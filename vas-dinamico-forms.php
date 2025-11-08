@@ -2,7 +2,7 @@
 /**
  * Plugin Name: EIPSI Forms
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 2.0
+ * Version: 1.1.0
  * Author: Mathias Rojas
  * Text Domain: vas-dinamico-forms
  * Domain Path: /languages
