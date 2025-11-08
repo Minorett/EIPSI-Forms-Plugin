@@ -36,6 +36,8 @@ export default function Save( { attributes } ) {
 		label,
 		required,
 		helperText,
+		leftLabel,
+		rightLabel,
 		labels,
 		minValue,
 		maxValue,
@@ -60,14 +62,14 @@ export default function Save( { attributes } ) {
 			? initialValue
 			: Math.floor( ( minValue + maxValue ) / 2 );
 
-	// Procesar etiquetas personalizadas
 	const labelArray =
 		labels && labels.trim() !== ''
 			? labels
 					.split( ',' )
 					.map( ( l ) => l.trim() )
 					.filter( ( l ) => l !== '' )
-			: [ 'Nada', 'Leve', 'Moderado', 'Fuerte', 'Muy fuerte' ]; // Valores por defecto
+			: [];
+	const hasMultiLabels = labelArray.length > 0;
 
 	return (
 		<div { ...blockProps }>
@@ -79,55 +81,67 @@ export default function Save( { attributes } ) {
 					{ label }
 				</label>
 			) }
-
-			<div className="vas-section">
-				<div className="vas-slider-container">
-					{ /* ===== ETIQUETAS PERSONALIZABLES ===== */ }
-					{ labelArray.length > 0 && (
-						<div className="vas-labels">
-							{ labelArray.map( ( labelText, index ) => (
-								<span key={ index } className="vas-label">
-									{ labelText }
-								</span>
-							) ) }
-						</div>
-					) }
-
-					{ /* ===== SLIDER PRINCIPAL ===== */ }
-					<div className="vas-slider-wrapper">
-						<input
-							type="range"
-							name={ normalizedFieldName }
-							id={ inputId }
-							className="vas-slider"
-							min={ minValue }
-							max={ maxValue }
-							step={ step }
-							defaultValue={ currentValue }
-							required={ required }
-							data-required={ required ? 'true' : 'false' }
-							data-show-value={ showValue ? 'true' : 'false' }
-							aria-valuemin={ minValue }
-							aria-valuemax={ maxValue }
-							aria-valuenow={ currentValue }
-							aria-labelledby={ `${ inputId }-value` }
-						/>
-					</div>
-
-					{ /* ===== VALOR NUMÉRICO CENTRAL ===== */ }
-					{ showValue && (
-						<div className="vas-value-display">
+			<div
+				className="vas-slider-container"
+				data-scale={ `${ minValue }-${ maxValue }` }
+			>
+				{ ! hasMultiLabels && (
+					<div className="vas-slider-labels">
+						{ leftLabel && (
+							<span className="vas-label-left">
+								{ leftLabel }
+							</span>
+						) }
+						{ showValue && (
 							<span
-								className="vas-value-number"
-								id={ `${ inputId }-value-display` }
+								className="vas-current-value"
+								id={ `${ inputId }-value` }
 							>
 								{ currentValue }
 							</span>
-						</div>
-					) }
-				</div>
+						) }
+						{ rightLabel && (
+							<span className="vas-label-right">
+								{ rightLabel }
+							</span>
+						) }
+					</div>
+				) }
+				{ hasMultiLabels && (
+					<div className="vas-multi-labels">
+						{ labelArray.map( ( labelText, index ) => (
+							<span key={ index } className="vas-multi-label">
+								{ labelText }
+							</span>
+						) ) }
+					</div>
+				) }
+				{ hasMultiLabels && showValue && (
+					<div
+						className="vas-current-value-solo"
+						id={ `${ inputId }-value` }
+					>
+						{ currentValue }
+					</div>
+				) }
+				<input
+					type="range"
+					name={ normalizedFieldName }
+					id={ inputId }
+					className="vas-slider"
+					min={ minValue }
+					max={ maxValue }
+					step={ step }
+					defaultValue={ currentValue }
+					required={ required }
+					data-required={ required ? 'true' : 'false' }
+					data-show-value={ showValue ? 'true' : 'false' }
+					aria-valuemin={ minValue }
+					aria-valuemax={ maxValue }
+					aria-valuenow={ currentValue }
+					aria-labelledby={ `${ inputId }-value` }
+				/>
 			</div>
-
 			{ renderHelperText( helperText ) }
 			<div className="form-error" aria-live="polite" />
 		</div>
