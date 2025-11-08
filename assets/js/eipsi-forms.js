@@ -41,6 +41,7 @@
 			this.populateDeviceInfo( form );
 			this.initPagination( form );
 			this.initVasSliders( form );
+			this.initLikertFields( form );
 			this.attachTracking( form );
 
 			form.addEventListener( 'submit', ( e ) =>
@@ -350,6 +351,37 @@
 						} );
 					}
 				}
+			} );
+		},
+
+		initLikertFields( form ) {
+			const likertFields = form.querySelectorAll( '.eipsi-likert-field' );
+
+			likertFields.forEach( ( field ) => {
+				const radioInputs = field.querySelectorAll(
+					'input[type="radio"]'
+				);
+
+				radioInputs.forEach( ( radio ) => {
+					// Add click handler for toggle behavior
+					radio.addEventListener( 'click', () => {
+						const wasChecked = radio.checked;
+
+						// If clicking an already checked radio, uncheck it
+						if ( wasChecked ) {
+							// Use setTimeout to allow the browser to complete the default click behavior first
+							setTimeout( () => {
+								radio.checked = false;
+								this.validateField( radio );
+							}, 0 );
+						} else {
+							// Validate the field when a new option is selected
+							setTimeout( () => {
+								this.validateField( radio );
+							}, 0 );
+						}
+					} );
+				} );
 			} );
 		},
 

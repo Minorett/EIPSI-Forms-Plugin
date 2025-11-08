@@ -67,7 +67,7 @@ export default function Save( { attributes } ) {
 					.split( ',' )
 					.map( ( l ) => l.trim() )
 					.filter( ( l ) => l !== '' )
-			: ['Nada', 'Leve', 'Moderado', 'Fuerte', 'Muy fuerte']; // Valores por defecto
+			: [ 'Nada', 'Leve', 'Moderado', 'Fuerte', 'Muy fuerte' ]; // Valores por defecto
 
 	return (
 		<div { ...blockProps }>
@@ -79,24 +79,21 @@ export default function Save( { attributes } ) {
 					{ label }
 				</label>
 			) }
-			
+
 			<div className="vas-section">
 				<div className="vas-slider-container">
-					{/* ===== ETIQUETAS PERSONALIZABLES ===== */}
+					{ /* ===== ETIQUETAS PERSONALIZABLES ===== */ }
 					{ labelArray.length > 0 && (
 						<div className="vas-labels">
 							{ labelArray.map( ( labelText, index ) => (
-								<span 
-									key={ index } 
-									className="vas-label"
-								>
+								<span key={ index } className="vas-label">
 									{ labelText }
 								</span>
 							) ) }
 						</div>
 					) }
 
-					{/* ===== SLIDER PRINCIPAL ===== */}
+					{ /* ===== SLIDER PRINCIPAL ===== */ }
 					<div className="vas-slider-wrapper">
 						<input
 							type="range"
@@ -117,11 +114,11 @@ export default function Save( { attributes } ) {
 						/>
 					</div>
 
-					{/* ===== VALOR NUMÉRICO CENTRAL ===== */}
+					{ /* ===== VALOR NUMÉRICO CENTRAL ===== */ }
 					{ showValue && (
 						<div className="vas-value-display">
-							<span 
-								className="vas-value-number" 
+							<span
+								className="vas-value-number"
 								id={ `${ inputId }-value-display` }
 							>
 								{ currentValue }
@@ -130,7 +127,7 @@ export default function Save( { attributes } ) {
 					) }
 				</div>
 			</div>
-			
+
 			{ renderHelperText( helperText ) }
 			<div className="form-error" aria-live="polite" />
 		</div>

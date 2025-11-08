@@ -21,6 +21,10 @@
 		}
 	},
 	"attributes": {
+		"fieldKey": {
+			"type": "string",
+			"default": ""
+		},
 		"fieldName": {
 			"type": "string",
 			"default": ""

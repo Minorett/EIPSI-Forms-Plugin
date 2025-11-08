@@ -1,135 +1,172 @@
 .eipsi-likert-field {
-	.likert-scale {
-		margin: 1.2em 0;
-		padding: 1.5em;
-		background: rgba(255, 255, 255, 0.05);
-		border: 2px solid rgba(255, 255, 255, 0.1);
-		border-radius: 10px;
-		transition: all 0.3s ease;
+    .likert-scale {
+        margin: 1.2em 0;
+        padding: 1.5em;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        transition: all 0.3s ease;
 
-		&:hover {
-			background: rgba(255, 255, 255, 0.08);
-			border-color: rgba(255, 255, 255, 0.15);
-		}
-	}
+        &:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+    }
 
-	.likert-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75em;
-		list-style: none;
-		margin: 0;
-		padding: 0;
+    .likert-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75em;
+        list-style: none;
+        margin: 0;
+        padding: 0;
 
-		@media (min-width: 768px) {
-			flex-direction: row;
-			justify-content: space-between;
-			align-items: stretch;
-		}
-	}
+        @media (min-width: 768px) {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: stretch;
+        }
+    }
 
-	.likert-item {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		gap: 0.6em;
-		padding: 0.9em 1em;
-		background: rgba(255, 255, 255, 0.05);
-		border: 2px solid rgba(255, 255, 255, 0.15);
-		border-radius: 8px;
-		transition: all 0.3s ease;
-		cursor: pointer;
+    .likert-item {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.6em;
+        padding: 0.9em 1em;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        cursor: pointer;
 
-		@media (min-width: 768px) {
-			flex: 1;
-			flex-direction: column;
-			text-align: center;
-			justify-content: center;
-			padding: 1em 0.5em;
-		}
+        @media (min-width: 768px) {
+            flex: 1;
+            flex-direction: column;
+            text-align: center;
+            justify-content: center;
+            padding: 1em 0.5em;
+        }
 
-		&:hover {
-			background: rgba(255, 255, 255, 0.12);
-			border-color: rgba(0, 115, 170, 0.6);
-			transform: translateY(-2px);
-			box-shadow: 0 3px 8px rgba(0, 115, 170, 0.2);
-		}
+        &:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(0, 115, 170, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0, 115, 170, 0.2);
+        }
 
-		&:active {
-			transform: translateY(0);
-		}
+        &:active {
+            transform: translateY(0);
+        }
 
-		// ESTILOS NUEVOS PARA EL LABEL WRAPPER
-		.likert-label-wrapper {
-			display: flex;
-			flex-direction: row;
-			align-items: center;
-			gap: 0.6em;
-			cursor: pointer;
-			user-select: none;
-			width: 100%;
-			height: 100%;
-			padding: 0;
+        // ESTILOS NUEVOS PARA EL LABEL WRAPPER
+        .likert-label-wrapper {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 0.6em;
+            cursor: pointer;
+            user-select: none;
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            position: relative;
 
-			@media (min-width: 768px) {
-				flex-direction: column;
-				text-align: center;
-				justify-content: center;
-			}
+            @media (min-width: 768px) {
+                flex-direction: column;
+                text-align: center;
+                justify-content: center;
+            }
 
-			input[type="radio"] {
-				margin: 0;
-				width: 20px;
-				height: 20px;
-				cursor: pointer;
-				flex-shrink: 0;
+            input[type="radio"] {
+                margin: 0;
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                flex-shrink: 0;
+                position: absolute;
+                opacity: 0;
+                z-index: 1;
 
-				@media (min-width: 768px) {
-					width: 22px;
-					height: 22px;
-				}
-			}
-		}
+                @media (min-width: 768px) {
+                    width: 22px;
+                    height: 22px;
+                }
+            }
+        }
 
-		// Mover los estilos del radio checked al wrapper
-		.likert-label-wrapper:has(input[type="radio"]:checked) {
-			.likert-label-text {
-				font-weight: 700;
-				color: #0073aa;
-				text-shadow: 0 1px 2px rgba(0, 115, 170, 0.3);
-			}
-		}
+        // Mantener el estilo del item cuando está checked
+        &:has(input[type="radio"]:checked) {
+            background: rgba(0, 115, 170, 0.15);
+            border-color: #0073aa;
+            box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
+        }
+    }
 
-		// Mantener el estilo del item cuando está checked
-		&:has(input[type="radio"]:checked) {
-			background: rgba(0, 115, 170, 0.15);
-			border-color: #0073aa;
-			box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
-		}
-	}
+    // Actualizar la clase del label
+    .likert-label-text {
+        margin: 0;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 0.95em;
+        line-height: 1.4;
+        color: #ffffff;
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.6em;
 
-	// Actualizar la clase del label
-	.likert-label-text {
-		margin: 0;
-		cursor: pointer;
-		font-weight: 500;
-		font-size: 0.95em;
-		line-height: 1.4;
-		color: #ffffff;
+        @media (min-width: 768px) {
+            font-size: 0.9em;
+            flex-direction: column;
+            text-align: center;
+            gap: 0.4em;
+        }
 
-		@media (min-width: 768px) {
-			font-size: 0.9em;
-		}
-	}
+        // Create a visual radio indicator
+        &::before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            background: transparent;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
 
-	&.has-error {
-		.likert-scale {
-			border-color: #ff6b6b;
-			background: rgba(255, 107, 107, 0.08);
-		}
+            @media (min-width: 768px) {
+                width: 22px;
+                height: 22px;
+            }
+        }
 
-		.likert-item {
-			border-color: rgba(255, 107, 107, 0.4);
-		}
-	}
+        input[type="radio"]:checked + & {
+            font-weight: 700;
+            color: #0073aa;
+            text-shadow: 0 1px 2px rgba(0, 115, 170, 0.3);
+
+            &::before {
+                background: #0073aa;
+                border-color: #0073aa;
+                box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        input[type="radio"]:hover + &::before {
+            border-color: #0073aa;
+            transform: scale(1.05);
+        }
+    }
+
+    &.has-error {
+        .likert-scale {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.08);
+        }
+
+        .likert-item {
+            border-color: rgba(255, 107, 107, 0.4);
+        }
+    }
 }

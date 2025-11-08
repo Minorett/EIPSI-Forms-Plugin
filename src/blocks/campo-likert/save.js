@@ -32,6 +32,7 @@ const getFieldId = ( fieldName ) => {
 
 export default function Save( { attributes } ) {
 	const {
+		fieldKey,
 		fieldName,
 		label,
 		required,
@@ -41,12 +42,12 @@ export default function Save( { attributes } ) {
 		labels,
 	} = attributes;
 
-	const normalizedFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
+	const effectiveFieldName =
+		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
 
 	const blockProps = useBlockProps.save( {
 		className: 'form-group eipsi-field eipsi-likert-field',
-		'data-field-name': normalizedFieldName,
+		'data-field-name': effectiveFieldName,
 		'data-required': required ? 'true' : 'false',
 		'data-field-type': 'likert',
 		'data-min': minValue,
@@ -69,7 +70,14 @@ export default function Save( { attributes } ) {
 	return (
 		<div { ...blockProps }>
 			{ label && (
-				<label className={ required ? 'required' : undefined }>
+				<label
+					htmlFor={
+						effectiveFieldName
+							? `${ getFieldId( effectiveFieldName ) }-label`
+							: undefined
+					}
+					className={ required ? 'required' : undefined }
+				>
 					{ label }
 				</label>
 			) }
@@ -80,7 +88,7 @@ export default function Save( { attributes } ) {
 				<ul className="likert-list">
 					{ scale.map( ( value, index ) => {
 						const optionId = `${ getFieldId(
-							normalizedFieldName
+							effectiveFieldName
 						) }-${ value }`;
 						const optionLabel =
 							labelArray[ index ] || value.toString();
@@ -93,7 +101,7 @@ export default function Save( { attributes } ) {
 								>
 									<input
 										type="radio"
-										name={ normalizedFieldName }
+										name={ effectiveFieldName }
 										id={ optionId }
 										value={ value }
 										required={ required }

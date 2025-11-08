@@ -4,24 +4,25 @@ import {
 	useInnerBlocksProps,
 	InnerBlocks,
 } from '@wordpress/block-editor';
-import { PanelBody, TextControl, TextareaControl, ColorPalette, RangeControl } from '@wordpress/components';
+import {
+	PanelBody,
+	TextControl,
+	TextareaControl,
+	ColorPalette,
+	RangeControl,
+} from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { 
-		formId, 
-		submitButtonLabel, 
+	const {
+		formId,
+		submitButtonLabel,
 		description,
 		// NUEVOS atributos
 		backgroundColor,
 		textColor,
-		primaryColor,
 		borderRadius,
 		padding,
-		inputBgColor,
-		inputTextColor,
-		buttonBgColor,
-		buttonTextColor
 	} = attributes;
 
 	const blockProps = useBlockProps( {
@@ -54,7 +55,10 @@ export default function Edit( { attributes, setAttributes } ) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody title={ __( 'Form Settings', 'vas-dinamico-forms' ) } initialOpen={true}>
+				<PanelBody
+					title={ __( 'Form Settings', 'vas-dinamico-forms' ) }
+					initialOpen={ true }
+				>
 					<TextControl
 						label={ __( 'Form ID/Slug', 'vas-dinamico-forms' ) }
 						value={ formId }
@@ -91,31 +95,46 @@ export default function Edit( { attributes, setAttributes } ) {
 						) }
 					/>
 				</PanelBody>
-				{/* NUEVO: Panel de personalización - Sin TabPanel */}
-				<PanelBody title={ __( 'Style Customization', 'vas-dinamico-forms' ) } initialOpen={false}>
-					<div style={{ marginBottom: '1em' }}>
-						<label>{ __( 'Background Color', 'vas-dinamico-forms' ) }</label>
+				{ /* NUEVO: Panel de personalización - Sin TabPanel */ }
+				<PanelBody
+					title={ __( 'Style Customization', 'vas-dinamico-forms' ) }
+					initialOpen={ false }
+				>
+					<div style={ { marginBottom: '1em' } }>
+						<label htmlFor="background-color">
+							{ __( 'Background Color', 'vas-dinamico-forms' ) }
+						</label>
 						<ColorPalette
-							colors={[
+							id="background-color"
+							colors={ [
 								{ name: 'Dark', color: '#23210f' },
 								{ name: 'White', color: '#ffffff' },
-								{ name: 'Gray', color: '#f0f0f0' }
-							]}
+								{ name: 'Gray', color: '#f0f0f0' },
+							] }
 							value={ backgroundColor }
-							onChange={ ( color ) => setAttributes( { backgroundColor: color } ) }
+							onChange={ ( color ) =>
+								setAttributes( { backgroundColor: color } )
+							}
 						/>
 					</div>
-					<div style={{ marginBottom: '1em' }}>
-						<label>{ __( 'Text Color', 'vas-dinamico-forms' ) }</label>
+					<div style={ { marginBottom: '1em' } }>
+						<label htmlFor="text-color">
+							{ __( 'Text Color', 'vas-dinamico-forms' ) }
+						</label>
 						<ColorPalette
+							id="text-color"
 							value={ textColor }
-							onChange={ ( color ) => setAttributes( { textColor: color } ) }
+							onChange={ ( color ) =>
+								setAttributes( { textColor: color } )
+							}
 						/>
 					</div>
 					<RangeControl
 						label={ __( 'Padding', 'vas-dinamico-forms' ) }
 						value={ padding }
-						onChange={ ( value ) => setAttributes( { padding: value } ) }
+						onChange={ ( value ) =>
+							setAttributes( { padding: value } )
+						}
 						min={ 0 }
 						max={ 60 }
 						step={ 4 }
@@ -123,7 +142,9 @@ export default function Edit( { attributes, setAttributes } ) {
 					<RangeControl
 						label={ __( 'Border Radius', 'vas-dinamico-forms' ) }
 						value={ borderRadius }
-						onChange={ ( value ) => setAttributes( { borderRadius: value } ) }
+						onChange={ ( value ) =>
+							setAttributes( { borderRadius: value } )
+						}
 						min={ 0 }
 						max={ 30 }
 						step={ 2 }
