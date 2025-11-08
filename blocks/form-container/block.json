@@ -20,62 +20,62 @@
 			"padding": true
 		}
 	},
-    "attributes": {
-        "formId": {
-            "type": "string",
-            "default": ""
-        },
-        "submitButtonLabel": {
-            "type": "string", 
-            "default": "Submit"
-        },
-        "description": {
-            "type": "string",
-            "default": ""
-        },
-        
-        "backgroundColor": {
-            "type": "string", 
-            "default": "#23210f"
-        },
-        "textColor": {
-            "type": "string",
-            "default": "#ffffff" 
-        },
-        "primaryColor": {
-            "type": "string",
-            "default": "#0073aa"
-        },
-        "borderRadius": {
-            "type": "number",
-            "default": 12
-        },
-        "padding": {
-            "type": "number", 
-            "default": 24
-        },
-        "inputBgColor": {
-            "type": "string",
-            "default": "rgba(255,255,255,0.95)"
-        },
-        "inputTextColor": {
-            "type": "string",
-            "default": "#1d2327"
-        },
-        "buttonBgColor": {
-            "type": "string",
-            "default": "#0073aa"
-        },
-        "buttonTextColor": {
-            "type": "string",
-            "default": "#ffffff"
-        },
-        
-        "className": {
-            "type": "string",
-            "default": ""
-        }
-    },
+	"attributes": {
+		"formId": {
+			"type": "string",
+			"default": ""
+		},
+		"submitButtonLabel": {
+			"type": "string",
+			"default": "Submit"
+		},
+		"description": {
+			"type": "string",
+			"default": ""
+		},
+
+		"backgroundColor": {
+			"type": "string",
+			"default": "#23210f"
+		},
+		"textColor": {
+			"type": "string",
+			"default": "#ffffff"
+		},
+		"primaryColor": {
+			"type": "string",
+			"default": "#0073aa"
+		},
+		"borderRadius": {
+			"type": "number",
+			"default": 12
+		},
+		"padding": {
+			"type": "number",
+			"default": 24
+		},
+		"inputBgColor": {
+			"type": "string",
+			"default": "rgba(255,255,255,0.95)"
+		},
+		"inputTextColor": {
+			"type": "string",
+			"default": "#1d2327"
+		},
+		"buttonBgColor": {
+			"type": "string",
+			"default": "#0073aa"
+		},
+		"buttonTextColor": {
+			"type": "string",
+			"default": "#ffffff"
+		},
+
+		"className": {
+			"type": "string",
+			"default": ""
+		}
+	},
 	"providesContext": {
 		"vas-dinamico/formId": "formId"
 	},
