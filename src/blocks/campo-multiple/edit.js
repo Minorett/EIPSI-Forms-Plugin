@@ -1,9 +1,5 @@
 import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
-import {
-	PanelBody,
-	TextareaControl,
-	ToggleControl,
-} from '@wordpress/components';
+import { PanelBody, TextareaControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import FieldSettings from '../../components/FieldSettings';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
@@ -49,7 +45,7 @@ const parseOptions = ( optionsString ) => {
 		.filter( ( option ) => option !== '' );
 };
 
-export default function Edit( { attributes, setAttributes } ) {
+export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
 		fieldName,
 		label,
@@ -62,11 +58,20 @@ export default function Edit( { attributes, setAttributes } ) {
 	const normalizedFieldName =
 		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
 
+	const hasConditionalLogic =
+		conditionalLogic &&
+		( Array.isArray( conditionalLogic )
+			? conditionalLogic.length > 0
+			: conditionalLogic.enabled &&
+			  conditionalLogic.rules &&
+			  conditionalLogic.rules.length > 0 );
+
 	const blockProps = useBlockProps( {
 		className: 'form-group eipsi-field eipsi-checkbox-field',
 		'data-field-name': normalizedFieldName,
 		'data-required': required ? 'true' : 'false',
 		'data-field-type': 'checkbox',
+		'data-conditional-logic': hasConditionalLogic ? 'true' : undefined,
 	} );
 
 	const displayLabel =
@@ -74,11 +79,6 @@ export default function Edit( { attributes, setAttributes } ) {
 			? label
 			: __( 'Campo de selección múltiple', 'vas-dinamico-forms' );
 	const optionsArray = parseOptions( options );
-
-	// This will be handled by the ConditionalLogicControl component
-	const getTotalPages = () => {
-		return 0; // Placeholder, actual logic in ConditionalLogicControl
-	};
 
 	return (
 		<>
@@ -89,42 +89,11 @@ export default function Edit( { attributes, setAttributes } ) {
 					showPlaceholder={ false }
 				/>
 
-				<PanelBody
-					title={ __( 'Lógica Condicional', 'vas-dinamico-forms' ) }
-					initialOpen={ false }
-				>
-					<ToggleControl
-						label={ __(
-							'Habilitar lógica condicional',
-							'vas-dinamico-forms'
-						) }
-						checked={ conditionalLogic?.enabled || false }
-						onChange={ ( enabled ) => {
-							if ( enabled ) {
-								setAttributes( {
-									conditionalLogic: {
-										enabled: true,
-										rules: [],
-									},
-								} );
-							} else {
-								setAttributes( {
-									conditionalLogic: undefined,
-								} );
-							}
-						} }
-						help={ __(
-							'Permite redirigir a diferentes páginas según las opciones seleccionadas.',
-							'vas-dinamico-forms'
-						) }
-					/>
-				</PanelBody>
-
 				<ConditionalLogicControl
 					attributes={ attributes }
 					setAttributes={ setAttributes }
 					options={ optionsArray }
-					totalPages={ getTotalPages() }
+					clientId={ clientId }
 				/>
 
 				<PanelBody

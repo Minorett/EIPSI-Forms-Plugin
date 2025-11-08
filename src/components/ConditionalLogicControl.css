@@ -1,91 +1,383 @@
-/* Conditional Logic Panel Styles */
+/* ===================================================================
+   CONDITIONAL LOGIC CONTROL - GUTENBERG INSPECTOR PANEL
+   Clinical research form branching logic configuration
+   =================================================================== */
+
+/* ----------------------------------------
+   Panel Container
+   ---------------------------------------- */
 .conditional-logic-panel {
-    .conditional-logic-warning {
-        padding: 12px;
-        background: #f0f6fc;
-        border: 1px solid #72aee6;
-        border-radius: 4px;
-        margin-bottom: 16px;
-        
-        p {
-            margin: 0;
-            color: #2e5a88;
-            font-size: 13px;
-        }
-    }
-    
-    .conditional-logic-rule {
-        background: #f8f9fa;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 16px;
-        margin-bottom: 16px;
-        
-        h4 {
-            margin: 0 0 12px 0;
-            font-size: 14px;
-            color: #1e1e1e;
-            font-weight: 600;
-        }
-        
-        .components-base-control {
-            margin-bottom: 12px;
-            
-            &:last-child {
-                margin-bottom: 0;
-            }
-        }
-        
-        button {
-            margin-top: 8px;
-        }
-    }
-    
-    .components-button.is-primary {
-        background: #0073aa;
-        border-color: #0073aa;
-        
-        &:hover {
-            background: #005a87;
-            border-color: #005a87;
-        }
-        
-        &:disabled {
-            background: #8c8f94;
-            border-color: #8c8f94;
-            cursor: not-allowed;
-        }
-    }
-    
-    .components-button.is-destructive {
-        color: #d63638;
-        
-        &:hover {
-            color: #b32d2e;
-            background: #f7e3e3;
-        }
-    }
+    margin-top: 16px;
 }
 
-/* Field indicators for conditional logic */
-.eipsi-field[data-conditional-logic] {
+/* ----------------------------------------
+   Warning/Notice Boxes
+   ---------------------------------------- */
+.conditional-logic-warning {
+    padding: 12px 16px;
+    background: #e3f2fd;
+    border: 2px solid #005a87;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.conditional-logic-warning p {
+    margin: 0;
+    color: #003d5b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.conditional-logic-info {
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.conditional-logic-info p {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ----------------------------------------
+   Rule Container
+   ---------------------------------------- */
+.conditional-logic-rule {
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.conditional-logic-rule:hover {
+    border-color: #cbd5e0;
+    box-shadow: 0 2px 8px rgba(0, 90, 135, 0.1);
+}
+
+.conditional-logic-rule:focus-within {
+    border-color: #005a87;
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.15);
+}
+
+.conditional-logic-rule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.conditional-logic-rule-header h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #1e1e1e;
+    font-weight: 600;
+}
+
+/* ----------------------------------------
+   Form Controls
+   ---------------------------------------- */
+.conditional-logic-rule .components-base-control {
+    margin-bottom: 16px;
+}
+
+.conditional-logic-rule .components-base-control:last-of-type {
+    margin-bottom: 12px;
+}
+
+.conditional-logic-rule .components-base-control__label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    margin-bottom: 8px;
+}
+
+/* Select Control Enhancements */
+.conditional-logic-rule .components-select-control__input {
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.conditional-logic-rule .components-select-control__input:focus {
+    border-color: #005a87;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.15);
+}
+
+.conditional-logic-rule .components-select-control__input:disabled {
+    background: #f8f9fa;
+    color: #8c8f94;
+    cursor: not-allowed;
+}
+
+/* ----------------------------------------
+   Validation Messages
+   ---------------------------------------- */
+.conditional-logic-validation-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #fff5f5;
+    border: 1px solid #ff6b6b;
+    border-radius: 6px;
+    margin-top: 8px;
+}
+
+.conditional-logic-validation-error span {
+    color: #ff6b6b;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ----------------------------------------
+   Buttons
+   ---------------------------------------- */
+.conditional-logic-rule-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.conditional-logic-panel .components-button.is-primary {
+    background: #005a87;
+    border-color: #005a87;
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.conditional-logic-panel .components-button.is-primary:hover:not(:disabled) {
+    background: #003d5b;
+    border-color: #003d5b;
+    box-shadow: 0 2px 4px rgba(0, 90, 135, 0.2);
+}
+
+.conditional-logic-panel .components-button.is-primary:focus {
+    outline: 2px solid #005a87;
+    outline-offset: 2px;
+}
+
+.conditional-logic-panel .components-button.is-primary:disabled {
+    background: #cbd5e0;
+    border-color: #cbd5e0;
+    color: #8c8f94;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.conditional-logic-panel .components-button.is-destructive {
+    color: #ff6b6b;
+    border-color: transparent;
+    background: transparent;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.conditional-logic-panel .components-button.is-destructive:hover:not(:disabled) {
+    color: #b32d2e;
+    background: #fff5f5;
+    border-color: #ff6b6b;
+}
+
+.conditional-logic-panel .components-button.is-destructive:focus {
+    outline: 2px solid #ff6b6b;
+    outline-offset: 2px;
+}
+
+.conditional-logic-panel .components-button.is-secondary {
+    border-color: #005a87;
+    color: #005a87;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.conditional-logic-panel .components-button.is-secondary:hover:not(:disabled) {
+    background: #e3f2fd;
+    border-color: #003d5b;
+    color: #003d5b;
+}
+
+.conditional-logic-panel .components-button.is-secondary:focus {
+    outline: 2px solid #005a87;
+    outline-offset: 2px;
+}
+
+/* Add Rule Button */
+.conditional-logic-add-rule-button {
+    width: 100%;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+/* ----------------------------------------
+   Toggle Control
+   ---------------------------------------- */
+.conditional-logic-toggle-wrapper {
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.conditional-logic-toggle-wrapper .components-toggle-control {
+    margin-bottom: 0;
+}
+
+.conditional-logic-toggle-wrapper .components-toggle-control .components-base-control__label {
+    font-weight: 600;
+    color: #1e1e1e;
+    font-size: 14px;
+}
+
+/* ----------------------------------------
+   Default Action Section
+   ---------------------------------------- */
+.conditional-logic-default-action {
+    background: #f8f9fa;
+    border: 2px solid #cbd5e0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.conditional-logic-default-action h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: #1e1e1e;
+    font-weight: 600;
+}
+
+.conditional-logic-default-action .components-base-control {
+    margin-bottom: 0;
+}
+
+/* ----------------------------------------
+   Empty State
+   ---------------------------------------- */
+.conditional-logic-empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    background: #f8f9fa;
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.conditional-logic-empty-state p {
+    margin: 0 0 16px 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.conditional-logic-empty-state .dashicon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #cbd5e0;
+    margin-bottom: 12px;
+}
+
+/* ----------------------------------------
+   Field Indicators for Conditional Logic
+   (Applied in block editor)
+   ---------------------------------------- */
+.eipsi-field[data-conditional-logic="true"] {
     position: relative;
-    
-    &::after {
-        content: "🔀";
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        font-size: 14px;
-        z-index: 1;
-        opacity: 0.7;
+}
+
+.eipsi-field[data-conditional-logic="true"]::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border: 2px solid #005a87;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.eipsi-field[data-conditional-logic="true"]::after {
+    content: "⚡";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 18px;
+    z-index: 2;
+    opacity: 0.8;
+    background: #005a87;
+    color: #ffffff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* ----------------------------------------
+   Enhanced Block Styles with Conditional Logic
+   ---------------------------------------- */
+.wp-block[data-conditional-logic="true"] {
+    box-shadow: 0 0 0 2px rgba(0, 90, 135, 0.2);
+    border-radius: 8px;
+}
+
+/* ----------------------------------------
+   Accessibility Enhancements
+   ---------------------------------------- */
+.conditional-logic-panel *:focus {
+    outline-color: #005a87;
+    outline-width: 2px;
+    outline-offset: 2px;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .conditional-logic-rule,
+    .conditional-logic-panel .components-button {
+        transition: none;
     }
 }
 
-/* Enhanced editor styles for fields with conditional logic */
-.wp-block-vas-dinamico-campo-select[data-conditional-logic],
-.wp-block-vas-dinamico-campo-radio[data-conditional-logic],
-.wp-block-vas-dinamico-campo-multiple[data-conditional-logic] {
-    border-color: #0073aa !important;
-    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2) !important;
+/* ----------------------------------------
+   Responsive Adjustments
+   ---------------------------------------- */
+@media (max-width: 768px) {
+    .conditional-logic-rule-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .conditional-logic-rule-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .conditional-logic-rule-actions .components-button {
+        width: 100%;
+        justify-content: center;
+    }
 }
