@@ -9,6 +9,9 @@ add_action('wp_ajax_vas_dinamico_submit_form', 'vas_dinamico_submit_form_handler
 add_action('wp_ajax_nopriv_eipsi_get_response_details', 'eipsi_ajax_get_response_details');
 add_action('wp_ajax_eipsi_get_response_details', 'eipsi_ajax_get_response_details');
 
+add_action('wp_ajax_nopriv_eipsi_track_event', 'eipsi_track_event_handler');
+add_action('wp_ajax_eipsi_track_event', 'eipsi_track_event_handler');
+
 function vas_dinamico_submit_form_handler() {
     check_ajax_referer('eipsi_forms_nonce', 'nonce');
     
@@ -221,5 +224,84 @@ function eipsi_ajax_get_response_details() {
     $html .= '</div>';
     
     wp_send_json_success($html);
+}
+
+function eipsi_track_event_handler() {
+    // Verify nonce for security
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'eipsi_tracking_nonce')) {
+        wp_send_json_error(array(
+            'message' => __('Invalid security token.', 'vas-dinamico-forms')
+        ), 403);
+        return;
+    }
+    
+    // Define allowed event types
+    $allowed_events = array('view', 'start', 'page_change', 'submit', 'abandon');
+    
+    // Sanitize and validate POST data
+    $event_type = isset($_POST['event_type']) ? sanitize_text_field($_POST['event_type']) : '';
+    
+    // Validate event type
+    if (empty($event_type) || !in_array($event_type, $allowed_events, true)) {
+        wp_send_json_error(array(
+            'message' => __('Invalid event type.', 'vas-dinamico-forms')
+        ), 400);
+        return;
+    }
+    
+    // Sanitize other required fields
+    $form_id = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : '';
+    $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
+    
+    // Validate required fields
+    if (empty($session_id)) {
+        wp_send_json_error(array(
+            'message' => __('Missing required field: session_id.', 'vas-dinamico-forms')
+        ), 400);
+        return;
+    }
+    
+    // Sanitize optional fields
+    $page_number = isset($_POST['page_number']) ? intval($_POST['page_number']) : null;
+    $user_agent = isset($_POST['user_agent']) ? sanitize_text_field($_POST['user_agent']) : '';
+    
+    // Prepare data for database insertion
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'vas_form_events';
+    
+    $insert_data = array(
+        'form_id' => $form_id,
+        'session_id' => $session_id,
+        'event_type' => $event_type,
+        'page_number' => $page_number,
+        'user_agent' => $user_agent,
+        'created_at' => current_time('mysql')
+    );
+    
+    $insert_formats = array('%s', '%s', '%s', '%d', '%s', '%s');
+    
+    // Insert event into database
+    $result = $wpdb->insert($table_name, $insert_data, $insert_formats);
+    
+    // Check for database errors
+    if ($result === false) {
+        // Log error but don't crash tracking
+        error_log('EIPSI Tracking: Failed to insert event - ' . $wpdb->last_error);
+        
+        // Still return success to keep tracking JS resilient
+        wp_send_json_success(array(
+            'message' => __('Event logged.', 'vas-dinamico-forms'),
+            'event_id' => null,
+            'logged' => true
+        ));
+        return;
+    }
+    
+    // Return success with event ID
+    wp_send_json_success(array(
+        'message' => __('Event tracked successfully.', 'vas-dinamico-forms'),
+        'event_id' => $wpdb->insert_id,
+        'tracked' => true
+    ));
 }
 ?>

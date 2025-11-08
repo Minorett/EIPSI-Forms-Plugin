@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EIPSI Tracking Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #005a87;
+            margin-bottom: 10px;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #005a87;
+            border-radius: 4px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+        .test-section h2 {
+            color: #2c3e50;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+        button {
+            background: #005a87;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #003d5b;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .input-group input:focus {
+            border-color: #005a87;
+            outline: none;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        #response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        #response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        .info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 EIPSI Tracking Handler Test</h1>
+        
+        <div class="description">
+            <strong>Purpose:</strong> This page allows you to manually test the AJAX tracking endpoints without requiring a full WordPress frontend setup.
+            <br><br>
+            <strong>Instructions:</strong>
+            <ol style="margin: 10px 0 0 20px; padding: 0;">
+                <li>Update the AJAX URL and Nonce values below</li>
+                <li>Click the test buttons to send tracking events</li>
+                <li>Check the response messages to verify the handler is working</li>
+            </ol>
+        </div>
+
+        <div class="info">
+            <strong>⚠️ Configuration Required:</strong> Replace the placeholder values below with actual values from your WordPress installation.
+        </div>
+
+        <div class="test-section">
+            <h2>Configuration</h2>
+            
+            <div class="input-group">
+                <label for="ajaxUrl">AJAX URL:</label>
+                <input type="text" id="ajaxUrl" value="http://your-wordpress-site.com/wp-admin/admin-ajax.php" placeholder="e.g., http://localhost/wp-admin/admin-ajax.php">
+            </div>
+
+            <div class="input-group">
+                <label for="nonce">Tracking Nonce:</label>
+                <input type="text" id="nonce" value="your-nonce-here" placeholder="Get from eipsiTrackingConfig.nonce">
+            </div>
+
+            <div class="input-group">
+                <label for="formId">Form ID:</label>
+                <input type="text" id="formId" value="test-form-id" placeholder="e.g., clinical-assessment">
+            </div>
+
+            <div class="input-group">
+                <label for="sessionId">Session ID:</label>
+                <input type="text" id="sessionId" value="" placeholder="Auto-generated">
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Events</h2>
+            
+            <button onclick="testEvent('view')">Test View Event</button>
+            <button onclick="testEvent('start')">Test Start Event</button>
+            <button onclick="testEvent('page_change')">Test Page Change Event</button>
+            <button onclick="testEvent('submit')">Test Submit Event</button>
+            <button onclick="testEvent('abandon')">Test Abandon Event</button>
+            <button onclick="testInvalidEvent()">Test Invalid Event (should fail)</button>
+            <button onclick="testInvalidNonce()">Test Invalid Nonce (should fail)</button>
+        </div>
+
+        <div id="response"></div>
+    </div>
+
+    <script>
+        // Generate a session ID on page load
+        function generateSessionId() {
+            return Math.random().toString(36).slice(2) + Date.now().toString(36);
+        }
+
+        // Initialize session ID
+        document.getElementById('sessionId').value = generateSessionId();
+
+        function testEvent(eventType, pageNumber = null) {
+            const ajaxUrl = document.getElementById('ajaxUrl').value;
+            const nonce = document.getElementById('nonce').value;
+            const formId = document.getElementById('formId').value;
+            const sessionId = document.getElementById('sessionId').value;
+
+            if (!ajaxUrl || ajaxUrl.includes('your-wordpress-site')) {
+                showResponse('error', 'Please update the AJAX URL first!');
+                return;
+            }
+
+            if (!nonce || nonce === 'your-nonce-here') {
+                showResponse('error', 'Please update the Nonce value first!');
+                return;
+            }
+
+            const params = new URLSearchParams();
+            params.append('action', 'eipsi_track_event');
+            params.append('nonce', nonce);
+            params.append('form_id', formId);
+            params.append('session_id', sessionId);
+            params.append('event_type', eventType);
+            
+            if (pageNumber !== null) {
+                params.append('page_number', pageNumber);
+            }
+            
+            params.append('user_agent', navigator.userAgent);
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: params.toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showResponse('success', `✅ Event tracked successfully: ${eventType}`, data);
+                } else {
+                    showResponse('error', `❌ Error: ${data.data?.message || 'Unknown error'}`, data);
+                }
+            })
+            .catch(error => {
+                showResponse('error', `❌ Network error: ${error.message}`);
+            });
+        }
+
+        function testInvalidEvent() {
+            const ajaxUrl = document.getElementById('ajaxUrl').value;
+            const nonce = document.getElementById('nonce').value;
+            const formId = document.getElementById('formId').value;
+            const sessionId = document.getElementById('sessionId').value;
+
+            const params = new URLSearchParams();
+            params.append('action', 'eipsi_track_event');
+            params.append('nonce', nonce);
+            params.append('form_id', formId);
+            params.append('session_id', sessionId);
+            params.append('event_type', 'invalid_event_type');
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: params.toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    showResponse('success', `✅ Correctly rejected invalid event type`, data);
+                } else {
+                    showResponse('error', `❌ Should have rejected invalid event type`, data);
+                }
+            })
+            .catch(error => {
+                showResponse('error', `❌ Network error: ${error.message}`);
+            });
+        }
+
+        function testInvalidNonce() {
+            const ajaxUrl = document.getElementById('ajaxUrl').value;
+            const formId = document.getElementById('formId').value;
+            const sessionId = document.getElementById('sessionId').value;
+
+            const params = new URLSearchParams();
+            params.append('action', 'eipsi_track_event');
+            params.append('nonce', 'invalid-nonce-12345');
+            params.append('form_id', formId);
+            params.append('session_id', sessionId);
+            params.append('event_type', 'view');
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: params.toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    showResponse('success', `✅ Correctly rejected invalid nonce`, data);
+                } else {
+                    showResponse('error', `❌ Should have rejected invalid nonce`, data);
+                }
+            })
+            .catch(error => {
+                showResponse('error', `❌ Network error: ${error.message}`);
+            });
+        }
+
+        function showResponse(type, message, data = null) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.className = type;
+            responseDiv.style.display = 'block';
+            
+            let html = `<strong>${message}</strong>`;
+            
+            if (data) {
+                html += '<div class="code">' + JSON.stringify(data, null, 2) + '</div>';
+            }
+            
+            responseDiv.innerHTML = html;
+            
+            // Scroll to response
+            responseDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    </script>
+</body>
+</html>
