@@ -1,0 +1,265 @@
+/**
+ * FormStylePanel Styles
+ * Professional, clinical-appropriate styling for the customization panel
+ */
+
+/* Panel Description Text */
+.eipsi-panel-description {
+	font-size: 0.9em;
+	color: #666;
+	margin-top: 0;
+	margin-bottom: 1rem;
+	line-height: 1.5;
+}
+
+/* Section Titles */
+.eipsi-section-title {
+	font-size: 0.95em;
+	font-weight: 600;
+	color: #1e1e1e;
+	margin-top: 1.5rem;
+	margin-bottom: 0.75rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.eipsi-section-title:first-child {
+	margin-top: 0;
+}
+
+/* Color Control Container */
+.eipsi-color-control {
+	margin-bottom: 1.5rem;
+}
+
+.eipsi-color-control label {
+	display: block;
+	font-size: 0.9em;
+	font-weight: 500;
+	color: #1e1e1e;
+	margin-bottom: 0.5rem;
+}
+
+/* Preset Grid */
+.eipsi-preset-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+
+.eipsi-preset-button {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.75rem;
+	background: #ffffff;
+	border: 2px solid #e2e8f0;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.eipsi-preset-button:hover {
+	border-color: #005a87;
+	box-shadow: 0 2px 8px rgba(0, 90, 135, 0.1);
+	transform: translateY(-2px);
+}
+
+.eipsi-preset-button.is-active {
+	border-color: #005a87;
+	background: rgba(0, 90, 135, 0.05);
+	box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+}
+
+/* Preset Preview Box */
+.eipsi-preset-preview {
+	width: 100%;
+	height: 60px;
+	border-radius: 6px;
+	border: 1px solid;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.5rem;
+	overflow: hidden;
+}
+
+.eipsi-preset-primary {
+	width: 24px;
+	height: 24px;
+	border-radius: 4px;
+	flex-shrink: 0;
+}
+
+.eipsi-preset-text {
+	font-size: 1.25rem;
+	font-weight: 600;
+	flex-grow: 1;
+	text-align: center;
+}
+
+/* Preset Name */
+.eipsi-preset-name {
+	font-size: 0.85em;
+	font-weight: 500;
+	color: #1e1e1e;
+	text-align: center;
+}
+
+/* Active Checkmark */
+.eipsi-preset-checkmark {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	color: #005a87;
+	font-size: 20px;
+	line-height: 1;
+}
+
+/* WordPress Component Overrides */
+.components-color-palette {
+	margin-top: 0.5rem;
+}
+
+.components-color-palette__item {
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
+}
+
+.components-notice {
+	margin-top: 0.75rem;
+	margin-bottom: 0.75rem;
+}
+
+.components-notice__content {
+	font-size: 0.875em;
+	line-height: 1.5;
+}
+
+/* Range Control Spacing */
+.components-range-control {
+	margin-bottom: 1.25rem;
+}
+
+/* Text Control Spacing */
+.components-text-control {
+	margin-bottom: 1rem;
+}
+
+/* Select Control Spacing */
+.components-select-control {
+	margin-bottom: 1rem;
+}
+
+/* Button Styles */
+.components-button.is-secondary {
+	border-color: #005a87;
+	color: #005a87;
+}
+
+.components-button.is-secondary:hover {
+	background: rgba(0, 90, 135, 0.05);
+	border-color: #003d5b;
+	color: #003d5b;
+}
+
+/* Flex Layout Adjustments */
+.components-flex {
+	margin-bottom: 0.5rem;
+}
+
+.components-flex-item label {
+	font-size: 0.9em;
+	font-weight: 500;
+	color: #1e1e1e;
+}
+
+/* Color Indicator in Flex */
+.components-color-indicator {
+	width: 24px;
+	height: 24px;
+	border-radius: 4px;
+	border: 1px solid #e2e8f0;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Help Text */
+.components-base-control__help {
+	font-size: 0.85em;
+	color: #757575;
+	margin-top: 0.5rem;
+	line-height: 1.4;
+}
+
+/* Panel Body Adjustments */
+.components-panel__body-title {
+	font-size: 1em;
+}
+
+/* Improve Color Picker Visibility */
+.components-color-picker {
+	margin-top: 0.5rem;
+}
+
+/* Reset Button Styling */
+.components-button.is-small {
+	font-size: 0.875em;
+	padding: 6px 12px;
+}
+
+/* Accessibility: Focus States */
+.eipsi-preset-button:focus {
+	outline: 2px solid #005a87;
+	outline-offset: 2px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 782px) {
+	.eipsi-preset-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.eipsi-preset-preview {
+		height: 50px;
+	}
+}
+
+/* Clinical Design Token Indicators */
+.eipsi-token-indicator {
+	display: inline-block;
+	font-family: 'Courier New', monospace;
+	font-size: 0.8em;
+	background: #f0f0f0;
+	padding: 2px 6px;
+	border-radius: 3px;
+	color: #666;
+	margin-left: 0.5rem;
+}
+
+/* Warning Box for Accessibility */
+.components-notice.is-warning {
+	background: #fff8e5;
+	border-left-color: #ffc107;
+}
+
+.components-notice.is-warning strong {
+	color: #b35900;
+}
+
+/* Success Indicator */
+.eipsi-contrast-success {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.85em;
+	color: #28a745;
+	margin-top: 0.5rem;
+}
+
+.eipsi-contrast-success .dashicon {
+	color: #28a745;
+}
