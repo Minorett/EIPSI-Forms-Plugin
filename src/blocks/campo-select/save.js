@@ -86,7 +86,9 @@ export default function Save( { attributes } ) {
 				data-field-type="select"
 			>
 				{ placeholder && placeholder.trim() !== '' && (
-					<option value="">{ placeholder }</option>
+					<option value="" disabled selected>
+						{ placeholder }
+					</option>
 				) }
 				{ optionsArray.map( ( option, index ) => (
 					<option key={ index } value={ option }>
