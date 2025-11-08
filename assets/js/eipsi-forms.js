@@ -1750,4 +1750,5 @@
 	EIPSIForms.init();
 
 	window.EIPSIForms = EIPSIForms;
+	window.EIPSIForms.conditionalNavigators = EIPSIForms.navigators;
 } )();

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>EIPSI Forms - Conditional Flow Test Report</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			background: #f5f7fa;
+			color: #2c3e50;
+			line-height: 1.6;
+			padding: 20px;
+		}
+
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+			background: white;
+			border-radius: 12px;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+			overflow: hidden;
+		}
+
+		.header {
+			background: linear-gradient(135deg, #005a87, #003d5b);
+			color: white;
+			padding: 40px;
+			text-align: center;
+		}
+
+		.header h1 {
+			font-size: 2.5rem;
+			margin-bottom: 10px;
+		}
+
+		.header p {
+			font-size: 1.1rem;
+			opacity: 0.9;
+		}
+
+		.content {
+			padding: 40px;
+		}
+
+		.section {
+			margin-bottom: 40px;
+		}
+
+		.section h2 {
+			color: #005a87;
+			font-size: 1.8rem;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 3px solid #e3f2fd;
+		}
+
+		.form-card {
+			background: #f8f9fa;
+			border: 2px solid #e2e8f0;
+			border-radius: 8px;
+			padding: 25px;
+			margin-bottom: 25px;
+			transition: all 0.3s ease;
+		}
+
+		.form-card:hover {
+			border-color: #005a87;
+			box-shadow: 0 4px 12px rgba(0, 90, 135, 0.15);
+		}
+
+		.form-card h3 {
+			color: #2c3e50;
+			font-size: 1.5rem;
+			margin-bottom: 15px;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.status-badge {
+			display: inline-block;
+			padding: 5px 15px;
+			border-radius: 20px;
+			font-size: 0.9rem;
+			font-weight: 600;
+			text-transform: uppercase;
+		}
+
+		.status-pending {
+			background: #ffeaa7;
+			color: #d63031;
+		}
+
+		.status-pass {
+			background: #55efc4;
+			color: #00b894;
+		}
+
+		.status-fail {
+			background: #fab1a0;
+			color: #d63031;
+		}
+
+		.status-warning {
+			background: #fdcb6e;
+			color: #e17055;
+		}
+
+		.test-detail {
+			background: white;
+			border-left: 4px solid #005a87;
+			padding: 15px;
+			margin: 15px 0;
+			border-radius: 4px;
+		}
+
+		.test-detail h4 {
+			color: #005a87;
+			margin-bottom: 10px;
+		}
+
+		.test-detail ul {
+			margin-left: 20px;
+		}
+
+		.test-detail li {
+			margin: 8px 0;
+		}
+
+		.code-block {
+			background: #2c3e50;
+			color: #55efc4;
+			padding: 20px;
+			border-radius: 8px;
+			overflow-x: auto;
+			margin: 15px 0;
+			font-family: 'Courier New', monospace;
+			font-size: 0.9rem;
+		}
+
+		.instructions {
+			background: #e3f2fd;
+			border-left: 4px solid #005a87;
+			padding: 20px;
+			margin: 20px 0;
+			border-radius: 4px;
+		}
+
+		.instructions ol {
+			margin-left: 20px;
+		}
+
+		.instructions li {
+			margin: 10px 0;
+		}
+
+		.checkbox-list {
+			list-style: none;
+			margin-left: 0;
+		}
+
+		.checkbox-list li {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			margin: 10px 0;
+		}
+
+		.checkbox-list input[type="checkbox"] {
+			width: 20px;
+			height: 20px;
+			cursor: pointer;
+		}
+
+		.summary-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+			gap: 20px;
+			margin: 30px 0;
+		}
+
+		.summary-card {
+			background: linear-gradient(135deg, #e3f2fd, #f8f9fa);
+			border: 2px solid #005a87;
+			border-radius: 12px;
+			padding: 25px;
+			text-align: center;
+		}
+
+		.summary-card .number {
+			font-size: 3rem;
+			font-weight: bold;
+			color: #005a87;
+			margin-bottom: 10px;
+		}
+
+		.summary-card .label {
+			font-size: 1.1rem;
+			color: #64748b;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+		}
+
+		.button {
+			display: inline-block;
+			padding: 12px 30px;
+			background: #005a87;
+			color: white;
+			text-decoration: none;
+			border-radius: 6px;
+			font-weight: 600;
+			transition: all 0.3s ease;
+			border: none;
+			cursor: pointer;
+			font-size: 1rem;
+		}
+
+		.button:hover {
+			background: #003d5b;
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(0, 90, 135, 0.3);
+		}
+
+		.button-group {
+			display: flex;
+			gap: 15px;
+			flex-wrap: wrap;
+			margin: 20px 0;
+		}
+
+		.footer {
+			background: #f8f9fa;
+			padding: 30px;
+			text-align: center;
+			color: #64748b;
+			border-top: 2px solid #e2e8f0;
+		}
+
+		@media print {
+			body {
+				background: white;
+			}
+
+			.container {
+				box-shadow: none;
+			}
+
+			.button {
+				display: none;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<h1>🧪 Conditional Navigation Testing Report</h1>
+			<p>EIPSI Forms Plugin - ConditionalNavigator State Machine Validation</p>
+		</div>
+
+		<div class="content">
+			<!-- Summary Section -->
+			<div class="section">
+				<h2>📊 Test Summary</h2>
+				
+				<div class="summary-grid">
+					<div class="summary-card">
+						<div class="number" id="total-tests">4</div>
+						<div class="label">Total Tests</div>
+					</div>
+					<div class="summary-card">
+						<div class="number" id="passed-tests">0</div>
+						<div class="label">Passed</div>
+					</div>
+					<div class="summary-card">
+						<div class="number" id="failed-tests">0</div>
+						<div class="label">Failed</div>
+					</div>
+					<div class="summary-card">
+						<div class="number" id="pass-rate">0%</div>
+						<div class="label">Pass Rate</div>
+					</div>
+				</div>
+
+				<div class="instructions">
+					<h3>📝 Testing Instructions</h3>
+					<ol>
+						<li>Create each test form in WordPress following the <strong>MANUAL_TESTING_GUIDE.md</strong></li>
+						<li>Navigate to each form on the frontend</li>
+						<li>Open Browser DevTools (F12) → Console tab</li>
+						<li>Load <code>test-conditional-flows.js</code> script</li>
+						<li>Run: <code>EIPSIConditionalTests.runAll()</code></li>
+						<li>Mark checkboxes below as you complete each test</li>
+						<li>Document any issues in the notes section</li>
+					</ol>
+				</div>
+			</div>
+
+			<!-- Test 1 -->
+			<div class="section">
+				<div class="form-card">
+					<h3>
+						<span>📄 Test 1: Linear Flow (Baseline)</span>
+						<span class="status-badge status-pending">Pending</span>
+					</h3>
+
+					<p><strong>Objective:</strong> Verify standard pagination without conditional logic interference.</p>
+
+					<div class="test-detail">
+						<h4>Form Structure</h4>
+						<ul>
+							<li>Page 1: Text field "Your Name" (required)</li>
+							<li>Page 2: Text field "Your Email" (required)</li>
+							<li>Page 3: Text area "Comments"</li>
+							<li>Page 4: Thank you message</li>
+						</ul>
+					</div>
+
+					<div class="test-detail">
+						<h4>Expected Behavior</h4>
+						<ul class="checkbox-list">
+							<li><input type="checkbox"> Pages navigate sequentially (1→2→3→4)</li>
+							<li><input type="checkbox"> Prev button respects history</li>
+							<li><input type="checkbox"> Page counter accurate</li>
+							<li><input type="checkbox"> No skipped pages</li>
+							<li><input type="checkbox"> History: <code>[1, 2, 3, 4]</code></li>
+							<li><input type="checkbox"> No console errors</li>
+						</ul>
+					</div>
+
+					<div class="code-block">
+// Console Verification
+const nav = window.EIPSIForms.conditionalNavigators.get(
+  document.querySelector('.vas-dinamico-form')
+);
+console.log('History:', [...nav.history]);
+console.log('Skipped:', [...nav.skippedPages]);
+// Expected: History: [1, 2, 3, 4], Skipped: []
+					</div>
+
+					<div class="button-group">
+						<a href="#" class="button">✅ Mark as Passed</a>
+						<a href="#" class="button" style="background: #d63031;">❌ Mark as Failed</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Test 2 -->
+			<div class="section">
+				<div class="form-card">
+					<h3>
+						<span>🔀 Test 2: Single-Branch Flow (goToPage)</span>
+						<span class="status-badge status-pending">Pending</span>
+					</h3>
+
+					<p><strong>Objective:</strong> Validate conditional rule jumping to non-sequential page.</p>
+
+					<div class="test-detail">
+						<h4>Form Structure</h4>
+						<ul>
+							<li>Page 1: Radio "Experience?" (Yes/No) with conditional logic</li>
+							<li>Page 2: Background text field</li>
+							<li>Page 3: Rating radio field</li>
+							<li>Page 4: Submit page</li>
+						</ul>
+					</div>
+
+					<div class="test-detail">
+						<h4>Conditional Logic Configuration</h4>
+						<div class="code-block">
+{
+  "enabled": true,
+  "rules": [
+    {
+      "id": "rule-yes",
+      "matchValue": "Yes",
+      "action": "goToPage",
+      "targetPage": 3
+    }
+  ],
+  "defaultAction": "nextPage"
+}
+						</div>
+					</div>
+
+					<div class="test-detail">
+						<h4>Path A: Select "Yes" (Jump)</h4>
+						<ul class="checkbox-list">
+							<li><input type="checkbox"> Jumps from page 1 → 3</li>
+							<li><input type="checkbox"> Page 2 never displayed</li>
+							<li><input type="checkbox"> History: <code>[1, 3]</code></li>
+							<li><input type="checkbox"> SkippedPages: <code>{2}</code></li>
+							<li><input type="checkbox"> Prev returns to page 1</li>
+						</ul>
+					</div>
+
+					<div class="test-detail">
+						<h4>Path B: Select "No" (Sequential)</h4>
+						<ul class="checkbox-list">
+							<li><input type="checkbox"> Goes to page 2</li>
+							<li><input type="checkbox"> Sequential flow: 1→2→3→4</li>
+							<li><input type="checkbox"> History: <code>[1, 2, 3, 4]</code></li>
+							<li><input type="checkbox"> SkippedPages: <code>{}</code></li>
+						</ul>
+					</div>
+
+					<div class="button-group">
+						<a href="#" class="button">✅ Mark as Passed</a>
+						<a href="#" class="button" style="background: #d63031;">❌ Mark as Failed</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Test 3 -->
+			<div class="section">
+				<div class="form-card">
+					<h3>
+						<span>🌲 Test 3: Multi-Branch Flow (Complex Routing)</span>
+						<span class="status-badge status-pending">Pending</span>
+					</h3>
+
+					<p><strong>Objective:</strong> Test multiple conditional rules with different targets.</p>
+
+					<div class="test-detail">
+						<h4>Form Structure</h4>
+						<ul>
+							<li>Page 1: Select "Category" (Researcher/Clinician/Student/Other)</li>
+							<li>Page 2: Research-specific questions</li>
+							<li>Page 3: Clinical-specific questions</li>
+							<li>Page 4: Student-specific questions</li>
+							<li>Page 5: Other background</li>
+							<li>Page 6: Final summary (convergence)</li>
+						</ul>
+					</div>
+
+					<div class="test-detail">
+						<h4>Path Testing</h4>
+						<ul class="checkbox-list">
+							<li><input type="checkbox"> Researcher → Page 2 (skips 3,4,5)</li>
+							<li><input type="checkbox"> Clinician → Page 3 (skips 2,4,5)</li>
+							<li><input type="checkbox"> Student → Page 4 (skips 2,3,5)</li>
+							<li><input type="checkbox"> Other → Page 5 (skips 2,3,4)</li>
+							<li><input type="checkbox"> All paths converge at page 6</li>
+							<li><input type="checkbox"> Backward navigation correct</li>
+							<li><input type="checkbox"> SkippedPages set correctly per path</li>
+						</ul>
+					</div>
+
+					<div class="code-block">
+// Test Each Path
+// Researcher: History: [1, 2, 6], Skipped: {3, 4, 5}
+// Clinician:  History: [1, 3, 6], Skipped: {2, 4, 5}
+// Student:    History: [1, 4, 6], Skipped: {2, 3, 5}
+// Other:      History: [1, 5, 6], Skipped: {2, 3, 4}
+					</div>
+
+					<div class="button-group">
+						<a href="#" class="button">✅ Mark as Passed</a>
+						<a href="#" class="button" style="background: #d63031;">❌ Mark as Failed</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Test 4 -->
+			<div class="section">
+				<div class="form-card">
+					<h3>
+						<span>🚀 Test 4: Submit Shortcut Flow</span>
+						<span class="status-badge status-pending">Pending</span>
+					</h3>
+
+					<p><strong>Objective:</strong> Validate <code>submit</code> action bypassing remaining pages.</p>
+
+					<div class="test-detail">
+						<h4>Form Structure</h4>
+						<ul>
+							<li>Page 1: Radio "Participate?" (Yes/No thanks)</li>
+							<li>Page 2: Consent form</li>
+							<li>Page 3: Demographics</li>
+							<li>Page 4: Contact information</li>
+						</ul>
+					</div>
+
+					<div class="test-detail">
+						<h4>Conditional Logic Configuration</h4>
+						<div class="code-block">
+{
+  "enabled": true,
+  "rules": [
+    {
+      "id": "rule-decline",
+      "matchValue": "No thanks",
+      "action": "submit"
+    }
+  ],
+  "defaultAction": "nextPage"
+}
+						</div>
+					</div>
+
+					<div class="test-detail">
+						<h4>Path A: Select "Yes" (Full Form)</h4>
+						<ul class="checkbox-list">
+							<li><input type="checkbox"> Sequential flow: 1→2→3→4</li>
+							<li><input type="checkbox"> Normal submission at end</li>
+							<li><input type="checkbox"> All data submitted</li>
+						</ul>
+					</div>
+
+					<div class="test-detail">
+						<h4>Path B: Select "No thanks" (Submit)</h4>
+						<ul class="checkbox-list">
+							<li><input type="checkbox"> Submit action triggered on page 1</li>
+							<li><input type="checkbox"> Pages 2-4 never shown</li>
+							<li><input type="checkbox"> Immediate submission</li>
+							<li><input type="checkbox"> Only page 1 data submitted</li>
+							<li><input type="checkbox"> History: <code>[1]</code></li>
+							<li><input type="checkbox"> SkippedPages: <code>{2, 3, 4}</code></li>
+							<li><input type="checkbox"> No validation errors for skipped fields</li>
+						</ul>
+					</div>
+
+					<div class="button-group">
+						<a href="#" class="button">✅ Mark as Passed</a>
+						<a href="#" class="button" style="background: #d63031;">❌ Mark as Failed</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Issues and Notes -->
+			<div class="section">
+				<h2>📋 Issues and Notes</h2>
+				
+				<div class="form-card">
+					<h3>Found Issues</h3>
+					<textarea id="issues-textarea" 
+						style="width: 100%; min-height: 150px; padding: 15px; 
+						border: 2px solid #e2e8f0; border-radius: 8px; 
+						font-family: inherit; font-size: 1rem;"
+						placeholder="Document any issues, bugs, or unexpected behavior here..."></textarea>
+				</div>
+
+				<div class="form-card">
+					<h3>Testing Notes</h3>
+					<textarea id="notes-textarea" 
+						style="width: 100%; min-height: 150px; padding: 15px; 
+						border: 2px solid #e2e8f0; border-radius: 8px; 
+						font-family: inherit; font-size: 1rem;"
+						placeholder="Additional observations, performance notes, browser compatibility..."></textarea>
+				</div>
+			</div>
+
+			<!-- Test Environment -->
+			<div class="section">
+				<h2>🖥️ Test Environment</h2>
+				
+				<div class="form-card">
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+						<div>
+							<strong>Date:</strong> <span id="test-date">{{ DATE }}</span>
+						</div>
+						<div>
+							<strong>Tester:</strong> <input type="text" id="tester-name" style="border: 1px solid #ccc; padding: 5px; border-radius: 4px;">
+						</div>
+						<div>
+							<strong>Plugin Version:</strong> <span id="plugin-version">1.1.0</span>
+						</div>
+						<div>
+							<strong>WordPress Version:</strong> <input type="text" id="wp-version" style="border: 1px solid #ccc; padding: 5px; border-radius: 4px;" placeholder="6.4">
+						</div>
+						<div>
+							<strong>Browser:</strong> <input type="text" id="browser" style="border: 1px solid #ccc; padding: 5px; border-radius: 4px;" placeholder="Chrome 120">
+						</div>
+						<div>
+							<strong>OS:</strong> <input type="text" id="os" style="border: 1px solid #ccc; padding: 5px; border-radius: 4px;" placeholder="Windows 11">
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Actions -->
+			<div class="section">
+				<div class="button-group">
+					<button class="button" onclick="window.print()">🖨️ Print Report</button>
+					<button class="button" onclick="exportReport()">💾 Export to JSON</button>
+					<button class="button" onclick="updateSummary()">🔄 Update Summary</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="footer">
+			<p><strong>EIPSI Forms Plugin</strong> - Conditional Navigation Testing</p>
+			<p>For support, see <code>CONDITIONAL_FLOW_TESTING.md</code> and <code>MANUAL_TESTING_GUIDE.md</code></p>
+		</div>
+	</div>
+
+	<script>
+		// Set current date
+		document.getElementById('test-date').textContent = new Date().toLocaleDateString();
+
+		// Update summary counts
+		function updateSummary() {
+			const allCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+			const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked');
+			
+			document.getElementById('passed-tests').textContent = checkedBoxes.length;
+			document.getElementById('failed-tests').textContent = allCheckboxes.length - checkedBoxes.length;
+			
+			const passRate = allCheckboxes.length > 0 
+				? ((checkedBoxes.length / allCheckboxes.length) * 100).toFixed(0)
+				: 0;
+			document.getElementById('pass-rate').textContent = passRate + '%';
+
+			alert('Summary updated! ✅');
+		}
+
+		// Export report as JSON
+		function exportReport() {
+			const report = {
+				date: document.getElementById('test-date').textContent,
+				tester: document.getElementById('tester-name').value,
+				environment: {
+					pluginVersion: document.getElementById('plugin-version').textContent,
+					wordpressVersion: document.getElementById('wp-version').value,
+					browser: document.getElementById('browser').value,
+					os: document.getElementById('os').value
+				},
+				tests: {},
+				issues: document.getElementById('issues-textarea').value,
+				notes: document.getElementById('notes-textarea').value
+			};
+
+			// Collect checkbox states
+			const formCards = document.querySelectorAll('.form-card');
+			formCards.forEach((card, index) => {
+				const testName = card.querySelector('h3')?.textContent || `Test ${index + 1}`;
+				const checkboxes = card.querySelectorAll('input[type="checkbox"]');
+				const results = Array.from(checkboxes).map(cb => ({
+					label: cb.parentElement.textContent.trim(),
+					checked: cb.checked
+				}));
+				
+				if (results.length > 0) {
+					report.tests[testName] = results;
+				}
+			});
+
+			// Download as JSON
+			const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `eipsi-conditional-test-report-${Date.now()}.json`;
+			a.click();
+			URL.revokeObjectURL(url);
+
+			alert('Report exported! 💾');
+		}
+
+		// Mark buttons functionality
+		document.querySelectorAll('.button').forEach(btn => {
+			if (btn.textContent.includes('Mark as')) {
+				btn.addEventListener('click', (e) => {
+					e.preventDefault();
+					const card = btn.closest('.form-card');
+					const badge = card.querySelector('.status-badge');
+					
+					if (btn.textContent.includes('Passed')) {
+						badge.textContent = 'Passed';
+						badge.className = 'status-badge status-pass';
+					} else if (btn.textContent.includes('Failed')) {
+						badge.textContent = 'Failed';
+						badge.className = 'status-badge status-fail';
+					}
+				});
+			}
+		});
+	</script>
+</body>
+</html>
