@@ -35,9 +35,10 @@ require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/ajax-handlers.php';
 function vas_dinamico_activate() {
     global $wpdb;
     
-    $table_name = $wpdb->prefix . 'vas_form_results';
     $charset_collate = $wpdb->get_charset_collate();
     
+    // Create form results table
+    $table_name = $wpdb->prefix . 'vas_form_results';
     $sql = "CREATE TABLE IF NOT EXISTS $table_name (
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         participant varchar(255) DEFAULT NULL,
@@ -58,6 +59,26 @@ function vas_dinamico_activate() {
     
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
+    
+    // Create form events tracking table
+    $events_table = $wpdb->prefix . 'vas_form_events';
+    $sql_events = "CREATE TABLE IF NOT EXISTS $events_table (
+        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        form_id varchar(255) NOT NULL DEFAULT '',
+        session_id varchar(255) NOT NULL,
+        event_type varchar(50) NOT NULL,
+        page_number int(11) DEFAULT NULL,
+        user_agent text DEFAULT NULL,
+        created_at datetime NOT NULL,
+        PRIMARY KEY (id),
+        KEY form_id (form_id),
+        KEY session_id (session_id),
+        KEY event_type (event_type),
+        KEY created_at (created_at),
+        KEY form_session (form_id, session_id)
+    ) $charset_collate;";
+    
+    dbDelta($sql_events);
 }
 
 register_activation_hook(__FILE__, 'vas_dinamico_activate');
