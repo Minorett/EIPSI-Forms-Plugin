@@ -1,3 +1,5 @@
+/* global sessionStorage, navigator */
+
 ( function () {
 	'use strict';
 
@@ -9,6 +11,7 @@
 		'page_change',
 		'submit',
 		'abandon',
+		'branch_jump',
 	] );
 
 	const Tracking = {
@@ -272,6 +275,24 @@
 				params.append( 'page_number', String( payload.page_number ) );
 			}
 
+			if ( payload && eventType === 'branch_jump' ) {
+				if ( payload.from_page ) {
+					params.append( 'from_page', String( payload.from_page ) );
+				}
+				if ( payload.to_page ) {
+					params.append( 'to_page', String( payload.to_page ) );
+				}
+				if ( payload.field_id ) {
+					params.append( 'field_id', String( payload.field_id ) );
+				}
+				if ( payload.matched_value ) {
+					params.append(
+						'matched_value',
+						String( payload.matched_value )
+					);
+				}
+			}
+
 			if ( navigator.userAgent ) {
 				params.append( 'user_agent', navigator.userAgent );
 			}
@@ -329,6 +350,9 @@
 		},
 		flushAbandon() {
 			Tracking.flushAbandonEvents( true );
+		},
+		trackEvent( eventType, formId, payload = {} ) {
+			Tracking.trackEvent( eventType, formId, payload );
 		},
 	};
 } )();

@@ -9,8 +9,280 @@
 
 	/* global navigator */
 
+	class ConditionalNavigator {
+		constructor( form ) {
+			this.form = form;
+			this.fieldCache = new Map();
+			this.history = [];
+			this.visitedPages = new Set();
+			this.skippedPages = new Set();
+		}
+
+		parseConditionalLogic( jsonString ) {
+			if ( ! jsonString || jsonString === 'true' ) {
+				return null;
+			}
+
+			try {
+				return JSON.parse( jsonString );
+			} catch ( error ) {
+				if ( window.console && window.console.warn ) {
+					window.console.warn(
+						'[EIPSI Forms] Invalid conditional logic JSON:',
+						jsonString,
+						error
+					);
+				}
+				return null;
+			}
+		}
+
+		normalizeConditionalLogic( logic ) {
+			if ( ! logic ) {
+				return null;
+			}
+
+			if ( Array.isArray( logic ) ) {
+				return {
+					enabled: logic.length > 0,
+					rules: logic.map( ( rule ) => ( {
+						id: rule.id || `rule-${ Date.now() }`,
+						matchValue: rule.value || rule.matchValue || '',
+						action: rule.action || 'nextPage',
+						targetPage: rule.targetPage || null,
+					} ) ),
+					defaultAction: 'nextPage',
+					defaultTargetPage: null,
+				};
+			}
+
+			if ( typeof logic === 'object' && logic.enabled !== undefined ) {
+				return logic;
+			}
+
+			return null;
+		}
+
+		getFieldValue( field ) {
+			const fieldType = field.dataset.fieldType;
+
+			switch ( fieldType ) {
+				case 'select':
+					const select = field.querySelector( 'select' );
+					return select ? select.value : '';
+
+				case 'radio':
+					const checkedRadio = field.querySelector(
+						'input[type="radio"]:checked'
+					);
+					return checkedRadio ? checkedRadio.value : '';
+
+				case 'checkbox':
+					const checkedBoxes = field.querySelectorAll(
+						'input[type="checkbox"]:checked'
+					);
+					return Array.from( checkedBoxes ).map( ( cb ) => cb.value );
+
+				default:
+					return '';
+			}
+		}
+
+		findMatchingRule( rules, fieldValue ) {
+			if ( ! Array.isArray( rules ) ) {
+				return null;
+			}
+
+			if ( Array.isArray( fieldValue ) ) {
+				for ( const value of fieldValue ) {
+					const rule = rules.find(
+						( r ) => r.matchValue === value || r.value === value
+					);
+					if ( rule ) {
+						return rule;
+					}
+				}
+			} else {
+				return rules.find(
+					( rule ) =>
+						rule.matchValue === fieldValue ||
+						rule.value === fieldValue
+				);
+			}
+
+			return null;
+		}
+
+		getNextPage( currentPage ) {
+			const currentPageElement = EIPSIForms.getPageElement(
+				this.form,
+				currentPage
+			);
+
+			if ( ! currentPageElement ) {
+				return { action: 'nextPage', targetPage: currentPage + 1 };
+			}
+
+			const conditionalFields = currentPageElement.querySelectorAll(
+				'[data-conditional-logic]'
+			);
+
+			for ( const field of conditionalFields ) {
+				const jsonString = field.dataset.conditionalLogic;
+				const parsedLogic = this.parseConditionalLogic( jsonString );
+				const conditionalLogic =
+					this.normalizeConditionalLogic( parsedLogic );
+
+				if ( ! conditionalLogic || ! conditionalLogic.enabled ) {
+					continue;
+				}
+
+				const fieldValue = this.getFieldValue( field );
+
+				if (
+					! fieldValue ||
+					( Array.isArray( fieldValue ) && fieldValue.length === 0 )
+				) {
+					continue;
+				}
+
+				const matchingRule = this.findMatchingRule(
+					conditionalLogic.rules,
+					fieldValue
+				);
+
+				if ( matchingRule ) {
+					if ( matchingRule.action === 'submit' ) {
+						return { action: 'submit' };
+					}
+
+					if (
+						matchingRule.action === 'goToPage' &&
+						matchingRule.targetPage
+					) {
+						const targetPage = parseInt(
+							matchingRule.targetPage,
+							10
+						);
+
+						if ( ! Number.isNaN( targetPage ) ) {
+							const totalPages = EIPSIForms.getTotalPages(
+								this.form
+							);
+							const boundedTarget = Math.min(
+								Math.max( targetPage, 1 ),
+								totalPages
+							);
+							return {
+								action: 'goToPage',
+								targetPage: boundedTarget,
+								fieldId: field.id || field.dataset.fieldName,
+								matchedValue: Array.isArray( fieldValue )
+									? fieldValue[ 0 ]
+									: fieldValue,
+							};
+						}
+					}
+
+					if ( matchingRule.action === 'nextPage' ) {
+						return {
+							action: 'nextPage',
+							targetPage: currentPage + 1,
+						};
+					}
+				}
+
+				if ( conditionalLogic.defaultAction ) {
+					if ( conditionalLogic.defaultAction === 'submit' ) {
+						return { action: 'submit' };
+					}
+
+					if (
+						conditionalLogic.defaultAction === 'goToPage' &&
+						conditionalLogic.defaultTargetPage
+					) {
+						const targetPage = parseInt(
+							conditionalLogic.defaultTargetPage,
+							10
+						);
+
+						if ( ! Number.isNaN( targetPage ) ) {
+							const totalPages = EIPSIForms.getTotalPages(
+								this.form
+							);
+							const boundedTarget = Math.min(
+								Math.max( targetPage, 1 ),
+								totalPages
+							);
+							return {
+								action: 'goToPage',
+								targetPage: boundedTarget,
+								isDefault: true,
+							};
+						}
+					}
+				}
+			}
+
+			return { action: 'nextPage', targetPage: currentPage + 1 };
+		}
+
+		shouldSubmit( currentPage ) {
+			const result = this.getNextPage( currentPage );
+			return result.action === 'submit';
+		}
+
+		pushHistory( pageNumber ) {
+			if (
+				this.history.length === 0 ||
+				this.history[ this.history.length - 1 ] !== pageNumber
+			) {
+				this.history.push( pageNumber );
+				this.visitedPages.add( pageNumber );
+			}
+		}
+
+		popHistory() {
+			if ( this.history.length > 1 ) {
+				this.history.pop();
+				return this.history[ this.history.length - 1 ];
+			}
+			return null;
+		}
+
+		markSkippedPages( fromPage, toPage ) {
+			if ( fromPage === toPage || Math.abs( toPage - fromPage ) === 1 ) {
+				return;
+			}
+
+			const start = Math.min( fromPage, toPage );
+			const end = Math.max( fromPage, toPage );
+
+			for ( let i = start + 1; i < end; i++ ) {
+				if ( ! this.visitedPages.has( i ) ) {
+					this.skippedPages.add( i );
+				}
+			}
+		}
+
+		getActivePath() {
+			return Array.from( this.visitedPages ).sort( ( a, b ) => a - b );
+		}
+
+		isPageSkipped( pageNumber ) {
+			return this.skippedPages.has( pageNumber );
+		}
+
+		reset() {
+			this.history = [];
+			this.visitedPages.clear();
+			this.skippedPages.clear();
+		}
+	}
+
 	const EIPSIForms = {
 		forms: [],
+		navigators: new Map(),
 
 		init() {
 			document.addEventListener( 'DOMContentLoaded', () => {
@@ -36,12 +308,20 @@
 			form.dataset.initialized = 'true';
 			this.forms.push( form );
 
+			const formId = this.getFormId( form );
+			const navigator = new ConditionalNavigator( form );
+			this.navigators.set( formId || form, navigator );
+
+			const initialPage = this.getCurrentPage( form );
+			navigator.pushHistory( initialPage );
+
 			this.applyTestSelectors( form );
 
 			this.populateDeviceInfo( form );
 			this.initPagination( form );
 			this.initVasSliders( form );
 			this.initLikertFields( form );
+			this.initConditionalFieldListeners( form );
 			this.attachTracking( form );
 
 			form.addEventListener( 'submit', ( e ) =>
@@ -72,6 +352,69 @@
 			}
 
 			return form.dataset.trackingFormId || this.getFormId( form );
+		},
+
+		getNavigator( form ) {
+			if ( ! form ) {
+				return null;
+			}
+
+			const formId = this.getFormId( form );
+			return this.navigators.get( formId || form );
+		},
+
+		initConditionalFieldListeners( form ) {
+			const conditionalFields = form.querySelectorAll(
+				'[data-conditional-logic]'
+			);
+
+			conditionalFields.forEach( ( field ) => {
+				const inputs = field.querySelectorAll(
+					'input[type="radio"], input[type="checkbox"], select'
+				);
+
+				inputs.forEach( ( input ) => {
+					input.addEventListener( 'change', () => {
+						const navigator = this.getNavigator( form );
+						if ( navigator ) {
+							const currentPage = this.getCurrentPage( form );
+							const nextPageResult =
+								navigator.getNextPage( currentPage );
+
+							if ( window.EIPSITracking ) {
+								const trackingFormId =
+									this.getTrackingFormId( form );
+								if (
+									trackingFormId &&
+									nextPageResult.action === 'goToPage' &&
+									nextPageResult.targetPage !==
+										currentPage + 1
+								) {
+									this.recordBranchingPreview(
+										trackingFormId,
+										currentPage,
+										nextPageResult
+									);
+								}
+							}
+						}
+					} );
+				} );
+			} );
+		},
+
+		recordBranchingPreview( formId, currentPage, nextPageResult ) {
+			if ( ! window.EIPSITracking || ! window.EIPSITracking.trackEvent ) {
+				return;
+			}
+
+			if ( window.console && window.console.log ) {
+				window.console.log(
+					'[EIPSI Forms] Branching route updated:',
+					`Page ${ currentPage } → Page ${ nextPageResult.targetPage }`,
+					nextPageResult
+				);
+			}
 		},
 
 		applyTestSelectors( form ) {
@@ -497,37 +840,122 @@
 
 			const currentPage = this.getCurrentPage( form );
 			let targetPage = currentPage;
+			let isBranchJump = false;
+			let branchDetails = null;
 
 			if ( direction === 'next' ) {
 				if ( ! this.validateCurrentPage( form ) ) {
 					return;
 				}
 
-				const totalPages = this.getTotalPages( form );
-				const conditionalTarget = this.handleConditionalNavigation(
-					form,
-					currentPage
-				);
+				const navigator = this.getNavigator( form );
+				if ( navigator ) {
+					const result = navigator.getNextPage( currentPage );
 
-				if ( conditionalTarget === 'submit' ) {
-					this.handleSubmit( { preventDefault: () => {} }, form );
-					return;
-				}
+					if ( result.action === 'submit' ) {
+						this.handleSubmit( { preventDefault: () => {} }, form );
+						return;
+					}
 
-				if (
-					typeof conditionalTarget === 'number' &&
-					! Number.isNaN( conditionalTarget )
-				) {
-					targetPage = conditionalTarget;
-				} else if ( currentPage < totalPages ) {
-					targetPage = currentPage + 1;
+					if ( result.action === 'goToPage' && result.targetPage ) {
+						targetPage = result.targetPage;
+						isBranchJump = targetPage !== currentPage + 1;
+						branchDetails = result;
+					} else {
+						const totalPages = this.getTotalPages( form );
+						if ( currentPage < totalPages ) {
+							targetPage = currentPage + 1;
+						}
+					}
+
+					if ( isBranchJump ) {
+						navigator.markSkippedPages( currentPage, targetPage );
+					}
+
+					navigator.pushHistory( targetPage );
+				} else {
+					const conditionalTarget = this.handleConditionalNavigation(
+						form,
+						currentPage
+					);
+
+					if ( conditionalTarget === 'submit' ) {
+						this.handleSubmit( { preventDefault: () => {} }, form );
+						return;
+					}
+
+					if (
+						typeof conditionalTarget === 'number' &&
+						! Number.isNaN( conditionalTarget )
+					) {
+						targetPage = conditionalTarget;
+					} else {
+						const totalPages = this.getTotalPages( form );
+						if ( currentPage < totalPages ) {
+							targetPage = currentPage + 1;
+						}
+					}
 				}
-			} else if ( direction === 'prev' && currentPage > 1 ) {
-				targetPage = currentPage - 1;
+			} else if ( direction === 'prev' ) {
+				const navigator = this.getNavigator( form );
+				if ( navigator ) {
+					const previousPage = navigator.popHistory();
+					if ( previousPage !== null ) {
+						targetPage = previousPage;
+					} else if ( currentPage > 1 ) {
+						targetPage = currentPage - 1;
+					}
+				} else if ( currentPage > 1 ) {
+					targetPage = currentPage - 1;
+				}
 			}
 
 			if ( targetPage !== currentPage ) {
 				this.setCurrentPage( form, targetPage );
+
+				if ( isBranchJump && branchDetails && window.EIPSITracking ) {
+					this.recordBranchJump(
+						form,
+						currentPage,
+						targetPage,
+						branchDetails
+					);
+				}
+			}
+		},
+
+		recordBranchJump( form, fromPage, toPage, details ) {
+			const trackingFormId = this.getTrackingFormId( form );
+			if ( ! trackingFormId ) {
+				return;
+			}
+
+			if ( window.console && window.console.log ) {
+				window.console.log(
+					'[EIPSI Forms] Branch jump executed:',
+					`Page ${ fromPage } → Page ${ toPage }`,
+					{
+						fieldId: details.fieldId,
+						matchedValue: details.matchedValue,
+						isDefault: details.isDefault,
+					}
+				);
+			}
+
+			if (
+				window.EIPSITracking &&
+				typeof window.EIPSITracking.trackEvent === 'function'
+			) {
+				window.EIPSITracking.trackEvent(
+					'branch_jump',
+					trackingFormId,
+					{
+						from_page: fromPage,
+						to_page: toPage,
+						field_id: details.fieldId,
+						matched_value: details.matchedValue,
+					}
+				);
 			}
 		},
 
@@ -538,26 +966,67 @@
 			const progressText = form.querySelector(
 				'.form-progress .current-page'
 			);
+			const totalPagesText = form.querySelector(
+				'.form-progress .total-pages'
+			);
+			const navigator = this.getNavigator( form );
+
+			const hasHistory = navigator && navigator.history.length > 1;
 
 			if ( prevButton ) {
-				prevButton.style.display = currentPage > 1 ? '' : 'none';
+				prevButton.style.display =
+					hasHistory || currentPage > 1 ? '' : 'none';
 			}
+
+			const shouldShowNext = navigator
+				? ! navigator.shouldSubmit( currentPage ) &&
+				  currentPage < totalPages
+				: currentPage < totalPages;
 
 			if ( nextButton ) {
-				nextButton.style.display =
-					currentPage < totalPages ? '' : 'none';
+				nextButton.style.display = shouldShowNext ? '' : 'none';
 			}
 
+			const shouldShowSubmit = navigator
+				? navigator.shouldSubmit( currentPage ) ||
+				  currentPage === totalPages
+				: currentPage === totalPages;
+
 			if ( submitButton ) {
-				submitButton.style.display =
-					currentPage === totalPages ? '' : 'none';
+				submitButton.style.display = shouldShowSubmit ? '' : 'none';
 			}
 
 			if ( progressText ) {
 				progressText.textContent = currentPage;
 			}
 
+			if (
+				totalPagesText &&
+				navigator &&
+				navigator.visitedPages.size > 0
+			) {
+				const activePath = navigator.getActivePath();
+				const currentIndex = activePath.indexOf( currentPage );
+
+				if ( currentIndex !== -1 ) {
+					const remainingPages =
+						totalPages - activePath[ activePath.length - 1 ];
+					const estimatedTotal =
+						activePath.length + Math.max( 0, remainingPages );
+
+					if ( estimatedTotal !== totalPages ) {
+						totalPagesText.textContent = `${ estimatedTotal }*`;
+						totalPagesText.title =
+							'Estimado basado en tu ruta actual';
+					} else {
+						totalPagesText.textContent = totalPages;
+						totalPagesText.title = '';
+					}
+				}
+			}
+
 			this.updatePageVisibility( form, currentPage );
+			this.updatePageAriaAttributes( form, currentPage );
 
 			if ( window.EIPSITracking ) {
 				const trackingFormId = this.getTrackingFormId( form );
@@ -569,6 +1038,24 @@
 					);
 				}
 			}
+		},
+
+		updatePageAriaAttributes( form, currentPage ) {
+			const pages = form.querySelectorAll( '.eipsi-page' );
+
+			pages.forEach( ( page, index ) => {
+				const pageNumber = parseInt( page.dataset.page || index + 1 );
+
+				if ( pageNumber === currentPage ) {
+					page.setAttribute( 'aria-hidden', 'false' );
+					page.removeAttribute( 'inert' );
+				} else {
+					page.setAttribute( 'aria-hidden', 'true' );
+					if ( 'inert' in page ) {
+						page.inert = true;
+					}
+				}
+			} );
 		},
 
 		updatePageVisibility( form, currentPage ) {
@@ -829,14 +1316,35 @@
 				return true;
 			}
 
-			const fields = form.querySelectorAll( 'input, textarea, select' );
+			const navigator = this.getNavigator( form );
+			let fieldsToValidate;
+
+			if ( navigator && navigator.visitedPages.size > 0 ) {
+				fieldsToValidate = [];
+				const visitedPageNumbers = Array.from( navigator.visitedPages );
+
+				visitedPageNumbers.forEach( ( pageNum ) => {
+					const pageElement = this.getPageElement( form, pageNum );
+					if ( pageElement ) {
+						const pageFields = pageElement.querySelectorAll(
+							'input, textarea, select'
+						);
+						fieldsToValidate.push( ...Array.from( pageFields ) );
+					}
+				} );
+			} else {
+				fieldsToValidate = Array.from(
+					form.querySelectorAll( 'input, textarea, select' )
+				);
+			}
+
 			let isValid = true;
 
 			this.resetValidationState( form );
 
 			const validatedGroups = new Set();
 
-			fields.forEach( ( field ) => {
+			fieldsToValidate.forEach( ( field ) => {
 				const formGroup = field.closest( '.form-group' );
 				const groupKey = formGroup
 					? formGroup.dataset.fieldName || formGroup.id || ''
