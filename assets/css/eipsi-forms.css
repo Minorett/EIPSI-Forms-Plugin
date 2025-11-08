@@ -3,33 +3,95 @@
  * EIPSI FORMS - CLINICAL RESEARCH DESIGN SYSTEM
  * ============================================================================
  * Professional psychotherapy research forms with clinical-grade UX
- * Version: 2.0
+ * Version: 2.1 - Design Token System
  * @package VAS Dinamico Forms
  * ============================================================================
  */
 
 /* ============================================================================
-   1. DESIGN TOKENS - CLINICAL COLOR SYSTEM
+   1. DESIGN TOKENS - CSS VARIABLES WITH FALLBACKS
    ============================================================================ */
 
 /**
- * Primary Colors - Trust & Professionalism
- * #005a87 - EIPSI Institutional Blue (primary)
- * #003d5b - Darker Blue (hover states)
- * #e3f2fd - Light Blue (VAS backgrounds)
+ * CSS Custom Properties (CSS Variables)
+ * These can be overridden on the .vas-dinamico-form element via inline styles
+ * generated from the styleConfig block attribute.
  * 
- * Neutral System - Clinical Cleanliness
- * #ffffff - Pure White (backgrounds)
- * #f8f9fa - Off White (subtle backgrounds)
- * #e2e8f0 - Light Grey (borders)
- * #cbd5e0 - Medium Grey (disabled states)
- * #2c3e50 - Soft Dark (text)
- * 
- * Semantic Colors
- * #ff6b6b - Error Red
- * #28a745 - Success Green
- * #ffc107 - Warning Amber
+ * Default values align with clinical design guidance:
+ * - Primary: #005a87 (EIPSI Institutional Blue - trust & professionalism)
+ * - Secondary: #e3f2fd (Light Blue - calming backgrounds)
+ * - Neutral: #ffffff, #f8f9fa, #e2e8f0 (clinical cleanliness)
+ * - Text: #2c3e50 (soft dark - readable without harshness)
+ * - Semantic: #ff6b6b (error), #28a745 (success), #ffc107 (warning)
  */
+
+:root {
+    /* Colors - Clinical Palette */
+    --eipsi-color-primary: #005a87;
+    --eipsi-color-primary-hover: #003d5b;
+    --eipsi-color-secondary: #e3f2fd;
+    --eipsi-color-background: #ffffff;
+    --eipsi-color-background-subtle: #f8f9fa;
+    --eipsi-color-text: #2c3e50;
+    --eipsi-color-text-muted: #64748b;
+    --eipsi-color-input-bg: #ffffff;
+    --eipsi-color-input-text: #2c3e50;
+    --eipsi-color-input-border: #e2e8f0;
+    --eipsi-color-input-border-focus: #005a87;
+    --eipsi-color-button-bg: #005a87;
+    --eipsi-color-button-text: #ffffff;
+    --eipsi-color-button-hover-bg: #003d5b;
+    --eipsi-color-error: #ff6b6b;
+    --eipsi-color-success: #28a745;
+    --eipsi-color-warning: #ffc107;
+    --eipsi-color-border: #e2e8f0;
+    --eipsi-color-border-dark: #cbd5e0;
+
+    /* Typography */
+    --eipsi-font-family-heading: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --eipsi-font-family-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --eipsi-font-size-base: 16px;
+    --eipsi-font-size-h1: 2rem;
+    --eipsi-font-size-h2: 1.75rem;
+    --eipsi-font-size-h3: 1.5rem;
+    --eipsi-font-size-small: 0.875rem;
+    --eipsi-font-weight-normal: 400;
+    --eipsi-font-weight-medium: 500;
+    --eipsi-font-weight-bold: 700;
+    --eipsi-line-height-base: 1.6;
+    --eipsi-line-height-heading: 1.3;
+
+    /* Spacing */
+    --eipsi-spacing-xs: 0.5rem;
+    --eipsi-spacing-sm: 1rem;
+    --eipsi-spacing-md: 1.5rem;
+    --eipsi-spacing-lg: 2rem;
+    --eipsi-spacing-xl: 2.5rem;
+    --eipsi-spacing-container-padding: 2.5rem;
+    --eipsi-spacing-field-gap: 1.5rem;
+    --eipsi-spacing-section-gap: 2rem;
+
+    /* Borders */
+    --eipsi-border-radius-sm: 8px;
+    --eipsi-border-radius-md: 12px;
+    --eipsi-border-radius-lg: 20px;
+    --eipsi-border-width: 1px;
+    --eipsi-border-width-focus: 2px;
+    --eipsi-border-style: solid;
+
+    /* Shadows */
+    --eipsi-shadow-sm: 0 2px 8px rgba(0, 90, 135, 0.08);
+    --eipsi-shadow-md: 0 4px 12px rgba(0, 90, 135, 0.1);
+    --eipsi-shadow-lg: 0 8px 25px rgba(0, 90, 135, 0.1);
+    --eipsi-shadow-focus: 0 0 0 3px rgba(0, 90, 135, 0.1);
+
+    /* Interactivity */
+    --eipsi-transition-duration: 0.2s;
+    --eipsi-transition-timing: ease;
+    --eipsi-hover-scale: 1.02;
+    --eipsi-focus-outline-width: 2px;
+    --eipsi-focus-outline-offset: 2px;
+}
 
 /* ============================================================================
    2. MAIN FORM CONTAINER
@@ -37,17 +99,17 @@
 
 .vas-dinamico-form,
 .eipsi-form {
-    background: #ffffff;
-    border-radius: 20px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 8px 25px rgba(0, 90, 135, 0.1);
-    padding: 2.5rem;
+    background: var(--eipsi-color-background, #ffffff);
+    border-radius: var(--eipsi-border-radius-lg, 20px);
+    border: var(--eipsi-border-width, 1px) var(--eipsi-border-style, solid) var(--eipsi-color-border, #e2e8f0);
+    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(0, 90, 135, 0.1));
+    padding: var(--eipsi-spacing-container-padding, 2.5rem);
     max-width: 800px;
     margin: 0 auto;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
-    color: #2c3e50;
+    font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
+    font-size: var(--eipsi-font-size-base, 16px);
+    line-height: var(--eipsi-line-height-base, 1.6);
+    color: var(--eipsi-color-text, #2c3e50);
 }
 
 .vas-dinamico-form *,
@@ -58,18 +120,18 @@
 /* Form Description */
 .vas-dinamico-form .form-description,
 .eipsi-form .form-description {
-    background: #f8f9fa;
-    border-left: 4px solid #005a87;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border-left: 4px solid var(--eipsi-color-primary, #005a87);
     padding: 1.25rem 1.5rem;
-    margin: 0 0 2rem 0;
-    border-radius: 8px;
+    margin: 0 0 var(--eipsi-spacing-lg, 2rem) 0;
+    border-radius: var(--eipsi-border-radius-sm, 8px);
 }
 
 .vas-dinamico-form .form-description p,
 .eipsi-form .form-description p {
     margin: 0;
-    color: #2c3e50;
-    line-height: 1.6;
+    color: var(--eipsi-color-text, #2c3e50);
+    line-height: var(--eipsi-line-height-base, 1.6);
 }
 
 /* ============================================================================
@@ -82,35 +144,36 @@
 .eipsi-form h1,
 .eipsi-form h2,
 .eipsi-form h3 {
-    color: #005a87;
-    font-weight: 700;
-    line-height: 1.3;
-    margin: 0 0 1.5rem 0;
+    color: var(--eipsi-color-primary, #005a87);
+    font-family: var(--eipsi-font-family-heading, inherit);
+    font-weight: var(--eipsi-font-weight-bold, 700);
+    line-height: var(--eipsi-line-height-heading, 1.3);
+    margin: 0 0 var(--eipsi-spacing-md, 1.5rem) 0;
 }
 
 .vas-dinamico-form h1,
 .eipsi-form h1 {
-    font-size: 2rem;
+    font-size: var(--eipsi-font-size-h1, 2rem);
 }
 
 .vas-dinamico-form h2,
 .eipsi-form h2 {
-    font-size: 1.75rem;
+    font-size: var(--eipsi-font-size-h2, 1.75rem);
 }
 
 .vas-dinamico-form h3,
 .eipsi-form h3 {
-    font-size: 1.5rem;
+    font-size: var(--eipsi-font-size-h3, 1.5rem);
 }
 
 /* Page Titles */
 .eipsi-page-title {
-    color: #005a87;
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0 0 1.5rem 0;
-    padding: 0 0 1rem 0;
-    border-bottom: 2px solid #e2e8f0;
+    color: var(--eipsi-color-primary, #005a87);
+    font-size: var(--eipsi-font-size-h2, 1.75rem);
+    font-weight: var(--eipsi-font-weight-bold, 700);
+    margin: 0 0 var(--eipsi-spacing-md, 1.5rem) 0;
+    padding: 0 0 var(--eipsi-spacing-sm, 1rem) 0;
+    border-bottom: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-border, #e2e8f0);
 }
 
 /* ============================================================================
@@ -156,7 +219,7 @@
 
 .form-group,
 .eipsi-field {
-    margin: 0 0 1.5rem 0;
+    margin: 0 0 var(--eipsi-spacing-field-gap, 1.5rem) 0;
     position: relative;
 }
 
@@ -169,9 +232,9 @@
 .form-group label,
 .eipsi-field label {
     display: block;
-    color: #2c3e50;
-    font-size: 1rem;
-    font-weight: 600;
+    color: var(--eipsi-color-text, #2c3e50);
+    font-size: var(--eipsi-font-size-base, 1rem);
+    font-weight: var(--eipsi-font-weight-medium, 600);
     margin: 0 0 0.75rem 0;
     line-height: 1.4;
 }
@@ -179,25 +242,25 @@
 .form-group label.required::after,
 .eipsi-field label.required::after {
     content: " *";
-    color: #ff6b6b;
-    font-weight: 700;
+    color: var(--eipsi-color-error, #ff6b6b);
+    font-weight: var(--eipsi-font-weight-bold, 700);
 }
 
 /* Helper Text */
 .field-helper {
-    color: #6c757d;
-    font-size: 0.875rem;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    font-size: var(--eipsi-font-size-small, 0.875rem);
     font-style: italic;
     line-height: 1.5;
-    margin: 0.5rem 0 0 0;
+    margin: var(--eipsi-spacing-xs, 0.5rem) 0 0 0;
 }
 
 /* Error Messages */
 .form-error {
-    color: #ff6b6b;
-    font-size: 0.875rem;
-    font-weight: 600;
-    margin: 0.5rem 0 0 0;
+    color: var(--eipsi-color-error, #ff6b6b);
+    font-size: var(--eipsi-font-size-small, 0.875rem);
+    font-weight: var(--eipsi-font-weight-medium, 600);
+    margin: var(--eipsi-spacing-xs, 0.5rem) 0 0 0;
     display: block;
     min-height: 1.25rem;
 }
@@ -208,11 +271,11 @@
 
 /* Error State */
 .has-error label {
-    color: #ff6b6b;
+    color: var(--eipsi-color-error, #ff6b6b);
 }
 
 .has-error .field-helper {
-    color: #ff6b6b;
+    color: var(--eipsi-color-error, #ff6b6b);
 }
 
 /* ============================================================================
@@ -239,13 +302,13 @@
 .eipsi-form input[type="date"] {
     width: 100%;
     padding: 0.75rem 1rem;
-    font-size: 1rem;
+    font-size: var(--eipsi-font-size-base, 1rem);
     font-family: inherit;
-    color: #2c3e50;
-    background: #ffffff;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    color: var(--eipsi-color-input-text, #2c3e50);
+    background: var(--eipsi-color-input-bg, #ffffff);
+    border: var(--eipsi-border-width-focus, 2px) var(--eipsi-border-style, solid) var(--eipsi-color-input-border, #e2e8f0);
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
     line-height: 1.5;
 }
 
@@ -256,8 +319,8 @@
 .eipsi-form input[type="text"]:hover,
 .eipsi-form input[type="email"]:hover,
 .eipsi-form input[type="number"]:hover {
-    border-color: #cbd5e0;
-    background: #f8f9fa;
+    border-color: var(--eipsi-color-border-dark, #cbd5e0);
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
 }
 
 .eipsi-text-field input:focus,
@@ -268,9 +331,9 @@
 .eipsi-form input[type="email"]:focus,
 .eipsi-form input[type="number"]:focus {
     outline: none;
-    border-color: #005a87;
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+    border-color: var(--eipsi-color-input-border-focus, #005a87);
+    background: var(--eipsi-color-input-bg, #ffffff);
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
 }
 
 .eipsi-text-field input::placeholder,
@@ -287,13 +350,13 @@
 .has-error input[type="url"],
 .has-error input[type="date"],
 input[aria-invalid="true"] {
-    border-color: #ff6b6b;
+    border-color: var(--eipsi-color-error, #ff6b6b);
     background: #fff5f5;
 }
 
 .has-error input:focus,
 input[aria-invalid="true"]:focus {
-    border-color: #ff6b6b;
+    border-color: var(--eipsi-color-error, #ff6b6b);
     box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
 }
 
@@ -919,10 +982,10 @@ select[aria-invalid="true"] {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 2.5rem 0 0 0;
-    padding: 2rem 0 0 0;
-    border-top: 2px solid #e2e8f0;
-    gap: 1.5rem;
+    margin: var(--eipsi-spacing-xl, 2.5rem) 0 0 0;
+    padding: var(--eipsi-spacing-lg, 2rem) 0 0 0;
+    border-top: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-border, #e2e8f0);
+    gap: var(--eipsi-spacing-md, 1.5rem);
 }
 
 /* Navigation Buttons */
@@ -930,27 +993,27 @@ select[aria-invalid="true"] {
 .eipsi-next-button,
 .eipsi-submit-button {
     padding: 0.875rem 2rem;
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: var(--eipsi-font-size-base, 1rem);
+    font-weight: var(--eipsi-font-weight-medium, 600);
     font-family: inherit;
-    border-radius: 8px;
+    border-radius: var(--eipsi-border-radius-sm, 8px);
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: 2px solid transparent;
+    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+    border: var(--eipsi-border-width-focus, 2px) solid transparent;
     text-transform: none;
     letter-spacing: 0.025em;
     line-height: 1.5;
 }
 
 .eipsi-prev-button {
-    background: #ffffff;
-    color: #005a87;
-    border-color: #e2e8f0;
+    background: var(--eipsi-color-background, #ffffff);
+    color: var(--eipsi-color-primary, #005a87);
+    border-color: var(--eipsi-color-border, #e2e8f0);
 }
 
 .eipsi-prev-button:hover {
-    background: #f8f9fa;
-    border-color: #cbd5e0;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border-color: var(--eipsi-color-border-dark, #cbd5e0);
     transform: translateX(-2px);
 }
 
@@ -959,21 +1022,21 @@ select[aria-invalid="true"] {
 }
 
 .eipsi-prev-button:focus {
-    outline: 2px solid #005a87;
-    outline-offset: 3px;
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline-offset: var(--eipsi-focus-outline-offset, 3px);
 }
 
 .eipsi-next-button {
-    background: #005a87;
-    color: #ffffff;
-    border-color: #005a87;
+    background: var(--eipsi-color-button-bg, #005a87);
+    color: var(--eipsi-color-button-text, #ffffff);
+    border-color: var(--eipsi-color-button-bg, #005a87);
 }
 
 .eipsi-next-button:hover {
-    background: #003d5b;
-    border-color: #003d5b;
+    background: var(--eipsi-color-button-hover-bg, #003d5b);
+    border-color: var(--eipsi-color-button-hover-bg, #003d5b);
     transform: translateX(2px);
-    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.3);
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.3));
 }
 
 .eipsi-next-button:active {
@@ -981,24 +1044,24 @@ select[aria-invalid="true"] {
 }
 
 .eipsi-next-button:focus {
-    outline: 2px solid #005a87;
-    outline-offset: 3px;
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline-offset: var(--eipsi-focus-outline-offset, 3px);
 }
 
 .eipsi-submit-button,
 .eipsi-submit-btn {
-    background: #005a87;
-    color: #ffffff;
-    border-color: #005a87;
+    background: var(--eipsi-color-button-bg, #005a87);
+    color: var(--eipsi-color-button-text, #ffffff);
+    border-color: var(--eipsi-color-button-bg, #005a87);
     padding: 1rem 2.5rem;
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.2);
+    font-weight: var(--eipsi-font-weight-bold, 700);
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.2));
 }
 
 .eipsi-submit-button:hover,
 .eipsi-submit-btn:hover {
-    background: #003d5b;
-    border-color: #003d5b;
+    background: var(--eipsi-color-button-hover-bg, #003d5b);
+    border-color: var(--eipsi-color-button-hover-bg, #003d5b);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 90, 135, 0.35);
 }
@@ -1006,20 +1069,20 @@ select[aria-invalid="true"] {
 .eipsi-submit-button:active,
 .eipsi-submit-btn:active {
     transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(0, 90, 135, 0.2);
+    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.2));
 }
 
 .eipsi-submit-button:focus,
 .eipsi-submit-btn:focus {
-    outline: 2px solid #005a87;
-    outline-offset: 3px;
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline-offset: var(--eipsi-focus-outline-offset, 3px);
 }
 
 .eipsi-submit-button:disabled,
 .eipsi-submit-btn:disabled {
-    background: #cbd5e0;
-    border-color: #cbd5e0;
-    color: #6c757d;
+    background: var(--eipsi-color-border-dark, #cbd5e0);
+    border-color: var(--eipsi-color-border-dark, #cbd5e0);
+    color: var(--eipsi-color-text-muted, #6c757d);
     cursor: not-allowed;
     opacity: 0.6;
     transform: none;

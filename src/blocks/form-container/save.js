@@ -1,10 +1,20 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
+import {
+	migrateToStyleConfig,
+	serializeToCSSVariables,
+} from '../../utils/styleTokens';
 
 export default function Save( { attributes } ) {
-	const { formId, submitButtonLabel, description, className } = attributes;
+	const { formId, submitButtonLabel, description, className, styleConfig } =
+		attributes;
+
+	// Get style configuration (migrate if needed)
+	const currentConfig = styleConfig || migrateToStyleConfig( attributes );
+	const cssVars = serializeToCSSVariables( currentConfig );
 
 	const blockProps = useBlockProps.save( {
 		className: 'vas-dinamico-form eipsi-form ' + ( className || '' ),
+		style: cssVars,
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps.save( {

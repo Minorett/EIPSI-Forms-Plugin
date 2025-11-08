@@ -6,8 +6,221 @@ This document outlines the comprehensive rebuild of `assets/css/eipsi-forms.css`
 ## File Information
 - **Location**: `assets/css/eipsi-forms.css`
 - **Size**: ~30KB (production-ready)
-- **Version**: 2.0
-- **Lines of Code**: 1,294
+- **Version**: 2.1 - Design Token System
+- **Lines of Code**: 1,358 (expanded with CSS variables)
+
+## Design Token System (NEW in v2.1)
+
+### Overview
+The form container now supports a comprehensive **design token system** using CSS custom properties. This allows centralized theming and consistent styling across all form elements.
+
+### Architecture
+
+#### 1. Style Configuration Attribute (`styleConfig`)
+Located in `blocks/form-container/block.json`, this new attribute stores theme configuration:
+
+```json
+{
+  "styleConfig": {
+    "type": "object",
+    "default": null
+  }
+}
+```
+
+The `styleConfig` object contains:
+- **colors**: Primary, secondary, text, input, button, error states
+- **typography**: Font families, sizes, weights, line heights
+- **spacing**: Padding, margins, gaps (xs, sm, md, lg, xl)
+- **borders**: Radius sizes, widths, styles
+- **shadows**: Shadow depths (sm, md, lg, focus)
+- **interactivity**: Transitions, hover effects, focus outlines
+
+#### 2. Migration Logic
+Legacy attributes are automatically migrated to the new `styleConfig` format:
+
+**Legacy Attributes** → **New Structure**
+- `backgroundColor` → `styleConfig.colors.background`
+- `textColor` → `styleConfig.colors.text`
+- `primaryColor` → `styleConfig.colors.primary`
+- `buttonBgColor` → `styleConfig.colors.buttonBg`
+- `borderRadius` → `styleConfig.borders.radiusMd`
+- `padding` → `styleConfig.spacing.containerPadding`
+
+This ensures **backward compatibility** - existing forms render identically.
+
+#### 3. CSS Variables Generated
+The `styleConfig` is serialized into CSS custom properties applied to the `.vas-dinamico-form` element:
+
+```css
+.vas-dinamico-form {
+  --eipsi-color-primary: #005a87;
+  --eipsi-color-background: #ffffff;
+  --eipsi-font-size-base: 16px;
+  --eipsi-spacing-container-padding: 2.5rem;
+  --eipsi-border-radius-md: 12px;
+  /* ... 60+ variables total */
+}
+```
+
+All form elements consume these variables with **fallback values** for compatibility:
+
+```css
+.eipsi-form input {
+  color: var(--eipsi-color-input-text, #2c3e50);
+  background: var(--eipsi-color-input-bg, #ffffff);
+  border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
+}
+```
+
+### Token Reference
+
+#### Color Tokens
+| Token | Default | Usage |
+|-------|---------|-------|
+| `--eipsi-color-primary` | #005a87 | Headings, links, primary actions |
+| `--eipsi-color-primary-hover` | #003d5b | Hover states for primary elements |
+| `--eipsi-color-secondary` | #e3f2fd | Secondary backgrounds (VAS) |
+| `--eipsi-color-background` | #ffffff | Form container background |
+| `--eipsi-color-background-subtle` | #f8f9fa | Section backgrounds, hover states |
+| `--eipsi-color-text` | #2c3e50 | Primary text color |
+| `--eipsi-color-text-muted` | #64748b | Helper text, secondary text |
+| `--eipsi-color-input-bg` | #ffffff | Input field backgrounds |
+| `--eipsi-color-input-text` | #2c3e50 | Input field text |
+| `--eipsi-color-input-border` | #e2e8f0 | Input field borders |
+| `--eipsi-color-input-border-focus` | #005a87 | Input focus border |
+| `--eipsi-color-button-bg` | #005a87 | Button background |
+| `--eipsi-color-button-text` | #ffffff | Button text |
+| `--eipsi-color-button-hover-bg` | #003d5b | Button hover background |
+| `--eipsi-color-error` | #ff6b6b | Error states |
+| `--eipsi-color-success` | #28a745 | Success states |
+| `--eipsi-color-border` | #e2e8f0 | Default borders |
+| `--eipsi-color-border-dark` | #cbd5e0 | Darker borders, disabled states |
+
+#### Typography Tokens
+| Token | Default | Usage |
+|-------|---------|-------|
+| `--eipsi-font-family-heading` | System fonts | Heading font stack |
+| `--eipsi-font-family-body` | System fonts | Body text font stack |
+| `--eipsi-font-size-base` | 16px | Base font size |
+| `--eipsi-font-size-h1` | 2rem | H1 headings |
+| `--eipsi-font-size-h2` | 1.75rem | H2 headings |
+| `--eipsi-font-size-h3` | 1.5rem | H3 headings |
+| `--eipsi-font-size-small` | 0.875rem | Helper text, captions |
+| `--eipsi-font-weight-normal` | 400 | Body text |
+| `--eipsi-font-weight-medium` | 500 | Labels |
+| `--eipsi-font-weight-bold` | 700 | Headings, emphasis |
+| `--eipsi-line-height-base` | 1.6 | Body text line height |
+| `--eipsi-line-height-heading` | 1.3 | Heading line height |
+
+#### Spacing Tokens
+| Token | Default | Usage |
+|-------|---------|-------|
+| `--eipsi-spacing-xs` | 0.5rem | Minimal spacing |
+| `--eipsi-spacing-sm` | 1rem | Small spacing |
+| `--eipsi-spacing-md` | 1.5rem | Medium spacing |
+| `--eipsi-spacing-lg` | 2rem | Large spacing |
+| `--eipsi-spacing-xl` | 2.5rem | Extra large spacing |
+| `--eipsi-spacing-container-padding` | 2.5rem | Form container padding |
+| `--eipsi-spacing-field-gap` | 1.5rem | Space between fields |
+| `--eipsi-spacing-section-gap` | 2rem | Space between sections |
+
+#### Border Tokens
+| Token | Default | Usage |
+|-------|---------|-------|
+| `--eipsi-border-radius-sm` | 8px | Input fields, buttons |
+| `--eipsi-border-radius-md` | 12px | Cards, containers |
+| `--eipsi-border-radius-lg` | 20px | Form container |
+| `--eipsi-border-width` | 1px | Default border width |
+| `--eipsi-border-width-focus` | 2px | Focus state borders |
+| `--eipsi-border-style` | solid | Border style |
+
+#### Shadow Tokens
+| Token | Default | Usage |
+|-------|---------|-------|
+| `--eipsi-shadow-sm` | 0 2px 8px rgba(...) | Subtle elevation |
+| `--eipsi-shadow-md` | 0 4px 12px rgba(...) | Standard elevation |
+| `--eipsi-shadow-lg` | 0 8px 25px rgba(...) | Form container |
+| `--eipsi-shadow-focus` | 0 0 0 3px rgba(...) | Focus ring |
+
+#### Interactivity Tokens
+| Token | Default | Usage |
+|-------|---------|-------|
+| `--eipsi-transition-duration` | 0.2s | Transition timing |
+| `--eipsi-transition-timing` | ease | Transition easing |
+| `--eipsi-hover-scale` | 1.02 | Hover scale transform |
+| `--eipsi-focus-outline-width` | 2px | Focus outline width |
+| `--eipsi-focus-outline-offset` | 2px | Focus outline offset |
+
+### Implementation Files
+
+#### Core Utilities
+- **`src/utils/styleTokens.js`** - Central token management
+  - `DEFAULT_STYLE_CONFIG` - Default token values
+  - `migrateToStyleConfig()` - Converts legacy attributes
+  - `serializeToCSSVariables()` - Generates CSS variable object
+  - `sanitizeStyleConfig()` - Validates token values
+  - `generateInlineStyle()` - Creates inline style string
+
+#### Block Integration
+- **`blocks/form-container/block.json`** - Attribute definition
+- **`src/blocks/form-container/edit.js`** - Editor integration
+  - Migration effect runs on mount
+  - Style controls in Inspector
+  - Live preview with CSS variables
+- **`src/blocks/form-container/save.js`** - Frontend output
+  - Serializes tokens to inline styles
+  - Applies to `.vas-dinamico-form` element
+
+#### Styling
+- **`assets/css/eipsi-forms.css`** - Consumes CSS variables
+  - `:root` defines defaults
+  - All components use `var(--token, fallback)`
+  - Maintains backward compatibility
+
+### Customization Workflow
+
+#### In Block Editor
+1. Select the **EIPSI Form Container** block
+2. Open **Inspector** → **Style Customization** panel
+3. Adjust colors, spacing, or borders
+4. Changes apply immediately in preview
+
+#### Programmatically
+```javascript
+// In edit.js or custom code
+const customConfig = {
+  colors: {
+    primary: '#007bff',
+    buttonBg: '#007bff',
+    background: '#f0f0f0'
+  },
+  spacing: {
+    containerPadding: '40px'
+  }
+};
+
+setAttributes({ styleConfig: customConfig });
+```
+
+#### Via CSS Override
+For global customization, override variables in your theme:
+
+```css
+.vas-dinamico-form {
+  --eipsi-color-primary: #8b4513 !important;
+  --eipsi-spacing-container-padding: 3rem !important;
+}
+```
+
+### Benefits
+
+✅ **Centralized Theming** - Change colors once, update everywhere
+✅ **Backward Compatible** - Legacy forms work without changes
+✅ **Type-Safe** - Validation in `sanitizeStyleConfig()`
+✅ **Fallback Values** - Works without styleConfig
+✅ **Research Consistency** - Maintains clinical design standards
+✅ **Extensible** - Easy to add new tokens
 
 ## Design System Implementation
 
@@ -338,10 +551,12 @@ This ensures our clinical styles can properly override block defaults when neede
 
 1. **RTL Support** - Right-to-left language support
 2. **Dark Mode** - Dark theme variant for reduced eye strain
-3. **Custom Properties** - CSS variables for theme customization
+3. ~~**Custom Properties**~~ - ✅ **IMPLEMENTED in v2.1** - Full CSS variable system
 4. **Animation Library** - Expanded micro-interactions
 5. **Field Validation Patterns** - Visual validation feedback
 6. **Progress Bar** - Visual progress indicator beyond text
+7. **Theme Presets** - Pre-built color schemes (e.g., "Clinical Blue", "Warm Research", "High Contrast")
+8. **Style Inspector UI** - Visual token editor in block settings
 
 ## Clinical Research Standards Met
 
