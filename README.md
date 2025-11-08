@@ -52,6 +52,62 @@ Professional WordPress form builder with Gutenberg blocks for research and surve
    - Add field blocks inside page blocks
    - Pagination navigation appears automatically
 
+5. Configure conditional logic (branching):
+   - Select a field block (select, radio, or checkboxes)
+   - In the block settings panel, find "Lógica Condicional"
+   - Toggle "Habilitar lógica condicional"
+   - Add rules to redirect participants based on their responses
+   - Set a default action for values without specific rules
+   - Fields with conditional logic show a lightning bolt (⚡) badge in the editor
+
+## Conditional Logic (Form Branching)
+
+The plugin supports conditional logic for select, radio, and checkbox fields, allowing you to create dynamic forms that adapt to participant responses.
+
+### How It Works
+
+1. **Enable Conditional Logic**: In the block inspector, toggle "Habilitar lógica condicional"
+2. **Add Rules**: Click "+ Agregar regla" to create branching rules
+3. **Configure Rules**: For each rule, select:
+   - Which option/value triggers the rule
+   - What action to take (go to next page, go to specific page, or finish form)
+   - Which page to navigate to (if applicable)
+4. **Set Default Action**: Define what happens when participants select values without specific rules
+
+### Rule Schema
+
+Conditional logic is stored in the `conditionalLogic` block attribute with this structure:
+
+```json
+{
+  "enabled": true,
+  "rules": [
+    {
+      "id": "rule-1234567890",
+      "matchValue": "Option 1",
+      "action": "goToPage|nextPage|submit",
+      "targetPage": 2
+    }
+  ],
+  "defaultAction": "nextPage",
+  "defaultTargetPage": null
+}
+```
+
+### Actions
+
+- **nextPage**: Continue to the next page in sequence
+- **goToPage**: Jump to a specific page (requires `targetPage`)
+- **submit**: Finish the form immediately
+
+### Features
+
+- **Duplicate Detection**: The inspector warns if multiple rules use the same value
+- **Page Titles**: Page dropdowns show "Página N – Title" format for clarity
+- **Visual Indicators**: Fields with conditional logic display a lightning bolt badge
+- **Backward Compatibility**: Legacy conditional logic formats are automatically upgraded
+- **Clinical UX**: Clear, accessible interface aligned with research form standards
+
 ## View Results
 
 1. In WordPress admin, go to "VAS Forms"
