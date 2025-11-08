@@ -23,7 +23,10 @@ Professional WordPress form builder with Gutenberg blocks for research and surve
 
 - **Professional UI**
   - Clinical research-grade design system
-  - Design token system for centralized theming
+  - **Comprehensive customization panel** with FormGent-level controls
+  - Design token system for centralized theming (60+ tokens)
+  - 4 clinical presets: Clinical Blue, Minimal White, Warm Neutral, High Contrast
+  - Real-time WCAG AA contrast checking
   - Mobile-friendly responsive forms
   - Professional form styling with CSS variables
   - AJAX-powered submissions
@@ -39,10 +42,18 @@ Professional WordPress form builder with Gutenberg blocks for research and surve
 1. Create or edit a page in the WordPress block editor
 2. Add an "EIPSI Form Container" block
 3. Customize form appearance (optional):
-   - Open block settings panel → "Style Customization"
-   - Adjust primary color, background, text color
-   - Modify container padding and border radius
-   - Changes apply instantly via design token system
+   - Open Inspector sidebar → Block settings
+   - **Quick Start**: Apply a theme preset (Clinical Blue, Minimal White, Warm Neutral, High Contrast)
+   - **Advanced**: Use 7 customization panels for full control:
+     - 🎨 Theme Presets - One-click professional themes
+     - 🎨 Colors - 18 color tokens with contrast checking
+     - ✍️ Typography - Fonts, sizes, weights, line heights
+     - 📐 Spacing & Layout - Padding, gaps, margins
+     - 🔲 Borders & Radius - Corner radius, border styles
+     - ✨ Shadows & Effects - Depth and elevation
+     - ⚡ Hover & Interaction - Animations and transitions
+   - Changes apply instantly with live preview
+   - See [CUSTOMIZATION_PANEL_GUIDE.md](./CUSTOMIZATION_PANEL_GUIDE.md) for full documentation
 4. Add field blocks inside the form container:
    - EIPSI Campo Texto (text input with various types)
    - EIPSI Campo Textarea (multi-line text)
