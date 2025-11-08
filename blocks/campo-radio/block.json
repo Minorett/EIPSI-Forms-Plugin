@@ -1,0 +1,61 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "vas-dinamico/campo-radio",
+	"version": "1.0.0",
+	"title": "EIPSI Campo Radio",
+	"category": "eipsi-forms",
+	"icon": "marker",
+	"description": "Campo de selección con botones de radio para formularios EIPSI.",
+	"keywords": [ "form", "field", "radio", "choice", "eipsi" ],
+	"textdomain": "vas-dinamico-forms",
+	"parent": [ "vas-dinamico/form-container", "vas-dinamico/form-page" ],
+	"editorScript": "file:../../build/index.js",
+	"editorStyle": "file:../../build/index.css",
+	"style": "file:../../build/style-index.css",
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"fieldName": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"required": {
+			"type": "boolean",
+			"default": false
+		},
+		"helperText": {
+			"type": "string",
+			"default": ""
+		},
+		"options": {
+			"type": "string",
+			"default": ""
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		},
+		"conditionalLogic": {
+			"type": "object",
+			"default": null
+		}
+	},
+	"example": {
+		"attributes": {
+			"fieldName": "gender",
+			"label": "Género",
+			"required": true,
+			"options": "Masculino,Femenino,Otro,Prefiero no decir"
+		}
+	}
+}

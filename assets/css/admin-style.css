@@ -1,0 +1,622 @@
+/**
+ * EIPSI Admin Styles - Mejoras de Contraste
+ * Manteniendo la estética de WordPress admin pero con mejor legibilidad
+ */
+
+/* ==========================================================================
+   Filtros - Mejor Contraste
+   ========================================================================== */
+
+.vas-dinamico-filters {
+    background: #ffffff;
+    padding: 25px;
+    border: 2px solid #c3c4c7;
+    border-radius: 8px;
+    margin: 20px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.vas-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.vas-filter-group label {
+    font-weight: 700;
+    margin: 0;
+    color: #1d2327;
+    font-size: 14px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+    min-width: 120px;
+}
+
+.vas-filter-group select,
+.vas-filter-group input[type="search"] {
+    min-width: 220px;
+    padding: 10px 12px;
+    border: 2px solid #8c8f94;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #1d2327;
+    background: #ffffff;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.vas-filter-group select:focus,
+.vas-filter-group input[type="search"]:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.2);
+    outline: none;
+    background: #fafafa;
+}
+
+.vas-filter-group .button {
+    margin-left: 8px;
+    font-weight: 600;
+    border-width: 2px;
+}
+
+/* ==========================================================================
+   Tablas - Mejor Legibilidad
+   ========================================================================== */
+
+.wp-list-table {
+    border: 2px solid #c3c4c7;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.wp-list-table thead th,
+.wp-list-table thead td {
+    background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 14px;
+    border-bottom: 3px solid #ffffff;
+    padding: 15px 10px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.wp-list-table tbody th,
+.wp-list-table tbody td {
+    padding: 12px 10px;
+    border-bottom: 2px solid #f0f0f1;
+    color: #1d2327;
+    font-weight: 500;
+    background: #ffffff;
+}
+
+.wp-list-table tbody tr:hover th,
+.wp-list-table tbody tr:hover td {
+    background: #f8f9fa !important;
+    color: #1d2327;
+}
+
+.wp-list-table tbody tr:nth-child(even) {
+    background: #fafafa;
+}
+
+.wp-list-table tbody tr:nth-child(even):hover {
+    background: #f0f6fc !important;
+}
+
+.wp-list-table th,
+.wp-list-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    border-right: 1px solid #f0f0f1;
+}
+
+.wp-list-table th:last-child,
+.wp-list-table td:last-child {
+    border-right: none;
+}
+
+/* ==========================================================================
+   Botones - Mejor Contraste
+   ========================================================================== */
+
+.button-link-delete {
+    color: #d63638 !important;
+    border: 2px solid #d63638 !important;
+    font-weight: 600;
+    background: #ffffff;
+}
+
+.button-link-delete:hover {
+    background: #d63638 !important;
+    color: #ffffff !important;
+    border-color: #d63638 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(214, 54, 56, 0.3);
+}
+
+.wp-core-ui .button-primary {
+    background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+    border: 2px solid #005a87;
+    font-weight: 600;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.wp-core-ui .button-primary:hover {
+    background: linear-gradient(135deg, #005a87 0%, #004366 100%);
+    border-color: #004366;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 115, 170, 0.4);
+}
+
+/* ==========================================================================
+   Navegación y Paginación
+   ========================================================================== */
+
+.tablenav {
+    margin-top: 25px;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 2px solid #dcdcde;
+    border-radius: 8px;
+}
+
+.tablenav-pages {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-weight: 600;
+}
+
+.tablenav-pages .pagination-links {
+    display: flex;
+    gap: 8px;
+}
+
+.tablenav-pages .pagination-links a,
+.tablenav-pages .pagination-links span {
+    display: inline-block;
+    padding: 8px 12px;
+    border: 2px solid #dcdcde;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    min-width: 40px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.tablenav-pages .pagination-links a:hover {
+    background: #0073aa;
+    color: #ffffff;
+    border-color: #0073aa;
+    transform: translateY(-1px);
+}
+
+.tablenav-pages .pagination-links .current {
+    background: #0073aa;
+    color: #ffffff;
+    border-color: #0073aa;
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   Notices - Mejor Visibilidad
+   ========================================================================== */
+
+.notice {
+    margin: 20px 0;
+    border: 2px solid;
+    border-radius: 8px;
+    padding: 15px 20px;
+    font-weight: 600;
+}
+
+.notice-success {
+    border-color: #46b450;
+    background: #f0f9f1;
+    color: #2a5c2e;
+}
+
+.notice-error {
+    border-color: #dc3232;
+    background: #fdf0f0;
+    color: #721c24;
+}
+
+.notice-warning {
+    border-color: #ffb900;
+    background: #fff8e5;
+    color: #856404;
+}
+
+.notice-info {
+    border-color: #0073aa;
+    background: #f0f6fc;
+    color: #005a87;
+}
+
+/* ==========================================================================
+   Configuración - Mejor Estructura
+   ========================================================================== */
+
+#vas-dinamico-config .form-table th {
+    width: 250px;
+    padding: 20px 10px 20px 0;
+    font-weight: 700;
+    color: #1d2327;
+    font-size: 14px;
+    border-right: 2px solid #f0f0f1;
+}
+
+#vas-dinamico-config .form-table td {
+    padding: 20px 10px;
+    background: #ffffff;
+}
+
+#vas-dinamico-config .form-table tr:nth-child(even) td {
+    background: #fafafa;
+}
+
+.vas-db-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: #f0f6fc;
+    border: 2px solid #0073aa;
+}
+
+/* ==========================================================================
+   Export Dropdown - Mejorado
+   ========================================================================== */
+
+.eipsi-export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.eipsi-export-dropdown button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.export-options {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #ffffff;
+    border: 2px solid #0073aa;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 8px 0;
+    min-width: 200px;
+    z-index: 1000;
+}
+
+.export-options.show {
+    display: block;
+    animation: slideDown 0.2s ease;
+}
+
+.export-options li a {
+    display: block;
+    padding: 10px 20px;
+    color: #1d2327;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+}
+
+.export-options li a:hover {
+    background: #f0f6fc;
+    color: #0073aa;
+    border-left-color: #0073aa;
+    padding-left: 25px;
+}
+
+.export-options li a:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: -2px;
+}
+
+/* ==========================================================================
+   Página de Configuración Minimalista - Mejorada
+   ========================================================================== */
+
+.eipsi-config-page {
+    max-width: 900px;
+}
+
+.eipsi-intro-text {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #1d2327;
+    margin-bottom: 35px;
+    padding: 20px;
+    background: #f8f9fa;
+    border: 2px solid #e5e5e5;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.eipsi-card {
+    background: #ffffff;
+    border: 2px solid #dcdcde;
+    border-radius: 10px;
+    padding: 25px 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: box-shadow 0.3s ease;
+}
+
+.eipsi-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* ==========================================================================
+   Toggle Switch - Más Visible
+   ========================================================================== */
+
+.eipsi-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px solid #e5e5e5;
+}
+
+.eipsi-toggle {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.eipsi-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.eipsi-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 30px;
+    border: 2px solid transparent;
+}
+
+.eipsi-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.eipsi-toggle input:checked + .eipsi-toggle-slider {
+    background-color: #0073aa;
+    border-color: #005a87;
+}
+
+.eipsi-toggle input:checked + .eipsi-toggle-slider:before {
+    transform: translateX(30px);
+}
+
+.eipsi-toggle-label {
+    flex: 1;
+}
+
+.eipsi-toggle-label strong {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #1d2327;
+    font-weight: 700;
+}
+
+.eipsi-toggle-label .description {
+    margin: 0;
+    color: #50575e;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+/* ==========================================================================
+   Campos de Formulario - Mejor Contraste
+   ========================================================================== */
+
+#external-db-fields .form-table th {
+    padding-left: 0;
+    font-weight: 700;
+    color: #1d2327;
+}
+
+#external-db-fields input[type="text"],
+#external-db-fields input[type="password"] {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    border: 2px solid #8c8f94;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+#external-db-fields input[type="text"]:focus,
+#external-db-fields input[type="password"]:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.2);
+    outline: none;
+}
+
+/* ==========================================================================
+   Status Card - Mejorada
+   ========================================================================== */
+
+.eipsi-status-card {
+    background: #f0f6fc;
+    border-left: 6px solid #0073aa;
+    border-radius: 8px;
+}
+
+.eipsi-status-card h2 {
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #1d2327;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.eipsi-status-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.eipsi-status-table td {
+    padding: 15px 0;
+    border-bottom: 2px solid #e1e5e9;
+    font-weight: 500;
+}
+
+.eipsi-status-table tr:last-child td {
+    border-bottom: none;
+}
+
+.eipsi-status-table td:first-child {
+    width: 180px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.eipsi-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #0073aa;
+    color: #fff;
+    border-radius: 4px;
+    margin-left: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.eipsi-count {
+    font-weight: 700;
+    color: #0073aa;
+    font-size: 18px;
+}
+
+.eipsi-warning {
+    color: #f56e00;
+    font-weight: 600;
+    background: #fff8e5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #ffb900;
+}
+
+.eipsi-error {
+    color: #d63638;
+    font-weight: 600;
+    background: #fdf0f0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #dc3232;
+}
+
+/* ==========================================================================
+   Botones de Envío
+   ========================================================================== */
+
+.eipsi-config-page .submit {
+    padding-top: 20px;
+    margin-bottom: 40px;
+    border-top: 2px solid #f0f0f1;
+    padding-top: 25px;
+}
+
+.button-large {
+    padding: 12px 24px !important;
+    height: auto !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    border-width: 2px !important;
+}
+
+/* ==========================================================================
+   Animaciones
+   ========================================================================== */
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .vas-filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .vas-filter-group label {
+        min-width: auto;
+    }
+    
+    .vas-filter-group select,
+    .vas-filter-group input[type="search"] {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .eipsi-toggle-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .tablenav-pages {
+        flex-direction: column;
+        gap: 15px;
+    }
+}

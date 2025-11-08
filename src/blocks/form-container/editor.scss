@@ -1,0 +1,125 @@
+.eipsi-form-container-editor {
+    margin: 2em 0;
+    padding: 1.5em;
+    background: #fff;
+    border: 2px solid #0073aa;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 115, 170, 0.1);
+    position: relative;
+    
+    &::before {
+        content: "EIPSI Form Container";
+        position: absolute;
+        top: -12px;
+        left: 12px;
+        background: #0073aa;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .eipsi-form-placeholder {
+        text-align: center;
+        padding: 2em;
+
+        .components-placeholder {
+            background: #f8fbff;
+            border: 2px dashed #0073aa;
+            border-radius: 4px;
+            padding: 2em;
+        }
+
+        .components-placeholder__label {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 0.5em;
+            color: #0073aa;
+        }
+
+        .components-placeholder__instructions {
+            color: #005177;
+        }
+    }
+
+    .eipsi-form-preview-wrapper {
+        .form-header {
+            margin-bottom: 1.5em;
+            padding-bottom: 1em;
+            border-bottom: 1px solid #e1e1e1;
+
+            .form-title {
+                margin: 0 0 0.5em;
+                font-size: 1.5em;
+                font-weight: 600;
+                color: #0073aa;
+            }
+
+            .form-description {
+                margin: 0;
+                color: #005177;
+                font-size: 0.95em;
+            }
+        }
+
+        .eipsi-form-inner-blocks {
+            min-height: 150px;
+            padding: 1.5em;
+            background: #f8fbff;
+            border: 3px dashed #0073aa;
+            border-radius: 6px;
+            margin-bottom: 1.5em;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+                background: #e6f3ff;
+                border-color: #005177;
+                box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.1);
+            }
+
+            &:empty::before {
+                content: "Click here or press '/' to add form fields and pages";
+                display: block;
+                text-align: center;
+                color: #0073aa;
+                padding: 2em;
+                font-weight: 500;
+                font-style: italic;
+            }
+
+            .block-editor-block-list__layout {
+                min-height: 100px;
+            }
+
+            .block-list-appender {
+                margin: 1em 0;
+            }
+        }
+
+        .form-footer {
+            padding-top: 1em;
+            border-top: 1px solid #e1e1e1;
+            text-align: left;
+
+            .eipsi-submit-button {
+                padding: 0.75em 2em;
+                background: linear-gradient(135deg, #0073aa, #005177);
+                color: #fff;
+                border: none;
+                border-radius: 6px;
+                font-size: 1em;
+                font-weight: 600;
+                cursor: not-allowed;
+                opacity: 0.6;
+                box-shadow: 0 2px 4px rgba(0, 115, 170, 0.2);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+        }
+    }
+}

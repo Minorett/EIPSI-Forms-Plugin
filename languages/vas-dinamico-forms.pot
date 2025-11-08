@@ -1,0 +1,1340 @@
+# Copyright (C) 2025 VAS Team
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: VAS Dinámico Forms 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/project\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-11-06T03:41:15+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: vas-dinamico-forms\n"
+
+#. Plugin Name of the plugin
+#: vas-dinamico-forms.php
+msgid "VAS Dinámico Forms"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: vas-dinamico-forms.php
+msgid "https://example.com/vas-dinamico-forms"
+msgstr ""
+
+#. Description of the plugin
+#: vas-dinamico-forms.php
+msgid "Dynamic form results management with admin dashboard, external database configuration, and Excel export capabilities."
+msgstr ""
+
+#. Author of the plugin
+#: vas-dinamico-forms.php
+msgid "VAS Team"
+msgstr ""
+
+#. Author URI of the plugin
+#: vas-dinamico-forms.php
+msgid "https://example.com"
+msgstr ""
+
+#: admin/ajax-handlers.php:332
+msgid "Invalid form submission."
+msgstr ""
+
+#: admin/ajax-handlers.php:443
+#: vas-dinamico-forms.php:347
+msgid "Form submitted successfully!"
+msgstr ""
+
+#: admin/ajax-handlers.php:448
+msgid "Failed to save form data. Please try again."
+msgstr ""
+
+#: admin/ajax-handlers.php:466
+msgid "Invalid tracking payload."
+msgstr ""
+
+#: admin/ajax-handlers.php:511
+msgid "Failed to record analytics event."
+msgstr ""
+
+#: admin/analytics-calculations.php:340
+msgid "< 5 min"
+msgstr ""
+
+#: admin/analytics-calculations.php:345
+msgid "5-10 min"
+msgstr ""
+
+#: admin/analytics-calculations.php:350
+msgid "10-20 min"
+msgstr ""
+
+#: admin/analytics-calculations.php:355
+msgid "> 20 min"
+msgstr ""
+
+#: admin/analytics-calculations.php:399
+msgid "0s"
+msgstr ""
+
+#: admin/analytics-calculations.php:407
+#, php-format
+msgid "%d min"
+msgid_plural "%d mins"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/analytics-calculations.php:411
+#, php-format
+msgid "%d sec"
+msgid_plural "%d secs"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/analytics-export.php:12
+#: admin/analytics-export.php:99
+#: admin/analytics-export.php:201
+#: admin/export.php:10
+#: admin/export.php:164
+#: admin/handlers.php:11
+#: admin/handlers.php:45
+#: admin/handlers.php:117
+msgid "You do not have sufficient permissions to perform this action."
+msgstr ""
+
+#: admin/analytics-export.php:16
+#: admin/analytics-export.php:103
+#: admin/analytics-export.php:205
+#: admin/export.php:15
+#: admin/export.php:169
+#: admin/handlers.php:56
+#: admin/handlers.php:128
+#: admin/summary-export.php:12
+#: admin/summary-export.php:170
+#: admin/summary-export.php:378
+msgid "Security check failed."
+msgstr ""
+
+#: admin/analytics-export.php:29
+#: admin/analytics-export.php:116
+#: admin/analytics-export.php:218
+#: admin/analytics-page.php:126
+msgid "All forms"
+msgstr ""
+
+#: admin/analytics-export.php:34
+#: admin/analytics-export.php:137
+#: admin/analytics-export.php:223
+msgid "Metric"
+msgstr ""
+
+#: admin/analytics-export.php:34
+#: admin/analytics-export.php:137
+#: admin/analytics-export.php:223
+#: admin/summary-page.php:242
+#: admin/summary-page.php:307
+msgid "Value"
+msgstr ""
+
+#: admin/analytics-export.php:35
+#: admin/analytics-export.php:133
+#: admin/analytics-export.php:224
+#: admin/analytics-page.php:164
+#: admin/results-page.php:226
+msgid "Form"
+msgstr ""
+
+#: admin/analytics-export.php:36
+#: admin/analytics-export.php:134
+#: admin/analytics-export.php:225
+#: admin/analytics-page.php:172
+msgid "Date range"
+msgstr ""
+
+#: admin/analytics-export.php:37
+#: admin/analytics-export.php:138
+#: admin/analytics-export.php:226
+#: admin/analytics-page.php:215
+msgid "Views"
+msgstr ""
+
+#: admin/analytics-export.php:38
+#: admin/analytics-export.php:139
+#: admin/analytics-export.php:227
+#: admin/analytics-page.php:219
+msgid "Started"
+msgstr ""
+
+#: admin/analytics-export.php:39
+#: admin/analytics-export.php:140
+#: admin/analytics-export.php:228
+#: admin/summary-page.php:312
+msgid "Completed"
+msgstr ""
+
+#: admin/analytics-export.php:40
+#: admin/analytics-export.php:61
+#: admin/analytics-export.php:141
+#: admin/analytics-export.php:164
+#: admin/analytics-export.php:229
+#: admin/analytics-export.php:250
+#: admin/analytics-page.php:239
+msgid "Abandons"
+msgstr ""
+
+#: admin/analytics-export.php:41
+#: admin/analytics-export.php:142
+#: admin/analytics-export.php:230
+msgid "Completion rate (%)"
+msgstr ""
+
+#: admin/analytics-export.php:42
+#: admin/analytics-export.php:143
+#: admin/analytics-export.php:231
+msgid "Drop-off rate (%)"
+msgstr ""
+
+#: admin/analytics-export.php:43
+#: admin/analytics-export.php:144
+#: admin/analytics-export.php:232
+msgid "Average duration (seconds)"
+msgstr ""
+
+#: admin/analytics-export.php:44
+#: admin/analytics-export.php:145
+#: admin/analytics-export.php:233
+msgid "Average duration (formatted)"
+msgstr ""
+
+#: admin/analytics-export.php:45
+#: admin/analytics-export.php:146
+#: admin/analytics-export.php:234
+msgid "Generated at"
+msgstr ""
+
+#: admin/analytics-export.php:49
+#: admin/analytics-export.php:151
+#: admin/analytics-export.php:238
+#: admin/results-page.php:225
+#: src/blocks/campo-texto/edit.js:12
+msgid "Date"
+msgstr ""
+
+#: admin/analytics-export.php:49
+#: admin/analytics-export.php:87
+#: admin/analytics-export.php:151
+#: admin/analytics-export.php:238
+#: admin/analytics-export.php:276
+#: admin/analytics-page.php:104
+msgid "Submissions"
+msgstr ""
+
+#: admin/analytics-export.php:61
+#: admin/analytics-export.php:164
+#: admin/analytics-export.php:250
+#: src/blocks/pagina/edit.js:119
+msgid "Page"
+msgstr ""
+
+#: admin/analytics-export.php:61
+#: admin/analytics-export.php:164
+#: admin/analytics-export.php:250
+msgid "Drop-off (%)"
+msgstr ""
+
+#: admin/analytics-export.php:73
+#: admin/analytics-export.php:178
+#: admin/analytics-export.php:262
+msgid "Bucket"
+msgstr ""
+
+#: admin/analytics-export.php:73
+#: admin/analytics-export.php:178
+#: admin/analytics-export.php:262
+#: admin/analytics-page.php:106
+#: admin/analytics-page.php:150
+#: admin/results-page.php:72
+msgid "Responses"
+msgstr ""
+
+#: admin/analytics-export.php:73
+#: admin/analytics-export.php:178
+#: admin/analytics-export.php:262
+msgid "Percentage (%)"
+msgstr ""
+
+#: admin/analytics-export.php:86
+#: admin/analytics-export.php:275
+#: admin/analytics-page.php:153
+#: admin/menu.php:28
+#: admin/menu.php:29
+#: admin/results-page.php:75
+msgid "Summary"
+msgstr ""
+
+#: admin/analytics-export.php:88
+#: admin/analytics-export.php:277
+#: admin/analytics-page.php:105
+msgid "Drop-off"
+msgstr ""
+
+#: admin/analytics-export.php:89
+#: admin/analytics-export.php:278
+msgid "Completion Time"
+msgstr ""
+
+#: admin/analytics-export.php:132
+msgid "Analytics Report"
+msgstr ""
+
+#: admin/analytics-export.php:150
+msgid "Submissions Timeline"
+msgstr ""
+
+#: admin/analytics-export.php:163
+#: admin/analytics-page.php:256
+msgid "Drop-off by Page"
+msgstr ""
+
+#: admin/analytics-export.php:177
+#: admin/analytics-page.php:283
+msgid "Completion Time Distribution"
+msgstr ""
+
+#: admin/analytics-page.php:8
+#: admin/results-page.php:8
+#: admin/summary-export.php:8
+#: admin/summary-export.php:166
+#: admin/summary-export.php:374
+#: admin/summary-page.php:8
+msgid "You do not have sufficient permissions to access this page."
+msgstr ""
+
+#: admin/analytics-page.php:41
+#: admin/analytics-page.php:264
+#, php-format
+msgid "Page %d"
+msgstr ""
+
+#: admin/analytics-page.php:109
+msgid "No data available for the selected range."
+msgstr ""
+
+#: admin/analytics-page.php:135
+msgid "Last 7 days"
+msgstr ""
+
+#: admin/analytics-page.php:136
+msgid "Last 14 days"
+msgstr ""
+
+#: admin/analytics-page.php:137
+msgid "Last 30 days"
+msgstr ""
+
+#: admin/analytics-page.php:138
+msgid "Last 60 days"
+msgstr ""
+
+#: admin/analytics-page.php:139
+msgid "Last 90 days"
+msgstr ""
+
+#: admin/analytics-page.php:140
+msgid "Last 180 days"
+msgstr ""
+
+#: admin/analytics-page.php:141
+msgid "Last 365 days"
+msgstr ""
+
+#: admin/analytics-page.php:146
+msgid "Analytics Dashboard"
+msgstr ""
+
+#: admin/analytics-page.php:156
+#: admin/menu.php:37
+#: admin/menu.php:38
+#: admin/results-page.php:78
+msgid "Analytics"
+msgstr ""
+
+#: admin/analytics-page.php:179
+msgid "Apply filters"
+msgstr ""
+
+#: admin/analytics-page.php:190
+#: admin/results-page.php:168
+msgid "Export"
+msgstr ""
+
+#: admin/analytics-page.php:205
+#, php-format
+msgid "Showing data from %1$s to %2$s."
+msgstr ""
+
+#: admin/analytics-page.php:223
+msgid "Finished"
+msgstr ""
+
+#: admin/analytics-page.php:227
+msgid "Completion rate"
+msgstr ""
+
+#: admin/analytics-page.php:231
+msgid "Average completion time"
+msgstr ""
+
+#: admin/analytics-page.php:235
+msgid "Drop-off rate"
+msgstr ""
+
+#: admin/analytics-page.php:246
+msgid "Submissions Over Time"
+msgstr ""
+
+#: admin/analytics-page.php:249
+msgid "Submissions over time"
+msgstr ""
+
+#: admin/analytics-page.php:250
+msgid "No submissions recorded for this period."
+msgstr ""
+
+#: admin/analytics-page.php:270
+msgid "No drop-off data for this range."
+msgstr ""
+
+#: admin/analytics-page.php:275
+msgid "Drop-off by form page"
+msgstr ""
+
+#: admin/analytics-page.php:276
+msgid "No drop-off events recorded."
+msgstr ""
+
+#: admin/analytics-page.php:297
+msgid "No completion time records yet."
+msgstr ""
+
+#: admin/analytics-page.php:302
+msgid "Completion time distribution"
+msgstr ""
+
+#: admin/analytics-page.php:303
+msgid "No completion data recorded."
+msgstr ""
+
+#: admin/config-page.php:147
+msgid "No tenés permisos para acceder a esta página."
+msgstr ""
+
+#: admin/export.php:72
+#: admin/export.php:226
+msgid "No results to export."
+msgstr ""
+
+#: admin/handlers.php:17
+msgid "Invalid file name."
+msgstr ""
+
+#: admin/handlers.php:23
+msgid "File not found."
+msgstr ""
+
+#: admin/handlers.php:51
+#: admin/handlers.php:123
+msgid "Invalid result ID."
+msgstr ""
+
+#: admin/menu.php:8
+#: admin/menu.php:9
+#: admin/menu.php:19
+#: admin/results-page.php:67
+msgid "Form Results"
+msgstr ""
+
+#: admin/menu.php:20
+msgid "All Results"
+msgstr ""
+
+#: admin/menu.php:46
+#: admin/menu.php:47
+msgid "Configuración"
+msgstr ""
+
+#: admin/results-page.php:85
+msgid "Result deleted successfully."
+msgstr ""
+
+#: admin/results-page.php:88
+msgid "Result updated successfully."
+msgstr ""
+
+#: admin/results-page.php:93
+msgid "Failed to delete the result."
+msgstr ""
+
+#: admin/results-page.php:94
+msgid "Failed to update the result."
+msgstr ""
+
+#: admin/results-page.php:95
+msgid "No data to update."
+msgstr ""
+
+#: admin/results-page.php:97
+msgid "An error occurred."
+msgstr ""
+
+#: admin/results-page.php:108
+msgid "Filter by Form:"
+msgstr ""
+
+#: admin/results-page.php:110
+msgid "All Forms"
+msgstr ""
+
+#: admin/results-page.php:118
+msgid "Apply"
+msgstr ""
+
+#: admin/results-page.php:122
+msgid "Clear Filters"
+msgstr ""
+
+#: admin/results-page.php:181
+msgid "Advanced Filters"
+msgstr ""
+
+#: admin/results-page.php:188
+msgid "Add Filter"
+msgstr ""
+
+#: admin/results-page.php:191
+msgid "Apply Filters"
+msgstr ""
+
+#: admin/results-page.php:194
+msgid "Clear All"
+msgstr ""
+
+#: admin/results-page.php:216
+msgid "Loading..."
+msgstr ""
+
+#: admin/results-page.php:224
+msgid "ID"
+msgstr ""
+
+#: admin/results-page.php:228
+msgid "Actions"
+msgstr ""
+
+#: admin/results-page.php:235
+msgid "Loading data..."
+msgstr ""
+
+#: admin/results-page.php:265
+msgid "Response Details"
+msgstr ""
+
+#: admin/results-page.php:275
+msgid "Edit"
+msgstr ""
+
+#: admin/results-page.php:278
+msgid "Close"
+msgstr ""
+
+#: admin/summary-export.php:18
+#: admin/summary-export.php:176
+#: admin/summary-export.php:384
+msgid "No form selected."
+msgstr ""
+
+#: admin/summary-export.php:24
+#: admin/summary-export.php:182
+#: admin/summary-export.php:390
+msgid "No data available for export."
+msgstr ""
+
+#: admin/summary-page.php:62
+msgid "Summary Statistics"
+msgstr ""
+
+#: admin/summary-page.php:66
+msgid "Summary report exported successfully!"
+msgstr ""
+
+#: admin/summary-page.php:74
+msgid "Select Form:"
+msgstr ""
+
+#: admin/summary-page.php:91
+msgid "Export Summary Report"
+msgstr ""
+
+#: admin/summary-page.php:106
+msgid "SUMMARY - "
+msgstr ""
+
+#: admin/summary-page.php:109
+#, php-format
+msgid "Total responses: %d"
+msgstr ""
+
+#: admin/summary-page.php:136
+#, php-format
+msgid "Responses: %d out of %d (%.1f%%)"
+msgstr ""
+
+#: admin/summary-page.php:148
+#: admin/summary-page.php:160
+msgid "Show Chart ▼"
+msgstr ""
+
+#: admin/summary-page.php:173
+msgid "Show sample responses ▼"
+msgstr ""
+
+#: admin/summary-page.php:193
+msgid "No field data available for this form."
+msgstr ""
+
+#: admin/summary-page.php:199
+msgid "Please select a form to view summary statistics."
+msgstr ""
+
+#: admin/summary-page.php:216
+msgid "Option"
+msgstr ""
+
+#: admin/summary-page.php:217
+msgid "n"
+msgstr ""
+
+#: admin/summary-page.php:218
+msgid "%"
+msgstr ""
+
+#: admin/summary-page.php:241
+#: admin/summary-page.php:306
+msgid "Statistic"
+msgstr ""
+
+#: admin/summary-page.php:247
+msgid "Mean (M)"
+msgstr ""
+
+#: admin/summary-page.php:251
+msgid "Median (Mdn)"
+msgstr ""
+
+#: admin/summary-page.php:255
+msgid "Std Dev (SD)"
+msgstr ""
+
+#: admin/summary-page.php:259
+msgid "Minimum"
+msgstr ""
+
+#: admin/summary-page.php:263
+msgid "Maximum"
+msgstr ""
+
+#: admin/summary-page.php:267
+msgid "Range"
+msgstr ""
+
+#: admin/summary-page.php:271
+msgid "Mode"
+msgstr ""
+
+#: admin/summary-page.php:276
+msgid "P25"
+msgstr ""
+
+#: admin/summary-page.php:280
+msgid "P50"
+msgstr ""
+
+#: admin/summary-page.php:284
+msgid "P75"
+msgstr ""
+
+#: admin/summary-page.php:290
+msgid "Scale"
+msgstr ""
+
+#: admin/summary-page.php:316
+msgid "Empty"
+msgstr ""
+
+#: admin/summary-page.php:320
+msgid "Avg Length"
+msgstr ""
+
+#: admin/summary-page.php:321
+msgid "characters"
+msgstr ""
+
+#: vas-dinamico-forms.php:257
+msgid "Please configure the form ID in block settings."
+msgstr ""
+
+#: vas-dinamico-forms.php:277
+msgid "Name"
+msgstr ""
+
+#: vas-dinamico-forms.php:282
+#: src/blocks/campo-texto/edit.js:8
+msgid "Email"
+msgstr ""
+
+#: vas-dinamico-forms.php:287
+msgid "Message"
+msgstr ""
+
+#: vas-dinamico-forms.php:292
+#: vas-dinamico-forms.php:345
+#: src/blocks/form-container/edit.js:131
+msgid "Submit"
+msgstr ""
+
+#: vas-dinamico-forms.php:342
+msgid "This field is required."
+msgstr ""
+
+#: vas-dinamico-forms.php:343
+msgid "Please enter a valid email address."
+msgstr ""
+
+#: vas-dinamico-forms.php:344
+msgid "Submitting..."
+msgstr ""
+
+#: vas-dinamico-forms.php:346
+msgid "An error occurred. Please try again."
+msgstr ""
+
+#: src/blocks/campo-descripcion/edit.js:38
+msgid "Campo descripción"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:68
+msgid "Escala Likert"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:90
+#: src/blocks/vas-slider/edit.js:94
+#: src/components/FieldSettings.js:18
+msgid "Field Settings"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:94
+#: src/blocks/vas-slider/edit.js:98
+#: src/components/FieldSettings.js:22
+msgid "Field Name / Slug"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:102
+msgid "Used as the input name attribute (e.g., satisfaction)"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:108
+#: src/blocks/vas-slider/edit.js:112
+#: src/components/FieldSettings.js:31
+msgid "Label"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:115
+#: src/blocks/vas-slider/edit.js:119
+#: src/components/FieldSettings.js:36
+msgid "Required field"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:122
+#: src/blocks/vas-slider/edit.js:126
+#: src/components/FieldSettings.js:52
+msgid "Helper text"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:127
+#: src/blocks/vas-slider/edit.js:131
+#: src/components/FieldSettings.js:55
+msgid "Displayed below the field to provide additional guidance."
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:135
+msgid "Likert Scale Options"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:139
+#: src/blocks/vas-slider/edit.js:179
+msgid "Minimum Value"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:148
+msgid "The lowest value in the scale"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:154
+#: src/blocks/vas-slider/edit.js:198
+msgid "Maximum Value"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:163
+msgid "The highest value in the scale"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:169
+#: src/blocks/vas-slider/edit.js:143
+msgid "Labels (comma-separated)"
+msgstr ""
+
+#: src/blocks/campo-likert/edit.js:177
+msgid "Optional labels for each scale point. Must match the number of scale points."
+msgstr ""
+
+#: src/blocks/campo-multiple/edit.js:75
+msgid "Campo de selección múltiple"
+msgstr ""
+
+#: src/blocks/campo-multiple/edit.js:93
+#: src/blocks/campo-radio/edit.js:93
+#: src/blocks/campo-select/edit.js:94
+#: src/components/ConditionalLogicControl.js:175
+msgid "Lógica Condicional"
+msgstr ""
+
+#: src/blocks/campo-multiple/edit.js:97
+#: src/blocks/campo-radio/edit.js:97
+#: src/blocks/campo-select/edit.js:98
+msgid "Habilitar lógica condicional"
+msgstr ""
+
+#: src/blocks/campo-multiple/edit.js:116
+msgid "Permite redirigir a diferentes páginas según las opciones seleccionadas."
+msgstr ""
+
+#: src/blocks/campo-multiple/edit.js:131
+msgid "Checkbox Options"
+msgstr ""
+
+#: src/blocks/campo-multiple/edit.js:135
+#: src/blocks/campo-radio/edit.js:135
+#: src/blocks/campo-select/edit.js:136
+msgid "Options (comma-separated)"
+msgstr ""
+
+#: src/blocks/campo-multiple/edit.js:143
+#: src/blocks/campo-radio/edit.js:143
+#: src/blocks/campo-select/edit.js:144
+msgid "Enter options separated by commas (e.g., Option 1, Option 2, Option 3)"
+msgstr ""
+
+#: src/blocks/campo-multiple/edit.js:184
+#: src/blocks/campo-radio/edit.js:185
+#: src/blocks/campo-select/edit.js:179
+msgid "Add options in the sidebar"
+msgstr ""
+
+#: src/blocks/campo-radio/edit.js:75
+msgid "Campo de opciones"
+msgstr ""
+
+#: src/blocks/campo-radio/edit.js:116
+msgid "Permite redirigir a diferentes páginas según la opción seleccionada."
+msgstr ""
+
+#: src/blocks/campo-radio/edit.js:131
+msgid "Radio Options"
+msgstr ""
+
+#: src/blocks/campo-select/edit.js:77
+msgid "Campo de selección"
+msgstr ""
+
+#: src/blocks/campo-select/edit.js:117
+msgid "Permite redirigir a diferentes páginas según la respuesta seleccionada."
+msgstr ""
+
+#: src/blocks/campo-select/edit.js:132
+msgid "Select Options"
+msgstr ""
+
+#: src/blocks/campo-textarea/edit.js:51
+msgid "Campo textarea"
+msgstr ""
+
+#: src/blocks/campo-textarea/edit.js:62
+msgid "Textarea Options"
+msgstr ""
+
+#: src/blocks/campo-textarea/edit.js:66
+msgid "Rows"
+msgstr ""
+
+#: src/blocks/campo-texto/edit.js:7
+msgid "Text"
+msgstr ""
+
+#: src/blocks/campo-texto/edit.js:9
+msgid "Number"
+msgstr ""
+
+#: src/blocks/campo-texto/edit.js:10
+msgid "Telephone"
+msgstr ""
+
+#: src/blocks/campo-texto/edit.js:11
+msgid "URL"
+msgstr ""
+
+#: src/blocks/campo-texto/edit.js:63
+msgid "Campo de texto"
+msgstr ""
+
+#: src/blocks/campo-texto/edit.js:73
+msgid "Text Field Options"
+msgstr ""
+
+#: src/blocks/campo-texto/edit.js:77
+msgid "Input type"
+msgstr ""
+
+#: src/blocks/form-block/index.js:19
+#: src/blocks/form-container/edit.js:44
+msgid "Form Settings"
+msgstr ""
+
+#: src/blocks/form-block/index.js:22
+msgid "Form ID"
+msgstr ""
+
+#: src/blocks/form-block/index.js:27
+msgid "Enter the unique identifier for the form"
+msgstr ""
+
+#: src/blocks/form-block/index.js:33
+msgid "Show Title"
+msgstr ""
+
+#: src/blocks/form-block/index.js:51
+msgid "VAS Dinámico Form"
+msgstr ""
+
+#: src/blocks/form-block/index.js:57
+msgid "Please enter a Form ID in the block settings."
+msgstr ""
+
+#: src/blocks/form-container/edit.js:47
+msgid "Form ID/Slug"
+msgstr ""
+
+#: src/blocks/form-container/edit.js:52
+msgid "Enter a unique identifier for the form (e.g., contact-form)"
+msgstr ""
+
+#: src/blocks/form-container/edit.js:58
+msgid "Submit Button Label"
+msgstr ""
+
+#: src/blocks/form-container/edit.js:68
+msgid "Description (Optional)"
+msgstr ""
+
+#: src/blocks/form-container/edit.js:76
+msgid "Optional description text shown above the form"
+msgstr ""
+
+#: src/blocks/form-container/edit.js:90
+msgid "EIPSI Form Container"
+msgstr ""
+
+#: src/blocks/form-container/edit.js:96
+msgid "Please enter a Form ID in the block settings to get started."
+msgstr ""
+
+#: src/blocks/pagina/edit.js:86
+msgid "Page Settings"
+msgstr ""
+
+#: src/blocks/pagina/edit.js:89
+msgid "Page Title (Optional)"
+msgstr ""
+
+#: src/blocks/pagina/edit.js:97
+msgid "Enter an optional title for this page (e.g., Personal Information)"
+msgstr ""
+
+#: src/blocks/pagina/edit.js:103
+msgid "Page Number"
+msgstr ""
+
+#: src/blocks/pagina/edit.js:106
+msgid "This page number updates automatically based on block order."
+msgstr ""
+
+#: src/blocks/pagina/edit.js:127
+msgid "Add a page title in the block settings (optional)"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:72
+msgid "VAS Slider"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:106
+msgid "Used as the input name attribute (e.g., pain_level)"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:139
+msgid "VAS Slider Options"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:151
+msgid "Optional: Multiple labels for scale points (e.g., \"Muy mal,Mal,Neutral,Bien,Muy bien\")"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:157
+msgid "Left Label"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:162
+msgid "Label for the minimum value (used when multi-labels are not set)"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:168
+msgid "Right Label"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:173
+msgid "Label for the maximum value (used when multi-labels are not set)"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:217
+msgid "Step"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:225
+msgid "Increment for each slider movement"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:231
+msgid "Initial Value"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:240
+msgid "Default slider position"
+msgstr ""
+
+#: src/blocks/vas-slider/edit.js:246
+msgid "Show current value"
+msgstr ""
+
+#: src/components/ConditionalLogicControl.js:135
+msgid "Finalizar formulario"
+msgstr ""
+
+#: src/components/ConditionalLogicControl.js:142
+msgid "Ir a Página"
+msgstr ""
+
+#: src/components/ConditionalLogicControl.js:154
+msgid "Agrega opciones primero"
+msgstr ""
+
+#: src/components/ConditionalLogicControl.js:182
+msgid "Agrega páginas al formulario para configurar la lógica condicional."
+msgstr ""
+
+#: src/components/ConditionalLogicControl.js:193
+msgid "Agrega opciones al campo para configurar la lógica condicional."
+msgstr ""
+
+#: src/components/ConditionalLogicControl.js:204
+msgid "Regla"
+msgstr ""
+
+#: src/components/ConditionalLogicControl.js:209
+msgid "Si el valor es"
+msgstr ""
+
+#: src/components/ConditionalLogicControl.js:221
+msgid "Entonces"
+msgstr ""
+
+#: src/components/ConditionalLogicControl.js:248
+msgid "Eliminar regla"
+msgstr ""
+
+#: src/components/ConditionalLogicControl.js:259
+msgid "Agregar regla"
+msgstr ""
+
+#: src/components/FieldSettings.js:25
+msgid "Used as the input name attribute (e.g., full_name)"
+msgstr ""
+
+#: src/components/FieldSettings.js:44
+msgid "Placeholder"
+msgstr ""
+
+#: blocks/campo-descripcion/block.json
+msgctxt "block title"
+msgid "EIPSI Campo Descripción"
+msgstr ""
+
+#: blocks/campo-descripcion/block.json
+msgctxt "block description"
+msgid "Texto informativo dentro del formulario EIPSI sin campo de entrada."
+msgstr ""
+
+#: blocks/campo-descripcion/block.json
+#: blocks/campo-likert/block.json
+#: blocks/campo-multiple/block.json
+#: blocks/campo-radio/block.json
+#: blocks/campo-select/block.json
+#: blocks/campo-textarea/block.json
+#: blocks/campo-texto/block.json
+#: blocks/form-block/block.json
+#: blocks/form-container/block.json
+#: blocks/pagina/block.json
+#: blocks/vas-slider/block.json
+msgctxt "block keyword"
+msgid "form"
+msgstr ""
+
+#: blocks/campo-descripcion/block.json
+#: blocks/campo-likert/block.json
+#: blocks/campo-multiple/block.json
+#: blocks/campo-radio/block.json
+#: blocks/campo-select/block.json
+#: blocks/campo-textarea/block.json
+#: blocks/campo-texto/block.json
+#: blocks/vas-slider/block.json
+msgctxt "block keyword"
+msgid "field"
+msgstr ""
+
+#: blocks/campo-descripcion/block.json
+msgctxt "block keyword"
+msgid "description"
+msgstr ""
+
+#: blocks/campo-descripcion/block.json
+#: blocks/campo-likert/block.json
+#: blocks/campo-multiple/block.json
+#: blocks/campo-radio/block.json
+#: blocks/campo-select/block.json
+#: blocks/campo-textarea/block.json
+#: blocks/campo-texto/block.json
+#: blocks/form-container/block.json
+#: blocks/vas-slider/block.json
+msgctxt "block keyword"
+msgid "eipsi"
+msgstr ""
+
+#: blocks/campo-likert/block.json
+msgctxt "block title"
+msgid "EIPSI Campo Likert"
+msgstr ""
+
+#: blocks/campo-likert/block.json
+msgctxt "block description"
+msgid "Campo de escala Likert para formularios EIPSI."
+msgstr ""
+
+#: blocks/campo-likert/block.json
+msgctxt "block keyword"
+msgid "likert"
+msgstr ""
+
+#: blocks/campo-likert/block.json
+#: blocks/vas-slider/block.json
+msgctxt "block keyword"
+msgid "scale"
+msgstr ""
+
+#: blocks/campo-likert/block.json
+msgctxt "block keyword"
+msgid "rating"
+msgstr ""
+
+#: blocks/campo-multiple/block.json
+msgctxt "block title"
+msgid "EIPSI Campo Multiple"
+msgstr ""
+
+#: blocks/campo-multiple/block.json
+msgctxt "block description"
+msgid "Campo de selección múltiple con checkboxes para formularios EIPSI."
+msgstr ""
+
+#: blocks/campo-multiple/block.json
+msgctxt "block keyword"
+msgid "checkbox"
+msgstr ""
+
+#: blocks/campo-multiple/block.json
+msgctxt "block keyword"
+msgid "multiple"
+msgstr ""
+
+#: blocks/campo-multiple/block.json
+#: blocks/campo-radio/block.json
+msgctxt "block keyword"
+msgid "choice"
+msgstr ""
+
+#: blocks/campo-radio/block.json
+msgctxt "block title"
+msgid "EIPSI Campo Radio"
+msgstr ""
+
+#: blocks/campo-radio/block.json
+msgctxt "block description"
+msgid "Campo de selección con botones de radio para formularios EIPSI."
+msgstr ""
+
+#: blocks/campo-radio/block.json
+msgctxt "block keyword"
+msgid "radio"
+msgstr ""
+
+#: blocks/campo-select/block.json
+msgctxt "block title"
+msgid "EIPSI Campo Select"
+msgstr ""
+
+#: blocks/campo-select/block.json
+msgctxt "block description"
+msgid "Campo de selección desplegable (dropdown) para formularios EIPSI."
+msgstr ""
+
+#: blocks/campo-select/block.json
+msgctxt "block keyword"
+msgid "select"
+msgstr ""
+
+#: blocks/campo-select/block.json
+msgctxt "block keyword"
+msgid "dropdown"
+msgstr ""
+
+#: blocks/campo-textarea/block.json
+msgctxt "block title"
+msgid "EIPSI Campo Textarea"
+msgstr ""
+
+#: blocks/campo-textarea/block.json
+msgctxt "block description"
+msgid "Campo de área de texto para respuestas largas en formularios EIPSI."
+msgstr ""
+
+#: blocks/campo-textarea/block.json
+msgctxt "block keyword"
+msgid "textarea"
+msgstr ""
+
+#: blocks/campo-texto/block.json
+msgctxt "block title"
+msgid "EIPSI Campo Texto"
+msgstr ""
+
+#: blocks/campo-texto/block.json
+msgctxt "block description"
+msgid "Campo de texto configurable para formularios EIPSI."
+msgstr ""
+
+#: blocks/campo-texto/block.json
+msgctxt "block keyword"
+msgid "text"
+msgstr ""
+
+#: blocks/form-block/block.json
+msgctxt "block title"
+msgid "VAS Dinámico Form"
+msgstr ""
+
+#: blocks/form-block/block.json
+msgctxt "block description"
+msgid "Display a VAS Dinámico form with advanced data handling capabilities."
+msgstr ""
+
+#: blocks/form-block/block.json
+msgctxt "block keyword"
+msgid "contact"
+msgstr ""
+
+#: blocks/form-block/block.json
+#: blocks/form-container/block.json
+#: blocks/pagina/block.json
+#: blocks/vas-slider/block.json
+msgctxt "block keyword"
+msgid "vas"
+msgstr ""
+
+#: blocks/form-container/block.json
+msgctxt "block title"
+msgid "EIPSI Form Container"
+msgstr ""
+
+#: blocks/form-container/block.json
+msgctxt "block description"
+msgid "A container for EIPSI form fields with pagination and submission handling."
+msgstr ""
+
+#: blocks/form-container/block.json
+msgctxt "block keyword"
+msgid "container"
+msgstr ""
+
+#: blocks/pagina/block.json
+msgctxt "block title"
+msgid "EIPSI Página"
+msgstr ""
+
+#: blocks/pagina/block.json
+msgctxt "block description"
+msgid "A page container for grouping form fields with optional title in paginated forms."
+msgstr ""
+
+#: blocks/pagina/block.json
+msgctxt "block keyword"
+msgid "page"
+msgstr ""
+
+#: blocks/pagina/block.json
+msgctxt "block keyword"
+msgid "pagina"
+msgstr ""
+
+#: blocks/pagina/block.json
+msgctxt "block keyword"
+msgid "step"
+msgstr ""
+
+#: blocks/vas-slider/block.json
+msgctxt "block title"
+msgid "EIPSI VAS Slider"
+msgstr ""
+
+#: blocks/vas-slider/block.json
+msgctxt "block description"
+msgid "Campo de escala analógica visual (VAS) con slider para formularios EIPSI."
+msgstr ""
+
+#: blocks/vas-slider/block.json
+msgctxt "block keyword"
+msgid "slider"
+msgstr ""
+
+#: blocks/vas-slider/block.json
+msgctxt "block keyword"
+msgid "analog"
+msgstr ""

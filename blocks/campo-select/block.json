@@ -1,0 +1,66 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "vas-dinamico/campo-select",
+	"version": "1.0.0",
+	"title": "EIPSI Campo Select",
+	"category": "eipsi-forms",
+	"icon": "arrow-down",
+	"description": "Campo de selección desplegable (dropdown) para formularios EIPSI.",
+	"keywords": [ "form", "field", "select", "dropdown", "eipsi" ],
+	"textdomain": "vas-dinamico-forms",
+	"parent": [ "vas-dinamico/form-container", "vas-dinamico/form-page" ],
+	"editorScript": "file:../../build/index.js",
+	"editorStyle": "file:../../build/index.css",
+	"style": "file:../../build/style-index.css",
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"fieldName": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"required": {
+			"type": "boolean",
+			"default": false
+		},
+		"placeholder": {
+			"type": "string",
+			"default": ""
+		},
+		"helperText": {
+			"type": "string",
+			"default": ""
+		},
+		"options": {
+			"type": "string",
+			"default": ""
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		},
+		"conditionalLogic": {
+			"type": "object",
+			"default": null
+		}
+	},
+	"example": {
+		"attributes": {
+			"fieldName": "country",
+			"label": "País",
+			"required": true,
+			"placeholder": "Selecciona un país",
+			"options": "Argentina,Brasil,Chile,Colombia,México"
+		}
+	}
+}

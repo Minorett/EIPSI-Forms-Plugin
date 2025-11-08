@@ -1,0 +1,114 @@
+/**
+ * EIPSI FORM STYLES - Paleta Neutral Profesional
+ * Versión compatible - Sin variables CSS
+ */
+
+/* ==========================================================================
+   MODIFICACIONES EIPSI - COLORES AZUL INSTITUCIONAL
+   ========================================================================== */
+
+/* 1. COLORES PRINCIPALES (cambiar de gris a azul EIPSI) */
+.vas-dinamico-form h2,
+.vas-dinamico-form h3,
+.vas-dinamico-form .form-section-title {
+    color: #005a87 !important;  /* ← ERA: #1a202c */
+}
+
+.vas-slider-label {
+    color: #005a87 !important;  /* ← ERA: #4a5568 */
+}
+
+.vas-value-number {
+    color: #005a87 !important;  /* ← ERA: #2d3748 */
+    font-size: 2.5em !important;  /* ← MÁS GRANDE */
+}
+
+.eipsi-submit-btn {
+    background: #005a87 !important;  /* ← ERA: #4a5568 */
+    transition: background 0.3s ease !important;  /* ← AGREGAR ESTO */
+}
+
+.eipsi-submit-btn:hover {
+    background: #003d5b !important;  /* ← ERA: #2d3748 */
+}
+
+/* AGREGAR ESTO: */
+.eipsi-submit-btn:focus {
+    outline: 2px solid #005a87 !important;
+    outline-offset: 2px !important;
+}
+
+/* 2. VAS CONTAINER (fondo azul claro) */
+.vas-dinamico-form .vas-slider-container,
+.eipsi-form .vas-slider-container,
+.form-investigacion .vas-slider-container {
+    background: #e3f2fd !important;  /* ← ERA: #ffffff */
+    box-shadow: 0 4px 16px rgba(0, 90, 135, 0.1) !important;  /* ← ERA: rgba(0,0,0,0.06) */
+}
+
+/* 3. CONTENEDOR PRINCIPAL (con sombra azul) */
+.vas-dinamico-form {
+    background: #ffffff !important;  /* ← ERA: #f9fbfd */
+    border-radius: 20px !important;  /* ← ERA: 0 */
+    box-shadow: 0 8px 25px rgba(0, 90, 135, 0.1) !important;  /* ← NUEVO */
+    border: 1px solid #e2e8f0 !important;  /* ← NUEVO */
+}
+
+/* 4. FOCUS STATES CON AZUL EIPSI */
+.vas-dinamico-form input:focus,
+.vas-dinamico-form textarea:focus,
+.vas-dinamico-form select:focus,
+.eipsi-form input:focus,
+.eipsi-form textarea:focus,
+.eipsi-form select:focus {
+    border-color: #005a87 !important;  /* ← ERA: #4a5568 */
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1) !important;  /* ← NUEVO */
+}
+
+/* 5. BODY/PÁGINA (fondo gris claro) */
+body {
+    background: #f8fafc !important;
+}
+
+/* ==========================================================================
+   ELIMINAR ELEMENTOS EMOCIONALES (se mantiene igual)
+   ========================================================================== */
+.vas-intensity-label {
+    display: none !important;
+}
+
+/* AGREGAR ESTO AL FINAL: */
+@media (max-width: 768px) {
+    .vas-dinamico-form .vas-slider-container {
+        box-shadow: 0 2px 8px rgba(0, 90, 135, 0.08) !important;
+    }
+}
+
+/* ==========================================================================
+   LIKERT - ÁREA COMPLETA CLICKEABLE
+   ========================================================================== */
+
+.likert-label-wrapper {
+    display: block;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+    width: 100%;
+    text-align: center;
+}
+
+.likert-label-wrapper:hover {
+    background: rgba(0, 90, 135, 0.08);
+}
+
+.likert-label-wrapper input[type="radio"] {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.likert-label-text {
+    user-select: none;
+    pointer-events: none;
+}

@@ -1,0 +1,17 @@
+.form-group.eipsi-field {
+	&.eipsi-textarea-field {
+		textarea {
+			width: 100%;
+			resize: vertical;
+			min-height: 120px;
+		}
+	}
+
+	.field-helper {
+		margin-top: 0.6em;
+		font-size: 0.9em;
+		color: #b0b0b0;
+		font-style: italic;
+		line-height: 1.5;
+	}
+}

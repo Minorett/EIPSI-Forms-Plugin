@@ -1,0 +1,27 @@
+.form-group.eipsi-field {
+	&.eipsi-description-field {
+		.description-content {
+			padding: 1em;
+			background: rgba(255, 255, 255, 0.05);
+			border-radius: 8px;
+			border-left: 3px solid #0073aa;
+			color: #e0e0e0;
+			line-height: 1.6;
+		}
+
+		.description-placeholder {
+			margin-top: 0.5em;
+			margin-bottom: 0.75em;
+			font-style: italic;
+			color: #b0b0b0;
+		}
+	}
+
+	.field-helper {
+		margin-top: 0.6em;
+		font-size: 0.9em;
+		color: #b0b0b0;
+		font-style: italic;
+		line-height: 1.5;
+	}
+}

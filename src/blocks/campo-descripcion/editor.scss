@@ -1,0 +1,58 @@
+.wp-block-vas-dinamico-campo-descripcion {
+    .form-group.eipsi-field {
+        &.eipsi-description-field {
+            padding: 1em;
+            border: 2px solid #0073aa;
+            border-radius: 6px;
+            background: #f8fbff;
+            box-shadow: 0 2px 6px rgba(0, 115, 170, 0.1);
+            position: relative;
+            
+            &::before {
+                content: "EIPSI Description";
+                position: absolute;
+                top: -10px;
+                left: 12px;
+                background: #0073aa;
+                color: white;
+                padding: 2px 8px;
+                border-radius: 3px;
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            .description-placeholder {
+                background: #fff;
+                padding: 1em;
+                border-left: 4px solid #0073aa;
+                border-radius: 4px;
+                color: #005177;
+                font-style: italic;
+                line-height: 1.5;
+            }
+        }
+
+        .field-helper {
+            margin-top: 0.5em;
+            font-size: 0.9em;
+            color: #005177;
+            font-style: italic;
+        }
+        
+        label {
+            color: #0073aa;
+            font-weight: 600;
+            margin-bottom: 0.5em;
+            display: block;
+        }
+    }
+    
+    &:hover {
+        .form-group.eipsi-field.eipsi-description-field {
+            border-color: #005177;
+            background: #e6f3ff;
+        }
+    }
+}

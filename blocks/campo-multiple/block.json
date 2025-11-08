@@ -1,0 +1,61 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "vas-dinamico/campo-multiple",
+	"version": "1.0.0",
+	"title": "EIPSI Campo Multiple",
+	"category": "eipsi-forms",
+	"icon": "yes-alt",
+	"description": "Campo de selección múltiple con checkboxes para formularios EIPSI.",
+	"keywords": [ "form", "field", "checkbox", "multiple", "choice", "eipsi" ],
+	"textdomain": "vas-dinamico-forms",
+	"parent": [ "vas-dinamico/form-container", "vas-dinamico/form-page" ],
+	"editorScript": "file:../../build/index.js",
+	"editorStyle": "file:../../build/index.css",
+	"style": "file:../../build/style-index.css",
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"fieldName": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"required": {
+			"type": "boolean",
+			"default": false
+		},
+		"helperText": {
+			"type": "string",
+			"default": ""
+		},
+		"options": {
+			"type": "string",
+			"default": ""
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		},
+		"conditionalLogic": {
+			"type": "object",
+			"default": null
+		}
+	},
+	"example": {
+		"attributes": {
+			"fieldName": "interests",
+			"label": "Intereses",
+			"required": false,
+			"options": "Deportes,Música,Lectura,Viajes,Tecnología"
+		}
+	}
+}

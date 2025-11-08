@@ -1,0 +1,91 @@
+/* Conditional Logic Panel Styles */
+.conditional-logic-panel {
+    .conditional-logic-warning {
+        padding: 12px;
+        background: #f0f6fc;
+        border: 1px solid #72aee6;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        
+        p {
+            margin: 0;
+            color: #2e5a88;
+            font-size: 13px;
+        }
+    }
+    
+    .conditional-logic-rule {
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+        
+        h4 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #1e1e1e;
+            font-weight: 600;
+        }
+        
+        .components-base-control {
+            margin-bottom: 12px;
+            
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+        
+        button {
+            margin-top: 8px;
+        }
+    }
+    
+    .components-button.is-primary {
+        background: #0073aa;
+        border-color: #0073aa;
+        
+        &:hover {
+            background: #005a87;
+            border-color: #005a87;
+        }
+        
+        &:disabled {
+            background: #8c8f94;
+            border-color: #8c8f94;
+            cursor: not-allowed;
+        }
+    }
+    
+    .components-button.is-destructive {
+        color: #d63638;
+        
+        &:hover {
+            color: #b32d2e;
+            background: #f7e3e3;
+        }
+    }
+}
+
+/* Field indicators for conditional logic */
+.eipsi-field[data-conditional-logic] {
+    position: relative;
+    
+    &::after {
+        content: "🔀";
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 14px;
+        z-index: 1;
+        opacity: 0.7;
+    }
+}
+
+/* Enhanced editor styles for fields with conditional logic */
+.wp-block-vas-dinamico-campo-select[data-conditional-logic],
+.wp-block-vas-dinamico-campo-radio[data-conditional-logic],
+.wp-block-vas-dinamico-campo-multiple[data-conditional-logic] {
+    border-color: #0073aa !important;
+    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2) !important;
+}

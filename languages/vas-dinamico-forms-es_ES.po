@@ -1,0 +1,52 @@
+# Copyright (C) 2024 VAS Team
+# This file is distributed under the same license as the VAS Dinámico Forms plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: VAS Dinámico Forms 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/vas-dinamico-forms\n"
+"POT-Creation-Date: 2024-12-15T00:00:00+00:00\n"
+"PO-Revision-Date: 2024-12-15T00:00:00+00:00\n"
+"Last-Translator: VAS Team <team@example.com>\n"
+"Language-Team: Spanish\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: WP-CLI 2.9.0\n"
+"X-Domain: vas-dinamico-forms\n"
+
+msgid "Please configure the form ID in block settings."
+msgstr "Por favor, configure el ID del formulario en la configuración del bloque."
+
+msgid "Name"
+msgstr "Nombre"
+
+msgid "Email"
+msgstr "Correo electrónico"
+
+msgid "Message"
+msgstr "Mensaje"
+
+msgid "Submit"
+msgstr "Enviar"
+
+msgid "This field is required."
+msgstr "Este campo es obligatorio."
+
+msgid "Please enter a valid email address."
+msgstr "Por favor, introduzca una dirección de correo electrónico válida."
+
+msgid "Submitting..."
+msgstr "Enviando..."
+
+msgid "An error occurred. Please try again."
+msgstr "Ocurrió un error. Por favor, inténtelo de nuevo."
+
+msgid "Form submitted successfully!"
+msgstr "¡Formulario enviado correctamente!"
+
+msgid "Dynamic form results management with admin dashboard, external database configuration, and Excel export capabilities."
+msgstr "Gestión dinámica de resultados de formularios con panel de administración, configuración de base de datos externa y capacidades de exportación a Excel."
+
+msgid "VAS Dinámico Forms"
+msgstr "Formularios Dinámicos VAS"
