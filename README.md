@@ -22,9 +22,10 @@ Professional WordPress form builder with Gutenberg blocks for research and surve
   - Excel export functionality
 
 - **Professional UI**
-  - Dark theme responsive design
-  - Mobile-friendly forms
-  - Professional form styling
+  - Clinical research-grade design system
+  - Design token system for centralized theming
+  - Mobile-friendly responsive forms
+  - Professional form styling with CSS variables
   - AJAX-powered submissions
 
 ## Installation
@@ -37,7 +38,12 @@ Professional WordPress form builder with Gutenberg blocks for research and surve
 
 1. Create or edit a page in the WordPress block editor
 2. Add an "EIPSI Form Container" block
-3. Add field blocks inside the form container:
+3. Customize form appearance (optional):
+   - Open block settings panel → "Style Customization"
+   - Adjust primary color, background, text color
+   - Modify container padding and border radius
+   - Changes apply instantly via design token system
+4. Add field blocks inside the form container:
    - EIPSI Campo Texto (text input with various types)
    - EIPSI Campo Textarea (multi-line text)
    - EIPSI Campo Descripción (static text/instructions)
@@ -47,12 +53,12 @@ Professional WordPress form builder with Gutenberg blocks for research and surve
    - EIPSI Campo Likert (Likert scale 1-5 or 1-7)
    - EIPSI VAS Slider (visual analog scale 0-100)
 
-4. For multi-page forms:
+5. For multi-page forms:
    - Add "EIPSI Página" blocks inside the form container
    - Add field blocks inside page blocks
    - Pagination navigation appears automatically
 
-5. Configure conditional logic (branching):
+6. Configure conditional logic (branching):
    - Select a field block (select, radio, or checkboxes)
    - In the block settings panel, find "Lógica Condicional"
    - Toggle "Habilitar lógica condicional"

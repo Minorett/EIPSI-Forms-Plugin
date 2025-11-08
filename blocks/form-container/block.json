@@ -1,89 +1,94 @@
 {
-	"$schema": "https://schemas.wp.org/trunk/block.json",
-	"apiVersion": 3,
-	"name": "vas-dinamico/form-container",
-	"version": "1.0.0",
-	"title": "EIPSI Form Container",
-	"category": "eipsi-forms",
-	"icon": "layout",
-	"description": "A container for EIPSI form fields with pagination and submission handling.",
-	"keywords": [ "form", "eipsi", "container" ],
-	"textdomain": "vas-dinamico-forms",
-	"editorScript": "file:../../build/index.js",
-	"editorStyle": "file:../../build/index.css",
-	"style": "file:../../build/style-index.css",
-	"supports": {
-		"html": false,
-		"align": true,
-		"spacing": {
-			"margin": true,
-			"padding": true
-		}
-	},
-	"attributes": {
-		"formId": {
-			"type": "string",
-			"default": ""
-		},
-		"submitButtonLabel": {
-			"type": "string",
-			"default": "Submit"
-		},
-		"description": {
-			"type": "string",
-			"default": ""
-		},
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "vas-dinamico/form-container",
+    "version": "1.0.0",
+    "title": "EIPSI Form Container",
+    "category": "eipsi-forms",
+    "icon": "layout",
+    "description": "A container for EIPSI form fields with pagination and submission handling.",
+    "keywords": [ "form", "eipsi", "container" ],
+    "textdomain": "vas-dinamico-forms",
+    "editorScript": "file:../../build/index.js",
+    "editorStyle": "file:../../build/index.css",
+    "style": "file:../../build/style-index.css",
+    "supports": {
+        "html": false,
+        "align": true,
+        "spacing": {
+            "margin": true,
+            "padding": true
+        }
+    },
+    "attributes": {
+        "formId": {
+            "type": "string",
+            "default": ""
+        },
+        "submitButtonLabel": {
+            "type": "string",
+            "default": "Submit"
+        },
+        "description": {
+            "type": "string",
+            "default": ""
+        },
+        
+        "styleConfig": {
+            "type": "object",
+            "default": null
+        },
 
-		"backgroundColor": {
-			"type": "string",
-			"default": "#23210f"
-		},
-		"textColor": {
-			"type": "string",
-			"default": "#ffffff"
-		},
-		"primaryColor": {
-			"type": "string",
-			"default": "#0073aa"
-		},
-		"borderRadius": {
-			"type": "number",
-			"default": 12
-		},
-		"padding": {
-			"type": "number",
-			"default": 24
-		},
-		"inputBgColor": {
-			"type": "string",
-			"default": "rgba(255,255,255,0.95)"
-		},
-		"inputTextColor": {
-			"type": "string",
-			"default": "#1d2327"
-		},
-		"buttonBgColor": {
-			"type": "string",
-			"default": "#0073aa"
-		},
-		"buttonTextColor": {
-			"type": "string",
-			"default": "#ffffff"
-		},
+        "backgroundColor": {
+            "type": "string",
+            "default": "#23210f"
+        },
+        "textColor": {
+            "type": "string",
+            "default": "#ffffff"
+        },
+        "primaryColor": {
+            "type": "string",
+            "default": "#0073aa"
+        },
+        "borderRadius": {
+            "type": "number",
+            "default": 12
+        },
+        "padding": {
+            "type": "number",
+            "default": 24
+        },
+        "inputBgColor": {
+            "type": "string",
+            "default": "rgba(255,255,255,0.95)"
+        },
+        "inputTextColor": {
+            "type": "string",
+            "default": "#1d2327"
+        },
+        "buttonBgColor": {
+            "type": "string",
+            "default": "#0073aa"
+        },
+        "buttonTextColor": {
+            "type": "string",
+            "default": "#ffffff"
+        },
 
-		"className": {
-			"type": "string",
-			"default": ""
-		}
-	},
-	"providesContext": {
-		"vas-dinamico/formId": "formId"
-	},
-	"example": {
-		"attributes": {
-			"formId": "sample-form",
-			"submitButtonLabel": "Submit",
-			"description": "Fill out the form below"
-		}
-	}
+        "className": {
+            "type": "string",
+            "default": ""
+        }
+    },
+    "providesContext": {
+        "vas-dinamico/formId": "formId"
+    },
+    "example": {
+        "attributes": {
+            "formId": "sample-form",
+            "submitButtonLabel": "Submit",
+            "description": "Fill out the form below"
+        }
+    }
 }

@@ -12,18 +12,31 @@ import {
 	RangeControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
+import { useEffect } from '@wordpress/element';
+import {
+	migrateToStyleConfig,
+	serializeToCSSVariables,
+	generateInlineStyle,
+} from '../../utils/styleTokens';
 
 export default function Edit( { attributes, setAttributes } ) {
-	const {
-		formId,
-		submitButtonLabel,
-		description,
-		// NUEVOS atributos
-		backgroundColor,
-		textColor,
-		borderRadius,
-		padding,
-	} = attributes;
+	const { formId, submitButtonLabel, description, styleConfig } = attributes;
+
+	// Migration: Convert legacy attributes to styleConfig on mount
+	useEffect( () => {
+		if ( ! styleConfig ) {
+			const migratedConfig = migrateToStyleConfig( attributes );
+			setAttributes( { styleConfig: migratedConfig } );
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [] );
+
+	// Get current style config (with fallback)
+	const currentConfig = styleConfig || migrateToStyleConfig( attributes );
+
+	// Generate CSS variables for editor preview
+	const cssVars = serializeToCSSVariables( currentConfig );
+	const inlineStyle = generateInlineStyle( cssVars );
 
 	const blockProps = useBlockProps( {
 		className: 'eipsi-form-container-editor',
@@ -51,6 +64,42 @@ export default function Edit( { attributes, setAttributes } ) {
 			renderAppender: InnerBlocks.ButtonBlockAppender,
 		}
 	);
+
+	// Helper to update styleConfig colors
+	const updateStyleColor = ( colorKey, newValue ) => {
+		const updatedConfig = {
+			...currentConfig,
+			colors: {
+				...currentConfig.colors,
+				[ colorKey ]: newValue,
+			},
+		};
+		setAttributes( { styleConfig: updatedConfig } );
+	};
+
+	// Helper to update styleConfig spacing
+	const updateStyleSpacing = ( spacingKey, newValue ) => {
+		const updatedConfig = {
+			...currentConfig,
+			spacing: {
+				...currentConfig.spacing,
+				[ spacingKey ]: `${ newValue }px`,
+			},
+		};
+		setAttributes( { styleConfig: updatedConfig } );
+	};
+
+	// Helper to update styleConfig borders
+	const updateStyleBorder = ( borderKey, newValue ) => {
+		const updatedConfig = {
+			...currentConfig,
+			borders: {
+				...currentConfig.borders,
+				[ borderKey ]: `${ newValue }px`,
+			},
+		};
+		setAttributes( { styleConfig: updatedConfig } );
+	};
 
 	return (
 		<>
@@ -95,65 +144,139 @@ export default function Edit( { attributes, setAttributes } ) {
 						) }
 					/>
 				</PanelBody>
-				{ /* NUEVO: Panel de personalización - Sin TabPanel */ }
 				<PanelBody
 					title={ __( 'Style Customization', 'vas-dinamico-forms' ) }
 					initialOpen={ false }
 				>
-					<div style={ { marginBottom: '1em' } }>
-						<label htmlFor="background-color">
-							{ __( 'Background Color', 'vas-dinamico-forms' ) }
-						</label>
-						<ColorPalette
-							id="background-color"
-							colors={ [
-								{ name: 'Dark', color: '#23210f' },
-								{ name: 'White', color: '#ffffff' },
-								{ name: 'Gray', color: '#f0f0f0' },
-							] }
-							value={ backgroundColor }
-							onChange={ ( color ) =>
-								setAttributes( { backgroundColor: color } )
+					<p
+						style={ {
+							fontSize: '0.9em',
+							color: '#666',
+							marginTop: 0,
+						} }
+					>
+						{ __(
+							'Customize form appearance using design tokens. Changes apply to all form elements.',
+							'vas-dinamico-forms'
+						) }
+					</p>
+
+					<div style={ { marginBottom: '1.5em' } }>
+						<h4
+							style={ {
+								fontSize: '0.95em',
+								marginBottom: '0.5em',
+							} }
+						>
+							{ __( 'Colors', 'vas-dinamico-forms' ) }
+						</h4>
+
+						<div style={ { marginBottom: '1em' } }>
+							<label htmlFor="primary-color">
+								{ __( 'Primary Color', 'vas-dinamico-forms' ) }
+							</label>
+							<ColorPalette
+								id="primary-color"
+								colors={ [
+									{ name: 'EIPSI Blue', color: '#005a87' },
+									{ name: 'Default Blue', color: '#0073aa' },
+									{ name: 'Navy', color: '#003d5b' },
+								] }
+								value={ currentConfig.colors.primary }
+								onChange={ ( color ) =>
+									updateStyleColor( 'primary', color )
+								}
+							/>
+						</div>
+
+						<div style={ { marginBottom: '1em' } }>
+							<label htmlFor="background-color">
+								{ __(
+									'Background Color',
+									'vas-dinamico-forms'
+								) }
+							</label>
+							<ColorPalette
+								id="background-color"
+								colors={ [
+									{ name: 'White', color: '#ffffff' },
+									{ name: 'Light Gray', color: '#f8f9fa' },
+									{ name: 'Dark', color: '#23210f' },
+								] }
+								value={ currentConfig.colors.background }
+								onChange={ ( color ) =>
+									updateStyleColor( 'background', color )
+								}
+							/>
+						</div>
+
+						<div style={ { marginBottom: '1em' } }>
+							<label htmlFor="text-color">
+								{ __( 'Text Color', 'vas-dinamico-forms' ) }
+							</label>
+							<ColorPalette
+								id="text-color"
+								colors={ [
+									{ name: 'Dark', color: '#2c3e50' },
+									{ name: 'Black', color: '#1d2327' },
+									{ name: 'White', color: '#ffffff' },
+								] }
+								value={ currentConfig.colors.text }
+								onChange={ ( color ) =>
+									updateStyleColor( 'text', color )
+								}
+							/>
+						</div>
+					</div>
+
+					<div style={ { marginBottom: '1.5em' } }>
+						<h4
+							style={ {
+								fontSize: '0.95em',
+								marginBottom: '0.5em',
+							} }
+						>
+							{ __( 'Spacing & Layout', 'vas-dinamico-forms' ) }
+						</h4>
+
+						<RangeControl
+							label={ __(
+								'Container Padding',
+								'vas-dinamico-forms'
+							) }
+							value={ parseInt(
+								currentConfig.spacing.containerPadding
+							) }
+							onChange={ ( value ) =>
+								updateStyleSpacing( 'containerPadding', value )
 							}
+							min={ 0 }
+							max={ 80 }
+							step={ 4 }
+						/>
+
+						<RangeControl
+							label={ __(
+								'Border Radius',
+								'vas-dinamico-forms'
+							) }
+							value={ parseInt( currentConfig.borders.radiusMd ) }
+							onChange={ ( value ) =>
+								updateStyleBorder( 'radiusMd', value )
+							}
+							min={ 0 }
+							max={ 40 }
+							step={ 2 }
 						/>
 					</div>
-					<div style={ { marginBottom: '1em' } }>
-						<label htmlFor="text-color">
-							{ __( 'Text Color', 'vas-dinamico-forms' ) }
-						</label>
-						<ColorPalette
-							id="text-color"
-							value={ textColor }
-							onChange={ ( color ) =>
-								setAttributes( { textColor: color } )
-							}
-						/>
-					</div>
-					<RangeControl
-						label={ __( 'Padding', 'vas-dinamico-forms' ) }
-						value={ padding }
-						onChange={ ( value ) =>
-							setAttributes( { padding: value } )
-						}
-						min={ 0 }
-						max={ 60 }
-						step={ 4 }
-					/>
-					<RangeControl
-						label={ __( 'Border Radius', 'vas-dinamico-forms' ) }
-						value={ borderRadius }
-						onChange={ ( value ) =>
-							setAttributes( { borderRadius: value } )
-						}
-						min={ 0 }
-						max={ 30 }
-						step={ 2 }
-					/>
 				</PanelBody>
 			</InspectorControls>
 
-			<div { ...blockProps }>
-				<div className="eipsi-form-container-preview">
+			<div
+				{ ...blockProps }
+				style={ { '--eipsi-editor-style': inlineStyle } }
+			>
+				<div className="eipsi-form-container-preview" style={ cssVars }>
 					{ ! formId && (
 						<div className="eipsi-form-placeholder">
 							<div className="components-placeholder">
