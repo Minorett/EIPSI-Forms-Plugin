@@ -258,7 +258,7 @@ function vas_dinamico_enqueue_frontend_assets() {
     wp_enqueue_style(
         'eipsi-forms-css',
         VAS_DINAMICO_PLUGIN_URL . 'assets/css/eipsi-forms.css',
-        array(),
+        array('vas-dinamico-blocks-style'),
         VAS_DINAMICO_VERSION
     );
 
