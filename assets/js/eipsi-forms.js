@@ -7,8 +7,9 @@
 ( function () {
 	'use strict';
 
+	/* global navigator */
+
 	const EIPSIForms = {
-		config: window.eipsiFormsConfig || {},
 		forms: [],
 
 		init() {
@@ -211,7 +212,8 @@
 		},
 
 		getDeviceType() {
-			const ua = navigator.userAgent;
+			const ua =
+				typeof navigator !== 'undefined' ? navigator.userAgent : '';
 			if (
 				/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test( ua )
 			) {
@@ -228,7 +230,8 @@
 		},
 
 		getBrowser() {
-			const ua = navigator.userAgent;
+			const ua =
+				typeof navigator !== 'undefined' ? navigator.userAgent : '';
 			let browser = 'Unknown';
 
 			if ( ua.indexOf( 'Firefox' ) > -1 ) {
@@ -256,7 +259,8 @@
 		},
 
 		getOS() {
-			const ua = navigator.userAgent;
+			const ua =
+				typeof navigator !== 'undefined' ? navigator.userAgent : '';
 			let os = 'Unknown';
 
 			if ( ua.indexOf( 'Win' ) > -1 ) {
@@ -280,21 +284,33 @@
 			const pages = form.querySelectorAll( '.eipsi-page' );
 
 			if ( pages.length > 0 ) {
+				pages.forEach( ( page, index ) => {
+					if ( ! page.dataset.page ) {
+						page.dataset.page = String( index + 1 );
+					}
+				} );
+
 				const totalPages = pages.length;
 				form.dataset.totalPages = totalPages;
 
-				const totalPagesField = form.querySelector( '.total-pages' );
+				const totalPagesField =
+					form.querySelector( '.form-progress .total-pages' ) ||
+					form.querySelector( '.total-pages' );
 				if ( totalPagesField ) {
 					totalPagesField.textContent = totalPages;
 				}
 
 				const progressContainer =
 					form.querySelector( '.form-progress' );
-				if ( progressContainer && totalPages > 1 ) {
-					progressContainer.style.display = '';
+				if ( progressContainer ) {
+					progressContainer.style.display =
+						totalPages > 1 ? '' : 'none';
 				}
 
-				this.updatePaginationDisplay( form, 1, totalPages );
+				const normalizedPage = this.getCurrentPage( form );
+				this.setCurrentPage( form, normalizedPage, {
+					trackChange: false,
+				} );
 			}
 
 			const prevButton = form.querySelector( '.eipsi-prev-button' );
@@ -337,50 +353,149 @@
 			} );
 		},
 
-		handlePagination( form, direction ) {
+		getTotalPages( form ) {
+			if ( ! form ) {
+				return 1;
+			}
+
+			const datasetValue = parseInt( form.dataset.totalPages || '', 10 );
+
+			if ( ! Number.isNaN( datasetValue ) && datasetValue > 0 ) {
+				return datasetValue;
+			}
+
+			const pages = form.querySelectorAll( '.eipsi-page' );
+			const totalPages = pages.length || 1;
+			form.dataset.totalPages = totalPages;
+
+			return totalPages;
+		},
+
+		getCurrentPage( form ) {
+			if ( ! form ) {
+				return 1;
+			}
+
 			const currentPageField = form.querySelector(
 				'.eipsi-current-page'
 			);
-			const currentPage = parseInt( currentPageField?.value || '1' );
-			const totalPages = parseInt( form.dataset.totalPages || '1' );
+			const fieldValue = currentPageField
+				? parseInt( currentPageField.value || '', 10 )
+				: NaN;
+			const datasetValue = parseInt( form.dataset.currentPage || '', 10 );
+			const totalPages = this.getTotalPages( form );
 
-			let newPage = currentPage;
+			let currentPage = ! Number.isNaN( fieldValue )
+				? fieldValue
+				: datasetValue;
+
+			if ( Number.isNaN( currentPage ) ) {
+				currentPage = 1;
+			}
+
+			if ( currentPage < 1 ) {
+				currentPage = 1;
+			} else if ( currentPage > totalPages ) {
+				currentPage = totalPages;
+			}
+
+			if (
+				currentPageField &&
+				currentPageField.value !== `${ currentPage }`
+			) {
+				currentPageField.value = currentPage;
+			}
+
+			form.dataset.currentPage = currentPage;
+
+			return currentPage;
+		},
+
+		setCurrentPage( form, pageNumber, options = {} ) {
+			if ( ! form ) {
+				return;
+			}
+
+			const { trackChange = true } = options;
+			const totalPages = this.getTotalPages( form );
+			const previousPage = this.getCurrentPage( form );
+			let sanitizedPage = parseInt( pageNumber, 10 );
+
+			if ( Number.isNaN( sanitizedPage ) ) {
+				sanitizedPage = 1;
+			}
+
+			if ( sanitizedPage < 1 ) {
+				sanitizedPage = 1;
+			} else if ( sanitizedPage > totalPages ) {
+				sanitizedPage = totalPages;
+			}
+
+			const currentPageField = form.querySelector(
+				'.eipsi-current-page'
+			);
+
+			if ( currentPageField ) {
+				currentPageField.value = sanitizedPage;
+			}
+
+			form.dataset.currentPage = sanitizedPage;
+
+			this.updatePaginationDisplay( form, sanitizedPage, totalPages );
+
+			if (
+				trackChange &&
+				sanitizedPage !== previousPage &&
+				window.EIPSITracking
+			) {
+				const trackingFormId = this.getTrackingFormId( form );
+				if ( trackingFormId ) {
+					window.EIPSITracking.recordPageChange(
+						trackingFormId,
+						sanitizedPage
+					);
+				}
+			}
+		},
+
+		handlePagination( form, direction ) {
+			if ( ! form ) {
+				return;
+			}
+
+			const currentPage = this.getCurrentPage( form );
+			let targetPage = currentPage;
 
 			if ( direction === 'next' ) {
-				// Check for conditional logic on current page
+				if ( ! this.validateCurrentPage( form ) ) {
+					return;
+				}
+
+				const totalPages = this.getTotalPages( form );
 				const conditionalTarget = this.handleConditionalNavigation(
 					form,
 					currentPage
 				);
+
 				if ( conditionalTarget === 'submit' ) {
-					// Submit the form
 					this.handleSubmit( { preventDefault: () => {} }, form );
 					return;
-				} else if ( conditionalTarget !== null ) {
-					newPage = conditionalTarget;
+				}
+
+				if (
+					typeof conditionalTarget === 'number' &&
+					! Number.isNaN( conditionalTarget )
+				) {
+					targetPage = conditionalTarget;
 				} else if ( currentPage < totalPages ) {
-					newPage = currentPage + 1;
+					targetPage = currentPage + 1;
 				}
 			} else if ( direction === 'prev' && currentPage > 1 ) {
-				newPage = currentPage - 1;
+				targetPage = currentPage - 1;
 			}
 
-			if ( newPage !== currentPage ) {
-				if ( currentPageField ) {
-					currentPageField.value = newPage;
-				}
-				form.dataset.currentPage = newPage;
-				this.updatePaginationDisplay( form, newPage, totalPages );
-
-				if ( window.EIPSITracking ) {
-					const trackingFormId = this.getTrackingFormId( form );
-					if ( trackingFormId ) {
-						window.EIPSITracking.recordPageChange(
-							trackingFormId,
-							newPage
-						);
-					}
-				}
+			if ( targetPage !== currentPage ) {
+				this.setCurrentPage( form, targetPage );
 			}
 		},
 
@@ -410,7 +525,7 @@
 				progressText.textContent = currentPage;
 			}
 
-			this.updatePageVisibility( form, currentPage, totalPages );
+			this.updatePageVisibility( form, currentPage );
 
 			if ( window.EIPSITracking ) {
 				const trackingFormId = this.getTrackingFormId( form );
@@ -424,7 +539,7 @@
 			}
 		},
 
-		updatePageVisibility( form, currentPage, totalPages ) {
+		updatePageVisibility( form, currentPage ) {
 			const pages = form.querySelectorAll( '.eipsi-page' );
 
 			pages.forEach( ( page, index ) => {
@@ -463,94 +578,229 @@
 			} );
 		},
 
+		clearFieldError( formGroup, field, options = {} ) {
+			if ( formGroup ) {
+				formGroup.classList.remove( 'has-error' );
+				const errorElement = formGroup.querySelector( '.form-error' );
+				if ( errorElement ) {
+					errorElement.style.display = 'none';
+					errorElement.textContent = '';
+				}
+			}
+
+			if ( field ) {
+				field.classList.remove( 'error' );
+				field.removeAttribute( 'aria-invalid' );
+			}
+
+			const { groupSelector } = options;
+
+			if ( groupSelector && formGroup ) {
+				const groupedInputs =
+					formGroup.querySelectorAll( groupSelector );
+				groupedInputs.forEach( ( input ) => {
+					input.classList.remove( 'error' );
+					input.removeAttribute( 'aria-invalid' );
+				} );
+			}
+		},
+
 		validateField( field ) {
+			if ( ! field ) {
+				return true;
+			}
+
 			const formGroup = field.closest( '.form-group' );
 			if ( ! formGroup ) {
 				return true;
 			}
 
-			const errorElement = formGroup.querySelector( '.form-error' );
+			if ( field.disabled ) {
+				this.clearFieldError( formGroup, field );
+				return true;
+			}
+
+			const isRadio = field.type === 'radio';
+			const isCheckbox = field.type === 'checkbox';
+			const isSelect = field.tagName === 'SELECT';
+			const groupSelector =
+				isRadio || isCheckbox
+					? `input[type="${ field.type }"][name="${ field.name }"]`
+					: null;
+			const isRequired =
+				formGroup.dataset.required === 'true' ||
+				field.hasAttribute( 'required' );
 			let isValid = true;
 			let errorMessage = '';
 
-			// Validación para SELECT
-			if ( field.tagName === 'SELECT' && field.hasAttribute( 'required' ) ) {
-				if ( ! field.value || field.value === '' ) {
+			const pageElement = field.closest( '.eipsi-page' );
+			if (
+				( isSelect || isRadio ) &&
+				pageElement &&
+				! this.isElementVisible( pageElement )
+			) {
+				this.clearFieldError( formGroup, field, {
+					groupSelector,
+				} );
+				return true;
+			}
+
+			const errorElement = formGroup.querySelector( '.form-error' );
+
+			if ( isSelect ) {
+				if ( isRequired && ( ! field.value || field.value === '' ) ) {
 					isValid = false;
 					errorMessage = 'Este campo es obligatorio.';
 				}
-			} else if ( field.type === 'radio' ) {
+			} else if ( isRadio ) {
 				const radioGroup = formGroup.querySelectorAll(
 					`input[type="radio"][name="${ field.name }"]`
 				);
 				const isChecked = Array.from( radioGroup ).some(
 					( radio ) => radio.checked
 				);
-				const isRequired =
-					formGroup.dataset.required === 'true' ||
-					field.hasAttribute( 'required' );
 
 				if ( isRequired && ! isChecked ) {
 					isValid = false;
 					errorMessage = 'Este campo es obligatorio.';
 				}
-			} else if ( field.type === 'checkbox' ) {
+			} else if ( isCheckbox ) {
 				const checkboxGroup = formGroup.querySelectorAll(
 					`input[type="checkbox"][name="${ field.name }"]`
 				);
 				const isChecked = Array.from( checkboxGroup ).some(
 					( checkbox ) => checkbox.checked
 				);
-				const isRequired =
-					formGroup.dataset.required === 'true' ||
-					field.hasAttribute( 'required' );
 
 				if ( isRequired && ! isChecked ) {
 					isValid = false;
 					errorMessage = 'Este campo es obligatorio.';
 				}
-			} else if (
-				field.hasAttribute( 'required' ) &&
-				! field.value.trim()
-			) {
+			} else if ( isRequired && ! field.value.trim() ) {
 				isValid = false;
 				errorMessage = 'Este campo es obligatorio.';
 			} else if ( field.type === 'email' && field.value ) {
 				const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 				if ( ! emailPattern.test( field.value ) ) {
 					isValid = false;
-					errorMessage = 'Por favor, introduzca una dirección de correo electrónico válida.';
+					errorMessage =
+						'Por favor, introduzca una dirección de correo electrónico válida.';
 				}
 			}
 
 			if ( isValid ) {
-				formGroup.classList.remove( 'has-error' );
-				if ( errorElement ) {
-					errorElement.style.display = 'none';
-					errorElement.textContent = '';
-				}
+				this.clearFieldError( formGroup, field, {
+					groupSelector,
+				} );
 			} else {
 				formGroup.classList.add( 'has-error' );
+
 				if ( errorElement ) {
 					errorElement.style.display = 'block';
 					errorElement.textContent = errorMessage;
+				}
+
+				if ( isRadio || isCheckbox ) {
+					const groupedInputs = groupSelector
+						? formGroup.querySelectorAll( groupSelector )
+						: [];
+					groupedInputs.forEach( ( input ) => {
+						input.classList.add( 'error' );
+						input.setAttribute( 'aria-invalid', 'true' );
+					} );
+				} else {
+					field.classList.add( 'error' );
+					field.setAttribute( 'aria-invalid', 'true' );
 				}
 			}
 
 			return isValid;
 		},
 
+		validateCurrentPage( form ) {
+			if ( ! form ) {
+				return true;
+			}
+
+			const currentPage = this.getCurrentPage( form );
+			const pageElement = this.getPageElement( form, currentPage );
+
+			if ( ! pageElement ) {
+				return true;
+			}
+
+			const fields = pageElement.querySelectorAll(
+				'input, textarea, select'
+			);
+			let isValid = true;
+			const validatedGroups = new Set();
+
+			fields.forEach( ( field ) => {
+				const formGroup = field.closest( '.form-group' );
+				const groupKey = formGroup
+					? formGroup.dataset.fieldName || formGroup.id || ''
+					: '';
+
+				if (
+					( field.type === 'radio' || field.type === 'checkbox' ) &&
+					groupKey
+				) {
+					if ( validatedGroups.has( groupKey ) ) {
+						return;
+					}
+					validatedGroups.add( groupKey );
+				}
+
+				if ( ! this.validateField( field ) ) {
+					isValid = false;
+				}
+			} );
+
+			if ( ! isValid ) {
+				this.focusFirstInvalidField( form, pageElement );
+			}
+
+			return isValid;
+		},
+
+		resetValidationState( form ) {
+			if ( ! form ) {
+				return;
+			}
+
+			form.querySelectorAll( '.form-group.has-error' ).forEach(
+				( el ) => {
+					el.classList.remove( 'has-error' );
+				}
+			);
+
+			form.querySelectorAll(
+				'input.error, textarea.error, select.error'
+			).forEach( ( field ) => {
+				field.classList.remove( 'error' );
+			} );
+
+			form.querySelectorAll( '[aria-invalid="true"]' ).forEach(
+				( el ) => {
+					el.removeAttribute( 'aria-invalid' );
+				}
+			);
+
+			form.querySelectorAll( '.form-error' ).forEach( ( el ) => {
+				el.style.display = 'none';
+				el.textContent = '';
+			} );
+		},
+
 		validateForm( form ) {
+			if ( ! form ) {
+				return true;
+			}
+
 			const fields = form.querySelectorAll( 'input, textarea, select' );
 			let isValid = true;
-			
-			// Limpiar errores previos
-			form.querySelectorAll( '.has-error' ).forEach( el => {
-				el.classList.remove( 'has-error' );
-			});
-			form.querySelectorAll( '.form-error' ).forEach( el => {
-				el.style.display = 'none';
-			});
+
+			this.resetValidationState( form );
 
 			const validatedGroups = new Set();
 
@@ -575,31 +825,28 @@
 				}
 			} );
 
+			if ( ! isValid ) {
+				this.focusFirstInvalidField( form );
+			}
+
 			return isValid;
 		},
 
 		handleSubmit( e, form ) {
 			e.preventDefault();
 
-			console.log('=== VALIDATING FORM ===');
+			this.getCurrentPage( form );
 
 			if ( ! this.validateForm( form ) ) {
-				console.log('=== FORM VALIDATION FAILED ===');
-				const firstError = form.querySelector( '.has-error' );
-				if ( firstError && this.config.settings?.enableAutoScroll ) {
-					this.scrollToElement( firstError );
-				}
-				
-				// Mostrar mensaje general de error
 				this.showMessage(
 					form,
 					'error',
 					'Por favor, completa todos los campos requeridos.'
 				);
+				this.focusFirstInvalidField( form );
 				return;
 			}
 
-			console.log('=== FORM VALIDATION PASSED - SUBMITTING ===');
 			this.submitForm( form );
 		},
 
@@ -624,13 +871,12 @@
 			} )
 				.then( ( response ) => response.json() )
 				.then( ( data ) => {
-					console.log('Form submission response:', data);
 					if ( data.success ) {
 						this.showMessage(
 							form,
 							'success',
-                            '¡Formulario enviado correctamente!'
-                        );
+							'¡Formulario enviado correctamente!'
+						);
 
 						if ( window.EIPSITracking ) {
 							const trackingFormId =
@@ -647,13 +893,11 @@
 						this.showMessage(
 							form,
 							'error',
-                            'Ocurrió un error. Por favor, inténtelo de nuevo.'
+							'Ocurrió un error. Por favor, inténtelo de nuevo.'
 						);
 					}
 				} )
-				.catch( ( error ) => {
-					console.error( 'Form submission error:', error );
-					console.log('=== FORM SUBMISSION FAILED ===');
+				.catch( () => {
 					this.showMessage(
 						form,
 						'error',
@@ -709,10 +953,74 @@
 			messages.forEach( ( msg ) => msg.remove() );
 		},
 
+		focusFirstInvalidField( form, scope ) {
+			if ( ! form ) {
+				return;
+			}
+
+			let searchRoot = scope;
+
+			if ( ! searchRoot ) {
+				const currentPageElement = this.getPageElement(
+					form,
+					this.getCurrentPage( form )
+				);
+				searchRoot = currentPageElement || form;
+			}
+
+			let invalidGroups = Array.from(
+				searchRoot.querySelectorAll( '.has-error' )
+			).filter( ( group ) => this.isElementVisible( group ) );
+
+			if ( invalidGroups.length === 0 && searchRoot !== form ) {
+				invalidGroups = Array.from(
+					form.querySelectorAll( '.has-error' )
+				).filter( ( group ) => this.isElementVisible( group ) );
+			}
+
+			const targetGroup = invalidGroups[ 0 ];
+			if ( ! targetGroup ) {
+				return;
+			}
+
+			const focusableSelectors =
+				'input:not([type="hidden"]), select, textarea, button, [tabindex]';
+			const candidates = Array.from(
+				targetGroup.querySelectorAll( focusableSelectors )
+			).filter(
+				( element ) =>
+					! element.disabled &&
+					this.isElementVisible( element ) &&
+					element.getAttribute( 'tabindex' ) !== '-1'
+			);
+
+			const focusTarget = candidates[ 0 ] || null;
+			const scrollTarget = focusTarget || targetGroup;
+
+			if (
+				this.config.settings?.enableAutoScroll &&
+				this.isElementVisible( scrollTarget )
+			) {
+				this.scrollToElement( scrollTarget );
+			}
+
+			if ( focusTarget && typeof focusTarget.focus === 'function' ) {
+				try {
+					focusTarget.focus( { preventScroll: true } );
+				} catch ( error ) {
+					focusTarget.focus();
+				}
+			}
+		},
+
 		scrollToElement( element ) {
+			if ( ! this.isElementVisible( element ) ) {
+				return;
+			}
+
 			const offset = this.config.settings?.scrollOffset || 20;
-			const elementPosition =
-				element.getBoundingClientRect().top + window.pageYOffset;
+			const elementRect = element.getBoundingClientRect();
+			const elementPosition = elementRect.top + window.pageYOffset;
 			const offsetPosition = elementPosition - offset;
 
 			if ( this.config.settings?.smoothScroll ) {
@@ -725,22 +1033,54 @@
 			}
 		},
 
+		isElementVisible( element ) {
+			if ( ! element ) {
+				return false;
+			}
+
+			if ( element.hidden ) {
+				return false;
+			}
+
+			if ( element.offsetParent !== null ) {
+				return true;
+			}
+
+			const style = window.getComputedStyle( element );
+
+			return (
+				style.position === 'fixed' &&
+				style.visibility !== 'hidden' &&
+				style.display !== 'none' &&
+				parseFloat( style.opacity || '1' ) > 0
+			);
+		},
+
 		handleConditionalNavigation( form, currentPage ) {
 			const currentPageElement = this.getPageElement( form, currentPage );
 			if ( ! currentPageElement ) {
 				return null;
 			}
 
-			// Find all conditional logic fields on current page
 			const conditionalFields = currentPageElement.querySelectorAll(
 				'[data-conditional-logic]'
 			);
 
 			for ( const field of conditionalFields ) {
-				const conditionalLogic = JSON.parse(
-					field.dataset.conditionalLogic || '{}'
-				);
-				if ( ! conditionalLogic.enabled || ! conditionalLogic.rules ) {
+				let conditionalLogic = {};
+
+				try {
+					conditionalLogic = JSON.parse(
+						field.dataset.conditionalLogic || '{}'
+					);
+				} catch ( error ) {
+					continue;
+				}
+
+				if (
+					! conditionalLogic.enabled ||
+					! Array.isArray( conditionalLogic.rules )
+				) {
 					continue;
 				}
 
@@ -750,15 +1090,34 @@
 					fieldValue
 				);
 
-				if ( matchingRule ) {
-					if ( matchingRule.action === 'submit' ) {
-						return 'submit';
-					} else if (
-						matchingRule.action === 'goToPage' &&
-						matchingRule.targetPage
-					) {
-						return matchingRule.targetPage;
+				if ( ! matchingRule ) {
+					continue;
+				}
+
+				if ( matchingRule.action === 'submit' ) {
+					return 'submit';
+				}
+
+				if (
+					matchingRule.action === 'goToPage' &&
+					matchingRule.targetPage
+				) {
+					const parsedTarget = parseInt(
+						matchingRule.targetPage,
+						10
+					);
+
+					if ( Number.isNaN( parsedTarget ) ) {
+						continue;
 					}
+
+					const totalPages = this.getTotalPages( form );
+					const boundedTarget = Math.min(
+						Math.max( parsedTarget, 1 ),
+						totalPages
+					);
+
+					return boundedTarget;
 				}
 			}
 
@@ -789,7 +1148,6 @@
 
 		getFieldValue( field ) {
 			const fieldType = field.dataset.fieldType;
-			const fieldName = field.dataset.fieldName;
 
 			switch ( fieldType ) {
 				case 'select':
@@ -815,44 +1173,37 @@
 
 		getPageElement( form, pageNumber ) {
 			const pages = form.querySelectorAll( '.eipsi-page' );
-			for ( const page of pages ) {
-				const pageNum = parseInt( page.dataset.page );
+
+			for ( let index = 0; index < pages.length; index++ ) {
+				const page = pages[ index ];
+				const pageNum =
+					parseInt( page.dataset.page || '', 10 ) || index + 1;
+
 				if ( pageNum === pageNumber ) {
 					return page;
 				}
 			}
+
 			return null;
 		},
 
 		goToPage( form, pageNumber ) {
-			const currentPageField = form.querySelector(
-				'.eipsi-current-page'
-			);
-			const totalPages = parseInt( form.dataset.totalPages || '1' );
+			if ( ! form ) {
+				return;
+			}
 
 			if ( pageNumber === 'submit' ) {
-				// Handle form submission
 				this.handleSubmit( { preventDefault: () => {} }, form );
 				return;
 			}
 
-			if ( pageNumber >= 1 && pageNumber <= totalPages ) {
-				if ( currentPageField ) {
-					currentPageField.value = pageNumber;
-				}
-				form.dataset.currentPage = pageNumber;
-				this.updatePaginationDisplay( form, pageNumber, totalPages );
+			const targetPage = parseInt( pageNumber, 10 );
 
-				if ( window.EIPSITracking ) {
-					const trackingFormId = this.getTrackingFormId( form );
-					if ( trackingFormId ) {
-						window.EIPSITracking.recordPageChange(
-							trackingFormId,
-							pageNumber
-						);
-					}
-				}
+			if ( Number.isNaN( targetPage ) ) {
+				return;
 			}
+
+			this.setCurrentPage( form, targetPage );
 		},
 	};
 
