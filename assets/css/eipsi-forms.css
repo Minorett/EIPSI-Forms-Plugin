@@ -1,114 +1,1294 @@
 /**
- * EIPSI FORM STYLES - Paleta Neutral Profesional
- * Versión compatible - Sin variables CSS
+ * ============================================================================
+ * EIPSI FORMS - CLINICAL RESEARCH DESIGN SYSTEM
+ * ============================================================================
+ * Professional psychotherapy research forms with clinical-grade UX
+ * Version: 2.0
+ * @package VAS Dinamico Forms
+ * ============================================================================
  */
 
-/* ==========================================================================
-   MODIFICACIONES EIPSI - COLORES AZUL INSTITUCIONAL
-   ========================================================================== */
+/* ============================================================================
+   1. DESIGN TOKENS - CLINICAL COLOR SYSTEM
+   ============================================================================ */
 
-/* 1. COLORES PRINCIPALES (cambiar de gris a azul EIPSI) */
+/**
+ * Primary Colors - Trust & Professionalism
+ * #005a87 - EIPSI Institutional Blue (primary)
+ * #003d5b - Darker Blue (hover states)
+ * #e3f2fd - Light Blue (VAS backgrounds)
+ * 
+ * Neutral System - Clinical Cleanliness
+ * #ffffff - Pure White (backgrounds)
+ * #f8f9fa - Off White (subtle backgrounds)
+ * #e2e8f0 - Light Grey (borders)
+ * #cbd5e0 - Medium Grey (disabled states)
+ * #2c3e50 - Soft Dark (text)
+ * 
+ * Semantic Colors
+ * #ff6b6b - Error Red
+ * #28a745 - Success Green
+ * #ffc107 - Warning Amber
+ */
+
+/* ============================================================================
+   2. MAIN FORM CONTAINER
+   ============================================================================ */
+
+.vas-dinamico-form,
+.eipsi-form {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 25px rgba(0, 90, 135, 0.1);
+    padding: 2.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #2c3e50;
+}
+
+.vas-dinamico-form *,
+.eipsi-form * {
+    box-sizing: border-box;
+}
+
+/* Form Description */
+.vas-dinamico-form .form-description,
+.eipsi-form .form-description {
+    background: #f8f9fa;
+    border-left: 4px solid #005a87;
+    padding: 1.25rem 1.5rem;
+    margin: 0 0 2rem 0;
+    border-radius: 8px;
+}
+
+.vas-dinamico-form .form-description p,
+.eipsi-form .form-description p {
+    margin: 0;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+/* ============================================================================
+   3. TYPOGRAPHY SYSTEM
+   ============================================================================ */
+
+.vas-dinamico-form h1,
 .vas-dinamico-form h2,
 .vas-dinamico-form h3,
-.vas-dinamico-form .form-section-title {
-    color: #005a87 !important;  /* ← ERA: #1a202c */
+.eipsi-form h1,
+.eipsi-form h2,
+.eipsi-form h3 {
+    color: #005a87;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0 0 1.5rem 0;
 }
 
-.vas-slider-label {
-    color: #005a87 !important;  /* ← ERA: #4a5568 */
+.vas-dinamico-form h1,
+.eipsi-form h1 {
+    font-size: 2rem;
 }
 
-.vas-value-number {
-    color: #005a87 !important;  /* ← ERA: #2d3748 */
-    font-size: 2.5em !important;  /* ← MÁS GRANDE */
+.vas-dinamico-form h2,
+.eipsi-form h2 {
+    font-size: 1.75rem;
 }
 
-.eipsi-submit-btn {
-    background: #005a87 !important;  /* ← ERA: #4a5568 */
-    transition: background 0.3s ease !important;  /* ← AGREGAR ESTO */
+.vas-dinamico-form h3,
+.eipsi-form h3 {
+    font-size: 1.5rem;
 }
 
-.eipsi-submit-btn:hover {
-    background: #003d5b !important;  /* ← ERA: #2d3748 */
+/* Page Titles */
+.eipsi-page-title {
+    color: #005a87;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 1.5rem 0;
+    padding: 0 0 1rem 0;
+    border-bottom: 2px solid #e2e8f0;
 }
 
-/* AGREGAR ESTO: */
-.eipsi-submit-btn:focus {
-    outline: 2px solid #005a87 !important;
-    outline-offset: 2px !important;
+/* ============================================================================
+   4. PAGE MANAGEMENT
+   ============================================================================ */
+
+.eipsi-page {
+    margin: 0;
+    padding: 0;
+    animation: fadeIn 0.4s ease;
 }
 
-/* 2. VAS CONTAINER (fondo azul claro) */
-.vas-dinamico-form .vas-slider-container,
-.eipsi-form .vas-slider-container,
-.form-investigacion .vas-slider-container {
-    background: #e3f2fd !important;  /* ← ERA: #ffffff */
-    box-shadow: 0 4px 16px rgba(0, 90, 135, 0.1) !important;  /* ← ERA: rgba(0,0,0,0.06) */
+.eipsi-page[style*="display: none"] {
+    display: none;
 }
 
-/* 3. CONTENEDOR PRINCIPAL (con sombra azul) */
-.vas-dinamico-form {
-    background: #ffffff !important;  /* ← ERA: #f9fbfd */
-    border-radius: 20px !important;  /* ← ERA: 0 */
-    box-shadow: 0 8px 25px rgba(0, 90, 135, 0.1) !important;  /* ← NUEVO */
-    border: 1px solid #e2e8f0 !important;  /* ← NUEVO */
+.eipsi-page-content {
+    margin: 0;
 }
 
-/* 4. FOCUS STATES CON AZUL EIPSI */
-.vas-dinamico-form input:focus,
-.vas-dinamico-form textarea:focus,
-.vas-dinamico-form select:focus,
-.eipsi-form input:focus,
-.eipsi-form textarea:focus,
-.eipsi-form select:focus {
-    border-color: #005a87 !important;  /* ← ERA: #4a5568 */
-    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1) !important;  /* ← NUEVO */
+.eipsi-page-content > * {
+    margin-bottom: 1.5rem;
 }
 
-/* 5. BODY/PÁGINA (fondo gris claro) */
-body {
-    background: #f8fafc !important;
+.eipsi-page-content > *:last-child {
+    margin-bottom: 0;
 }
 
-/* ==========================================================================
-   ELIMINAR ELEMENTOS EMOCIONALES (se mantiene igual)
-   ========================================================================== */
-.vas-intensity-label {
-    display: none !important;
-}
-
-/* AGREGAR ESTO AL FINAL: */
-@media (max-width: 768px) {
-    .vas-dinamico-form .vas-slider-container {
-        box-shadow: 0 2px 8px rgba(0, 90, 135, 0.08) !important;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-/* ==========================================================================
-   LIKERT - ÁREA COMPLETA CLICKEABLE
-   ========================================================================== */
+/* ============================================================================
+   5. FORM FIELD GROUPS - GENERIC STYLING
+   ============================================================================ */
 
-.likert-label-wrapper {
+.form-group,
+.eipsi-field {
+    margin: 0 0 1.5rem 0;
+    position: relative;
+}
+
+.form-group:last-child,
+.eipsi-field:last-child {
+    margin-bottom: 0;
+}
+
+/* Labels */
+.form-group label,
+.eipsi-field label {
     display: block;
-    padding: 12px 16px;
+    color: #2c3e50;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    line-height: 1.4;
+}
+
+.form-group label.required::after,
+.eipsi-field label.required::after {
+    content: " *";
+    color: #ff6b6b;
+    font-weight: 700;
+}
+
+/* Helper Text */
+.field-helper {
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-style: italic;
+    line-height: 1.5;
+    margin: 0.5rem 0 0 0;
+}
+
+/* Error Messages */
+.form-error {
+    color: #ff6b6b;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0.5rem 0 0 0;
+    display: block;
+    min-height: 1.25rem;
+}
+
+.form-error:empty {
+    display: none;
+}
+
+/* Error State */
+.has-error label {
+    color: #ff6b6b;
+}
+
+.has-error .field-helper {
+    color: #ff6b6b;
+}
+
+/* ============================================================================
+   6. TEXT INPUTS
+   ============================================================================ */
+
+.eipsi-text-field input[type="text"],
+.eipsi-text-field input[type="email"],
+.eipsi-text-field input[type="number"],
+.eipsi-text-field input[type="tel"],
+.eipsi-text-field input[type="url"],
+.eipsi-text-field input[type="date"],
+.vas-dinamico-form input[type="text"],
+.vas-dinamico-form input[type="email"],
+.vas-dinamico-form input[type="number"],
+.vas-dinamico-form input[type="tel"],
+.vas-dinamico-form input[type="url"],
+.vas-dinamico-form input[type="date"],
+.eipsi-form input[type="text"],
+.eipsi-form input[type="email"],
+.eipsi-form input[type="number"],
+.eipsi-form input[type="tel"],
+.eipsi-form input[type="url"],
+.eipsi-form input[type="date"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-family: inherit;
+    color: #2c3e50;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    line-height: 1.5;
+}
+
+.eipsi-text-field input:hover,
+.vas-dinamico-form input[type="text"]:hover,
+.vas-dinamico-form input[type="email"]:hover,
+.vas-dinamico-form input[type="number"]:hover,
+.eipsi-form input[type="text"]:hover,
+.eipsi-form input[type="email"]:hover,
+.eipsi-form input[type="number"]:hover {
+    border-color: #cbd5e0;
+    background: #f8f9fa;
+}
+
+.eipsi-text-field input:focus,
+.vas-dinamico-form input[type="text"]:focus,
+.vas-dinamico-form input[type="email"]:focus,
+.vas-dinamico-form input[type="number"]:focus,
+.eipsi-form input[type="text"]:focus,
+.eipsi-form input[type="email"]:focus,
+.eipsi-form input[type="number"]:focus {
+    outline: none;
+    border-color: #005a87;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+}
+
+.eipsi-text-field input::placeholder,
+.vas-dinamico-form input::placeholder,
+.eipsi-form input::placeholder {
+    color: #adb5bd;
+}
+
+/* Error State for Inputs */
+.has-error input[type="text"],
+.has-error input[type="email"],
+.has-error input[type="number"],
+.has-error input[type="tel"],
+.has-error input[type="url"],
+.has-error input[type="date"],
+input[aria-invalid="true"] {
+    border-color: #ff6b6b;
+    background: #fff5f5;
+}
+
+.has-error input:focus,
+input[aria-invalid="true"]:focus {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
+}
+
+/* ============================================================================
+   7. TEXTAREA FIELDS
+   ============================================================================ */
+
+.eipsi-textarea-field textarea,
+.vas-dinamico-form textarea,
+.eipsi-form textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-family: inherit;
+    color: #2c3e50;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.eipsi-textarea-field textarea:hover,
+.vas-dinamico-form textarea:hover,
+.eipsi-form textarea:hover {
+    border-color: #cbd5e0;
+    background: #f8f9fa;
+}
+
+.eipsi-textarea-field textarea:focus,
+.vas-dinamico-form textarea:focus,
+.eipsi-form textarea:focus {
+    outline: none;
+    border-color: #005a87;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+}
+
+.has-error textarea,
+textarea[aria-invalid="true"] {
+    border-color: #ff6b6b;
+    background: #fff5f5;
+}
+
+/* ============================================================================
+   8. SELECT FIELDS
+   ============================================================================ */
+
+.eipsi-select-field select,
+.vas-dinamico-form select,
+.eipsi-form select {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    font-size: 1rem;
+    font-family: inherit;
+    color: #2c3e50;
+    background: #ffffff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23005a87"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 0.75rem center;
+    background-size: 1.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    appearance: none;
+}
+
+.eipsi-select-field select:hover,
+.vas-dinamico-form select:hover,
+.eipsi-form select:hover {
+    border-color: #cbd5e0;
+    background-color: #f8f9fa;
+}
+
+.eipsi-select-field select:focus,
+.vas-dinamico-form select:focus,
+.eipsi-form select:focus {
+    outline: none;
+    border-color: #005a87;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+}
+
+.has-error select,
+select[aria-invalid="true"] {
+    border-color: #ff6b6b;
+    background-color: #fff5f5;
+}
+
+/* ============================================================================
+   9. RADIO BUTTONS
+   ============================================================================ */
+
+.eipsi-radio-field .radio-list,
+.vas-dinamico-form .radio-list,
+.eipsi-form .radio-list {
+    list-style: none;
+    margin: 0.75rem 0 0 0;
+    padding: 0;
+}
+
+.eipsi-radio-field .radio-list li,
+.vas-dinamico-form .radio-list li,
+.eipsi-form .radio-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    margin: 0 0 0.75rem 0;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.eipsi-radio-field .radio-list li:last-child,
+.vas-dinamico-form .radio-list li:last-child,
+.eipsi-form .radio-list li:last-child {
+    margin-bottom: 0;
+}
+
+.eipsi-radio-field .radio-list li:hover,
+.vas-dinamico-form .radio-list li:hover,
+.eipsi-form .radio-list li:hover {
+    background: #f8f9fa;
+    border-color: #005a87;
+    transform: translateX(4px);
+}
+
+.eipsi-radio-field .radio-list li input[type="radio"],
+.vas-dinamico-form .radio-list li input[type="radio"],
+.eipsi-form .radio-list li input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    accent-color: #005a87;
+}
+
+.eipsi-radio-field .radio-list li label,
+.vas-dinamico-form .radio-list li label,
+.eipsi-form .radio-list li label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.has-error .radio-list li {
+    border-color: #ff6b6b;
+    background: #fff5f5;
+}
+
+/* ============================================================================
+   10. CHECKBOXES
+   ============================================================================ */
+
+.eipsi-checkbox-field .checkbox-list,
+.eipsi-multiple-field .checkbox-list,
+.vas-dinamico-form .checkbox-list,
+.eipsi-form .checkbox-list {
+    list-style: none;
+    margin: 0.75rem 0 0 0;
+    padding: 0;
+}
+
+.eipsi-checkbox-field .checkbox-list li,
+.eipsi-multiple-field .checkbox-list li,
+.vas-dinamico-form .checkbox-list li,
+.eipsi-form .checkbox-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    margin: 0 0 0.75rem 0;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.eipsi-checkbox-field .checkbox-list li:last-child,
+.eipsi-multiple-field .checkbox-list li:last-child,
+.vas-dinamico-form .checkbox-list li:last-child,
+.eipsi-form .checkbox-list li:last-child {
+    margin-bottom: 0;
+}
+
+.eipsi-checkbox-field .checkbox-list li:hover,
+.eipsi-multiple-field .checkbox-list li:hover,
+.vas-dinamico-form .checkbox-list li:hover,
+.eipsi-form .checkbox-list li:hover {
+    background: #f8f9fa;
+    border-color: #005a87;
+    transform: translateX(4px);
+}
+
+.eipsi-checkbox-field .checkbox-list li input[type="checkbox"],
+.eipsi-multiple-field .checkbox-list li input[type="checkbox"],
+.vas-dinamico-form .checkbox-list li input[type="checkbox"],
+.eipsi-form .checkbox-list li input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    accent-color: #005a87;
+}
+
+.eipsi-checkbox-field .checkbox-list li label,
+.eipsi-multiple-field .checkbox-list li label,
+.vas-dinamico-form .checkbox-list li label,
+.eipsi-form .checkbox-list li label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.has-error .checkbox-list li {
+    border-color: #ff6b6b;
+    background: #fff5f5;
+}
+
+/* ============================================================================
+   11. LIKERT SCALE FIELDS - RESEARCH-GRADE DESIGN
+   ============================================================================ */
+
+.eipsi-likert-field {
+    margin: 1.5rem 0;
+}
+
+.eipsi-likert-field .likert-scale {
+    margin: 1rem 0 0 0;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.eipsi-likert-field .likert-scale:hover {
+    background: #ffffff;
+    border-color: #cbd5e0;
+}
+
+.eipsi-likert-field .likert-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+@media (min-width: 768px) {
+    .eipsi-likert-field .likert-list {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: stretch;
+    }
+}
+
+.eipsi-likert-field .likert-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+@media (min-width: 768px) {
+    .eipsi-likert-field .likert-item {
+        flex: 1;
+        flex-direction: column;
+        text-align: center;
+        justify-content: center;
+        padding: 1.25rem 0.75rem;
+    }
+}
+
+.eipsi-likert-field .likert-item:hover {
+    background: #f8f9fa;
+    border-color: #005a87;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.15);
+}
+
+.eipsi-likert-field .likert-item:active {
+    transform: translateY(0);
+}
+
+/* Selected State */
+.eipsi-likert-field .likert-item:has(input[type="radio"]:checked) {
+    background: rgba(0, 90, 135, 0.05);
+    border-color: #005a87;
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+}
+
+/* Label Wrapper - Full Clickable Area */
+.eipsi-likert-field .likert-label-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
     cursor: pointer;
     user-select: none;
-    border-radius: 10px;
-    transition: background 0.2s ease;
     width: 100%;
+    height: 100%;
+    padding: 0;
+    position: relative;
+}
+
+@media (min-width: 768px) {
+    .eipsi-likert-field .likert-label-wrapper {
+        flex-direction: column;
+        text-align: center;
+        justify-content: center;
+    }
+}
+
+/* Hidden Radio Input */
+.eipsi-likert-field .likert-label-wrapper input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    z-index: 1;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Custom Radio Label with Visual Indicator */
+.eipsi-likert-field .likert-label-text {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    color: #2c3e50;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    .eipsi-likert-field .likert-label-text {
+        font-size: 0.875rem;
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+}
+
+/* Custom Radio Button Visual */
+.eipsi-likert-field .likert-label-text::before {
+    content: '';
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #cbd5e0;
+    border-radius: 50%;
+    background: transparent;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+@media (min-width: 768px) {
+    .eipsi-likert-field .likert-label-text::before {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* Checked State */
+.eipsi-likert-field input[type="radio"]:checked + .likert-label-text {
+    font-weight: 700;
+    color: #005a87;
+}
+
+.eipsi-likert-field input[type="radio"]:checked + .likert-label-text::before {
+    background: #005a87;
+    border-color: #005a87;
+    box-shadow: inset 0 0 0 4px #ffffff;
+}
+
+/* Hover State */
+.eipsi-likert-field input[type="radio"]:hover + .likert-label-text::before {
+    border-color: #005a87;
+    transform: scale(1.1);
+}
+
+/* Focus State for Accessibility */
+.eipsi-likert-field input[type="radio"]:focus + .likert-label-text {
+    outline: 2px solid #005a87;
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
+/* Error State */
+.eipsi-likert-field.has-error .likert-scale {
+    border-color: #ff6b6b;
+    background: #fff5f5;
+}
+
+.eipsi-likert-field.has-error .likert-item {
+    border-color: rgba(255, 107, 107, 0.5);
+}
+
+/* ============================================================================
+   12. VAS SLIDER FIELDS - CLINICAL RESEARCH DESIGN
+   ============================================================================ */
+
+.eipsi-vas-slider-field {
+    margin: 1.5rem 0;
+}
+
+.vas-section {
+    margin: 1rem 0 0 0;
+}
+
+.vas-slider-container {
+    background: #e3f2fd;
+    border: 2px solid #b3d9f2;
+    border-radius: 12px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+.vas-slider-container:hover {
+    background: #d6edff;
+    border-color: #90c9eb;
+}
+
+/* Multiple Labels Layout */
+.vas-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 1.5rem 0;
+    flex-wrap: wrap;
+}
+
+.vas-label {
+    flex: 1;
+    min-width: 0;
+    padding: 0.625rem 0.875rem;
+    background: rgba(0, 90, 135, 0.1);
+    border: 2px solid rgba(0, 90, 135, 0.2);
+    border-radius: 8px;
+    color: #005a87;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 767px) {
+    .vas-labels {
+        flex-direction: column;
+    }
+    
+    .vas-label {
+        width: 100%;
+    }
+}
+
+/* Slider Wrapper */
+.vas-slider-wrapper {
+    margin: 1.5rem 0;
+    position: relative;
+}
+
+/* Range Input Slider */
+.vas-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 12px;
+    background: linear-gradient(to right, #e2e8f0 0%, #cbd5e0 50%, #e2e8f0 100%);
+    border: 2px solid #cbd5e0;
+    border-radius: 8px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.vas-slider:hover {
+    background: linear-gradient(to right, #cbd5e0 0%, #a0aec0 50%, #cbd5e0 100%);
+}
+
+.vas-slider:focus {
+    outline: 2px solid #005a87;
+    outline-offset: 4px;
+}
+
+/* Webkit (Chrome, Safari, Edge) Slider Thumb */
+.vas-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #005a87, #003d5b);
+    border: 4px solid #ffffff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.vas-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 5px 15px rgba(0, 90, 135, 0.4);
+}
+
+.vas-slider::-webkit-slider-thumb:active {
+    transform: scale(1.05);
+}
+
+/* Firefox Slider Thumb */
+.vas-slider::-moz-range-thumb {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #005a87, #003d5b);
+    border: 4px solid #ffffff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.vas-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 5px 15px rgba(0, 90, 135, 0.4);
+}
+
+/* Webkit Track */
+.vas-slider::-webkit-slider-track {
+    width: 100%;
+    height: 12px;
+    background: transparent;
+    border-radius: 8px;
+}
+
+/* Firefox Track */
+.vas-slider::-moz-range-track {
+    width: 100%;
+    height: 12px;
+    background: transparent;
+    border-radius: 8px;
+}
+
+/* Value Display */
+.vas-value-display {
+    text-align: center;
+    margin: 1.5rem 0 0 0;
+}
+
+.vas-value-number {
+    display: inline-block;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #005a87;
+    background: rgba(0, 90, 135, 0.05);
+    border: 2px solid rgba(0, 90, 135, 0.2);
+    border-radius: 12px;
+    padding: 0.5rem 1.5rem;
+    min-width: 4rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 90, 135, 0.1);
+}
+
+/* VAS Error State */
+.eipsi-vas-slider-field.has-error .vas-slider-container {
+    border-color: #ff6b6b;
+    background: #fff5f5;
+}
+
+/* ============================================================================
+   13. DESCRIPTION FIELDS
+   ============================================================================ */
+
+.eipsi-description-field {
+    margin: 1.5rem 0;
+}
+
+.eipsi-description-field .description-content {
+    background: #f8f9fa;
+    border-left: 4px solid #005a87;
+    padding: 1.25rem 1.5rem;
+    border-radius: 8px;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+.eipsi-description-field .description-content p {
+    margin: 0 0 0.75rem 0;
+}
+
+.eipsi-description-field .description-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* ============================================================================
+   14. FORM NAVIGATION - BUTTONS & PROGRESS
+   ============================================================================ */
+
+.form-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 2.5rem 0 0 0;
+    padding: 2rem 0 0 0;
+    border-top: 2px solid #e2e8f0;
+    gap: 1.5rem;
+}
+
+/* Navigation Buttons */
+.eipsi-prev-button,
+.eipsi-next-button,
+.eipsi-submit-button {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    text-transform: none;
+    letter-spacing: 0.025em;
+    line-height: 1.5;
+}
+
+.eipsi-prev-button {
+    background: #ffffff;
+    color: #005a87;
+    border-color: #e2e8f0;
+}
+
+.eipsi-prev-button:hover {
+    background: #f8f9fa;
+    border-color: #cbd5e0;
+    transform: translateX(-2px);
+}
+
+.eipsi-prev-button:active {
+    transform: translateX(0);
+}
+
+.eipsi-prev-button:focus {
+    outline: 2px solid #005a87;
+    outline-offset: 3px;
+}
+
+.eipsi-next-button {
+    background: #005a87;
+    color: #ffffff;
+    border-color: #005a87;
+}
+
+.eipsi-next-button:hover {
+    background: #003d5b;
+    border-color: #003d5b;
+    transform: translateX(2px);
+    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.3);
+}
+
+.eipsi-next-button:active {
+    transform: translateX(0);
+}
+
+.eipsi-next-button:focus {
+    outline: 2px solid #005a87;
+    outline-offset: 3px;
+}
+
+.eipsi-submit-button,
+.eipsi-submit-btn {
+    background: #005a87;
+    color: #ffffff;
+    border-color: #005a87;
+    padding: 1rem 2.5rem;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.2);
+}
+
+.eipsi-submit-button:hover,
+.eipsi-submit-btn:hover {
+    background: #003d5b;
+    border-color: #003d5b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 90, 135, 0.35);
+}
+
+.eipsi-submit-button:active,
+.eipsi-submit-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 90, 135, 0.2);
+}
+
+.eipsi-submit-button:focus,
+.eipsi-submit-btn:focus {
+    outline: 2px solid #005a87;
+    outline-offset: 3px;
+}
+
+.eipsi-submit-button:disabled,
+.eipsi-submit-btn:disabled {
+    background: #cbd5e0;
+    border-color: #cbd5e0;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Progress Indicator */
+.form-progress {
+    background: #f8f9fa;
+    border: 2px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #2c3e50;
+    white-space: nowrap;
+}
+
+.form-progress .current-page,
+.form-progress .total-pages {
+    color: #005a87;
+    font-weight: 700;
+    font-size: 1.125rem;
+}
+
+/* ============================================================================
+   15. RESPONSIVE BREAKPOINTS
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .vas-dinamico-form,
+    .eipsi-form {
+        padding: 1.5rem;
+        border-radius: 12px;
+    }
+    
+    .eipsi-page-title {
+        font-size: 1.5rem;
+    }
+    
+    .form-navigation {
+        flex-direction: column-reverse;
+        gap: 1rem;
+    }
+    
+    .eipsi-prev-button,
+    .eipsi-next-button,
+    .eipsi-submit-button {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+    
+    .form-progress {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .vas-slider-container {
+        padding: 1.5rem;
+    }
+    
+    .vas-value-number {
+        font-size: 2rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .eipsi-likert-field .likert-scale {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .vas-dinamico-form,
+    .eipsi-form {
+        padding: 1rem;
+    }
+    
+    .vas-dinamico-form h1,
+    .eipsi-form h1 {
+        font-size: 1.5rem;
+    }
+    
+    .vas-dinamico-form h2,
+    .eipsi-form h2 {
+        font-size: 1.25rem;
+    }
+    
+    .eipsi-page-title {
+        font-size: 1.25rem;
+    }
+    
+    .vas-value-number {
+        font-size: 1.75rem;
+    }
+    
+    .eipsi-likert-field .likert-item {
+        padding: 0.75rem;
+    }
+}
+
+/* ============================================================================
+   16. ACCESSIBILITY ENHANCEMENTS
+   ============================================================================ */
+
+/* Focus Visible for Modern Browsers */
+.vas-dinamico-form *:focus-visible,
+.eipsi-form *:focus-visible {
+    outline: 2px solid #005a87;
+    outline-offset: 2px;
+}
+
+/* Skip Links */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #005a87;
+    color: #ffffff;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Screen Reader Only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .vas-dinamico-form,
+    .eipsi-form {
+        border: 3px solid #000000;
+    }
+    
+    input,
+    textarea,
+    select,
+    .likert-item,
+    .radio-list li,
+    .checkbox-list li {
+        border-width: 3px;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ============================================================================
+   17. PRINT STYLES
+   ============================================================================ */
+
+@media print {
+    .vas-dinamico-form,
+    .eipsi-form {
+        box-shadow: none;
+        border: 1px solid #000000;
+    }
+    
+    .form-navigation {
+        display: none;
+    }
+    
+    .eipsi-page {
+        display: block !important;
+        page-break-after: always;
+    }
+    
+    .eipsi-page:last-child {
+        page-break-after: auto;
+    }
+}
+
+/* ============================================================================
+   18. UTILITY CLASSES
+   ============================================================================ */
+
+.hidden {
+    display: none !important;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border-width: 0 !important;
+}
+
+/* Text Alignment */
+.text-center {
     text-align: center;
 }
 
-.likert-label-wrapper:hover {
-    background: rgba(0, 90, 135, 0.08);
+.text-left {
+    text-align: left;
 }
 
-.likert-label-wrapper input[type="radio"] {
-    margin-right: 8px;
-    cursor: pointer;
+.text-right {
+    text-align: right;
 }
 
-.likert-label-text {
-    user-select: none;
-    pointer-events: none;
+/* ============================================================================
+   19. WORDPRESS COMPATIBILITY OVERRIDES
+   ============================================================================ */
+
+/* Ensure form elements inherit correct styles despite WordPress defaults */
+.vas-dinamico-form input[type="text"],
+.vas-dinamico-form input[type="email"],
+.vas-dinamico-form input[type="number"],
+.vas-dinamico-form textarea,
+.vas-dinamico-form select,
+.eipsi-form input[type="text"],
+.eipsi-form input[type="email"],
+.eipsi-form input[type="number"],
+.eipsi-form textarea,
+.eipsi-form select {
+    max-width: 100% !important;
 }
+
+/* Override WordPress theme button styles */
+.vas-dinamico-form button,
+.eipsi-form button {
+    display: inline-block !important;
+}
+
+/* Ensure WordPress doesn't hide our elements */
+.eipsi-page[style*="display: none"] {
+    display: none !important;
+}
+
+.eipsi-prev-button[style*="display: none"],
+.eipsi-next-button[style*="display: none"],
+.eipsi-submit-button[style*="display: none"] {
+    display: none !important;
+}
+
+/* Body background for clinical environment */
+body.single-eipsi-form,
+body.page-template-eipsi-form {
+    background: #f8f9fa !important;
+}
+
+/* ============================================================================
+   END OF EIPSI FORMS CSS
+   ============================================================================ */
