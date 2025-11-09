@@ -339,7 +339,8 @@
 .eipsi-text-field input::placeholder,
 .vas-dinamico-form input::placeholder,
 .eipsi-form input::placeholder {
-    color: #adb5bd;
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.85;
 }
 
 /* Error State for Inputs */
@@ -350,14 +351,14 @@
 .has-error input[type="url"],
 .has-error input[type="date"],
 input[aria-invalid="true"] {
-    border-color: var(--eipsi-color-error, #ff6b6b);
+    border-color: var(--eipsi-color-error, #d32f2f);
     background: #fff5f5;
 }
 
 .has-error input:focus,
 input[aria-invalid="true"]:focus {
-    border-color: var(--eipsi-color-error, #ff6b6b);
-    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
+    border-color: var(--eipsi-color-error, #d32f2f);
+    box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15);
 }
 
 /* ============================================================================
@@ -372,11 +373,11 @@ input[aria-invalid="true"]:focus {
     padding: 0.75rem 1rem;
     font-size: 1rem;
     font-family: inherit;
-    color: #2c3e50;
-    background: #ffffff;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    color: var(--eipsi-color-input-text, #2c3e50);
+    background: var(--eipsi-color-input-bg, #ffffff);
+    border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
     line-height: 1.6;
     resize: vertical;
 }
@@ -384,22 +385,22 @@ input[aria-invalid="true"]:focus {
 .eipsi-textarea-field textarea:hover,
 .vas-dinamico-form textarea:hover,
 .eipsi-form textarea:hover {
-    border-color: #cbd5e0;
-    background: #f8f9fa;
+    border-color: var(--eipsi-color-border-dark, #cbd5e0);
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
 }
 
 .eipsi-textarea-field textarea:focus,
 .vas-dinamico-form textarea:focus,
 .eipsi-form textarea:focus {
     outline: none;
-    border-color: #005a87;
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+    border-color: var(--eipsi-color-input-border-focus, #005a87);
+    background: var(--eipsi-color-input-bg, #ffffff);
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
 }
 
 .has-error textarea,
 textarea[aria-invalid="true"] {
-    border-color: #ff6b6b;
+    border-color: var(--eipsi-color-error, #d32f2f);
     background: #fff5f5;
 }
 
@@ -414,12 +415,12 @@ textarea[aria-invalid="true"] {
     padding: 0.75rem 2.5rem 0.75rem 1rem;
     font-size: 1rem;
     font-family: inherit;
-    color: #2c3e50;
-    background: #ffffff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23005a87"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 0.75rem center;
+    color: var(--eipsi-color-input-text, #2c3e50);
+    background: var(--eipsi-color-input-bg, #ffffff) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23005a87"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 0.75rem center;
     background-size: 1.5rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
     cursor: pointer;
     appearance: none;
 }
@@ -427,22 +428,22 @@ textarea[aria-invalid="true"] {
 .eipsi-select-field select:hover,
 .vas-dinamico-form select:hover,
 .eipsi-form select:hover {
-    border-color: #cbd5e0;
-    background-color: #f8f9fa;
+    border-color: var(--eipsi-color-border-dark, #cbd5e0);
+    background-color: var(--eipsi-color-background-subtle, #f8f9fa);
 }
 
 .eipsi-select-field select:focus,
 .vas-dinamico-form select:focus,
 .eipsi-form select:focus {
     outline: none;
-    border-color: #005a87;
-    background-color: #ffffff;
-    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+    border-color: var(--eipsi-color-input-border-focus, #005a87);
+    background-color: var(--eipsi-color-input-bg, #ffffff);
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
 }
 
 .has-error select,
 select[aria-invalid="true"] {
-    border-color: #ff6b6b;
+    border-color: var(--eipsi-color-error, #d32f2f);
     background-color: #fff5f5;
 }
 
