@@ -61,10 +61,10 @@ echo ""
 # Test 2: Check table structure
 echo "Test 2: Verifying table structure..."
 COLUMNS=$(wp db query "DESCRIBE wp_vas_form_events;" --skip-column-names 2>/dev/null | wc -l)
-if [ "$COLUMNS" -eq 7 ]; then
-    print_test_result 0 "Table has correct number of columns (7)"
+if [ "$COLUMNS" -eq 8 ]; then
+    print_test_result 0 "Table has correct number of columns (8)"
 else
-    print_test_result 1 "Table structure incorrect (expected 7 columns, found $COLUMNS)"
+    print_test_result 1 "Table structure incorrect (expected 8 columns, found $COLUMNS)"
 fi
 echo ""
 
@@ -183,8 +183,36 @@ else
 fi
 echo ""
 
-# Test 8: Test invalid event type (should fail gracefully)
-echo "Test 8: Testing invalid event type rejection..."
+# Test 8: Test 'branch_jump' event with metadata
+echo "Test 8: Testing 'branch_jump' event with metadata..."
+wp eval "
+\$_POST['nonce'] = wp_create_nonce('eipsi_tracking_nonce');
+\$_POST['form_id'] = 'cli-test-form';
+\$_POST['session_id'] = '$TEST_SESSION_ID';
+\$_POST['event_type'] = 'branch_jump';
+\$_POST['from_page'] = '2';
+\$_POST['to_page'] = '5';
+\$_POST['field_id'] = 'test-field-123';
+\$_POST['matched_value'] = 'Option A';
+\$_POST['user_agent'] = 'WP-CLI Test Script';
+
+ob_start();
+do_action('wp_ajax_nopriv_eipsi_track_event');
+\$output = ob_get_clean();
+\$result = json_decode(\$output, true);
+echo \$result['success'] ? 'success' : 'failed';
+" 2>/dev/null > /tmp/test_result.txt
+
+RESULT=$(cat /tmp/test_result.txt)
+if [ "$RESULT" = "success" ]; then
+    print_test_result 0 "'branch_jump' event tracked successfully"
+else
+    print_test_result 1 "'branch_jump' event tracking failed"
+fi
+echo ""
+
+# Test 9: Test invalid event type (should fail gracefully)
+echo "Test 9: Testing invalid event type rejection..."
 wp eval "
 \$_POST['nonce'] = wp_create_nonce('eipsi_tracking_nonce');
 \$_POST['form_id'] = 'cli-test-form';
@@ -207,8 +235,8 @@ else
 fi
 echo ""
 
-# Test 9: Test missing session_id (should fail gracefully)
-echo "Test 9: Testing missing session_id rejection..."
+# Test 10: Test missing session_id (should fail gracefully)
+echo "Test 10: Testing missing session_id rejection..."
 wp eval "
 \$_POST['nonce'] = wp_create_nonce('eipsi_tracking_nonce');
 \$_POST['form_id'] = 'cli-test-form';
@@ -231,13 +259,23 @@ else
 fi
 echo ""
 
-# Test 10: Verify database entries
-echo "Test 10: Verifying database entries for test session..."
+# Test 11: Verify database entries
+echo "Test 11: Verifying database entries for test session..."
 EVENT_COUNT=$(wp db query "SELECT COUNT(*) FROM wp_vas_form_events WHERE session_id = '$TEST_SESSION_ID';" --skip-column-names 2>/dev/null)
-if [ "$EVENT_COUNT" -ge 4 ]; then
+if [ "$EVENT_COUNT" -ge 5 ]; then
     print_test_result 0 "Database entries created ($EVENT_COUNT events found)"
 else
-    print_test_result 1 "Not enough database entries (expected >= 4, found $EVENT_COUNT)"
+    print_test_result 1 "Not enough database entries (expected >= 5, found $EVENT_COUNT)"
+fi
+echo ""
+
+# Test 12: Verify branch_jump metadata stored correctly
+echo "Test 12: Verifying branch_jump metadata storage..."
+METADATA_CHECK=$(wp db query "SELECT metadata FROM wp_vas_form_events WHERE session_id = '$TEST_SESSION_ID' AND event_type = 'branch_jump' LIMIT 1;" --skip-column-names 2>/dev/null)
+if [ ! -z "$METADATA_CHECK" ] && [ "$METADATA_CHECK" != "NULL" ]; then
+    print_test_result 0 "Branch jump metadata stored correctly"
+else
+    print_test_result 1 "Branch jump metadata not stored"
 fi
 echo ""
 
@@ -245,7 +283,7 @@ echo ""
 echo "================================================"
 echo "Test Session Data ($TEST_SESSION_ID):"
 echo "================================================"
-wp db query "SELECT id, event_type, page_number, created_at FROM wp_vas_form_events WHERE session_id = '$TEST_SESSION_ID' ORDER BY created_at;" 2>/dev/null
+wp db query "SELECT id, event_type, page_number, metadata, created_at FROM wp_vas_form_events WHERE session_id = '$TEST_SESSION_ID' ORDER BY created_at;" 2>/dev/null
 echo ""
 
 # Summary

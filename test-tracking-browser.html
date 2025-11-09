@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EIPSI Tracking Event Test - Browser Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .test-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+        
+        .test-card h3 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .test-card p {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .log-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .log-section h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        
+        .log-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .log-controls button {
+            background: #f1f5f9;
+            color: #475569;
+            border: 2px solid #e2e8f0;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .log-controls button:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+        
+        #eventLog {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+        
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-left: 3px solid transparent;
+            padding-left: 1rem;
+        }
+        
+        .log-entry.success {
+            border-left-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .log-entry.error {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .log-entry.info {
+            border-left-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        .timestamp {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 EIPSI Tracking Event Test Suite</h1>
+            <p>Browser-based testing for analytics pipeline verification. Open Network DevTools to inspect AJAX requests to <code>admin-ajax.php?action=eipsi_track_event</code></p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="statSent">0</div>
+                <div class="stat-label">Events Sent</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statSuccess">0</div>
+                <div class="stat-label">Success</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statFailed">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statSession">-</div>
+                <div class="stat-label">Session ID</div>
+            </div>
+        </div>
+        
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>📊 View Event</h3>
+                <p>Tracks when a form is initially viewed by a participant</p>
+                <button class="btn" onclick="sendEvent('view')">Fire View Event</button>
+            </div>
+            
+            <div class="test-card">
+                <h3>🎯 Start Event</h3>
+                <p>Tracks when a participant first interacts with the form</p>
+                <button class="btn" onclick="sendEvent('start')">Fire Start Event</button>
+            </div>
+            
+            <div class="test-card">
+                <h3>📄 Page Change Event</h3>
+                <p>Tracks navigation between pages in multi-page forms</p>
+                <button class="btn" onclick="sendEvent('page_change', {page_number: 3})">Go to Page 3</button>
+            </div>
+            
+            <div class="test-card">
+                <h3>🔀 Branch Jump Event</h3>
+                <p>Tracks conditional logic branches with metadata</p>
+                <button class="btn" onclick="sendBranchJump()">Execute Branch Jump</button>
+            </div>
+            
+            <div class="test-card">
+                <h3>✅ Submit Event</h3>
+                <p>Tracks successful form submission</p>
+                <button class="btn" onclick="sendEvent('submit')">Fire Submit Event</button>
+            </div>
+            
+            <div class="test-card">
+                <h3>🚪 Abandon Event</h3>
+                <p>Tracks when a participant leaves without submitting</p>
+                <button class="btn" onclick="sendEvent('abandon', {page_number: 2})">Fire Abandon Event</button>
+            </div>
+            
+            <div class="test-card">
+                <h3>❌ Invalid Event (Error Test)</h3>
+                <p>Tests error handling with invalid event type</p>
+                <button class="btn" onclick="sendEvent('invalid_type')">Send Invalid Event</button>
+            </div>
+            
+            <div class="test-card">
+                <h3>🔄 Sequence Test</h3>
+                <p>Fires typical event sequence: view → start → page_change → submit</p>
+                <button class="btn" onclick="runSequence()">Run Sequence</button>
+            </div>
+        </div>
+        
+        <div class="log-section">
+            <h2>📋 Event Log</h2>
+            <div class="log-controls">
+                <button onclick="clearLog()">Clear Log</button>
+                <button onclick="exportLog()">Export as JSON</button>
+                <button onclick="copySessionId()">Copy Session ID</button>
+            </div>
+            <div id="eventLog"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration - IMPORTANT: Update these values for your WordPress installation
+        const CONFIG = {
+            ajaxUrl: '/wp-admin/admin-ajax.php', // Update if WordPress is in subdirectory
+            nonce: 'test-nonce-12345', // You'll need to get a real nonce from WordPress
+            formId: 'browser-test-form'
+        };
+        
+        // Session and stats
+        let sessionId = generateSessionId();
+        let eventsSent = 0;
+        let eventsSuccess = 0;
+        let eventsFailed = 0;
+        
+        // Display session ID
+        document.getElementById('statSession').textContent = sessionId.substring(0, 8) + '...';
+        
+        // Generate session ID like the tracking script does
+        function generateSessionId() {
+            if (window.crypto && window.crypto.getRandomValues) {
+                const buffer = new Uint32Array(4);
+                window.crypto.getRandomValues(buffer);
+                return Array.from(buffer)
+                    .map(value => value.toString(16).padStart(8, '0'))
+                    .join('');
+            }
+            return Math.random().toString(36).slice(2) + Date.now().toString(36);
+        }
+        
+        // Log function
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('eventLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                fractionalSecondDigits: 3
+            });
+            
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        // Update stats
+        function updateStats() {
+            document.getElementById('statSent').textContent = eventsSent;
+            document.getElementById('statSuccess').textContent = eventsSuccess;
+            document.getElementById('statFailed').textContent = eventsFailed;
+        }
+        
+        // Send tracking event
+        async function sendEvent(eventType, payload = {}) {
+            eventsSent++;
+            updateStats();
+            
+            const params = new URLSearchParams();
+            params.append('action', 'eipsi_track_event');
+            params.append('nonce', CONFIG.nonce);
+            params.append('form_id', CONFIG.formId);
+            params.append('session_id', sessionId);
+            params.append('event_type', eventType);
+            params.append('user_agent', navigator.userAgent);
+            
+            // Add optional payload fields
+            if (payload.page_number !== undefined) {
+                params.append('page_number', payload.page_number);
+            }
+            
+            log(`📤 Sending <strong>${eventType}</strong> event...`, 'info');
+            
+            try {
+                const response = await fetch(CONFIG.ajaxUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    },
+                    body: params.toString()
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    eventsSuccess++;
+                    log(`✅ <strong>${eventType}</strong> tracked successfully. Event ID: ${data.data.event_id || 'N/A'}`, 'success');
+                } else {
+                    eventsFailed++;
+                    log(`❌ <strong>${eventType}</strong> failed: ${data.data?.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                eventsFailed++;
+                log(`❌ Network error sending <strong>${eventType}</strong>: ${error.message}`, 'error');
+            }
+            
+            updateStats();
+        }
+        
+        // Send branch jump with metadata
+        async function sendBranchJump() {
+            eventsSent++;
+            updateStats();
+            
+            const params = new URLSearchParams();
+            params.append('action', 'eipsi_track_event');
+            params.append('nonce', CONFIG.nonce);
+            params.append('form_id', CONFIG.formId);
+            params.append('session_id', sessionId);
+            params.append('event_type', 'branch_jump');
+            params.append('from_page', '2');
+            params.append('to_page', '5');
+            params.append('field_id', 'question-satisfaction');
+            params.append('matched_value', 'Muy satisfecho');
+            params.append('user_agent', navigator.userAgent);
+            
+            log(`📤 Sending <strong>branch_jump</strong> event with metadata (Page 2→5)...`, 'info');
+            
+            try {
+                const response = await fetch(CONFIG.ajaxUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    },
+                    body: params.toString()
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    eventsSuccess++;
+                    log(`✅ <strong>branch_jump</strong> tracked successfully. Event ID: ${data.data.event_id || 'N/A'}`, 'success');
+                    log(`   Metadata: from_page=2, to_page=5, field_id=question-satisfaction, matched_value=Muy satisfecho`, 'info');
+                } else {
+                    eventsFailed++;
+                    log(`❌ <strong>branch_jump</strong> failed: ${data.data?.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                eventsFailed++;
+                log(`❌ Network error sending <strong>branch_jump</strong>: ${error.message}`, 'error');
+            }
+            
+            updateStats();
+        }
+        
+        // Run sequence test
+        async function runSequence() {
+            log('🔄 Starting event sequence test...', 'info');
+            
+            await sendEvent('view');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await sendEvent('start');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await sendEvent('page_change', {page_number: 2});
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await sendEvent('page_change', {page_number: 3});
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await sendEvent('submit');
+            
+            log('✅ Sequence test completed', 'success');
+        }
+        
+        // Clear log
+        function clearLog() {
+            document.getElementById('eventLog').innerHTML = '';
+            log('🧹 Log cleared', 'info');
+        }
+        
+        // Export log as JSON
+        function exportLog() {
+            const logData = {
+                sessionId: sessionId,
+                stats: {
+                    sent: eventsSent,
+                    success: eventsSuccess,
+                    failed: eventsFailed
+                },
+                timestamp: new Date().toISOString(),
+                logEntries: Array.from(document.querySelectorAll('.log-entry')).map(entry => ({
+                    type: entry.classList[1],
+                    content: entry.textContent
+                }))
+            };
+            
+            const dataStr = JSON.stringify(logData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `eipsi-tracking-log-${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            log('📥 Log exported to JSON file', 'success');
+        }
+        
+        // Copy session ID
+        function copySessionId() {
+            navigator.clipboard.writeText(sessionId).then(() => {
+                log(`📋 Session ID copied to clipboard: ${sessionId}`, 'success');
+            }).catch(() => {
+                log('❌ Failed to copy session ID', 'error');
+            });
+        }
+        
+        // Track beforeunload for abandon event testing
+        window.addEventListener('beforeunload', () => {
+            // Using sendBeacon for guaranteed delivery
+            const params = new URLSearchParams();
+            params.append('action', 'eipsi_track_event');
+            params.append('nonce', CONFIG.nonce);
+            params.append('form_id', CONFIG.formId);
+            params.append('session_id', sessionId);
+            params.append('event_type', 'abandon');
+            params.append('page_number', '2');
+            params.append('user_agent', navigator.userAgent);
+            
+            navigator.sendBeacon(CONFIG.ajaxUrl, params);
+        });
+        
+        // Initial log entry
+        log('🚀 EIPSI Tracking Test Suite initialized', 'info');
+        log(`📝 Session ID: ${sessionId}`, 'info');
+        log('⚠️  IMPORTANT: Update CONFIG.nonce with a valid WordPress nonce for testing', 'info');
+        log('💡 Open Network DevTools to inspect AJAX requests', 'info');
+    </script>
+</body>
+</html>
