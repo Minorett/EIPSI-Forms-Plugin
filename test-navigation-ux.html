@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EIPSI Forms - Navigation UX Test</title>
+    
+    <!-- Load plugin CSS -->
+    <link rel="stylesheet" href="assets/css/eipsi-forms.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            padding: 2rem;
+            margin: 0;
+        }
+        
+        .test-header {
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .test-header h1 {
+            margin: 0 0 0.5rem;
+            color: #005a87;
+        }
+        
+        .test-header p {
+            margin: 0.25rem 0;
+            color: #64748b;
+        }
+        
+        .test-checklist {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        .test-checklist h3 {
+            margin: 0 0 0.5rem;
+            color: #005a87;
+            font-size: 1rem;
+        }
+        
+        .test-checklist ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        
+        .test-checklist li {
+            margin: 0.25rem 0;
+            font-size: 0.9rem;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>🧪 Navigation UX Test Form</h1>
+        <p><strong>Test Objective:</strong> Verify pagination, progress indicators, validation blockers, and navigation controls.</p>
+        <p><strong>Form Structure:</strong> 4 pages with mixed required/optional fields and conditional branching.</p>
+        
+        <div class="test-checklist">
+            <h3>✅ Test Checklist</h3>
+            <ul>
+                <li>Progress bar updates when moving forward/back</li>
+                <li>Validation prevents advancing with empty required fields</li>
+                <li>Inline error messages display for validation failures</li>
+                <li>Previous button respects history stack (branched paths)</li>
+                <li>Submit button shows "Enviando..." and disables during submission</li>
+                <li>Auto-scroll to form top on page change</li>
+                <li>Keyboard navigation (Tab, Shift+Tab, Enter, Space)</li>
+                <li>Focus management on validation errors</li>
+                <li>Conditional logic triggers page skips</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- EIPSI FORM -->
+    <div class="vas-dinamico-form eipsi-form" style="max-width: 800px; margin: 0 auto;">
+        <div class="form-description">
+            <p><strong>Instrucciones:</strong> Complete este cuestionario de prueba. Algunos campos son obligatorios y la navegación incluye lógica condicional.</p>
+        </div>
+        
+        <form class="vas-form eipsi-form-element" data-form-id="test-navigation">
+            <input type="hidden" name="form_id" value="test-navigation" />
+            <input type="hidden" name="form_action" value="vas_dinamico_submit_form" />
+            <input type="hidden" name="eipsi_nonce" value="" />
+            <input type="hidden" class="eipsi-device-placeholder" name="device" />
+            <input type="hidden" class="eipsi-browser-placeholder" name="browser" />
+            <input type="hidden" class="eipsi-os-placeholder" name="os" />
+            <input type="hidden" class="eipsi-screen-placeholder" name="screen_width" />
+            <input type="hidden" class="eipsi-start-time" name="start_time" />
+            <input type="hidden" class="eipsi-current-page" name="current_page" value="1" />
+
+            <!-- PAGE 1: Demographics (Required Fields) -->
+            <div class="eipsi-page" data-page="1" data-testid="form-page-1">
+                <h2 class="eipsi-page-title">Página 1: Datos Demográficos</h2>
+                <p class="eipsi-page-description">Por favor, complete la siguiente información básica.</p>
+
+                <!-- Text Input - Required -->
+                <div class="form-group" data-field-name="nombre" data-required="true">
+                    <label for="nombre">Nombre completo <span class="required-asterisk">*</span></label>
+                    <input 
+                        type="text" 
+                        id="nombre" 
+                        name="nombre" 
+                        class="text-input"
+                        required
+                        data-testid="input-nombre"
+                    />
+                    <div class="form-error" style="display:none;"></div>
+                </div>
+
+                <!-- Email Input - Required -->
+                <div class="form-group" data-field-name="email" data-required="true">
+                    <label for="email">Correo electrónico <span class="required-asterisk">*</span></label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="text-input"
+                        required
+                        data-testid="input-email"
+                    />
+                    <div class="form-error" style="display:none;"></div>
+                </div>
+
+                <!-- Select - Required with Conditional Logic -->
+                <div class="form-group eipsi-select-field" data-field-name="experiencia" data-required="true" data-field-type="select" data-conditional-logic='{"enabled":true,"rules":[{"id":"rule-1","matchValue":"Nunca","action":"goToPage","targetPage":4}],"defaultAction":"nextPage","defaultTargetPage":null}'>
+                    <label for="experiencia">¿Ha participado antes en estudios de investigación? <span class="required-asterisk">*</span></label>
+                    <select id="experiencia" name="experiencia" class="select-input" required data-testid="input-experiencia">
+                        <option value="">-- Seleccione --</option>
+                        <option value="Nunca">Nunca (ir directamente a Página 4)</option>
+                        <option value="Una vez">Una vez</option>
+                        <option value="Varias veces">Varias veces</option>
+                    </select>
+                    <p class="field-description">Si selecciona "Nunca", saltará a la página final.</p>
+                    <div class="form-error" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- PAGE 2: Psychological Assessment (Mixed Required/Optional) -->
+            <div class="eipsi-page" data-page="2" data-testid="form-page-2" style="display:none;">
+                <h2 class="eipsi-page-title">Página 2: Evaluación Psicológica</h2>
+                <p class="eipsi-page-description">Responda las siguientes preguntas sobre su bienestar emocional.</p>
+
+                <!-- Likert Scale - Required -->
+                <div class="form-group eipsi-likert-field" data-field-name="ansiedad" data-required="true">
+                    <label>¿Con qué frecuencia se ha sentido ansioso/a en las últimas dos semanas? <span class="required-asterisk">*</span></label>
+                    <div class="likert-scale">
+                        <div class="likert-item">
+                            <input type="radio" id="ansiedad-1" name="ansiedad" value="Nunca" required />
+                            <label for="ansiedad-1">
+                                <span class="likert-number">1</span>
+                                <span class="likert-label">Nunca</span>
+                            </label>
+                        </div>
+                        <div class="likert-item">
+                            <input type="radio" id="ansiedad-2" name="ansiedad" value="Raramente" />
+                            <label for="ansiedad-2">
+                                <span class="likert-number">2</span>
+                                <span class="likert-label">Raramente</span>
+                            </label>
+                        </div>
+                        <div class="likert-item">
+                            <input type="radio" id="ansiedad-3" name="ansiedad" value="A veces" />
+                            <label for="ansiedad-3">
+                                <span class="likert-number">3</span>
+                                <span class="likert-label">A veces</span>
+                            </label>
+                        </div>
+                        <div class="likert-item">
+                            <input type="radio" id="ansiedad-4" name="ansiedad" value="Frecuentemente" />
+                            <label for="ansiedad-4">
+                                <span class="likert-number">4</span>
+                                <span class="likert-label">Frecuentemente</span>
+                            </label>
+                        </div>
+                        <div class="likert-item">
+                            <input type="radio" id="ansiedad-5" name="ansiedad" value="Siempre" />
+                            <label for="ansiedad-5">
+                                <span class="likert-number">5</span>
+                                <span class="likert-label">Siempre</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-error" style="display:none;"></div>
+                </div>
+
+                <!-- VAS Slider - Optional -->
+                <div class="form-group eipsi-vas-slider-field" data-field-name="estres">
+                    <label for="estres-slider">Nivel de estrés actual (0-100)</label>
+                    <div class="vas-slider-container">
+                        <div class="vas-labels">
+                            <span class="vas-label">Sin estrés</span>
+                            <span class="vas-label">Estrés extremo</span>
+                        </div>
+                        <div class="vas-slider-wrapper">
+                            <input 
+                                type="range" 
+                                id="estres-slider" 
+                                name="estres" 
+                                class="vas-slider"
+                                min="0" 
+                                max="100" 
+                                value="50"
+                                step="1"
+                                data-show-value="true"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-valuenow="50"
+                                aria-labelledby="estres-value"
+                            />
+                        </div>
+                        <div class="vas-value-display">
+                            <span class="vas-value-number" id="estres-value">50</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 3: Detailed Feedback (Optional Fields) -->
+            <div class="eipsi-page" data-page="3" data-testid="form-page-3" style="display:none;">
+                <h2 class="eipsi-page-title">Página 3: Comentarios Detallados</h2>
+                <p class="eipsi-page-description">Sus comentarios son opcionales pero muy valiosos.</p>
+
+                <!-- Textarea - Optional -->
+                <div class="form-group" data-field-name="comentarios">
+                    <label for="comentarios">¿Tiene algún comentario adicional?</label>
+                    <textarea 
+                        id="comentarios" 
+                        name="comentarios" 
+                        class="textarea-input"
+                        rows="5"
+                        placeholder="Escriba aquí sus comentarios..."
+                        data-testid="input-comentarios"
+                    ></textarea>
+                    <p class="field-description">Este campo es opcional.</p>
+                </div>
+
+                <!-- Radio Group - Optional -->
+                <div class="form-group eipsi-radio-field" data-field-name="recomendacion" data-field-type="radio">
+                    <label>¿Recomendaría este estudio a otras personas?</label>
+                    <div class="radio-list">
+                        <div class="radio-item">
+                            <input type="radio" id="reco-si" name="recomendacion" value="Sí" />
+                            <label for="reco-si">Sí</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="reco-no" name="recomendacion" value="No" />
+                            <label for="reco-no">No</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="reco-tal-vez" name="recomendacion" value="Tal vez" />
+                            <label for="reco-tal-vez">Tal vez</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 4: Final Page (Confirmation) -->
+            <div class="eipsi-page" data-page="4" data-testid="form-page-4" style="display:none;">
+                <h2 class="eipsi-page-title">Página 4: Confirmación</h2>
+                <p class="eipsi-page-description">Gracias por completar el cuestionario.</p>
+
+                <!-- Checkbox - Required -->
+                <div class="form-group eipsi-checkbox-field" data-field-name="consentimiento" data-required="true" data-field-type="checkbox">
+                    <label>Consentimiento <span class="required-asterisk">*</span></label>
+                    <div class="checkbox-list">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="consent" name="consentimiento" value="Acepto" required />
+                            <label for="consent">Confirmo que he leído y acepto participar en este estudio</label>
+                        </div>
+                    </div>
+                    <div class="form-error" style="display:none;"></div>
+                </div>
+
+                <!-- Description Field -->
+                <div class="eipsi-description-field">
+                    <div class="description-content">
+                        <p><strong>Importante:</strong> Al enviar este formulario, sus respuestas serán procesadas de forma confidencial y anónima.</p>
+                        <p>Si tiene alguna pregunta sobre este estudio, por favor contacte a: research@eipsi.example.com</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NAVIGATION BUTTONS -->
+            <div class="form-navigation" data-testid="form-navigation-test-navigation">
+                <button
+                    type="button"
+                    class="eipsi-prev-button"
+                    style="display: none"
+                    data-testid="prev-button"
+                >
+                    Anterior
+                </button>
+                <button
+                    type="button"
+                    class="eipsi-next-button"
+                    data-testid="next-button"
+                >
+                    Siguiente
+                </button>
+                <button
+                    type="submit"
+                    class="eipsi-submit-button"
+                    style="display: none"
+                    data-testid="submit-button"
+                >
+                    Enviar
+                </button>
+            </div>
+
+            <!-- PROGRESS INDICATOR -->
+            <div class="form-progress" data-testid="form-progress-test-navigation">
+                Página <span class="current-page">1</span> de <span class="total-pages">?</span>
+            </div>
+        </form>
+    </div>
+
+    <!-- Load plugin JavaScript -->
+    <script>
+        // Mock WordPress config
+        window.eipsiFormsConfig = {
+            ajaxUrl: '/wp-admin/admin-ajax.php',
+            nonce: 'test-nonce-12345',
+            strings: {
+                requiredField: 'Este campo es obligatorio.',
+                invalidEmail: 'Por favor, introduzca una dirección de correo electrónico válida.',
+                submitting: 'Enviando...',
+                submit: 'Enviar',
+                error: 'Ocurrió un error. Por favor, inténtelo de nuevo.',
+                success: '¡Formulario enviado correctamente!',
+            },
+            settings: {
+                enableAutoScroll: true,
+                scrollOffset: 20,
+                validateOnBlur: true,
+                smoothScroll: true,
+            },
+        };
+    </script>
+    <script src="assets/js/eipsi-tracking.js"></script>
+    <script src="assets/js/eipsi-forms.js"></script>
+    
+    <script>
+        // Mock AJAX submission for testing
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            if (url.includes('admin-ajax.php')) {
+                console.log('📤 Mock AJAX Submission', {
+                    url: url,
+                    method: options?.method,
+                    body: options?.body
+                });
+                
+                // Simulate network delay
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve({
+                            json: () => Promise.resolve({
+                                success: true,
+                                message: 'Formulario enviado correctamente (simulado)'
+                            })
+                        });
+                    }, 2000); // 2 second delay
+                });
+            }
+            return originalFetch.apply(this, arguments);
+        };
+        
+        // Console logging for debugging
+        console.log('✅ EIPSI Forms Test Page Loaded');
+        console.log('📊 Config:', window.eipsiFormsConfig);
+        console.log('🔧 EIPSIForms object:', window.EIPSIForms);
+        console.log('📍 EIPSITracking object:', window.EIPSITracking);
+        
+        // Log navigation events
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('.vas-form');
+            if (form) {
+                console.log('🎯 Form initialized:', form.dataset.formId);
+                
+                // Monitor button clicks
+                const nextBtn = form.querySelector('.eipsi-next-button');
+                const prevBtn = form.querySelector('.eipsi-prev-button');
+                const submitBtn = form.querySelector('.eipsi-submit-button');
+                
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        console.log('➡️ Next button clicked');
+                    });
+                }
+                
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        console.log('⬅️ Previous button clicked');
+                    });
+                }
+                
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', () => {
+                        console.log('📝 Submit button clicked');
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
