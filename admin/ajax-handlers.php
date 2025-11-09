@@ -236,7 +236,7 @@ function eipsi_track_event_handler() {
     }
     
     // Define allowed event types
-    $allowed_events = array('view', 'start', 'page_change', 'submit', 'abandon');
+    $allowed_events = array('view', 'start', 'page_change', 'submit', 'abandon', 'branch_jump');
     
     // Sanitize and validate POST data
     $event_type = isset($_POST['event_type']) ? sanitize_text_field($_POST['event_type']) : '';
@@ -265,6 +265,25 @@ function eipsi_track_event_handler() {
     $page_number = isset($_POST['page_number']) ? intval($_POST['page_number']) : null;
     $user_agent = isset($_POST['user_agent']) ? sanitize_text_field($_POST['user_agent']) : '';
     
+    // Collect metadata for branch_jump events
+    $metadata = null;
+    if ($event_type === 'branch_jump') {
+        $metadata = array();
+        if (isset($_POST['from_page'])) {
+            $metadata['from_page'] = intval($_POST['from_page']);
+        }
+        if (isset($_POST['to_page'])) {
+            $metadata['to_page'] = intval($_POST['to_page']);
+        }
+        if (isset($_POST['field_id'])) {
+            $metadata['field_id'] = sanitize_text_field($_POST['field_id']);
+        }
+        if (isset($_POST['matched_value'])) {
+            $metadata['matched_value'] = sanitize_text_field($_POST['matched_value']);
+        }
+        $metadata = !empty($metadata) ? wp_json_encode($metadata) : null;
+    }
+    
     // Prepare data for database insertion
     global $wpdb;
     $table_name = $wpdb->prefix . 'vas_form_events';
@@ -274,11 +293,12 @@ function eipsi_track_event_handler() {
         'session_id' => $session_id,
         'event_type' => $event_type,
         'page_number' => $page_number,
+        'metadata' => $metadata,
         'user_agent' => $user_agent,
         'created_at' => current_time('mysql')
     );
     
-    $insert_formats = array('%s', '%s', '%s', '%d', '%s', '%s');
+    $insert_formats = array('%s', '%s', '%s', '%d', '%s', '%s', '%s');
     
     // Insert event into database
     $result = $wpdb->insert($table_name, $insert_data, $insert_formats);

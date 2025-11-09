@@ -68,6 +68,7 @@ function vas_dinamico_activate() {
         session_id varchar(255) NOT NULL,
         event_type varchar(50) NOT NULL,
         page_number int(11) DEFAULT NULL,
+        metadata text DEFAULT NULL,
         user_agent text DEFAULT NULL,
         created_at datetime NOT NULL,
         PRIMARY KEY (id),
