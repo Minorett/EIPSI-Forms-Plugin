@@ -10,7 +10,6 @@ import { useEffect } from '@wordpress/element';
 import {
 	migrateToStyleConfig,
 	serializeToCSSVariables,
-	generateInlineStyle,
 } from '../../utils/styleTokens';
 import FormStylePanel from '../../components/FormStylePanel';
 
@@ -31,10 +30,10 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	// Generate CSS variables for editor preview
 	const cssVars = serializeToCSSVariables( currentConfig );
-	const inlineStyle = generateInlineStyle( cssVars );
 
 	const blockProps = useBlockProps( {
 		className: 'eipsi-form-container-editor',
+		style: cssVars,
 	} );
 
 	const ALLOWED_BLOCKS = [
@@ -115,11 +114,8 @@ export default function Edit( { attributes, setAttributes } ) {
 				/>
 			</InspectorControls>
 
-			<div
-				{ ...blockProps }
-				style={ { '--eipsi-editor-style': inlineStyle } }
-			>
-				<div className="eipsi-form-container-preview" style={ cssVars }>
+			<div { ...blockProps }>
+				<div className="eipsi-form-container-preview">
 					{ ! formId && (
 						<div className="eipsi-form-placeholder">
 							<div className="components-placeholder">
