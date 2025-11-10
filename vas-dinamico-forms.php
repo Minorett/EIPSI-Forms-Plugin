@@ -319,6 +319,7 @@ function vas_dinamico_enqueue_frontend_assets() {
             'success' => '¡Formulario enviado correctamente!',
         ),
         'settings' => array(
+            'debug' => apply_filters('vas_dinamico_debug_mode', defined('WP_DEBUG') && WP_DEBUG),
             'enableAutoScroll' => apply_filters('vas_dinamico_enable_auto_scroll', true),
             'scrollOffset' => apply_filters('vas_dinamico_scroll_offset', 20),
             'validateOnBlur' => apply_filters('vas_dinamico_validate_on_blur', true),

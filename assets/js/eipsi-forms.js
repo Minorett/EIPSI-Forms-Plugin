@@ -283,6 +283,7 @@
 	const EIPSIForms = {
 		forms: [],
 		navigators: new Map(),
+		config: window.eipsiFormsConfig || {},
 
 		init() {
 			document.addEventListener( 'DOMContentLoaded', () => {
@@ -408,7 +409,11 @@
 				return;
 			}
 
-			if ( window.console && window.console.log ) {
+			if (
+				this.config.settings?.debug &&
+				window.console &&
+				window.console.log
+			) {
 				window.console.log(
 					'[EIPSI Forms] Branching route updated:',
 					`Page ${ currentPage } → Page ${ nextPageResult.targetPage }`,
@@ -930,7 +935,11 @@
 				return;
 			}
 
-			if ( window.console && window.console.log ) {
+			if (
+				this.config.settings?.debug &&
+				window.console &&
+				window.console.log
+			) {
 				window.console.log(
 					'[EIPSI Forms] Branch jump executed:',
 					`Page ${ fromPage } → Page ${ toPage }`,
