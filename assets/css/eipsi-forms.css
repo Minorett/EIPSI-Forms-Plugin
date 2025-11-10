@@ -1359,10 +1359,29 @@ select[aria-invalid="true"] {
     outline-offset: 2px;
 }
 
-/* Enhanced focus for small touchscreens */
-@media (max-width: 480px) {
+/* Enhanced focus for mobile devices and tablets (improved visibility for touch+keyboard) */
+@media (max-width: 768px) {
     .vas-dinamico-form *:focus-visible,
     .eipsi-form *:focus-visible {
+        outline-width: 3px;
+        outline-offset: 3px;
+    }
+    
+    /* Specific interactive controls - explicit focus enhancement */
+    .vas-dinamico-form button:focus-visible,
+    .eipsi-form button:focus-visible,
+    .eipsi-prev-button:focus-visible,
+    .eipsi-next-button:focus-visible,
+    .eipsi-submit-button:focus-visible,
+    .vas-dinamico-form input:focus-visible,
+    .eipsi-form input:focus-visible,
+    .vas-dinamico-form textarea:focus-visible,
+    .eipsi-form textarea:focus-visible,
+    .vas-dinamico-form select:focus-visible,
+    .eipsi-form select:focus-visible,
+    .radio-list li:focus-within,
+    .checkbox-list li:focus-within,
+    .likert-item:focus-visible {
         outline-width: 3px;
         outline-offset: 3px;
     }
