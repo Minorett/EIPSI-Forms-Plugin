@@ -4,15 +4,17 @@
 
 set -e  # Exit on error
 
-PLUGIN_SLUG="vas-dinamico-forms"
-VERSION=$(grep "Version:" vas-dinamico-forms.php | awk '{print $2}' | tr -d '\r')
+PLUGIN_SLUG="eipsi-forms"
+VERSION=$(grep "^ \* Version:" vas-dinamico-forms.php | head -1 | awk '{print $3}' | tr -d '\r')
 BUILD_DIR="dist"
 ARCHIVE_NAME="${PLUGIN_SLUG}-${VERSION}.zip"
+METADATA_FILE="release-metadata-${VERSION}.json"
 
 echo "============================================"
 echo "EIPSI Forms - Release Package Builder"
 echo "============================================"
 echo "Version: ${VERSION}"
+echo "Build Date: $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""
 
 # Step 1: Clean old build artifacts
@@ -20,12 +22,14 @@ echo "Step 1: Cleaning old build artifacts..."
 rm -rf build/
 rm -rf node_modules/
 rm -rf ${BUILD_DIR}/
+rm -f ${PLUGIN_SLUG}-*.zip
+rm -f release-metadata-*.json
 echo "✓ Cleaned"
 echo ""
 
 # Step 2: Install dependencies
-echo "Step 2: Installing npm dependencies..."
-npm install --quiet
+echo "Step 2: Installing npm dependencies with npm ci..."
+npm ci --quiet
 echo "✓ Dependencies installed"
 echo ""
 
@@ -43,6 +47,10 @@ if [ ! -d "build" ]; then
 fi
 if [ ! -f "build/index.js" ]; then
     echo "✗ ERROR: build/index.js not found!"
+    exit 1
+fi
+if [ ! -f "build/index.asset.php" ]; then
+    echo "✗ ERROR: build/index.asset.php not found!"
     exit 1
 fi
 echo "✓ Build output verified"
@@ -71,6 +79,7 @@ else
     
     # Copy files using rsync with .distignore exclusions
     if [ -f ".distignore" ]; then
+        echo "Using .distignore for exclusions..."
         rsync -av --exclude-from=.distignore . ${BUILD_DIR}/${PLUGIN_SLUG}/
     else
         echo "✗ ERROR: .distignore file not found!"
@@ -127,12 +136,59 @@ if [ $EXCLUDED_FOUND -eq 0 ]; then
 fi
 echo ""
 
-# Step 8: Summary
+# Step 8: Generate checksums
+echo "Step 8: Generating checksums..."
+MD5_CHECKSUM=$(md5sum ${ARCHIVE_NAME} | awk '{print $1}')
+SHA256_CHECKSUM=$(sha256sum ${ARCHIVE_NAME} | awk '{print $1}')
+PACKAGE_SIZE=$(du -h ${ARCHIVE_NAME} | awk '{print $1}')
+PACKAGE_SIZE_BYTES=$(stat -c%s ${ARCHIVE_NAME})
+FILE_COUNT=$(unzip -l ${ARCHIVE_NAME} | tail -n 1 | awk '{print $2}')
+
+echo "✓ MD5: ${MD5_CHECKSUM}"
+echo "✓ SHA256: ${SHA256_CHECKSUM}"
+echo ""
+
+# Step 9: Create metadata file
+echo "Step 9: Creating release metadata..."
+cat > ${METADATA_FILE} <<EOF
+{
+  "plugin": "EIPSI Forms",
+  "slug": "${PLUGIN_SLUG}",
+  "version": "${VERSION}",
+  "archive": "${ARCHIVE_NAME}",
+  "buildDate": "$(date -u '+%Y-%m-%d %H:%M:%S UTC')",
+  "size": {
+    "bytes": ${PACKAGE_SIZE_BYTES},
+    "human": "${PACKAGE_SIZE}"
+  },
+  "fileCount": ${FILE_COUNT},
+  "checksums": {
+    "md5": "${MD5_CHECKSUM}",
+    "sha256": "${SHA256_CHECKSUM}"
+  },
+  "requirements": {
+    "wordpress": "5.8+",
+    "php": "7.4+",
+    "gutenberg": true
+  },
+  "verification": {
+    "excludedFilesCheck": $([ $EXCLUDED_FOUND -eq 0 ] && echo "true" || echo "false"),
+    "buildOutputVerified": true
+  }
+}
+EOF
+echo "✓ Metadata saved to: ${METADATA_FILE}"
+echo ""
+
+# Step 10: Summary
 echo "============================================"
 echo "Build Summary"
 echo "============================================"
 echo "Package: ${ARCHIVE_NAME}"
-echo "Size: $(du -h ${ARCHIVE_NAME} | awk '{print $1}')"
+echo "Size: ${PACKAGE_SIZE} (${PACKAGE_SIZE_BYTES} bytes)"
+echo "Files: ${FILE_COUNT}"
+echo "MD5: ${MD5_CHECKSUM}"
+echo "SHA256: ${SHA256_CHECKSUM}"
 echo ""
 echo "Package contents:"
 unzip -l ${ARCHIVE_NAME} | tail -n 1
@@ -142,9 +198,10 @@ if [ $EXCLUDED_FOUND -eq 0 ]; then
     echo "✓ Release package is ready!"
     echo ""
     echo "Next steps:"
-    echo "1. Test installation: unzip ${ARCHIVE_NAME} -d /path/to/wordpress/wp-content/plugins/"
-    echo "2. Verify plugin functionality"
-    echo "3. Upload to WordPress.org or distribute"
+    echo "1. Review metadata: cat ${METADATA_FILE}"
+    echo "2. Test installation: unzip ${ARCHIVE_NAME} -d /path/to/wordpress/wp-content/plugins/"
+    echo "3. Run smoke tests (see SMOKE_TEST_PROCEDURES.md)"
+    echo "4. Upload to WordPress.org or distribute"
 else
     echo "⚠ WARNING: Package may contain excluded files!"
     echo "Please review the package contents before distribution."

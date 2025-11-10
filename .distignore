@@ -12,9 +12,10 @@ node_modules
 package-lock.json
 .wp-env.json
 server.log
+dist
 
-# Build Output (will be regenerated)
-build
+# Note: build/ directory is INCLUDED in distribution (contains compiled blocks)
+# Only exclude during development if needed
 
 # Development Environment
 .DS_Store
@@ -50,6 +51,7 @@ CUSTOMIZATION_PANEL_TESTING.md
 CUSTOMIZATION_QUICK_REFERENCE.md
 DELIVERABLES*.md
 DESIGN_TOKENS_IMPLEMENTATION.md
+DISTRIBUTION_*.md
 EDITOR_SMOKE_TEST_*.md
 FIELD_WIDGET_VALIDATION*.md
 IMPLEMENTATION_*.md
@@ -79,9 +81,16 @@ WIRING_AUDIT_SUMMARY.md
 phpunit.xml
 phpunit.xml.dist
 
-# Deployment
+# Deployment & Build
 deploy.sh
 release.sh
+build-release.sh
+release-metadata-*.json
+build-log.txt
+RELEASE_PACKAGE_DOCUMENTATION.md
+SMOKE_TEST_PROCEDURES.md
+RELEASE_VERIFICATION_REPORT.md
+PACKAGE_BUILD_QUICKSTART.md
 
 # Logs
 *.log

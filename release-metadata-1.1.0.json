@@ -1,0 +1,25 @@
+{
+  "plugin": "EIPSI Forms",
+  "slug": "eipsi-forms",
+  "version": "1.1.0",
+  "archive": "eipsi-forms-1.1.0.zip",
+  "buildDate": "2025-11-10 01:25:45 UTC",
+  "size": {
+    "bytes": 205486,
+    "human": "204K"
+  },
+  "fileCount": 166,
+  "checksums": {
+    "md5": "21b82857cb869b8259d7f94ce8e596d5",
+    "sha256": "79d82d49ad7363b11b6b6633cf8081a79f6fa716aa57c48e03cdd3bd3e0fc161"
+  },
+  "requirements": {
+    "wordpress": "5.8+",
+    "php": "7.4+",
+    "gutenberg": true
+  },
+  "verification": {
+    "excludedFilesCheck": true,
+    "buildOutputVerified": true
+  }
+}
