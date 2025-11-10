@@ -226,7 +226,7 @@ For issues or questions, please refer to the plugin documentation.
 
 ---
 
-**Version**: 1.1.0  
+**Version**: 1.2.0  
 **License**: GPL v2 or later
 # EIPSI Forms Plugin
 Plugin de WordPress para formularios dinámicos

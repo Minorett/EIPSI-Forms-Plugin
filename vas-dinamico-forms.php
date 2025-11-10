@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://github.com/roofkat/VAS-dinamico-mvp
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Mathias Rojas
  * Author URI: https://github.com/roofkat
  * Text Domain: vas-dinamico-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics
- * Stable tag: 1.1.0
+ * Stable tag: 1.2.0
  * 
  * @package VAS_Dinamico_Forms
  */
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('VAS_DINAMICO_VERSION', '1.1.0');
+define('VAS_DINAMICO_VERSION', '1.2.0');
 define('VAS_DINAMICO_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('VAS_DINAMICO_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('VAS_DINAMICO_PLUGIN_FILE', __FILE__);
