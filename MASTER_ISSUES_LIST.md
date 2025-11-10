@@ -13,14 +13,14 @@
 This master list consolidates every issue identified across all audit reports for the EIPSI Forms plugin. Issues are categorized by severity, type, and current status.
 
 ### Issue Status Overview
-- ✅ **Resolved:** 30 issues (+3 from block SCSS migration, +3 from semantic token fixes, +2 from placeholder contrast fix)
-- ⚠️ **Requires Attention:** 9 issues (Critical/High priority)
+- ✅ **Resolved:** 32 issues (+3 from block SCSS migration, +3 from semantic token fixes, +2 from placeholder contrast fix, +2 from mobile focus enhancement)
+- ⚠️ **Requires Attention:** 7 issues (Critical/High priority)
 - 📝 **Low Priority/Acceptable:** 8 issues
 
 ### Severity Breakdown
 - 🔴 **Critical:** 17 issues (14 resolved, 3 open)
-- 🟠 **High:** 11 issues (10 resolved, 1 open)
-- 🟡 **Medium:** 12 issues (4 resolved, 8 open)
+- 🟠 **High:** 11 issues (11 resolved, 0 open) ✅ ALL RESOLVED
+- 🟡 **Medium:** 12 issues (5 resolved, 7 open)
 - 🟢 **Low:** 7 issues (2 resolved, 5 open)
 
 ---
@@ -369,43 +369,39 @@ const ratingName = getContrastRating(config.colors.foreground, config.colors.bac
 ### Issue #11: Missing 320px Breakpoint Rules
 **Source:** RESPONSIVE_UX_AUDIT_REPORT.md (Lines 41-61)  
 **Severity:** 🟠 HIGH  
-**Status:** ⚠️ OPEN  
-**File:** `assets/css/eipsi-forms.css`
+**Status:** ✅ VERIFIED COMPLETE (2025-01-15)  
+**File:** `assets/css/eipsi-forms.css` lines 1264-1349
 
-**Problem:**
+**Problem:** (Historical - Already Resolved)
 - NO specific CSS rules for 320-374px range
 - Ultra-small phones (iPhone 5/SE, Galaxy S4 Mini) not optimized
 - Plugin jumps from 480px rules directly to mobile defaults
 
-**Impact:**
-- Content too tight at 320px (32px padding = only 288px usable width)
-- Typography too large for small screens
-- Touch targets adequate but could be optimized
+**Fix Applied:**
+Complete `@media (max-width: 374px)` breakpoint was found to be already implemented with all required specifications:
+- ✅ `.vas-dinamico-form { padding: 0.75rem; }` (line 1268)
+- ✅ `h1 { font-size: 1.375rem; }` (line 1274)
+- ✅ `h2 { font-size: 1.125rem; }` (line 1280)
+- ✅ `.vas-value-number { font-size: 1.5rem; }` (line 1296)
+- ✅ `.likert-item { padding: 0.625rem 0.75rem; }` (line 1302)
+- ✅ `.form-navigation { gap: 0.75rem; }` (line 1310)
+- ✅ Touch targets maintained at 44px minimum (WCAG AAA)
+- ✅ Navigation buttons ~48px height (0.875rem padding)
 
-**Fix Required:**
-Add new media query section:
-```css
-@media (max-width: 374px) {
-    .vas-dinamico-form { padding: 0.75rem; }  /* 12px vs 16px */
-    h1 { font-size: 1.375rem; }  /* 22px vs 24px */
-    h2 { font-size: 1.125rem; }  /* 18px vs 20px */
-    .vas-value-number { font-size: 1.5rem; }  /* 24px vs 28px */
-    .likert-item { padding: 0.625rem 0.75rem; }  /* Tighter */
-    .form-navigation { gap: 0.75rem; }  /* Reduced gap */
-}
-```
-
-**Clinical Impact:** Poor participant experience on older/smaller devices
+**Verification:**
+- Automated test passed: `node mobile-focus-verification.js`
+- 320px viewport: 296px usable width (no horizontal scroll)
+- Documentation: `MOBILE_FOCUS_IMPLEMENTATION_REPORT.md`
 
 ---
 
 ### Issue #12: Focus Outline Too Subtle on Mobile
 **Source:** RESPONSIVE_UX_AUDIT_REPORT.md (Lines 285-300)  
 **Severity:** 🟡 MEDIUM  
-**Status:** ⚠️ OPEN  
-**File:** `assets/css/eipsi-forms.css`
+**Status:** ✅ FIXED (2025-01-15)  
+**File:** `assets/css/eipsi-forms.css` lines 1362-1388
 
-**Problem:**
+**Problem:** (Historical - Now Resolved)
 ```css
 .vas-dinamico-form *:focus-visible {
     outline: 2px solid #005a87;  /* Same size on all devices */
@@ -413,19 +409,58 @@ Add new media query section:
 }
 ```
 
-**Impact:**
+**Impact:** (Historical - Now Resolved)
 - 2px outline hard to see on high-DPI mobile screens
 - Accessibility issue for keyboard navigation on tablets
 
-**Fix Required:**
+**Fix Applied:**
+Enhanced focus indicators for mobile and tablet devices (≤768px):
 ```css
 @media (max-width: 768px) {
-    .vas-dinamico-form *:focus-visible {
-        outline-width: 3px;  /* Thicker on mobile */
+    .vas-dinamico-form *:focus-visible,
+    .eipsi-form *:focus-visible {
+        outline-width: 3px;  /* 50% thicker - improved visibility */
+        outline-offset: 3px; /* 50% larger offset - better separation */
+    }
+    
+    /* Specific interactive controls - explicit enhancement */
+    .vas-dinamico-form button:focus-visible,
+    .eipsi-form button:focus-visible,
+    .eipsi-prev-button:focus-visible,
+    .eipsi-next-button:focus-visible,
+    .eipsi-submit-button:focus-visible,
+    .vas-dinamico-form input:focus-visible,
+    .eipsi-form input:focus-visible,
+    .vas-dinamico-form textarea:focus-visible,
+    .eipsi-form textarea:focus-visible,
+    .vas-dinamico-form select:focus-visible,
+    .eipsi-form select:focus-visible,
+    .radio-list li:focus-within,
+    .checkbox-list li:focus-within,
+    .likert-item:focus-visible {
+        outline-width: 3px;
         outline-offset: 3px;
     }
 }
 ```
+
+**Improvements:**
+- ✅ Changed breakpoint from 480px to 768px (includes tablets with keyboards)
+- ✅ Added explicit selectors for all interactive form controls
+- ✅ Used `:focus-within` for radio/checkbox parent elements
+- ✅ Desktop experience preserved (2px outline >768px)
+- ✅ WCAG 2.1 Level AA compliant (7.47:1 contrast ratio)
+
+**Clinical Impact:**
+- Better accessibility for participants using tablets with external keyboards
+- Improved data entry accuracy in clinical research settings
+- Meets international accessibility standards for psychotherapy research
+
+**Verification:**
+- Desktop (>768px): 2px outline ✅ (no regression)
+- Mobile/Tablet (≤768px): 3px outline ✅ (enhanced)
+- Focus color: #005a87 (EIPSI Blue) with 7.47:1 contrast ✅
+- Documentation: `MOBILE_FOCUS_IMPLEMENTATION_REPORT.md`
 
 ---
 
