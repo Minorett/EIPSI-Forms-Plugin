@@ -340,7 +340,36 @@
 .vas-dinamico-form input::placeholder,
 .eipsi-form input::placeholder {
     color: var(--eipsi-color-text-muted, #64748b);
-    opacity: 0.85;
+    opacity: 0.8;
+}
+
+/* Vendor-specific placeholder selectors for cross-browser compatibility */
+.eipsi-text-field input::-webkit-input-placeholder,
+.vas-dinamico-form input::-webkit-input-placeholder,
+.eipsi-form input::-webkit-input-placeholder {
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.8;
+}
+
+.eipsi-text-field input::-moz-placeholder,
+.vas-dinamico-form input::-moz-placeholder,
+.eipsi-form input::-moz-placeholder {
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.8;
+}
+
+.eipsi-text-field input:-ms-input-placeholder,
+.vas-dinamico-form input:-ms-input-placeholder,
+.eipsi-form input:-ms-input-placeholder {
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.8;
+}
+
+.eipsi-text-field input::-ms-input-placeholder,
+.vas-dinamico-form input::-ms-input-placeholder,
+.eipsi-form input::-ms-input-placeholder {
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.8;
 }
 
 /* Error State for Inputs */
@@ -402,6 +431,43 @@ input[aria-invalid="true"]:focus {
 textarea[aria-invalid="true"] {
     border-color: var(--eipsi-color-error, #d32f2f);
     background: #fff5f5;
+}
+
+/* Textarea placeholder styling */
+.eipsi-textarea-field textarea::placeholder,
+.vas-dinamico-form textarea::placeholder,
+.eipsi-form textarea::placeholder {
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.8;
+}
+
+/* Vendor-specific textarea placeholder selectors */
+.eipsi-textarea-field textarea::-webkit-input-placeholder,
+.vas-dinamico-form textarea::-webkit-input-placeholder,
+.eipsi-form textarea::-webkit-input-placeholder {
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.8;
+}
+
+.eipsi-textarea-field textarea::-moz-placeholder,
+.vas-dinamico-form textarea::-moz-placeholder,
+.eipsi-form textarea::-moz-placeholder {
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.8;
+}
+
+.eipsi-textarea-field textarea:-ms-input-placeholder,
+.vas-dinamico-form textarea:-ms-input-placeholder,
+.eipsi-form textarea:-ms-input-placeholder {
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.8;
+}
+
+.eipsi-textarea-field textarea::-ms-input-placeholder,
+.vas-dinamico-form textarea::-ms-input-placeholder,
+.eipsi-form textarea::-ms-input-placeholder {
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.8;
 }
 
 /* ============================================================================
