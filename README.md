@@ -139,6 +139,70 @@ Conditional logic is stored in the `conditionalLogic` block attribute with this 
    - All form field values
 4. Download responses as CSV or Excel for analysis
 
+### Database Configuration (External Database Support)
+
+The plugin supports storing form submissions in an external MySQL database instead of the WordPress database. This is useful for:
+- Separating research data from website data
+- Connecting multiple WordPress sites to a shared database
+- Maintaining data compliance and security requirements
+- Centralizing research data management
+
+#### Setting Up External Database
+
+1. **Access Configuration Panel**
+   - In WordPress admin, go to "EIPSI Forms" → "Configuration"
+   - The Database Configuration page appears
+
+2. **Enter Database Credentials**
+   - **Host**: MySQL server hostname or IP (e.g., `localhost`, `192.168.1.100`)
+   - **Username**: MySQL user with INSERT and SELECT privileges
+   - **Password**: MySQL user password (encrypted before storage)
+   - **Database Name**: Target database name (e.g., `research_db_custom`)
+
+3. **Test Connection**
+   - Click "Test Connection" button
+   - System verifies credentials and displays:
+     - ✅ **Green status**: Connection successful, shows record count
+     - ❌ **Red status**: Connection failed, shows error message
+   - **Important**: Connection must succeed before saving
+
+4. **Save Configuration**
+   - Click "Save Configuration" after successful test
+   - Credentials are encrypted using WordPress security functions
+   - All new form submissions will route to external database
+
+5. **Monitor Status**
+   - Status box shows:
+     - Connection state (Connected/Disconnected)
+     - Current database name
+     - Total record count
+     - Last configuration update time
+
+#### Important Notes
+
+- **Table Structure**: External database must have identical table structure to WordPress database
+- **Security**: Passwords encrypted using AES-256-CBC with WordPress salts
+- **Testing Required**: Configuration validates connection before saving to prevent data loss
+- **Fallback Behavior**: If external DB becomes unavailable, submissions will fail (intentional to prevent data inconsistency)
+- **Disable External DB**: Click "Disable External Database" to return to WordPress database storage
+
+#### Credential Encryption
+
+The plugin uses WordPress's built-in security functions:
+- Encryption: `openssl_encrypt()` with AES-256-CBC
+- Salt: WordPress `wp_salt('auth')` for key generation
+- Storage: Encrypted credentials stored in `wp_options` table
+- Keys: `eipsi_external_db_host`, `eipsi_external_db_user`, `eipsi_external_db_password`, `eipsi_external_db_name`
+
+#### Technical Implementation
+
+Form submission flow:
+1. Frontend JavaScript validates form
+2. AJAX request sent to `vas_dinamico_submit_form`
+3. Handler checks if external DB is enabled (`EIPSI_External_Database::is_enabled()`)
+4. If enabled: Data inserted via `mysqli` connection to external DB
+5. If disabled: Data inserted to WordPress DB (default behavior)
+
 ## Database
 
 Plugin creates table: `wp_vas_form_results` with:

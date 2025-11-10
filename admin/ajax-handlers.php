@@ -12,12 +12,17 @@ add_action('wp_ajax_eipsi_get_response_details', 'eipsi_ajax_get_response_detail
 add_action('wp_ajax_nopriv_eipsi_track_event', 'eipsi_track_event_handler');
 add_action('wp_ajax_eipsi_track_event', 'eipsi_track_event_handler');
 
+add_action('wp_ajax_eipsi_test_db_connection', 'eipsi_test_db_connection_handler');
+add_action('wp_ajax_eipsi_save_db_config', 'eipsi_save_db_config_handler');
+add_action('wp_ajax_eipsi_disable_external_db', 'eipsi_disable_external_db_handler');
+add_action('wp_ajax_eipsi_get_db_status', 'eipsi_get_db_status_handler');
+add_action('wp_ajax_eipsi_check_external_db', 'eipsi_check_external_db_handler');
+add_action('wp_ajax_nopriv_eipsi_check_external_db', 'eipsi_check_external_db_handler');
+
 function vas_dinamico_submit_form_handler() {
     check_ajax_referer('eipsi_forms_nonce', 'nonce');
     
     global $wpdb;
-    
-    $table_name = $wpdb->prefix . 'vas_form_results';
     
     $form_id = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : 'default';
     $ip_address = isset($_POST['ip_address']) ? sanitize_text_field($_POST['ip_address']) : '';
@@ -43,25 +48,52 @@ function vas_dinamico_submit_form_handler() {
         $duration = max(0, intval(($current_timestamp - $start_timestamp) / 1000));
     }
     
-    $wpdb->insert(
-        $table_name,
-        array(
-            'form_name' => $form_id,
-            'created_at' => current_time('mysql'),
-            'ip_address' => $ip_address,
-            'device' => $device,
-            'browser' => $browser,
-            'os' => $os,
-            'screen_width' => $screen_width,
-            'duration' => $duration,
-            'form_responses' => wp_json_encode($form_responses)
-        ),
-        array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')
+    // Prepare data for insertion
+    $data = array(
+        'form_name' => $form_id,
+        'created_at' => current_time('mysql'),
+        'ip_address' => $ip_address,
+        'device' => $device,
+        'browser' => $browser,
+        'os' => $os,
+        'screen_width' => $screen_width,
+        'duration' => $duration,
+        'form_responses' => wp_json_encode($form_responses)
     );
     
-    wp_send_json_success(array(
-        'message' => __('Form submitted successfully!', 'vas-dinamico-forms')
-    ));
+    // Check if external database is configured
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    $db_helper = new EIPSI_External_Database();
+    
+    if ($db_helper->is_enabled()) {
+        // Use external database
+        $result = $db_helper->insert_form_submission($data);
+        
+        if ($result) {
+            wp_send_json_success(array(
+                'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
+                'external_db' => true
+            ));
+        } else {
+            wp_send_json_error(array(
+                'message' => __('Failed to submit form to external database.', 'vas-dinamico-forms')
+            ));
+        }
+    } else {
+        // Use WordPress database (default behavior)
+        $table_name = $wpdb->prefix . 'vas_form_results';
+        
+        $wpdb->insert(
+            $table_name,
+            $data,
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')
+        );
+        
+        wp_send_json_success(array(
+            'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
+            'external_db' => false
+        ));
+    }
 }
 
 // =============================================================================
@@ -322,6 +354,146 @@ function eipsi_track_event_handler() {
         'message' => __('Event tracked successfully.', 'vas-dinamico-forms'),
         'event_id' => $wpdb->insert_id,
         'tracked' => true
+    ));
+}
+
+// =============================================================================
+// EXTERNAL DATABASE CONFIGURATION HANDLERS
+// =============================================================================
+
+function eipsi_test_db_connection_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Unauthorized', 'vas-dinamico-forms')
+        ));
+    }
+    
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    $db_helper = new EIPSI_External_Database();
+    
+    $host = isset($_POST['host']) ? sanitize_text_field($_POST['host']) : '';
+    $user = isset($_POST['user']) ? sanitize_text_field($_POST['user']) : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
+    $db_name = isset($_POST['db_name']) ? sanitize_text_field($_POST['db_name']) : '';
+    
+    if (empty($host) || empty($user) || empty($db_name)) {
+        wp_send_json_error(array(
+            'message' => __('Please fill in all required fields.', 'vas-dinamico-forms')
+        ));
+    }
+    
+    $result = $db_helper->test_connection($host, $user, $password, $db_name);
+    
+    if ($result['success']) {
+        wp_send_json_success($result);
+    } else {
+        wp_send_json_error($result);
+    }
+}
+
+function eipsi_save_db_config_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Unauthorized', 'vas-dinamico-forms')
+        ));
+    }
+    
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    $db_helper = new EIPSI_External_Database();
+    
+    $host = isset($_POST['host']) ? sanitize_text_field($_POST['host']) : '';
+    $user = isset($_POST['user']) ? sanitize_text_field($_POST['user']) : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
+    $db_name = isset($_POST['db_name']) ? sanitize_text_field($_POST['db_name']) : '';
+    
+    // If password is empty, get existing password
+    if (empty($password)) {
+        $existing_credentials = $db_helper->get_credentials();
+        if ($existing_credentials && isset($existing_credentials['password'])) {
+            $password = $existing_credentials['password'];
+        }
+    }
+    
+    if (empty($host) || empty($user) || empty($password) || empty($db_name)) {
+        wp_send_json_error(array(
+            'message' => __('Please fill in all required fields.', 'vas-dinamico-forms')
+        ));
+    }
+    
+    // Test connection before saving
+    $test_result = $db_helper->test_connection($host, $user, $password, $db_name);
+    
+    if (!$test_result['success']) {
+        wp_send_json_error(array(
+            'message' => __('Connection test failed. Please verify your credentials.', 'vas-dinamico-forms') . ' ' . $test_result['message']
+        ));
+    }
+    
+    // Save credentials
+    $success = $db_helper->save_credentials($host, $user, $password, $db_name);
+    
+    if ($success) {
+        $status = $db_helper->get_status();
+        wp_send_json_success(array(
+            'message' => sprintf(
+                __('Configuration saved successfully! Data will now be stored in: %s', 'vas-dinamico-forms'),
+                $db_name
+            ),
+            'status' => $status
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => __('Failed to save configuration.', 'vas-dinamico-forms')
+        ));
+    }
+}
+
+function eipsi_disable_external_db_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Unauthorized', 'vas-dinamico-forms')
+        ));
+    }
+    
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    $db_helper = new EIPSI_External_Database();
+    
+    $db_helper->disable();
+    
+    wp_send_json_success(array(
+        'message' => __('External database disabled. Form submissions will now be stored in the WordPress database.', 'vas-dinamico-forms')
+    ));
+}
+
+function eipsi_get_db_status_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Unauthorized', 'vas-dinamico-forms')
+        ));
+    }
+    
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    $db_helper = new EIPSI_External_Database();
+    
+    $status = $db_helper->get_status();
+    
+    wp_send_json_success($status);
+}
+
+function eipsi_check_external_db_handler() {
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    $db_helper = new EIPSI_External_Database();
+    
+    wp_send_json_success(array(
+        'enabled' => $db_helper->is_enabled()
     ));
 }
 ?>
