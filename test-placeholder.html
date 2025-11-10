@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placeholder Contrast Test</title>
+    <link rel="stylesheet" href="assets/css/eipsi-forms.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #005a87;
+            margin-top: 0;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>EIPSI Forms - Placeholder Contrast Test</h1>
+    
+    <div class="info">
+        <strong>Test Purpose:</strong> Verify placeholder text uses <code>var(--eipsi-color-text-muted, #64748b)</code> 
+        with <code>opacity: 0.8</code> for WCAG AA compliance (4.5:1+ contrast ratio).
+        <br><br>
+        <strong>Expected Contrast:</strong> 4.76:1 on white background (✓ PASSES WCAG AA)
+    </div>
+
+    <div class="test-section">
+        <h2>Text Input Placeholder</h2>
+        <div class="vas-dinamico-form">
+            <div class="eipsi-text-field">
+                <label for="test-text">Text Input</label>
+                <input type="text" id="test-text" placeholder="Enter your name here" />
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Email Input Placeholder</h2>
+        <div class="vas-dinamico-form">
+            <div class="eipsi-text-field">
+                <label for="test-email">Email Input</label>
+                <input type="email" id="test-email" placeholder="your.email@example.com" />
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Number Input Placeholder</h2>
+        <div class="vas-dinamico-form">
+            <div class="eipsi-text-field">
+                <label for="test-number">Number Input</label>
+                <input type="number" id="test-number" placeholder="Enter a number" />
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Textarea Placeholder</h2>
+        <div class="vas-dinamico-form">
+            <div class="eipsi-textarea-field">
+                <label for="test-textarea">Textarea</label>
+                <textarea id="test-textarea" placeholder="Enter your detailed response here..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="info">
+        <strong>Browser Compatibility Test:</strong>
+        <ul>
+            <li>Chrome/Edge: Uses <code>::-webkit-input-placeholder</code></li>
+            <li>Firefox: Uses <code>::-moz-placeholder</code></li>
+            <li>IE/Edge (Legacy): Uses <code>:-ms-input-placeholder</code> and <code>::-ms-input-placeholder</code></li>
+            <li>Modern browsers: Use <code>::placeholder</code></li>
+        </ul>
+        All vendor-specific selectors have been added to ensure cross-browser compatibility.
+    </div>
+</body>
+</html>

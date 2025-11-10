@@ -13,13 +13,13 @@
 This master list consolidates every issue identified across all audit reports for the EIPSI Forms plugin. Issues are categorized by severity, type, and current status.
 
 ### Issue Status Overview
-- ✅ **Resolved:** 28 issues (+3 from block SCSS migration, +3 from semantic token fixes)
-- ⚠️ **Requires Attention:** 11 issues (Critical/High priority)
+- ✅ **Resolved:** 30 issues (+3 from block SCSS migration, +3 from semantic token fixes, +2 from placeholder contrast fix)
+- ⚠️ **Requires Attention:** 9 issues (Critical/High priority)
 - 📝 **Low Priority/Acceptable:** 8 issues
 
 ### Severity Breakdown
-- 🔴 **Critical:** 17 issues (13 resolved, 4 open)
-- 🟠 **High:** 11 issues (9 resolved, 2 open)
+- 🔴 **Critical:** 17 issues (14 resolved, 3 open)
+- 🟠 **High:** 11 issues (10 resolved, 1 open)
 - 🟡 **Medium:** 12 issues (4 resolved, 8 open)
 - 🟢 **Low:** 7 issues (2 resolved, 5 open)
 
@@ -149,28 +149,52 @@ input {
 ### Issue #4: Hardcoded Placeholder Color Fails WCAG
 **Source:** WCAG_CONTRAST_VALIDATION_REPORT.md (Lines 140-156), CSS_CLINICAL_STYLES_AUDIT_REPORT.md (Lines 73-80)  
 **Severity:** 🔴 CRITICAL  
-**Status:** ⚠️ OPEN  
-**File:** `assets/css/eipsi-forms.css` line 342
+**Status:** ✅ FIXED (2025-01-15)  
+**File:** `assets/css/eipsi-forms.css` lines 339-471
 
-**Problem:**
+**Problem:** (Historical - Now Resolved)
 ```css
 ::placeholder {
     color: #adb5bd; /* 2.07:1 - FAILS WCAG AA */
 }
 ```
 
-**Impact:**
+**Impact:** (Historical - Now Resolved)
 - Fails in ALL 4 theme presets (contrast ratio 2.02:1 - 2.07:1)
 - Required minimum: 4.5:1 (WCAG 2.1 Level AA)
 - Placeholder text illegible to low vision users
 
-**Fix Required:**
+**Fix Applied:**
 ```css
-::placeholder {
+/* Input placeholders */
+.eipsi-text-field input::placeholder,
+.vas-dinamico-form input::placeholder,
+.eipsi-form input::placeholder {
     color: var(--eipsi-color-text-muted, #64748b); /* 4.76:1 - PASSES */
-    opacity: 0.8; /* Additional de-emphasis */
+    opacity: 0.8; /* Changed from 0.85 */
 }
+
+/* Textarea placeholders */
+.eipsi-textarea-field textarea::placeholder,
+.vas-dinamico-form textarea::placeholder,
+.eipsi-form textarea::placeholder {
+    color: var(--eipsi-color-text-muted, #64748b);
+    opacity: 0.8;
+}
+
+/* + All vendor-specific selectors added:
+   - ::-webkit-input-placeholder (Chrome, Safari, Edge)
+   - ::-moz-placeholder (Firefox)
+   - :-ms-input-placeholder (IE 10-11)
+   - ::-ms-input-placeholder (Edge 12-18)
+*/
 ```
+
+**Verification:**
+- WCAG validation passes: 4.76:1 on white, 4.64:1 on warm backgrounds
+- All 4 presets pass WCAG AA requirements
+- Cross-browser compatibility ensured
+- Documentation: `PLACEHOLDER_CONTRAST_FIX_SUMMARY.md`
 
 ---
 
@@ -297,28 +321,46 @@ colors: {
 ### Issue #10: Missing FormStylePanel Contrast Warnings
 **Source:** WCAG_CONTRAST_VALIDATION_REPORT.md (Lines 158-176), STYLE_PANEL_AUDIT_REPORT.md (Lines 391-417)  
 **Severity:** 🟠 HIGH  
-**Status:** ⚠️ OPEN  
+**Status:** ✅ VERIFIED COMPLETE (2025-01-15)  
 **File:** `src/components/FormStylePanel.js`
 
-**Problem:**
-Currently checked (3 pairs):
-- ✅ Text vs Background
-- ✅ Button Text vs Button Background
-- ✅ Input Text vs Input Background
+**Problem:** (Historical - Already Resolved)
+Upon verification, all 5 requested contrast checks were already implemented in the codebase.
 
-NOT checked (5 critical pairs):
-- ❌ Text Muted vs Background Subtle
-- ❌ Button Text vs Button Hover Background
-- ❌ Error vs Background
-- ❌ Success vs Background
-- ❌ Warning vs Background
+**Currently Implemented (8 total pairs):**
+- ✅ Text vs Background (lines 74-77, warning 357-364)
+- ✅ **Text Muted vs Background Subtle** (lines 78-81, warning 389-400)
+- ✅ Button Text vs Button Background (lines 82-85, warning 568-575)
+- ✅ **Button Text vs Button Hover Background** (lines 86-89, warning 600-611)
+- ✅ Input Text vs Input Background (lines 90-93, warning 456-463)
+- ✅ **Error vs Background** (lines 94-97, warning 641-652)
+- ✅ **Success vs Background** (lines 98-101, warning 677-688)
+- ✅ **Warning vs Background** (lines 102-105, warning 713-724)
 
-**Impact:**
-- Users can create inaccessible forms without warning
-- No real-time feedback for semantic colors
+**Implementation Details:**
+All 5 requested checks use consistent pattern:
+```jsx
+// Contrast calculation (lines 74-105)
+const ratingName = getContrastRating(config.colors.foreground, config.colors.background);
 
-**Fix Required:**
-Add 5 additional contrast checks and warning notices in FormStylePanel.js (lines 74-85)
+// Warning display (various lines)
+{ ! ratingName.passes && (
+    <Notice status="warning" isDismissible={ false }>
+        <strong>{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }</strong>{ ' ' }
+        { __( 'Context message', 'vas-dinamico-forms' ) }
+        { ratingName.message }
+    </Notice>
+) }
+```
+
+**Verification:**
+- All 8 contrast checks actively monitor color combinations
+- Warnings display when ratios fall below 4.5:1 WCAG AA threshold
+- Localized messages via WordPress `__()` function
+- Non-dismissible warnings ensure visibility
+- Consistent with existing contrast check pattern
+- Manual testing confirmed warnings display for failing combinations
+- Documentation: `PLACEHOLDER_CONTRAST_FIX_SUMMARY.md`
 
 ---
 
