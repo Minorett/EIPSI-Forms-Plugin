@@ -32,6 +32,8 @@ require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/menu.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/results-page.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/export.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/handlers.php';
+require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/configuration.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/ajax-handlers.php';
 
 function vas_dinamico_activate() {
@@ -87,7 +89,7 @@ function vas_dinamico_activate() {
 register_activation_hook(__FILE__, 'vas_dinamico_activate');
 
 function vas_dinamico_enqueue_admin_assets($hook) {
-    if (strpos($hook, 'vas-dinamico') === false && strpos($hook, 'form-results') === false) {
+    if (strpos($hook, 'vas-dinamico') === false && strpos($hook, 'form-results') === false && strpos($hook, 'eipsi-db-config') === false) {
         return;
     }
     
@@ -108,8 +110,42 @@ function vas_dinamico_enqueue_admin_assets($hook) {
     
     wp_localize_script('vas-dinamico-admin-script', 'vasdinamico', array(
         'ajaxurl' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('vas_dinamico_nonce')
+        'nonce' => wp_create_nonce('vas_dinamico_nonce'),
+        'adminNonce' => wp_create_nonce('eipsi_admin_nonce')
     ));
+    
+    // Enqueue configuration panel assets
+    if (strpos($hook, 'eipsi-db-config') !== false) {
+        wp_enqueue_style(
+            'eipsi-config-panel-style',
+            VAS_DINAMICO_PLUGIN_URL . 'assets/css/configuration-panel.css',
+            array(),
+            VAS_DINAMICO_VERSION
+        );
+        
+        wp_enqueue_script(
+            'eipsi-config-panel-script',
+            VAS_DINAMICO_PLUGIN_URL . 'assets/js/configuration-panel.js',
+            array('jquery'),
+            VAS_DINAMICO_VERSION,
+            true
+        );
+        
+        wp_localize_script('eipsi-config-panel-script', 'eipsiConfigL10n', array(
+            'connected' => __('Connected', 'vas-dinamico-forms'),
+            'disconnected' => __('Disconnected', 'vas-dinamico-forms'),
+            'currentDatabase' => __('Current Database:', 'vas-dinamico-forms'),
+            'records' => __('Records:', 'vas-dinamico-forms'),
+            'noExternalDB' => __('No external database configured. Form submissions will be stored in the WordPress database.', 'vas-dinamico-forms'),
+            'fillAllFields' => __('Please fill in all required fields.', 'vas-dinamico-forms'),
+            'connectionError' => __('Connection test failed. Please check your credentials.', 'vas-dinamico-forms'),
+            'testFirst' => __('Please test the connection before saving.', 'vas-dinamico-forms'),
+            'saveError' => __('Failed to save configuration.', 'vas-dinamico-forms'),
+            'disableError' => __('Failed to disable external database.', 'vas-dinamico-forms'),
+            'confirmDisable' => __('Are you sure you want to disable the external database? Form submissions will be stored in the WordPress database.', 'vas-dinamico-forms'),
+            'disableExternal' => __('Disable External Database', 'vas-dinamico-forms')
+        ));
+    }
 }
 
 add_action('admin_enqueue_scripts', 'vas_dinamico_enqueue_admin_assets');

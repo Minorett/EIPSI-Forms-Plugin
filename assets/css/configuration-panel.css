@@ -1,0 +1,391 @@
+/**
+ * EIPSI Forms - Database Configuration Panel Styles
+ * Professional styling for external database management
+ */
+
+.eipsi-config-wrap {
+	max-width: 1200px;
+	margin: 20px auto;
+}
+
+.eipsi-config-wrap h1 {
+	color: var(--eipsi-color-text, #2c3e50);
+	font-size: 2rem;
+	margin-bottom: 0.5rem;
+}
+
+.eipsi-config-wrap .description {
+	color: var(--eipsi-color-text-muted, #64748b);
+	font-size: 1rem;
+	margin-bottom: 2rem;
+}
+
+.eipsi-config-container {
+	display: grid;
+	grid-template-columns: 1fr 400px;
+	gap: 2rem;
+	margin-top: 2rem;
+}
+
+@media (max-width: 1024px) {
+	.eipsi-config-container {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Configuration Form Section */
+.eipsi-config-form-section {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 2rem;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.eipsi-config-form-section h2 {
+	color: var(--eipsi-color-text, #2c3e50);
+	font-size: 1.5rem;
+	margin: 0 0 1.5rem 0;
+	padding-bottom: 1rem;
+	border-bottom: 2px solid var(--eipsi-color-primary, #005a87);
+}
+
+.eipsi-db-form .form-table th {
+	padding: 1rem 1rem 1rem 0;
+	vertical-align: top;
+	font-weight: 600;
+	color: var(--eipsi-color-text, #2c3e50);
+}
+
+.eipsi-db-form .form-table td {
+	padding: 1rem 0;
+}
+
+.eipsi-db-form .form-table input[type="text"],
+.eipsi-db-form .form-table input[type="password"] {
+	width: 100%;
+	max-width: 400px;
+	padding: 0.75rem 1rem;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	font-size: 1rem;
+	transition: all 0.2s ease;
+}
+
+.eipsi-db-form .form-table input[type="text"]:focus,
+.eipsi-db-form .form-table input[type="password"]:focus {
+	border-color: var(--eipsi-color-primary, #005a87);
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+}
+
+.eipsi-db-form .required {
+	color: #d32f2f;
+	margin-left: 0.25rem;
+}
+
+.eipsi-db-form .description {
+	color: var(--eipsi-color-text-muted, #64748b);
+	font-size: 0.875rem;
+	margin-top: 0.5rem;
+	line-height: 1.5;
+}
+
+/* Form Actions */
+.eipsi-form-actions {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+	padding-top: 1.5rem;
+	margin-top: 1.5rem;
+	border-top: 1px solid #e2e8f0;
+}
+
+.eipsi-form-actions .button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.75rem 1.5rem;
+	font-size: 1rem;
+	border-radius: 6px;
+	transition: all 0.2s ease;
+}
+
+.eipsi-form-actions .button .dashicons {
+	margin-top: 2px;
+}
+
+.eipsi-form-actions .button-primary {
+	background: var(--eipsi-color-primary, #005a87);
+	border-color: var(--eipsi-color-primary, #005a87);
+	color: #ffffff;
+}
+
+.eipsi-form-actions .button-primary:hover:not(:disabled) {
+	background: var(--eipsi-color-primary-hover, #003d5b);
+	border-color: var(--eipsi-color-primary-hover, #003d5b);
+}
+
+.eipsi-form-actions .button-primary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.eipsi-form-actions .button-secondary {
+	background: #ffffff;
+	border-color: #e2e8f0;
+	color: var(--eipsi-color-text, #2c3e50);
+}
+
+.eipsi-form-actions .button-secondary:hover {
+	background: #f8f9fa;
+	border-color: #cbd5e0;
+}
+
+.eipsi-form-actions .button-link-delete {
+	color: #d32f2f;
+	text-decoration: none;
+	background: transparent;
+	border: none;
+	padding: 0.5rem 1rem;
+}
+
+.eipsi-form-actions .button-link-delete:hover {
+	color: #b71c1c;
+	text-decoration: underline;
+}
+
+/* Message Container */
+#eipsi-message-container {
+	margin-top: 1.5rem;
+	padding: 1rem;
+	border-radius: 6px;
+	font-size: 1rem;
+}
+
+#eipsi-message-container.success {
+	background: #e8f5e9;
+	border: 1px solid #198754;
+	color: #1b5e20;
+}
+
+#eipsi-message-container.error {
+	background: #ffebee;
+	border: 1px solid #d32f2f;
+	color: #c62828;
+}
+
+#eipsi-message-container.warning {
+	background: #fff3e0;
+	border: 1px solid #b35900;
+	color: #e65100;
+}
+
+/* Status Section */
+.eipsi-status-section {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.eipsi-status-section h2 {
+	color: var(--eipsi-color-text, #2c3e50);
+	font-size: 1.5rem;
+	margin: 0;
+}
+
+/* Status Box */
+.eipsi-status-box {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 1.5rem;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.eipsi-status-indicator {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding-bottom: 1rem;
+	margin-bottom: 1rem;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.status-icon {
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.status-icon.status-connected {
+	background-color: #198754;
+	box-shadow: 0 0 8px rgba(25, 135, 84, 0.5);
+}
+
+.status-icon.status-disconnected {
+	background-color: #d32f2f;
+	box-shadow: 0 0 8px rgba(211, 47, 47, 0.5);
+}
+
+.status-text {
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: var(--eipsi-color-text, #2c3e50);
+}
+
+.eipsi-status-details {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.status-detail-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 0.5rem 0;
+	border-bottom: 1px solid #f8f9fa;
+}
+
+.status-detail-row:last-child {
+	border-bottom: none;
+}
+
+.detail-label {
+	font-weight: 600;
+	color: var(--eipsi-color-text-muted, #64748b);
+	font-size: 0.875rem;
+}
+
+.detail-value {
+	font-weight: 500;
+	color: var(--eipsi-color-text, #2c3e50);
+	font-size: 0.875rem;
+}
+
+.eipsi-status-message {
+	color: var(--eipsi-color-text-muted, #64748b);
+	font-size: 0.875rem;
+	line-height: 1.6;
+}
+
+/* Help Box */
+.eipsi-help-box {
+	background: #f8f9fa;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 1.5rem;
+}
+
+.eipsi-help-box h3 {
+	color: var(--eipsi-color-text, #2c3e50);
+	font-size: 1rem;
+	font-weight: 600;
+	margin: 0 0 0.75rem 0;
+}
+
+.eipsi-help-box ol,
+.eipsi-help-box ul {
+	margin: 0 0 1.5rem 0;
+	padding-left: 1.5rem;
+	color: var(--eipsi-color-text-muted, #64748b);
+	font-size: 0.875rem;
+	line-height: 1.6;
+}
+
+.eipsi-help-box ol li,
+.eipsi-help-box ul li {
+	margin-bottom: 0.5rem;
+}
+
+.eipsi-help-box h3:last-of-type {
+	margin-top: 1rem;
+}
+
+.eipsi-help-box ul:last-child {
+	margin-bottom: 0;
+}
+
+/* Loading State */
+.eipsi-loading {
+	position: relative;
+	pointer-events: none;
+	opacity: 0.6;
+}
+
+.eipsi-loading::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 24px;
+	height: 24px;
+	margin: -12px 0 0 -12px;
+	border: 3px solid var(--eipsi-color-primary, #005a87);
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: eipsi-spin 0.8s linear infinite;
+}
+
+@keyframes eipsi-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+	.eipsi-config-wrap {
+		margin: 10px;
+	}
+
+	.eipsi-config-form-section,
+	.eipsi-status-box,
+	.eipsi-help-box {
+		padding: 1rem;
+	}
+
+	.eipsi-db-form .form-table th,
+	.eipsi-db-form .form-table td {
+		display: block;
+		padding: 0.5rem 0;
+	}
+
+	.eipsi-db-form .form-table th {
+		padding-bottom: 0.25rem;
+	}
+
+	.eipsi-db-form .form-table input[type="text"],
+	.eipsi-db-form .form-table input[type="password"] {
+		max-width: 100%;
+	}
+
+	.eipsi-form-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.eipsi-form-actions .button {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.status-detail-row {
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+}
+
+/* Accessibility */
+.eipsi-config-wrap *:focus-visible {
+	outline: 2px solid var(--eipsi-color-primary, #005a87);
+	outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+	.eipsi-config-wrap *:focus-visible {
+		outline-width: 3px;
+		outline-offset: 3px;
+	}
+}
