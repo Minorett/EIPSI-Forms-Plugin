@@ -4,7 +4,12 @@ import {
 	useInnerBlocksProps,
 	InnerBlocks,
 } from '@wordpress/block-editor';
-import { PanelBody, TextControl, TextareaControl } from '@wordpress/components';
+import {
+	PanelBody,
+	TextControl,
+	TextareaControl,
+	ToggleControl,
+} from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useEffect } from '@wordpress/element';
 import {
@@ -14,7 +19,13 @@ import {
 import FormStylePanel from '../../components/FormStylePanel';
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { formId, submitButtonLabel, description, styleConfig } = attributes;
+	const {
+		formId,
+		submitButtonLabel,
+		description,
+		styleConfig,
+		allowBackwardsNav,
+	} = attributes;
 
 	// Migration: Convert legacy attributes to styleConfig on mount
 	useEffect( () => {
@@ -103,6 +114,26 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 						help={ __(
 							'Optional description text shown above the form',
+							'vas-dinamico-forms'
+						) }
+					/>
+				</PanelBody>
+
+				<PanelBody
+					title={ __( 'Navigation Settings', 'vas-dinamico-forms' ) }
+					initialOpen={ false }
+				>
+					<ToggleControl
+						label={ __(
+							'Allow backwards navigation',
+							'vas-dinamico-forms'
+						) }
+						checked={ !! allowBackwardsNav }
+						onChange={ ( value ) =>
+							setAttributes( { allowBackwardsNav: !! value } )
+						}
+						help={ __(
+							'When disabled, the "Previous" button will be hidden on all pages.',
 							'vas-dinamico-forms'
 						) }
 					/>

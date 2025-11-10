@@ -38,6 +38,10 @@
             "type": "object",
             "default": null
         },
+        "allowBackwardsNav": {
+            "type": "boolean",
+            "default": true
+        },
 
         "backgroundColor": {
             "type": "string",
