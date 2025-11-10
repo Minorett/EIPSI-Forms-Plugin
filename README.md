@@ -45,15 +45,14 @@ Professional WordPress form builder with Gutenberg blocks for research and surve
    - Open Inspector sidebar → Block settings
    - **Quick Start**: Apply a theme preset (Clinical Blue, Minimal White, Warm Neutral, High Contrast)
    - **Advanced**: Use 7 customization panels for full control:
-     - 🎨 Theme Presets - One-click professional themes
-     - 🎨 Colors - 18 color tokens with contrast checking
-     - ✍️ Typography - Fonts, sizes, weights, line heights
-     - 📐 Spacing & Layout - Padding, gaps, margins
-     - 🔲 Borders & Radius - Corner radius, border styles
-     - ✨ Shadows & Effects - Depth and elevation
-     - ⚡ Hover & Interaction - Animations and transitions
+      - 🎨 Theme Presets - One-click professional themes
+      - 🎨 Colors - 18 color tokens with contrast checking
+      - ✍️ Typography - Fonts, sizes, weights, line heights
+      - 📐 Spacing & Layout - Padding, gaps, margins
+      - 🔲 Borders & Radius - Corner radius, border styles
+      - ✨ Shadows & Effects - Depth and elevation
+      - ⚡ Hover & Interaction - Animations and transitions
    - Changes apply instantly with live preview
-   - See [CUSTOMIZATION_PANEL_GUIDE.md](./CUSTOMIZATION_PANEL_GUIDE.md) for full documentation
 4. Add field blocks inside the form container:
    - EIPSI Campo Texto (text input with various types)
    - EIPSI Campo Textarea (multi-line text)
