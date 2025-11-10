@@ -68,34 +68,38 @@ export default function Save( { attributes } ) {
 
 	return (
 		<div { ...blockProps }>
-			{ label && (
-				<label className={ required ? 'required' : undefined }>
-					{ label }
-				</label>
-			) }
-			<ul className="checkbox-list">
-				{ optionsArray.map( ( option, index ) => {
-					const checkboxId = getFieldId(
-						normalizedFieldName,
-						index.toString()
-					);
-					return (
-						<li key={ index }>
-							<input
-								type="checkbox"
-								name={ `${ normalizedFieldName }[]` }
-								id={ checkboxId }
-								value={ option }
-								data-required={ required ? 'true' : 'false' }
-								data-field-type="checkbox"
-							/>
-							<label htmlFor={ checkboxId }>{ option }</label>
-						</li>
-					);
-				} ) }
-			</ul>
-			{ renderHelperText( helperText ) }
-			<div className="form-error" aria-live="polite" />
+			<fieldset>
+				{ label && (
+					<legend className={ required ? 'required' : undefined }>
+						{ label }
+					</legend>
+				) }
+				<ul className="checkbox-list">
+					{ optionsArray.map( ( option, index ) => {
+						const checkboxId = getFieldId(
+							normalizedFieldName,
+							index.toString()
+						);
+						return (
+							<li key={ index }>
+								<input
+									type="checkbox"
+									name={ `${ normalizedFieldName }[]` }
+									id={ checkboxId }
+									value={ option }
+									data-required={
+										required ? 'true' : 'false'
+									}
+									data-field-type="checkbox"
+								/>
+								<label htmlFor={ checkboxId }>{ option }</label>
+							</li>
+						);
+					} ) }
+				</ul>
+				{ renderHelperText( helperText ) }
+				<div className="form-error" aria-live="polite" />
+			</fieldset>
 		</div>
 	);
 }

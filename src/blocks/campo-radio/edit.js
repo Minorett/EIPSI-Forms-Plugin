@@ -119,47 +119,49 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			</InspectorControls>
 
 			<div { ...blockProps }>
-				<label className={ required ? 'required' : undefined }>
-					{ displayLabel }
-				</label>
-				<ul className="radio-list">
-					{ optionsArray.length > 0 ? (
-						optionsArray.map( ( option, index ) => {
-							const radioId = getFieldId(
-								normalizedFieldName,
-								index.toString()
-							);
-							return (
-								<li key={ index }>
-									<input
-										type="radio"
-										name={ normalizedFieldName }
-										id={ radioId }
-										value={ option }
-										required={ required }
-										data-required={
-											required ? 'true' : 'false'
-										}
-										data-field-type="radio"
-										disabled
-									/>
-									<label htmlFor={ radioId }>
-										{ option }
-									</label>
-								</li>
-							);
-						} )
-					) : (
-						<li className="empty-state">
-							{ __(
-								'Add options in the sidebar',
-								'vas-dinamico-forms'
-							) }
-						</li>
-					) }
-				</ul>
-				{ renderHelperText( helperText ) }
-				<div className="form-error" aria-live="polite" />
+				<fieldset>
+					<legend className={ required ? 'required' : undefined }>
+						{ displayLabel }
+					</legend>
+					<ul className="radio-list">
+						{ optionsArray.length > 0 ? (
+							optionsArray.map( ( option, index ) => {
+								const radioId = getFieldId(
+									normalizedFieldName,
+									index.toString()
+								);
+								return (
+									<li key={ index }>
+										<input
+											type="radio"
+											name={ normalizedFieldName }
+											id={ radioId }
+											value={ option }
+											required={ required }
+											data-required={
+												required ? 'true' : 'false'
+											}
+											data-field-type="radio"
+											disabled
+										/>
+										<label htmlFor={ radioId }>
+											{ option }
+										</label>
+									</li>
+								);
+							} )
+						) : (
+							<li className="empty-state">
+								{ __(
+									'Add options in the sidebar',
+									'vas-dinamico-forms'
+								) }
+							</li>
+						) }
+					</ul>
+					{ renderHelperText( helperText ) }
+					<div className="form-error" aria-live="polite" />
+				</fieldset>
 			</div>
 		</>
 	);

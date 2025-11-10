@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * WCAG Contrast Validation Test Suite
  * Validates contrast ratios for all default tokens and presets

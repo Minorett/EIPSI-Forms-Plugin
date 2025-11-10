@@ -1,7 +1,8 @@
+/* global jQuery, ajaxurl, eipsiConfigL10n, confirm */
 /**
  * EIPSI Forms - Database Configuration Panel JavaScript
  * Handles connection testing, saving, and status updates
- * @param $
+ * @param {Object} $ - jQuery object
  */
 
 ( function ( $ ) {
@@ -39,10 +40,6 @@
 		testConnection( e ) {
 			e.preventDefault();
 
-			const $button = $( '#eipsi-test-connection' );
-			const $form = $( '#eipsi-db-config-form' );
-			const $statusBox = $( '#eipsi-status-box' );
-
 			// Get form values
 			const data = {
 				action: 'eipsi_test_db_connection',
@@ -58,6 +55,8 @@
 				this.showMessage( 'error', eipsiConfigL10n.fillAllFields );
 				return;
 			}
+
+			const $button = $( '#eipsi-test-connection' );
 
 			// Show loading state
 			$button.prop( 'disabled', true ).addClass( 'eipsi-loading' );
@@ -85,7 +84,7 @@
 						EIPSIConfig.updateStatusBox( false, {} );
 					}
 				},
-				error( xhr, status, error ) {
+				error() {
 					EIPSIConfig.showMessage(
 						'error',
 						eipsiConfigL10n.connectionError
@@ -162,7 +161,7 @@
 						);
 					}
 				},
-				error( xhr, status, error ) {
+				error() {
 					EIPSIConfig.showMessage(
 						'error',
 						eipsiConfigL10n.saveError
@@ -179,6 +178,7 @@
 		disableExternalDB( e ) {
 			e.preventDefault();
 
+			// eslint-disable-next-line no-alert
 			if ( ! confirm( eipsiConfigL10n.confirmDisable ) ) {
 				return;
 			}
@@ -213,7 +213,7 @@
 						);
 					}
 				},
-				error( xhr, status, error ) {
+				error() {
 					EIPSIConfig.showMessage(
 						'error',
 						eipsiConfigL10n.disableError

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 
 /**
  * Mobile Focus & Responsive Verification Script
@@ -258,13 +259,6 @@ console.log( '\nTESTING RESPONSIVE CONTAINER BEHAVIOR' );
 console.log( '----------------------------------------------------------' );
 
 // Test 15: Container padding progression
-const paddingTests = [
-	{ breakpoint: '374px', padding: '0.75rem', pixels: '12px' },
-	{ breakpoint: '480px', padding: '1rem', pixels: '16px' },
-	{ breakpoint: '768px', padding: '1.5rem', pixels: '24px' },
-	{ breakpoint: 'desktop', padding: '2.5rem', pixels: '40px' },
-];
-
 // Check 320px padding
 if (
 	/@media\s*\(max-width:\s*374px\)[\s\S]*?\.vas-dinamico-form[\s\S]*?padding:\s*0\.75rem/i.test(

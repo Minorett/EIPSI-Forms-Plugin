@@ -48,9 +48,9 @@ export default function Edit( { attributes, setAttributes } ) {
 
 			<div { ...blockProps }>
 				{ displayLabel && (
-					<label className={ required ? 'required' : undefined }>
+					<span className={ required ? 'required' : undefined }>
 						{ displayLabel }
-					</label>
+					</span>
 				) }
 				{ placeholder && (
 					<p className="description-placeholder">{ placeholder }</p>
