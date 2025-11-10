@@ -44,6 +44,11 @@ export default function Save( { attributes } ) {
 		step,
 		initialValue,
 		showValue,
+		labelStyle,
+		labelAlignment,
+		labelBgColor,
+		labelBorderColor,
+		labelTextColor,
 	} = attributes;
 
 	const normalizedFieldName =
@@ -82,13 +87,26 @@ export default function Save( { attributes } ) {
 				</label>
 			) }
 			<div
-				className="vas-slider-container"
+				className={ `vas-slider-container label-style-${
+					labelStyle || 'simple'
+				} label-align-${ labelAlignment || 'justified' }` }
 				data-scale={ `${ minValue }-${ maxValue }` }
 			>
 				{ ! hasMultiLabels && (
 					<div className="vas-slider-labels">
 						{ leftLabel && (
-							<span className="vas-label-left">
+							<span
+								className="vas-label-left"
+								style={ {
+									backgroundColor: labelBgColor || undefined,
+									borderColor: labelBorderColor || undefined,
+									color:
+										labelStyle === 'buttons' &&
+										labelTextColor
+											? labelTextColor
+											: undefined,
+								} }
+							>
 								{ leftLabel }
 							</span>
 						) }
@@ -101,7 +119,18 @@ export default function Save( { attributes } ) {
 							</span>
 						) }
 						{ rightLabel && (
-							<span className="vas-label-right">
+							<span
+								className="vas-label-right"
+								style={ {
+									backgroundColor: labelBgColor || undefined,
+									borderColor: labelBorderColor || undefined,
+									color:
+										labelStyle === 'buttons' &&
+										labelTextColor
+											? labelTextColor
+											: undefined,
+								} }
+							>
 								{ rightLabel }
 							</span>
 						) }
@@ -110,7 +139,19 @@ export default function Save( { attributes } ) {
 				{ hasMultiLabels && (
 					<div className="vas-multi-labels">
 						{ labelArray.map( ( labelText, index ) => (
-							<span key={ index } className="vas-multi-label">
+							<span
+								key={ index }
+								className="vas-multi-label"
+								style={ {
+									backgroundColor: labelBgColor || undefined,
+									borderColor: labelBorderColor || undefined,
+									color:
+										labelStyle === 'buttons' &&
+										labelTextColor
+											? labelTextColor
+											: undefined,
+								} }
+							>
 								{ labelText }
 							</span>
 						) ) }

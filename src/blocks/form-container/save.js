@@ -5,8 +5,14 @@ import {
 } from '../../utils/styleTokens';
 
 export default function Save( { attributes } ) {
-	const { formId, submitButtonLabel, description, className, styleConfig } =
-		attributes;
+	const {
+		formId,
+		submitButtonLabel,
+		description,
+		className,
+		styleConfig,
+		allowBackwardsNav,
+	} = attributes;
 
 	// Get style configuration (migrate if needed)
 	const currentConfig = styleConfig || migrateToStyleConfig( attributes );
@@ -31,6 +37,9 @@ export default function Save( { attributes } ) {
 			<form
 				className="vas-form eipsi-form-element"
 				data-form-id={ formId }
+				data-allow-backwards-nav={
+					allowBackwardsNav ? 'true' : 'false'
+				}
 			>
 				<input type="hidden" name="form_id" value={ formId } />
 				<input

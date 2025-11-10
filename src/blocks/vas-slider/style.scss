@@ -120,6 +120,116 @@
         }
     }
 
+    // LABEL STYLE: SIMPLE (default - minimal styling)
+    &.label-style-simple {
+        .vas-slider-labels {
+            .vas-label-left,
+            .vas-label-right {
+                background: transparent !important;
+                border: none !important;
+                padding: 0.5em 0;
+                font-weight: 600;
+            }
+        }
+
+        .vas-multi-labels .vas-multi-label {
+            background: transparent !important;
+            border: none !important;
+            padding: 0.5em 0;
+            font-weight: 600;
+        }
+    }
+
+    // LABEL STYLE: SQUARES (badge style with background)
+    &.label-style-squares {
+        .vas-slider-labels {
+            .vas-label-left,
+            .vas-label-right {
+                background: var(--eipsi-color-primary, #005a87);
+                border: none !important;
+                border-radius: 6px;
+                padding: 0.6em 1em;
+                color: var(--eipsi-color-background, #ffffff);
+                font-weight: 700;
+                box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.15));
+            }
+        }
+
+        .vas-multi-labels .vas-multi-label {
+            background: var(--eipsi-color-primary, #005a87);
+            border: none !important;
+            border-radius: 6px;
+            color: var(--eipsi-color-background, #ffffff);
+            font-weight: 700;
+            box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.15));
+        }
+    }
+
+    // LABEL STYLE: BUTTONS (outlined button style)
+    &.label-style-buttons {
+        .vas-slider-labels {
+            .vas-label-left,
+            .vas-label-right {
+                background: var(--eipsi-color-background, #ffffff);
+                border: 2px solid var(--eipsi-color-primary, #005a87) !important;
+                border-radius: 8px;
+                padding: 0.7em 1.2em;
+                color: var(--eipsi-color-primary, #005a87);
+                font-weight: 700;
+                transition: all 0.2s ease;
+                cursor: default;
+
+                &:hover {
+                    background: var(--eipsi-color-primary, #005a87);
+                    color: var(--eipsi-color-background, #ffffff);
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.2);
+                }
+            }
+        }
+
+        .vas-multi-labels .vas-multi-label {
+            background: var(--eipsi-color-background, #ffffff);
+            border: 2px solid var(--eipsi-color-primary, #005a87) !important;
+            border-radius: 8px;
+            color: var(--eipsi-color-primary, #005a87);
+            font-weight: 700;
+            transition: all 0.2s ease;
+            cursor: default;
+
+            &:hover {
+                background: var(--eipsi-color-primary, #005a87);
+                color: var(--eipsi-color-background, #ffffff);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 90, 135, 0.2);
+            }
+        }
+    }
+
+    // LABEL ALIGNMENT: CENTERED (labels with spacing, not edge-to-edge)
+    &.label-align-centered {
+        .vas-slider-labels,
+        .vas-multi-labels {
+            justify-content: center;
+            gap: 1.5em;
+
+            @media (max-width: 767px) {
+                gap: 1em;
+            }
+
+            .vas-label-left,
+            .vas-label-right,
+            .vas-multi-label {
+                flex: 0 1 auto;
+                min-width: 80px;
+
+                @media (max-width: 480px) {
+                    min-width: 60px;
+                }
+            }
+        }
+    }
+
     .vas-current-value-solo {
         font-size: 1.8em;
         font-weight: 800;

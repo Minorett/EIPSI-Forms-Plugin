@@ -77,6 +77,26 @@
             "type": "boolean",
             "default": true
         },
+        "labelStyle": {
+            "type": "string",
+            "default": "simple"
+        },
+        "labelAlignment": {
+            "type": "string",
+            "default": "justified"
+        },
+        "labelBgColor": {
+            "type": "string",
+            "default": ""
+        },
+        "labelBorderColor": {
+            "type": "string",
+            "default": ""
+        },
+        "labelTextColor": {
+            "type": "string",
+            "default": ""
+        },
         "className": {
             "type": "string",
             "default": ""

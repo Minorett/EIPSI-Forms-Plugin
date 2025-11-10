@@ -1050,10 +1050,13 @@
 			const navigator = this.getNavigator( form );
 
 			const hasHistory = navigator && navigator.history.length > 1;
+			const allowBackwardsNav =
+				form.dataset.allowBackwardsNav !== 'false';
 
 			if ( prevButton ) {
-				prevButton.style.display =
-					hasHistory || currentPage > 1 ? '' : 'none';
+				const shouldShowPrev =
+					allowBackwardsNav && ( hasHistory || currentPage > 1 );
+				prevButton.style.display = shouldShowPrev ? '' : 'none';
 			}
 
 			const shouldShowNext = navigator

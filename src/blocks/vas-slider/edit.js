@@ -1,10 +1,15 @@
-import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
+import {
+	InspectorControls,
+	useBlockProps,
+	ColorPalette,
+} from '@wordpress/block-editor';
 import {
 	PanelBody,
 	TextControl,
 	TextareaControl,
 	ToggleControl,
 	RangeControl,
+	SelectControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useState } from '@wordpress/element';
@@ -53,6 +58,11 @@ export default function Edit( { attributes, setAttributes } ) {
 		step,
 		initialValue,
 		showValue,
+		labelStyle,
+		labelAlignment,
+		labelBgColor,
+		labelBorderColor,
+		labelTextColor,
 	} = attributes;
 
 	const normalizedFieldName =
@@ -252,6 +262,139 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 					/>
 				</PanelBody>
+
+				<PanelBody
+					title={ __( 'Label Styling', 'vas-dinamico-forms' ) }
+					initialOpen={ false }
+				>
+					<SelectControl
+						label={ __( 'Label Style', 'vas-dinamico-forms' ) }
+						value={ labelStyle }
+						options={ [
+							{
+								label: __(
+									'Simple text (no decoration)',
+									'vas-dinamico-forms'
+								),
+								value: 'simple',
+							},
+							{
+								label: __(
+									'Squares (badge style)',
+									'vas-dinamico-forms'
+								),
+								value: 'squares',
+							},
+							{
+								label: __(
+									'Buttons (outlined style)',
+									'vas-dinamico-forms'
+								),
+								value: 'buttons',
+							},
+						] }
+						onChange={ ( value ) =>
+							setAttributes( { labelStyle: value } )
+						}
+					/>
+					<SelectControl
+						label={ __( 'Label Alignment', 'vas-dinamico-forms' ) }
+						value={ labelAlignment }
+						options={ [
+							{
+								label: __(
+									'Justified (full width)',
+									'vas-dinamico-forms'
+								),
+								value: 'justified',
+							},
+							{
+								label: __(
+									'Centered (with spacing)',
+									'vas-dinamico-forms'
+								),
+								value: 'centered',
+							},
+						] }
+						onChange={ ( value ) =>
+							setAttributes( { labelAlignment: value } )
+						}
+					/>
+					{ labelStyle !== 'simple' && (
+						<>
+							<p
+								style={ {
+									marginTop: '16px',
+									marginBottom: '8px',
+								} }
+							>
+								<strong>
+									{ __(
+										'Background Color',
+										'vas-dinamico-forms'
+									) }
+								</strong>
+							</p>
+							<ColorPalette
+								value={ labelBgColor }
+								onChange={ ( value ) =>
+									setAttributes( {
+										labelBgColor: value || '',
+									} )
+								}
+								clearable={ true }
+							/>
+							<p
+								style={ {
+									marginTop: '16px',
+									marginBottom: '8px',
+								} }
+							>
+								<strong>
+									{ __(
+										'Border Color',
+										'vas-dinamico-forms'
+									) }
+								</strong>
+							</p>
+							<ColorPalette
+								value={ labelBorderColor }
+								onChange={ ( value ) =>
+									setAttributes( {
+										labelBorderColor: value || '',
+									} )
+								}
+								clearable={ true }
+							/>
+							{ labelStyle === 'buttons' && (
+								<>
+									<p
+										style={ {
+											marginTop: '16px',
+											marginBottom: '8px',
+										} }
+									>
+										<strong>
+											{ __(
+												'Text Color',
+												'vas-dinamico-forms'
+											) }
+										</strong>
+									</p>
+									<ColorPalette
+										value={ labelTextColor }
+										onChange={ ( value ) =>
+											setAttributes( {
+												labelTextColor: value || '',
+											} )
+										}
+										clearable={ true }
+									/>
+								</>
+							) }
+						</>
+					) }
+				</PanelBody>
 			</InspectorControls>
 
 			<div { ...blockProps }>
@@ -262,13 +405,26 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ displayLabel }
 				</label>
 				<div
-					className="vas-slider-container vas-slider-preview"
+					className={ `vas-slider-container vas-slider-preview label-style-${ labelStyle } label-align-${ labelAlignment }` }
 					data-scale={ `${ minValue }-${ maxValue }` }
 				>
 					{ ! hasMultiLabels && (
 						<div className="vas-slider-labels">
 							{ leftLabel && (
-								<span className="vas-label-left">
+								<span
+									className="vas-label-left"
+									style={ {
+										backgroundColor:
+											labelBgColor || undefined,
+										borderColor:
+											labelBorderColor || undefined,
+										color:
+											labelStyle === 'buttons' &&
+											labelTextColor
+												? labelTextColor
+												: undefined,
+									} }
+								>
 									{ leftLabel }
 								</span>
 							) }
@@ -281,7 +437,20 @@ export default function Edit( { attributes, setAttributes } ) {
 								</span>
 							) }
 							{ rightLabel && (
-								<span className="vas-label-right">
+								<span
+									className="vas-label-right"
+									style={ {
+										backgroundColor:
+											labelBgColor || undefined,
+										borderColor:
+											labelBorderColor || undefined,
+										color:
+											labelStyle === 'buttons' &&
+											labelTextColor
+												? labelTextColor
+												: undefined,
+									} }
+								>
 									{ rightLabel }
 								</span>
 							) }
@@ -290,7 +459,21 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ hasMultiLabels && (
 						<div className="vas-multi-labels">
 							{ labelArray.map( ( labelText, index ) => (
-								<span key={ index } className="vas-multi-label">
+								<span
+									key={ index }
+									className="vas-multi-label"
+									style={ {
+										backgroundColor:
+											labelBgColor || undefined,
+										borderColor:
+											labelBorderColor || undefined,
+										color:
+											labelStyle === 'buttons' &&
+											labelTextColor
+												? labelTextColor
+												: undefined,
+									} }
+								>
 									{ labelText }
 								</span>
 							) ) }
