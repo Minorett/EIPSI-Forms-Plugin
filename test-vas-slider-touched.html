@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAS Slider Touched State Test</title>
+    <link rel="stylesheet" href="assets/css/eipsi-forms.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background: #f8f9fa;
+        }
+        .test-section {
+            background: white;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-status {
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .test-status.untouched { background: #fff3cd; color: #856404; }
+        .test-status.touched { background: #d4edda; color: #155724; }
+        .test-status.error { background: #f8d7da; color: #721c24; }
+        button {
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            background: #005a87;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #003d5b;
+        }
+    </style>
+</head>
+<body>
+    <h1>VAS Slider Touched State Test</h1>
+    <p>This page tests the touched-state validation enhancement (Issue #13).</p>
+
+    <!-- Test 1: Required slider, not touched -->
+    <div class="test-section">
+        <h2>Test 1: Required VAS Slider (Not Touched)</h2>
+        <p>Try clicking "Validate" without interacting with the slider. Should show error.</p>
+        
+        <form id="test-form-1" class="vas-dinamico-form">
+            <div class="form-group eipsi-field eipsi-vas-slider-field" 
+                 data-field-name="pain_level" 
+                 data-required="true"
+                 data-field-type="vas-slider">
+                <label class="required" for="field-pain_level-1">Pain Level</label>
+                <div class="vas-slider-container" data-scale="0-10">
+                    <div class="vas-slider-labels">
+                        <span class="vas-label-left">No Pain</span>
+                        <span class="vas-current-value" id="field-pain_level-1-value">5</span>
+                        <span class="vas-label-right">Max Pain</span>
+                    </div>
+                    <input type="range" name="pain_level" id="field-pain_level-1" 
+                           class="vas-slider" min="0" max="10" step="1" value="5" 
+                           required data-required="true" data-show-value="true"
+                           data-touched="false"
+                           aria-valuemin="0" aria-valuemax="10" aria-valuenow="5"
+                           aria-labelledby="field-pain_level-1-value">
+                </div>
+                <p class="field-helper">Move the slider to indicate your pain level</p>
+                <div class="form-error" aria-live="polite"></div>
+            </div>
+            <button type="button" onclick="validateTest1()">Validate</button>
+        </form>
+        <div id="status-1" class="test-status untouched">Status: Untouched</div>
+    </div>
+
+    <!-- Test 2: Required slider, touched via mouse -->
+    <div class="test-section">
+        <h2>Test 2: Required VAS Slider (Touch via Mouse)</h2>
+        <p>Click/drag the slider, then click "Validate". Should pass validation.</p>
+        
+        <form id="test-form-2" class="vas-dinamico-form">
+            <div class="form-group eipsi-field eipsi-vas-slider-field" 
+                 data-field-name="stress_level" 
+                 data-required="true"
+                 data-field-type="vas-slider">
+                <label class="required" for="field-stress_level-2">Stress Level</label>
+                <div class="vas-slider-container" data-scale="0-10">
+                    <div class="vas-slider-labels">
+                        <span class="vas-label-left">Relaxed</span>
+                        <span class="vas-current-value" id="field-stress_level-2-value">5</span>
+                        <span class="vas-label-right">Very Stressed</span>
+                    </div>
+                    <input type="range" name="stress_level" id="field-stress_level-2" 
+                           class="vas-slider" min="0" max="10" step="1" value="5" 
+                           required data-required="true" data-show-value="true"
+                           data-touched="false"
+                           aria-valuemin="0" aria-valuemax="10" aria-valuenow="5"
+                           aria-labelledby="field-stress_level-2-value">
+                </div>
+                <p class="field-helper">Move the slider to indicate your stress level</p>
+                <div class="form-error" aria-live="polite"></div>
+            </div>
+            <button type="button" onclick="validateTest2()">Validate</button>
+        </form>
+        <div id="status-2" class="test-status untouched">Status: Untouched</div>
+    </div>
+
+    <!-- Test 3: Non-required slider -->
+    <div class="test-section">
+        <h2>Test 3: Non-Required VAS Slider</h2>
+        <p>This slider is NOT required. Should pass validation even without interaction.</p>
+        
+        <form id="test-form-3" class="vas-dinamico-form">
+            <div class="form-group eipsi-field eipsi-vas-slider-field" 
+                 data-field-name="satisfaction" 
+                 data-required="false"
+                 data-field-type="vas-slider">
+                <label for="field-satisfaction-3">Satisfaction Level</label>
+                <div class="vas-slider-container" data-scale="0-10">
+                    <div class="vas-slider-labels">
+                        <span class="vas-label-left">Not Satisfied</span>
+                        <span class="vas-current-value" id="field-satisfaction-3-value">5</span>
+                        <span class="vas-label-right">Very Satisfied</span>
+                    </div>
+                    <input type="range" name="satisfaction" id="field-satisfaction-3" 
+                           class="vas-slider" min="0" max="10" step="1" value="5" 
+                           data-required="false" data-show-value="true"
+                           data-touched="false"
+                           aria-valuemin="0" aria-valuemax="10" aria-valuenow="5"
+                           aria-labelledby="field-satisfaction-3-value">
+                </div>
+                <p class="field-helper">Optional: Rate your satisfaction</p>
+                <div class="form-error" aria-live="polite"></div>
+            </div>
+            <button type="button" onclick="validateTest3()">Validate</button>
+        </form>
+        <div id="status-3" class="test-status untouched">Status: Not Required</div>
+    </div>
+
+    <script>
+        // Mock config for standalone testing
+        window.eipsiFormsConfig = {
+            strings: {
+                sliderRequired: 'Por favor, interactúe con la escala para continuar.',
+                requiredField: 'Este campo es obligatorio.'
+            },
+            settings: {
+                debug: true
+            }
+        };
+    </script>
+    <script src="assets/js/eipsi-forms.js"></script>
+    <script>
+        // Initialize forms
+        document.addEventListener('DOMContentLoaded', () => {
+            const form1 = document.getElementById('test-form-1');
+            const form2 = document.getElementById('test-form-2');
+            const form3 = document.getElementById('test-form-3');
+            
+            EIPSIForms.initForm(form1);
+            EIPSIForms.initForm(form2);
+            EIPSIForms.initForm(form3);
+
+            // Add status update listeners
+            const slider1 = document.getElementById('field-pain_level-1');
+            const slider2 = document.getElementById('field-stress_level-2');
+            const slider3 = document.getElementById('field-satisfaction-3');
+
+            const updateStatus = (slider, statusId) => {
+                const status = document.getElementById(statusId);
+                const touched = slider.dataset.touched === 'true';
+                status.className = `test-status ${touched ? 'touched' : 'untouched'}`;
+                status.textContent = `Status: ${touched ? 'Touched ✓' : 'Untouched'}`;
+            };
+
+            slider1.addEventListener('pointerdown', () => setTimeout(() => updateStatus(slider1, 'status-1'), 100));
+            slider1.addEventListener('keydown', () => setTimeout(() => updateStatus(slider1, 'status-1'), 100));
+            
+            slider2.addEventListener('pointerdown', () => setTimeout(() => updateStatus(slider2, 'status-2'), 100));
+            slider2.addEventListener('keydown', () => setTimeout(() => updateStatus(slider2, 'status-2'), 100));
+            
+            slider3.addEventListener('pointerdown', () => setTimeout(() => updateStatus(slider3, 'status-3'), 100));
+            slider3.addEventListener('keydown', () => setTimeout(() => updateStatus(slider3, 'status-3'), 100));
+        });
+
+        function validateTest1() {
+            const slider = document.getElementById('field-pain_level-1');
+            const isValid = EIPSIForms.validateField(slider);
+            const status = document.getElementById('status-1');
+            
+            if (isValid) {
+                status.className = 'test-status touched';
+                status.textContent = 'PASS: Validation successful ✓';
+            } else {
+                status.className = 'test-status error';
+                status.textContent = 'EXPECTED: Validation failed (slider not touched) ✓';
+            }
+        }
+
+        function validateTest2() {
+            const slider = document.getElementById('field-stress_level-2');
+            const isValid = EIPSIForms.validateField(slider);
+            const status = document.getElementById('status-2');
+            
+            if (isValid) {
+                status.className = 'test-status touched';
+                status.textContent = 'PASS: Validation successful ✓';
+            } else {
+                status.className = 'test-status error';
+                status.textContent = 'FAIL: Should pass after touching slider ✗';
+            }
+        }
+
+        function validateTest3() {
+            const slider = document.getElementById('field-satisfaction-3');
+            const isValid = EIPSIForms.validateField(slider);
+            const status = document.getElementById('status-3');
+            
+            if (isValid) {
+                status.className = 'test-status touched';
+                status.textContent = 'PASS: Non-required slider always passes ✓';
+            } else {
+                status.className = 'test-status error';
+                status.textContent = 'FAIL: Non-required should always pass ✗';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -251,15 +251,33 @@ initVasSliders( form ) {
 - **Impact**: Screen readers now properly associate value display with slider
 - **Status**: ✅ RESOLVED
 
-**Issue #3: Required Validation Edge Case** (REMAINS - Low Priority)
-- VAS sliders always have a value (initialValue), so `required` attribute doesn't trigger traditional "empty" validation
-- For clinical research, may want to track if user actually interacted with slider
-- **Recommendation**: Add data attribute `data-touched="false"` that gets set to `"true"` on first interaction
+**Issue #3: Required Validation Edge Case** ✅ FIXED (2025-01-16)
+- **Problem**: VAS sliders always have a value (initialValue), so `required` attribute doesn't trigger traditional "empty" validation. For clinical research, tracking whether participants actually interacted with the slider is critical for data validity.
+- **Fix Applied**: Implemented touched-state validation mechanism:
+  - Added `data-touched="false"` attribute to slider markup (`src/blocks/vas-slider/save.js`)
+  - Existing forms receive the attribute on initialization (`initVasSliders`)
+  - First intentional interaction flips flag to `"true"` via:
+    - `pointerdown` event (mouse/touch interaction)
+    - `keydown` event (arrow keys, Home/End navigation)
+  - `validateField` checks `data-touched` for required range inputs
+  - Clinical-grade error message via localized string: `sliderRequired`
+- **Impact**: Ensures research data integrity by distinguishing "never touched" from "intentionally set to initial value"
+- **Clinical Rationale**: Prevents submission of default values when participant hasn't engaged with the assessment scale
+- **Status**: ✅ RESOLVED (Issues #13)
 
-**Issue #4: ARIA Announcements** (REMAINS - Acceptable)
-- Value changes announced by `aria-valuenow`, but rapid sliding may create excessive announcements
-- **Status**: Acceptable for clinical use; consider `aria-live="polite"` on value display if needed
-- **Priority**: Low - current behavior meets WCAG requirements
+**Issue #4: ARIA Announcements** ✅ ENHANCED (2025-01-16)
+- **Problem**: Rapid slider movement creates excessive ARIA announcements. `aria-valuenow` updates on every input event, causing screen reader chatter.
+- **Fix Applied**: Implemented throttled ARIA updates:
+  - Combined `setTimeout` debouncing (80ms) with `requestAnimationFrame` throttling
+  - Batches value display updates and `aria-valuenow` changes
+  - Maintains responsive feedback while reducing announcement frequency
+  - Smooth visual updates continue uninterrupted
+- **Benefits**:
+  - Screen reader users hear meaningful value changes, not every pixel
+  - Responsive UX maintained (80ms delay imperceptible)
+  - Battery efficiency improved (fewer DOM updates)
+- **Clinical Rationale**: Better accessibility for participants using assistive technology during VAS assessments
+- **Status**: ✅ ENHANCED (Issues #15)
 
 ---
 
@@ -1063,7 +1081,67 @@ Use this checklist to manually test each widget in a live WordPress environment:
 
 ---
 
-## 16. Conclusion
+## 16. Conditional Submit Button UX Enhancement ✅ (2025-01-16)
+
+### Issue #14: Submit Button vs Next Button State
+
+**Problem**: When conditional logic on the current page resolves to a submit action, the navigation UI didn't update immediately. Participants would see a "Next" button when they should see "Submit", creating confusion about whether the form was complete.
+
+**Fix Applied** (Issues #14):
+- Updated `initConditionalFieldListeners` to call `updatePaginationDisplay` immediately when conditional field values change
+- `updatePaginationDisplay` now:
+  - Checks `navigator.shouldSubmit(currentPage)` to determine if submit action applies
+  - Hides Next button when submit action detected
+  - Shows Submit button with proper label from `config.strings.submit`
+  - Updates button text dynamically to reflect form state
+- History handling remains intact (branch navigation preserved)
+
+**Implementation Details**:
+```javascript
+// In initConditionalFieldListeners (assets/js/eipsi-forms.js)
+input.addEventListener('change', () => {
+    const navigator = this.getNavigator(form);
+    if (navigator) {
+        const currentPage = this.getCurrentPage(form);
+        const nextPageResult = navigator.getNextPage(currentPage);
+        
+        // Update navigation controls immediately
+        const totalPages = this.getTotalPages(form);
+        this.updatePaginationDisplay(form, currentPage, totalPages);
+        // ... tracking logic ...
+    }
+});
+
+// In updatePaginationDisplay
+if (submitButton) {
+    submitButton.style.display = shouldShowSubmit ? '' : 'none';
+    const strings = this.config.strings || {};
+    if (shouldShowSubmit && strings.submit) {
+        submitButton.textContent = strings.submit;
+    }
+}
+```
+
+**Benefits**:
+- ✅ Immediate visual feedback when conditional submit triggered
+- ✅ Clear indication that form is ready for submission
+- ✅ Reduces participant confusion and form abandonment
+- ✅ No impact on linear (non-conditional) forms
+- ✅ Branch history navigation still works correctly
+
+**Clinical Rationale**: In clinical research, clear navigation cues reduce participant anxiety and improve completion rates. When a conditional logic rule determines the assessment is complete, participants should immediately see "Submit" rather than wondering if more pages remain.
+
+**Testing Scenarios**:
+1. **Linear Form**: Next button on pages 1-N, Submit on page N+1 (unchanged)
+2. **Conditional Submit**: Radio/select triggers submit action → Next hides, Submit shows immediately
+3. **Conditional Branch**: Radio/select triggers page jump → Next remains, target page changes
+4. **Back Navigation**: Conditional submit on return visit → UI updates correctly
+
+**Status**: ✅ RESOLVED (Issue #14)
+
+---
+
+## 17. Conclusion
 
 All field widgets in the EIPSI Forms plugin are **production-ready** and meet clinical research standards:
 

@@ -382,6 +382,13 @@
 							const nextPageResult =
 								navigator.getNextPage( currentPage );
 
+							const totalPages = this.getTotalPages( form );
+							this.updatePaginationDisplay(
+								form,
+								currentPage,
+								totalPages
+							);
+
 							if ( window.EIPSITracking ) {
 								const trackingFormId =
 									this.getTrackingFormId( form );
@@ -684,20 +691,82 @@
 			const sliders = form.querySelectorAll( '.vas-slider' );
 
 			sliders.forEach( ( slider ) => {
+				if ( ! slider.hasAttribute( 'data-touched' ) ) {
+					slider.setAttribute( 'data-touched', 'false' );
+				}
+
 				const showValue = slider.dataset.showValue === 'true';
+				let updateTimer = null;
+				let rafId = null;
+
+				const markAsTouched = () => {
+					if ( slider.dataset.touched === 'false' ) {
+						slider.dataset.touched = 'true';
+						this.validateField( slider );
+					}
+				};
+
+				const throttledUpdate = ( value ) => {
+					if ( rafId ) {
+						return;
+					}
+
+					rafId = window.requestAnimationFrame( () => {
+						const valueDisplay = document.getElementById(
+							slider.getAttribute( 'aria-labelledby' )
+						);
+
+						if ( valueDisplay ) {
+							valueDisplay.textContent = value;
+						}
+
+						slider.setAttribute( 'aria-valuenow', value );
+						rafId = null;
+					} );
+				};
+
+				slider.addEventListener( 'pointerdown', markAsTouched, {
+					once: true,
+				} );
+
+				slider.addEventListener( 'keydown', ( e ) => {
+					if (
+						e.key === 'ArrowLeft' ||
+						e.key === 'ArrowRight' ||
+						e.key === 'ArrowUp' ||
+						e.key === 'ArrowDown' ||
+						e.key === 'Home' ||
+						e.key === 'End'
+					) {
+						markAsTouched();
+					}
+				} );
 
 				if ( showValue ) {
-					const valueDisplay = document.getElementById(
-						slider.getAttribute( 'aria-labelledby' )
-					);
+					slider.addEventListener( 'input', ( e ) => {
+						const value = e.target.value;
 
-					if ( valueDisplay ) {
-						slider.addEventListener( 'input', ( e ) => {
-							const value = e.target.value;
-							valueDisplay.textContent = value;
-							slider.setAttribute( 'aria-valuenow', value );
-						} );
-					}
+						if ( updateTimer ) {
+							clearTimeout( updateTimer );
+						}
+
+						updateTimer = setTimeout( () => {
+							throttledUpdate( value );
+						}, 80 );
+					} );
+				} else {
+					slider.addEventListener( 'input', ( e ) => {
+						if ( updateTimer ) {
+							clearTimeout( updateTimer );
+						}
+
+						updateTimer = setTimeout( () => {
+							slider.setAttribute(
+								'aria-valuenow',
+								e.target.value
+							);
+						}, 80 );
+					} );
 				}
 			} );
 		},
@@ -1003,6 +1072,11 @@
 
 			if ( submitButton ) {
 				submitButton.style.display = shouldShowSubmit ? '' : 'none';
+
+				const strings = this.config.strings || {};
+				if ( shouldShowSubmit && strings.submit ) {
+					submitButton.textContent = strings.submit;
+				}
 			}
 
 			if ( progressText ) {
@@ -1151,6 +1225,7 @@
 			const isRadio = field.type === 'radio';
 			const isCheckbox = field.type === 'checkbox';
 			const isSelect = field.tagName === 'SELECT';
+			const isRange = field.type === 'range';
 			const groupSelector =
 				isRadio || isCheckbox
 					? `input[type="${ field.type }"][name="${ field.name }"]`
@@ -1174,11 +1249,20 @@
 			}
 
 			const errorElement = formGroup.querySelector( '.form-error' );
+			const strings = this.config.strings || {};
 
-			if ( isSelect ) {
+			if ( isRange ) {
+				if ( isRequired && field.dataset.touched === 'false' ) {
+					isValid = false;
+					errorMessage =
+						strings.sliderRequired ||
+						'Por favor, interactúe con la escala para continuar.';
+				}
+			} else if ( isSelect ) {
 				if ( isRequired && ( ! field.value || field.value === '' ) ) {
 					isValid = false;
-					errorMessage = 'Este campo es obligatorio.';
+					errorMessage =
+						strings.requiredField || 'Este campo es obligatorio.';
 				}
 			} else if ( isRadio ) {
 				const radioGroup = formGroup.querySelectorAll(
@@ -1190,7 +1274,8 @@
 
 				if ( isRequired && ! isChecked ) {
 					isValid = false;
-					errorMessage = 'Este campo es obligatorio.';
+					errorMessage =
+						strings.requiredField || 'Este campo es obligatorio.';
 				}
 			} else if ( isCheckbox ) {
 				const checkboxGroup = formGroup.querySelectorAll(
@@ -1202,16 +1287,19 @@
 
 				if ( isRequired && ! isChecked ) {
 					isValid = false;
-					errorMessage = 'Este campo es obligatorio.';
+					errorMessage =
+						strings.requiredField || 'Este campo es obligatorio.';
 				}
 			} else if ( isRequired && ! field.value.trim() ) {
 				isValid = false;
-				errorMessage = 'Este campo es obligatorio.';
+				errorMessage =
+					strings.requiredField || 'Este campo es obligatorio.';
 			} else if ( field.type === 'email' && field.value ) {
 				const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 				if ( ! emailPattern.test( field.value ) ) {
 					isValid = false;
 					errorMessage =
+						strings.invalidEmail ||
 						'Por favor, introduzca una dirección de correo electrónico válida.';
 				}
 			}
