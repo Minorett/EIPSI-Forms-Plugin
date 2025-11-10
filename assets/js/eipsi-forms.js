@@ -780,23 +780,9 @@
 				);
 
 				radioInputs.forEach( ( radio ) => {
-					// Add click handler for toggle behavior
-					radio.addEventListener( 'click', () => {
-						const wasChecked = radio.checked;
-
-						// If clicking an already checked radio, uncheck it
-						if ( wasChecked ) {
-							// Use setTimeout to allow the browser to complete the default click behavior first
-							setTimeout( () => {
-								radio.checked = false;
-								this.validateField( radio );
-							}, 0 );
-						} else {
-							// Validate the field when a new option is selected
-							setTimeout( () => {
-								this.validateField( radio );
-							}, 0 );
-						}
+					// Validate when radio selection changes
+					radio.addEventListener( 'change', () => {
+						this.validateField( radio );
 					} );
 				} );
 			} );
