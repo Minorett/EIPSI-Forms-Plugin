@@ -136,6 +136,7 @@ export default function Save( { attributes } ) {
 					required={ required }
 					data-required={ required ? 'true' : 'false' }
 					data-show-value={ showValue ? 'true' : 'false' }
+					data-touched="false"
 					aria-valuemin={ minValue }
 					aria-valuemax={ maxValue }
 					aria-valuenow={ currentValue }

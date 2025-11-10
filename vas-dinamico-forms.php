@@ -312,6 +312,7 @@ function vas_dinamico_enqueue_frontend_assets() {
         'nonce' => wp_create_nonce('eipsi_forms_nonce'),
         'strings' => array(
             'requiredField' => 'Este campo es obligatorio.',
+            'sliderRequired' => 'Por favor, interactúe con la escala para continuar.',
             'invalidEmail' => 'Por favor, introduzca una dirección de correo electrónico válida.',
             'submitting' => 'Enviando...',
             'submit' => 'Enviar',
