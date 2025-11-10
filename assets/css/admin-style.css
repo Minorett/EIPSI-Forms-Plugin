@@ -590,6 +590,140 @@
 }
 
 /* ==========================================================================
+   Database Indicator Banner
+   ========================================================================== */
+
+.eipsi-db-indicator-banner {
+    background: linear-gradient(135deg, #f0f6fc 0%, #e3f2fd 100%);
+    border: 3px solid #0073aa;
+    border-radius: 12px;
+    padding: 20px 25px;
+    margin: 25px 0;
+    box-shadow: 0 4px 16px rgba(0, 115, 170, 0.15);
+}
+
+.eipsi-db-indicator-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.eipsi-db-indicator-icon {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 115, 170, 0.25);
+}
+
+.eipsi-db-indicator-icon .dashicons {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #ffffff;
+}
+
+.eipsi-db-indicator-info {
+    flex: 1;
+}
+
+.eipsi-db-indicator-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #50575e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.eipsi-db-indicator-value {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.eipsi-db-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.eipsi-db-badge .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.eipsi-db-badge--external {
+    background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+}
+
+.eipsi-db-badge--wordpress {
+    background: linear-gradient(135deg, #135e96 0%, #0073aa 100%);
+}
+
+.eipsi-db-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1d2327;
+    font-family: 'Courier New', monospace;
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 2px solid #0073aa;
+}
+
+.eipsi-db-indicator-status {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 2px solid #46b450;
+    box-shadow: 0 2px 6px rgba(70, 180, 80, 0.15);
+}
+
+.eipsi-status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.eipsi-status-dot--connected {
+    background: #46b450;
+    box-shadow: 0 0 8px rgba(70, 180, 80, 0.5);
+}
+
+.eipsi-status-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2a5c2e;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ==========================================================================
    Responsive
    ========================================================================== */
 
@@ -618,5 +752,45 @@
     .tablenav-pages {
         flex-direction: column;
         gap: 15px;
+    }
+    
+    /* DB Indicator responsive */
+    .eipsi-db-indicator-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .eipsi-db-indicator-status {
+        align-self: stretch;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .eipsi-db-indicator-banner {
+        padding: 15px 20px;
+    }
+    
+    .eipsi-db-indicator-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .eipsi-db-indicator-icon .dashicons {
+        font-size: 26px;
+        width: 26px;
+        height: 26px;
+    }
+    
+    .eipsi-db-indicator-value {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .eipsi-db-name {
+        font-size: 14px;
+        word-break: break-all;
     }
 }
