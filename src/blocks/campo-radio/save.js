@@ -68,35 +68,39 @@ export default function Save( { attributes } ) {
 
 	return (
 		<div { ...blockProps }>
-			{ label && (
-				<label className={ required ? 'required' : undefined }>
-					{ label }
-				</label>
-			) }
-			<ul className="radio-list">
-				{ optionsArray.map( ( option, index ) => {
-					const radioId = getFieldId(
-						normalizedFieldName,
-						index.toString()
-					);
-					return (
-						<li key={ index }>
-							<input
-								type="radio"
-								name={ normalizedFieldName }
-								id={ radioId }
-								value={ option }
-								required={ required }
-								data-required={ required ? 'true' : 'false' }
-								data-field-type="radio"
-							/>
-							<label htmlFor={ radioId }>{ option }</label>
-						</li>
-					);
-				} ) }
-			</ul>
-			{ renderHelperText( helperText ) }
-			<div className="form-error" aria-live="polite" />
+			<fieldset>
+				{ label && (
+					<legend className={ required ? 'required' : undefined }>
+						{ label }
+					</legend>
+				) }
+				<ul className="radio-list">
+					{ optionsArray.map( ( option, index ) => {
+						const radioId = getFieldId(
+							normalizedFieldName,
+							index.toString()
+						);
+						return (
+							<li key={ index }>
+								<input
+									type="radio"
+									name={ normalizedFieldName }
+									id={ radioId }
+									value={ option }
+									required={ required }
+									data-required={
+										required ? 'true' : 'false'
+									}
+									data-field-type="radio"
+								/>
+								<label htmlFor={ radioId }>{ option }</label>
+							</li>
+						);
+					} ) }
+				</ul>
+				{ renderHelperText( helperText ) }
+				<div className="form-error" aria-live="polite" />
+			</fieldset>
 		</div>
 	);
 }

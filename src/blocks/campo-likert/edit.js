@@ -194,13 +194,15 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					/>
 					{ hasLabelMismatch && (
 						<Notice status="warning" isDismissible={ false }>
-							{ /* translators: %1$d: number of labels, %2$d: number of scale points */ }
-							{ __(
-								"You have %1$d labels but %2$d scale points. Labels will be ignored if count doesn't match.",
-								'vas-dinamico-forms'
-							)
-								.replace( '%1$d', labelArray.length )
-								.replace( '%2$d', scale.length ) }
+							{
+								// translators: %1$d: number of labels, %2$d: number of scale points
+								__(
+									"You have %1$d labels but %2$d scale points. Labels will be ignored if count doesn't match.",
+									'vas-dinamico-forms'
+								)
+									.replace( '%1$d', labelArray.length )
+									.replace( '%2$d', scale.length )
+							}
 						</Notice>
 					) }
 				</PanelBody>

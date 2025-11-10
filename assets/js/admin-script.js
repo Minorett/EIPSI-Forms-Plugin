@@ -1,3 +1,4 @@
+/* global jQuery, alert */
 jQuery( document ).ready( function ( $ ) {
 	$( '#use_external_db' )
 		.on( 'change', function () {
@@ -33,6 +34,7 @@ jQuery( document ).ready( function ( $ ) {
 
 		if ( hasEmpty ) {
 			e.preventDefault();
+			// eslint-disable-next-line no-alert
 			alert( 'Please fill in all required fields.' );
 			return false;
 		}

@@ -35,9 +35,9 @@ export default function Save( { attributes } ) {
 	return (
 		<div { ...blockProps }>
 			{ label && (
-				<label className={ required ? 'required' : undefined }>
+				<span className={ required ? 'required' : undefined }>
 					{ label }
-				</label>
+				</span>
 			) }
 			{ placeholder && (
 				<p className="description-placeholder">{ placeholder }</p>
