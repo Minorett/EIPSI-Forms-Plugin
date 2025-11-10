@@ -38,6 +38,8 @@
     --eipsi-color-input-text: #2c3e50;
     --eipsi-color-input-border: #e2e8f0;
     --eipsi-color-input-border-focus: #005a87;
+    --eipsi-color-input-error-bg: #fff5f5;
+    --eipsi-color-input-icon: #005a87;
     --eipsi-color-button-bg: #005a87;
     --eipsi-color-button-text: #ffffff;
     --eipsi-color-button-hover-bg: #003d5b;
@@ -84,6 +86,7 @@
     --eipsi-shadow-md: 0 4px 12px rgba(0, 90, 135, 0.1);
     --eipsi-shadow-lg: 0 8px 25px rgba(0, 90, 135, 0.1);
     --eipsi-shadow-focus: 0 0 0 3px rgba(0, 90, 135, 0.1);
+    --eipsi-shadow-error: 0 0 0 3px rgba(211, 47, 47, 0.15);
 
     /* Interactivity */
     --eipsi-transition-duration: 0.2s;
@@ -381,13 +384,13 @@
 .has-error input[type="date"],
 input[aria-invalid="true"] {
     border-color: var(--eipsi-color-error, #d32f2f);
-    background: #fff5f5;
+    background: var(--eipsi-color-input-error-bg, #fff5f5);
 }
 
 .has-error input:focus,
 input[aria-invalid="true"]:focus {
     border-color: var(--eipsi-color-error, #d32f2f);
-    box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15);
+    box-shadow: var(--eipsi-shadow-error, 0 0 0 3px rgba(211, 47, 47, 0.15));
 }
 
 /* ============================================================================
@@ -430,7 +433,13 @@ input[aria-invalid="true"]:focus {
 .has-error textarea,
 textarea[aria-invalid="true"] {
     border-color: var(--eipsi-color-error, #d32f2f);
-    background: #fff5f5;
+    background: var(--eipsi-color-input-error-bg, #fff5f5);
+}
+
+.has-error textarea:focus,
+textarea[aria-invalid="true"]:focus {
+    border-color: var(--eipsi-color-error, #d32f2f);
+    box-shadow: var(--eipsi-shadow-error, 0 0 0 3px rgba(211, 47, 47, 0.15));
 }
 
 /* Textarea placeholder styling */
@@ -482,8 +491,14 @@ textarea[aria-invalid="true"] {
     font-size: 1rem;
     font-family: inherit;
     color: var(--eipsi-color-input-text, #2c3e50);
-    background: var(--eipsi-color-input-bg, #ffffff) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23005a87"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 0.75rem center;
-    background-size: 1.5rem;
+    background-color: var(--eipsi-color-input-bg, #ffffff);
+    background-image: linear-gradient(45deg, transparent 50%, var(--eipsi-color-input-icon, #005a87) 50%),
+                      linear-gradient(135deg, var(--eipsi-color-input-icon, #005a87) 50%, transparent 50%);
+    background-position: calc(100% - 1.125rem) center,
+                         calc(100% - 0.75rem) center;
+    background-size: 0.375rem 0.375rem,
+                     0.375rem 0.375rem;
+    background-repeat: no-repeat;
     border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
     border-radius: var(--eipsi-border-radius-sm, 8px);
     transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
@@ -510,7 +525,13 @@ textarea[aria-invalid="true"] {
 .has-error select,
 select[aria-invalid="true"] {
     border-color: var(--eipsi-color-error, #d32f2f);
-    background-color: #fff5f5;
+    background-color: var(--eipsi-color-input-error-bg, #fff5f5);
+}
+
+.has-error select:focus,
+select[aria-invalid="true"]:focus {
+    border-color: var(--eipsi-color-error, #d32f2f);
+    box-shadow: var(--eipsi-shadow-error, 0 0 0 3px rgba(211, 47, 47, 0.15));
 }
 
 /* ============================================================================
@@ -533,11 +554,11 @@ select[aria-invalid="true"] {
     gap: 0.75rem;
     padding: 0.875rem 1rem;
     margin: 0 0 0.75rem 0;
-    background: #ffffff;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
+    background: var(--eipsi-color-input-bg, #ffffff);
+    border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
+    border-radius: var(--eipsi-border-radius-sm, 8px);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
 }
 
 .eipsi-radio-field .radio-list li:last-child,
@@ -549,8 +570,8 @@ select[aria-invalid="true"] {
 .eipsi-radio-field .radio-list li:hover,
 .vas-dinamico-form .radio-list li:hover,
 .eipsi-form .radio-list li:hover {
-    background: #f8f9fa;
-    border-color: #005a87;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border-color: var(--eipsi-color-primary, #005a87);
     transform: translateX(4px);
 }
 
@@ -562,7 +583,7 @@ select[aria-invalid="true"] {
     margin: 0;
     cursor: pointer;
     flex-shrink: 0;
-    accent-color: #005a87;
+    accent-color: var(--eipsi-color-primary, #005a87);
 }
 
 .eipsi-radio-field .radio-list li label,
@@ -570,13 +591,13 @@ select[aria-invalid="true"] {
 .eipsi-form .radio-list li label {
     margin: 0;
     cursor: pointer;
-    font-weight: 500;
-    color: #2c3e50;
+    font-weight: var(--eipsi-font-weight-medium, 500);
+    color: var(--eipsi-color-input-text, #2c3e50);
 }
 
 .has-error .radio-list li {
-    border-color: #ff6b6b;
-    background: #fff5f5;
+    border-color: var(--eipsi-color-error, #d32f2f);
+    background: var(--eipsi-color-input-error-bg, #fff5f5);
 }
 
 /* ============================================================================
@@ -601,11 +622,11 @@ select[aria-invalid="true"] {
     gap: 0.75rem;
     padding: 0.875rem 1rem;
     margin: 0 0 0.75rem 0;
-    background: #ffffff;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
+    background: var(--eipsi-color-input-bg, #ffffff);
+    border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
+    border-radius: var(--eipsi-border-radius-sm, 8px);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
 }
 
 .eipsi-checkbox-field .checkbox-list li:last-child,
@@ -619,8 +640,8 @@ select[aria-invalid="true"] {
 .eipsi-multiple-field .checkbox-list li:hover,
 .vas-dinamico-form .checkbox-list li:hover,
 .eipsi-form .checkbox-list li:hover {
-    background: #f8f9fa;
-    border-color: #005a87;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border-color: var(--eipsi-color-primary, #005a87);
     transform: translateX(4px);
 }
 
@@ -633,7 +654,7 @@ select[aria-invalid="true"] {
     margin: 0;
     cursor: pointer;
     flex-shrink: 0;
-    accent-color: #005a87;
+    accent-color: var(--eipsi-color-primary, #005a87);
 }
 
 .eipsi-checkbox-field .checkbox-list li label,
@@ -642,13 +663,13 @@ select[aria-invalid="true"] {
 .eipsi-form .checkbox-list li label {
     margin: 0;
     cursor: pointer;
-    font-weight: 500;
-    color: #2c3e50;
+    font-weight: var(--eipsi-font-weight-medium, 500);
+    color: var(--eipsi-color-input-text, #2c3e50);
 }
 
 .has-error .checkbox-list li {
-    border-color: #ff6b6b;
-    background: #fff5f5;
+    border-color: var(--eipsi-color-error, #d32f2f);
+    background: var(--eipsi-color-input-error-bg, #fff5f5);
 }
 
 /* ============================================================================

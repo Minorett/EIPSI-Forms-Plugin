@@ -20,14 +20,14 @@ November 2024 - Version 2.1
 - `getTokenDisplayName()` - Generates human-readable token names
 
 **Token Categories**:
-- **Colors** (18 tokens): Primary, backgrounds, text, inputs, buttons, borders, semantic
+- **Colors** (20 tokens): Primary, backgrounds, text, inputs, buttons, borders, semantic, error states, icons
 - **Typography** (12 tokens): Font families, sizes, weights, line heights
 - **Spacing** (8 tokens): XS to XL scale, semantic spacing
 - **Borders** (6 tokens): Radius sizes, widths, styles
-- **Shadows** (4 tokens): Elevation depths, focus rings
+- **Shadows** (5 tokens): Elevation depths, focus rings, error states
 - **Interactivity** (5 tokens): Transitions, hover effects, focus outlines
 
-**Total**: 53 distinct CSS variables with clinical research defaults
+**Total**: 56 distinct CSS variables with clinical research defaults
 
 ### 2. Block Attribute Extension
 **File**: `blocks/form-container/block.json`
@@ -256,6 +256,32 @@ In your theme's stylesheet:
 - No database updates required
 - Familiar to existing users
 
+## Recent Updates
+
+### January 2025 - Error State Normalization (v2.2)
+
+**New Tokens Added**:
+- `--eipsi-color-input-error-bg` - Error background for inputs/textarea/select (default: `#fff5f5`)
+- `--eipsi-color-input-icon` - Dropdown caret and icon color (default: `#005a87`)
+- `--eipsi-shadow-error` - Error focus shadow (default: `0 0 0 3px rgba(211, 47, 47, 0.15)`)
+
+**CSS Changes**:
+- Replaced all hardcoded error background colors (`#fff5f5`) with `var(--eipsi-color-input-error-bg)`
+- Replaced all hardcoded error focus shadows with `var(--eipsi-shadow-error)`
+- Updated select dropdown caret to use CSS gradient with `var(--eipsi-color-input-icon)`
+- Normalized radio and checkbox colors to use CSS variables throughout
+
+**Files Modified**:
+- `src/utils/styleTokens.js` - Added new color and shadow tokens
+- `src/utils/stylePresets.js` - Updated all 4 presets with new tokens
+- `assets/css/eipsi-forms.css` - Replaced hardcoded colors in inputs, textareas, selects, radio buttons, checkboxes
+
+**Benefits**:
+- ✅ All form field error states now theme-able via styleConfig
+- ✅ Select dropdown icon color responds to theme changes
+- ✅ Consistent error treatment across all input types
+- ✅ WCAG AA compliance maintained (verified via `wcag-contrast-validation.js`)
+
 ## Contact
 
 For questions about the design token system:
@@ -267,5 +293,5 @@ For questions about the design token system:
 ---
 
 **Implementation Status**: ✅ Complete - Production Ready
-**Version**: 2.1
-**Date**: November 2024
+**Version**: 2.2
+**Date**: January 2025
