@@ -50,14 +50,15 @@ function eipsi_display_configuration_page() {
                                     </label>
                                 </th>
                                 <td>
-                                    <input type="text" 
-                                        id="db_host" 
-                                        name="db_host" 
-                                        class="regular-text" 
+                                    <input type="text"
+                                        id="db_host"
+                                        name="db_host"
+                                        class="regular-text"
                                         value="<?php echo esc_attr($current_host); ?>"
                                         placeholder="localhost"
+                                        aria-describedby="db_host_desc"
                                         required>
-                                    <p class="description">
+                                    <p class="description" id="db_host_desc">
                                         <?php echo esc_html__('Database server hostname or IP address (e.g., localhost, 192.168.1.100)', 'vas-dinamico-forms'); ?>
                                     </p>
                                 </td>
@@ -71,14 +72,15 @@ function eipsi_display_configuration_page() {
                                     </label>
                                 </th>
                                 <td>
-                                    <input type="text" 
-                                        id="db_user" 
-                                        name="db_user" 
-                                        class="regular-text" 
+                                    <input type="text"
+                                        id="db_user"
+                                        name="db_user"
+                                        class="regular-text"
                                         value="<?php echo esc_attr($current_user); ?>"
                                         placeholder="<?php echo esc_attr__('MySQL username', 'vas-dinamico-forms'); ?>"
+                                        aria-describedby="db_user_desc"
                                         required>
-                                    <p class="description">
+                                    <p class="description" id="db_user_desc">
                                         <?php echo esc_html__('MySQL user with access to the database', 'vas-dinamico-forms'); ?>
                                     </p>
                                 </td>
@@ -92,14 +94,15 @@ function eipsi_display_configuration_page() {
                                     </label>
                                 </th>
                                 <td>
-                                    <input type="password" 
-                                        id="db_password" 
-                                        name="db_password" 
-                                        class="regular-text" 
+                                    <input type="password"
+                                        id="db_password"
+                                        name="db_password"
+                                        class="regular-text"
                                         placeholder="<?php echo esc_attr__('MySQL password', 'vas-dinamico-forms'); ?>"
+                                        aria-describedby="db_password_desc"
                                         <?php echo $credentials ? '' : 'required'; ?>>
-                                    <p class="description">
-                                        <?php 
+                                    <p class="description" id="db_password_desc">
+                                        <?php
                                         if ($credentials) {
                                             echo esc_html__('Leave blank to keep existing password', 'vas-dinamico-forms');
                                         } else {
@@ -118,14 +121,15 @@ function eipsi_display_configuration_page() {
                                     </label>
                                 </th>
                                 <td>
-                                    <input type="text" 
-                                        id="db_name" 
-                                        name="db_name" 
-                                        class="regular-text" 
+                                    <input type="text"
+                                        id="db_name"
+                                        name="db_name"
+                                        class="regular-text"
                                         value="<?php echo esc_attr($current_db_name); ?>"
                                         placeholder="research_db_custom"
+                                        aria-describedby="db_name_desc"
                                         required>
-                                    <p class="description">
+                                    <p class="description" id="db_name_desc">
                                         <?php echo esc_html__('Name of the database to store form submissions', 'vas-dinamico-forms'); ?>
                                     </p>
                                 </td>
@@ -151,7 +155,7 @@ function eipsi_display_configuration_page() {
                         <?php endif; ?>
                     </div>
                     
-                    <div id="eipsi-message-container" style="display: none;"></div>
+                    <div id="eipsi-message-container" role="alert" aria-live="polite" style="display: none;"></div>
                 </form>
             </div>
             
