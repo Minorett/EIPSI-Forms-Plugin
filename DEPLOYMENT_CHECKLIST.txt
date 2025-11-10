@@ -1,0 +1,153 @@
+═══════════════════════════════════════════════════════════════
+DEPLOYMENT CHECKLIST - CAMPO RADIO FIX
+═══════════════════════════════════════════════════════════════
+
+Plugin: VAS Dinámico Forms v1.2.0
+Branch: fix-campo-radio-clean-build
+Date: November 10, 2024
+
+═══════════════════════════════════════════════════════════════
+PRE-DEPLOYMENT VERIFICATION
+═══════════════════════════════════════════════════════════════
+
+BUILD & QUALITY CHECKS:
+✅ JavaScript linting passed (no errors)
+✅ WCAG AA contrast validation passed (all 4 presets)
+✅ Webpack build successful
+✅ CSS compiled correctly with :has() selectors
+✅ JavaScript event listeners added
+✅ All unnecessary files removed
+
+CODE CHANGES VERIFIED:
+✅ assets/js/eipsi-forms.js - initRadioFields() function added
+✅ assets/js/eipsi-forms.js - initForm() calls initRadioFields()
+✅ src/blocks/campo-radio/style.scss - Checked state styles added
+✅ build/style-index.css - Compiled output verified
+
+DIRECTORY STRUCTURE:
+✅ Only essential folders remain (admin, assets, blocks, build, languages, lib, src)
+✅ Core files intact (vas-dinamico-forms.php, LICENSE, summaries)
+✅ No test files, validation scripts, or dev dependencies
+
+═══════════════════════════════════════════════════════════════
+MANUAL TESTING REQUIRED
+═══════════════════════════════════════════════════════════════
+
+CAMPO RADIO FUNCTIONALITY:
+⬜ Install plugin in WordPress test environment
+⬜ Create test form with Campo Radio block
+⬜ Verify only ONE option can be selected at a time
+⬜ Verify selection is recorded correctly on form submission
+⬜ Verify visual feedback (blue border, shadow) on selection
+⬜ Verify label becomes bold and blue when selected
+
+VISUAL TESTING:
+⬜ Test with all 4 style presets (Clinical Blue, Minimal White, Warm Neutral, High Contrast)
+⬜ Verify hover effects work correctly
+⬜ Verify focus outlines are visible (keyboard navigation)
+⬜ Test on mobile devices (320px, 375px, 768px)
+⬜ Test on desktop (1024px, 1280px+)
+
+INTEGRATION TESTING:
+⬜ Test in single-page form
+⬜ Test in multi-page form
+⬜ Test with conditional logic (navigate based on selection)
+⬜ Test with required field validation
+⬜ Test form submission with radio selection
+⬜ Verify data is stored correctly in database
+
+ACCESSIBILITY TESTING:
+⬜ Keyboard navigation (Tab, Space, Arrow keys)
+⬜ Screen reader announces options correctly
+⬜ Focus indicators visible at all times
+⬜ Color contrast meets WCAG AA standards
+⬜ Touch targets adequate on mobile (44×44px)
+
+CROSS-BROWSER TESTING:
+⬜ Chrome/Edge (latest)
+⬜ Firefox (latest)
+⬜ Safari (latest)
+⬜ Mobile Safari (iOS)
+⬜ Chrome Mobile (Android)
+
+═══════════════════════════════════════════════════════════════
+DEPLOYMENT STEPS
+═══════════════════════════════════════════════════════════════
+
+1. PACKAGE CREATION:
+   ⬜ Create ZIP file from clean directory
+   ⬜ Verify ZIP contains correct structure
+   ⬜ Test ZIP installation in fresh WordPress
+
+2. STAGING DEPLOYMENT:
+   ⬜ Deploy to staging environment
+   ⬜ Run smoke tests
+   ⬜ Verify existing forms still work
+   ⬜ Create new test forms with radio fields
+
+3. DOCUMENTATION:
+   ⬜ Update changelog with fix details
+   ⬜ Document breaking changes (if any)
+   ⬜ Update version number if needed
+
+4. PRODUCTION DEPLOYMENT:
+   ⬜ Backup production database
+   ⬜ Deploy plugin update
+   ⬜ Monitor error logs for 24 hours
+   ⬜ Verify sample forms work correctly
+
+═══════════════════════════════════════════════════════════════
+ROLLBACK PLAN
+═══════════════════════════════════════════════════════════════
+
+If issues arise:
+1. Restore previous plugin version from backup
+2. Restore database backup if needed
+3. Document issue in detail
+4. Review error logs
+5. Create hotfix branch if necessary
+
+═══════════════════════════════════════════════════════════════
+SUCCESS CRITERIA
+═══════════════════════════════════════════════════════════════
+
+Campo Radio field must:
+✓ Allow selection of only one option (mutually exclusive)
+✓ Register selection correctly in form data
+✓ Provide clear visual feedback on selection
+✓ Work with conditional logic system
+✓ Meet WCAG AA accessibility standards
+✓ Function correctly across all browsers and devices
+✓ Integrate seamlessly with form tracking/analytics
+
+═══════════════════════════════════════════════════════════════
+POST-DEPLOYMENT MONITORING
+═══════════════════════════════════════════════════════════════
+
+Monitor for 48 hours:
+⬜ WordPress error logs (PHP errors)
+⬜ Browser console errors (JavaScript errors)
+⬜ Form submission success rate
+⬜ User feedback/support tickets
+⬜ Analytics data (form completion rates)
+
+═══════════════════════════════════════════════════════════════
+NOTES
+═══════════════════════════════════════════════════════════════
+
+Browser Compatibility:
+- :has() selector supported in Chrome 105+, Safari 15.4+, Firefox 121+
+- accent-color supported in Chrome 93+, Safari 15.4+, Firefox 92+
+- All modern browsers as of 2024 support these features
+
+Performance Impact:
+- Minimal (one additional event listener initialization)
+- No impact on page load time
+- No impact on form submission time
+
+Technical Debt:
+- None introduced
+- Follows established patterns (same as Likert fix)
+- Maintains consistency with codebase standards
+
+═══════════════════════════════════════════════════════════════

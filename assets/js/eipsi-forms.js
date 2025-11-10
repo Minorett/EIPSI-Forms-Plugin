@@ -322,6 +322,7 @@
 			this.initPagination( form );
 			this.initVasSliders( form );
 			this.initLikertFields( form );
+			this.initRadioFields( form );
 			this.initConditionalFieldListeners( form );
 			this.attachTracking( form );
 
@@ -775,6 +776,23 @@
 			const likertFields = form.querySelectorAll( '.eipsi-likert-field' );
 
 			likertFields.forEach( ( field ) => {
+				const radioInputs = field.querySelectorAll(
+					'input[type="radio"]'
+				);
+
+				radioInputs.forEach( ( radio ) => {
+					// Validate when radio selection changes
+					radio.addEventListener( 'change', () => {
+						this.validateField( radio );
+					} );
+				} );
+			} );
+		},
+
+		initRadioFields( form ) {
+			const radioFields = form.querySelectorAll( '.eipsi-radio-field' );
+
+			radioFields.forEach( ( field ) => {
 				const radioInputs = field.querySelectorAll(
 					'input[type="radio"]'
 				);
