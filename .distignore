@@ -38,6 +38,8 @@ test-*.sh
 *-test.html
 *.sql
 wcag-contrast-validation.js
+mobile-focus-verification.js
+validate-*.js
 
 # Developer Documentation (keep only user-facing docs)
 AUDIT_*.md
@@ -73,6 +75,9 @@ TICKET_*.md
 TRACKING_*.md
 WCAG_*.md
 WIRING_AUDIT_SUMMARY.md
+FINAL_QA_REPORT_*.md
+DELIVERY_CHECKLIST_*.md
+QA_SUMMARY_*.txt
 
 # CI/CD
 .github

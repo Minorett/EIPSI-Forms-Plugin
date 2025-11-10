@@ -1,6 +1,6 @@
 {
     "name": "vas-dinamico-forms",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Professional form builder with Gutenberg blocks and Excel export capabilities.",
     "scripts": {
         "build": "wp-scripts build",
