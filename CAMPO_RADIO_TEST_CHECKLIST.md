@@ -1,0 +1,116 @@
+# Campo Radio - Test Checklist
+
+## ✅ Pre-Fix Verification (Expected Failures)
+- [ ] Create a form with Campo Radio block
+- [ ] Add 3-4 options (e.g., "Opción 1", "Opción 2", "Opción 3")
+- [ ] Publish and view form
+- [ ] Try clicking each radio option
+- [ ] **Expected:** Clicks don't register or multiple selections possible ❌
+
+## ✅ Post-Fix Verification (Expected Success)
+
+### 1. Basic Functionality
+- [ ] Click on first option → should select immediately ✅
+- [ ] Click on second option → first should deselect, second should select ✅
+- [ ] Click on third option → second should deselect, third should select ✅
+- [ ] **Result:** Only ONE option selected at a time ✅
+
+### 2. Validation
+- [ ] Create form with required Campo Radio
+- [ ] Try to submit without selecting → should show validation error ✅
+- [ ] Select an option → validation error should disappear ✅
+- [ ] Submit form → should succeed with selected value ✅
+
+### 3. Label Click Functionality
+- [ ] Click on the radio button itself → should select ✅
+- [ ] Click on the label text → should also select ✅
+- [ ] Click anywhere on the list item → should select (due to CSS cursor:pointer) ✅
+
+### 4. Mobile/Touch Testing
+- [ ] Open form on mobile device or responsive mode (375px width)
+- [ ] Tap each option → should select correctly ✅
+- [ ] Verify touch targets are adequate (44×44px minimum) ✅
+- [ ] Test on real device if possible ✅
+
+### 5. Keyboard Navigation
+- [ ] Tab to radio group
+- [ ] Use arrow keys to navigate between options ✅
+- [ ] Press Space to select ✅
+- [ ] Verify focus indicators are visible ✅
+
+### 6. Conditional Logic (if applicable)
+- [ ] Create Campo Radio with conditional logic rules
+- [ ] Select option with "Go to Page X" rule
+- [ ] Verify navigation works correctly ✅
+- [ ] Check that tracking events are recorded ✅
+
+### 7. Multiple Campo Radio Blocks
+- [ ] Create form with 2-3 different Campo Radio blocks
+- [ ] Each should have different field names
+- [ ] Verify they work independently ✅
+- [ ] Selecting in one doesn't affect the other ✅
+
+### 8. Form Submission
+- [ ] Fill out form including Campo Radio selection
+- [ ] Submit form
+- [ ] Check database/admin panel for saved response ✅
+- [ ] Verify selected value is stored correctly ✅
+
+### 9. Browser Compatibility
+- [ ] Chrome/Edge (latest) ✅
+- [ ] Firefox (latest) ✅
+- [ ] Safari (latest) ✅
+- [ ] Mobile browsers (iOS Safari, Chrome Mobile) ✅
+
+### 10. Analytics Tracking (if enabled)
+- [ ] Select different options in Campo Radio
+- [ ] Check browser console for tracking events
+- [ ] Verify EIPSITracking records field changes ✅
+
+## 🐛 Known Issues to Verify are Fixed
+- ❌ Clicks not registering → should be FIXED ✅
+- ❌ Multiple selections possible → should be FIXED ✅
+- ❌ Validation not working → should be FIXED ✅
+- ❌ Values not saving → should be FIXED ✅
+
+## 📊 Comparison with Campo Likert
+Both should now behave identically regarding:
+- Event listener setup ✅
+- Validation triggering ✅
+- Change event handling ✅
+- Tracking integration ✅
+
+The only difference should be visual styling (Likert has scale layout, Radio has list layout).
+
+## 🔍 Debug Commands
+
+### Check if initRadioFields is called:
+```javascript
+// In browser console after page load:
+console.log(document.querySelectorAll('.eipsi-radio-field'));
+// Should show your radio fields
+
+// Check if event listeners are attached:
+const radioField = document.querySelector('.eipsi-radio-field input[type="radio"]');
+console.log(radioField);
+// Click it and verify change event fires
+```
+
+### Check validation:
+```javascript
+// In browser console:
+const radioInput = document.querySelector('.eipsi-radio-field input[type="radio"]');
+radioInput.addEventListener('change', () => {
+    console.log('✅ Change event fired!', radioInput.checked, radioInput.value);
+});
+```
+
+### Check EIPSIForms object:
+```javascript
+// In browser console:
+console.log(EIPSIForms);
+// Should show forms array with initialized forms
+```
+
+## ✅ Success Criteria
+All items above should pass for the fix to be considered complete and production-ready.
