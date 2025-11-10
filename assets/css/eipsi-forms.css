@@ -1492,7 +1492,136 @@ select[aria-invalid="true"]:focus {
 }
 
 /* ============================================================================
-   18. UTILITY CLASSES
+   18. FORM MESSAGES (SUCCESS/ERROR)
+   ============================================================================ */
+
+.form-message {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-size: var(--eipsi-font-size-base, 16px);
+    line-height: 1.5;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Success Message */
+.form-message--success {
+    background: var(--eipsi-color-success, #198754);
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 16px rgba(25, 135, 84, 0.25);
+}
+
+.form-message--success .form-message__icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+}
+
+.form-message--success .form-message__content {
+    flex: 1;
+}
+
+.form-message--success .form-message__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+    color: #ffffff;
+}
+
+.form-message--success .form-message__subtitle {
+    font-size: 0.9375rem;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Error Message */
+.form-message--error {
+    background: var(--eipsi-color-error, #d32f2f);
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 16px rgba(211, 47, 47, 0.25);
+}
+
+.form-message--error .form-message__icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+}
+
+.form-message--error .form-message__content {
+    flex: 1;
+}
+
+.form-message--error .form-message__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .form-message {
+        flex-direction: row;
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+    
+    .form-message--success .form-message__icon,
+    .form-message--error .form-message__icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .form-message--success .form-message__title,
+    .form-message--error .form-message__title {
+        font-size: 1rem;
+    }
+    
+    .form-message--success .form-message__subtitle {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 374px) {
+    .form-message {
+        padding: 0.875rem;
+        gap: 0.625rem;
+    }
+    
+    .form-message--success .form-message__icon,
+    .form-message--error .form-message__icon {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* ============================================================================
+   19. UTILITY CLASSES
    ============================================================================ */
 
 .hidden {
@@ -1525,7 +1654,7 @@ select[aria-invalid="true"]:focus {
 }
 
 /* ============================================================================
-   19. WORDPRESS COMPATIBILITY OVERRIDES
+   20. WORDPRESS COMPATIBILITY OVERRIDES
    ============================================================================ */
 
 /* Ensure form elements inherit correct styles despite WordPress defaults */

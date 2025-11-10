@@ -1,502 +1,313 @@
-# EIPSI Tracking Handler - Testing Guide
+# Testing Guide - Form UX Enhancements
 
-## Quick Testing Methods
+## Quick Start Testing
 
-This guide provides step-by-step instructions for testing the tracking handler implementation.
-
----
-
-## Method 1: Browser Console (Quickest)
-
-### Prerequisites
-- WordPress site with EIPSI Forms plugin activated
-- Browser with developer tools (Chrome, Firefox, Safari)
-
-### Steps
-
-1. **Load a page with a form** (or any page where tracking is loaded)
-
-2. **Open Developer Console** (F12 or Cmd+Option+I)
-
-3. **Verify tracking is loaded:**
-   ```javascript
-   console.log(window.EIPSITracking);
-   console.log(eipsiTrackingConfig);
-   ```
-
-4. **Test a 'view' event:**
-   ```javascript
-   fetch(eipsiTrackingConfig.ajaxUrl, {
-       method: 'POST',
-       headers: {
-           'Content-Type': 'application/x-www-form-urlencoded'
-       },
-       body: new URLSearchParams({
-           action: 'eipsi_track_event',
-           nonce: eipsiTrackingConfig.nonce,
-           form_id: 'test-form',
-           session_id: 'test-' + Date.now(),
-           event_type: 'view',
-           user_agent: navigator.userAgent
-       })
-   })
-   .then(r => r.json())
-   .then(d => {
-       console.log('✅ Response:', d);
-       if (d.success) {
-           console.log('✅ Event tracked! ID:', d.data.event_id);
-       } else {
-           console.error('❌ Error:', d.data.message);
-       }
-   });
-   ```
-
-5. **Check Network Tab:**
-   - Look for POST to `admin-ajax.php`
-   - Status should be 200 OK
-   - Response should show `success: true`
-
-6. **Verify in database:**
-   ```javascript
-   // You'll need to check database separately
-   // See Database Verification section below
-   ```
-
-**Expected Result:** Console shows success message with event ID.
+Follow these steps to verify all new features work correctly.
 
 ---
 
-## Method 2: Test HTML Interface (Most User-Friendly)
+## 1. Navigation Buttons Test (5 minutes)
 
-### Prerequisites
-- Browser only (no WordPress needed for initial test)
-- EIPSI Forms plugin activated on WordPress site
+### Setup:
+1. Log in to WordPress admin
+2. Create a new page or post
+3. Add an "EIPSI Form Container" block
+4. Add at least 3 "Form Page" blocks inside the container
+5. Add some fields to each page (text, radio, etc.)
+6. Publish the page
 
-### Steps
+### Test Procedure:
 
-1. **Open test page:**
-   ```bash
-   # From plugin directory
-   open test-tracking.html
-   
-   # Or navigate to:
-   # http://your-site.com/wp-content/plugins/vas-dinamico-forms/test-tracking.html
-   ```
+#### Test 1A: Default Behavior (Backward Navigation ON)
+1. ✅ View the published form
+2. ✅ **Page 1**: Verify only "Siguiente" button appears (no "Anterior")
+3. ✅ Click "Siguiente" to go to page 2
+4. ✅ **Page 2**: Verify both "Anterior" and "Siguiente" appear
+5. ✅ Click "Siguiente" to go to page 3
+6. ✅ **Page 3**: Verify "Anterior" and "Enviar" appear (no "Siguiente")
+7. ✅ Click "Anterior" to go back to page 2
+8. ✅ Click "Anterior" again to go back to page 1
 
-2. **Configure the page:**
-   - Update "AJAX URL" to your WordPress site's admin-ajax.php
-     - Example: `http://localhost/wp-admin/admin-ajax.php`
-   - Get nonce from your site:
-     1. Load a page with a form
-     2. Open console
-     3. Run: `console.log(eipsiTrackingConfig.nonce)`
-     4. Copy the nonce value
-   - Paste nonce into "Tracking Nonce" field
+**Expected Result**: Navigation buttons appear/hide correctly based on current page.
 
-3. **Test events:**
-   - Click "Test View Event"
-   - Click "Test Start Event"
-   - Click "Test Page Change Event"
-   - Click "Test Submit Event"
-   - Click "Test Abandon Event"
+#### Test 1B: Backward Navigation Disabled
+1. ✅ Edit the form in WordPress
+2. ✅ Select the Form Container block
+3. ✅ In the right sidebar, expand "Navigation Settings"
+4. ✅ Toggle "Allow backwards navigation" to OFF
+5. ✅ Update/publish the page
+6. ✅ View the published form
+7. ✅ **Page 1**: Verify only "Siguiente" button appears
+8. ✅ Click "Siguiente" to go to page 2
+9. ✅ **Page 2**: Verify only "Siguiente" appears (NO "Anterior" button)
+10. ✅ Click "Siguiente" to go to page 3
+11. ✅ **Page 3**: Verify only "Enviar" appears (NO "Anterior" button)
 
-4. **Test error handling:**
-   - Click "Test Invalid Event"
-   - Click "Test Invalid Nonce"
-
-5. **Review results:**
-   - Success messages appear in green
-   - Error messages appear in red
-   - JSON responses shown for debugging
-
-**Expected Result:** Green success messages for valid events, red error messages for invalid ones.
+**Expected Result**: "Anterior" button never appears when setting is disabled.
 
 ---
 
-## Method 3: WP-CLI Automated Tests (Most Comprehensive)
+## 2. Enhanced Success Message Test (3 minutes)
 
-### Prerequisites
-- WP-CLI installed
-- WordPress accessible via command line
-- Plugin activated
+### Setup:
+Use the form created in Test 1 (make sure it has at least one required field)
 
-### Steps
+### Test Procedure:
 
-1. **Navigate to WordPress root:**
-   ```bash
-   cd /path/to/wordpress
-   ```
+#### Test 2A: Success Message
+1. ✅ View the published form
+2. ✅ Fill in all required fields
+3. ✅ Navigate to the last page
+4. ✅ Click "Enviar" to submit the form
+5. ✅ Verify the success message appears:
+   - Green background
+   - Checkmark icon (✓)
+   - Title: "¡Formulario enviado correctamente!"
+   - Subtitle: "Gracias por completar el formulario"
+6. ✅ Wait 5 seconds and verify the message auto-dismisses
 
-2. **Run test script:**
-   ```bash
-   ./wp-content/plugins/vas-dinamico-forms/test-tracking-cli.sh
-   ```
+**Expected Result**: Professional green success message with icon appears and auto-dismisses.
 
-3. **Review results:**
-   - Test results displayed with ✓/✗ indicators
-   - Summary shows pass/fail counts
-   - Database entries displayed
+#### Test 2B: Error Message
+1. ✅ Refresh the page to load a new form
+2. ✅ Leave required fields empty
+3. ✅ Navigate to the last page
+4. ✅ Click "Enviar" to submit
+5. ✅ Verify the error message appears:
+   - Red background
+   - Warning icon (!)
+   - Title: "Por favor, completa todos los campos requeridos."
 
-**Expected Result:** All 10 tests pass.
+**Expected Result**: Professional red error message with icon appears (does not auto-dismiss).
 
-### Individual WP-CLI Commands
+#### Test 2C: Mobile Responsive
+1. ✅ Open browser DevTools (F12)
+2. ✅ Toggle device toolbar (Ctrl+Shift+M)
+3. ✅ Set to iPhone SE (375px width)
+4. ✅ Submit the form (successfully)
+5. ✅ Verify success message is responsive:
+   - Icon is smaller but visible
+   - Text is readable
+   - No horizontal scrolling
+6. ✅ Set to Galaxy Fold (320px width)
+7. ✅ Submit again and verify compact layout
 
-Test specific functionality:
-
-```bash
-# Check table exists
-wp db query "SHOW TABLES LIKE '%vas_form_events%';"
-
-# Check table structure
-wp db query "DESCRIBE wp_vas_form_events;"
-
-# Test a single event
-wp eval "
-\$_POST['nonce'] = wp_create_nonce('eipsi_tracking_nonce');
-\$_POST['form_id'] = 'manual-test';
-\$_POST['session_id'] = 'test-' . time();
-\$_POST['event_type'] = 'view';
-\$_POST['user_agent'] = 'WP-CLI Manual Test';
-do_action('wp_ajax_nopriv_eipsi_track_event');
-"
-
-# View recent events
-wp db query "SELECT * FROM wp_vas_form_events ORDER BY created_at DESC LIMIT 5;"
-```
+**Expected Result**: Success message adapts to mobile screen sizes.
 
 ---
 
-## Method 4: Database Verification
+## 3. Database Indicator Banner Test (2 minutes)
 
-### Using WP-CLI
+### Test Procedure:
 
-```bash
-# View all events
-wp db query "SELECT * FROM wp_vas_form_events ORDER BY created_at DESC LIMIT 10;"
+#### Test 3A: WordPress Database (Default)
+1. ✅ Log in to WordPress admin
+2. ✅ Navigate to "EIPSI Forms > Configuration"
+3. ✅ Verify the banner appears at the top of the page
+4. ✅ Verify the banner shows:
+   - Blue gradient background
+   - Large database icon (circular)
+   - Label: "CURRENT STORAGE LOCATION:"
+   - Badge: "WordPress Database" with WordPress icon
+   - Database name in monospace font (e.g., `wp_mysite_db`)
+   - NO "Connected" status indicator
 
-# Count events by type
-wp db query "
-SELECT event_type, COUNT(*) as count 
-FROM wp_vas_form_events 
-GROUP BY event_type;
-"
+**Expected Result**: Banner shows WordPress database information clearly.
 
-# Check specific session
-wp db query "
-SELECT * FROM wp_vas_form_events 
-WHERE session_id = 'your-session-id' 
-ORDER BY created_at;
-"
-```
+#### Test 3B: External Database (If Configured)
+1. ✅ Fill in external database credentials
+2. ✅ Click "Test Connection"
+3. ✅ If successful, click "Save Configuration"
+4. ✅ Page reloads - verify the banner now shows:
+   - Badge: "External Database" with site icon
+   - External database name (e.g., `research_db_custom`)
+   - "Connected" status with pulsing green dot
+   - "Connected" text in green
 
-### Using phpMyAdmin
+**Expected Result**: Banner updates to show external database with connected status.
 
-1. Login to phpMyAdmin
-2. Select your WordPress database
-3. Find table `wp_vas_form_events`
-4. Browse or run queries from `tracking-queries.sql`
+#### Test 3C: Mobile Responsive
+1. ✅ Open browser DevTools (F12)
+2. ✅ Toggle device toolbar (Ctrl+Shift+M)
+3. ✅ Set to iPad (768px width)
+4. ✅ Verify banner stacks vertically (icon, info, status)
+5. ✅ Set to iPhone SE (375px width)
+6. ✅ Verify compact layout with smaller icon
 
-### Using MySQL Command Line
-
-```bash
-mysql -u username -p database_name
-
-# Then run queries:
-SELECT * FROM wp_vas_form_events ORDER BY created_at DESC LIMIT 10;
-```
-
----
-
-## Method 5: Frontend Form Testing (Real-World)
-
-### Prerequisites
-- Page with EIPSI form
-- Browser with developer tools
-
-### Steps
-
-1. **Load form page**
-
-2. **Open Network tab** (F12 → Network)
-
-3. **Filter by XHR requests**
-
-4. **Interact with form:**
-   - Page loads → Should see 'view' event
-   - Click first field → Should see 'start' event
-   - Navigate pages → Should see 'page_change' events
-   - Submit form → Should see 'submit' event
-   - Close page → Should see 'abandon' event (if not submitted)
-
-5. **Check each request:**
-   - URL: `admin-ajax.php`
-   - Status: 200 OK
-   - Response: `{"success":true, ...}`
-
-6. **Verify in database:**
-   ```bash
-   wp db query "
-   SELECT * FROM wp_vas_form_events 
-   WHERE form_id = 'your-form-id' 
-   ORDER BY created_at DESC;
-   "
-   ```
-
-**Expected Result:** Events tracked automatically as you interact with form.
+**Expected Result**: Banner adapts to mobile screen sizes gracefully.
 
 ---
 
-## Common Test Scenarios
+## 4. Accessibility Testing (5 minutes)
 
-### Scenario 1: Complete Form Submission Flow
+### Test Procedure:
 
-**Test:** User completes form successfully
+#### Test 4A: Keyboard Navigation
+1. ✅ View a published form
+2. ✅ Press TAB to navigate through form fields
+3. ✅ Press TAB to reach navigation buttons
+4. ✅ Verify focus outlines are visible
+5. ✅ Press ENTER on "Siguiente" button
+6. ✅ Verify page changes
+7. ✅ Submit the form using keyboard only (TAB + ENTER)
+8. ✅ Verify success message appears
 
-**Events Expected:**
-1. `view` - Page loads
-2. `start` - User clicks first field
-3. `page_change` (if multi-page) - User navigates
-4. `submit` - User submits form
+**Expected Result**: All interactive elements are keyboard accessible.
 
-**Verification:**
-```sql
-SELECT event_type, created_at 
-FROM wp_vas_form_events 
-WHERE session_id = 'test-session-id' 
-ORDER BY created_at;
-```
+#### Test 4B: Screen Reader (Optional)
+**Requirements**: NVDA (Windows), JAWS (Windows), or VoiceOver (Mac)
 
-### Scenario 2: Form Abandonment
+1. ✅ Enable screen reader
+2. ✅ Navigate to the form
+3. ✅ Fill in fields and submit
+4. ✅ Verify screen reader announces success message:
+   - "Status: ¡Formulario enviado correctamente!"
+   - "Gracias por completar el formulario"
 
-**Test:** User views form but doesn't submit
+**Expected Result**: Screen reader announces form messages correctly.
 
-**Events Expected:**
-1. `view` - Page loads
-2. `start` - User clicks field
-3. `abandon` - User closes/leaves page
+#### Test 4C: High Contrast Mode (Windows)
+1. ✅ Press Alt+Shift+PrtScn to enable High Contrast mode
+2. ✅ View the form
+3. ✅ Submit the form
+4. ✅ Verify success message is still readable
+5. ✅ Navigate to Configuration page
+6. ✅ Verify database indicator banner is readable
 
-**Verification:**
-```sql
-SELECT * FROM wp_vas_form_events 
-WHERE event_type = 'abandon' 
-ORDER BY created_at DESC;
-```
-
-### Scenario 3: Invalid Request Handling
-
-**Test:** Malformed requests rejected
-
-**Requests to Test:**
-- Invalid event type
-- Missing nonce
-- Missing session_id
-- Invalid nonce
-
-**Expected:** All return error responses, no database entries
+**Expected Result**: All elements remain visible in high contrast mode.
 
 ---
 
-## Troubleshooting Test Failures
+## 5. Cross-Browser Testing (10 minutes)
 
-### "Table doesn't exist"
+Test in multiple browsers to ensure compatibility.
 
-**Solution:**
-```bash
-# Activate plugin
-wp plugin activate vas-dinamico-forms
+### Test Procedure:
 
-# Or manually create table
-wp db query < tracking-queries.sql
+#### Chrome/Edge (Chromium):
+1. ✅ Test navigation buttons
+2. ✅ Test success message
+3. ✅ Test database indicator
+
+#### Firefox:
+1. ✅ Test navigation buttons
+2. ✅ Test success message
+3. ✅ Test database indicator
+
+#### Safari (Mac/iOS):
+1. ✅ Test navigation buttons
+2. ✅ Test success message
+3. ✅ Test database indicator
+
+**Expected Result**: All features work identically across browsers.
+
+---
+
+## 6. Performance Testing (Optional)
+
+### Test Procedure:
+
+1. ✅ Open browser DevTools (F12)
+2. ✅ Go to "Network" tab
+3. ✅ Reload the form page
+4. ✅ Verify `eipsi-forms.css` loads successfully
+5. ✅ Verify `eipsi-forms.js` loads successfully
+6. ✅ Go to "Performance" tab
+7. ✅ Record page interaction (submit form)
+8. ✅ Verify animation runs at 60fps (success message slide-in)
+
+**Expected Result**: No performance degradation from new features.
+
+---
+
+## Bug Reporting Template
+
+If you find any issues, please report using this format:
+
 ```
+**Bug Title**: [Brief description]
 
-### "Invalid nonce"
+**Steps to Reproduce**:
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
 
-**Solution:**
-- Nonces expire after 12-24 hours
-- Refresh page to get new nonce
-- Don't hardcode nonces in tests
+**Expected Behavior**:
+[What should happen]
 
-### "Function not found"
+**Actual Behavior**:
+[What actually happened]
 
-**Solution:**
-```bash
-# Check plugin is activated
-wp plugin list
+**Environment**:
+- Browser: [Chrome 120, Firefox 115, etc.]
+- Device: [Desktop, iPhone 12, iPad Pro, etc.]
+- Screen Size: [1920x1080, 375x667, etc.]
+- WordPress Version: [6.4, 6.5, etc.]
 
-# Check ajax-handlers.php is loaded
-wp eval "echo function_exists('eipsi_track_event_handler') ? 'yes' : 'no';"
-```
+**Screenshots**:
+[Attach screenshots if relevant]
 
-### "404 on admin-ajax.php"
-
-**Solution:**
-- Check WordPress is accessible
-- Verify URL is correct
-- Check .htaccess rules
-- Test: `curl http://your-site.com/wp-admin/admin-ajax.php`
-
-### "Events not appearing in database"
-
-**Solution:**
-```bash
-# Check database connection
-wp db check
-
-# Check table permissions
-wp db query "SELECT * FROM wp_vas_form_events LIMIT 1;"
-
-# Check WordPress debug log
-tail -f wp-content/debug.log
+**Console Errors**:
+[Copy any JavaScript errors from browser console]
 ```
 
 ---
 
-## Performance Testing
+## Test Completion Checklist
 
-### Load Testing
+Once all tests pass, check off each item:
 
-Test with multiple concurrent requests:
+### Functionality:
+- [ ] Navigation buttons appear correctly on all pages
+- [ ] Backward navigation toggle works when enabled/disabled
+- [ ] Success message appears with green background and icon
+- [ ] Error message appears with red background and icon
+- [ ] Success message auto-dismisses after 5 seconds
+- [ ] Database indicator shows WordPress DB by default
+- [ ] Database indicator shows External DB when configured
+- [ ] Connected status appears with pulsing green dot
 
-```bash
-# Using Apache Bench (if installed)
-ab -n 100 -c 10 -p post_data.txt -T 'application/x-www-form-urlencoded' \
-   http://your-site.com/wp-admin/admin-ajax.php
-```
+### Responsive:
+- [ ] Success message responsive on mobile (≤480px)
+- [ ] Database indicator responsive on tablet (≤768px)
+- [ ] Database indicator responsive on mobile (≤480px)
+- [ ] No horizontal scrolling on any screen size
 
-Where `post_data.txt` contains:
-```
-action=eipsi_track_event&nonce=YOUR_NONCE&form_id=test&session_id=load-test&event_type=view&user_agent=LoadTest
-```
+### Accessibility:
+- [ ] Keyboard navigation works on all elements
+- [ ] Screen reader announces success/error messages
+- [ ] High contrast mode is readable
+- [ ] Focus outlines are visible
+- [ ] ARIA attributes are present
 
-### Database Performance
+### Cross-Browser:
+- [ ] Chrome/Edge: All features work
+- [ ] Firefox: All features work
+- [ ] Safari: All features work
+- [ ] Mobile browsers: All features work
 
-```sql
--- Check query performance
-EXPLAIN SELECT * FROM wp_vas_form_events 
-WHERE form_id = 'test' AND event_type = 'view';
-
--- Check index usage
-SHOW INDEX FROM wp_vas_form_events;
-
--- Analyze table
-ANALYZE TABLE wp_vas_form_events;
-```
-
----
-
-## Test Data Cleanup
-
-### Remove test events:
-
-```bash
-# WP-CLI
-wp db query "DELETE FROM wp_vas_form_events WHERE form_id LIKE 'test%';"
-
-# Or keep last 100 events for reference
-wp db query "
-DELETE FROM wp_vas_form_events 
-WHERE id NOT IN (
-    SELECT id FROM (
-        SELECT id FROM wp_vas_form_events 
-        ORDER BY created_at DESC LIMIT 100
-    ) tmp
-);
-"
-```
-
-### Reset table:
-
-```bash
-# Truncate (removes all data, keeps structure)
-wp db query "TRUNCATE TABLE wp_vas_form_events;"
-```
+### Performance:
+- [ ] Page loads without delay
+- [ ] Animations run smoothly (60fps)
+- [ ] No JavaScript console errors
+- [ ] No CSS rendering issues
 
 ---
 
-## Success Criteria
+## Quick Smoke Test (2 minutes)
 
-### ✅ Tests Pass If:
+For rapid verification after deployment:
 
-1. **Database**
-   - Table `wp_vas_form_events` exists
-   - 7 columns present
-   - 5 indexes created
+1. ✅ Create a 3-page form
+2. ✅ Navigate through pages (verify buttons)
+3. ✅ Toggle backward navigation OFF (verify prev button hides)
+4. ✅ Submit form successfully (verify green success message)
+5. ✅ Go to Configuration page (verify database indicator)
 
-2. **AJAX Handler**
-   - Function `eipsi_track_event_handler` exists
-   - Returns 200 for valid requests
-   - Returns 403 for invalid nonce
-   - Returns 400 for invalid event type
-
-3. **Event Tracking**
-   - Events inserted into database
-   - Timestamps recorded correctly
-   - Session IDs preserved
-   - Page numbers tracked (when provided)
-
-4. **Error Handling**
-   - Invalid requests rejected gracefully
-   - Database errors logged but don't crash
-   - Frontend continues working on failures
+**If all 5 steps pass**: ✅ Deployment successful!
 
 ---
 
-## Next Steps After Testing
-
-Once all tests pass:
-
-1. **Review Analytics:**
-   ```bash
-   # View summary
-   wp db query < tracking-queries.sql
-   ```
-
-2. **Set Up Monitoring:**
-   - Check database size regularly
-   - Monitor error logs
-   - Review abandonment rates
-
-3. **Implement Retention Policy:**
-   - Decide how long to keep events
-   - Set up automatic cleanup
-   - Export data for research before deletion
-
-4. **Document for Team:**
-   - Share access to analytics
-   - Train researchers on data export
-   - Establish review schedule
-
----
-
-## Support Resources
-
-- **Full Documentation:** `TRACKING_IMPLEMENTATION.md`
-- **SQL Queries:** `tracking-queries.sql`
-- **Test Interface:** `test-tracking.html`
-- **Automated Tests:** `test-tracking-cli.sh`
-- **Changes Summary:** `CHANGES.md`
-
----
-
-## Quick Reference
-
-### Most Common Test Command
-```bash
-./test-tracking-cli.sh
-```
-
-### Most Common SQL Query
-```sql
-SELECT * FROM wp_vas_form_events ORDER BY created_at DESC LIMIT 10;
-```
-
-### Most Common Browser Console Test
-```javascript
-console.log(eipsiTrackingConfig);
-```
-
----
-
-**Happy Testing! 🧪**
-
-If you encounter issues not covered here, check `TRACKING_IMPLEMENTATION.md` for detailed troubleshooting.
+**Last Updated**: January 2025
+**Version**: 1.2.0+
+**Status**: Ready for Testing

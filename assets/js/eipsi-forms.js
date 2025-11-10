@@ -1576,8 +1576,38 @@
             this.clearMessages( form );
 
             const messageElement = document.createElement( 'div' );
-            messageElement.className = `form-message ${ type }`;
-            messageElement.textContent = message;
+            messageElement.className = `form-message form-message--${ type }`;
+            messageElement.setAttribute( 'role', type === 'error' ? 'alert' : 'status' );
+            messageElement.setAttribute( 'aria-live', 'polite' );
+
+            if ( type === 'success' ) {
+                messageElement.innerHTML = `
+                    <div class="form-message__icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
+                            <path d="M7 12L10.5 15.5L17 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="form-message__content">
+                        <div class="form-message__title">${ message }</div>
+                        <div class="form-message__subtitle">Gracias por completar el formulario</div>
+                    </div>
+                `;
+            } else if ( type === 'error' ) {
+                messageElement.innerHTML = `
+                    <div class="form-message__icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
+                            <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="form-message__content">
+                        <div class="form-message__title">${ message }</div>
+                    </div>
+                `;
+            } else {
+                messageElement.textContent = message;
+            }
 
             form.appendChild( messageElement );
 

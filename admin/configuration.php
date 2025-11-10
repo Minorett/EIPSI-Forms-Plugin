@@ -32,6 +32,39 @@ function eipsi_display_configuration_page() {
             <?php echo esc_html__('Configure an external MySQL database to store form submission data. If no external database is configured, data will be stored in the default WordPress database.', 'vas-dinamico-forms'); ?>
         </p>
         
+        <!-- Prominent Database Indicator -->
+        <div class="eipsi-db-indicator-banner">
+            <div class="eipsi-db-indicator-content">
+                <div class="eipsi-db-indicator-icon">
+                    <span class="dashicons dashicons-database"></span>
+                </div>
+                <div class="eipsi-db-indicator-info">
+                    <div class="eipsi-db-indicator-label"><?php echo esc_html__('Current Storage Location:', 'vas-dinamico-forms'); ?></div>
+                    <div class="eipsi-db-indicator-value">
+                        <?php if ($status['connected']): ?>
+                            <span class="eipsi-db-badge eipsi-db-badge--external">
+                                <span class="dashicons dashicons-admin-site-alt3"></span>
+                                <?php echo esc_html__('External Database', 'vas-dinamico-forms'); ?>
+                            </span>
+                            <span class="eipsi-db-name"><?php echo esc_html($status['db_name']); ?></span>
+                        <?php else: ?>
+                            <span class="eipsi-db-badge eipsi-db-badge--wordpress">
+                                <span class="dashicons dashicons-wordpress"></span>
+                                <?php echo esc_html__('WordPress Database', 'vas-dinamico-forms'); ?>
+                            </span>
+                            <span class="eipsi-db-name"><?php echo esc_html(DB_NAME); ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php if ($status['connected']): ?>
+                <div class="eipsi-db-indicator-status">
+                    <span class="eipsi-status-dot eipsi-status-dot--connected"></span>
+                    <span class="eipsi-status-text"><?php echo esc_html__('Connected', 'vas-dinamico-forms'); ?></span>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        
         <div class="eipsi-config-container">
             <!-- Configuration Form -->
             <div class="eipsi-config-form-section">
