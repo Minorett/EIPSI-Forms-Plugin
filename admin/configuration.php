@@ -229,6 +229,34 @@ function eipsi_display_configuration_page() {
                         <p><?php echo esc_html__('No external database configured. Form submissions will be stored in the WordPress database.', 'vas-dinamico-forms'); ?></p>
                     </div>
                     <?php endif; ?>
+                    
+                    <?php if (!empty($status['last_error'])): ?>
+                    <div class="eipsi-error-box" style="margin-top: 15px; padding: 12px; background: #fff3cd; border-left: 4px solid #ff9800; border-radius: 4px;">
+                        <h4 style="margin: 0 0 8px 0; color: #856404;">
+                            <span class="dashicons dashicons-warning" style="color: #ff9800;"></span>
+                            <?php echo esc_html__('Fallback Mode Active', 'vas-dinamico-forms'); ?>
+                        </h4>
+                        <p style="margin: 0 0 8px 0; color: #856404;">
+                            <?php echo esc_html__('Recent submissions were saved to the WordPress database because the external database was unavailable.', 'vas-dinamico-forms'); ?>
+                        </p>
+                        <div class="status-detail-row" style="font-size: 13px;">
+                            <span class="detail-label"><?php echo esc_html__('Last Error:', 'vas-dinamico-forms'); ?></span>
+                            <span class="detail-value" style="color: #d32f2f; font-family: monospace;"><?php echo esc_html($status['last_error']); ?></span>
+                        </div>
+                        <?php if (!empty($status['last_error_code'])): ?>
+                        <div class="status-detail-row" style="font-size: 13px;">
+                            <span class="detail-label"><?php echo esc_html__('Error Code:', 'vas-dinamico-forms'); ?></span>
+                            <span class="detail-value" style="font-family: monospace;"><?php echo esc_html($status['last_error_code']); ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if (!empty($status['last_error_time'])): ?>
+                        <div class="status-detail-row" style="font-size: 13px;">
+                            <span class="detail-label"><?php echo esc_html__('Occurred:', 'vas-dinamico-forms'); ?></span>
+                            <span class="detail-value"><?php echo esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $status['last_error_time'])); ?></span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 
                 <!-- Help Section -->
@@ -243,10 +271,12 @@ function eipsi_display_configuration_page() {
                     
                     <h3><?php echo esc_html__('Important Notes', 'vas-dinamico-forms'); ?></h3>
                     <ul>
-                        <li><?php echo esc_html__('The external database must have the same table structure as the WordPress database', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('The plugin will automatically create the required table and columns in the external database if they are missing', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('Passwords are encrypted before storage using WordPress security functions', 'vas-dinamico-forms'); ?></li>
-                        <li><?php echo esc_html__('Test the connection before saving to prevent data loss', 'vas-dinamico-forms'); ?></li>
-                        <li><?php echo esc_html__('If the external database becomes unavailable, submissions will fail', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('Test the connection before saving to verify credentials and schema', 'vas-dinamico-forms'); ?></li>
+                        <li><strong><?php echo esc_html__('Automatic Fallback:', 'vas-dinamico-forms'); ?></strong> <?php echo esc_html__('If the external database becomes unavailable, submissions will automatically be saved to the WordPress database without blocking the user', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('Admin notifications will alert you when fallback mode is active so you can investigate the issue', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('Enable WP_DEBUG to see detailed error logs for troubleshooting database issues', 'vas-dinamico-forms'); ?></li>
                     </ul>
                 </div>
             </div>

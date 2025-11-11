@@ -165,34 +165,83 @@ function vas_dinamico_submit_form_handler() {
     require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
     
-    if ($db_helper->is_enabled()) {
-        // Use external database
+    $external_db_enabled = $db_helper->is_enabled();
+    $used_fallback = false;
+    $error_info = null;
+    
+    if ($external_db_enabled) {
+        // Try external database first
         $result = $db_helper->insert_form_submission($data);
         
-        if ($result) {
+        if ($result['success']) {
+            // External DB insert succeeded
             wp_send_json_success(array(
                 'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
-                'external_db' => true
+                'external_db' => true,
+                'insert_id' => $result['insert_id']
             ));
         } else {
-            wp_send_json_error(array(
-                'message' => __('Failed to submit form to external database.', 'vas-dinamico-forms')
-            ));
+            // External DB failed, record error and fall back to WordPress DB
+            $error_info = array(
+                'error' => $result['error'],
+                'error_code' => $result['error_code'],
+                'mysql_errno' => isset($result['mysql_errno']) ? $result['mysql_errno'] : null
+            );
+            
+            // Record error for admin diagnostics
+            $db_helper->record_error($result['error'], $result['error_code']);
+            
+            // Log the fallback
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('EIPSI Forms: External DB insert failed, falling back to WordPress DB - ' . $result['error']);
+            }
+            
+            $used_fallback = true;
         }
-    } else {
-        // Use WordPress database (default behavior)
+    }
+    
+    // Use WordPress database (either as default or as fallback)
+    if (!$external_db_enabled || $used_fallback) {
         $table_name = $wpdb->prefix . 'vas_form_results';
         
-        $wpdb->insert(
+        $wpdb_result = $wpdb->insert(
             $table_name,
             $data,
             array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%s')
         );
         
-        wp_send_json_success(array(
-            'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
-            'external_db' => false
-        ));
+        if ($wpdb_result === false) {
+            // WordPress DB insert also failed - critical error
+            $wpdb_error = $wpdb->last_error;
+            error_log('EIPSI Forms: WordPress DB insert failed - ' . $wpdb_error);
+            
+            wp_send_json_error(array(
+                'message' => __('Failed to submit form. Please try again.', 'vas-dinamico-forms'),
+                'external_db_error' => $error_info,
+                'wordpress_db_error' => $wpdb_error
+            ));
+        }
+        
+        $insert_id = $wpdb->insert_id;
+        
+        if ($used_fallback) {
+            // Fallback succeeded - inform user with warning
+            wp_send_json_success(array(
+                'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
+                'external_db' => false,
+                'fallback_used' => true,
+                'warning' => __('Form was saved to local database (external database temporarily unavailable).', 'vas-dinamico-forms'),
+                'insert_id' => $insert_id,
+                'error_code' => $error_info['error_code']
+            ));
+        } else {
+            // Normal WordPress DB submission
+            wp_send_json_success(array(
+                'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
+                'external_db' => false,
+                'insert_id' => $insert_id
+            ));
+        }
     }
 }
 
