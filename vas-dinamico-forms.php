@@ -323,6 +323,16 @@ function vas_dinamico_enqueue_frontend_assets() {
         return;
     }
 
+    // Ensure block styles are registered before enqueueing main CSS
+    if (!wp_style_is('vas-dinamico-blocks-style', 'registered')) {
+        wp_register_style(
+            'vas-dinamico-blocks-style',
+            VAS_DINAMICO_PLUGIN_URL . 'build/style-index.css',
+            array(),
+            VAS_DINAMICO_VERSION
+        );
+    }
+
     wp_enqueue_style(
         'eipsi-forms-css',
         VAS_DINAMICO_PLUGIN_URL . 'assets/css/eipsi-forms.css',

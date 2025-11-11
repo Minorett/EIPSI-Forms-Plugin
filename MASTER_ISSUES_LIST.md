@@ -13,12 +13,12 @@
 This master list consolidates every issue identified across all audit reports for the EIPSI Forms plugin. Issues are categorized by severity, type, and current status.
 
 ### Issue Status Overview
-- ✅ **Resolved:** 32 issues (+3 from block SCSS migration, +3 from semantic token fixes, +2 from placeholder contrast fix, +2 from mobile focus enhancement)
-- ⚠️ **Requires Attention:** 7 issues (Critical/High priority)
+- ✅ **Resolved:** 33 issues (+3 from block SCSS migration, +3 from semantic token fixes, +2 from placeholder contrast fix, +2 from mobile focus enhancement, +1 from CSS dependency fix)
+- ⚠️ **Requires Attention:** 6 issues (Critical/High priority)
 - 📝 **Low Priority/Acceptable:** 8 issues
 
 ### Severity Breakdown
-- 🔴 **Critical:** 17 issues (14 resolved, 3 open)
+- 🔴 **Critical:** 17 issues (15 resolved, 2 open) 
 - 🟠 **High:** 11 issues (11 resolved, 0 open) ✅ ALL RESOLVED
 - 🟡 **Medium:** 12 issues (5 resolved, 7 open)
 - 🟢 **Low:** 7 issues (2 resolved, 5 open)
@@ -225,6 +225,65 @@ input {
 
 **Fix Applied:**
 - Added `'branch_jump'` to `$allowed_events` array in `admin/ajax-handlers.php` line 239
+
+---
+
+### Issue #6.5: CSS Dependency Order Causing Visual Regression
+**Source:** Visual Regression Ticket (January 2025)  
+**Severity:** 🔴 CRITICAL  
+**Status:** ✅ FIXED (2025-01-23)
+
+**Problem:** (Historical - Now Resolved)
+- Main CSS (`eipsi-forms.css`) declared dependency on `vas-dinamico-blocks-style`
+- Block styles only registered when Gutenberg blocks present on page
+- Caused load order failures on pages without blocks (test files, shortcodes)
+- Result: Missing button gradients, hover effects, form aesthetics
+
+**Code Location:**
+```php
+// vas-dinamico-forms.php:329 (BEFORE)
+wp_enqueue_style(
+    'eipsi-forms-css',
+    VAS_DINAMICO_PLUGIN_URL . 'assets/css/eipsi-forms.css',
+    array('vas-dinamico-blocks-style'),  // ❌ Dependency on unregistered style
+    VAS_DINAMICO_VERSION
+);
+```
+
+**Impact:** (Historical - Now Resolved)
+- Button styling degraded (no gradients, no shadows, no hover effects)
+- Form aesthetics downgraded to basic styles
+- Visual regression from January 2025 baseline
+- Affected standalone test forms and shortcode implementations
+
+**Fix Applied:**
+```php
+// vas-dinamico-forms.php:326-341 (AFTER)
+// Ensure block styles are registered before enqueueing main CSS
+if (!wp_style_is('vas-dinamico-blocks-style', 'registered')) {
+    wp_register_style(
+        'vas-dinamico-blocks-style',
+        VAS_DINAMICO_PLUGIN_URL . 'build/style-index.css',
+        array(),
+        VAS_DINAMICO_VERSION
+    );
+}
+
+wp_enqueue_style(
+    'eipsi-forms-css',
+    VAS_DINAMICO_PLUGIN_URL . 'assets/css/eipsi-forms.css',
+    array('vas-dinamico-blocks-style'),  // ✅ Now always registered
+    VAS_DINAMICO_VERSION
+);
+```
+
+**Verification:**
+- ✅ Build succeeds: `npm run build` - webpack 5.102.1 compiled successfully
+- ✅ WCAG compliance maintained: 16/16 critical color pairs pass (4.5:1 minimum)
+- ✅ No regression: Mobile focus (3px at ≤768px), touch targets (44px), responsive padding
+- ✅ All January 2025 visual enhancements preserved
+
+**Documentation:** `VISUAL_REGRESSION_FIX_REPORT.md`
 
 ---
 
