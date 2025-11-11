@@ -10,18 +10,33 @@ add_action('admin_init', function() {
         
         // Verificar permisos
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to perform this action.', 'vas-dinamico-forms'));
+            $redirect_url = add_query_arg(
+                array('page' => 'vas-dinamico-results', 'error' => 'permission'),
+                admin_url('admin.php')
+            );
+            wp_safe_redirect($redirect_url);
+            exit;
         }
         
         // Validar ID y nonce
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if (!$id || !isset($_GET['_wpnonce'])) {
-            wp_die(__('Invalid request.', 'vas-dinamico-forms'));
+            $redirect_url = add_query_arg(
+                array('page' => 'vas-dinamico-results', 'error' => 'invalid'),
+                admin_url('admin.php')
+            );
+            wp_safe_redirect($redirect_url);
+            exit;
         }
         
-        // Verificar nonce de seguridad
-        if (!wp_verify_nonce($_GET['_wpnonce'], 'vas_dinamico_delete_' . $id)) {
-            wp_die(__('Security check failed.', 'vas-dinamico-forms'));
+        // Verificar nonce de seguridad - ALIGNED with results-page.php
+        if (!wp_verify_nonce($_GET['_wpnonce'], 'delete_response_' . $id)) {
+            $redirect_url = add_query_arg(
+                array('page' => 'vas-dinamico-results', 'error' => 'nonce'),
+                admin_url('admin.php')
+            );
+            wp_safe_redirect($redirect_url);
+            exit;
         }
         
         // Eliminar el registro de la base de datos
@@ -34,12 +49,20 @@ add_action('admin_init', function() {
             array('%d')
         );
         
-        // Redirigir con mensaje de éxito
-        if ($result !== false) {
-            wp_redirect(admin_url('admin.php?page=vas-dinamico-results&deleted=1'));
+        // Redirigir con mensaje de éxito o error
+        if ($result !== false && $result > 0) {
+            $redirect_url = add_query_arg(
+                array('page' => 'vas-dinamico-results', 'deleted' => '1'),
+                admin_url('admin.php')
+            );
         } else {
-            wp_redirect(admin_url('admin.php?page=vas-dinamico-results&error=1'));
+            $redirect_url = add_query_arg(
+                array('page' => 'vas-dinamico-results', 'error' => 'delete'),
+                admin_url('admin.php')
+            );
         }
+        
+        wp_safe_redirect($redirect_url);
         exit;
     }
 });

@@ -28,6 +28,42 @@ function vas_display_form_responses() {
     <div class="wrap">
         <h1>Form Responses</h1>
         
+        <?php
+        // Display admin notices for delete actions
+        if (isset($_GET['deleted']) && $_GET['deleted'] === '1') {
+            ?>
+            <div class="notice notice-success is-dismissible">
+                <p><?php _e('Response deleted successfully.', 'vas-dinamico-forms'); ?></p>
+            </div>
+            <?php
+        }
+        
+        if (isset($_GET['error'])) {
+            $error_message = '';
+            switch ($_GET['error']) {
+                case 'permission':
+                    $error_message = __('You do not have sufficient permissions to perform this action.', 'vas-dinamico-forms');
+                    break;
+                case 'invalid':
+                    $error_message = __('Invalid request. Please try again.', 'vas-dinamico-forms');
+                    break;
+                case 'nonce':
+                    $error_message = __('Security check failed. Please refresh the page and try again.', 'vas-dinamico-forms');
+                    break;
+                case 'delete':
+                    $error_message = __('Failed to delete response. The record may not exist.', 'vas-dinamico-forms');
+                    break;
+                default:
+                    $error_message = __('An error occurred. Please try again.', 'vas-dinamico-forms');
+            }
+            ?>
+            <div class="notice notice-error is-dismissible">
+                <p><?php echo esc_html($error_message); ?></p>
+            </div>
+            <?php
+        }
+        ?>
+        
         <!-- Filtro por formulario -->
         <div class="vas-form-filter" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 5px;">
             <form method="get">
