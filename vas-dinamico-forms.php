@@ -45,20 +45,28 @@ function vas_dinamico_activate() {
     $table_name = $wpdb->prefix . 'vas_form_results';
     $sql = "CREATE TABLE IF NOT EXISTS $table_name (
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        form_id varchar(20) DEFAULT NULL,
+        participant_id varchar(20) DEFAULT NULL,
         participant varchar(255) DEFAULT NULL,
         interaction varchar(255) DEFAULT NULL,
         form_name varchar(255) NOT NULL,
         created_at datetime NOT NULL,
+        submitted_at datetime DEFAULT NULL,
         device varchar(100) DEFAULT NULL,
         browser varchar(100) DEFAULT NULL,
         os varchar(100) DEFAULT NULL,
         screen_width int(11) DEFAULT NULL,
         duration int(11) DEFAULT NULL,
+        duration_seconds decimal(8,3) DEFAULT NULL,
         ip_address varchar(45) DEFAULT NULL,
         form_responses longtext DEFAULT NULL,
         PRIMARY KEY (id),
         KEY form_name (form_name),
-        KEY created_at (created_at)
+        KEY created_at (created_at),
+        KEY form_id (form_id),
+        KEY participant_id (participant_id),
+        KEY submitted_at (submitted_at),
+        KEY form_participant (form_id, participant_id)
     ) $charset_collate;";
     
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';

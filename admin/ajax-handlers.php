@@ -3,6 +3,73 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+function generate_stable_form_id($form_name) {
+    global $wpdb;
+    
+    $initials = get_form_initials($form_name);
+    
+    if (strlen($initials) < 2) {
+        $slug = sanitize_title($form_name);
+        $initials = strtoupper(substr($slug, 0, 3));
+    }
+    
+    $slug = sanitize_title($form_name);
+    $hash = substr(md5($slug), 0, 6);
+    $form_id = "{$initials}-{$hash}";
+    
+    $table_name = $wpdb->prefix . 'vas_form_results';
+    $exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM $table_name WHERE form_id = %s",
+        $form_id
+    ));
+    
+    if ($exists > 0) {
+        return $form_id;
+    }
+    
+    return $form_id;
+}
+
+function get_form_initials($form_name) {
+    $stop_words = array('de', 'la', 'el', 'y', 'en', 'con', 'para', 'del', 'los', 'las');
+    $words = preg_split('/\s+/', strtolower($form_name));
+    $words = array_diff($words, $stop_words);
+    $initials = '';
+    foreach ($words as $word) {
+        if (!empty($word)) {
+            $initials .= strtoupper(substr($word, 0, 1));
+        }
+    }
+    return $initials;
+}
+
+function generateStableFingerprint($user_data) {
+    $components = array(
+        'email' => strtolower(trim($user_data['email'] ?? '')),
+        'name' => normalizeName($user_data['name'] ?? ''),
+    );
+    
+    $fingerprint_string = implode('|', array_filter($components));
+    
+    if ($fingerprint_string) {
+        $hash = substr(hash('sha256', $fingerprint_string), 0, 8);
+        return "FP-{$hash}";
+    } else {
+        $session_id = session_id();
+        if (empty($session_id)) {
+            session_start();
+            $session_id = session_id();
+        }
+        $remote_addr = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $session_hash = substr(md5($session_id . $remote_addr), 0, 6);
+        return "FP-SESS-{$session_hash}";
+    }
+}
+
+function normalizeName($name) {
+    return strtoupper(trim($name));
+}
+
 add_action('wp_ajax_nopriv_vas_dinamico_submit_form', 'vas_dinamico_submit_form_handler');
 add_action('wp_ajax_vas_dinamico_submit_form', 'vas_dinamico_submit_form_handler');
 
@@ -24,40 +91,73 @@ function vas_dinamico_submit_form_handler() {
     
     global $wpdb;
     
-    $form_id = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : 'default';
+    $form_name = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : 'default';
     $ip_address = isset($_POST['ip_address']) ? sanitize_text_field($_POST['ip_address']) : '';
+    if (empty($ip_address)) {
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+    }
     $device = isset($_POST['device']) ? sanitize_text_field($_POST['device']) : '';
     $browser = isset($_POST['browser']) ? sanitize_text_field($_POST['browser']) : '';
     $os = isset($_POST['os']) ? sanitize_text_field($_POST['os']) : '';
     $screen_width = isset($_POST['screen_width']) ? intval($_POST['screen_width']) : 0;
     $start_time = isset($_POST['form_start_time']) ? sanitize_text_field($_POST['form_start_time']) : '';
+    $end_time = isset($_POST['form_end_time']) ? sanitize_text_field($_POST['form_end_time']) : '';
     
     $form_responses = array();
-    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'current_page', 'nonce');
+    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action');
+    
+    $user_data = array(
+        'email' => '',
+        'name' => ''
+    );
     
     foreach ($_POST as $key => $value) {
         if (!in_array($key, $exclude_fields) && is_string($value)) {
             $form_responses[$key] = sanitize_text_field($value);
+            
+            if (strtolower($key) === 'email' || strpos(strtolower($key), 'correo') !== false) {
+                $user_data['email'] = sanitize_email($value);
+            }
+            if (strtolower($key) === 'name' || strtolower($key) === 'nombre') {
+                $user_data['name'] = sanitize_text_field($value);
+            }
         }
     }
     
     $duration = 0;
-    if (!empty($start_time)) {
+    $duration_seconds = 0.0;
+    if (!empty($start_time) && !empty($end_time)) {
+        $start_timestamp = intval($start_time);
+        $end_timestamp = intval($end_time);
+        $duration_ms = max(0, $end_timestamp - $start_timestamp);
+        $duration = intval($duration_ms / 1000);
+        $duration_seconds = round($duration_ms / 1000, 3);
+    } elseif (!empty($start_time)) {
         $start_timestamp = intval($start_time);
         $current_timestamp = current_time('timestamp', true) * 1000;
         $duration = max(0, intval(($current_timestamp - $start_timestamp) / 1000));
+        $duration_seconds = $duration;
     }
+    
+    $stable_form_id = generate_stable_form_id($form_name);
+    $participant_id = generateStableFingerprint($user_data);
+    
+    $submitted_at = current_time('mysql');
     
     // Prepare data for insertion
     $data = array(
-        'form_name' => $form_id,
+        'form_id' => $stable_form_id,
+        'participant_id' => $participant_id,
+        'form_name' => $form_name,
         'created_at' => current_time('mysql'),
+        'submitted_at' => $submitted_at,
         'ip_address' => $ip_address,
         'device' => $device,
         'browser' => $browser,
         'os' => $os,
         'screen_width' => $screen_width,
         'duration' => $duration,
+        'duration_seconds' => $duration_seconds,
         'form_responses' => wp_json_encode($form_responses)
     );
     
@@ -86,7 +186,7 @@ function vas_dinamico_submit_form_handler() {
         $wpdb->insert(
             $table_name,
             $data,
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%s')
         );
         
         wp_send_json_success(array(
