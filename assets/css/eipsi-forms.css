@@ -22,7 +22,7 @@
  * - Secondary: #e3f2fd (Light Blue - calming backgrounds)
  * - Neutral: #ffffff, #f8f9fa, #e2e8f0 (clinical cleanliness)
  * - Text: #2c3e50 (soft dark - readable without harshness)
- * - Semantic: #ff6b6b (error), #28a745 (success), #ffc107 (warning)
+ * - Semantic: #ff6b6b (error), #198754 (success), #ffc107 (warning)
  */
 
 :root {
@@ -44,7 +44,7 @@
     --eipsi-color-button-text: #ffffff;
     --eipsi-color-button-hover-bg: #003d5b;
     --eipsi-color-error: #ff6b6b;
-    --eipsi-color-success: #28a745;
+    --eipsi-color-success: #198754;
     --eipsi-color-warning: #ffc107;
     --eipsi-color-border: #e2e8f0;
     --eipsi-color-border-dark: #cbd5e0;
