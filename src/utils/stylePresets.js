@@ -348,6 +348,89 @@ const SERENE_TEAL = {
 };
 
 /**
+ * Dark EIPSI Theme
+ * High-contrast dark mode with EIPSI blue background
+ * Visual Identity: Dark blue background, light text, reduced eye strain, professional dark mode
+ */
+const DARK_EIPSI = {
+    name: 'Dark EIPSI',
+    description: 'Professional dark mode with EIPSI blue background and high-contrast light text',
+    config: {
+        colors: {
+            primary: '#22d3ee',
+            primaryHover: '#06b6d4',
+            secondary: '#0c4a6e',
+            background: '#005a87',
+            backgroundSubtle: '#003d5b',
+            text: '#ffffff',
+            textMuted: '#94a3b8',
+            inputBg: '#f8f9fa',
+            inputText: '#1e293b',
+            inputBorder: '#64748b',
+            inputBorderFocus: '#22d3ee',
+            inputErrorBg: '#fff5f5',
+            inputIcon: '#1e293b',
+            buttonBg: '#0e7490',
+            buttonText: '#ffffff',
+            buttonHoverBg: '#155e75',
+            error: '#fecaca',
+            success: '#6ee7b7',
+            warning: '#fcd34d',
+            border: '#cbd5e1',
+            borderDark: '#e2e8f0',
+        },
+        typography: {
+            fontFamilyHeading:
+                '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamilyBody:
+                '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontSizeBase: '16px',
+            fontSizeH1: '2rem',
+            fontSizeH2: '1.75rem',
+            fontSizeH3: '1.5rem',
+            fontSizeSmall: '0.875rem',
+            fontWeightNormal: '400',
+            fontWeightMedium: '500',
+            fontWeightBold: '600',
+            lineHeightBase: '1.65',
+            lineHeightHeading: '1.3',
+        },
+        spacing: {
+            xs: '0.5rem',
+            sm: '1rem',
+            md: '1.75rem',
+            lg: '2.25rem',
+            xl: '3rem',
+            containerPadding: '2.5rem',
+            fieldGap: '1.75rem',
+            sectionGap: '2.5rem',
+        },
+        borders: {
+            radiusSm: '8px',
+            radiusMd: '12px',
+            radiusLg: '16px',
+            width: '1px',
+            widthFocus: '2px',
+            style: 'solid',
+        },
+        shadows: {
+            sm: '0 2px 8px rgba(0, 0, 0, 0.25)',
+            md: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            lg: '0 8px 25px rgba(0, 0, 0, 0.35)',
+            focus: '0 0 0 3px rgba(34, 211, 238, 0.4)',
+            error: '0 0 0 3px rgba(252, 165, 165, 0.3)',
+        },
+        interactivity: {
+            transitionDuration: '0.2s',
+            transitionTiming: 'ease',
+            hoverScale: '1.01',
+            focusOutlineWidth: '2px',
+            focusOutlineOffset: '2px',
+        },
+    },
+};
+
+/**
  * All available presets
  */
 export const STYLE_PRESETS = [
@@ -356,6 +439,7 @@ export const STYLE_PRESETS = [
     WARM_NEUTRAL,
     HIGH_CONTRAST,
     SERENE_TEAL,
+    DARK_EIPSI,
 ];
 
 /**

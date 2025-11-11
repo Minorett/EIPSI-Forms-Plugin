@@ -161,6 +161,35 @@ const STYLE_PRESETS = [
             },
         },
     },
+    {
+        name: 'Dark EIPSI',
+        description: 'Professional dark mode with EIPSI blue background and high-contrast light text',
+        config: {
+            colors: {
+                primary: '#22d3ee',
+                primaryHover: '#06b6d4',
+                secondary: '#0c4a6e',
+                background: '#005a87',
+                backgroundSubtle: '#003d5b',
+                text: '#ffffff',
+                textMuted: '#94a3b8',
+                inputBg: '#f8f9fa',
+                inputText: '#1e293b',
+                inputBorder: '#64748b',
+                inputBorderFocus: '#22d3ee',
+                inputErrorBg: '#fff5f5',
+                inputIcon: '#1e293b',
+                buttonBg: '#0e7490',
+                buttonText: '#ffffff',
+                buttonHoverBg: '#155e75',
+                error: '#fecaca',
+                success: '#6ee7b7',
+                warning: '#fcd34d',
+                border: '#cbd5e1',
+                borderDark: '#e2e8f0',
+            },
+        },
+    },
 ];
 
 /**
