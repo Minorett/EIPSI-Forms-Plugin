@@ -100,6 +100,10 @@
         "className": {
             "type": "string",
             "default": ""
+        },
+        "conditionalLogic": {
+            "type": "object",
+            "default": null
         }
     },
     "example": {
