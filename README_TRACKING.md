@@ -91,6 +91,13 @@ wp db query "SELECT * FROM wp_vas_form_events" --csv > events_export.csv
 - `submit` - Form submitted
 - `abandon` - User left without submitting
 
+### Duration Tracking (Updated: January 2025)
+- ✅ `form_start_time` set once on initialization
+- ✅ `form_end_time` captured before submission
+- ✅ Protected against multiple submissions
+- ✅ Accurate duration calculation in seconds (millisecond precision)
+- ✅ Works with both normal and conditional-logic auto-submit flows
+
 ### Security
 - ✅ Nonce verification
 - ✅ Input sanitization
