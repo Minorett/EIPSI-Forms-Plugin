@@ -95,8 +95,8 @@ function vas_export_to_excel() {
     }
     
     $data = array();
-    // Encabezados: nuevo formato con IDs + metadatos + preguntas dinámicas
-    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'IP Address', 'Device', 'Browser', 'OS');
+    // Encabezados: nuevo formato con IDs + metadatos + timestamps + preguntas dinámicas
+    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)', 'IP Address', 'Device', 'Browser', 'OS');
     $headers = array_merge($headers, $all_questions);
     $data[] = $headers;
     
@@ -130,6 +130,16 @@ function vas_export_to_excel() {
         // Use duration_seconds if available, otherwise duration
         $duration = !empty($row->duration_seconds) ? number_format($row->duration_seconds, 3, '.', '') : $row->duration;
         
+        // Format timestamps as ISO 8601 datetime strings
+        $start_time_utc = '';
+        $end_time_utc = '';
+        if (!empty($row->start_timestamp_ms)) {
+            $start_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->start_timestamp_ms / 1000));
+        }
+        if (!empty($row->end_timestamp_ms)) {
+            $end_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->end_timestamp_ms / 1000));
+        }
+        
         $row_data = array(
             $form_id,
             $participant_id,
@@ -137,6 +147,8 @@ function vas_export_to_excel() {
             $date,
             $time,
             $duration,
+            $start_time_utc,
+            $end_time_utc,
             $row->ip_address,
             $row->device,
             $row->browser,
@@ -194,8 +206,8 @@ function vas_export_to_csv() {
     
     $output = fopen('php://output', 'w');
     
-    // Encabezados: nuevo formato con IDs + metadatos + preguntas dinámicas
-    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'IP Address', 'Device', 'Browser', 'OS');
+    // Encabezados: nuevo formato con IDs + metadatos + timestamps + preguntas dinámicas
+    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)', 'IP Address', 'Device', 'Browser', 'OS');
     $headers = array_merge($headers, $all_questions);
     fputcsv($output, $headers);
     
@@ -229,6 +241,16 @@ function vas_export_to_csv() {
         // Use duration_seconds if available, otherwise duration
         $duration = !empty($row->duration_seconds) ? number_format($row->duration_seconds, 3, '.', '') : $row->duration;
         
+        // Format timestamps as ISO 8601 datetime strings
+        $start_time_utc = '';
+        $end_time_utc = '';
+        if (!empty($row->start_timestamp_ms)) {
+            $start_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->start_timestamp_ms / 1000));
+        }
+        if (!empty($row->end_timestamp_ms)) {
+            $end_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->end_timestamp_ms / 1000));
+        }
+        
         $row_data = array(
             $form_id,
             $participant_id,
@@ -236,6 +258,8 @@ function vas_export_to_csv() {
             $date,
             $time,
             $duration,
+            $start_time_utc,
+            $end_time_utc,
             $row->ip_address,
             $row->device,
             $row->browser,

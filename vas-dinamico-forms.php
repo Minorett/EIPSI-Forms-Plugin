@@ -58,6 +58,8 @@ function vas_dinamico_activate() {
         screen_width int(11) DEFAULT NULL,
         duration int(11) DEFAULT NULL,
         duration_seconds decimal(8,3) DEFAULT NULL,
+        start_timestamp_ms bigint(20) DEFAULT NULL,
+        end_timestamp_ms bigint(20) DEFAULT NULL,
         ip_address varchar(45) DEFAULT NULL,
         form_responses longtext DEFAULT NULL,
         PRIMARY KEY (id),
@@ -95,6 +97,49 @@ function vas_dinamico_activate() {
 }
 
 register_activation_hook(__FILE__, 'vas_dinamico_activate');
+
+function vas_dinamico_upgrade_database() {
+    global $wpdb;
+    
+    $db_version_key = 'vas_dinamico_db_version';
+    $current_db_version = get_option($db_version_key, '1.0');
+    $required_db_version = '1.3';
+    
+    if (version_compare($current_db_version, $required_db_version, '>=')) {
+        return;
+    }
+    
+    $table_name = $wpdb->prefix . 'vas_form_results';
+    
+    $columns_to_add = array(
+        'start_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
+        'end_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms"
+    );
+    
+    foreach ($columns_to_add as $column => $alter_sql) {
+        $column_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                DB_NAME,
+                $table_name,
+                $column
+            )
+        );
+        
+        if (empty($column_exists)) {
+            $wpdb->query($alter_sql);
+            
+            if ($wpdb->last_error) {
+                error_log('EIPSI Forms: Failed to add column ' . $column . ' - ' . $wpdb->last_error);
+            }
+        }
+    }
+    
+    update_option($db_version_key, $required_db_version);
+}
+
+add_action('plugins_loaded', 'vas_dinamico_upgrade_database');
 
 function vas_dinamico_enqueue_admin_assets($hook) {
     if (strpos($hook, 'vas-dinamico') === false && strpos($hook, 'form-results') === false && strpos($hook, 'eipsi-db-config') === false) {
