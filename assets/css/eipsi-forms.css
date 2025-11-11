@@ -1505,68 +1505,173 @@ select[aria-invalid="true"]:focus {
     font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     font-size: var(--eipsi-font-size-base, 16px);
     line-height: 1.5;
-    animation: slideIn 0.3s ease-out;
+    animation: slideIn 0.4s ease-out;
 }
 
 @keyframes slideIn {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-20px) scale(0.95);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
 @keyframes fadeOut {
     from {
         opacity: 1;
-        transform: translateY(0);
+        transform: scale(1);
     }
     to {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: scale(0.98);
+    }
+}
+
+@keyframes iconBounce {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+    }
+    25% {
+        transform: scale(1.15) rotate(5deg);
+    }
+    50% {
+        transform: scale(1.1) rotate(-5deg);
+    }
+    75% {
+        transform: scale(1.15) rotate(3deg);
+    }
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(0) translateX(0) rotate(0deg) scale(var(--confetti-scale, 1));
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(300px) translateX(calc(var(--confetti-x, 50%) - 50%)) rotate(var(--confetti-rotation, 360deg)) scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+    100% {
+        background-position: 200% center;
     }
 }
 
 .form-message--fadeout {
-    animation: fadeOut 0.3s ease-out forwards;
+    animation: fadeOut 0.5s ease-out forwards;
 }
 
-/* Success Message */
+/* Success Message - Celebratory Design */
 .form-message--success {
+    position: relative;
+    overflow: hidden;
     background: var(--eipsi-color-success, #198754);
+    background: linear-gradient(
+        135deg,
+        var(--eipsi-color-success, #198754) 0%,
+        #156b47 100%
+    );
     color: #ffffff;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 16px rgba(25, 135, 84, 0.25);
+    border: none;
+    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(0, 90, 135, 0.15)),
+                0 12px 40px rgba(25, 135, 84, 0.2);
+    padding: 2rem 2.5rem;
+    gap: 1.5rem;
+    animation: slideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.form-message--success::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
 }
 
 .form-message--success .form-message__icon {
     flex-shrink: 0;
-    width: 48px;
-    height: 48px;
+    width: 60px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    animation: iconBounce 0.8s ease-out 0.3s;
+    position: relative;
+    z-index: 2;
+}
+
+.form-message--success .form-message__icon svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .form-message--success .form-message__content {
     flex: 1;
+    position: relative;
+    z-index: 2;
 }
 
 .form-message--success .form-message__title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin: 0 0 0.25rem 0;
+    font-size: 1.375rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
     color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .form-message--success .form-message__subtitle {
+    font-size: 1.0625rem;
+    margin: 0 0 0.25rem 0;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 500;
+}
+
+.form-message--success .form-message__note {
     font-size: 0.9375rem;
     margin: 0;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.85);
+    font-style: italic;
+}
+
+.form-message__confetti {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.confetti-particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--confetti-color, #ffffff);
+    top: -20px;
+    left: var(--confetti-x, 50%);
+    animation: confettiFall var(--confetti-duration, 3s) ease-in var(--confetti-delay, 0s) forwards;
+    border-radius: 2px;
 }
 
 /* Error Message */
@@ -1598,7 +1703,48 @@ select[aria-invalid="true"]:focus {
     color: #ffffff;
 }
 
+/* Reduced Motion Support for Messages */
+.form-message--success.no-motion {
+    animation: none;
+}
+
+.form-message--success.no-motion::before {
+    animation: none;
+}
+
+.form-message--success.no-motion .form-message__icon {
+    animation: none;
+}
+
+.form-message--success.no-motion .confetti-particle {
+    display: none;
+}
+
 /* Mobile responsive */
+@media (max-width: 768px) {
+    .form-message--success {
+        padding: 1.5rem 1.75rem;
+        gap: 1.25rem;
+    }
+
+    .form-message--success .form-message__icon {
+        width: 52px;
+        height: 52px;
+    }
+
+    .form-message--success .form-message__title {
+        font-size: 1.25rem;
+    }
+
+    .form-message--success .form-message__subtitle {
+        font-size: 1rem;
+    }
+
+    .form-message--success .form-message__note {
+        font-size: 0.875rem;
+    }
+}
+
 @media (max-width: 480px) {
     .form-message {
         flex-direction: row;
@@ -1606,19 +1752,35 @@ select[aria-invalid="true"]:focus {
         gap: 0.75rem;
     }
     
-    .form-message--success .form-message__icon,
+    .form-message--success {
+        padding: 1.25rem 1.5rem;
+        gap: 1rem;
+    }
+
+    .form-message--success .form-message__icon {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .form-message--success .form-message__title {
+        font-size: 1.125rem;
+    }
+    
+    .form-message--success .form-message__subtitle {
+        font-size: 0.9375rem;
+    }
+
+    .form-message--success .form-message__note {
+        font-size: 0.8125rem;
+    }
+
     .form-message--error .form-message__icon {
         width: 40px;
         height: 40px;
     }
     
-    .form-message--success .form-message__title,
     .form-message--error .form-message__title {
         font-size: 1rem;
-    }
-    
-    .form-message--success .form-message__subtitle {
-        font-size: 0.875rem;
     }
 }
 
@@ -1627,11 +1789,27 @@ select[aria-invalid="true"]:focus {
         padding: 0.875rem;
         gap: 0.625rem;
     }
+
+    .form-message--success {
+        padding: 1rem 1.25rem;
+    }
     
     .form-message--success .form-message__icon,
     .form-message--error .form-message__icon {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .form-message--success .form-message__title {
+        font-size: 1rem;
+    }
+
+    .form-message--success .form-message__subtitle {
+        font-size: 0.875rem;
+    }
+
+    .form-message--success .form-message__note {
+        font-size: 0.75rem;
     }
 }
 

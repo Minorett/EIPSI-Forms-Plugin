@@ -1,0 +1,42 @@
+# WordPress
+.DS_Store
+thumbs.db
+
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build artifacts
+build/
+dist/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+
+# Temporary files
+*.log
+*.tmp
+.cache/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# WordPress specific
+wp-content/uploads/
+wp-content/cache/
+wp-content/backup-db/
+wp-content/advanced-cache.php
+wp-content/wp-cache-config.php
+
+# Test files (keep test HTML files in repo for development)
+# test-*.html files are intentionally included for QA
