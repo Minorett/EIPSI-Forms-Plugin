@@ -71,7 +71,12 @@ export default function Save( { attributes } ) {
 				<input
 					type="hidden"
 					className="eipsi-start-time"
-					name="start_time"
+					name="form_start_time"
+				/>
+				<input
+					type="hidden"
+					className="eipsi-end-time"
+					name="form_end_time"
 				/>
 				<input
 					type="hidden"

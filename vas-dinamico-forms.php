@@ -291,6 +291,7 @@ function vas_dinamico_render_form_block($attributes) {
     $output .= '<input type="hidden" name="os" class="eipsi-os-placeholder" value="">';
     $output .= '<input type="hidden" name="screen_width" class="eipsi-screen-placeholder" value="">';
     $output .= '<input type="hidden" name="form_start_time" class="eipsi-start-time" value="">';
+    $output .= '<input type="hidden" name="form_end_time" class="eipsi-end-time" value="">';
     $output .= '<input type="hidden" name="current_page" class="eipsi-current-page" value="1">';
     $output .= '<div class="form-group">';
     $output .= '<label for="form-name" class="required">Nombre</label>';
@@ -321,6 +322,16 @@ function vas_dinamico_enqueue_frontend_assets() {
 
     if ($assets_enqueued) {
         return;
+    }
+
+    // Ensure block styles are registered before enqueueing main CSS
+    if (!wp_style_is('vas-dinamico-blocks-style', 'registered')) {
+        wp_register_style(
+            'vas-dinamico-blocks-style',
+            VAS_DINAMICO_PLUGIN_URL . 'build/style-index.css',
+            array(),
+            VAS_DINAMICO_VERSION
+        );
     }
 
     wp_enqueue_style(
