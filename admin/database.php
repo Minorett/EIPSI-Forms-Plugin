@@ -152,25 +152,60 @@ class EIPSI_External_Database {
             );
         }
         
-        // Test if the required table exists
-        $table_exists = $this->check_table_exists($mysqli);
+        // Ensure schema is ready (create table if missing, add columns if needed)
+        $schema_result = $this->ensure_schema_ready($mysqli);
         
-        $record_count = 0;
-        if ($table_exists) {
-            $record_count = $this->get_record_count_from_connection($mysqli);
+        if (!$schema_result['success']) {
+            $mysqli->close();
+            return array(
+                'success' => false,
+                'message' => sprintf(
+                    __('Schema validation failed: %s', 'vas-dinamico-forms'),
+                    $schema_result['error']
+                ),
+                'error_code' => 'SCHEMA_ERROR'
+            );
         }
+        
+        // Get record count
+        $record_count = $this->get_record_count_from_connection($mysqli);
         
         $mysqli->close();
         
         return array(
             'success' => true,
-            'message' => __('Connection successful!', 'vas-dinamico-forms'),
+            'message' => __('Connection successful! Schema validated.', 'vas-dinamico-forms'),
             'db_name' => $db_name,
             'record_count' => $record_count,
-            'table_exists' => $table_exists
+            'table_exists' => true
         );
     }
     
+    /**
+     * Resolve table name (with or without WP prefix)
+     * Checks both prefixed and bare table names
+     */
+    private function resolve_table_name($mysqli) {
+        global $wpdb;
+        $prefixed_table = $wpdb->prefix . 'vas_form_results';
+        $bare_table = 'vas_form_results';
+        
+        // Check prefixed table first
+        $result = $mysqli->query("SHOW TABLES LIKE '{$prefixed_table}'");
+        if ($result && $result->num_rows > 0) {
+            return $prefixed_table;
+        }
+        
+        // Check bare table
+        $result = $mysqli->query("SHOW TABLES LIKE '{$bare_table}'");
+        if ($result && $result->num_rows > 0) {
+            return $bare_table;
+        }
+        
+        // Default to prefixed table for creation
+        return $prefixed_table;
+    }
+
     /**
      * Check if vas_form_results table exists
      */
@@ -191,8 +226,7 @@ class EIPSI_External_Database {
      * Get record count from custom database connection
      */
     private function get_record_count_from_connection($mysqli) {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'vas_form_results';
+        $table_name = $this->resolve_table_name($mysqli);
         
         $result = $mysqli->query("SELECT COUNT(*) as count FROM `{$table_name}`");
         
@@ -204,6 +238,121 @@ class EIPSI_External_Database {
         return isset($row['count']) ? intval($row['count']) : 0;
     }
     
+    /**
+     * Create the vas_form_results table in the external database
+     * 
+     * @param mysqli $mysqli Active database connection
+     * @return bool Success or failure
+     */
+    private function create_table_if_missing($mysqli) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'vas_form_results';
+        $charset = $mysqli->character_set_name();
+        
+        $sql = "CREATE TABLE IF NOT EXISTS `{$table_name}` (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            form_id varchar(20) DEFAULT NULL,
+            participant_id varchar(20) DEFAULT NULL,
+            participant varchar(255) DEFAULT NULL,
+            interaction varchar(255) DEFAULT NULL,
+            form_name varchar(255) NOT NULL,
+            created_at datetime NOT NULL,
+            submitted_at datetime DEFAULT NULL,
+            device varchar(100) DEFAULT NULL,
+            browser varchar(100) DEFAULT NULL,
+            os varchar(100) DEFAULT NULL,
+            screen_width int(11) DEFAULT NULL,
+            duration int(11) DEFAULT NULL,
+            duration_seconds decimal(8,3) DEFAULT NULL,
+            ip_address varchar(45) DEFAULT NULL,
+            form_responses longtext DEFAULT NULL,
+            PRIMARY KEY (id),
+            KEY form_name (form_name),
+            KEY created_at (created_at),
+            KEY form_id (form_id),
+            KEY participant_id (participant_id),
+            KEY submitted_at (submitted_at),
+            KEY form_participant (form_id, participant_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET={$charset}";
+        
+        $result = $mysqli->query($sql);
+        
+        if (!$result) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('EIPSI Forms: Failed to create table - ' . $mysqli->error);
+            }
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Ensure required columns exist in the table
+     * 
+     * @param mysqli $mysqli Active database connection
+     * @param string $table_name Resolved table name
+     * @return bool Success or failure
+     */
+    private function ensure_required_columns($mysqli, $table_name) {
+        $required_columns = array(
+            'participant_id' => "ALTER TABLE `{$table_name}` ADD COLUMN participant_id varchar(20) DEFAULT NULL AFTER form_id",
+            'duration_seconds' => "ALTER TABLE `{$table_name}` ADD COLUMN duration_seconds decimal(8,3) DEFAULT NULL AFTER duration",
+            'submitted_at' => "ALTER TABLE `{$table_name}` ADD COLUMN submitted_at datetime DEFAULT NULL AFTER created_at"
+        );
+        
+        foreach ($required_columns as $column => $alter_sql) {
+            // Check if column exists
+            $result = $mysqli->query("SHOW COLUMNS FROM `{$table_name}` LIKE '{$column}'");
+            
+            if (!$result || $result->num_rows === 0) {
+                // Column doesn't exist, add it
+                if (!$mysqli->query($alter_sql)) {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("EIPSI Forms: Failed to add column {$column} - " . $mysqli->error);
+                    }
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Ensure schema is ready (table exists with all required columns)
+     * 
+     * @param mysqli $mysqli Active database connection
+     * @return array Array with success status and table name
+     */
+    private function ensure_schema_ready($mysqli) {
+        // Try to create table if missing
+        if (!$this->create_table_if_missing($mysqli)) {
+            return array(
+                'success' => false,
+                'error' => 'Failed to create table',
+                'table_name' => null
+            );
+        }
+        
+        // Resolve the actual table name
+        $table_name = $this->resolve_table_name($mysqli);
+        
+        // Ensure all required columns exist
+        if (!$this->ensure_required_columns($mysqli, $table_name)) {
+            return array(
+                'success' => false,
+                'error' => 'Failed to add required columns',
+                'table_name' => $table_name
+            );
+        }
+        
+        return array(
+            'success' => true,
+            'table_name' => $table_name
+        );
+    }
+
     /**
      * Get active database connection (custom or WordPress)
      * 
@@ -258,19 +407,48 @@ class EIPSI_External_Database {
      * Insert form submission into custom database
      * 
      * @param array $data Form submission data
-     * @return bool|int Insert ID on success, false on failure
+     * @return array Result array with success status, insert_id, and error details
      */
     public function insert_form_submission($data) {
         $mysqli = $this->get_connection();
         
         if (!$mysqli) {
-            return false;
+            $error_msg = 'Failed to connect to external database';
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('EIPSI Forms External DB: ' . $error_msg);
+            }
+            return array(
+                'success' => false,
+                'error' => $error_msg,
+                'error_code' => 'CONNECTION_FAILED',
+                'insert_id' => null
+            );
         }
         
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'vas_form_results';
+        // Ensure schema is ready before insert
+        $schema_result = $this->ensure_schema_ready($mysqli);
         
-        // Prepare statement with new fields
+        if (!$schema_result['success']) {
+            $error_msg = 'Schema validation failed: ' . $schema_result['error'];
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('EIPSI Forms External DB: ' . $error_msg);
+            }
+            $mysqli->close();
+            return array(
+                'success' => false,
+                'error' => $error_msg,
+                'error_code' => 'SCHEMA_ERROR',
+                'insert_id' => null
+            );
+        }
+        
+        $table_name = $schema_result['table_name'];
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('EIPSI Forms External DB: Attempting insert into table ' . $table_name);
+        }
+        
+        // Prepare statement with corrected bind types: s s s s s s s s s i i d s
         $stmt = $mysqli->prepare(
             "INSERT INTO `{$table_name}` 
             (form_id, participant_id, form_name, created_at, submitted_at, ip_address, device, browser, os, screen_width, duration, duration_seconds, form_responses) 
@@ -278,13 +456,24 @@ class EIPSI_External_Database {
         );
         
         if (!$stmt) {
-            error_log('EIPSI Forms: Failed to prepare statement - ' . $mysqli->error);
+            $error_msg = 'Failed to prepare statement: ' . $mysqli->error;
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('EIPSI Forms External DB: ' . $error_msg);
+                error_log('EIPSI Forms External DB: MySQL Error Code: ' . $mysqli->errno);
+            }
             $mysqli->close();
-            return false;
+            return array(
+                'success' => false,
+                'error' => $error_msg,
+                'error_code' => 'PREPARE_FAILED',
+                'mysql_errno' => $mysqli->errno,
+                'insert_id' => null
+            );
         }
         
+        // Correct bind types: string × 9, int, int, double, string
         $stmt->bind_param(
-            'ssssssssssiis',
+            'sssssssssiids',
             $data['form_id'],
             $data['participant_id'],
             $data['form_name'],
@@ -301,19 +490,68 @@ class EIPSI_External_Database {
         );
         
         $success = $stmt->execute();
+        
+        if (!$success) {
+            $error_msg = 'Failed to execute insert: ' . $stmt->error;
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('EIPSI Forms External DB: ' . $error_msg);
+                error_log('EIPSI Forms External DB: MySQL Error Code: ' . $stmt->errno);
+            }
+            $stmt->close();
+            $mysqli->close();
+            return array(
+                'success' => false,
+                'error' => $error_msg,
+                'error_code' => 'EXECUTE_FAILED',
+                'mysql_errno' => $stmt->errno,
+                'insert_id' => null
+            );
+        }
+        
         $insert_id = $mysqli->insert_id;
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('EIPSI Forms External DB: Successfully inserted record with ID ' . $insert_id);
+        }
         
         $stmt->close();
         $mysqli->close();
         
-        return $success ? $insert_id : false;
+        return array(
+            'success' => true,
+            'insert_id' => $insert_id,
+            'error' => null,
+            'error_code' => null
+        );
     }
     
+    /**
+     * Record external database error for admin diagnostics
+     * 
+     * @param string $error_message Error message
+     * @param string $error_code Machine-readable error code
+     */
+    public function record_error($error_message, $error_code) {
+        update_option($this->option_prefix . 'last_error', $error_message);
+        update_option($this->option_prefix . 'last_error_code', $error_code);
+        update_option($this->option_prefix . 'last_error_time', current_time('mysql'));
+    }
+
+    /**
+     * Clear recorded errors
+     */
+    public function clear_errors() {
+        delete_option($this->option_prefix . 'last_error');
+        delete_option($this->option_prefix . 'last_error_code');
+        delete_option($this->option_prefix . 'last_error_time');
+    }
+
     /**
      * Disable external database
      */
     public function disable() {
         update_option($this->option_prefix . 'enabled', false);
+        $this->clear_errors();
     }
     
     /**
@@ -340,12 +578,21 @@ class EIPSI_External_Database {
     public function get_status() {
         $credentials = $this->get_credentials();
         
+        // Get error information
+        $last_error = get_option($this->option_prefix . 'last_error', '');
+        $last_error_code = get_option($this->option_prefix . 'last_error_code', '');
+        $last_error_time = get_option($this->option_prefix . 'last_error_time', '');
+        
         if (!$credentials) {
             return array(
                 'connected' => false,
                 'db_name' => '',
                 'record_count' => 0,
-                'last_updated' => ''
+                'last_updated' => '',
+                'last_error' => $last_error,
+                'last_error_code' => $last_error_code,
+                'last_error_time' => $last_error_time,
+                'fallback_active' => !empty($last_error)
             );
         }
         
@@ -356,12 +603,24 @@ class EIPSI_External_Database {
             $credentials['name']
         );
         
+        // Clear errors if connection is successful
+        if ($test_result['success']) {
+            $this->clear_errors();
+            $last_error = '';
+            $last_error_code = '';
+            $last_error_time = '';
+        }
+        
         return array(
             'connected' => $test_result['success'],
             'db_name' => $credentials['name'],
             'record_count' => $test_result['success'] ? $test_result['record_count'] : 0,
             'last_updated' => get_option($this->option_prefix . 'last_updated', ''),
-            'message' => $test_result['message']
+            'message' => $test_result['message'],
+            'last_error' => $last_error,
+            'last_error_code' => $last_error_code,
+            'last_error_time' => $last_error_time,
+            'fallback_active' => !empty($last_error) && !$test_result['success']
         );
     }
 }
