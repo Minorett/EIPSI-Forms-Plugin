@@ -77,13 +77,9 @@
             "type": "boolean",
             "default": true
         },
-        "labelStyle": {
-            "type": "string",
-            "default": "simple"
-        },
-        "labelAlignment": {
-            "type": "string",
-            "default": "justified"
+        "labelAlignmentPercent": {
+            "type": "number",
+            "default": 50
         },
         "labelBgColor": {
             "type": "string",

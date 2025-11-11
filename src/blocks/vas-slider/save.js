@@ -44,11 +44,7 @@ export default function Save( { attributes } ) {
         step,
         initialValue,
         showValue,
-        labelStyle,
-        labelAlignment,
-        labelBgColor,
-        labelBorderColor,
-        labelTextColor,
+        labelAlignmentPercent,
         conditionalLogic,
     } = attributes;
 
@@ -100,26 +96,16 @@ export default function Save( { attributes } ) {
                 </label>
             ) }
             <div
-                className={ `vas-slider-container label-style-${
-                    labelStyle || 'simple'
-                } label-align-${ labelAlignment || 'justified' }` }
+                className="vas-slider-container"
                 data-scale={ `${ minValue }-${ maxValue }` }
+                style={ {
+                    '--vas-label-alignment': ( labelAlignmentPercent !== undefined ? labelAlignmentPercent : 50 ) / 100,
+                } }
             >
                 { ! hasMultiLabels && (
                     <div className="vas-slider-labels">
                         { leftLabel && (
-                            <span
-                                className="vas-label-left"
-                                style={ {
-                                    backgroundColor: labelBgColor || undefined,
-                                    borderColor: labelBorderColor || undefined,
-                                    color:
-                                        labelStyle === 'buttons' &&
-                                        labelTextColor
-                                            ? labelTextColor
-                                            : undefined,
-                                } }
-                            >
+                            <span className="vas-label-left">
                                 { leftLabel }
                             </span>
                         ) }
@@ -132,18 +118,7 @@ export default function Save( { attributes } ) {
                             </span>
                         ) }
                         { rightLabel && (
-                            <span
-                                className="vas-label-right"
-                                style={ {
-                                    backgroundColor: labelBgColor || undefined,
-                                    borderColor: labelBorderColor || undefined,
-                                    color:
-                                        labelStyle === 'buttons' &&
-                                        labelTextColor
-                                            ? labelTextColor
-                                            : undefined,
-                                } }
-                            >
+                            <span className="vas-label-right">
                                 { rightLabel }
                             </span>
                         ) }
@@ -152,19 +127,7 @@ export default function Save( { attributes } ) {
                 { hasMultiLabels && (
                     <div className="vas-multi-labels">
                         { labelArray.map( ( labelText, index ) => (
-                            <span
-                                key={ index }
-                                className="vas-multi-label"
-                                style={ {
-                                    backgroundColor: labelBgColor || undefined,
-                                    borderColor: labelBorderColor || undefined,
-                                    color:
-                                        labelStyle === 'buttons' &&
-                                        labelTextColor
-                                            ? labelTextColor
-                                            : undefined,
-                                } }
-                            >
+                            <span key={ index } className="vas-multi-label">
                                 { labelText }
                             </span>
                         ) ) }
