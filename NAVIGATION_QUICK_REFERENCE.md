@@ -309,6 +309,30 @@ console.log('Config:', window.eipsiFormsConfig)
 
 ## 🚨 Common Issues & Fixes
 
+### Issue: Navigation buttons not responding (FIXED 2025-01-23)
+
+**Cause:** Disabled attribute not cleared after initialization  
+**Symptoms:**
+- Buttons visible but unresponsive to clicks
+- No console errors
+- Form appears normal
+
+**Fix Applied:** Added explicit `removeAttribute('disabled')` in:
+- `initPagination()` - Lines 677, 688
+- `updatePaginationDisplay()` - Lines 1086, 1098, 1116
+
+**Verification:**
+```javascript
+const form = document.querySelector('.vas-form')
+const nextBtn = form.querySelector('.eipsi-next-button')
+console.log('Disabled:', nextBtn.disabled) // Should be false
+console.log('Display:', window.getComputedStyle(nextBtn).display) // Should not be 'none'
+```
+
+**See:** `NAVIGATION_UX_FIX_REPORT.md` for full details
+
+---
+
 ### Issue: Previous button doesn't show
 
 **Cause:** History not initialized  

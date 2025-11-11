@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Bug Reproduction Test</title>
+    <link rel="stylesheet" href="assets/css/eipsi-forms.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            padding: 2rem;
+            margin: 0;
+        }
+        .test-header {
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-results {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-pass { color: #198754; font-weight: bold; }
+        .test-fail { color: #d32f2f; font-weight: bold; }
+        .test-warning { color: #b35900; font-weight: bold; }
+        #testLog { 
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        .log-entry {
+            margin: 0.25rem 0;
+            padding: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>🐛 Navigation Bug Reproduction Test</h1>
+        <p><strong>Objective:</strong> Reproduce and diagnose "Anterior/Siguiente" button malfunction</p>
+        <button id="startTest" style="padding: 0.5rem 1rem; background: #005a87; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Run Automated Tests
+        </button>
+    </div>
+
+    <!-- TEST FORM -->
+    <div class="vas-dinamico-form eipsi-form" style="max-width: 800px; margin: 0 auto;">
+        <form class="vas-form eipsi-form-element" data-form-id="test-nav-bug">
+            <input type="hidden" name="form_id" value="test-nav-bug" />
+            <input type="hidden" class="eipsi-current-page" name="current_page" value="1" />
+
+            <!-- PAGE 1 -->
+            <div class="eipsi-page" data-page="1">
+                <h2 class="eipsi-page-title">Página 1</h2>
+                <div class="form-group" data-field-name="field1" data-required="true">
+                    <label for="field1">Campo requerido <span class="required-asterisk">*</span></label>
+                    <input type="text" id="field1" name="field1" class="text-input" required />
+                    <div class="form-error" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- PAGE 2 -->
+            <div class="eipsi-page" data-page="2" style="display:none;">
+                <h2 class="eipsi-page-title">Página 2</h2>
+                <div class="form-group" data-field-name="field2">
+                    <label for="field2">Campo opcional</label>
+                    <input type="text" id="field2" name="field2" class="text-input" />
+                </div>
+            </div>
+
+            <!-- PAGE 3 -->
+            <div class="eipsi-page" data-page="3" style="display:none;">
+                <h2 class="eipsi-page-title">Página 3</h2>
+                <div class="form-group" data-field-name="field3" data-required="true">
+                    <label for="field3">Campo requerido <span class="required-asterisk">*</span></label>
+                    <input type="text" id="field3" name="field3" class="text-input" required />
+                    <div class="form-error" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- NAVIGATION -->
+            <div class="form-navigation">
+                <button type="button" class="eipsi-prev-button" style="display: none;">
+                    Anterior
+                </button>
+                <button type="button" class="eipsi-next-button">
+                    Siguiente
+                </button>
+                <button type="submit" class="eipsi-submit-button" style="display: none;">
+                    Enviar
+                </button>
+            </div>
+
+            <!-- PROGRESS -->
+            <div class="form-progress">
+                Página <span class="current-page">1</span> de <span class="total-pages">?</span>
+            </div>
+        </form>
+    </div>
+
+    <div class="test-results">
+        <h2>Test Results</h2>
+        <div id="testLog"></div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        window.eipsiFormsConfig = {
+            ajaxUrl: '/wp-admin/admin-ajax.php',
+            nonce: 'test-nonce',
+            strings: {
+                requiredField: 'Este campo es obligatorio.',
+                invalidEmail: 'Por favor, introduzca una dirección de correo electrónico válida.',
+            },
+            settings: {
+                enableAutoScroll: true,
+                scrollOffset: 20,
+                validateOnBlur: true,
+                smoothScroll: true,
+            },
+        };
+    </script>
+    <script src="assets/js/eipsi-tracking.js"></script>
+    <script src="assets/js/eipsi-forms.js"></script>
+
+    <!-- TEST SCRIPT -->
+    <script>
+        const TestSuite = {
+            log(message, type = 'info') {
+                const logEl = document.getElementById('testLog');
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                
+                const emoji = {
+                    pass: '✅',
+                    fail: '❌',
+                    warning: '⚠️',
+                    info: 'ℹ️'
+                };
+                
+                entry.innerHTML = `<span class="test-${type}">${emoji[type] || emoji.info} ${message}</span>`;
+                logEl.appendChild(entry);
+                logEl.scrollTop = logEl.scrollHeight;
+            },
+
+            async runTests() {
+                this.log('Starting navigation bug reproduction tests...', 'info');
+                await this.delay(500);
+
+                const form = document.querySelector('.vas-form');
+                const prevBtn = form.querySelector('.eipsi-prev-button');
+                const nextBtn = form.querySelector('.eipsi-next-button');
+                const submitBtn = form.querySelector('.eipsi-submit-button');
+
+                // Test 1: Check if buttons exist
+                this.log('Test 1: Button elements exist', 'info');
+                if (prevBtn && nextBtn && submitBtn) {
+                    this.log('✓ All navigation buttons found', 'pass');
+                } else {
+                    this.log('✗ Missing navigation buttons', 'fail');
+                    return;
+                }
+
+                // Test 2: Check initial states
+                this.log('Test 2: Initial button states', 'info');
+                const prevHidden = window.getComputedStyle(prevBtn).display === 'none';
+                const nextVisible = window.getComputedStyle(nextBtn).display !== 'none';
+                const submitHidden = window.getComputedStyle(submitBtn).display === 'none';
+
+                if (prevHidden) this.log('✓ Previous button hidden on page 1', 'pass');
+                else this.log('✗ Previous button should be hidden on page 1', 'fail');
+
+                if (nextVisible) this.log('✓ Next button visible on page 1', 'pass');
+                else this.log('✗ Next button should be visible on page 1', 'fail');
+
+                if (submitHidden) this.log('✓ Submit button hidden on page 1', 'pass');
+                else this.log('✗ Submit button should be hidden on page 1', 'fail');
+
+                // Test 3: Check event listeners attached
+                this.log('Test 3: Event listeners attached', 'info');
+                let nextClickFired = false;
+                let prevClickFired = false;
+
+                const testNextListener = () => { nextClickFired = true; };
+                const testPrevListener = () => { prevClickFired = true; };
+
+                nextBtn.addEventListener('click', testNextListener, { once: true });
+                prevBtn.addEventListener('click', testPrevListener, { once: true });
+
+                nextBtn.click();
+                await this.delay(100);
+
+                if (nextClickFired) {
+                    this.log('✓ Next button event listener works', 'pass');
+                } else {
+                    this.log('✗ Next button event listener not working', 'fail');
+                }
+
+                // Test 4: Try to navigate without filling required field
+                this.log('Test 4: Validation blocks navigation', 'info');
+                const currentPage1 = parseInt(form.dataset.currentPage || '1');
+                nextBtn.click();
+                await this.delay(300);
+                const currentPage2 = parseInt(form.dataset.currentPage || '1');
+
+                if (currentPage1 === currentPage2) {
+                    this.log('✓ Validation correctly blocked navigation', 'pass');
+                } else {
+                    this.log('✗ Navigation occurred without validation', 'fail');
+                }
+
+                // Test 5: Fill field and try again
+                this.log('Test 5: Navigate to page 2', 'info');
+                const field1 = document.getElementById('field1');
+                field1.value = 'Test value';
+                field1.dispatchEvent(new Event('input', { bubbles: true }));
+                await this.delay(100);
+
+                nextBtn.click();
+                await this.delay(500);
+                const currentPage3 = parseInt(form.dataset.currentPage || '1');
+
+                if (currentPage3 === 2) {
+                    this.log('✓ Successfully navigated to page 2', 'pass');
+                } else {
+                    this.log(`✗ Failed to navigate to page 2 (current: ${currentPage3})`, 'fail');
+                    this.log(`Form dataset: ${form.dataset.currentPage}`, 'info');
+                    this.log(`Form initialized: ${form.dataset.initialized}`, 'info');
+                }
+
+                // Test 6: Check button states on page 2
+                this.log('Test 6: Button states on page 2', 'info');
+                await this.delay(300);
+                const prevVisible = window.getComputedStyle(prevBtn).display !== 'none';
+                const nextVisible2 = window.getComputedStyle(nextBtn).display !== 'none';
+
+                if (prevVisible) this.log('✓ Previous button visible on page 2', 'pass');
+                else this.log('✗ Previous button should be visible on page 2', 'fail');
+
+                if (nextVisible2) this.log('✓ Next button still visible on page 2', 'pass');
+                else this.log('✗ Next button should be visible on page 2', 'fail');
+
+                // Test 7: Navigate back
+                this.log('Test 7: Navigate back to page 1', 'info');
+                prevBtn.click();
+                await this.delay(500);
+                const currentPage4 = parseInt(form.dataset.currentPage || '1');
+
+                if (currentPage4 === 1) {
+                    this.log('✓ Successfully navigated back to page 1', 'pass');
+                } else {
+                    this.log(`✗ Failed to navigate back (current: ${currentPage4})`, 'fail');
+                }
+
+                // Test 8: Check button disabled states
+                this.log('Test 8: Button disabled attributes', 'info');
+                if (prevBtn.disabled) {
+                    this.log('⚠️ Previous button has disabled attribute set', 'warning');
+                } else {
+                    this.log('✓ Previous button not disabled', 'pass');
+                }
+
+                if (nextBtn.disabled) {
+                    this.log('⚠️ Next button has disabled attribute set', 'warning');
+                } else {
+                    this.log('✓ Next button not disabled', 'pass');
+                }
+
+                // Test 9: Check form state
+                this.log('Test 9: Form state checks', 'info');
+                this.log(`Form initialized: ${form.dataset.initialized}`, 'info');
+                this.log(`Current page: ${form.dataset.currentPage}`, 'info');
+                this.log(`Total pages: ${form.dataset.totalPages}`, 'info');
+                
+                const navigator = window.EIPSIForms?.getNavigator(form);
+                if (navigator) {
+                    this.log(`History: [${navigator.history.join(', ')}]`, 'info');
+                    this.log(`Visited pages: {${Array.from(navigator.visitedPages).join(', ')}}`, 'info');
+                } else {
+                    this.log('⚠️ Navigator not found', 'warning');
+                }
+
+                this.log('Tests completed!', 'info');
+            },
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        };
+
+        document.getElementById('startTest').addEventListener('click', () => {
+            document.getElementById('testLog').innerHTML = '';
+            TestSuite.runTests();
+        });
+
+        // Log initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const logEl = document.getElementById('testLog');
+                logEl.innerHTML = '<div class="log-entry"><span class="test-info">ℹ️ Click "Run Automated Tests" to start...</span></div>';
+                console.log('Form initialized:', document.querySelector('.vas-form').dataset.initialized);
+                console.log('EIPSIForms object:', window.EIPSIForms);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
