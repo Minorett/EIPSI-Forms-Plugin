@@ -109,13 +109,76 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px;
     border-right: 1px solid #f0f0f1;
 }
 
 .wp-list-table th:last-child,
 .wp-list-table td:last-child {
     border-right: none;
+}
+
+/* Response table column sizing */
+.wp-list-table th[style*="width: 10%"],
+.wp-list-table td:nth-child(1) {
+    max-width: 120px;
+}
+
+.wp-list-table th[style*="width: 12%"],
+.wp-list-table td:nth-child(2),
+.wp-list-table td:nth-child(3),
+.wp-list-table td:nth-child(7) {
+    max-width: 140px;
+}
+
+.wp-list-table th[style*="width: 14%"],
+.wp-list-table td:nth-child(8) {
+    max-width: 160px;
+}
+
+/* Allow Actions column to wrap buttons if needed */
+.wp-list-table .vas-action-buttons {
+    white-space: normal;
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Responsive Table Adjustments
+   ========================================================================== */
+
+@media screen and (max-width: 1200px) {
+    .wp-list-table th,
+    .wp-list-table td {
+        padding: 10px 6px;
+        font-size: 13px;
+    }
+    
+    .wp-list-table th[style*="width"],
+    .wp-list-table td {
+        max-width: none;
+    }
+}
+
+@media screen and (max-width: 782px) {
+    /* WordPress mobile breakpoint */
+    .wp-list-table {
+        font-size: 12px;
+    }
+    
+    .wp-list-table th,
+    .wp-list-table td {
+        padding: 8px 4px;
+    }
+    
+    /* Make table scrollable on very small screens */
+    .wrap {
+        overflow-x: auto;
+    }
+    
+    .wp-list-table {
+        min-width: 800px;
+    }
 }
 
 /* ==========================================================================

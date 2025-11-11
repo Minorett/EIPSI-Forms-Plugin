@@ -409,31 +409,33 @@ function eipsi_ajax_get_response_details() {
     }
     
     // ESTAS LÍNEAS QUEDAN IGUAL:
-    $html .= '<p><strong>⏱️ Duración registrada:</strong> ' . intval($response->duration) . ' segundos</p>';
+    $html .= '<p><strong>⏱️ Duración registrada:</strong> ' . (!empty($response->duration_seconds) ? number_format($response->duration_seconds, 3) : intval($response->duration)) . ' segundos</p>';
     $html .= '<p><strong>📍 Dispositivo:</strong> ' . esc_html($response->device) . ' (' . esc_html($response->browser) . ' on ' . esc_html($response->os) . ')</p>';
     $html .= '<p><strong>🖥️ Ancho pantalla:</strong> ' . ($response->screen_width ? esc_html($response->screen_width) . 'px' : 'N/A') . '</p>';
-    $html .= '<p><strong>🌐 IP:</strong> ' . esc_html($response->ip_address) . '</p>';
     $html .= '</div>';
     
     // =============================================================================
-    // DATOS DEL FORMULARIO
+    // SESSION IDENTIFIERS
     // =============================================================================
-    $html .= '<div>';
-    $html .= '<h4>📋 Datos del Formulario</h4>';
-    if (!empty($form_responses)) {
-        $html .= '<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">';
-        $html .= '<table style="width: 100%; border-collapse: collapse;">';
-        foreach ($form_responses as $key => $value) {
-            $html .= '<tr style="border-bottom: 1px solid #eee;">';
-            $html .= '<td style="padding: 12px; font-weight: bold; background: #f9f9f9; width: 30%;">' . esc_html($key) . '</td>';
-            $html .= '<td style="padding: 12px; background: white;">' . esc_html(is_array($value) ? json_encode($value) : $value) . '</td>';
-            $html .= '</tr>';
-        }
-        $html .= '</table>';
-        $html .= '</div>';
-    } else {
-        $html .= '<p>' . esc_html__('No form data available.', 'vas-dinamico-forms') . '</p>';
-    }
+    $html .= '<div style="margin-bottom: 20px;">';
+    $html .= '<h4>🔑 Session Identifiers</h4>';
+    $html .= '<p><strong>Form ID:</strong> ' . (!empty($response->form_id) ? esc_html($response->form_id) : '<em>Not available</em>') . '</p>';
+    $html .= '<p><strong>Participant ID:</strong> ' . (!empty($response->participant_id) ? esc_html($response->participant_id) : '<em>Not available</em>') . '</p>';
+    $html .= '<p><strong>Form Name:</strong> ' . esc_html($response->form_name) . '</p>';
+    $html .= '</div>';
+    
+    // =============================================================================
+    // DATA EXPORT NOTICE
+    // =============================================================================
+    $html .= '<div style="margin: 20px 0; padding: 15px; background: #f0f6fc; border-left: 4px solid #2271b1; border-radius: 4px;">';
+    $html .= '<h4 style="margin-top: 0;">📊 Access Complete Response Data</h4>';
+    $html .= '<p style="margin-bottom: 10px;">For privacy and data protection, questionnaire responses are not displayed in the dashboard.</p>';
+    $html .= '<p style="margin-bottom: 10px;"><strong>To view complete responses:</strong></p>';
+    $html .= '<ol style="margin-left: 20px; line-height: 1.6;">';
+    $html .= '<li>Use the <strong>CSV Export</strong> button for statistical analysis software (SPSS, R, etc.)</li>';
+    $html .= '<li>Use the <strong>Excel Export</strong> button for spreadsheet analysis</li>';
+    $html .= '</ol>';
+    $html .= '<p style="margin-bottom: 0; font-size: 0.9em; color: #666;">Number of questions answered: <strong>' . (!empty($form_responses) ? count($form_responses) : 0) . '</strong></p>';
     $html .= '</div>';
     
     wp_send_json_success($html);
