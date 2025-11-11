@@ -12,7 +12,7 @@ import {
     SelectControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-import { useState } from '@wordpress/element';
+import { useState, useEffect } from '@wordpress/element';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
 
 const renderHelperText = ( text ) => {
@@ -61,10 +61,27 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
         showValue,
         labelStyle,
         labelAlignment,
+        labelAlignmentPercent,
         labelBgColor,
         labelBorderColor,
         labelTextColor,
     } = attributes;
+
+    useEffect( () => {
+        if ( labelAlignmentPercent === undefined && ( labelStyle !== undefined || labelAlignment !== undefined ) ) {
+            let migratedValue = 50;
+            if ( labelAlignment === 'justified' ) {
+                migratedValue = 0;
+            } else if ( labelAlignment === 'centered' ) {
+                migratedValue = 100;
+            } else if ( labelStyle === 'simple' ) {
+                migratedValue = 30;
+            } else if ( labelStyle === 'centered' ) {
+                migratedValue = 70;
+            }
+            setAttributes( { labelAlignmentPercent: migratedValue } );
+        }
+    }, [] );
 
     const normalizedFieldName =
         fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
@@ -268,133 +285,20 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
                     title={ __( 'Label Styling', 'vas-dinamico-forms' ) }
                     initialOpen={ false }
                 >
-                    <SelectControl
-                        label={ __( 'Label Style', 'vas-dinamico-forms' ) }
-                        value={ labelStyle }
-                        options={ [
-                            {
-                                label: __(
-                                    'Simple text (no decoration)',
-                                    'vas-dinamico-forms'
-                                ),
-                                value: 'simple',
-                            },
-                            {
-                                label: __(
-                                    'Squares (badge style)',
-                                    'vas-dinamico-forms'
-                                ),
-                                value: 'squares',
-                            },
-                            {
-                                label: __(
-                                    'Buttons (outlined style)',
-                                    'vas-dinamico-forms'
-                                ),
-                                value: 'buttons',
-                            },
-                        ] }
-                        onChange={ ( value ) =>
-                            setAttributes( { labelStyle: value } )
-                        }
-                    />
-                    <SelectControl
+                    <RangeControl
                         label={ __( 'Label Alignment', 'vas-dinamico-forms' ) }
-                        value={ labelAlignment }
-                        options={ [
-                            {
-                                label: __(
-                                    'Justified (full width)',
-                                    'vas-dinamico-forms'
-                                ),
-                                value: 'justified',
-                            },
-                            {
-                                label: __(
-                                    'Centered (with spacing)',
-                                    'vas-dinamico-forms'
-                                ),
-                                value: 'centered',
-                            },
-                        ] }
+                        value={ labelAlignmentPercent !== undefined ? labelAlignmentPercent : 50 }
                         onChange={ ( value ) =>
-                            setAttributes( { labelAlignment: value } )
+                            setAttributes( { labelAlignmentPercent: value } )
                         }
+                        min={ 0 }
+                        max={ 100 }
+                        step={ 1 }
+                        help={ __(
+                            '0 = tight spacing (edge-to-edge), 100 = wide spacing (centered with gaps)',
+                            'vas-dinamico-forms'
+                        ) }
                     />
-                    { labelStyle !== 'simple' && (
-                        <>
-                            <p
-                                style={ {
-                                    marginTop: '16px',
-                                    marginBottom: '8px',
-                                } }
-                            >
-                                <strong>
-                                    { __(
-                                        'Background Color',
-                                        'vas-dinamico-forms'
-                                    ) }
-                                </strong>
-                            </p>
-                            <ColorPalette
-                                value={ labelBgColor }
-                                onChange={ ( value ) =>
-                                    setAttributes( {
-                                        labelBgColor: value || '',
-                                    } )
-                                }
-                                clearable={ true }
-                            />
-                            <p
-                                style={ {
-                                    marginTop: '16px',
-                                    marginBottom: '8px',
-                                } }
-                            >
-                                <strong>
-                                    { __(
-                                        'Border Color',
-                                        'vas-dinamico-forms'
-                                    ) }
-                                </strong>
-                            </p>
-                            <ColorPalette
-                                value={ labelBorderColor }
-                                onChange={ ( value ) =>
-                                    setAttributes( {
-                                        labelBorderColor: value || '',
-                                    } )
-                                }
-                                clearable={ true }
-                            />
-                            { labelStyle === 'buttons' && (
-                                <>
-                                    <p
-                                        style={ {
-                                            marginTop: '16px',
-                                            marginBottom: '8px',
-                                        } }
-                                    >
-                                        <strong>
-                                            { __(
-                                                'Text Color',
-                                                'vas-dinamico-forms'
-                                            ) }
-                                        </strong>
-                                    </p>
-                                    <ColorPalette
-                                        value={ labelTextColor }
-                                        onChange={ ( value ) =>
-                                            setAttributes( {
-                                                labelTextColor: value || '',
-                                            } )
-                                        }
-                                        clearable={ true }
-                                    />
-                                </>
-                            ) }
-                        </>
-                    ) }
                 </PanelBody>
 
                 <ConditionalLogicControl
@@ -413,26 +317,16 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
                     { displayLabel }
                 </label>
                 <div
-                    className={ `vas-slider-container vas-slider-preview label-style-${ labelStyle } label-align-${ labelAlignment }` }
+                    className="vas-slider-container vas-slider-preview"
                     data-scale={ `${ minValue }-${ maxValue }` }
+                    style={ {
+                        '--vas-label-alignment': ( labelAlignmentPercent !== undefined ? labelAlignmentPercent : 50 ) / 100,
+                    } }
                 >
                     { ! hasMultiLabels && (
                         <div className="vas-slider-labels">
                             { leftLabel && (
-                                <span
-                                    className="vas-label-left"
-                                    style={ {
-                                        backgroundColor:
-                                            labelBgColor || undefined,
-                                        borderColor:
-                                            labelBorderColor || undefined,
-                                        color:
-                                            labelStyle === 'buttons' &&
-                                            labelTextColor
-                                                ? labelTextColor
-                                                : undefined,
-                                    } }
-                                >
+                                <span className="vas-label-left">
                                     { leftLabel }
                                 </span>
                             ) }
@@ -445,20 +339,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
                                 </span>
                             ) }
                             { rightLabel && (
-                                <span
-                                    className="vas-label-right"
-                                    style={ {
-                                        backgroundColor:
-                                            labelBgColor || undefined,
-                                        borderColor:
-                                            labelBorderColor || undefined,
-                                        color:
-                                            labelStyle === 'buttons' &&
-                                            labelTextColor
-                                                ? labelTextColor
-                                                : undefined,
-                                    } }
-                                >
+                                <span className="vas-label-right">
                                     { rightLabel }
                                 </span>
                             ) }
@@ -467,21 +348,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
                     { hasMultiLabels && (
                         <div className="vas-multi-labels">
                             { labelArray.map( ( labelText, index ) => (
-                                <span
-                                    key={ index }
-                                    className="vas-multi-label"
-                                    style={ {
-                                        backgroundColor:
-                                            labelBgColor || undefined,
-                                        borderColor:
-                                            labelBorderColor || undefined,
-                                        color:
-                                            labelStyle === 'buttons' &&
-                                            labelTextColor
-                                                ? labelTextColor
-                                                : undefined,
-                                    } }
-                                >
+                                <span key={ index } className="vas-multi-label">
                                     { labelText }
                                 </span>
                             ) ) }

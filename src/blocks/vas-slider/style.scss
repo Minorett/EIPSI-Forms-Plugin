@@ -22,13 +22,13 @@
         }
     }
 
-    // LABELS SUPERIORES
+    // LABELS SUPERIORES - Dynamic alignment based on CSS variable
     .vas-slider-labels {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 1em;
-        gap: 1em;
+        gap: calc(0.5em + var(--vas-label-alignment, 0.5) * 2em);
 
         @media (max-width: 767px) {
             flex-direction: column;
@@ -38,7 +38,7 @@
         .vas-label-left,
         .vas-label-right {
             font-weight: 700;
-            flex: 1;
+            flex: calc(1 - var(--vas-label-alignment, 0.5) * 0.5);
             color: var(--eipsi-color-text, #2c3e50);
             padding: 0.8em 1em;
             background: var(--eipsi-color-background, #ffffff);
@@ -71,6 +71,7 @@
             background: rgba(0, 90, 135, 0.05);
             border-radius: 8px;
             border: 2px solid var(--eipsi-color-primary, #005a87);
+            flex-shrink: 0;
 
             @media (max-width: 480px) {
                 font-size: 1.5em;
@@ -82,19 +83,19 @@
         }
     }
 
-    // LABELS MÚLTIPLES
+    // LABELS MÚLTIPLES - Dynamic alignment based on CSS variable
     .vas-multi-labels {
         display: flex;
         justify-content: space-between;
         margin-bottom: 1em;
-        gap: 0.5em;
+        gap: calc(0.3em + var(--vas-label-alignment, 0.5) * 1em);
 
         @media (max-width: 767px) {
             flex-wrap: wrap;
         }
         
         .vas-multi-label {
-            flex: 1;
+            flex: calc(1 - var(--vas-label-alignment, 0.5) * 0.3);
             text-align: center;
             font-weight: 700;
             padding: 0.6em 0.5em;
@@ -116,116 +117,6 @@
             &:hover {
                 background: rgba(0, 90, 135, 0.1);
                 transform: translateY(-1px);
-            }
-        }
-    }
-
-    // LABEL STYLE: SIMPLE (default - minimal styling)
-    .vas-slider-container.label-style-simple {
-        .vas-slider-labels {
-            .vas-label-left,
-            .vas-label-right {
-                background: transparent !important;
-                border: none !important;
-                padding: 0.5em 0;
-                font-weight: 600;
-            }
-        }
-
-        .vas-multi-labels .vas-multi-label {
-            background: transparent !important;
-            border: none !important;
-            padding: 0.5em 0;
-            font-weight: 600;
-        }
-    }
-
-    // LABEL STYLE: SQUARES (badge style with background)
-    .vas-slider-container.label-style-squares {
-        .vas-slider-labels {
-            .vas-label-left,
-            .vas-label-right {
-                background: var(--eipsi-color-primary, #005a87);
-                border: none !important;
-                border-radius: 6px;
-                padding: 0.6em 1em;
-                color: var(--eipsi-color-background, #ffffff);
-                font-weight: 700;
-                box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.15));
-            }
-        }
-
-        .vas-multi-labels .vas-multi-label {
-            background: var(--eipsi-color-primary, #005a87);
-            border: none !important;
-            border-radius: 6px;
-            color: var(--eipsi-color-background, #ffffff);
-            font-weight: 700;
-            box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.15));
-        }
-    }
-
-    // LABEL STYLE: BUTTONS (outlined button style)
-    .vas-slider-container.label-style-buttons {
-        .vas-slider-labels {
-            .vas-label-left,
-            .vas-label-right {
-                background: var(--eipsi-color-background, #ffffff);
-                border: 2px solid var(--eipsi-color-primary, #005a87) !important;
-                border-radius: 8px;
-                padding: 0.7em 1.2em;
-                color: var(--eipsi-color-primary, #005a87);
-                font-weight: 700;
-                transition: all 0.2s ease;
-                cursor: default;
-
-                &:hover {
-                    background: var(--eipsi-color-primary, #005a87);
-                    color: var(--eipsi-color-background, #ffffff);
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.2);
-                }
-            }
-        }
-
-        .vas-multi-labels .vas-multi-label {
-            background: var(--eipsi-color-background, #ffffff);
-            border: 2px solid var(--eipsi-color-primary, #005a87) !important;
-            border-radius: 8px;
-            color: var(--eipsi-color-primary, #005a87);
-            font-weight: 700;
-            transition: all 0.2s ease;
-            cursor: default;
-
-            &:hover {
-                background: var(--eipsi-color-primary, #005a87);
-                color: var(--eipsi-color-background, #ffffff);
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0, 90, 135, 0.2);
-            }
-        }
-    }
-
-    // LABEL ALIGNMENT: CENTERED (labels with spacing, not edge-to-edge)
-    .vas-slider-container.label-align-centered {
-        .vas-slider-labels,
-        .vas-multi-labels {
-            justify-content: center;
-            gap: 1.5em;
-
-            @media (max-width: 767px) {
-                gap: 1em;
-            }
-
-            .vas-label-left,
-            .vas-label-right,
-            .vas-multi-label {
-                flex: 0 1 auto;
-                min-width: 80px;
-
-                @media (max-width: 480px) {
-                    min-width: 60px;
-                }
             }
         }
     }
