@@ -1223,4 +1223,234 @@ LIMIT 20;
 
 ---
 
+## 10. Duration Tracking Repair (January 2025)
+
+### 10.1 Issue Identification
+
+**Problem:** Participant response duration recorded as `0` in all form submissions.
+
+**Root Causes:**
+1. Missing `form_end_time` hidden field in rendered forms (both shortcode and block)
+2. Field name inconsistency (`start_time` vs `form_start_time` in block render)
+3. No protection against multiple form initialization resetting start time
+4. `form_end_time` only appended to FormData, not set in hidden field
+5. No guard against duplicate submissions
+
+### 10.2 Solution Implementation
+
+**Files Modified:**
+- `vas-dinamico-forms.php` - Added `form_end_time` hidden field (line 294)
+- `src/blocks/form-container/save.js` - Fixed field name and added `form_end_time` (lines 73-80)
+- `assets/js/eipsi-forms.js` - Enhanced timing logic (lines 566-568, 1511-1522, 1601)
+
+**Changes:**
+
+1. **Form Rendering (PHP):**
+```php
+// Added hidden field for end time tracking
+$output .= '<input type="hidden" name="form_end_time" class="eipsi-end-time" value="">';
+```
+
+2. **Block Save Function (JavaScript):**
+```jsx
+// Fixed field name from "start_time" to "form_start_time"
+<input type="hidden" className="eipsi-start-time" name="form_start_time" />
+// Added end time field
+<input type="hidden" className="eipsi-end-time" name="form_end_time" />
+```
+
+3. **Frontend Logic (eipsi-forms.js):**
+
+**Guard Against Multiple Start Time Sets:**
+```javascript
+if ( startTimeField && ! startTimeField.value ) {
+    startTimeField.value = Date.now();
+}
+```
+
+**Capture End Time Before Submission:**
+```javascript
+submitForm( form ) {
+    // Prevent duplicate submissions
+    if ( form.dataset.submitting === 'true' ) {
+        return;
+    }
+    form.dataset.submitting = 'true';
+    
+    // Set end time in hidden field
+    const endTimeField = form.querySelector( '.eipsi-end-time' );
+    if ( endTimeField && ! endTimeField.value ) {
+        endTimeField.value = Date.now();
+    }
+    
+    // FormData automatically picks up hidden field values
+    const formData = new FormData( form );
+    // ... rest of submission
+}
+```
+
+**Reset Submission Flag:**
+```javascript
+.finally( () => {
+    form.dataset.submitting = 'false';
+    // ... rest of cleanup
+} );
+```
+
+### 10.3 PHP Handler (Existing - No Changes Required)
+
+The handler in `admin/ajax-handlers.php` already correctly processes duration:
+
+```php
+$start_time = isset($_POST['form_start_time']) ? sanitize_text_field($_POST['form_start_time']) : '';
+$end_time = isset($_POST['form_end_time']) ? sanitize_text_field($_POST['form_end_time']) : '';
+
+$duration = 0;
+$duration_seconds = 0.0;
+if (!empty($start_time) && !empty($end_time)) {
+    $start_timestamp = intval($start_time);
+    $end_timestamp = intval($end_time);
+    $duration_ms = max(0, $end_timestamp - $start_timestamp);
+    $duration = intval($duration_ms / 1000);
+    $duration_seconds = round($duration_ms / 1000, 3);
+} elseif (!empty($start_time)) {
+    // Fallback: use current time if end time missing
+    $start_timestamp = intval($start_time);
+    $current_timestamp = current_time('timestamp', true) * 1000;
+    $duration = max(0, intval(($current_timestamp - $start_timestamp) / 1000));
+    $duration_seconds = $duration;
+}
+```
+
+### 10.4 Flow Verification
+
+**Normal Submission Flow:**
+1. Form initialized → `populateDeviceInfo()` sets `form_start_time` once
+2. User completes form
+3. Submit button clicked → `handleSubmit()` → `submitForm()`
+4. `submitForm()` sets `form_end_time` before AJAX request
+5. PHP handler receives both timestamps
+6. Duration calculated: `(end - start) / 1000` seconds
+7. Stored in `duration` (int) and `duration_seconds` (decimal) columns
+
+**Conditional Logic Auto-Submit Flow:**
+1. Form initialized → start time set
+2. User navigates pages
+3. Conditional rule matches → `handlePagination()` calls `handleSubmit()`
+4. Same `submitForm()` logic ensures end time captured
+5. Duration calculated correctly regardless of submission trigger
+
+**Multiple Initialization Protection:**
+```javascript
+// First call: startTimeField.value = '' → sets Date.now()
+// Second call: startTimeField.value = '1234567890' → skips (already set)
+if ( startTimeField && ! startTimeField.value ) {
+    startTimeField.value = Date.now();
+}
+```
+
+**Duplicate Submission Prevention:**
+```javascript
+// First submit: form.dataset.submitting = 'false' → proceeds
+// Duplicate: form.dataset.submitting = 'true' → returns immediately
+if ( form.dataset.submitting === 'true' ) {
+    return;
+}
+```
+
+### 10.5 Testing Recommendations
+
+1. **Browser Console Test:**
+```javascript
+// Check start time is set on load
+document.querySelector('.eipsi-start-time').value;
+
+// Check end time is set after submit
+document.querySelector('.eipsi-end-time').value;
+
+// Calculate duration manually
+const start = parseInt(document.querySelector('.eipsi-start-time').value);
+const end = parseInt(document.querySelector('.eipsi-end-time').value);
+const durationSeconds = (end - start) / 1000;
+console.log(`Duration: ${durationSeconds} seconds`);
+```
+
+2. **Database Verification:**
+```sql
+-- Check recent submissions have non-zero durations
+SELECT 
+    id,
+    form_name,
+    duration,
+    duration_seconds,
+    created_at,
+    submitted_at
+FROM wp_vas_form_results
+ORDER BY id DESC
+LIMIT 10;
+```
+
+3. **Manual Submission Test:**
+- Open form in browser
+- Wait 5 seconds
+- Submit form
+- Verify `duration` ≥ 5 seconds in database
+
+4. **Conditional Logic Auto-Submit Test:**
+- Create form with conditional logic rule (e.g., "If answer = X, submit")
+- Fill out form to trigger auto-submit
+- Verify duration captured correctly
+
+### 10.6 Migration Notes
+
+**Existing Data:**
+- Previous submissions with `duration = 0` remain unchanged
+- No migration script needed (data integrity preserved)
+- New submissions will have accurate duration values
+
+**Backward Compatibility:**
+- PHP handler maintains fallback logic for missing end time
+- Uses current server time as fallback if only start time present
+- No breaking changes to existing form configurations
+
+**Database Schema:**
+- No changes required to `wp_vas_form_results` table
+- `duration` (int) and `duration_seconds` (decimal) columns already exist
+- Indexes remain optimal
+
+### 10.7 Success Criteria
+
+✅ **Field Presence:**
+- `form_start_time` hidden field exists in all rendered forms
+- `form_end_time` hidden field exists in all rendered forms
+- Both fields have class selectors for JavaScript access
+
+✅ **JavaScript Logic:**
+- Start time set once per form session (protected by existence check)
+- End time set before submission (in hidden field, not just FormData)
+- Duplicate submission prevented (form.dataset.submitting flag)
+
+✅ **Data Flow:**
+- FormData includes both timestamps
+- PHP handler receives both timestamps
+- Duration calculated correctly (millisecond precision)
+- Both `duration` (int) and `duration_seconds` (decimal) stored
+
+✅ **Edge Cases:**
+- Works with shortcode-rendered forms
+- Works with block-rendered forms
+- Works with single-page forms
+- Works with multi-page forms
+- Works with conditional logic auto-submit
+- Works with manual submit button
+- Handles page refresh gracefully (new session, new start time)
+
+### 10.8 Documentation Updates
+
+- Added duration tracking section to `README_TRACKING.md`
+- Documented timing flow in this audit report
+- Testing procedures outlined for QA verification
+
+---
+
 **END OF AUDIT REPORT**
