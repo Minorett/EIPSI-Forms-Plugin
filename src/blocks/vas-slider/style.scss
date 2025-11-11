@@ -121,7 +121,7 @@
     }
 
     // LABEL STYLE: SIMPLE (default - minimal styling)
-    &.label-style-simple {
+    .vas-slider-container.label-style-simple {
         .vas-slider-labels {
             .vas-label-left,
             .vas-label-right {
@@ -141,7 +141,7 @@
     }
 
     // LABEL STYLE: SQUARES (badge style with background)
-    &.label-style-squares {
+    .vas-slider-container.label-style-squares {
         .vas-slider-labels {
             .vas-label-left,
             .vas-label-right {
@@ -166,7 +166,7 @@
     }
 
     // LABEL STYLE: BUTTONS (outlined button style)
-    &.label-style-buttons {
+    .vas-slider-container.label-style-buttons {
         .vas-slider-labels {
             .vas-label-left,
             .vas-label-right {
@@ -207,7 +207,7 @@
     }
 
     // LABEL ALIGNMENT: CENTERED (labels with spacing, not edge-to-edge)
-    &.label-align-centered {
+    .vas-slider-container.label-align-centered {
         .vas-slider-labels,
         .vas-multi-labels {
             justify-content: center;
