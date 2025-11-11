@@ -713,19 +713,34 @@
 
             const prevButton = form.querySelector( '.eipsi-prev-button' );
             const nextButton = form.querySelector( '.eipsi-next-button' );
+            const submitButton = form.querySelector( '.eipsi-submit-button' );
 
             if ( prevButton ) {
+                prevButton.removeAttribute( 'disabled' );
                 prevButton.addEventListener( 'click', ( e ) => {
                     e.preventDefault();
+                    e.stopPropagation();
+                    if ( form.dataset.submitting === 'true' || prevButton.disabled ) {
+                        return;
+                    }
                     this.handlePagination( form, 'prev' );
                 } );
             }
 
             if ( nextButton ) {
+                nextButton.removeAttribute( 'disabled' );
                 nextButton.addEventListener( 'click', ( e ) => {
                     e.preventDefault();
+                    e.stopPropagation();
+                    if ( form.dataset.submitting === 'true' || nextButton.disabled ) {
+                        return;
+                    }
                     this.handlePagination( form, 'next' );
                 } );
+            }
+
+            if ( submitButton ) {
+                submitButton.removeAttribute( 'disabled' );
             }
         },
 
@@ -1107,14 +1122,29 @@
             );
             const navigator = this.getNavigator( form );
 
-            const hasHistory = navigator && navigator.history.length > 1;
+            const rawAllowBackwards = form.dataset.allowBackwardsNav;
             const allowBackwardsNav =
-                form.dataset.allowBackwardsNav !== 'false';
+                rawAllowBackwards !== 'false' &&
+                rawAllowBackwards !== '0' &&
+                rawAllowBackwards !== '';
+
+            const firstVisitedPage =
+                navigator && navigator.history.length > 0
+                    ? navigator.history[ 0 ]
+                    : 1;
+            const hasHistory = navigator && navigator.history.length > 1;
 
             if ( prevButton ) {
                 const shouldShowPrev =
-                    allowBackwardsNav && hasHistory && currentPage > 1;
-                prevButton.style.display = shouldShowPrev ? '' : 'none';
+                    allowBackwardsNav &&
+                    hasHistory &&
+                    currentPage > firstVisitedPage;
+                if ( shouldShowPrev ) {
+                    prevButton.style.display = '';
+                    prevButton.removeAttribute( 'disabled' );
+                } else {
+                    prevButton.style.display = 'none';
+                }
             }
 
             const shouldShowNext = navigator
@@ -1123,7 +1153,12 @@
                 : currentPage < totalPages;
 
             if ( nextButton ) {
-                nextButton.style.display = shouldShowNext ? '' : 'none';
+                if ( shouldShowNext ) {
+                    nextButton.style.display = '';
+                    nextButton.removeAttribute( 'disabled' );
+                } else {
+                    nextButton.style.display = 'none';
+                }
             }
 
             const shouldShowSubmit = navigator
@@ -1132,7 +1167,12 @@
                 : currentPage === totalPages;
 
             if ( submitButton ) {
-                submitButton.style.display = shouldShowSubmit ? '' : 'none';
+                if ( shouldShowSubmit ) {
+                    submitButton.style.display = '';
+                    submitButton.removeAttribute( 'disabled' );
+                } else {
+                    submitButton.style.display = 'none';
+                }
 
                 const strings = this.config.strings || {};
                 if ( shouldShowSubmit && strings.submit ) {
@@ -1556,6 +1596,7 @@
             formData.append( 'nonce', this.config.nonce );
             formData.append( 'form_end_time', Date.now() );
 
+            form.dataset.submitting = 'true';
             this.setFormLoading( form, true );
 
             if ( submitButton ) {
@@ -1599,6 +1640,10 @@
                                 trackChange: false,
                             } );
 
+                            if ( navigator ) {
+                                navigator.pushHistory( 1 );
+                            }
+
                             const sliders =
                                 form.querySelectorAll( '.vas-slider' );
                             sliders.forEach( ( slider ) => {
@@ -1628,6 +1673,7 @@
                 } )
                 .finally( () => {
                     this.setFormLoading( form, false );
+                    delete form.dataset.submitting;
 
                     if ( submitButton ) {
                         submitButton.disabled = false;
