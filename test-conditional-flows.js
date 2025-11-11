@@ -236,6 +236,19 @@
 											'error'
 										);
 									}
+
+									if ( rule.action === 'submit' ) {
+										this.log(
+											`Rule ${ ruleNum }: Submit action configured correctly`,
+											'success'
+										);
+										if ( rule.targetPage ) {
+											this.log(
+												`Rule ${ ruleNum }: WARNING - submit action should not have targetPage`,
+												'warning'
+											);
+										}
+									}
 								}
 
 								// Log rule details

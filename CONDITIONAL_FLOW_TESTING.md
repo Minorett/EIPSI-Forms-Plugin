@@ -453,7 +453,62 @@ conditionalFields.forEach(field => {
 **Scenario:** Last page with submit action rule
 
 **Expected:** Show "Submit" button, not "Next"
-**Status:** ⚠️ **NEEDS VERIFICATION** - Check button rendering logic
+**Status:** ✅ **VERIFIED** - Frontend updates button visibility in `updatePaginationDisplay()` lines 1090-1117
+
+### Issue 7: Submit Action with Default Action
+
+**Scenario:** Default action set to "submit" when no rules match
+
+**Expected:** Form should submit when any non-matched value is selected
+**Status:** ✅ **IMPLEMENTED** - Lines 195-198 in `getNextPage()` handle defaultAction === 'submit'
+
+---
+
+## Regression Testing Notes
+
+### Submit Action Feature (v2.1)
+
+**Added:** January 2025
+
+**Feature:** "Finalizar formulario" action that immediately submits the form without requiring a target page selection.
+
+**Test Cases:**
+
+1. **Editor UI:**
+   - [ ] "Finalizar formulario" appears in action dropdown
+   - [ ] Page picker is hidden when "submit" selected
+   - [ ] No validation error for missing targetPage on "submit" action
+   - [ ] Default action dropdown includes "Finalizar formulario" option
+
+2. **Frontend Runtime:**
+   - [ ] Selecting option with submit action triggers form submission
+   - [ ] Submit button appears instead of Next button
+   - [ ] Form submits immediately (bypasses remaining pages)
+   - [ ] Skipped pages are marked correctly in navigator
+   - [ ] handleSubmit() is called with preventDefault mock
+
+3. **Data Persistence:**
+   - [ ] Rules with action: "submit" save correctly
+   - [ ] targetPage is null for submit actions
+   - [ ] Re-opening post shows submit action correctly
+   - [ ] Copy/paste preserves submit action
+
+4. **Edge Cases:**
+   - [ ] Submit action on first page submits immediately
+   - [ ] Submit action on middle page skips remaining pages
+   - [ ] Submit action on last page behaves same as natural submit
+   - [ ] Default action "submit" works when no rules match
+   - [ ] Multiple submit rules (different values) all trigger submit
+
+5. **Backward Compatibility:**
+   - [ ] Legacy rules without submit action still work
+   - [ ] goToPage and nextPage actions unaffected
+   - [ ] Old forms continue to function normally
+
+**Code Locations:**
+- **Editor:** `src/components/ConditionalLogicControl.js` lines 238-240, 377-379
+- **Frontend:** `assets/js/eipsi-forms.js` lines 155-157, 195-198, 954-957, 981-984, 1870-1872
+- **Block Serialization:** `src/blocks/*/save.js` lines 62-64 (data-conditional-logic)
 
 ---
 

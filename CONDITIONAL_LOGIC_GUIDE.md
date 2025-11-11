@@ -59,12 +59,23 @@ ConditionalLogicControl Component
       "matchValue": "Option 2",
       "action": "submit",
       "targetPage": null
+    },
+    {
+      "id": "rule-1234567890125",
+      "matchValue": "Option 3",
+      "action": "nextPage",
+      "targetPage": null
     }
   ],
   "defaultAction": "nextPage",
   "defaultTargetPage": 3
 }
 ```
+
+**Action Types:**
+- `"nextPage"`: Continue to the next sequential page
+- `"goToPage"`: Jump to a specific page (requires `targetPage`)
+- `"submit"`: Immediately submit the form (bypasses remaining pages)
 
 ### Legacy Schema Support
 
@@ -143,16 +154,47 @@ const validateRules = ( rules ) => {
 };
 ```
 
-### 4. Default Action Selector
+### 4. Submit Action ("Finalizar formulario")
+
+**NEW:** Allows clinicians to immediately submit the form when a specific option is selected, bypassing all remaining pages.
+
+**Use Case:** Early exit scenarios where continuing the form is unnecessary:
+- Participant declines to participate in study
+- Screening criteria not met
+- Participant requests to stop
+
+**Implementation:**
+```json
+{
+  "enabled": true,
+  "rules": [
+    {
+      "id": "rule-decline",
+      "matchValue": "No thanks",
+      "action": "submit"
+    }
+  ],
+  "defaultAction": "nextPage"
+}
+```
+
+**Behavior:**
+- When the rule matches, the form immediately triggers submission
+- No `targetPage` value is required or stored
+- Submit button appears instead of Next button
+- All remaining pages are skipped and marked as skipped
+- Form submits with only the data from visited pages
+
+### 5. Default Action Selector
 
 Allows clinicians to define fallback behavior when participants select values without explicit rules.
 
 **Options:**
 - **nextPage**: Continue to the next page in sequence
 - **goToPage**: Jump to a specific page
-- **submit**: Finish the form immediately
+- **submit**: Finish the form immediately (same behavior as rule-level submit)
 
-### 5. Visual Indicators
+### 6. Visual Indicators
 
 Fields with conditional logic get a `data-conditional-logic="true"` attribute, which triggers CSS styling:
 
@@ -268,11 +310,14 @@ function normalizeConditionalLogic( conditionalLogic )
 - [ ] Rule displays option dropdown populated with field options
 - [ ] Rule displays action dropdown (nextPage, goToPage, submit)
 - [ ] Rule displays page dropdown when "goToPage" selected
+- [ ] Page dropdown is hidden when "submit" or "nextPage" selected
 - [ ] Page dropdown shows "Página N – Title" format
 - [ ] Remove rule button deletes the rule
 - [ ] Removing last rule clears conditionalLogic attribute
 - [ ] Default action selector appears when rules exist
+- [ ] Default action supports "submit" option
 - [ ] Validation errors appear for duplicate values
+- [ ] Validation does not require targetPage for "submit" action
 - [ ] Lightning bolt badge appears on field blocks with logic
 - [ ] Blue border appears on field blocks with logic
 
