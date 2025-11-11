@@ -1519,6 +1519,21 @@ select[aria-invalid="true"]:focus {
     }
 }
 
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+.form-message--fadeout {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
 /* Success Message */
 .form-message--success {
     background: var(--eipsi-color-success, #198754);
