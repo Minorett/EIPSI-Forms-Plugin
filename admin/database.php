@@ -264,6 +264,8 @@ class EIPSI_External_Database {
             screen_width int(11) DEFAULT NULL,
             duration int(11) DEFAULT NULL,
             duration_seconds decimal(8,3) DEFAULT NULL,
+            start_timestamp_ms bigint(20) DEFAULT NULL,
+            end_timestamp_ms bigint(20) DEFAULT NULL,
             ip_address varchar(45) DEFAULT NULL,
             form_responses longtext DEFAULT NULL,
             PRIMARY KEY (id),
@@ -298,7 +300,9 @@ class EIPSI_External_Database {
         $required_columns = array(
             'participant_id' => "ALTER TABLE `{$table_name}` ADD COLUMN participant_id varchar(20) DEFAULT NULL AFTER form_id",
             'duration_seconds' => "ALTER TABLE `{$table_name}` ADD COLUMN duration_seconds decimal(8,3) DEFAULT NULL AFTER duration",
-            'submitted_at' => "ALTER TABLE `{$table_name}` ADD COLUMN submitted_at datetime DEFAULT NULL AFTER created_at"
+            'submitted_at' => "ALTER TABLE `{$table_name}` ADD COLUMN submitted_at datetime DEFAULT NULL AFTER created_at",
+            'start_timestamp_ms' => "ALTER TABLE `{$table_name}` ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
+            'end_timestamp_ms' => "ALTER TABLE `{$table_name}` ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms"
         );
         
         foreach ($required_columns as $column => $alter_sql) {
@@ -448,11 +452,11 @@ class EIPSI_External_Database {
             error_log('EIPSI Forms External DB: Attempting insert into table ' . $table_name);
         }
         
-        // Prepare statement with corrected bind types: s s s s s s s s s i i d s
+        // Prepare statement with corrected bind types: s s s s s s s s s i i d i i s
         $stmt = $mysqli->prepare(
             "INSERT INTO `{$table_name}` 
-            (form_id, participant_id, form_name, created_at, submitted_at, ip_address, device, browser, os, screen_width, duration, duration_seconds, form_responses) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            (form_id, participant_id, form_name, created_at, submitted_at, ip_address, device, browser, os, screen_width, duration, duration_seconds, start_timestamp_ms, end_timestamp_ms, form_responses) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         
         if (!$stmt) {
@@ -471,9 +475,9 @@ class EIPSI_External_Database {
             );
         }
         
-        // Correct bind types: string × 9, int, int, double, string
+        // Correct bind types: string × 9, int, int, double, bigint, bigint, string
         $stmt->bind_param(
-            'sssssssssiids',
+            'sssssssssiidiis',
             $data['form_id'],
             $data['participant_id'],
             $data['form_name'],
@@ -486,6 +490,8 @@ class EIPSI_External_Database {
             $data['screen_width'],
             $data['duration'],
             $data['duration_seconds'],
+            $data['start_timestamp_ms'],
+            $data['end_timestamp_ms'],
             $data['form_responses']
         );
         

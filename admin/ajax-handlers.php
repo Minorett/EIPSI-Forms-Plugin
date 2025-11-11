@@ -124,19 +124,26 @@ function vas_dinamico_submit_form_handler() {
         }
     }
     
+    $start_timestamp_ms = null;
+    $end_timestamp_ms = null;
     $duration = 0;
     $duration_seconds = 0.0;
-    if (!empty($start_time) && !empty($end_time)) {
-        $start_timestamp = intval($start_time);
-        $end_timestamp = intval($end_time);
-        $duration_ms = max(0, $end_timestamp - $start_timestamp);
-        $duration = intval($duration_ms / 1000);
-        $duration_seconds = round($duration_ms / 1000, 3);
-    } elseif (!empty($start_time)) {
-        $start_timestamp = intval($start_time);
-        $current_timestamp = current_time('timestamp', true) * 1000;
-        $duration = max(0, intval(($current_timestamp - $start_timestamp) / 1000));
-        $duration_seconds = $duration;
+    
+    if (!empty($start_time)) {
+        $start_timestamp_ms = intval($start_time);
+        
+        if (!empty($end_time)) {
+            $end_timestamp_ms = intval($end_time);
+            $duration_ms = max(0, $end_timestamp_ms - $start_timestamp_ms);
+            $duration = intval($duration_ms / 1000);
+            $duration_seconds = round($duration_ms / 1000, 3);
+        } else {
+            $current_timestamp_ms = round(microtime(true) * 1000);
+            $end_timestamp_ms = $current_timestamp_ms;
+            $duration_ms = max(0, $end_timestamp_ms - $start_timestamp_ms);
+            $duration = intval($duration_ms / 1000);
+            $duration_seconds = round($duration_ms / 1000, 3);
+        }
     }
     
     $stable_form_id = generate_stable_form_id($form_name);
@@ -158,6 +165,8 @@ function vas_dinamico_submit_form_handler() {
         'screen_width' => $screen_width,
         'duration' => $duration,
         'duration_seconds' => $duration_seconds,
+        'start_timestamp_ms' => $start_timestamp_ms,
+        'end_timestamp_ms' => $end_timestamp_ms,
         'form_responses' => wp_json_encode($form_responses)
     );
     
@@ -207,7 +216,7 @@ function vas_dinamico_submit_form_handler() {
         $wpdb_result = $wpdb->insert(
             $table_name,
             $data,
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%s')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s')
         );
         
         if ($wpdb_result === false) {
@@ -376,8 +385,31 @@ function eipsi_ajax_get_response_details() {
     }
     $html .= '<p><strong>📅 Fecha y hora:</strong> ' . esc_html($response->created_at) . ' <em style="color: #666; font-size: 0.9em;">(' . esc_html($timezone_display) . ')</em></p>';
     
+    // Display timestamps if available
+    if (!empty($response->start_timestamp_ms) || !empty($response->end_timestamp_ms)) {
+        $html .= '<div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px;">';
+        
+        if (!empty($response->start_timestamp_ms)) {
+            $start_time_formatted = gmdate('Y-m-d H:i:s.v', intval($response->start_timestamp_ms / 1000));
+            $html .= '<p style="margin: 5px 0;"><strong>🕐 Inicio:</strong> ' . esc_html($start_time_formatted) . ' UTC</p>';
+        }
+        
+        if (!empty($response->end_timestamp_ms)) {
+            $end_time_formatted = gmdate('Y-m-d H:i:s.v', intval($response->end_timestamp_ms / 1000));
+            $html .= '<p style="margin: 5px 0;"><strong>🕑 Fin:</strong> ' . esc_html($end_time_formatted) . ' UTC</p>';
+        }
+        
+        if (!empty($response->start_timestamp_ms) && !empty($response->end_timestamp_ms)) {
+            $calculated_duration_ms = intval($response->end_timestamp_ms) - intval($response->start_timestamp_ms);
+            $calculated_duration_seconds = round($calculated_duration_ms / 1000, 3);
+            $html .= '<p style="margin: 5px 0;"><strong>⏱️ Duración calculada:</strong> ' . number_format($calculated_duration_seconds, 3) . ' segundos</p>';
+        }
+        
+        $html .= '</div>';
+    }
+    
     // ESTAS LÍNEAS QUEDAN IGUAL:
-    $html .= '<p><strong>⏱️ Duración total:</strong> ' . intval($response->duration) . ' segundos</p>';
+    $html .= '<p><strong>⏱️ Duración registrada:</strong> ' . intval($response->duration) . ' segundos</p>';
     $html .= '<p><strong>📍 Dispositivo:</strong> ' . esc_html($response->device) . ' (' . esc_html($response->browser) . ' on ' . esc_html($response->os) . ')</p>';
     $html .= '<p><strong>🖥️ Ancho pantalla:</strong> ' . ($response->screen_width ? esc_html($response->screen_width) . 'px' : 'N/A') . '</p>';
     $html .= '<p><strong>🌐 IP:</strong> ' . esc_html($response->ip_address) . '</p>';
