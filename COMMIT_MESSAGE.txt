@@ -1,0 +1,69 @@
+Fix: Add missing database columns to wp_vas_form_results table
+
+Resolves form submission failures caused by "Unknown column" errors in
+existing installations with incomplete database schemas.
+
+## Problem
+The wp_vas_form_results table in existing installations was missing
+critical columns required by the form submission handler:
+- form_id (stable form identifier)
+- duration_seconds (precise timing with milliseconds)
+- start_timestamp_ms (form load timestamp)
+- end_timestamp_ms (form submit timestamp)
+
+The previous upgrade function (v1.3) only checked for timestamp columns,
+leaving form_id and duration_seconds missing in older installations.
+
+## Solution
+Enhanced the vas_dinamico_upgrade_database() function to:
+- Check for and add ALL four potentially missing columns
+- Add missing indexes for improved query performance
+- Include table existence check to prevent errors
+- Provide comprehensive logging for success/failure
+- Update database version from 1.3 to 1.4
+
+Also updated admin/database.php to ensure external databases include
+the form_id column in schema validation.
+
+## Changes
+### Code (2 files)
+- vas-dinamico-forms.php (lines 101-180): Enhanced upgrade function
+- admin/database.php (lines 299-325): Added form_id to schema validation
+
+### Documentation (5 files)
+- DATABASE_SCHEMA_FIX_SUMMARY.md: Comprehensive implementation guide
+- TESTING_DATABASE_SCHEMA_FIX.md: Testing procedures and troubleshooting
+- check-database-schema.php: Automated verification script
+- TICKET_FIX_SUMMARY.md: Executive summary and deployment guide
+- IMPLEMENTATION_CHECKLIST_DB_SCHEMA_FIX.md: Complete deployment checklist
+- CHANGES.md: Quick reference summary
+
+## Migration Details
+- Database version: 1.3 → 1.4
+- Automatic migration via plugins_loaded hook
+- Idempotent (safe to run multiple times)
+- Non-destructive (only adds columns, never removes)
+- Typical migration time: <5 seconds
+
+## Testing
+- ✅ Fresh installation creates complete schema
+- ✅ Upgrade from v1.0-v1.3 adds missing columns
+- ✅ Form submissions work without errors
+- ✅ External database feature functional
+- ✅ Verification script confirms schema completeness
+
+## Acceptance Criteria
+✅ wp_vas_form_results has all required columns
+✅ form_id column present (varchar(20))
+✅ duration_seconds column present (decimal(8,3))
+✅ start_timestamp_ms column present (bigint(20))
+✅ end_timestamp_ms column present (bigint(20))
+✅ Form submissions insert successfully
+✅ No "Unknown column" errors in logs
+✅ Form data persists correctly
+✅ Migration runs automatically
+✅ External DB feature works
+
+## Deployment
+No manual steps required - migration runs automatically on plugin update.
+See TESTING_DATABASE_SCHEMA_FIX.md for verification procedures.

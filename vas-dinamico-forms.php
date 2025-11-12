@@ -103,7 +103,7 @@ function vas_dinamico_upgrade_database() {
     
     $db_version_key = 'vas_dinamico_db_version';
     $current_db_version = get_option($db_version_key, '1.0');
-    $required_db_version = '1.3';
+    $required_db_version = '1.4';
     
     if (version_compare($current_db_version, $required_db_version, '>=')) {
         return;
@@ -111,7 +111,19 @@ function vas_dinamico_upgrade_database() {
     
     $table_name = $wpdb->prefix . 'vas_form_results';
     
+    // Check if table exists before attempting upgrades
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+    
+    if (!$table_exists) {
+        // Table doesn't exist, activation hook will create it
+        update_option($db_version_key, $required_db_version);
+        return;
+    }
+    
+    // Define all potentially missing columns with their ALTER TABLE statements
     $columns_to_add = array(
+        'form_id' => "ALTER TABLE {$table_name} ADD COLUMN form_id varchar(20) DEFAULT NULL AFTER id",
+        'duration_seconds' => "ALTER TABLE {$table_name} ADD COLUMN duration_seconds decimal(8,3) DEFAULT NULL AFTER duration",
         'start_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
         'end_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms"
     );
@@ -132,6 +144,34 @@ function vas_dinamico_upgrade_database() {
             
             if ($wpdb->last_error) {
                 error_log('EIPSI Forms: Failed to add column ' . $column . ' - ' . $wpdb->last_error);
+            } else {
+                error_log('EIPSI Forms: Successfully added column ' . $column);
+            }
+        }
+    }
+    
+    // Add indexes if they don't exist
+    $indexes_to_add = array(
+        'form_id' => "ALTER TABLE {$table_name} ADD INDEX form_id (form_id)",
+        'form_participant' => "ALTER TABLE {$table_name} ADD INDEX form_participant (form_id, participant_id)"
+    );
+    
+    foreach ($indexes_to_add as $index_name => $alter_sql) {
+        $index_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS 
+                WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_NAME = %s",
+                DB_NAME,
+                $table_name,
+                $index_name
+            )
+        );
+        
+        if (empty($index_exists)) {
+            $wpdb->query($alter_sql);
+            
+            if ($wpdb->last_error) {
+                error_log('EIPSI Forms: Failed to add index ' . $index_name . ' - ' . $wpdb->last_error);
             }
         }
     }

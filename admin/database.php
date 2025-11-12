@@ -298,6 +298,7 @@ class EIPSI_External_Database {
      */
     private function ensure_required_columns($mysqli, $table_name) {
         $required_columns = array(
+            'form_id' => "ALTER TABLE `{$table_name}` ADD COLUMN form_id varchar(20) DEFAULT NULL AFTER id",
             'participant_id' => "ALTER TABLE `{$table_name}` ADD COLUMN participant_id varchar(20) DEFAULT NULL AFTER form_id",
             'duration_seconds' => "ALTER TABLE `{$table_name}` ADD COLUMN duration_seconds decimal(8,3) DEFAULT NULL AFTER duration",
             'submitted_at' => "ALTER TABLE `{$table_name}` ADD COLUMN submitted_at datetime DEFAULT NULL AFTER created_at",
