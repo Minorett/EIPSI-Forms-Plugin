@@ -29,7 +29,7 @@ function eipsi_display_configuration_page() {
     <div class="wrap eipsi-config-wrap">
         <h1><?php echo esc_html__('Database Configuration', 'vas-dinamico-forms'); ?></h1>
         <p class="description">
-            <?php echo esc_html__('Configure an external MySQL database to store form submission data. If no external database is configured, data will be stored in the default WordPress database.', 'vas-dinamico-forms'); ?>
+            <?php echo esc_html__('Configure an external MySQL database to store form submission data. When enabled, submissions are saved to BOTH the WordPress database and your external database simultaneously. The WordPress database remains the primary storage location.', 'vas-dinamico-forms'); ?>
         </p>
         
         <!-- Prominent Database Indicator -->
@@ -234,10 +234,10 @@ function eipsi_display_configuration_page() {
                     <div class="eipsi-error-box" style="margin-top: 15px; padding: 12px; background: #fff3cd; border-left: 4px solid #ff9800; border-radius: 4px;">
                         <h4 style="margin: 0 0 8px 0; color: #856404;">
                             <span class="dashicons dashicons-warning" style="color: #ff9800;"></span>
-                            <?php echo esc_html__('Fallback Mode Active', 'vas-dinamico-forms'); ?>
+                            <?php echo esc_html__('External Database Sync Failure', 'vas-dinamico-forms'); ?>
                         </h4>
                         <p style="margin: 0 0 8px 0; color: #856404;">
-                            <?php echo esc_html__('Recent submissions were saved to the WordPress database because the external database was unavailable.', 'vas-dinamico-forms'); ?>
+                            <?php echo esc_html__('Recent submissions were saved to WordPress database, but failed to sync to the external database. Form submissions are still being recorded successfully.', 'vas-dinamico-forms'); ?>
                         </p>
                         <div class="status-detail-row" style="font-size: 13px;">
                             <span class="detail-label"><?php echo esc_html__('Last Error:', 'vas-dinamico-forms'); ?></span>
@@ -266,16 +266,18 @@ function eipsi_display_configuration_page() {
                         <li><?php echo esc_html__('Enter your MySQL database credentials above', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('Click "Test Connection" to verify the credentials work', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('If the test is successful, click "Save Configuration"', 'vas-dinamico-forms'); ?></li>
-                        <li><?php echo esc_html__('All new form submissions will be stored in the external database', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('All new form submissions will be stored in BOTH WordPress and external databases', 'vas-dinamico-forms'); ?></li>
                     </ol>
                     
                     <h3><?php echo esc_html__('Important Notes', 'vas-dinamico-forms'); ?></h3>
                     <ul>
                         <li><?php echo esc_html__('The plugin will automatically create the required table and columns in the external database if they are missing', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('WordPress database remains the primary storage; external database is a synchronized copy', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('If external database sync fails, submissions still save to WordPress database successfully', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('Passwords are encrypted before storage using WordPress security functions', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('Test the connection before saving to verify credentials and schema', 'vas-dinamico-forms'); ?></li>
-                        <li><strong><?php echo esc_html__('Automatic Fallback:', 'vas-dinamico-forms'); ?></strong> <?php echo esc_html__('If the external database becomes unavailable, submissions will automatically be saved to the WordPress database without blocking the user', 'vas-dinamico-forms'); ?></li>
-                        <li><?php echo esc_html__('Admin notifications will alert you when fallback mode is active so you can investigate the issue', 'vas-dinamico-forms'); ?></li>
+                        <li><strong><?php echo esc_html__('Graceful Degradation:', 'vas-dinamico-forms'); ?></strong> <?php echo esc_html__('If the external database becomes unavailable, submissions continue saving to WordPress database while external sync is paused', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('Admin notifications will alert you when external database sync failures occur so you can investigate the issue', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('Enable WP_DEBUG to see detailed error logs for troubleshooting database issues', 'vas-dinamico-forms'); ?></li>
                     </ul>
                 </div>

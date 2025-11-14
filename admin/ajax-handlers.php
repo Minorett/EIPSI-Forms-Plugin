@@ -175,22 +175,46 @@ function vas_dinamico_submit_form_handler() {
     $db_helper = new EIPSI_External_Database();
     
     $external_db_enabled = $db_helper->is_enabled();
-    $used_fallback = false;
+    $external_db_success = false;
+    $external_insert_id = null;
     $error_info = null;
     
+    // Always save to WordPress database first (primary storage)
+    $table_name = $wpdb->prefix . 'vas_form_results';
+    
+    $wpdb_result = $wpdb->insert(
+        $table_name,
+        $data,
+        array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s')
+    );
+    
+    if ($wpdb_result === false) {
+        // WordPress DB insert failed - critical error
+        $wpdb_error = $wpdb->last_error;
+        error_log('EIPSI Forms: WordPress DB insert failed - ' . $wpdb_error);
+        
+        wp_send_json_error(array(
+            'message' => __('Failed to submit form. Please try again.', 'vas-dinamico-forms'),
+            'wordpress_db_error' => $wpdb_error
+        ));
+        return;
+    }
+    
+    $wordpress_insert_id = $wpdb->insert_id;
+    
+    // If external database is enabled, also save to external database
     if ($external_db_enabled) {
-        // Try external database first
         $result = $db_helper->insert_form_submission($data);
         
         if ($result['success']) {
-            // External DB insert succeeded
-            wp_send_json_success(array(
-                'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
-                'external_db' => true,
-                'insert_id' => $result['insert_id']
-            ));
+            $external_db_success = true;
+            $external_insert_id = $result['insert_id'];
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('EIPSI Forms: Successfully saved to both WordPress DB (ID: ' . $wordpress_insert_id . ') and External DB (ID: ' . $external_insert_id . ')');
+            }
         } else {
-            // External DB failed, record error and fall back to WordPress DB
+            // External DB failed, but WordPress succeeded - log error but continue
             $error_info = array(
                 'error' => $result['error'],
                 'error_code' => $result['error_code'],
@@ -200,58 +224,33 @@ function vas_dinamico_submit_form_handler() {
             // Record error for admin diagnostics
             $db_helper->record_error($result['error'], $result['error_code']);
             
-            // Log the fallback
+            // Log the failure
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('EIPSI Forms: External DB insert failed, falling back to WordPress DB - ' . $result['error']);
+                error_log('EIPSI Forms: External DB insert failed (WordPress DB succeeded) - ' . $result['error']);
             }
-            
-            $used_fallback = true;
         }
     }
     
-    // Use WordPress database (either as default or as fallback)
-    if (!$external_db_enabled || $used_fallback) {
-        $table_name = $wpdb->prefix . 'vas_form_results';
+    // Send success response
+    $response = array(
+        'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
+        'wordpress_db' => true,
+        'wordpress_insert_id' => $wordpress_insert_id
+    );
+    
+    if ($external_db_enabled) {
+        $response['external_db_enabled'] = true;
+        $response['external_db_success'] = $external_db_success;
         
-        $wpdb_result = $wpdb->insert(
-            $table_name,
-            $data,
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s')
-        );
-        
-        if ($wpdb_result === false) {
-            // WordPress DB insert also failed - critical error
-            $wpdb_error = $wpdb->last_error;
-            error_log('EIPSI Forms: WordPress DB insert failed - ' . $wpdb_error);
-            
-            wp_send_json_error(array(
-                'message' => __('Failed to submit form. Please try again.', 'vas-dinamico-forms'),
-                'external_db_error' => $error_info,
-                'wordpress_db_error' => $wpdb_error
-            ));
-        }
-        
-        $insert_id = $wpdb->insert_id;
-        
-        if ($used_fallback) {
-            // Fallback succeeded - inform user with warning
-            wp_send_json_success(array(
-                'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
-                'external_db' => false,
-                'fallback_used' => true,
-                'warning' => __('Form was saved to local database (external database temporarily unavailable).', 'vas-dinamico-forms'),
-                'insert_id' => $insert_id,
-                'error_code' => $error_info['error_code']
-            ));
+        if ($external_db_success) {
+            $response['external_insert_id'] = $external_insert_id;
         } else {
-            // Normal WordPress DB submission
-            wp_send_json_success(array(
-                'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
-                'external_db' => false,
-                'insert_id' => $insert_id
-            ));
+            $response['external_db_error'] = $error_info;
+            $response['warning'] = __('Form saved to WordPress database. External database sync failed.', 'vas-dinamico-forms');
         }
     }
+    
+    wp_send_json_success($response);
 }
 
 // =============================================================================
