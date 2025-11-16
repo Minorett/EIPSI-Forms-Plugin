@@ -1,0 +1,206 @@
+{
+  "timestamp": "2025-11-16T19:26:17.961Z",
+  "tests": {
+    "Build directory exists": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "index.js exists and is not empty": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "index.css exists and is not empty": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "style-index.css exists and is not empty": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "index.asset.php exists and contains dependencies": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "RTL CSS files generated": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "build/index.js size": {
+      "status": "INFO",
+      "size": 88791,
+      "sizeKB": "86.71"
+    },
+    "Measure build/index.js size": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "build/index.css size": {
+      "status": "INFO",
+      "size": 29771,
+      "sizeKB": "29.07"
+    },
+    "Measure build/index.css size": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "build/style-index.css size": {
+      "status": "INFO",
+      "size": 18368,
+      "sizeKB": "17.94"
+    },
+    "Measure build/style-index.css size": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "assets/js/eipsi-forms.js size": {
+      "status": "INFO",
+      "size": 74209,
+      "sizeKB": "72.47"
+    },
+    "Measure assets/js/eipsi-forms.js size": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "assets/css/eipsi-forms.css size": {
+      "status": "INFO",
+      "size": 50149,
+      "sizeKB": "48.97"
+    },
+    "Measure assets/css/eipsi-forms.css size": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "Build JS bundle size within acceptable limits (< 150KB)": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "Frontend JS bundle size within acceptable limits (< 100KB)": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "Total CSS size within acceptable limits (< 100KB)": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "Version constant defined in main plugin file": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "Build version hash": {
+      "status": "INFO",
+      "hash": "33580ef27a05380cb275"
+    },
+    "Version hash in index.asset.php is valid": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "Frontend assets enqueued with version parameter": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "Build output is minified": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "No development-only code in production build": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "WordPress dependencies declared correctly": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "package.json exists and is valid": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "WordPress dependencies count": {
+      "status": "INFO",
+      "count": 6,
+      "packages": [
+        "@wordpress/block-editor",
+        "@wordpress/blocks",
+        "@wordpress/components",
+        "@wordpress/element",
+        "@wordpress/i18n",
+        "@wordpress/server-side-render"
+      ]
+    },
+    "All WordPress dependencies at compatible versions": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "No known vulnerable dependencies": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "Estimated JS parse time": {
+      "status": "INFO",
+      "estimatedMs": "86.71",
+      "sizeKB": "86.71"
+    },
+    "Estimate parse time for main JS bundle": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "Estimated 3G transfer time": {
+      "status": "INFO",
+      "estimatedMs": "340.22",
+      "totalSizeKB": "255.16"
+    },
+    "Estimate network transfer time (3G)": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "No blocking resources identified": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "CSS optimization potential": {
+      "status": "INFO",
+      "totalCSSKB": "95.98",
+      "recommendation": "Use async CSS loading"
+    },
+    "CSS files can be loaded asynchronously": {
+      "status": "PASS",
+      "message": "Test passed"
+    },
+    "Estimated memory footprint": {
+      "status": "INFO",
+      "estimatedMB": "0.47"
+    },
+    "Memory footprint estimation": {
+      "status": "PASS",
+      "message": "Test passed"
+    }
+  },
+  "summary": {
+    "total": 28,
+    "passed": 28,
+    "failed": 0,
+    "warnings": 0
+  },
+  "bundleSizes": {
+    "build": {
+      "total": 136930,
+      "totalKB": "133.72",
+      "files": {
+        "index.js": 88791,
+        "index.css": 29771,
+        "style-index.css": 18368
+      }
+    },
+    "frontend": {
+      "total": 124358,
+      "totalKB": "121.44",
+      "files": {
+        "eipsi-forms.js": 74209,
+        "eipsi-forms.css": 50149
+      }
+    },
+    "combined": {
+      "total": 261288,
+      "totalKB": "255.16"
+    }
+  }
+}
