@@ -96,6 +96,7 @@ add_action('wp_ajax_eipsi_check_external_db', 'eipsi_check_external_db_handler')
 add_action('wp_ajax_nopriv_eipsi_check_external_db', 'eipsi_check_external_db_handler');
 
 add_action('wp_ajax_eipsi_save_privacy_config', 'eipsi_save_privacy_config_handler');
+add_action('wp_ajax_eipsi_verify_schema', 'eipsi_verify_schema_handler');
 
 /**
  * Calcula engagement score basado en tiempo y cambios
@@ -673,7 +674,6 @@ function eipsi_track_event_handler() {
     
     // Prepare data for database insertion
     global $wpdb;
-    $table_name = $wpdb->prefix . 'vas_form_events';
     
     $insert_data = array(
         'form_id' => $form_id,
@@ -685,13 +685,42 @@ function eipsi_track_event_handler() {
         'created_at' => current_time('mysql')
     );
     
+    // Check if external database is configured
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    $db_helper = new EIPSI_External_Database();
+    $external_db_enabled = $db_helper->is_enabled();
+    $used_fallback = false;
+    
+    if ($external_db_enabled) {
+        // Try external database first
+        $result = $db_helper->insert_form_event($insert_data);
+        
+        if ($result['success']) {
+            // External DB insert succeeded
+            wp_send_json_success(array(
+                'message' => __('Event tracked successfully.', 'vas-dinamico-forms'),
+                'event_id' => $result['insert_id'],
+                'tracked' => true,
+                'external_db' => true
+            ));
+            return;
+        } else {
+            // External DB failed, fall back to WordPress DB
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('EIPSI Tracking: External DB insert failed, falling back to WordPress DB - ' . $result['error']);
+            }
+            $used_fallback = true;
+        }
+    }
+    
+    // Use WordPress database (either as default or as fallback)
+    $table_name = $wpdb->prefix . 'vas_form_events';
     $insert_formats = array('%s', '%s', '%s', '%d', '%s', '%s', '%s');
     
-    // Insert event into database
-    $result = $wpdb->insert($table_name, $insert_data, $insert_formats);
+    $wpdb_result = $wpdb->insert($table_name, $insert_data, $insert_formats);
     
     // Check for database errors
-    if ($result === false) {
+    if ($wpdb_result === false) {
         // Log error but don't crash tracking
         error_log('EIPSI Tracking: Failed to insert event - ' . $wpdb->last_error);
         
@@ -708,7 +737,9 @@ function eipsi_track_event_handler() {
     wp_send_json_success(array(
         'message' => __('Event tracked successfully.', 'vas-dinamico-forms'),
         'event_id' => $wpdb->insert_id,
-        'tracked' => true
+        'tracked' => true,
+        'external_db' => false,
+        'fallback_used' => $used_fallback
     ));
 }
 
@@ -792,14 +823,35 @@ function eipsi_save_db_config_handler() {
     $success = $db_helper->save_credentials($host, $user, $password, $db_name);
     
     if ($success) {
+        // Trigger schema verification and synchronization
+        require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
+        $schema_result = EIPSI_Database_Schema_Manager::on_credentials_changed();
+        
         $status = $db_helper->get_status();
-        wp_send_json_success(array(
+        
+        // Include schema verification results in response
+        $response_data = array(
             'message' => sprintf(
                 __('Configuration saved successfully! Data will now be stored in: %s', 'vas-dinamico-forms'),
                 $db_name
             ),
-            'status' => $status
-        ));
+            'status' => $status,
+            'schema_verified' => $schema_result['success'],
+            'tables_created' => array(
+                'results' => $schema_result['results_table']['created'],
+                'events' => $schema_result['events_table']['created']
+            ),
+            'columns_added' => array(
+                'results' => count($schema_result['results_table']['columns_added']),
+                'events' => count($schema_result['events_table']['columns_added'])
+            )
+        );
+        
+        if (!$schema_result['success']) {
+            $response_data['schema_warnings'] = $schema_result['errors'];
+        }
+        
+        wp_send_json_success($response_data);
     } else {
         wp_send_json_error(array(
             'message' => __('Failed to save configuration.', 'vas-dinamico-forms')
@@ -850,5 +902,49 @@ function eipsi_check_external_db_handler() {
     wp_send_json_success(array(
         'enabled' => $db_helper->is_enabled()
     ));
+}
+
+function eipsi_verify_schema_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Unauthorized', 'vas-dinamico-forms')
+        ));
+    }
+    
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
+    
+    $db_helper = new EIPSI_External_Database();
+    
+    if (!$db_helper->is_enabled()) {
+        wp_send_json_error(array(
+            'message' => __('External database is not enabled', 'vas-dinamico-forms')
+        ));
+    }
+    
+    $mysqli = $db_helper->get_connection();
+    
+    if (!$mysqli) {
+        wp_send_json_error(array(
+            'message' => __('Failed to connect to external database', 'vas-dinamico-forms')
+        ));
+    }
+    
+    $result = EIPSI_Database_Schema_Manager::verify_and_sync_schema($mysqli);
+    $mysqli->close();
+    
+    if ($result['success']) {
+        wp_send_json_success(array(
+            'message' => __('Schema verification completed successfully', 'vas-dinamico-forms'),
+            'results' => $result
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => __('Schema verification failed', 'vas-dinamico-forms'),
+            'errors' => $result['errors']
+        ));
+    }
 }
 ?>
