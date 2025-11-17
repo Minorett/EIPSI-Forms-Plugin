@@ -83,7 +83,7 @@ function vas_export_to_excel() {
     }
     
     // Obtener todas las preguntas únicas para crear columnas (excluir campos internos)
-    $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id');
+    $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'current_page', 'form_id');
     $all_questions = [];
     foreach ($results as $row) {
         $form_data = $row->form_responses ? json_decode($row->form_responses, true) : [];
@@ -96,7 +96,7 @@ function vas_export_to_excel() {
     
     $data = array();
     // Encabezados: nuevo formato con IDs + metadatos + timestamps + preguntas dinámicas
-    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)', 'IP Address', 'Device', 'Browser', 'OS');
+    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)', 'IP Address', 'Device');
     $headers = array_merge($headers, $all_questions);
     $data[] = $headers;
     
@@ -150,9 +150,7 @@ function vas_export_to_excel() {
             $start_time_utc,
             $end_time_utc,
             $row->ip_address,
-            $row->device,
-            $row->browser,
-            $row->os
+            $row->device
         );
         
         // Agregar respuestas en el orden de las preguntas (excluir campos internos)
@@ -189,7 +187,7 @@ function vas_export_to_csv() {
     }
     
     // Obtener todas las preguntas únicas para crear columnas (excluir campos internos)
-    $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id');
+    $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'current_page', 'form_id');
     $all_questions = [];
     foreach ($results as $row) {
         $form_data = $row->form_responses ? json_decode($row->form_responses, true) : [];
@@ -207,7 +205,7 @@ function vas_export_to_csv() {
     $output = fopen('php://output', 'w');
     
     // Encabezados: nuevo formato con IDs + metadatos + timestamps + preguntas dinámicas
-    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)', 'IP Address', 'Device', 'Browser', 'OS');
+    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)', 'IP Address', 'Device');
     $headers = array_merge($headers, $all_questions);
     fputcsv($output, $headers);
     
@@ -261,9 +259,7 @@ function vas_export_to_csv() {
             $start_time_utc,
             $end_time_utc,
             $row->ip_address,
-            $row->device,
-            $row->browser,
-            $row->os
+            $row->device
         );
         
         // Agregar respuestas en el orden de las preguntas (excluir campos internos)

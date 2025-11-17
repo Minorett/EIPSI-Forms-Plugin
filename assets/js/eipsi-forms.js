@@ -616,29 +616,10 @@
 			const deviceField = form.querySelector(
 				'.eipsi-device-placeholder'
 			);
-			const browserField = form.querySelector(
-				'.eipsi-browser-placeholder'
-			);
-			const osField = form.querySelector( '.eipsi-os-placeholder' );
-			const screenField = form.querySelector(
-				'.eipsi-screen-placeholder'
-			);
 			const startTimeField = form.querySelector( '.eipsi-start-time' );
 
 			if ( deviceField ) {
 				deviceField.value = this.getDeviceType();
-			}
-
-			if ( browserField ) {
-				browserField.value = this.getBrowser();
-			}
-
-			if ( osField ) {
-				osField.value = this.getOS();
-			}
-
-			if ( screenField ) {
-				screenField.value = window.screen.width || '';
 			}
 
 			if ( startTimeField ) {
@@ -662,57 +643,6 @@
 				return 'mobile';
 			}
 			return 'desktop';
-		},
-
-		getBrowser() {
-			const ua =
-				typeof navigator !== 'undefined' ? navigator.userAgent : '';
-			let browser = 'Unknown';
-
-			if ( ua.indexOf( 'Firefox' ) > -1 ) {
-				browser = 'Firefox';
-			} else if ( ua.indexOf( 'SamsungBrowser' ) > -1 ) {
-				browser = 'Samsung Browser';
-			} else if (
-				ua.indexOf( 'Opera' ) > -1 ||
-				ua.indexOf( 'OPR' ) > -1
-			) {
-				browser = 'Opera';
-			} else if ( ua.indexOf( 'Trident' ) > -1 ) {
-				browser = 'Internet Explorer';
-			} else if ( ua.indexOf( 'Edge' ) > -1 ) {
-				browser = 'Edge';
-			} else if ( ua.indexOf( 'Edg' ) > -1 ) {
-				browser = 'Edge Chromium';
-			} else if ( ua.indexOf( 'Chrome' ) > -1 ) {
-				browser = 'Chrome';
-			} else if ( ua.indexOf( 'Safari' ) > -1 ) {
-				browser = 'Safari';
-			}
-
-			return browser;
-		},
-
-		getOS() {
-			const ua =
-				typeof navigator !== 'undefined' ? navigator.userAgent : '';
-			let os = 'Unknown';
-
-			if ( ua.indexOf( 'Win' ) > -1 ) {
-				os = 'Windows';
-			} else if ( ua.indexOf( 'Mac' ) > -1 ) {
-				os = 'MacOS';
-			} else if ( ua.indexOf( 'X11' ) > -1 ) {
-				os = 'UNIX';
-			} else if ( ua.indexOf( 'Linux' ) > -1 ) {
-				os = 'Linux';
-			} else if ( /Android/.test( ua ) ) {
-				os = 'Android';
-			} else if ( /iPhone|iPad|iPod/.test( ua ) ) {
-				os = 'iOS';
-			}
-
-			return os;
 		},
 
 		initPagination( form ) {

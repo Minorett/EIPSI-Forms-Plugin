@@ -196,9 +196,6 @@ Generación automática de IDs estables y legibles:
 #### Metadatos Automáticos:
 - ✅ **Timestamps** de inicio/fin y duración (ms)
 - ✅ **Device type** (mobile/desktop/tablet)
-- ✅ **Browser** (Chrome, Firefox, Safari, Edge, etc.)
-- ✅ **OS** (Windows, macOS, Linux, iOS, Android)
-- ✅ **Screen width** (px)
 - ✅ **IP Address** (requisito de auditoría clínica - retención configurable)
 
 #### Metadatos Clínicos (JSON en campo `metadata`):

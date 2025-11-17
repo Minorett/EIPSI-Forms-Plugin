@@ -36,21 +36,6 @@ export default function Save( { attributes } ) {
 				/>
 				<input
 					type="hidden"
-					className="eipsi-browser-placeholder"
-					name="browser"
-				/>
-				<input
-					type="hidden"
-					className="eipsi-os-placeholder"
-					name="os"
-				/>
-				<input
-					type="hidden"
-					className="eipsi-screen-placeholder"
-					name="screen_width"
-				/>
-				<input
-					type="hidden"
 					className="eipsi-start-time"
 					name="start_time"
 				/>

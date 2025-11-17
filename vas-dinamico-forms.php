@@ -55,9 +55,6 @@ function vas_dinamico_activate() {
         created_at datetime NOT NULL,
         submitted_at datetime DEFAULT NULL,
         device varchar(100) DEFAULT NULL,
-        browser varchar(100) DEFAULT NULL,
-        os varchar(100) DEFAULT NULL,
-        screen_width int(11) DEFAULT NULL,
         duration int(11) DEFAULT NULL,
         duration_seconds decimal(8,3) DEFAULT NULL,
         start_timestamp_ms bigint(20) DEFAULT NULL,
@@ -131,9 +128,6 @@ function vas_dinamico_upgrade_database() {
         'form_id' => "ALTER TABLE {$table_name} ADD COLUMN form_id varchar(20) DEFAULT NULL AFTER id",
         'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id varchar(20) DEFAULT NULL AFTER form_id",
         'session_id' => "ALTER TABLE {$table_name} ADD COLUMN session_id varchar(255) DEFAULT NULL AFTER participant_id",
-        'browser' => "ALTER TABLE {$table_name} ADD COLUMN browser varchar(100) DEFAULT NULL AFTER device",
-        'os' => "ALTER TABLE {$table_name} ADD COLUMN os varchar(100) DEFAULT NULL AFTER browser",
-        'screen_width' => "ALTER TABLE {$table_name} ADD COLUMN screen_width int(11) DEFAULT NULL AFTER os",
         'duration_seconds' => "ALTER TABLE {$table_name} ADD COLUMN duration_seconds decimal(8,3) DEFAULT NULL AFTER duration",
         'start_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
         'end_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms",
@@ -389,9 +383,6 @@ function vas_dinamico_render_form_block($attributes) {
     $output .= '<input type="hidden" name="form_action" value="vas_dinamico_submit_form">';
     $output .= '<input type="hidden" name="ip_address" class="eipsi-ip-placeholder" value="">';
     $output .= '<input type="hidden" name="device" class="eipsi-device-placeholder" value="">';
-    $output .= '<input type="hidden" name="browser" class="eipsi-browser-placeholder" value="">';
-    $output .= '<input type="hidden" name="os" class="eipsi-os-placeholder" value="">';
-    $output .= '<input type="hidden" name="screen_width" class="eipsi-screen-placeholder" value="">';
     $output .= '<input type="hidden" name="form_start_time" class="eipsi-start-time" value="">';
     $output .= '<input type="hidden" name="form_end_time" class="eipsi-end-time" value="">';
     $output .= '<input type="hidden" name="current_page" class="eipsi-current-page" value="1">';

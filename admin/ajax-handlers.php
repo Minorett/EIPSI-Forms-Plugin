@@ -207,9 +207,6 @@ function vas_dinamico_submit_form_handler() {
     $ip_address = filter_var($ip_address, FILTER_VALIDATE_IP) ?: 'invalid';
     
     $device = isset($_POST['device']) ? sanitize_text_field($_POST['device']) : '';
-    $browser = isset($_POST['browser']) ? sanitize_text_field($_POST['browser']) : '';
-    $os = isset($_POST['os']) ? sanitize_text_field($_POST['os']) : '';
-    $screen_width = isset($_POST['screen_width']) ? intval($_POST['screen_width']) : 0;
     $start_time = isset($_POST['form_start_time']) ? sanitize_text_field($_POST['form_start_time']) : '';
     $end_time = isset($_POST['form_end_time']) ? sanitize_text_field($_POST['form_end_time']) : '';
     
@@ -218,7 +215,7 @@ function vas_dinamico_submit_form_handler() {
     $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
     
     $form_responses = array();
-    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action', 'participant_id', 'session_id');
+    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action', 'participant_id', 'session_id');
     
     $user_data = array(
         'email' => '',
@@ -330,9 +327,6 @@ function vas_dinamico_submit_form_handler() {
         'submitted_at' => $submitted_at,
         'ip_address' => $ip_address,
         'device' => $device,
-        'browser' => $browser,
-        'os' => $os,
-        'screen_width' => $screen_width,
         'duration' => $duration,
         'duration_seconds' => $duration_seconds,
         'start_timestamp_ms' => $start_timestamp_ms,
@@ -389,7 +383,7 @@ function vas_dinamico_submit_form_handler() {
         $wpdb_result = $wpdb->insert(
             $table_name,
             $data,
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s', '%s')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%f', '%d', '%d', '%s', '%s', '%s', '%s')
         );
         
         if ($wpdb_result === false) {
@@ -448,14 +442,13 @@ function vas_get_time_context($datetime) {
     return '🌙 Madrugada';
 }
 
-function vas_get_platform_type($device, $screen_width) {
+function vas_get_platform_type($device) {
     if ($device === 'mobile') {
-        if ($screen_width < 400) return '📱 Teléfono pequeño';
-        if ($screen_width < 768) return '📱 Teléfono estándar';
-        return '📱 Teléfono grande/Tablet pequeña';
+        return '📱 Móvil';
+    } elseif ($device === 'tablet') {
+        return '📱 Tablet';
     } else {
-        if ($screen_width < 1200) return '💻 Laptop';
-        return '🖥️ Desktop grande';
+        return '💻 Desktop';
     }
 }
 
