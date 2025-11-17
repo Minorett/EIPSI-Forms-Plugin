@@ -31,16 +31,25 @@ function generate_stable_form_id($form_name) {
 }
 
 function get_form_initials($form_name) {
-    $stop_words = array('de', 'la', 'el', 'y', 'en', 'con', 'para', 'del', 'los', 'las');
-    $words = preg_split('/\s+/', strtolower($form_name));
-    $words = array_diff($words, $stop_words);
+    $words = explode(' ', trim($form_name));
     $initials = '';
+    
     foreach ($words as $word) {
-        if (!empty($word)) {
-            $initials .= strtoupper(substr($word, 0, 1));
+        // Limpiar caracteres especiales
+        $clean_word = preg_replace('/[^a-zA-Z0-9]/', '', $word);
+        
+        if (!empty($clean_word)) {
+            if (strlen($clean_word) >= 3) {
+                $initials .= strtoupper(substr($clean_word, 0, 3));
+            } else {
+                $initials .= strtoupper($clean_word); // Palabra completa si < 3
+            }
+            
+            if (strlen($initials) >= 3) break; // Máximo 3 caracteres total
         }
     }
-    return $initials;
+    
+    return !empty($initials) ? $initials : 'UNK'; // Fallback
 }
 
 function generateStableFingerprint($user_data) {
@@ -86,16 +95,116 @@ add_action('wp_ajax_eipsi_get_db_status', 'eipsi_get_db_status_handler');
 add_action('wp_ajax_eipsi_check_external_db', 'eipsi_check_external_db_handler');
 add_action('wp_ajax_nopriv_eipsi_check_external_db', 'eipsi_check_external_db_handler');
 
+add_action('wp_ajax_eipsi_save_privacy_config', 'eipsi_save_privacy_config_handler');
+
+/**
+ * Calcula engagement score basado en tiempo y cambios
+ */
+function eipsi_calculate_engagement_score($responses, $duration_seconds) {
+    if (!$responses || $duration_seconds == 0) {
+        return 0;
+    }
+    
+    $field_count = count($responses);
+    $avg_time_per_field = $duration_seconds / max($field_count, 1);
+    
+    // Score entre 0 y 1
+    // Más tiempo = más engagement (min 5s por campo, max 60s)
+    $score = min(max($avg_time_per_field / 60, 0), 1);
+    
+    return round($score, 2);
+}
+
+/**
+ * Calcula consistency score (coherencia de respuestas)
+ */
+function eipsi_calculate_consistency_score($responses) {
+    // TODO: Implementar lógica de coherencia
+    // Por ahora retorna 1.0 (perfecta coherencia)
+    return 1.0;
+}
+
+/**
+ * Detecta patrones de evitación (saltos, retrocesos)
+ */
+function eipsi_detect_avoidance_patterns($responses) {
+    // TODO: Implementar detección
+    // Por ahora retorna array vacío
+    return array();
+}
+
+/**
+ * Calcula quality flag basado en múltiples factores
+ */
+function eipsi_calculate_quality_flag($responses, $duration_seconds) {
+    $engagement = eipsi_calculate_engagement_score($responses, $duration_seconds);
+    $consistency = eipsi_calculate_consistency_score($responses);
+    
+    $avg_score = ($engagement + $consistency) / 2;
+    
+    if ($avg_score >= 0.8) {
+        return 'HIGH';
+    } elseif ($avg_score >= 0.5) {
+        return 'NORMAL';
+    } else {
+        return 'LOW';
+    }
+}
+
+/**
+ * Handler para guardar configuración de privacidad
+ */
+function eipsi_save_privacy_config_handler() {
+    check_ajax_referer('eipsi_privacy_nonce', 'eipsi_privacy_nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('No tienes permisos para realizar esta acción.', 'vas-dinamico-forms')));
+    }
+    
+    $form_id = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : '';
+    
+    if (empty($form_id)) {
+        wp_send_json_error(array('message' => __('Form ID is required.', 'vas-dinamico-forms')));
+    }
+    
+    require_once dirname(__FILE__) . '/privacy-config.php';
+    
+    $config = array(
+        'therapeutic_engagement' => isset($_POST['therapeutic_engagement']),
+        'clinical_consistency' => isset($_POST['clinical_consistency']),
+        'avoidance_patterns' => isset($_POST['avoidance_patterns']),
+        'device_type' => isset($_POST['device_type'])
+    );
+    
+    $result = save_privacy_config($form_id, $config);
+    
+    if ($result) {
+        wp_send_json_success(array('message' => __('✅ Configuración guardada correctamente.', 'vas-dinamico-forms')));
+    } else {
+        wp_send_json_error(array('message' => __('Error al guardar la configuración.', 'vas-dinamico-forms')));
+    }
+}
+
 function vas_dinamico_submit_form_handler() {
     check_ajax_referer('eipsi_forms_nonce', 'nonce');
     
     global $wpdb;
     
     $form_name = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : 'default';
-    $ip_address = isset($_POST['ip_address']) ? sanitize_text_field($_POST['ip_address']) : '';
-    if (empty($ip_address)) {
-        $ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+    
+    // Capturar IP del participante (REQUERIDO) con detección de proxy
+    $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    
+    // Si está detrás de proxy/CDN (Cloudflare, Load Balancer, etc.)
+    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        $ip_address = $_SERVER['HTTP_CF_CONNECTING_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip_address = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
     }
+    
+    // Validar IP
+    $ip_address = filter_var($ip_address, FILTER_VALIDATE_IP) ?: 'invalid';
+    
     $device = isset($_POST['device']) ? sanitize_text_field($_POST['device']) : '';
     $browser = isset($_POST['browser']) ? sanitize_text_field($_POST['browser']) : '';
     $os = isset($_POST['os']) ? sanitize_text_field($_POST['os']) : '';
@@ -103,8 +212,12 @@ function vas_dinamico_submit_form_handler() {
     $start_time = isset($_POST['form_start_time']) ? sanitize_text_field($_POST['form_start_time']) : '';
     $end_time = isset($_POST['form_end_time']) ? sanitize_text_field($_POST['form_end_time']) : '';
     
+    // Obtener IDs universales del frontend
+    $frontend_participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
+    $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
+    
     $form_responses = array();
-    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action');
+    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action', 'participant_id', 'session_id');
     
     $user_data = array(
         'email' => '',
@@ -147,14 +260,70 @@ function vas_dinamico_submit_form_handler() {
     }
     
     $stable_form_id = generate_stable_form_id($form_name);
-    $participant_id = generateStableFingerprint($user_data);
+    
+    // Usar Participant ID universal del frontend si está disponible, sino fallback al viejo sistema
+    $participant_id = !empty($frontend_participant_id) ? $frontend_participant_id : generateStableFingerprint($user_data);
     
     $submitted_at = current_time('mysql');
+    
+    // Obtener configuración de privacidad
+    require_once dirname(__FILE__) . '/privacy-config.php';
+    $privacy_config = get_privacy_config($stable_form_id);
+    
+    // Construir metadatos según configuración de privacidad
+    $metadata = array(
+        'form_id' => $stable_form_id,
+        'participant_id' => $participant_id,
+        'session_id' => $session_id
+    );
+    
+    // TIMESTAMPS (SIEMPRE)
+    $metadata['timestamps'] = array(
+        'start' => $start_timestamp_ms,
+        'end' => $end_timestamp_ms,
+        'duration_seconds' => $duration_seconds
+    );
+    
+    // DEVICE (si está habilitado)
+    if ($privacy_config['device_type']) {
+        $metadata['device_info'] = array(
+            'device_type' => $device
+        );
+    }
+    
+    // NETWORK INFO (IP SIEMPRE - REQUERIDO)
+    $metadata['network_info'] = array(
+        'ip_address' => $ip_address,
+        'ip_storage_type' => $privacy_config['ip_storage']
+    );
+    
+    // CLINICAL INSIGHTS
+    $metadata['clinical_insights'] = array();
+    
+    if ($privacy_config['therapeutic_engagement']) {
+        $metadata['clinical_insights']['therapeutic_engagement'] = eipsi_calculate_engagement_score($form_responses, $duration_seconds);
+    }
+    
+    if ($privacy_config['clinical_consistency']) {
+        $metadata['clinical_insights']['clinical_consistency'] = eipsi_calculate_consistency_score($form_responses);
+    }
+    
+    if ($privacy_config['avoidance_patterns']) {
+        $metadata['clinical_insights']['avoidance_patterns'] = eipsi_detect_avoidance_patterns($form_responses);
+    }
+    
+    // QUALITY METRICS (SIEMPRE)
+    $quality_flag = eipsi_calculate_quality_flag($form_responses, $duration_seconds);
+    $metadata['quality_metrics'] = array(
+        'quality_flag' => $quality_flag,
+        'completion_rate' => 1.0
+    );
     
     // Prepare data for insertion
     $data = array(
         'form_id' => $stable_form_id,
         'participant_id' => $participant_id,
+        'session_id' => $session_id,
         'form_name' => $form_name,
         'created_at' => current_time('mysql'),
         'submitted_at' => $submitted_at,
@@ -167,6 +336,9 @@ function vas_dinamico_submit_form_handler() {
         'duration_seconds' => $duration_seconds,
         'start_timestamp_ms' => $start_timestamp_ms,
         'end_timestamp_ms' => $end_timestamp_ms,
+        'metadata' => wp_json_encode($metadata),
+        'quality_flag' => $quality_flag,
+        'status' => 'submitted',
         'form_responses' => wp_json_encode($form_responses)
     );
     
@@ -216,7 +388,7 @@ function vas_dinamico_submit_form_handler() {
         $wpdb_result = $wpdb->insert(
             $table_name,
             $data,
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s', '%s')
         );
         
         if ($wpdb_result === false) {

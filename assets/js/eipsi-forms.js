@@ -7,7 +7,40 @@
 ( function () {
 	'use strict';
 
-	/* global navigator */
+	/* global navigator, localStorage */
+
+	/**
+	 * Obtiene o genera un Participant ID único y persistente
+	 * - Mismo ID para todos los formularios en la sesión
+	 * - Persiste en localStorage (sobrevive recargas)
+	 * - Completamente anónimo (UUID v4)
+	 *
+	 * @return {string} "p-a1b2c3d4e5f6" (p- + 12 caracteres)
+	 */
+	function getUniversalParticipantId() {
+		const STORAGE_KEY = 'eipsi_participant_id';
+
+		let pid = localStorage.getItem( STORAGE_KEY );
+		if ( ! pid ) {
+			// Generar UUID v4 truncado a 12 caracteres
+			pid =
+				'p-' +
+				crypto.randomUUID().replace( /-/g, '' ).substring( 0, 12 );
+			localStorage.setItem( STORAGE_KEY, pid );
+		}
+
+		return pid;
+	}
+
+	/**
+	 * Genera Session ID único para cada sesión/envío
+	 * @return {string} "sess-[timestamp]-[random]"
+	 */
+	function getSessionId() {
+		const timestamp = Date.now();
+		const random = Math.random().toString( 36 ).substring( 2, 8 );
+		return 'sess-' + timestamp + '-' + random;
+	}
 
 	class ConditionalNavigator {
 		constructor( form ) {
@@ -1602,9 +1635,26 @@
 			const submitButton = form.querySelector( 'button[type="submit"]' );
 			const formData = new FormData( form );
 
+			// Obtener IDs antes de enviar
+			const participantId = getUniversalParticipantId();
+			const sessionId = getSessionId();
+			const formId = this.getFormId( form ) || '';
+
 			formData.append( 'action', 'vas_dinamico_submit_form' );
 			formData.append( 'nonce', this.config.nonce );
 			formData.append( 'form_end_time', Date.now() );
+			formData.append( 'participant_id', participantId );
+			formData.append( 'session_id', sessionId );
+
+			// Registrar en console para debugging
+			if ( window.console && window.console.log ) {
+				window.console.log( '📊 Form Submission:', {
+					formId,
+					participantId,
+					sessionId,
+					timestamp: new Date().toISOString(),
+				} );
+			}
 
 			form.dataset.submitting = 'true';
 			this.setFormLoading( form, true );
