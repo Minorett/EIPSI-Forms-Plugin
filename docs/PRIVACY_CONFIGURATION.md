@@ -50,6 +50,7 @@ EIPSI Forms implements a comprehensive yet privacy-conscious metadata system for
 
 ### Form ID
 - **Format:** `ACA-a3f1b2` (3-letter prefix + 6-char hash)
+- **Max Length:** 10 characters (stored as varchar(15) for safety margin)
 - **Generation:** First 3 letters of each word (max 3 total) + MD5 hash
 - **Purpose:** Unique identifier for form template
 - **Configurable:** ❌ No (Always captured)
@@ -220,18 +221,17 @@ Configuration is **per-form** and stored in WordPress options:
 ```sql
 CREATE TABLE wp_vas_form_results (
     id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    form_id varchar(20) DEFAULT NULL,
+    form_id varchar(15) DEFAULT NULL,
     participant_id varchar(255) DEFAULT NULL,
     session_id varchar(255) DEFAULT NULL,
+    participant varchar(255) DEFAULT NULL,
+    interaction varchar(255) DEFAULT NULL,
     
     form_name varchar(255) NOT NULL,
     created_at datetime NOT NULL,
     submitted_at datetime DEFAULT NULL,
     
     device varchar(100) DEFAULT NULL,
-    browser varchar(100) DEFAULT NULL,
-    os varchar(100) DEFAULT NULL,
-    screen_width int(11) DEFAULT NULL,
     
     duration int(11) DEFAULT NULL,
     duration_seconds decimal(8,3) DEFAULT NULL,
@@ -247,11 +247,14 @@ CREATE TABLE wp_vas_form_results (
     form_responses LONGTEXT NOT NULL,
     
     PRIMARY KEY (id),
+    KEY form_name (form_name),
+    KEY created_at (created_at),
     KEY form_id (form_id),
     KEY participant_id (participant_id),
     KEY session_id (session_id),
+    KEY submitted_at (submitted_at),
     KEY ip_address (ip_address),
-    KEY submitted_at (submitted_at)
+    KEY form_participant (form_id, participant_id)
 );
 ```
 

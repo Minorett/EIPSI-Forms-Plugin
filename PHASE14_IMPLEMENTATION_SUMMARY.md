@@ -94,7 +94,9 @@
 - `status` enum('pending','submitted','error')
 
 **Updated:**
+- `form_id` optimized to varchar(15) (previously varchar(20))
 - `participant_id` expanded to varchar(255) for UUID support
+- Removed obsolete columns: `browser`, `os`, `screen_width`
 - `create_table_if_missing()` updated
 - `ensure_required_columns()` updated
 - `insert_form_submission()` prepared statement updated

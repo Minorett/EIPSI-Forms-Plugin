@@ -251,7 +251,7 @@ class EIPSI_External_Database {
         
         $sql = "CREATE TABLE IF NOT EXISTS `{$table_name}` (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-            form_id varchar(20) DEFAULT NULL,
+            form_id varchar(15) DEFAULT NULL,
             participant_id varchar(255) DEFAULT NULL,
             session_id varchar(255) DEFAULT NULL,
             participant varchar(255) DEFAULT NULL,
@@ -260,9 +260,6 @@ class EIPSI_External_Database {
             created_at datetime NOT NULL,
             submitted_at datetime DEFAULT NULL,
             device varchar(100) DEFAULT NULL,
-            browser varchar(100) DEFAULT NULL,
-            os varchar(100) DEFAULT NULL,
-            screen_width int(11) DEFAULT NULL,
             duration int(11) DEFAULT NULL,
             duration_seconds decimal(8,3) DEFAULT NULL,
             start_timestamp_ms bigint(20) DEFAULT NULL,
@@ -304,7 +301,7 @@ class EIPSI_External_Database {
      */
     private function ensure_required_columns($mysqli, $table_name) {
         $required_columns = array(
-            'form_id' => "ALTER TABLE `{$table_name}` ADD COLUMN form_id varchar(20) DEFAULT NULL AFTER id",
+            'form_id' => "ALTER TABLE `{$table_name}` ADD COLUMN form_id varchar(15) DEFAULT NULL AFTER id",
             'participant_id' => "ALTER TABLE `{$table_name}` ADD COLUMN participant_id varchar(255) DEFAULT NULL AFTER form_id",
             'session_id' => "ALTER TABLE `{$table_name}` ADD COLUMN session_id varchar(255) DEFAULT NULL AFTER participant_id",
             'duration_seconds' => "ALTER TABLE `{$table_name}` ADD COLUMN duration_seconds decimal(8,3) DEFAULT NULL AFTER duration",
