@@ -1,268 +1,155 @@
-# Navigation Controls Hardening - Changes Summary
+# Privacy Toggles Implementation - Changes Summary
 
-## Quick Reference
+## 🎯 Goal
+Implement configurable privacy toggles for Browser, OS, Screen Width, and IP Address with privacy-first defaults.
 
-**Branch**: `fix/harden-nav-controls-history-guards`  
-**Files Modified**: 1  
-**Lines Changed**: ~70 lines  
-**Breaking Changes**: None  
+## 📝 Files Modified
 
-## Changes Overview
+### 1. **admin/privacy-config.php**
+- ✅ Updated `get_privacy_defaults()` to set browser/os/screen_width OFF, ip_address ON
+- ✅ Removed forced IP requirement in `get_privacy_config()`
+- ✅ Added browser, os, screen_width, ip_address to `$allowed_toggles` in `save_privacy_config()`
+- ✅ Removed forced IP assignment in `save_privacy_config()`
 
-### File: `assets/js/eipsi-forms.js`
+### 2. **admin/privacy-dashboard.php**
+- ✅ Changed IP Address from disabled checkbox to configurable toggle
+- ✅ Added new "Dispositivo" section with Browser, OS, Screen Width toggles
+- ✅ Added CSS for `.eipsi-optional` and `.eipsi-section-description`
+- ✅ Updated info box with new privacy defaults explanation
 
-#### 1. Enhanced `initPagination()` - Lines 681-745
+### 3. **admin/ajax-handlers.php**
+- ✅ Captured raw values from POST (`$browser_raw`, `$os_raw`, `$screen_width_raw`, `$ip_address_raw`)
+- ✅ Applied privacy config logic to set values to NULL when disabled
+- ✅ Updated metadata construction to conditionally include browser, os, screen_width
+- ✅ Made network_info conditional (only added if IP is enabled)
 
-**Added**:
-- Clear stale `disabled` attributes on all navigation buttons
-- `stopPropagation()` on button click handlers
-- Guards: `form.dataset.submitting === 'true'` check
-- Guards: `button.disabled` check
+### 4. **README.md**
+- ✅ Updated Metadatos section with privacy defaults for each field
+- ✅ Added privacy note explaining OFF/ON defaults
+- ✅ Added new "Dashboard de Privacidad Integrado" section
+- ✅ Updated GDPR section with "Privacidad por defecto"
 
-**Code**:
-```javascript
-if ( prevButton ) {
-    prevButton.removeAttribute( 'disabled' );  // ✅ NEW
-    prevButton.addEventListener( 'click', ( e ) => {
-        e.preventDefault();
-        e.stopPropagation();  // ✅ NEW
-        // ✅ NEW: Guard against double-click
-        if ( form.dataset.submitting === 'true' || prevButton.disabled ) {
-            return;
-        }
-        this.handlePagination( form, 'prev' );
-    } );
-}
+### 5. **assets/js/configuration-panel.js**
+- ℹ️ Auto-formatted by linter (no functional changes)
 
-if ( nextButton ) {
-    nextButton.removeAttribute( 'disabled' );  // ✅ NEW
-    nextButton.addEventListener( 'click', ( e ) => {
-        e.preventDefault();
-        e.stopPropagation();  // ✅ NEW
-        // ✅ NEW: Guard against double-click
-        if ( form.dataset.submitting === 'true' || nextButton.disabled ) {
-            return;
-        }
-        this.handlePagination( form, 'next' );
-    } );
-}
+## 📦 New Files Created
 
-if ( submitButton ) {
-    submitButton.removeAttribute( 'disabled' );  // ✅ NEW
-}
+### 1. **test-privacy-toggles.js**
+- Comprehensive test suite with 41 tests
+- Validates all privacy toggle functionality
+- All tests passing ✅
+
+### 2. **PRIVACY_TOGGLES_IMPLEMENTATION.md**
+- Complete implementation documentation
+- Privacy defaults table
+- User experience flow
+- Migration path
+- Security & privacy benefits
+
+### 3. **CHANGES_SUMMARY.md** (this file)
+- Quick reference for code review
+
+## ✅ Privacy Defaults
+
+| Field | Before | After | Rationale |
+|-------|--------|-------|-----------|
+| Browser | Always ON | **OFF by default** | Optional debugging data |
+| OS | Always ON | **OFF by default** | Optional debugging data |
+| Screen Width | Always ON | **OFF by default** | Optional debugging data |
+| IP Address | Always ON (forced) | **ON by default** (configurable) | Audit trail, but now optional |
+| Device Type | ON (configurable) | **ON by default** (configurable) | Unchanged |
+| Clinical Data | ON (configurable) | **ON by default** (configurable) | Unchanged |
+
+## 🧪 Test Results
+
+```
+✓ ALL TESTS PASSED (41/41)
+
+━━━ 1. Privacy Config Defaults ━━━
+✓ Browser is OFF by default
+✓ OS is OFF by default
+✓ Screen Width is OFF by default
+✓ IP Address is ON by default
+✓ Device Type is ON by default (existing behavior)
+
+━━━ 2. Allowed Toggles in save_privacy_config() ━━━
+✓ Browser is in allowed_toggles array
+✓ OS is in allowed_toggles array
+✓ Screen Width is in allowed_toggles array
+✓ IP Address is in allowed_toggles array (now configurable)
+✓ IP Address is NOT forced to true in get_privacy_config()
+✓ IP Address is NOT forced to true in save_privacy_config()
+
+━━━ 3. Privacy Dashboard UI ━━━
+✓ Browser toggle exists in UI
+✓ OS toggle exists in UI
+✓ Screen Width toggle exists in UI
+✓ IP Address toggle exists in UI (no longer disabled)
+✓ IP Address is NOT disabled/readonly
+✓ Browser defaults to unchecked (false)
+✓ OS defaults to unchecked (false)
+✓ Screen Width defaults to unchecked (false)
+✓ IP Address defaults to checked (true)
+✓ Device Info section exists with "Opcional" label
+✓ Section description warning exists
+✓ CSS for .eipsi-optional exists
+✓ CSS for .eipsi-section-description exists
+✓ Updated info box exists
+
+━━━ 4. AJAX Handlers Privacy Logic ━━━
+✓ Browser_raw is captured from POST
+✓ OS_raw is captured from POST
+✓ Screen Width_raw is captured from POST
+✓ IP Address_raw is captured from SERVER
+✓ Browser respects privacy config
+✓ OS respects privacy config
+✓ Screen Width respects privacy config
+✓ IP Address respects privacy config
+✓ Browser is added to device_info metadata
+✓ OS is added to device_info metadata
+✓ Screen Width is added to device_info metadata
+✓ IP Address is conditionally added to network_info
+
+━━━ 5. Database Schema NULL Support ━━━
+✓ Browser column allows NULL
+✓ OS column allows NULL
+✓ Screen Width column allows NULL
+✓ IP Address column allows NULL
 ```
 
-#### 2. Fixed `updatePaginationDisplay()` - Lines 1113-1225
+## 🔧 Build & Lint
 
-**Changed**:
-- Backwards navigation check now handles legacy values (`"0"`, `""`)
-- Prev button visibility uses `firstVisitedPage` from history
-- All buttons remove `disabled` attribute when shown
+```bash
+# Linting
+✓ npm run lint:js -- --fix
+  → 0 errors, 0 warnings
 
-**Code**:
-```javascript
-// ✅ NEW: Handle legacy values
-const rawAllowBackwards = form.dataset.allowBackwardsNav;
-const allowBackwardsNav =
-    rawAllowBackwards !== 'false' &&
-    rawAllowBackwards !== '0' &&
-    rawAllowBackwards !== '';
+# Build
+✓ npm run build
+  → webpack 5.102.1 compiled successfully in 4539 ms
 
-// ✅ NEW: Use first visited page from history
-const firstVisitedPage =
-    navigator && navigator.history.length > 0
-        ? navigator.history[ 0 ]
-        : 1;
-
-// ✅ CHANGED: Check against firstVisitedPage, not just currentPage > 1
-const shouldShowPrev =
-    allowBackwardsNav &&
-    hasHistory &&
-    currentPage > firstVisitedPage;
-
-// ✅ NEW: Remove disabled when showing
-if ( prevButton ) {
-    if ( shouldShowPrev ) {
-        prevButton.style.display = '';
-        prevButton.removeAttribute( 'disabled' );
-    } else {
-        prevButton.style.display = 'none';
-    }
-}
-
-// ✅ Same pattern for nextButton and submitButton
-if ( nextButton ) {
-    if ( shouldShowNext ) {
-        nextButton.style.display = '';
-        nextButton.removeAttribute( 'disabled' );
-    } else {
-        nextButton.style.display = 'none';
-    }
-}
-
-if ( submitButton ) {
-    if ( shouldShowSubmit ) {
-        submitButton.style.display = '';
-        submitButton.removeAttribute( 'disabled' );
-    } else {
-        submitButton.style.display = 'none';
-    }
-    // ... rest unchanged
-}
+# Custom Tests
+✓ node test-privacy-toggles.js
+  → 41/41 tests passing
 ```
 
-#### 3. Added Submission State Tracking in `submitForm()` - Lines 1591-1684
+## 🚀 Breaking Changes
 
-**Added**:
-- Set `form.dataset.submitting = 'true'` at start
-- Clear submission flag in `finally` block
-- Re-initialize history after form reset
+**None!** This is a fully backward-compatible change:
 
-**Code**:
-```javascript
-submitForm( form ) {
-    const submitButton = form.querySelector( 'button[type="submit"]' );
-    const formData = new FormData( form );
-    
-    formData.append( 'action', 'vas_dinamico_submit_form' );
-    formData.append( 'nonce', this.config.nonce );
-    formData.append( 'form_end_time', Date.now() );
-    
-    form.dataset.submitting = 'true';  // ✅ NEW: Set submission flag
-    this.setFormLoading( form, true );
-    
-    // ... fetch logic ...
-    
-    .then( ( data ) => {
-        if ( data.success ) {
-            // ... success handling ...
-            
-            setTimeout( () => {
-                form.reset();
-                
-                const navigator = this.getNavigator( form );
-                if ( navigator ) {
-                    navigator.reset();
-                }
-                
-                this.setCurrentPage( form, 1, {
-                    trackChange: false,
-                } );
-                
-                // ✅ NEW: Re-initialize history after reset
-                if ( navigator ) {
-                    navigator.pushHistory( 1 );
-                }
-                
-                // ... reset sliders ...
-            }, 3000 );
-        }
-        // ... error handling ...
-    } )
-    .finally( () => {
-        this.setFormLoading( form, false );
-        delete form.dataset.submitting;  // ✅ NEW: Clear submission flag
-        
-        if ( submitButton ) {
-            submitButton.disabled = false;
-            submitButton.textContent =
-                submitButton.dataset.originalText || 'Enviar';
-        }
-    } );
-}
-```
+- Existing forms continue working with default settings
+- Existing data remains unchanged
+- New submissions respect new privacy defaults
+- Database schema already supported NULL values
+- No migrations needed
 
-## Key Improvements
+## 🎉 Summary
 
-### 1. Race Condition Prevention
-- ✅ Submission flag prevents navigation during AJAX
-- ✅ Button disabled check prevents stale clicks
-- ✅ `stopPropagation()` prevents event bubbling issues
+**Implementation Complete:** ✅  
+**All Tests Passing:** ✅ 41/41  
+**Build Successful:** ✅  
+**Linting Clean:** ✅ 0 errors  
+**Documentation Updated:** ✅  
+**Backward Compatible:** ✅  
 
-### 2. Backwards Navigation Robustness
-- ✅ Legacy values (`"0"`, `""`) treated as false
-- ✅ Prev button hidden on first page even after navigation
-- ✅ History-aware prev button visibility
-
-### 3. Button State Consistency
-- ✅ Disabled attributes cleared when buttons shown
-- ✅ No orphaned disabled states after visibility changes
-- ✅ Mutually exclusive next/submit visibility
-
-### 4. History Management
-- ✅ History re-initialized after form reset
-- ✅ Consistent state after submission
-- ✅ Proper backwards navigation after branching
-
-## Testing Checklist
-
-- [ ] Multi-page form with backwards enabled
-  - [ ] Prev hidden on page 1
-  - [ ] Prev shown on page 2+
-  - [ ] Submit only on last page
-  
-- [ ] Backwards navigation disabled
-  - [ ] Prev always hidden with `data-allow-backwards-nav="false"`
-  - [ ] Prev always hidden with `data-allow-backwards-nav="0"`
-  
-- [ ] Branch jump scenarios
-  - [ ] Prev returns to last visited page
-  - [ ] Skipped pages not in history
-  - [ ] Submit appears on target page
-  
-- [ ] Auto-submit rules
-  - [ ] Next disappears when submit triggered
-  - [ ] Submit appears correctly
-  - [ ] Form submits successfully
-  
-- [ ] Double-click protection
-  - [ ] Rapid clicking during submission ignored
-  - [ ] Only one AJAX request sent
-  
-- [ ] Form reset
-  - [ ] Prev hidden on page 1 after reset
-  - [ ] History re-initialized correctly
-
-## Compatibility
-
-**WordPress**: 5.0+  
-**PHP**: 7.0+  
-**Browsers**: All modern browsers + IE11  
-**jQuery**: Not required (vanilla JS)  
-
-## Performance
-
-**Impact**: Negligible  
-- ~3 boolean checks per button click
-- `removeAttribute()` only during display updates
-- No additional DOM queries
-
-## Rollback Plan
-
-If issues arise, revert changes in `assets/js/eipsi-forms.js`:
-1. Remove guards in `initPagination()` event handlers
-2. Restore original `updatePaginationDisplay()` logic
-3. Remove `form.dataset.submitting` tracking
-
-No database changes or PHP modifications required.
-
-## Documentation
-
-- `NAV_CONTROLS_HARDENING.md` - Detailed implementation report
-- `test-nav-controls.html` - Comprehensive test page with 4 scenarios
-- This file (`CHANGES_SUMMARY.md`) - Quick reference
-
-## Next Steps
-
-1. Review changes in local environment
-2. Test with `test-nav-controls.html`
-3. Run existing plugin tests
-4. Deploy to staging environment
-5. Run QA scenarios from ticket
-6. Deploy to production
-
-## Contact
-
-For questions or issues with these changes, refer to the ticket:  
-**Ticket**: Harden nav controls  
-**Branch**: `fix/harden-nav-controls-history-guards`
+Ready for production deployment! 🚀
