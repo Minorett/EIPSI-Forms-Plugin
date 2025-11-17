@@ -426,6 +426,14 @@ function vas_dinamico_enqueue_frontend_assets() {
         VAS_DINAMICO_VERSION
     );
 
+    // Enqueue dark mode toggle styles
+    wp_enqueue_style(
+        'eipsi-theme-toggle-css',
+        VAS_DINAMICO_PLUGIN_URL . 'assets/css/theme-toggle.css',
+        array('eipsi-forms-css'),
+        VAS_DINAMICO_VERSION
+    );
+
     wp_enqueue_script(
         'eipsi-tracking-js',
         VAS_DINAMICO_PLUGIN_URL . 'assets/js/eipsi-tracking.js',
@@ -467,6 +475,15 @@ function vas_dinamico_enqueue_frontend_assets() {
             'smoothScroll' => apply_filters('vas_dinamico_smooth_scroll', true),
         ),
     ));
+
+    // Enqueue dark mode toggle script
+    wp_enqueue_script(
+        'eipsi-theme-toggle-js',
+        VAS_DINAMICO_PLUGIN_URL . 'assets/js/theme-toggle.js',
+        array(),
+        VAS_DINAMICO_VERSION,
+        true
+    );
 
     $assets_enqueued = true;
 }

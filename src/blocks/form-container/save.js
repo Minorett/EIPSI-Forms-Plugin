@@ -29,11 +29,19 @@ export default function Save( { attributes } ) {
 
 	return (
 		<div { ...blockProps }>
-			{ description && (
-				<div className="form-description">
-					<p>{ description }</p>
-				</div>
-			) }
+			{ /* HEADER CON DARK MODE TOGGLE */ }
+			<header className="eipsi-header">
+				<h2>{ description || 'Formulario' }</h2>
+				<button
+					type="button"
+					className="eipsi-toggle"
+					id="eipsi-theme-toggle"
+					aria-label="Toggle dark mode"
+				>
+					🌙 Nocturno
+				</button>
+			</header>
+
 			<form
 				className="vas-form eipsi-form-element"
 				data-form-id={ formId }
@@ -120,7 +128,36 @@ export default function Save( { attributes } ) {
 					Página <span className="current-page">1</span> de{ ' ' }
 					<span className="total-pages">?</span>
 				</div>
+
+				{ /* FOOTER CON DARK MODE TOGGLE */ }
+				<div className="eipsi-theme-toggle">
+					<button
+						type="button"
+						className="eipsi-toggle"
+						aria-label="Toggle dark mode"
+					>
+						🌙 Nocturno
+					</button>
+				</div>
 			</form>
+
+			{ /* MOBILE FIXED TOGGLE */ }
+			<div className="eipsi-toggle-mobile">
+				<button
+					type="button"
+					className="eipsi-toggle"
+					aria-label="Toggle dark mode"
+				>
+					🌙
+				</button>
+			</div>
+
+			{ /* NOSCRIPT FALLBACK */ }
+			<noscript>
+				<style>
+					{ `.eipsi-theme-toggle, .eipsi-toggle-mobile { display: none !important; }` }
+				</style>
+			</noscript>
 		</div>
 	);
 }
