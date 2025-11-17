@@ -5,8 +5,8 @@ if (!defined('ABSPATH')) {
 
 /**
  * Obtiene defaults de privacidad
- * IP SIEMPRE es true y no se puede desactivar
- * SIN mood tracking ni research consent
+ * Browser/OS/Screen Width OFF por default (opcional)
+ * IP ON por default (pero configurable)
  */
 function get_privacy_defaults() {
     return array(
@@ -17,16 +17,21 @@ function get_privacy_defaults() {
         'timestamps_basic' => true,
         'quality_flag' => true,
 
-        // RECOMENDADOS
+        // RECOMENDADOS - ON por default
         'therapeutic_engagement' => true,
         'clinical_consistency' => true,
         'avoidance_patterns' => true,
         'device_type' => true,
 
-        // REQUERIDO EXPLÍCITAMENTE - NO DESACTIVABLE
+        // AUDITORÍA CLÍNICA - ON por default (pero opcional)
         'ip_address' => true,
-        'ip_storage' => 'plain_text', // Completa, no anonimizada
+        'ip_storage' => 'plain_text',
         'ip_retention_days' => 90,
+
+        // DISPOSITIVO - OFF por default (opcional)
+        'browser' => false,
+        'os' => false,
+        'screen_width' => false,
 
         // EXCLUIDOS (por privacidad y alcance)
         'screen_size' => false,
@@ -58,10 +63,6 @@ function get_privacy_config($form_id = null) {
     
     $config = array_merge($defaults, (array) $saved);
     
-    // IP SIEMPRE REQUERIDA
-    $config['ip_address'] = true;
-    $config['ip_storage'] = 'plain_text';
-    
     return $config;
 }
 
@@ -79,7 +80,11 @@ function save_privacy_config($form_id, $config) {
         'therapeutic_engagement',
         'clinical_consistency',
         'avoidance_patterns',
-        'device_type'
+        'device_type',
+        'browser',
+        'os',
+        'screen_width',
+        'ip_address'
     );
     
     foreach ($config as $key => $value) {
@@ -87,9 +92,6 @@ function save_privacy_config($form_id, $config) {
             $sanitized[$key] = (bool) $value;
         }
     }
-    
-    // IP nunca se toca - SIEMPRE true
-    $sanitized['ip_address'] = true;
     
     return update_option("eipsi_privacy_config_{$form_id}", $sanitized);
 }

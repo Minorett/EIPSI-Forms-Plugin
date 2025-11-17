@@ -68,7 +68,7 @@ function render_privacy_dashboard($form_id = null) {
                 </label>
             </div>
             
-            <!-- TRAZABILIDAD (REQUERIDA) -->
+            <!-- TRAZABILIDAD -->
             <div class="eipsi-toggle-group">
                 <h3>📋 Trazabilidad</h3>
                 
@@ -79,10 +79,33 @@ function render_privacy_dashboard($form_id = null) {
                 </label>
                 
                 <label>
-                    <input type="checkbox" checked disabled readonly>
+                    <input type="checkbox" name="ip_address" <?php checked($privacy_config['ip_address'] ?? true); ?>>
                     <strong>IP Address</strong>
-                    <span class="eipsi-required">⚠️ REQUERIDO - NO CONFIGURABLE</span>
-                    <span class="eipsi-tooltip">(Trazabilidad clínica obligatoria - 190.194.12.34)</span>
+                    <span class="eipsi-tooltip">(Auditoría clínica - GDPR/HIPAA - retención 90 días)</span>
+                </label>
+            </div>
+            
+            <!-- DISPOSITIVO (OPCIONAL - OFF por defecto) -->
+            <div class="eipsi-toggle-group">
+                <h3>🖥️ Información de Dispositivo <span class="eipsi-optional">(Opcional)</span></h3>
+                <p class="eipsi-section-description">⚠️ Estos datos son <strong>opcionales</strong> y están <strong>desactivados por defecto</strong>. Solo activa si necesitas contexto técnico.</p>
+                
+                <label>
+                    <input type="checkbox" name="browser" <?php checked($privacy_config['browser'] ?? false); ?>>
+                    <strong>Navegador</strong>
+                    <span class="eipsi-tooltip">(Chrome, Firefox, Safari, Edge, etc.)</span>
+                </label>
+                
+                <label>
+                    <input type="checkbox" name="os" <?php checked($privacy_config['os'] ?? false); ?>>
+                    <strong>Sistema Operativo</strong>
+                    <span class="eipsi-tooltip">(Windows, macOS, Linux, iOS, Android)</span>
+                </label>
+                
+                <label>
+                    <input type="checkbox" name="screen_width" <?php checked($privacy_config['screen_width'] ?? false); ?>>
+                    <strong>Ancho de Pantalla</strong>
+                    <span class="eipsi-tooltip">(Resolución en píxeles)</span>
                 </label>
             </div>
             
@@ -91,7 +114,14 @@ function render_privacy_dashboard($form_id = null) {
         
         <!-- INFO BOX -->
         <div class="eipsi-info-box">
-            <p><strong>ℹ️ Sobre IP:</strong> Se captura y almacena en texto plano por 90 días para auditoría clínica según requisito del equipo. No configurable.</p>
+            <p><strong>ℹ️ Información de Privacidad:</strong></p>
+            <ul>
+                <li>✅ <strong>Datos clínicos:</strong> Siempre capturados (therapy engagement, consistency, etc.)</li>
+                <li>✅ <strong>IP Address:</strong> Por defecto ON - Auditoría clínica (GDPR/HIPAA compliant)</li>
+                <li>⚠️ <strong>Dispositivo (navegador/OS/pantalla):</strong> Por defecto OFF - Solo para debugging</li>
+                <li>🔄 <strong>Retención de IP:</strong> 90 días (configurable)</li>
+                <li>📊 <strong>Todos los datos:</strong> Incluidos en exportación Excel/CSV</li>
+            </ul>
         </div>
     </div>
     
@@ -119,6 +149,16 @@ function render_privacy_dashboard($form_id = null) {
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+        
+        .eipsi-section-description {
+            margin: 10px 0;
+            padding: 8px;
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+            color: #856404;
+            font-size: 12px;
+            border-radius: 3px;
         }
         
         .eipsi-toggle-group label {
@@ -151,11 +191,11 @@ function render_privacy_dashboard($form_id = null) {
             font-style: italic;
         }
         
-        .eipsi-required {
-            color: #d32f2f;
+        .eipsi-optional {
+            color: #f39c12;
+            font-size: 0.8em;
+            margin-left: 6px;
             font-weight: 600;
-            font-size: 11px;
-            margin-left: 8px;
         }
         
         .eipsi-recommended {
@@ -173,6 +213,15 @@ function render_privacy_dashboard($form_id = null) {
             border-radius: 4px;
             color: #005a87;
             font-size: 12px;
+        }
+        
+        .eipsi-info-box ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .eipsi-info-box li {
+            margin: 6px 0;
         }
     </style>
     <?php

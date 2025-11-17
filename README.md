@@ -194,17 +194,22 @@ Generación automática de IDs estables y legibles:
 ### **Metadatos Completos Capturados**
 
 #### Metadatos Automáticos:
-- ✅ **Timestamps** de inicio/fin y duración (ms)
-- ✅ **Device type** (mobile/desktop/tablet)
-- ✅ **Browser** (Chrome, Firefox, Safari, Edge, etc.)
-- ✅ **OS** (Windows, macOS, Linux, iOS, Android)
-- ✅ **Screen width** (px)
-- ✅ **IP Address** (requisito de auditoría clínica - retención configurable)
+- ✅ **Timestamps** de inicio/fin y duración (ms) - **SIEMPRE**
+- ✅ **Device type** (mobile/desktop/tablet) - **ON por defecto** (configurable)
+- ⚙️ **Browser** (Chrome, Firefox, Safari, Edge, etc.) - **OFF por defecto** (configurable)
+- ⚙️ **OS** (Windows, macOS, Linux, iOS, Android) - **OFF por defecto** (configurable)
+- ⚙️ **Screen width** (px) - **OFF por defecto** (configurable)
+- ⚙️ **IP Address** - **ON por defecto** (configurable) - Auditoría clínica
+
+> **Nota de Privacidad:**  
+> - Browser, OS y Screen Width están **desactivados por defecto** para máxima privacidad.
+> - IP Address está **activado por defecto** para auditoría clínica, pero es **desactivable**.
+> - Todos los campos opcionales se configuran en el Dashboard de Privacidad.
 
 #### Metadatos Clínicos (JSON en campo `metadata`):
-- **Therapeutic Engagement:** Tiempo dedicado, cambios de campo, eventos de navegación
-- **Clinical Consistency:** Coherencia de respuestas (score automático)
-- **Avoidance Patterns:** Campos omitidos, retrocesos, tiempo excesivo
+- ✅ **Therapeutic Engagement:** Tiempo dedicado, cambios de campo, eventos de navegación - **ON por defecto** (configurable)
+- ✅ **Clinical Consistency:** Coherencia de respuestas (score automático) - **ON por defecto** (configurable)
+- ✅ **Avoidance Patterns:** Campos omitidos, retrocesos, tiempo excesivo - **ON por defecto** (configurable)
 
 #### Quality Flag Automático:
 - **HIGH:** Completación rápida y coherente
@@ -215,9 +220,32 @@ Generación automática de IDs estables y legibles:
 
 ## 🛡️ Seguridad y Privacidad
 
+### **Dashboard de Privacidad Integrado** 🆕
+Configuración granular de metadatos por formulario:
+
+**Obligatorios (siempre capturados):**
+- Form ID, Participant ID, Session ID, Timestamps, Quality Flag
+
+**Recomendados (ON por defecto):**
+- ✅ Therapeutic Engagement
+- ✅ Clinical Consistency  
+- ✅ Avoidance Patterns
+- ✅ Device Type
+
+**Auditoría Clínica (ON por defecto, desactivable):**
+- ⚙️ IP Address (retención 90 días, GDPR compliant)
+
+**Dispositivo (OFF por defecto, opcional):**
+- ⚙️ Browser
+- ⚙️ OS
+- ⚙️ Screen Width
+
+> **Acceso:** WordPress Admin → EIPSI Forms → Privacy Config  
+> **Filosofía:** Privacidad por defecto. Solo datos clínicos esenciales activados.
+
 ### **HIPAA Ready**
 Plugin preparado para cumplimiento HIPAA (no certificado):
-- ✅ Audit trail completo (IP, timestamps, device)
+- ✅ Audit trail completo (IP, timestamps, device) - **configurable**
 - ✅ Encriptación de credenciales de BD externa (AES-256-CBC)
 - ✅ Control de acceso basado en capabilities de WordPress
 - ⚠️ Datos de formularios almacenados sin encriptación (requiere configuración de servidor HTTPS + BD encriptada)
@@ -229,6 +257,7 @@ Plugin preparado para cumplimiento HIPAA (no certificado):
 - ✅ Portabilidad de datos (exportación Excel/CSV)
 - ✅ Consentimiento explícito (configurable por formulario)
 - ✅ Política de retención configurable (90 días default para IP)
+- ✅ **Privacidad por defecto:** Browser/OS/Screen Width OFF por defecto
 
 ### **Validación y Sanitización**
 - **Cliente (JavaScript):** Validación en tiempo real (required, email, rangos, patterns)

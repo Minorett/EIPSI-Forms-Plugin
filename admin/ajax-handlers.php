@@ -193,23 +193,25 @@ function vas_dinamico_submit_form_handler() {
     
     $form_name = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : 'default';
     
-    // Capturar IP del participante (REQUERIDO) con detección de proxy
-    $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $device = isset($_POST['device']) ? sanitize_text_field($_POST['device']) : '';
+    
+    // Capturar otros campos del frontend (siempre los recibimos)
+    $browser_raw = isset($_POST['browser']) ? sanitize_text_field($_POST['browser']) : '';
+    $os_raw = isset($_POST['os']) ? sanitize_text_field($_POST['os']) : '';
+    $screen_width_raw = isset($_POST['screen_width']) ? intval($_POST['screen_width']) : 0;
+    
+    // Capturar IP del participante con detección de proxy
+    $ip_address_raw = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     
     // Si está detrás de proxy/CDN (Cloudflare, Load Balancer, etc.)
     if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
-        $ip_address = $_SERVER['HTTP_CF_CONNECTING_IP'];
+        $ip_address_raw = $_SERVER['HTTP_CF_CONNECTING_IP'];
     } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ip_address = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+        $ip_address_raw = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
     }
     
     // Validar IP
-    $ip_address = filter_var($ip_address, FILTER_VALIDATE_IP) ?: 'invalid';
-    
-    $device = isset($_POST['device']) ? sanitize_text_field($_POST['device']) : '';
-    $browser = isset($_POST['browser']) ? sanitize_text_field($_POST['browser']) : '';
-    $os = isset($_POST['os']) ? sanitize_text_field($_POST['os']) : '';
-    $screen_width = isset($_POST['screen_width']) ? intval($_POST['screen_width']) : 0;
+    $ip_address_raw = filter_var($ip_address_raw, FILTER_VALIDATE_IP) ?: 'invalid';
     $start_time = isset($_POST['form_start_time']) ? sanitize_text_field($_POST['form_start_time']) : '';
     $end_time = isset($_POST['form_end_time']) ? sanitize_text_field($_POST['form_end_time']) : '';
     
@@ -271,6 +273,12 @@ function vas_dinamico_submit_form_handler() {
     require_once dirname(__FILE__) . '/privacy-config.php';
     $privacy_config = get_privacy_config($stable_form_id);
     
+    // Aplicar privacy config a los campos capturados
+    $browser = ($privacy_config['browser'] ?? false) ? $browser_raw : null;
+    $os = ($privacy_config['os'] ?? false) ? $os_raw : null;
+    $screen_width = ($privacy_config['screen_width'] ?? false) ? $screen_width_raw : null;
+    $ip_address = ($privacy_config['ip_address'] ?? true) ? $ip_address_raw : null;
+    
     // Construir metadatos según configuración de privacidad
     $metadata = array(
         'form_id' => $stable_form_id,
@@ -285,18 +293,31 @@ function vas_dinamico_submit_form_handler() {
         'duration_seconds' => $duration_seconds
     );
     
-    // DEVICE (si está habilitado)
+    // DEVICE INFO (según privacy config)
+    $device_info = array();
     if ($privacy_config['device_type']) {
-        $metadata['device_info'] = array(
-            'device_type' => $device
-        );
+        $device_info['device_type'] = $device;
+    }
+    if ($browser !== null) {
+        $device_info['browser'] = $browser;
+    }
+    if ($os !== null) {
+        $device_info['os'] = $os;
+    }
+    if ($screen_width !== null) {
+        $device_info['screen_width'] = $screen_width;
+    }
+    if (!empty($device_info)) {
+        $metadata['device_info'] = $device_info;
     }
     
-    // NETWORK INFO (IP SIEMPRE - REQUERIDO)
-    $metadata['network_info'] = array(
-        'ip_address' => $ip_address,
-        'ip_storage_type' => $privacy_config['ip_storage']
-    );
+    // NETWORK INFO (según privacy config)
+    if ($ip_address !== null) {
+        $metadata['network_info'] = array(
+            'ip_address' => $ip_address,
+            'ip_storage_type' => $privacy_config['ip_storage']
+        );
+    }
     
     // CLINICAL INSIGHTS
     $metadata['clinical_insights'] = array();
