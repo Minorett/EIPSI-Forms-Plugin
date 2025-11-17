@@ -187,88 +187,6 @@ const WARM_NEUTRAL = {
 };
 
 /**
- * High Contrast Theme
- * Maximum readability for accessibility
- * Visual Identity: Bold borders, large text, no shadows, maximum contrast ratios (AAA)
- */
-const HIGH_CONTRAST = {
-	name: 'High Contrast',
-	description:
-		'Maximum accessibility with bold borders, large text, and no visual distractions',
-	config: {
-		colors: {
-			primary: '#0050d8',
-			primaryHover: '#003da6',
-			secondary: '#f0f0f0',
-			background: '#ffffff',
-			backgroundSubtle: '#f8f8f8',
-			text: '#000000',
-			textMuted: '#3d3d3d',
-			inputBg: '#ffffff',
-			inputText: '#000000',
-			inputBorder: '#000000',
-			inputBorderFocus: '#0050d8',
-			inputErrorBg: '#ffe0e0',
-			inputIcon: '#0050d8',
-			buttonBg: '#0050d8',
-			buttonText: '#ffffff',
-			buttonHoverBg: '#003da6',
-			error: '#d30000',
-			success: '#006600',
-			warning: '#b35900',
-			border: '#000000',
-			borderDark: '#000000',
-		},
-		typography: {
-			fontFamilyHeading: 'Arial, sans-serif',
-			fontFamilyBody: 'Arial, sans-serif',
-			fontSizeBase: '18px',
-			fontSizeH1: '2.25rem',
-			fontSizeH2: '1.875rem',
-			fontSizeH3: '1.5rem',
-			fontSizeSmall: '1rem',
-			fontWeightNormal: '400',
-			fontWeightMedium: '600',
-			fontWeightBold: '700',
-			lineHeightBase: '1.8',
-			lineHeightHeading: '1.4',
-		},
-		spacing: {
-			xs: '0.75rem',
-			sm: '1.25rem',
-			md: '1.75rem',
-			lg: '2.25rem',
-			xl: '3rem',
-			containerPadding: '2rem',
-			fieldGap: '1.75rem',
-			sectionGap: '2.5rem',
-		},
-		borders: {
-			radiusSm: '4px',
-			radiusMd: '6px',
-			radiusLg: '8px',
-			width: '2px',
-			widthFocus: '3px',
-			style: 'solid',
-		},
-		shadows: {
-			sm: 'none',
-			md: 'none',
-			lg: 'none',
-			focus: '0 0 0 4px rgba(0, 80, 216, 0.3)',
-			error: '0 0 0 4px rgba(211, 0, 0, 0.3)',
-		},
-		interactivity: {
-			transitionDuration: '0.1s',
-			transitionTiming: 'linear',
-			hoverScale: '1',
-			focusOutlineWidth: '3px',
-			focusOutlineOffset: '2px',
-		},
-	},
-};
-
-/**
  * Serene Teal Theme
  * Calming, therapeutic for stress-reduction studies
  * Visual Identity: Soft teal palette, balanced curves, gentle shadows, modern sans-serif
@@ -443,7 +361,6 @@ export const STYLE_PRESETS = [
 	CLINICAL_BLUE,
 	MINIMAL_WHITE,
 	WARM_NEUTRAL,
-	HIGH_CONTRAST,
 	SERENE_TEAL,
 	DARK_EIPSI,
 ];
