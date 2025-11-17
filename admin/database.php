@@ -252,7 +252,8 @@ class EIPSI_External_Database {
         $sql = "CREATE TABLE IF NOT EXISTS `{$table_name}` (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             form_id varchar(20) DEFAULT NULL,
-            participant_id varchar(20) DEFAULT NULL,
+            participant_id varchar(255) DEFAULT NULL,
+            session_id varchar(255) DEFAULT NULL,
             participant varchar(255) DEFAULT NULL,
             interaction varchar(255) DEFAULT NULL,
             form_name varchar(255) NOT NULL,
@@ -267,13 +268,18 @@ class EIPSI_External_Database {
             start_timestamp_ms bigint(20) DEFAULT NULL,
             end_timestamp_ms bigint(20) DEFAULT NULL,
             ip_address varchar(45) DEFAULT NULL,
+            metadata LONGTEXT DEFAULT NULL,
+            quality_flag enum('HIGH','NORMAL','LOW') DEFAULT 'NORMAL',
+            status enum('pending','submitted','error') DEFAULT 'submitted',
             form_responses longtext DEFAULT NULL,
             PRIMARY KEY (id),
             KEY form_name (form_name),
             KEY created_at (created_at),
             KEY form_id (form_id),
             KEY participant_id (participant_id),
+            KEY session_id (session_id),
             KEY submitted_at (submitted_at),
+            KEY ip_address (ip_address),
             KEY form_participant (form_id, participant_id)
         ) ENGINE=InnoDB DEFAULT CHARSET={$charset}";
         
@@ -299,11 +305,15 @@ class EIPSI_External_Database {
     private function ensure_required_columns($mysqli, $table_name) {
         $required_columns = array(
             'form_id' => "ALTER TABLE `{$table_name}` ADD COLUMN form_id varchar(20) DEFAULT NULL AFTER id",
-            'participant_id' => "ALTER TABLE `{$table_name}` ADD COLUMN participant_id varchar(20) DEFAULT NULL AFTER form_id",
+            'participant_id' => "ALTER TABLE `{$table_name}` ADD COLUMN participant_id varchar(255) DEFAULT NULL AFTER form_id",
+            'session_id' => "ALTER TABLE `{$table_name}` ADD COLUMN session_id varchar(255) DEFAULT NULL AFTER participant_id",
             'duration_seconds' => "ALTER TABLE `{$table_name}` ADD COLUMN duration_seconds decimal(8,3) DEFAULT NULL AFTER duration",
             'submitted_at' => "ALTER TABLE `{$table_name}` ADD COLUMN submitted_at datetime DEFAULT NULL AFTER created_at",
             'start_timestamp_ms' => "ALTER TABLE `{$table_name}` ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
-            'end_timestamp_ms' => "ALTER TABLE `{$table_name}` ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms"
+            'end_timestamp_ms' => "ALTER TABLE `{$table_name}` ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms",
+            'metadata' => "ALTER TABLE `{$table_name}` ADD COLUMN metadata LONGTEXT DEFAULT NULL AFTER ip_address",
+            'quality_flag' => "ALTER TABLE `{$table_name}` ADD COLUMN quality_flag enum('HIGH','NORMAL','LOW') DEFAULT 'NORMAL' AFTER metadata",
+            'status' => "ALTER TABLE `{$table_name}` ADD COLUMN status enum('pending','submitted','error') DEFAULT 'submitted' AFTER quality_flag"
         );
         
         foreach ($required_columns as $column => $alter_sql) {
@@ -453,11 +463,11 @@ class EIPSI_External_Database {
             error_log('EIPSI Forms External DB: Attempting insert into table ' . $table_name);
         }
         
-        // Prepare statement with corrected bind types: s s s s s s s s s i i d i i s
+        // Prepare statement with new columns: session_id, metadata, quality_flag, status
         $stmt = $mysqli->prepare(
             "INSERT INTO `{$table_name}` 
-            (form_id, participant_id, form_name, created_at, submitted_at, ip_address, device, browser, os, screen_width, duration, duration_seconds, start_timestamp_ms, end_timestamp_ms, form_responses) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            (form_id, participant_id, session_id, form_name, created_at, submitted_at, ip_address, device, browser, os, screen_width, duration, duration_seconds, start_timestamp_ms, end_timestamp_ms, metadata, quality_flag, status, form_responses) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         
         if (!$stmt) {
@@ -476,11 +486,12 @@ class EIPSI_External_Database {
             );
         }
         
-        // Correct bind types: string × 9, int, int, double, bigint, bigint, string
+        // Bind types: string × 13, int, int, double, bigint, bigint, string, string, string, string
         $stmt->bind_param(
-            'sssssssssiidiis',
+            'ssssssssssiidiissss',
             $data['form_id'],
             $data['participant_id'],
+            $data['session_id'],
             $data['form_name'],
             $data['created_at'],
             $data['submitted_at'],
@@ -493,6 +504,9 @@ class EIPSI_External_Database {
             $data['duration_seconds'],
             $data['start_timestamp_ms'],
             $data['end_timestamp_ms'],
+            $data['metadata'],
+            $data['quality_flag'],
+            $data['status'],
             $data['form_responses']
         );
         
