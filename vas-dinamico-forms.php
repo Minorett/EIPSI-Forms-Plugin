@@ -33,6 +33,7 @@ require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/results-page.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/export.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/handlers.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/configuration.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/ajax-handlers.php';
 
@@ -47,6 +48,7 @@ function vas_dinamico_activate() {
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         form_id varchar(20) DEFAULT NULL,
         participant_id varchar(20) DEFAULT NULL,
+        session_id varchar(255) DEFAULT NULL,
         participant varchar(255) DEFAULT NULL,
         interaction varchar(255) DEFAULT NULL,
         form_name varchar(255) NOT NULL,
@@ -61,12 +63,16 @@ function vas_dinamico_activate() {
         start_timestamp_ms bigint(20) DEFAULT NULL,
         end_timestamp_ms bigint(20) DEFAULT NULL,
         ip_address varchar(45) DEFAULT NULL,
+        metadata LONGTEXT DEFAULT NULL,
+        quality_flag enum('HIGH','NORMAL','LOW') DEFAULT 'NORMAL',
+        status enum('pending','submitted','error') DEFAULT 'submitted',
         form_responses longtext DEFAULT NULL,
         PRIMARY KEY (id),
         KEY form_name (form_name),
         KEY created_at (created_at),
         KEY form_id (form_id),
         KEY participant_id (participant_id),
+        KEY session_id (session_id),
         KEY submitted_at (submitted_at),
         KEY form_participant (form_id, participant_id)
     ) $charset_collate;";
@@ -123,9 +129,17 @@ function vas_dinamico_upgrade_database() {
     // Define all potentially missing columns with their ALTER TABLE statements
     $columns_to_add = array(
         'form_id' => "ALTER TABLE {$table_name} ADD COLUMN form_id varchar(20) DEFAULT NULL AFTER id",
+        'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id varchar(20) DEFAULT NULL AFTER form_id",
+        'session_id' => "ALTER TABLE {$table_name} ADD COLUMN session_id varchar(255) DEFAULT NULL AFTER participant_id",
+        'browser' => "ALTER TABLE {$table_name} ADD COLUMN browser varchar(100) DEFAULT NULL AFTER device",
+        'os' => "ALTER TABLE {$table_name} ADD COLUMN os varchar(100) DEFAULT NULL AFTER browser",
+        'screen_width' => "ALTER TABLE {$table_name} ADD COLUMN screen_width int(11) DEFAULT NULL AFTER os",
         'duration_seconds' => "ALTER TABLE {$table_name} ADD COLUMN duration_seconds decimal(8,3) DEFAULT NULL AFTER duration",
         'start_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
-        'end_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms"
+        'end_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms",
+        'metadata' => "ALTER TABLE {$table_name} ADD COLUMN metadata LONGTEXT DEFAULT NULL AFTER ip_address",
+        'quality_flag' => "ALTER TABLE {$table_name} ADD COLUMN quality_flag enum('HIGH','NORMAL','LOW') DEFAULT 'NORMAL' AFTER metadata",
+        'status' => "ALTER TABLE {$table_name} ADD COLUMN status enum('pending','submitted','error') DEFAULT 'submitted' AFTER quality_flag"
     );
     
     foreach ($columns_to_add as $column => $alter_sql) {
@@ -180,6 +194,9 @@ function vas_dinamico_upgrade_database() {
 }
 
 add_action('plugins_loaded', 'vas_dinamico_upgrade_database');
+
+// Add periodic schema verification (every 24 hours)
+add_action('admin_init', array('EIPSI_Database_Schema_Manager', 'periodic_verification'));
 
 function vas_dinamico_enqueue_admin_assets($hook) {
     if (strpos($hook, 'vas-dinamico') === false && strpos($hook, 'form-results') === false && strpos($hook, 'eipsi-db-config') === false) {

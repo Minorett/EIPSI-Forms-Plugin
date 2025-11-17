@@ -257,10 +257,85 @@ function eipsi_display_configuration_page() {
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
-                </div>
-                
-                <!-- Help Section -->
-                <div class="eipsi-help-box">
+                    </div>
+
+                    <!-- Schema Verification Status -->
+                    <div class="eipsi-schema-status-box" style="margin-top: 20px;">
+                    <h3>
+                        <span class="dashicons dashicons-database-view"></span>
+                        <?php echo esc_html__('Database Schema Status', 'vas-dinamico-forms'); ?>
+                    </h3>
+                    <?php
+                    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
+                    $schema_status = EIPSI_Database_Schema_Manager::get_verification_status();
+                    ?>
+                    <div class="eipsi-schema-details">
+                        <?php if (!empty($schema_status['last_verified'])): ?>
+                        <div class="status-detail-row">
+                            <span class="detail-label"><?php echo esc_html__('Last Verified:', 'vas-dinamico-forms'); ?></span>
+                            <span class="detail-value"><?php echo esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $schema_status['last_verified'])); ?></span>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($schema_status['last_sync_result'])): ?>
+                        <?php $sync = $schema_status['last_sync_result']; ?>
+                        <div class="status-detail-row">
+                            <span class="detail-label"><?php echo esc_html__('Results Table:', 'vas-dinamico-forms'); ?></span>
+                            <span class="detail-value">
+                                <?php if ($sync['results_table']['exists']): ?>
+                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+                                    <?php echo esc_html__('Exists', 'vas-dinamico-forms'); ?>
+                                    <?php if ($sync['results_table']['created']): ?>
+                                        <em>(<?php echo esc_html__('created during last sync', 'vas-dinamico-forms'); ?>)</em>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
+                                    <?php echo esc_html__('Missing', 'vas-dinamico-forms'); ?>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                        <div class="status-detail-row">
+                            <span class="detail-label"><?php echo esc_html__('Events Table:', 'vas-dinamico-forms'); ?></span>
+                            <span class="detail-value">
+                                <?php if ($sync['events_table']['exists']): ?>
+                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+                                    <?php echo esc_html__('Exists', 'vas-dinamico-forms'); ?>
+                                    <?php if ($sync['events_table']['created']): ?>
+                                        <em>(<?php echo esc_html__('created during last sync', 'vas-dinamico-forms'); ?>)</em>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
+                                    <?php echo esc_html__('Missing', 'vas-dinamico-forms'); ?>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                        <?php if (!empty($sync['results_table']['columns_added']) || !empty($sync['events_table']['columns_added'])): ?>
+                        <div class="status-detail-row">
+                            <span class="detail-label"><?php echo esc_html__('Columns Added:', 'vas-dinamico-forms'); ?></span>
+                            <span class="detail-value">
+                                <?php
+                                $total_columns = count($sync['results_table']['columns_added']) + count($sync['events_table']['columns_added']);
+                                echo esc_html(sprintf(__('%d columns synced', 'vas-dinamico-forms'), $total_columns));
+                                ?>
+                            </span>
+                        </div>
+                        <?php endif; ?>
+                        <?php endif; ?>
+
+                        <?php if ($status['connected']): ?>
+                        <button type="button" id="eipsi-verify-schema" class="button button-secondary" style="margin-top: 10px;">
+                            <span class="dashicons dashicons-update"></span>
+                            <?php echo esc_html__('Verify & Repair Schema', 'vas-dinamico-forms'); ?>
+                        </button>
+                        <p class="description">
+                            <?php echo esc_html__('Manually verify database schema and create any missing tables or columns.', 'vas-dinamico-forms'); ?>
+                        </p>
+                        <?php endif; ?>
+                    </div>
+                    </div>
+
+                    <!-- Help Section -->
+                    <div class="eipsi-help-box">
                     <h3><?php echo esc_html__('Setup Instructions', 'vas-dinamico-forms'); ?></h3>
                     <ol>
                         <li><?php echo esc_html__('Enter your MySQL database credentials above', 'vas-dinamico-forms'); ?></li>

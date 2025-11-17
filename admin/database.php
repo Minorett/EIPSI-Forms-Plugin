@@ -589,6 +589,87 @@ class EIPSI_External_Database {
     }
     
     /**
+     * Insert form event into external database
+     * 
+     * @param array $data Event data
+     * @return array Result array with success status
+     */
+    public function insert_form_event($data) {
+        $mysqli = $this->get_connection();
+        
+        if (!$mysqli) {
+            return array(
+                'success' => false,
+                'error' => 'Failed to connect to external database',
+                'error_code' => 'CONNECTION_FAILED'
+            );
+        }
+        
+        // Ensure schema is ready
+        require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
+        $schema_result = EIPSI_Database_Schema_Manager::verify_and_sync_schema($mysqli);
+        
+        if (!$schema_result['success']) {
+            $mysqli->close();
+            return array(
+                'success' => false,
+                'error' => 'Schema validation failed',
+                'error_code' => 'SCHEMA_ERROR'
+            );
+        }
+        
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'vas_form_events';
+        
+        $stmt = $mysqli->prepare(
+            "INSERT INTO `{$table_name}` 
+            (form_id, session_id, event_type, page_number, metadata, user_agent, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)"
+        );
+        
+        if (!$stmt) {
+            $mysqli->close();
+            return array(
+                'success' => false,
+                'error' => 'Failed to prepare statement: ' . $mysqli->error,
+                'error_code' => 'PREPARE_FAILED'
+            );
+        }
+        
+        $stmt->bind_param(
+            'sssssss',
+            $data['form_id'],
+            $data['session_id'],
+            $data['event_type'],
+            $data['page_number'],
+            $data['metadata'],
+            $data['user_agent'],
+            $data['created_at']
+        );
+        
+        $success = $stmt->execute();
+        
+        if (!$success) {
+            $stmt->close();
+            $mysqli->close();
+            return array(
+                'success' => false,
+                'error' => 'Failed to execute insert: ' . $stmt->error,
+                'error_code' => 'EXECUTE_FAILED'
+            );
+        }
+        
+        $insert_id = $mysqli->insert_id;
+        $stmt->close();
+        $mysqli->close();
+        
+        return array(
+            'success' => true,
+            'insert_id' => $insert_id
+        );
+    }
+    
+    /**
      * Get connection status information
      * 
      * @return array Status information
