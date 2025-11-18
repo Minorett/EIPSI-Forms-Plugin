@@ -1167,9 +1167,9 @@
 
 			const rawAllowBackwards = form.dataset.allowBackwardsNav;
 			const allowBackwardsNav =
-				rawAllowBackwards !== 'false' &&
-				rawAllowBackwards !== '0' &&
-				rawAllowBackwards !== '';
+				rawAllowBackwards === 'false' || rawAllowBackwards === '0'
+					? false
+					: true;
 
 			const firstVisitedPage =
 				navigator && navigator.history.length > 0
