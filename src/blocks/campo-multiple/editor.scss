@@ -1,19 +1,25 @@
+/**
+ * EIPSI Checkbox Field Editor Styles
+ * Uses CSS variables for instant WYSIWYG preset preview
+ */
+
 .wp-block-vas-dinamico-campo-multiple {
     &.eipsi-checkbox-field {
-        padding: 1em;
-        border: 2px solid #0073aa;
-        border-radius: 6px;
-        background: #f8fbff;
-        box-shadow: 0 2px 6px rgba(0, 115, 170, 0.1);
+        padding: var(--eipsi-spacing-sm, 1em);
+        border: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-primary, #005a87);
+        border-radius: var(--eipsi-border-radius-sm, 8px);
+        background: var(--eipsi-color-background-subtle, #f8f9fa);
+        box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
         position: relative;
+        transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
         
         &::before {
             content: "EIPSI Checkboxes";
             position: absolute;
             top: -10px;
             left: 12px;
-            background: #0073aa;
-            color: white;
+            background: var(--eipsi-color-primary, #005a87);
+            color: var(--eipsi-color-button-text, #ffffff);
             padding: 2px 8px;
             border-radius: 3px;
             font-size: 10px;
@@ -24,13 +30,14 @@
 
         > label {
             display: block;
-            margin-bottom: 0.5em;
-            font-weight: 600;
-            color: #0073aa;
+            margin-bottom: var(--eipsi-spacing-xs, 0.5em);
+            font-weight: var(--eipsi-font-weight-bold, 600);
+            font-family: var(--eipsi-font-family-heading, inherit);
+            color: var(--eipsi-color-text, #2c3e50);
 
             &.required::after {
                 content: " *";
-                color: #d63638;
+                color: var(--eipsi-color-error, #d32f2f);
             }
         }
 
@@ -43,61 +50,64 @@
                 margin-bottom: 0.75em;
                 display: flex;
                 align-items: center;
-                gap: 0.5em;
-                padding: 0.5em;
-                border-radius: 4px;
-                transition: background-color 0.2s ease;
+                gap: var(--eipsi-spacing-xs, 0.5em);
+                padding: var(--eipsi-spacing-xs, 0.5em);
+                border-radius: var(--eipsi-border-radius-sm, 8px);
+                transition: background-color var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
 
                 &:last-child {
                     margin-bottom: 0;
                 }
 
                 &:hover {
-                    background: rgba(0, 115, 170, 0.05);
+                    background: var(--eipsi-color-secondary, rgba(0, 115, 170, 0.05));
                 }
 
                 &.empty-state {
-                    color: #005177;
+                    color: var(--eipsi-color-text-muted, #64748b);
                     font-style: italic;
-                    padding: 0.5em;
-                    background: #fff;
-                    border: 2px dashed #0073aa;
-                    border-radius: 4px;
+                    padding: var(--eipsi-spacing-xs, 0.5em);
+                    background: var(--eipsi-color-input-bg, #ffffff);
+                    border: 2px dashed var(--eipsi-color-border, #64748b);
+                    border-radius: var(--eipsi-border-radius-sm, 8px);
                 }
 
                 input[type="checkbox"] {
                     margin: 0;
                     cursor: pointer;
-                    accent-color: #0073aa;
+                    accent-color: var(--eipsi-color-primary, #005a87);
                     
                     &:checked + label {
-                        color: #0073aa;
-                        font-weight: 600;
+                        color: var(--eipsi-color-primary, #005a87);
+                        font-weight: var(--eipsi-font-weight-bold, 600);
                     }
                 }
 
                 label {
                     margin: 0;
                     cursor: pointer;
-                    font-weight: normal;
-                    color: #333;
-                    transition: all 0.2s ease;
+                    font-weight: var(--eipsi-font-weight-normal, 400);
+                    font-family: var(--eipsi-font-family-body, inherit);
+                    color: var(--eipsi-color-text, #2c3e50);
+                    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
                 }
             }
         }
 
         .field-helper {
-            margin-top: 0.5em;
-            font-size: 0.9em;
-            color: #005177;
+            margin-top: var(--eipsi-spacing-xs, 0.5em);
+            font-size: var(--eipsi-font-size-small, 0.875rem);
+            color: var(--eipsi-color-text-muted, #64748b);
             font-style: italic;
+            line-height: var(--eipsi-line-height-base, 1.6);
         }
     }
     
     &:hover {
         &.eipsi-checkbox-field {
-            border-color: #005177;
-            background: #e6f3ff;
+            border-color: var(--eipsi-color-primary-hover, #003d5b);
+            background: var(--eipsi-color-secondary, #e3f2fd);
+            box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
         }
     }
 }

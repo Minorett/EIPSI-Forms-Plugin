@@ -1,51 +1,66 @@
+/**
+ * EIPSI Page Editor Styles
+ * Uses CSS variables for instant WYSIWYG preset preview
+ */
+
 .eipsi-page-editor {
-    border: 2px solid #0073aa;
-    border-radius: 6px;
-    padding: 20px;
-    margin: 15px 0;
-    background: #f8fbff;
-    box-shadow: 0 2px 6px rgba(0, 115, 170, 0.1);
+    border: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-primary, #005a87);
+    border-radius: var(--eipsi-border-radius-md, 12px);
+    padding: var(--eipsi-spacing-md, 1.5rem);
+    margin: var(--eipsi-spacing-sm, 1rem) 0;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
     position: relative;
+    font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
 
     .eipsi-page-preview {
         .page-header {
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #ddd;
+            margin-bottom: var(--eipsi-spacing-sm, 1rem);
+            padding-bottom: var(--eipsi-spacing-xs, 0.5rem);
+            border-bottom: var(--eipsi-border-width, 1px) solid var(--eipsi-color-border, #64748b);
 
             .page-badge {
                 display: inline-block;
-                background: linear-gradient(135deg, #0073aa, #005177);
-                color: #fff;
+                background: var(--eipsi-color-primary, #005a87);
+                color: var(--eipsi-color-button-text, #ffffff);
                 padding: 4px 12px;
-                border-radius: 4px;
+                border-radius: var(--eipsi-border-radius-sm, 8px);
                 font-size: 12px;
                 font-weight: 600;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 margin-bottom: 10px;
-                box-shadow: 0 2px 4px rgba(0, 115, 170, 0.2);
+                box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.08));
+                transition: background var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+
+                &:hover {
+                    background: var(--eipsi-color-primary-hover, #003d5b);
+                }
             }
 
             .eipsi-page-title {
                 margin: 10px 0 0;
                 padding: 0;
-                font-size: 18px;
-                font-weight: 600;
-                color: #0073aa;
+                font-size: var(--eipsi-font-size-h3, 1.5rem);
+                font-weight: var(--eipsi-font-weight-bold, 600);
+                font-family: var(--eipsi-font-family-heading, inherit);
+                color: var(--eipsi-color-text, #2c3e50);
+                line-height: var(--eipsi-line-height-heading, 1.3);
             }
 
             .page-placeholder-text {
                 margin: 5px 0 0;
                 padding: 0;
-                font-size: 13px;
-                color: #005177;
+                font-size: var(--eipsi-font-size-small, 0.875rem);
+                color: var(--eipsi-color-text-muted, #64748b);
                 font-style: italic;
+                line-height: var(--eipsi-line-height-base, 1.6);
             }
         }
 
         .eipsi-page-content-editor {
-            margin-top: 15px;
+            margin-top: var(--eipsi-spacing-sm, 1rem);
             min-height: 50px;
 
             > .block-editor-inner-blocks > .block-editor-block-list__layout {
@@ -55,8 +70,8 @@
     }
 
     &:hover {
-        border-color: #005177;
-        background: #e6f3ff;
-        box-shadow: 0 4px 12px rgba(0, 115, 170, 0.15);
+        border-color: var(--eipsi-color-primary-hover, #003d5b);
+        background: var(--eipsi-color-secondary, #e3f2fd);
+        box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
     }
 }

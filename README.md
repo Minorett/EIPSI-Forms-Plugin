@@ -128,6 +128,21 @@ Modo oscuro profesional con fondo EIPSI blue
 - Media queries en todos los bloques
 - Optimizado para iOS y Android nativos
 
+### **✨ WYSIWYG Instant Preset Preview (Nuevo en v1.2.1)**
+- **Previsualización instantánea** de presets en el editor de Gutenberg
+- **Sin necesidad de guardar** - los cambios de estilo se ven inmediatamente
+- **CSS Variables completas** - 54 variables aplicadas dinámicamente a todos los bloques
+- **100% consistencia** entre editor y vista publicada
+- **Todos los elementos responden** - colores, tipografía, espaciado, bordes, sombras, transiciones
+- **Experiencia WYSIWYG profesional** como Figma o Visual Studio Code
+- **Retroalimentación visual instantánea** para decisiones de diseño informadas
+
+Los investigadores ahora pueden:
+- Probar diferentes presets y ver cambios al instante
+- Comparar esquemas de color sin guardar/previsualizar
+- Validar legibilidad y contraste en tiempo real
+- Personalizar diseño con confianza total en el resultado final
+
 ---
 
 ## 🔐 Lógica Condicional Avanzada
