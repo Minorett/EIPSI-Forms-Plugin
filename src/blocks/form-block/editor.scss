@@ -1,22 +1,29 @@
+/**
+ * EIPSI Form Block Editor Styles
+ * Uses CSS variables for instant WYSIWYG preset preview
+ */
+
 .wp-block-vas-dinamico-form-block {
     .vas-dinamico-form-placeholder {
         min-height: 200px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 3px dashed #0073aa;
-        background-color: #f8fbff;
-        border-radius: 6px;
-        box-shadow: 0 2px 6px rgba(0, 115, 170, 0.1);
+        border: 3px dashed var(--eipsi-color-border, #64748b);
+        background-color: var(--eipsi-color-background-subtle, #f8f9fa);
+        border-radius: var(--eipsi-border-radius-sm, 8px);
+        box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
         position: relative;
+        font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+        transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
         
         &::before {
             content: "VAS Dinámico Form";
             position: absolute;
             top: -12px;
             left: 12px;
-            background: #0073aa;
-            color: white;
+            background: var(--eipsi-color-primary, #005a87);
+            color: var(--eipsi-color-button-text, #ffffff);
             padding: 2px 8px;
             border-radius: 3px;
             font-size: 11px;
@@ -29,28 +36,31 @@
     .components-placeholder {
         text-align: center;
         padding: 2em;
-        background: #fff;
-        border-radius: 4px;
-        border: 2px solid #0073aa;
+        background: var(--eipsi-color-background, #ffffff);
+        border-radius: var(--eipsi-border-radius-sm, 8px);
+        border: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-primary, #005a87);
         
         .components-placeholder__label {
-            font-weight: 600;
+            font-weight: var(--eipsi-font-weight-bold, 600);
+            font-family: var(--eipsi-font-family-heading, inherit);
             margin-bottom: 0.5em;
-            color: #0073aa;
+            color: var(--eipsi-color-text, #2c3e50);
             font-size: 1.1em;
         }
 
         .components-placeholder__instructions {
-            color: #005177;
+            color: var(--eipsi-color-text-muted, #64748b);
             font-style: italic;
+            font-size: var(--eipsi-font-size-small, 0.875rem);
+            line-height: var(--eipsi-line-height-base, 1.6);
         }
     }
     
     &:hover {
         .vas-dinamico-form-placeholder {
-            border-color: #005177;
-            background: #e6f3ff;
-            box-shadow: 0 4px 12px rgba(0, 115, 170, 0.15);
+            border-color: var(--eipsi-color-primary-hover, #003d5b);
+            background: var(--eipsi-color-secondary, #e3f2fd);
+            box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
         }
     }
 }
