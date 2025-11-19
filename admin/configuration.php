@@ -334,6 +334,33 @@ function eipsi_display_configuration_page() {
                     </div>
                     </div>
 
+                    <!-- Table Status Section -->
+                    <div class="eipsi-table-status-box" style="margin-top: 20px;">
+                        <h3>
+                            <span class="dashicons dashicons-database-view"></span>
+                            <?php echo esc_html__('Database Table Status', 'vas-dinamico-forms'); ?>
+                        </h3>
+                        
+                        <div id="eipsi-table-status-content">
+                            <?php if ($status['connected']): ?>
+                                <p class="description">
+                                    <?php echo esc_html__('Check if required database tables exist in the external database.', 'vas-dinamico-forms'); ?>
+                                </p>
+                                <button type="button" id="eipsi-check-table-status" class="button button-secondary" style="margin-top: 10px;">
+                                    <span class="dashicons dashicons-search"></span>
+                                    <?php echo esc_html__('Check Table Status', 'vas-dinamico-forms'); ?>
+                                </button>
+                            <?php else: ?>
+                                <p class="description" style="color: #64748b;">
+                                    <?php echo esc_html__('Configure and connect to an external database to check table status.', 'vas-dinamico-forms'); ?>
+                                </p>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- Table Status Results (populated via AJAX) -->
+                        <div id="eipsi-table-status-results" style="display: none; margin-top: 15px;"></div>
+                    </div>
+
                     <!-- Help Section -->
                     <div class="eipsi-help-box">
                     <h3><?php echo esc_html__('Setup Instructions', 'vas-dinamico-forms'); ?></h3>

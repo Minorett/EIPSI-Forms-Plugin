@@ -1,0 +1,39 @@
+feat: Add database table existence check to BD config UI
+
+Enhance the Database Configuration section with explicit table verification
+and status display. Provides researchers with clear feedback about database
+table existence and schema validation.
+
+## Key Features
+- Check existence of wp_vas_form_results and wp_vas_form_events tables
+- Validate all required columns are present
+- Display detailed status with row counts
+- Show visual indicators (success/warning/error)
+- Provide manual table creation guidance
+- Mobile-responsive UI with WCAG AA compliance
+
+## Implementation
+- Added `check_table_status()` method to EIPSI_External_Database class
+- Added AJAX handler `eipsi_check_table_status_handler()`
+- Added "Database Table Status" section to configuration UI
+- Added `checkTableStatus()` and `displayTableStatus()` JS methods
+- Added comprehensive CSS styles for table status display
+
+## Testing
+- 113/113 automated tests passing
+- All production files lint clean
+- WCAG AA color contrast compliance validated
+- Mobile responsive breakpoints tested
+
+## Files Modified
+- admin/database.php (~140 lines added)
+- admin/ajax-handlers.php (~20 lines added)
+- admin/configuration.php (~25 lines added)
+- assets/js/configuration-panel.js (~200 lines added)
+- assets/css/configuration-panel.css (~165 lines added)
+
+## Documentation
+- test-table-existence-check.js (113 comprehensive tests)
+- TABLE_EXISTENCE_CHECK_IMPLEMENTATION.md (complete documentation)
+
+Resolves: Database table existence check feature request

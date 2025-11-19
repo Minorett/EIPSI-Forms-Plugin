@@ -355,7 +355,8 @@
 
     .eipsi-config-form-section,
     .eipsi-status-box,
-    .eipsi-help-box {
+    .eipsi-help-box,
+    .eipsi-table-status-box {
         padding: 0.75rem;
         border-radius: 6px;
     }
@@ -370,8 +371,19 @@
         font-size: 0.9375rem;
     }
 
-    .eipsi-help-box h3 {
+    .eipsi-help-box h3,
+    .eipsi-table-status-box h3,
+    .eipsi-table-detail h4,
+    .eipsi-table-guidance h4 {
         font-size: 0.9375rem;
+    }
+
+    .eipsi-table-detail {
+        padding: 0.75rem;
+    }
+
+    .eipsi-table-guidance {
+        padding: 0.75rem;
     }
 }
 
@@ -383,7 +395,8 @@
 
     .eipsi-config-form-section,
     .eipsi-status-box,
-    .eipsi-help-box {
+    .eipsi-help-box,
+    .eipsi-table-status-box {
         padding: 1rem;
     }
 
@@ -417,6 +430,173 @@
         flex-direction: column;
         gap: 0.25rem;
     }
+}
+
+/* Table Status Section */
+.eipsi-table-status-box {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.eipsi-table-status-box h3 {
+    color: var(--eipsi-color-text, #2c3e50);
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.eipsi-table-status-box h3 .dashicons {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.eipsi-table-status-box .description {
+    color: var(--eipsi-color-text-muted, #64748b);
+    font-size: 0.875rem;
+    margin: 0.5rem 0;
+    line-height: 1.6;
+}
+
+#eipsi-table-status-results {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
+
+.eipsi-table-status-success,
+.eipsi-table-status-warning,
+.eipsi-table-status-error {
+    padding: 1rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.eipsi-table-status-success {
+    background: var(--eipsi-color-background-success, #e8f5e9);
+    border: 1px solid var(--eipsi-color-success, #198754);
+    color: var(--eipsi-color-success-text, #1b5e20);
+}
+
+.eipsi-table-status-warning {
+    background: var(--eipsi-color-background-warning, #fff3e0);
+    border: 1px solid var(--eipsi-color-warning, #b35900);
+    color: var(--eipsi-color-warning-text, #e65100);
+}
+
+.eipsi-table-status-error {
+    background: var(--eipsi-color-background-error, #ffebee);
+    border: 1px solid var(--eipsi-color-error, #d32f2f);
+    color: var(--eipsi-color-error-text, #c62828);
+}
+
+.eipsi-table-detail {
+    background: #f8f9fa;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.eipsi-table-detail h4 {
+    color: var(--eipsi-color-text, #2c3e50);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.eipsi-table-exists,
+.eipsi-table-missing,
+.eipsi-table-info,
+.eipsi-table-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+}
+
+.eipsi-table-exists {
+    color: var(--eipsi-color-success, #198754);
+}
+
+.eipsi-table-missing {
+    color: var(--eipsi-color-error, #d32f2f);
+}
+
+.eipsi-table-info {
+    color: var(--eipsi-color-text-muted, #64748b);
+}
+
+.eipsi-table-info .detail-label {
+    font-weight: 600;
+}
+
+.eipsi-table-info .detail-value {
+    color: var(--eipsi-color-text, #2c3e50);
+    font-weight: 500;
+}
+
+.eipsi-table-warning {
+    color: var(--eipsi-color-warning-text, #e65100);
+    background: var(--eipsi-color-background-warning, #fff3e0);
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+}
+
+.eipsi-table-guidance {
+    background: #e3f2fd;
+    border: 1px solid #2271b1;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.eipsi-table-guidance h4 {
+    color: var(--eipsi-color-primary, #005a87);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.eipsi-table-guidance p {
+    color: var(--eipsi-color-text, #2c3e50);
+    font-size: 0.875rem;
+    margin: 0.5rem 0;
+    line-height: 1.6;
+}
+
+.eipsi-table-guidance ol,
+.eipsi-table-guidance ul {
+    margin: 0.5rem 0 0.5rem 1.5rem;
+    padding: 0;
+    color: var(--eipsi-color-text, #2c3e50);
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.eipsi-table-guidance li {
+    margin-bottom: 0.375rem;
+}
+
+.eipsi-table-guidance strong {
+    color: var(--eipsi-color-primary, #005a87);
 }
 
 /* Accessibility - Focus Indicators */

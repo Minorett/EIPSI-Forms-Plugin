@@ -670,6 +670,153 @@ class EIPSI_External_Database {
     }
     
     /**
+     * Check database table status (existence, schema, row count)
+     * 
+     * @return array Detailed table status information
+     */
+    public function check_table_status() {
+        $credentials = $this->get_credentials();
+        
+        if (!$credentials) {
+            return array(
+                'success' => false,
+                'message' => __('No external database configured', 'vas-dinamico-forms'),
+                'using_wordpress_db' => true,
+                'results_table' => array('exists' => false),
+                'events_table' => array('exists' => false)
+            );
+        }
+        
+        // Test connection
+        $mysqli = @new mysqli(
+            $credentials['host'],
+            $credentials['user'],
+            $credentials['password'],
+            $credentials['name']
+        );
+        
+        if ($mysqli->connect_error) {
+            return array(
+                'success' => false,
+                'message' => sprintf(
+                    __('Connection failed: %s', 'vas-dinamico-forms'),
+                    $mysqli->connect_error
+                ),
+                'error_code' => $mysqli->connect_errno,
+                'using_wordpress_db' => false,
+                'results_table' => array('exists' => false),
+                'events_table' => array('exists' => false)
+            );
+        }
+        
+        global $wpdb;
+        
+        // Check results table
+        $results_table_name = $wpdb->prefix . 'vas_form_results';
+        $results_exists_query = $mysqli->query("SHOW TABLES LIKE '{$results_table_name}'");
+        $results_exists = $results_exists_query && $results_exists_query->num_rows > 0;
+        
+        $results_info = array(
+            'exists' => $results_exists,
+            'table_name' => $results_table_name,
+            'row_count' => 0,
+            'columns_ok' => false
+        );
+        
+        if ($results_exists) {
+            // Get row count
+            $count_result = $mysqli->query("SELECT COUNT(*) as count FROM `{$results_table_name}`");
+            if ($count_result) {
+                $count_row = $count_result->fetch_assoc();
+                $results_info['row_count'] = intval($count_row['count']);
+            }
+            
+            // Check required columns
+            $required_columns = array(
+                'form_id', 'participant_id', 'session_id', 'form_name',
+                'created_at', 'submitted_at', 'duration_seconds',
+                'start_timestamp_ms', 'end_timestamp_ms', 'metadata',
+                'quality_flag', 'status', 'form_responses'
+            );
+            
+            $missing_columns = array();
+            foreach ($required_columns as $column) {
+                $column_check = $mysqli->query("SHOW COLUMNS FROM `{$results_table_name}` LIKE '{$column}'");
+                if (!$column_check || $column_check->num_rows === 0) {
+                    $missing_columns[] = $column;
+                }
+            }
+            
+            $results_info['columns_ok'] = empty($missing_columns);
+            $results_info['missing_columns'] = $missing_columns;
+        }
+        
+        // Check events table
+        $events_table_name = $wpdb->prefix . 'vas_form_events';
+        $events_exists_query = $mysqli->query("SHOW TABLES LIKE '{$events_table_name}'");
+        $events_exists = $events_exists_query && $events_exists_query->num_rows > 0;
+        
+        $events_info = array(
+            'exists' => $events_exists,
+            'table_name' => $events_table_name,
+            'row_count' => 0,
+            'columns_ok' => false
+        );
+        
+        if ($events_exists) {
+            // Get row count
+            $count_result = $mysqli->query("SELECT COUNT(*) as count FROM `{$events_table_name}`");
+            if ($count_result) {
+                $count_row = $count_result->fetch_assoc();
+                $events_info['row_count'] = intval($count_row['count']);
+            }
+            
+            // Check required columns
+            $required_columns = array(
+                'form_id', 'session_id', 'event_type', 'page_number',
+                'metadata', 'user_agent', 'created_at'
+            );
+            
+            $missing_columns = array();
+            foreach ($required_columns as $column) {
+                $column_check = $mysqli->query("SHOW COLUMNS FROM `{$events_table_name}` LIKE '{$column}'");
+                if (!$column_check || $column_check->num_rows === 0) {
+                    $missing_columns[] = $column;
+                }
+            }
+            
+            $events_info['columns_ok'] = empty($missing_columns);
+            $events_info['missing_columns'] = $missing_columns;
+        }
+        
+        $mysqli->close();
+        
+        // Determine overall status
+        $all_tables_exist = $results_exists && $events_exists;
+        $all_columns_ok = $results_info['columns_ok'] && $events_info['columns_ok'];
+        
+        $message = '';
+        if (!$all_tables_exist) {
+            $message = __('⚠️ One or more database tables are missing', 'vas-dinamico-forms');
+        } elseif (!$all_columns_ok) {
+            $message = __('⚠️ Database tables exist but some columns are missing', 'vas-dinamico-forms');
+        } else {
+            $message = __('✓ All database tables exist and are properly configured', 'vas-dinamico-forms');
+        }
+        
+        return array(
+            'success' => true,
+            'message' => $message,
+            'db_name' => $credentials['name'],
+            'all_tables_exist' => $all_tables_exist,
+            'all_columns_ok' => $all_columns_ok,
+            'using_wordpress_db' => false,
+            'results_table' => $results_info,
+            'events_table' => $events_info
+        );
+    }
+    
+    /**
      * Get connection status information
      * 
      * @return array Status information

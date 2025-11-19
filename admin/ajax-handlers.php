@@ -97,6 +97,7 @@ add_action('wp_ajax_nopriv_eipsi_check_external_db', 'eipsi_check_external_db_ha
 
 add_action('wp_ajax_eipsi_save_privacy_config', 'eipsi_save_privacy_config_handler');
 add_action('wp_ajax_eipsi_verify_schema', 'eipsi_verify_schema_handler');
+add_action('wp_ajax_eipsi_check_table_status', 'eipsi_check_table_status_handler');
 
 /**
  * Calcula engagement score basado en tiempo y cambios
@@ -966,6 +967,27 @@ function eipsi_verify_schema_handler() {
             'message' => __('Schema verification failed', 'vas-dinamico-forms'),
             'errors' => $result['errors']
         ));
+    }
+}
+
+function eipsi_check_table_status_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Unauthorized', 'vas-dinamico-forms')
+        ));
+    }
+    
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    $db_helper = new EIPSI_External_Database();
+    
+    $result = $db_helper->check_table_status();
+    
+    if ($result['success']) {
+        wp_send_json_success($result);
+    } else {
+        wp_send_json_error($result);
     }
 }
 ?>
