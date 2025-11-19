@@ -1675,7 +1675,7 @@
 						this.showMessage(
 							form,
 							'success',
-							'¡Formulario enviado correctamente!'
+							'¡Formulario enviado correctamente! Redirigiendo...'
 						);
 
 						if ( window.EIPSITracking ) {
@@ -1688,34 +1688,47 @@
 							}
 						}
 
+						// Redirect to completion page after 1.5 seconds
 						setTimeout( () => {
-							form.reset();
+							if (
+								this.config.completionUrl &&
+								this.config.completionUrl !== ''
+							) {
+								window.location.href =
+									this.config.completionUrl;
+							} else {
+								// Fallback: reset form if no completion URL configured
+								form.reset();
 
-							const navigator = this.getNavigator( form );
-							if ( navigator ) {
-								navigator.reset();
-							}
-
-							this.setCurrentPage( form, 1, {
-								trackChange: false,
-							} );
-
-							if ( navigator ) {
-								navigator.pushHistory( 1 );
-							}
-
-							const sliders =
-								form.querySelectorAll( '.vas-slider' );
-							sliders.forEach( ( slider ) => {
-								slider.dataset.touched = 'false';
-								const valueDisplay = document.getElementById(
-									slider.getAttribute( 'aria-labelledby' )
-								);
-								if ( valueDisplay ) {
-									valueDisplay.textContent = slider.value;
+								const navigator = this.getNavigator( form );
+								if ( navigator ) {
+									navigator.reset();
 								}
-							} );
-						}, 3000 );
+
+								this.setCurrentPage( form, 1, {
+									trackChange: false,
+								} );
+
+								if ( navigator ) {
+									navigator.pushHistory( 1 );
+								}
+
+								const sliders =
+									form.querySelectorAll( '.vas-slider' );
+								sliders.forEach( ( slider ) => {
+									slider.dataset.touched = 'false';
+									const valueDisplay =
+										document.getElementById(
+											slider.getAttribute(
+												'aria-labelledby'
+											)
+										);
+									if ( valueDisplay ) {
+										valueDisplay.textContent = slider.value;
+									}
+								} );
+							}
+						}, 1500 );
 					} else {
 						this.showMessage(
 							form,
