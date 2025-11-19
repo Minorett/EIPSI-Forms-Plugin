@@ -14,11 +14,11 @@ function vas_dinamico_menu() {
         25
     );
     
-    // Add submenu for Form Results (rename main page)
+    // Add submenu for Results & Experience (consolidated admin panel)
     add_submenu_page(
         'vas-dinamico-results',
-        __('Form Results', 'vas-dinamico-forms'),
-        __('Form Results', 'vas-dinamico-forms'),
+        __('Results & Experience', 'vas-dinamico-forms'),
+        __('Results & Experience', 'vas-dinamico-forms'),
         'manage_options',
         'vas-dinamico-results',
         'vas_display_form_responses'

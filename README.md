@@ -405,21 +405,36 @@ El sistema de tracking está **completamente implementado** y registra todos los
 
 ## ⚙️ Configuración Avanzada
 
-### **Panel de Privacidad y Metadatos**
-**Ubicación:** Admin → EIPSI Forms → Privacy & Metadata
+### **Admin Panel: Results & Experience** 🆕
+**Ubicación:** Admin → EIPSI Forms → Results & Experience
 
-**Configuración granular por formulario:**
+Panel administrativo consolidado con 3 tabs organizadas:
+
+#### **Tab 1: Submissions** 📊
+- Vista de tabla con todas las respuestas
+- Filtrado por Form ID
+- Exportación a Excel/CSV
+- Ver detalles de sesión (metadata completo)
+- Eliminación individual con confirmación
+- Timezone-aware date/time display
+
+#### **Tab 2: Completion Message** ✅
+- Configuración global de mensaje de agradecimiento
+- Editor rich text (wp_editor) con media upload
+- Toggle: Mostrar logo del sitio
+- Toggle: Mostrar botón "Return to Start"
+- Redirect URL opcional (para continuar a otra página)
+- Preview en vivo del mensaje
+
+#### **Tab 3: Privacy & Metadata** 🔒
+- Configuración granular por formulario
 - ✅ Therapeutic Engagement (toggle)
 - ✅ Clinical Consistency (toggle)
 - ✅ Avoidance Patterns (toggle)
 - ✅ Device tracking (toggle)
-- ✅ IP Address (siempre ON - requisito de auditoría)
-
-### **Privacy Dashboard**
-- UI intuitiva en panel de administración
+- ✅ IP Address (toggle - ON por defecto para auditoría)
 - Indicadores de estado de configuración
 - Info sobre retención de datos (90 días default)
-- Estado de sincronización de BD externa
 
 ### **Hooks y Filtros Disponibles**
 ```php
@@ -510,11 +525,14 @@ apply_filters('eipsi_style_tokens', $style_config, $form_id);
 
 ### Para Análisis
 
-1. **Acceder** a panel de resultados (Admin → EIPSI Forms → Results)
-2. **Filtrar/buscar** respuestas (por Form ID, Participant ID, fecha)
-3. **Exportar** a Excel/CSV (botón "Export to Excel")
-4. **Importar** en SPSS/R/Python para análisis estadístico
-5. **Analizar eventos** (queries SQL en `wp_vas_form_events` para tracking)
+1. **Acceder** a panel de resultados (Admin → EIPSI Forms → Results & Experience)
+2. **Navegar** a la tab "Submissions"
+3. **Filtrar/buscar** respuestas (por Form ID)
+4. **Exportar** a Excel/CSV (botones de exportación)
+5. **Importar** en SPSS/R/Python para análisis estadístico
+6. **Configurar mensaje final** en tab "Completion Message"
+7. **Ajustar privacidad** en tab "Privacy & Metadata"
+8. **Analizar eventos** (queries SQL en `wp_vas_form_events` para tracking)
 
 ---
 
@@ -554,6 +572,8 @@ apply_filters('eipsi_style_tokens', $style_config, $form_id);
 - 🔮 Sincronización con EMRs (Electronic Medical Records)
 
 ### Completado Recientemente
+- ✅ **Admin Panel Consolidation** (Phase 16 - January 2025) - 3 tabs organizadas
+- ✅ **Completion Message Global Config** (Phase 15 - January 2025)
 - ✅ **Dark EIPSI Preset** (Phase 13 - November 2025)
 - ✅ **Database Schema Synchronization** (Phase 14 - January 2025)
 - ✅ **WCAG 2.1 AA Compliance** (Phase 5 - validado 100%)
