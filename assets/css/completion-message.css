@@ -1,0 +1,194 @@
+/**
+ * Completion Message Page Styles
+ * WCAG AA compliant, responsive, accessible
+ * 
+ * @package VAS_Dinamico_Forms
+ */
+
+/* Page Background & Layout */
+.eipsi-completion-page {
+	background: linear-gradient(135deg, #e3f2fd 0%, #f0f4f8 100%);
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	margin: 0;
+	color: #2c3e50;
+}
+
+/* Main Container */
+.eipsi-completion-container {
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 8px 32px rgba(0, 90, 135, 0.15);
+	max-width: 600px;
+	width: 100%;
+	padding: 40px;
+	text-align: center;
+	animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+	from {
+		opacity: 0;
+		transform: translateY(30px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Logo Section */
+.eipsi-completion-logo {
+	margin-bottom: 30px;
+}
+
+.eipsi-completion-logo img {
+	max-width: 120px;
+	height: auto;
+	border-radius: 8px;
+}
+
+.eipsi-completion-logo h1 {
+	color: #005a87;
+	font-size: 24px;
+	margin: 0;
+}
+
+/* Message Section */
+.eipsi-completion-message {
+	margin: 30px 0;
+	color: #2c3e50;
+	font-size: 16px;
+	line-height: 1.6;
+}
+
+.eipsi-completion-message h2,
+.eipsi-completion-message h3 {
+	color: #005a87;
+	margin: 15px 0;
+}
+
+.eipsi-completion-message p {
+	margin: 10px 0;
+}
+
+/* Action Buttons */
+.eipsi-completion-actions {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+	margin-top: 30px;
+	flex-wrap: wrap;
+}
+
+.eipsi-btn {
+	display: inline-block;
+	padding: 12px 24px;
+	border-radius: 6px;
+	text-decoration: none;
+	font-weight: 600;
+	transition: all 0.3s ease;
+	cursor: pointer;
+	border: 2px solid transparent;
+	font-size: 16px;
+}
+
+/* Primary Button - WCAG AA: 7.47:1 contrast */
+.eipsi-btn-primary {
+	background: #005a87;
+	color: white;
+	border-color: #005a87;
+}
+
+.eipsi-btn-primary:hover,
+.eipsi-btn-primary:focus {
+	background: #003d5b;
+	color: white;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 90, 135, 0.3);
+}
+
+/* Secondary Button - WCAG AA compliant */
+.eipsi-btn-secondary {
+	background: #e3f2fd;
+	color: #005a87;
+	border-color: #005a87;
+}
+
+.eipsi-btn-secondary:hover,
+.eipsi-btn-secondary:focus {
+	background: #005a87;
+	color: white;
+	transform: translateY(-2px);
+}
+
+/* Focus Visible - WCAG AA compliance */
+.eipsi-btn:focus-visible {
+	outline: 3px solid #005a87;
+	outline-offset: 2px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+	.eipsi-completion-container {
+		padding: 25px;
+	}
+	
+	.eipsi-completion-actions {
+		flex-direction: column;
+	}
+	
+	.eipsi-btn {
+		width: 100%;
+	}
+	
+	.eipsi-completion-logo img {
+		max-width: 100px;
+	}
+	
+	.eipsi-completion-message {
+		font-size: 15px;
+	}
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: more) {
+	.eipsi-completion-container {
+		border: 2px solid #005a87;
+	}
+	
+	.eipsi-btn {
+		border-width: 3px;
+	}
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+	.eipsi-completion-container {
+		animation: none;
+	}
+	
+	.eipsi-btn {
+		transition: none;
+	}
+	
+	.eipsi-btn:hover,
+	.eipsi-btn:focus {
+		transform: none;
+	}
+}
+
+/* Print Styles */
+@media print {
+	.eipsi-completion-page {
+		background: white;
+	}
+	
+	.eipsi-completion-actions {
+		display: none;
+	}
+}

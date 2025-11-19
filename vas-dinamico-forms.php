@@ -36,6 +36,7 @@ require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/configuration.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/ajax-handlers.php';
+require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/completion-message-backend.php';
 
 function vas_dinamico_activate() {
     global $wpdb;
@@ -321,6 +322,28 @@ function vas_dinamico_register_blocks() {
 
 add_action('init', 'vas_dinamico_register_blocks');
 
+// Completion Message: Register custom endpoint
+function vas_dinamico_register_completion_endpoint() {
+    add_rewrite_rule('^eipsi-completion/?$', 'index.php?eipsi_completion=1', 'top');
+}
+add_action('init', 'vas_dinamico_register_completion_endpoint');
+
+// Completion Message: Add query var
+function vas_dinamico_add_completion_query_var($vars) {
+    $vars[] = 'eipsi_completion';
+    return $vars;
+}
+add_filter('query_vars', 'vas_dinamico_add_completion_query_var');
+
+// Completion Message: Handle template redirect
+function vas_dinamico_completion_template_redirect() {
+    if (get_query_var('eipsi_completion')) {
+        include VAS_DINAMICO_PLUGIN_DIR . 'templates/completion-message-page.php';
+        exit;
+    }
+}
+add_action('template_redirect', 'vas_dinamico_completion_template_redirect');
+
 // === AGREGÁ ESTA FUNCIÓN JUSTO AQUÍ ===
 function vas_dinamico_block_categories($block_categories, $editor_context) {
     if (!empty($editor_context->post)) {
@@ -451,6 +474,14 @@ function vas_dinamico_enqueue_frontend_assets() {
         VAS_DINAMICO_VERSION
     );
 
+    // Enqueue completion message styles
+    wp_enqueue_style(
+        'eipsi-completion-message-css',
+        VAS_DINAMICO_PLUGIN_URL . 'assets/css/completion-message.css',
+        array(),
+        VAS_DINAMICO_VERSION
+    );
+
     wp_enqueue_script(
         'eipsi-tracking-js',
         VAS_DINAMICO_PLUGIN_URL . 'assets/js/eipsi-tracking.js',
@@ -475,6 +506,7 @@ function vas_dinamico_enqueue_frontend_assets() {
     wp_localize_script('eipsi-forms-js', 'eipsiFormsConfig', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_forms_nonce'),
+        'completionUrl' => EIPSI_Completion_Message::get_page_url(),
         'strings' => array(
             'requiredField' => 'Este campo es obligatorio.',
             'sliderRequired' => 'Por favor, interactúe con la escala para continuar.',

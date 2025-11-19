@@ -990,4 +990,35 @@ function eipsi_check_table_status_handler() {
         wp_send_json_error($result);
     }
 }
+
+/**
+ * AJAX Handler: Save completion message configuration
+ * Phase 16 will create the admin UI that calls this
+ */
+function eipsi_save_completion_message_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Unauthorized', 'vas-dinamico-forms')), 403);
+    }
+    
+    $config = array(
+        'message'          => isset($_POST['message']) ? wp_kses_post($_POST['message']) : '',
+        'show_logo'        => isset($_POST['show_logo']),
+        'show_home_button' => isset($_POST['show_home_button']),
+        'redirect_url'     => isset($_POST['redirect_url']) ? esc_url_raw($_POST['redirect_url']) : '',
+    );
+    
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/completion-message-backend.php';
+    
+    if (EIPSI_Completion_Message::save_config($config)) {
+        wp_send_json_success(array(
+            'message' => __('Completion message saved successfully', 'vas-dinamico-forms'),
+            'config'  => EIPSI_Completion_Message::get_config(),
+        ));
+    } else {
+        wp_send_json_error(array('message' => __('Failed to save configuration', 'vas-dinamico-forms')));
+    }
+}
+add_action('wp_ajax_eipsi_save_completion_message', 'eipsi_save_completion_message_handler');
 ?>
