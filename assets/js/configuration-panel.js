@@ -33,6 +33,10 @@
 				'click',
 				this.verifySchema.bind( this )
 			);
+			$( '#eipsi-check-table-status' ).on(
+				'click',
+				this.checkTableStatus.bind( this )
+			);
 
 			// Enable save button after successful test
 			$( '#eipsi-db-config-form input' ).on( 'input', function () {
@@ -306,6 +310,207 @@
 						.removeClass( 'eipsi-loading' );
 				},
 			} );
+		},
+
+		checkTableStatus( e ) {
+			e.preventDefault();
+
+			const $button = $( '#eipsi-check-table-status' );
+			const $resultsContainer = $( '#eipsi-table-status-results' );
+
+			// Show loading state
+			$button.prop( 'disabled', true ).addClass( 'eipsi-loading' );
+			$resultsContainer.hide();
+
+			// Make AJAX request
+			$.ajax( {
+				url: ajaxurl,
+				type: 'POST',
+				data: {
+					action: 'eipsi_check_table_status',
+					nonce: $( '#eipsi_db_config_nonce' ).val(),
+				},
+				success( response ) {
+					if ( response.success ) {
+						EIPSIConfig.displayTableStatus( response.data );
+					} else {
+						$resultsContainer
+							.html(
+								'<div class="eipsi-table-status-error">' +
+									'<span class="dashicons dashicons-warning" style="color: #d32f2f;"></span>' +
+									'<span>' +
+									( response.data.message ||
+										'Failed to check table status' ) +
+									'</span>' +
+									'</div>'
+							)
+							.show();
+					}
+				},
+				error() {
+					$resultsContainer
+						.html(
+							'<div class="eipsi-table-status-error">' +
+								'<span class="dashicons dashicons-warning" style="color: #d32f2f;"></span>' +
+								'<span>Failed to check table status. Please try again.</span>' +
+								'</div>'
+						)
+						.show();
+				},
+				complete() {
+					$button
+						.prop( 'disabled', false )
+						.removeClass( 'eipsi-loading' );
+				},
+			} );
+		},
+
+		displayTableStatus( data ) {
+			const $resultsContainer = $( '#eipsi-table-status-results' );
+			let html = '';
+
+			// Overall status indicator
+			if ( data.all_tables_exist && data.all_columns_ok ) {
+				html +=
+					'<div class="eipsi-table-status-success">' +
+					'<span class="dashicons dashicons-yes-alt" style="color: #198754;"></span>' +
+					'<strong>' +
+					data.message +
+					'</strong>' +
+					'</div>';
+			} else {
+				html +=
+					'<div class="eipsi-table-status-warning">' +
+					'<span class="dashicons dashicons-warning" style="color: #b35900;"></span>' +
+					'<strong>' +
+					data.message +
+					'</strong>' +
+					'</div>';
+			}
+
+			// Results table details
+			if ( data.results_table ) {
+				html +=
+					'<div class="eipsi-table-detail">' +
+					'<h4>' +
+					'<span class="dashicons dashicons-database"></span>' +
+					' Results Table: ' +
+					data.results_table.table_name +
+					'</h4>';
+
+				if ( data.results_table.exists ) {
+					html +=
+						'<div class="eipsi-table-exists">' +
+						'<span class="dashicons dashicons-yes-alt" style="color: #198754;"></span>' +
+						' Table exists' +
+						'</div>';
+					html +=
+						'<div class="eipsi-table-info">' +
+						'<span class="detail-label">Records:</span> ' +
+						'<span class="detail-value">' +
+						data.results_table.row_count.toLocaleString() +
+						'</span>' +
+						'</div>';
+
+					if ( data.results_table.columns_ok ) {
+						html +=
+							'<div class="eipsi-table-info">' +
+							'<span class="detail-label">Schema:</span> ' +
+							'<span class="detail-value" style="color: #198754;">✓ All columns present</span>' +
+							'</div>';
+					} else {
+						html +=
+							'<div class="eipsi-table-warning">' +
+							'<span class="dashicons dashicons-warning" style="color: #b35900;"></span>' +
+							' Missing columns: ' +
+							data.results_table.missing_columns.join( ', ' ) +
+							'</div>';
+					}
+				} else {
+					html +=
+						'<div class="eipsi-table-missing">' +
+						'<span class="dashicons dashicons-dismiss" style="color: #d32f2f;"></span>' +
+						' Table does not exist' +
+						'</div>';
+				}
+
+				html += '</div>';
+			}
+
+			// Events table details
+			if ( data.events_table ) {
+				html +=
+					'<div class="eipsi-table-detail">' +
+					'<h4>' +
+					'<span class="dashicons dashicons-database"></span>' +
+					' Events Table: ' +
+					data.events_table.table_name +
+					'</h4>';
+
+				if ( data.events_table.exists ) {
+					html +=
+						'<div class="eipsi-table-exists">' +
+						'<span class="dashicons dashicons-yes-alt" style="color: #198754;"></span>' +
+						' Table exists' +
+						'</div>';
+					html +=
+						'<div class="eipsi-table-info">' +
+						'<span class="detail-label">Records:</span> ' +
+						'<span class="detail-value">' +
+						data.events_table.row_count.toLocaleString() +
+						'</span>' +
+						'</div>';
+
+					if ( data.events_table.columns_ok ) {
+						html +=
+							'<div class="eipsi-table-info">' +
+							'<span class="detail-label">Schema:</span> ' +
+							'<span class="detail-value" style="color: #198754;">✓ All columns present</span>' +
+							'</div>';
+					} else {
+						html +=
+							'<div class="eipsi-table-warning">' +
+							'<span class="dashicons dashicons-warning" style="color: #b35900;"></span>' +
+							' Missing columns: ' +
+							data.events_table.missing_columns.join( ', ' ) +
+							'</div>';
+					}
+				} else {
+					html +=
+						'<div class="eipsi-table-missing">' +
+						'<span class="dashicons dashicons-dismiss" style="color: #d32f2f;"></span>' +
+						' Table does not exist' +
+						'</div>';
+				}
+
+				html += '</div>';
+			}
+
+			// Show guidance if tables are missing
+			if ( ! data.all_tables_exist || ! data.all_columns_ok ) {
+				html +=
+					'<div class="eipsi-table-guidance">' +
+					'<h4>' +
+					'<span class="dashicons dashicons-info"></span>' +
+					' What to do next' +
+					'</h4>' +
+					'<p>The plugin should automatically create required tables when you save the database configuration or submit a form.</p>' +
+					'<p><strong>To manually create or repair tables:</strong></p>' +
+					'<ol>' +
+					'<li>Click the <strong>"Verify & Repair Schema"</strong> button above</li>' +
+					'<li>This will create missing tables and add any missing columns</li>' +
+					'<li>Then click <strong>"Check Table Status"</strong> again to verify</li>' +
+					'</ol>' +
+					'<p style="margin-top: 10px;"><strong>Why this might happen:</strong></p>' +
+					'<ul>' +
+					'<li>First time connecting to this database</li>' +
+					'<li>Database user lacks CREATE TABLE permissions</li>' +
+					'<li>Manual database migration without schema sync</li>' +
+					'</ul>' +
+					'</div>';
+			}
+
+			$resultsContainer.html( html ).show();
 		},
 
 		showMessage( type, message ) {
