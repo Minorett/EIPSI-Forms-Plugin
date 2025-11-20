@@ -415,15 +415,53 @@ function vas_dinamico_submit_form_handler() {
         );
         
         if ($wpdb_result === false) {
-            // WordPress DB insert also failed - critical error
+            // Check if it's an "Unknown column" error (schema issue)
             $wpdb_error = $wpdb->last_error;
-            error_log('EIPSI Forms: WordPress DB insert failed - ' . $wpdb_error);
             
-            wp_send_json_error(array(
-                'message' => __('Failed to submit form. Please try again.', 'vas-dinamico-forms'),
-                'external_db_error' => $error_info,
-                'wordpress_db_error' => $wpdb_error
-            ));
+            if (strpos($wpdb_error, 'Unknown column') !== false || strpos($wpdb_error, "doesn't exist") !== false) {
+                // Emergency schema repair
+                error_log('[EIPSI Forms] Detected schema error, triggering auto-repair: ' . $wpdb_error);
+                
+                EIPSI_Database_Schema_Manager::repair_local_schema();
+                
+                // Retry insert once after repair
+                $wpdb_result = $wpdb->insert(
+                    $table_name,
+                    $data,
+                    array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s', '%s')
+                );
+                
+                if ($wpdb_result !== false) {
+                    // Success after repair!
+                    error_log('[EIPSI Forms] Auto-repaired schema and recovered data insertion');
+                    $insert_id = $wpdb->insert_id;
+                    
+                    wp_send_json_success(array(
+                        'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
+                        'external_db' => false,
+                        'schema_repaired' => true,
+                        'insert_id' => $insert_id
+                    ));
+                } else {
+                    // Still failed after repair
+                    error_log('[EIPSI Forms CRITICAL] Schema repair failed: ' . $wpdb->last_error);
+                    wp_send_json_error(array(
+                        'message' => __('Database error (recovery attempted)', 'vas-dinamico-forms'),
+                        'external_db_error' => $error_info,
+                        'wordpress_db_error' => $wpdb->last_error
+                    ));
+                }
+            } else {
+                // Other database error (not schema-related)
+                error_log('EIPSI Forms: WordPress DB insert failed - ' . $wpdb_error);
+                
+                wp_send_json_error(array(
+                    'message' => __('Failed to submit form. Please try again.', 'vas-dinamico-forms'),
+                    'external_db_error' => $error_info,
+                    'wordpress_db_error' => $wpdb_error
+                ));
+            }
+            return;
         }
         
         $insert_id = $wpdb->insert_id;

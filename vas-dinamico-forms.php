@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://github.com/roofkat/VAS-dinamico-mvp
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.2.0
+ * Version: 1.2.2
  * Author: Mathias Rojas
  * Author URI: https://github.com/roofkat
  * Text Domain: vas-dinamico-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics
- * Stable tag: 1.2.0
+ * Stable tag: 1.2.2
  * 
  * @package VAS_Dinamico_Forms
  */
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('VAS_DINAMICO_VERSION', '1.2.0');
+define('VAS_DINAMICO_VERSION', '1.2.2');
 define('VAS_DINAMICO_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('VAS_DINAMICO_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('VAS_DINAMICO_PLUGIN_FILE', __FILE__);
@@ -101,6 +101,12 @@ function vas_dinamico_activate() {
     ) $charset_collate;";
     
     dbDelta($sql_events);
+    
+    // Store schema version
+    update_option('eipsi_db_schema_version', '1.2.2');
+    
+    // Log activation
+    error_log('[EIPSI Forms] Plugin activated - Schema v1.2.2 installed');
 }
 
 register_activation_hook(__FILE__, 'vas_dinamico_activate');
@@ -195,6 +201,18 @@ function vas_dinamico_upgrade_database() {
 }
 
 add_action('plugins_loaded', 'vas_dinamico_upgrade_database');
+
+// Verify schema on load (failsafe check)
+add_action('plugins_loaded', 'vas_dinamico_verify_schema_on_load');
+
+function vas_dinamico_verify_schema_on_load() {
+    $schema_version = get_option('eipsi_db_schema_version');
+    
+    // If schema version not set or outdated, trigger repair
+    if (!$schema_version || version_compare($schema_version, '1.2.2', '<')) {
+        EIPSI_Database_Schema_Manager::repair_local_schema();
+    }
+}
 
 // Add periodic schema verification (every 24 hours)
 add_action('admin_init', array('EIPSI_Database_Schema_Manager', 'periodic_verification'));
