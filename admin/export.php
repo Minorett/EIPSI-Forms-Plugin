@@ -82,6 +82,11 @@ function vas_export_to_excel() {
         wp_die(__('No data to export.', 'vas-dinamico-forms'));
     }
     
+    // Get privacy config for first form (assuming same config per form_name)
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/privacy-config.php';
+    $first_form_id = !empty($results[0]->form_id) ? $results[0]->form_id : export_generate_stable_form_id($results[0]->form_name);
+    $privacy_config = get_privacy_config($first_form_id);
+    
     // Obtener todas las preguntas únicas para crear columnas (excluir campos internos)
     $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id');
     $all_questions = [];
@@ -96,7 +101,22 @@ function vas_export_to_excel() {
     
     $data = array();
     // Encabezados: nuevo formato con IDs + metadatos + timestamps + preguntas dinámicas
-    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)', 'IP Address', 'Device', 'Browser', 'OS');
+    // ONLY include metadata columns if privacy config allows
+    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)');
+    
+    if ($privacy_config['ip_address']) {
+        $headers[] = 'IP Address';
+    }
+    if ($privacy_config['device_type']) {
+        $headers[] = 'Device';
+    }
+    if ($privacy_config['browser']) {
+        $headers[] = 'Browser';
+    }
+    if ($privacy_config['os']) {
+        $headers[] = 'OS';
+    }
+    
     $headers = array_merge($headers, $all_questions);
     $data[] = $headers;
     
@@ -148,12 +168,22 @@ function vas_export_to_excel() {
             $time,
             $duration,
             $start_time_utc,
-            $end_time_utc,
-            $row->ip_address,
-            $row->device,
-            $row->browser,
-            $row->os
+            $end_time_utc
         );
+        
+        // Add metadata fields only if privacy config allows
+        if ($privacy_config['ip_address']) {
+            $row_data[] = $row->ip_address;
+        }
+        if ($privacy_config['device_type']) {
+            $row_data[] = $row->device;
+        }
+        if ($privacy_config['browser']) {
+            $row_data[] = $row->browser;
+        }
+        if ($privacy_config['os']) {
+            $row_data[] = $row->os;
+        }
         
         // Agregar respuestas en el orden de las preguntas (excluir campos internos)
         foreach ($all_questions as $question) {
@@ -188,6 +218,11 @@ function vas_export_to_csv() {
         wp_die(__('No data to export.', 'vas-dinamico-forms'));
     }
     
+    // Get privacy config for first form (assuming same config per form_name)
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/privacy-config.php';
+    $first_form_id = !empty($results[0]->form_id) ? $results[0]->form_id : export_generate_stable_form_id($results[0]->form_name);
+    $privacy_config = get_privacy_config($first_form_id);
+    
     // Obtener todas las preguntas únicas para crear columnas (excluir campos internos)
     $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id');
     $all_questions = [];
@@ -207,7 +242,22 @@ function vas_export_to_csv() {
     $output = fopen('php://output', 'w');
     
     // Encabezados: nuevo formato con IDs + metadatos + timestamps + preguntas dinámicas
-    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)', 'IP Address', 'Device', 'Browser', 'OS');
+    // ONLY include metadata columns if privacy config allows
+    $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)');
+    
+    if ($privacy_config['ip_address']) {
+        $headers[] = 'IP Address';
+    }
+    if ($privacy_config['device_type']) {
+        $headers[] = 'Device';
+    }
+    if ($privacy_config['browser']) {
+        $headers[] = 'Browser';
+    }
+    if ($privacy_config['os']) {
+        $headers[] = 'OS';
+    }
+    
     $headers = array_merge($headers, $all_questions);
     fputcsv($output, $headers);
     
@@ -259,12 +309,22 @@ function vas_export_to_csv() {
             $time,
             $duration,
             $start_time_utc,
-            $end_time_utc,
-            $row->ip_address,
-            $row->device,
-            $row->browser,
-            $row->os
+            $end_time_utc
         );
+        
+        // Add metadata fields only if privacy config allows
+        if ($privacy_config['ip_address']) {
+            $row_data[] = $row->ip_address;
+        }
+        if ($privacy_config['device_type']) {
+            $row_data[] = $row->device;
+        }
+        if ($privacy_config['browser']) {
+            $row_data[] = $row->browser;
+        }
+        if ($privacy_config['os']) {
+            $row_data[] = $row->os;
+        }
         
         // Agregar respuestas en el orden de las preguntas (excluir campos internos)
         foreach ($all_questions as $question) {
