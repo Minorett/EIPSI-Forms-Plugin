@@ -2,9 +2,30 @@
 
 > Formularios profesionales de grado clínico para investigación en psicoterapia y salud mental
 
-**Versión:** 1.2.0  
+**Versión:** 1.2.2 🚀 HOTFIX - Reparación Automática de Esquema  
 **Requisitos:** WordPress 5.8+, PHP 7.4+  
 **Licencia:** GPL v2 or later
+
+## 🔥 Hotfix v1.2.2 - Reparación Automática de Esquema (CRÍTICO)
+
+**Lanzado:** 2025-01-20  
+**Prioridad:** BLOCKER - Prevención de Pérdida de Datos Clínicos
+
+### ¿Qué Resuelve?
+- ✅ **Error "Unknown column 'participant_id'"** al enviar formularios
+- ✅ **Fallas silenciosas** en envíos de formularios tras actualización
+- ✅ **Pérdida de datos** en instalaciones que actualizaron desde v1.0/v1.1
+- ✅ **Violación del principio "ZERO DATA LOSS"**
+
+### Sistema de Protección de 3 Capas
+1. **Capa 1 - Instalaciones Nuevas:** Esquema completo en activación
+2. **Capa 2 - Instalaciones Existentes:** Auto-reparación en carga de plugin (cada 24h)
+3. **Capa 3 - Recuperación de Emergencia:** Auto-reparación en fallo de INSERT con reintento
+
+### Garantía
+**CERO PÉRDIDA DE DATOS** - El plugin repara automáticamente cualquier problema de esquema sin intervención del usuario.
+
+📄 [Ver documentación completa del hotfix →](HOTFIX_v1.2.2_AUTO_DB_SCHEMA_REPAIR.md)
 
 ---
 
