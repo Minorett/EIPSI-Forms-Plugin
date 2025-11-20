@@ -5,6 +5,9 @@ import {
 	TextareaControl,
 	ToggleControl,
 	RangeControl,
+	SelectControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- UnitControl is the standard component for this use case
+	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useState, useEffect } from '@wordpress/element';
@@ -57,6 +60,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		labelStyle,
 		labelAlignment,
 		labelAlignmentPercent,
+		labelSpacing,
+		labelFontSize,
+		valueFontSize,
+		showLabelContainers,
+		showValueContainer,
+		boldLabels,
+		showCurrentValue,
+		valuePosition,
 	} = attributes;
 
 	useEffect( () => {
@@ -279,27 +290,188 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				</PanelBody>
 
 				<PanelBody
-					title={ __( 'Label Styling', 'vas-dinamico-forms' ) }
-					initialOpen={ false }
+					title={ __( 'Appearance', 'vas-dinamico-forms' ) }
+					initialOpen={ true }
 				>
-					<RangeControl
-						label={ __( 'Label Alignment', 'vas-dinamico-forms' ) }
-						value={
-							labelAlignmentPercent !== undefined
-								? labelAlignmentPercent
-								: 50
-						}
-						onChange={ ( value ) =>
-							setAttributes( { labelAlignmentPercent: value } )
-						}
-						min={ 0 }
-						max={ 100 }
-						step={ 1 }
-						help={ __(
-							'0 = tight spacing (edge-to-edge), 100 = wide spacing (centered with gaps)',
-							'vas-dinamico-forms'
-						) }
-					/>
+					<div className="eipsi-panel-section">
+						<h3
+							style={ {
+								fontSize: '13px',
+								fontWeight: 600,
+								marginBottom: '12px',
+							} }
+						>
+							{ __( 'Label Appearance', 'vas-dinamico-forms' ) }
+						</h3>
+
+						<ToggleControl
+							label={ __(
+								'Show label containers',
+								'vas-dinamico-forms'
+							) }
+							checked={ !! showLabelContainers }
+							onChange={ ( value ) =>
+								setAttributes( {
+									showLabelContainers: !! value,
+								} )
+							}
+							help={ __(
+								'Display background boxes around each label',
+								'vas-dinamico-forms'
+							) }
+						/>
+
+						<ToggleControl
+							label={ __( 'Bold labels', 'vas-dinamico-forms' ) }
+							checked={
+								boldLabels !== undefined ? !! boldLabels : true
+							}
+							onChange={ ( value ) =>
+								setAttributes( { boldLabels: !! value } )
+							}
+							help={ __(
+								'Make label text bold',
+								'vas-dinamico-forms'
+							) }
+						/>
+
+						<UnitControl
+							label={ __( 'Label size', 'vas-dinamico-forms' ) }
+							value={ `${ labelFontSize || 16 }px` }
+							onChange={ ( value ) => {
+								const numValue = parseInt( value ) || 16;
+								setAttributes( { labelFontSize: numValue } );
+							} }
+							min={ 12 }
+							max={ 36 }
+							step={ 1 }
+							units={ [
+								{ value: 'px', label: 'px', default: 16 },
+							] }
+							isUnitSelectTabbable={ false }
+						/>
+
+						<RangeControl
+							label={ __(
+								'Label spacing',
+								'vas-dinamico-forms'
+							) }
+							value={
+								labelSpacing !== undefined ? labelSpacing : 100
+							}
+							onChange={ ( value ) =>
+								setAttributes( { labelSpacing: value } )
+							}
+							min={ 0 }
+							max={ 100 }
+							step={ 1 }
+							help={ __(
+								'0 = tight spacing (edge-to-edge), 100 = wide spacing (centered with gaps)',
+								'vas-dinamico-forms'
+							) }
+						/>
+					</div>
+
+					<div
+						className="eipsi-panel-section"
+						style={ {
+							marginTop: '20px',
+							paddingTop: '20px',
+							borderTop: '1px solid #e5e5e5',
+						} }
+					>
+						<h3
+							style={ {
+								fontSize: '13px',
+								fontWeight: 600,
+								marginBottom: '12px',
+							} }
+						>
+							{ __( 'Value Display', 'vas-dinamico-forms' ) }
+						</h3>
+
+						<ToggleControl
+							label={ __(
+								'Show current value',
+								'vas-dinamico-forms'
+							) }
+							checked={
+								showCurrentValue !== undefined
+									? !! showCurrentValue
+									: showValue !== false
+							}
+							onChange={ ( value ) => {
+								setAttributes( {
+									showCurrentValue: !! value,
+									showValue: !! value,
+								} );
+							} }
+							help={ __(
+								'Display the current slider value',
+								'vas-dinamico-forms'
+							) }
+						/>
+
+						<ToggleControl
+							label={ __(
+								'Show value container',
+								'vas-dinamico-forms'
+							) }
+							checked={ !! showValueContainer }
+							onChange={ ( value ) =>
+								setAttributes( {
+									showValueContainer: !! value,
+								} )
+							}
+							help={ __(
+								'Display background box around the value number',
+								'vas-dinamico-forms'
+							) }
+						/>
+
+						<UnitControl
+							label={ __( 'Value size', 'vas-dinamico-forms' ) }
+							value={ `${ valueFontSize || 36 }px` }
+							onChange={ ( value ) => {
+								const numValue = parseInt( value ) || 36;
+								setAttributes( { valueFontSize: numValue } );
+							} }
+							min={ 20 }
+							max={ 80 }
+							step={ 1 }
+							units={ [
+								{ value: 'px', label: 'px', default: 36 },
+							] }
+							isUnitSelectTabbable={ false }
+						/>
+
+						<SelectControl
+							label={ __(
+								'Value position',
+								'vas-dinamico-forms'
+							) }
+							value={ valuePosition || 'above' }
+							options={ [
+								{
+									label: __(
+										'Above slider',
+										'vas-dinamico-forms'
+									),
+									value: 'above',
+								},
+								{
+									label: __(
+										'Below slider',
+										'vas-dinamico-forms'
+									),
+									value: 'below',
+								},
+							] }
+							onChange={ ( value ) =>
+								setAttributes( { valuePosition: value } )
+							}
+						/>
+					</div>
 				</PanelBody>
 
 				<ConditionalLogicControl
@@ -318,13 +490,24 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					{ displayLabel }
 				</label>
 				<div
-					className="vas-slider-container vas-slider-preview"
+					className={ `vas-slider-container vas-slider-preview ${
+						showLabelContainers ? 'vas-show-label-containers' : ''
+					} ${
+						showValueContainer ? 'vas-show-value-container' : ''
+					} ${ boldLabels !== false ? 'vas-bold-labels' : '' } ${
+						valuePosition === 'below' ? 'vas-value-below' : ''
+					}` }
 					data-scale={ `${ minValue }-${ maxValue }` }
 					style={ {
 						'--vas-label-alignment':
 							( labelAlignmentPercent !== undefined
 								? labelAlignmentPercent
-								: 50 ) / 100,
+								: labelSpacing || 50 ) / 100,
+						'--vas-label-size': `${ labelFontSize || 16 }px`,
+						'--vas-value-size': `${ valueFontSize || 36 }px`,
+						'--vas-label-spacing': `${
+							labelSpacing !== undefined ? labelSpacing : 100
+						}%`,
 					} }
 				>
 					{ ! hasMultiLabels && (
@@ -334,7 +517,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									{ leftLabel }
 								</span>
 							) }
-							{ showValue && (
+							{ ( showCurrentValue !== undefined
+								? showCurrentValue
+								: showValue !== false ) && (
 								<span
 									className="vas-current-value"
 									id={ `${ inputId }-value` }
@@ -358,14 +543,17 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							) ) }
 						</div>
 					) }
-					{ hasMultiLabels && showValue && (
-						<div
-							className="vas-current-value-solo"
-							id={ `${ inputId }-value` }
-						>
-							{ previewValue }
-						</div>
-					) }
+					{ hasMultiLabels &&
+						( showCurrentValue !== undefined
+							? showCurrentValue
+							: showValue !== false ) && (
+							<div
+								className="vas-current-value-solo"
+								id={ `${ inputId }-value` }
+							>
+								{ previewValue }
+							</div>
+						) }
 					<input
 						type="range"
 						name={ normalizedFieldName }
@@ -380,7 +568,15 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						}
 						required={ required }
 						data-required={ required ? 'true' : 'false' }
-						data-show-value={ showValue ? 'true' : 'false' }
+						data-show-value={
+							(
+								showCurrentValue !== undefined
+									? showCurrentValue
+									: showValue !== false
+							)
+								? 'true'
+								: 'false'
+						}
 						aria-valuemin={ minValue }
 						aria-valuemax={ maxValue }
 						aria-valuenow={ previewValue }

@@ -81,6 +81,39 @@
             "type": "number",
             "default": 50
         },
+        "labelSpacing": {
+            "type": "number",
+            "default": 100
+        },
+        "labelFontSize": {
+            "type": "number",
+            "default": 16
+        },
+        "valueFontSize": {
+            "type": "number",
+            "default": 36
+        },
+        "showLabelContainers": {
+            "type": "boolean",
+            "default": false
+        },
+        "showValueContainer": {
+            "type": "boolean",
+            "default": false
+        },
+        "boldLabels": {
+            "type": "boolean",
+            "default": true
+        },
+        "showCurrentValue": {
+            "type": "boolean",
+            "default": true
+        },
+        "valuePosition": {
+            "type": "string",
+            "default": "above",
+            "enum": ["above", "below"]
+        },
         "labelBgColor": {
             "type": "string",
             "default": ""
