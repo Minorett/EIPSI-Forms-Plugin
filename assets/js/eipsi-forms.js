@@ -1675,7 +1675,7 @@
 						this.showMessage(
 							form,
 							'success',
-							'¡Formulario enviado correctamente! Redirigiendo...'
+							'✓ Respuesta guardada correctamente'
 						);
 
 						if ( window.EIPSITracking ) {
@@ -1799,8 +1799,7 @@
                     </div>
                     <div class="form-message__content">
                         <div class="form-message__title">${ message }</div>
-                        <div class="form-message__subtitle">Gracias por completar el formulario</div>
-                        <div class="form-message__note">Su respuesta ha sido registrada exitosamente</div>
+                        <div class="form-message__subtitle">Redirigiendo a la página de confirmación...</div>
                     </div>
                     <div class="form-message__confetti" aria-hidden="true"></div>
                 `;
