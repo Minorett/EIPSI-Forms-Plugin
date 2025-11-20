@@ -79,8 +79,7 @@ const ConditionalLogicControl = ( {
 		if ( normalizedLogic.enabled && normalizedLogic.rules.length > 0 ) {
 			validateRules( normalizedLogic.rules );
 		}
-		// validateRules is a stable function that doesn't need to be in dependencies
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- validateRules is a stable function that doesn't need to be in dependencies
 	}, [ normalizedLogic.enabled, normalizedLogic.rules, options, pages ] );
 
 	const validateRules = ( rules ) => {

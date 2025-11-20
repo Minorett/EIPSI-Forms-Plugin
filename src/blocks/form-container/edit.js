@@ -33,7 +33,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			const migratedConfig = migrateToStyleConfig( attributes );
 			setAttributes( { styleConfig: migratedConfig } );
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- Migration runs only once on mount
 	}, [] );
 
 	// Get current style config (with fallback)

@@ -16,7 +16,7 @@
  * @package
  */
 
-/* eslint-disable no-console, jsdoc/require-param-type, no-nested-ternary */
+/* eslint-disable no-console, no-nested-ternary */
 
 const fs = require( 'fs' );
 const path = require( 'path' );
