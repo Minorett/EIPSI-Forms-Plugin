@@ -1,0 +1,49 @@
+fix: remove semantic redundancy from inline success message (Phase 18)
+
+PROBLEM:
+- Participants saw "Gracias por completar el formulario" twice
+  (inline message + completion page)
+- Created confusion and diluted thank-you impact
+- Mixed technical and emotional messaging in inline message
+
+SOLUTION:
+- Changed inline message to technical confirmation:
+  "✓ Respuesta guardada correctamente"
+- Changed subtitle to: "Redirigiendo a la página de confirmación..."
+- Removed "Gracias por completar el formulario" from inline message
+- Removed "Su respuesta ha sido registrada exitosamente" line
+- Kept "Gracias" exclusive to Completion Page
+
+TECHNICAL:
+- Modified: assets/js/eipsi-forms.js (2 locations)
+  - Line ~1678: Updated showMessage() call text
+  - Lines ~1793-1805: Updated HTML template
+- Preserved: Icon, confetti, 1.5s redirect, all styling
+- Tests: 12/12 passed (100%)
+- Build: ✅ Passed (webpack 5.102.1)
+- Lint: ✅ 0 errors in modified file
+
+UX BENEFITS:
+- Zero semantic redundancy
+- Clear technical → emotional progression
+- Professional, confident messaging
+- Better information hierarchy
+- Respects participant attention
+
+FILES MODIFIED:
+- assets/js/eipsi-forms.js
+
+FILES CREATED:
+- test-phase18-inline-success-message.js (12 tests)
+- PHASE18_INLINE_SUCCESS_MESSAGE_FIX.md (complete docs)
+- PHASE18_COMMIT_MESSAGE.txt (this file)
+
+TESTING:
+Run: node test-phase18-inline-success-message.js
+Result: 12/12 tests passed ✅
+
+VALIDATION:
+- npm run build ✅
+- npm run lint:js ✅
+- No breaking changes ✅
+- Backward compatible ✅
