@@ -1171,17 +1171,13 @@
 					? false
 					: true;
 
-			const firstVisitedPage =
-				navigator && navigator.history.length > 0
-					? navigator.history[ 0 ]
-					: 1;
-			const hasHistory = navigator && navigator.history.length > 1;
+			const isLastPage = navigator
+				? navigator.shouldSubmit( currentPage ) ||
+				  currentPage === totalPages
+				: currentPage === totalPages;
 
 			if ( prevButton ) {
-				const shouldShowPrev =
-					allowBackwardsNav &&
-					hasHistory &&
-					currentPage > firstVisitedPage;
+				const shouldShowPrev = currentPage > 1 && allowBackwardsNav;
 				if ( shouldShowPrev ) {
 					prevButton.style.display = '';
 					prevButton.removeAttribute( 'disabled' );
@@ -1190,10 +1186,7 @@
 				}
 			}
 
-			const shouldShowNext = navigator
-				? ! navigator.shouldSubmit( currentPage ) &&
-				  currentPage < totalPages
-				: currentPage < totalPages;
+			const shouldShowNext = ! isLastPage;
 
 			if ( nextButton ) {
 				if ( shouldShowNext ) {
@@ -1204,13 +1197,8 @@
 				}
 			}
 
-			const shouldShowSubmit = navigator
-				? navigator.shouldSubmit( currentPage ) ||
-				  currentPage === totalPages
-				: currentPage === totalPages;
-
 			if ( submitButton ) {
-				if ( shouldShowSubmit ) {
+				if ( isLastPage ) {
 					submitButton.style.display = '';
 					submitButton.removeAttribute( 'disabled' );
 				} else {
@@ -1218,7 +1206,7 @@
 				}
 
 				const strings = this.config.strings || {};
-				if ( shouldShowSubmit && strings.submit ) {
+				if ( isLastPage && strings.submit ) {
 					submitButton.textContent = strings.submit;
 				}
 			}
