@@ -45,6 +45,14 @@ export default function Save( { attributes } ) {
 		initialValue,
 		showValue,
 		labelAlignmentPercent,
+		labelSpacing,
+		labelFontSize,
+		valueFontSize,
+		showLabelContainers,
+		showValueContainer,
+		boldLabels,
+		showCurrentValue,
+		valuePosition,
 		conditionalLogic,
 	} = attributes;
 
@@ -96,13 +104,22 @@ export default function Save( { attributes } ) {
 				</label>
 			) }
 			<div
-				className="vas-slider-container"
+				className={ `vas-slider-container ${
+					showLabelContainers ? 'vas-show-label-containers' : ''
+				} ${ showValueContainer ? 'vas-show-value-container' : '' } ${
+					boldLabels !== false ? 'vas-bold-labels' : ''
+				} ${ valuePosition === 'below' ? 'vas-value-below' : '' }` }
 				data-scale={ `${ minValue }-${ maxValue }` }
 				style={ {
 					'--vas-label-alignment':
 						( labelAlignmentPercent !== undefined
 							? labelAlignmentPercent
-							: 50 ) / 100,
+							: labelSpacing || 50 ) / 100,
+					'--vas-label-size': `${ labelFontSize || 16 }px`,
+					'--vas-value-size': `${ valueFontSize || 36 }px`,
+					'--vas-label-spacing': `${
+						labelSpacing !== undefined ? labelSpacing : 100
+					}%`,
 				} }
 			>
 				{ ! hasMultiLabels && (
@@ -112,7 +129,9 @@ export default function Save( { attributes } ) {
 								{ leftLabel }
 							</span>
 						) }
-						{ showValue && (
+						{ ( showCurrentValue !== undefined
+							? showCurrentValue
+							: showValue !== false ) && (
 							<span
 								className="vas-current-value"
 								id={ `${ inputId }-value` }
@@ -136,14 +155,17 @@ export default function Save( { attributes } ) {
 						) ) }
 					</div>
 				) }
-				{ hasMultiLabels && showValue && (
-					<div
-						className="vas-current-value-solo"
-						id={ `${ inputId }-value` }
-					>
-						{ currentValue }
-					</div>
-				) }
+				{ hasMultiLabels &&
+					( showCurrentValue !== undefined
+						? showCurrentValue
+						: showValue !== false ) && (
+						<div
+							className="vas-current-value-solo"
+							id={ `${ inputId }-value` }
+						>
+							{ currentValue }
+						</div>
+					) }
 				<input
 					type="range"
 					name={ normalizedFieldName }
@@ -155,7 +177,15 @@ export default function Save( { attributes } ) {
 					defaultValue={ currentValue }
 					required={ required }
 					data-required={ required ? 'true' : 'false' }
-					data-show-value={ showValue ? 'true' : 'false' }
+					data-show-value={
+						(
+							showCurrentValue !== undefined
+								? showCurrentValue
+								: showValue !== false
+						)
+							? 'true'
+							: 'false'
+					}
 					data-touched="false"
 					aria-valuemin={ minValue }
 					aria-valuemax={ maxValue }
