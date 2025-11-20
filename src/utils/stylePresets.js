@@ -274,6 +274,7 @@ const SERENE_TEAL = {
  * Dark EIPSI Theme
  * High-contrast dark mode with EIPSI blue background
  * Visual Identity: Dark blue background, light text, reduced eye strain, professional dark mode
+ * Input fields: White background with dark text (normal state) for excellent readability
  */
 const DARK_EIPSI = {
 	name: 'Dark EIPSI',
@@ -285,15 +286,15 @@ const DARK_EIPSI = {
 			primaryHover: '#06b6d4',
 			secondary: '#0c4a6e',
 			background: '#005a87',
-			backgroundSubtle: '#003d5b',
+			backgroundSubtle: '#f8f9fa',
 			text: '#ffffff',
-			textMuted: '#94a3b8',
-			inputBg: '#f8f9fa',
-			inputText: '#1e293b',
+			textMuted: '#6b7280',
+			inputBg: '#ffffff',
+			inputText: '#1f2937',
 			inputBorder: '#64748b',
 			inputBorderFocus: '#22d3ee',
 			inputErrorBg: '#fff5f5',
-			inputIcon: '#1e293b',
+			inputIcon: '#1f2937',
 			buttonBg: '#0e7490',
 			buttonText: '#ffffff',
 			buttonHoverBg: '#155e75',
