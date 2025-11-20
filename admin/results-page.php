@@ -30,24 +30,24 @@ function vas_display_form_responses() {
     ?>
 
     <div class="wrap eipsi-results-page">
-        <h1><?php _e('Results & Experience', 'vas-dinamico-forms'); ?></h1>
+        <h1><?php esc_html_e('Results & Experience', 'vas-dinamico-forms'); ?></h1>
         
         <!-- Tab Navigation (WordPress native style) -->
         <h2 class="nav-tab-wrapper">
             <a href="?page=vas-dinamico-results&tab=submissions" 
-               class="nav-tab <?php echo ($active_tab === 'submissions') ? 'nav-tab-active' : ''; ?>"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'submissions') ? 'nav-tab-active' : ''); ?>"
                data-tab="submissions">
-                📊 <?php _e('Submissions', 'vas-dinamico-forms'); ?>
+                📊 <?php esc_html_e('Submissions', 'vas-dinamico-forms'); ?>
             </a>
             <a href="?page=vas-dinamico-results&tab=completion" 
-               class="nav-tab <?php echo ($active_tab === 'completion') ? 'nav-tab-active' : ''; ?>"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'completion') ? 'nav-tab-active' : ''); ?>"
                data-tab="completion">
-                ✅ <?php _e('Completion Message', 'vas-dinamico-forms'); ?>
+                ✅ <?php esc_html_e('Completion Message', 'vas-dinamico-forms'); ?>
             </a>
             <a href="?page=vas-dinamico-results&tab=privacy" 
-               class="nav-tab <?php echo ($active_tab === 'privacy') ? 'nav-tab-active' : ''; ?>"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'privacy') ? 'nav-tab-active' : ''); ?>"
                data-tab="privacy">
-                🔒 <?php _e('Privacy & Metadata', 'vas-dinamico-forms'); ?>
+                🔒 <?php esc_html_e('Privacy & Metadata', 'vas-dinamico-forms'); ?>
             </a>
         </h2>
         
