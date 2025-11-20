@@ -11,7 +11,7 @@
  * 1 - One or more presets fail WCAG AA
  */
 
-/* eslint-disable no-console, jsdoc/require-param-type */
+/* eslint-disable no-console */
 
 // Manually define preset configurations (since we can't easily import from JSX modules)
 // These are copied from styleTokens.js and stylePresets.js

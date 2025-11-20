@@ -6,7 +6,7 @@
  * @package
  */
 
-/* eslint-disable jsx-a11y/label-has-associated-control */
+/* eslint-disable jsx-a11y/label-has-associated-control -- Labels are properly associated through custom component structure */
 
 import {
 	PanelBody,

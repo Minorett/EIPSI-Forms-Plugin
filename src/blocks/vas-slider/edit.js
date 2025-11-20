@@ -87,8 +87,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			}
 			setAttributes( { labelAlignmentPercent: migratedValue } );
 		}
-		// Only run once on mount to migrate legacy attributes
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- Only run once on mount to migrate legacy attributes
 	}, [] );
 
 	const normalizedFieldName =
