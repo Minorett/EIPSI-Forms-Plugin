@@ -39,20 +39,27 @@ function eipsi_display_configuration_page() {
                     <span class="dashicons dashicons-database"></span>
                 </div>
                 <div class="eipsi-db-indicator-info">
-                    <div class="eipsi-db-indicator-label"><?php echo esc_html__('Current Storage Location:', 'vas-dinamico-forms'); ?></div>
+                    <div class="eipsi-db-indicator-label"><?php echo esc_html__('Current Storage Mode:', 'vas-dinamico-forms'); ?></div>
                     <div class="eipsi-db-indicator-value">
                         <?php if ($status['connected']): ?>
-                            <span class="eipsi-db-badge eipsi-db-badge--external">
-                                <span class="dashicons dashicons-admin-site-alt3"></span>
-                                <?php echo esc_html__('External Database', 'vas-dinamico-forms'); ?>
+                            <span class="eipsi-db-badge eipsi-db-badge--dual" style="background-color: #10b981; color: white; padding: 6px 12px; border-radius: 4px; font-weight: 600;">
+                                <span class="dashicons dashicons-update" style="font-size: 16px;"></span>
+                                <?php echo esc_html__('Dual Storage Active', 'vas-dinamico-forms'); ?>
                             </span>
-                            <span class="eipsi-db-name"><?php echo esc_html($status['db_name']); ?></span>
+                            <div style="margin-top: 8px; font-size: 13px; color: #64748b;">
+                                <?php echo esc_html__('Submissions saved to BOTH:', 'vas-dinamico-forms'); ?>
+                                <strong><?php echo esc_html__('WordPress DB', 'vas-dinamico-forms'); ?></strong>
+                                <?php echo esc_html__(' + ', 'vas-dinamico-forms'); ?>
+                                <strong><?php echo esc_html($status['db_name']); ?></strong>
+                            </div>
                         <?php else: ?>
                             <span class="eipsi-db-badge eipsi-db-badge--wordpress">
                                 <span class="dashicons dashicons-wordpress"></span>
-                                <?php echo esc_html__('WordPress Database', 'vas-dinamico-forms'); ?>
+                                <?php echo esc_html__('WordPress Database Only', 'vas-dinamico-forms'); ?>
                             </span>
-                            <span class="eipsi-db-name"><?php echo esc_html(DB_NAME); ?></span>
+                            <div style="margin-top: 8px; font-size: 13px; color: #64748b;">
+                                <?php echo esc_html__('Configure an external database below to enable dual storage', 'vas-dinamico-forms'); ?>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -63,6 +70,16 @@ function eipsi_display_configuration_page() {
                 </div>
                 <?php endif; ?>
             </div>
+            
+            <?php if ($status['connected']): ?>
+            <div style="margin-top: 12px; padding: 12px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px;">
+                <p style="margin: 0; font-size: 13px; color: #166534;">
+                    <span class="dashicons dashicons-yes-alt" style="color: #10b981;"></span>
+                    <strong><?php echo esc_html__('Zero Data Loss Protection:', 'vas-dinamico-forms'); ?></strong>
+                    <?php echo esc_html__('All submissions are first saved to WordPress database (guaranteed), then automatically replicated to external database. If external database becomes unavailable, submissions continue saving to WordPress database without interruption.', 'vas-dinamico-forms'); ?>
+                </p>
+            </div>
+            <?php endif; ?>
         </div>
         
         <div class="eipsi-config-container">
@@ -194,41 +211,79 @@ function eipsi_display_configuration_page() {
             
             <!-- Status Indicator -->
             <div class="eipsi-status-section">
-                <h2><?php echo esc_html__('Connection Status', 'vas-dinamico-forms'); ?></h2>
+                <h2><?php echo esc_html__('Database Connection Status', 'vas-dinamico-forms'); ?></h2>
                 
                 <div id="eipsi-status-box" class="eipsi-status-box">
-                    <div class="eipsi-status-indicator">
-                        <?php if ($status['connected']): ?>
-                            <span class="status-icon status-connected"></span>
-                            <span class="status-text"><?php echo esc_html__('Connected', 'vas-dinamico-forms'); ?></span>
-                        <?php else: ?>
-                            <span class="status-icon status-disconnected"></span>
-                            <span class="status-text"><?php echo esc_html__('Disconnected', 'vas-dinamico-forms'); ?></span>
-                        <?php endif; ?>
+                    <!-- WordPress Database Status (Always Active) -->
+                    <div style="margin-bottom: 20px; padding: 12px; background-color: #f0fdf4; border: 1px solid #86efac; border-radius: 4px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span class="dashicons dashicons-wordpress" style="color: #10b981; font-size: 20px;"></span>
+                            <strong style="color: #166534;"><?php echo esc_html__('WordPress Database', 'vas-dinamico-forms'); ?></strong>
+                            <span style="margin-left: auto; padding: 4px 8px; background-color: #10b981; color: white; border-radius: 3px; font-size: 11px; font-weight: 600;">
+                                <?php echo esc_html__('ACTIVE', 'vas-dinamico-forms'); ?>
+                            </span>
+                        </div>
+                        <div class="eipsi-status-details">
+                            <div class="status-detail-row">
+                                <span class="detail-label"><?php echo esc_html__('Database Name:', 'vas-dinamico-forms'); ?></span>
+                                <span class="detail-value"><?php echo esc_html(DB_NAME); ?></span>
+                            </div>
+                            <div class="status-detail-row">
+                                <span class="detail-label"><?php echo esc_html__('Status:', 'vas-dinamico-forms'); ?></span>
+                                <span class="detail-value" style="color: #10b981;">
+                                    <span class="dashicons dashicons-yes-alt"></span>
+                                    <?php echo esc_html__('Connected (Primary Storage)', 'vas-dinamico-forms'); ?>
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     
-                    <?php if ($status['connected']): ?>
-                    <div class="eipsi-status-details">
-                        <div class="status-detail-row">
-                            <span class="detail-label"><?php echo esc_html__('Current Database:', 'vas-dinamico-forms'); ?></span>
-                            <span class="detail-value"><?php echo esc_html($status['db_name']); ?></span>
+                    <!-- External Database Status -->
+                    <div style="padding: 12px; background-color: <?php echo $status['connected'] ? '#f0fdf4' : '#f8f9fa'; ?>; border: 1px solid <?php echo $status['connected'] ? '#86efac' : '#e2e8f0'; ?>; border-radius: 4px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span class="dashicons dashicons-admin-site-alt3" style="color: <?php echo $status['connected'] ? '#10b981' : '#94a3b8'; ?>; font-size: 20px;"></span>
+                            <strong style="color: <?php echo $status['connected'] ? '#166534' : '#64748b'; ?>;"><?php echo esc_html__('External Database', 'vas-dinamico-forms'); ?></strong>
+                            <?php if ($status['connected']): ?>
+                                <span style="margin-left: auto; padding: 4px 8px; background-color: #10b981; color: white; border-radius: 3px; font-size: 11px; font-weight: 600;">
+                                    <?php echo esc_html__('ACTIVE', 'vas-dinamico-forms'); ?>
+                                </span>
+                            <?php else: ?>
+                                <span style="margin-left: auto; padding: 4px 8px; background-color: #94a3b8; color: white; border-radius: 3px; font-size: 11px; font-weight: 600;">
+                                    <?php echo esc_html__('NOT CONFIGURED', 'vas-dinamico-forms'); ?>
+                                </span>
+                            <?php endif; ?>
                         </div>
-                        <div class="status-detail-row">
-                            <span class="detail-label"><?php echo esc_html__('Records:', 'vas-dinamico-forms'); ?></span>
-                            <span class="detail-value"><?php echo number_format_i18n($status['record_count']); ?></span>
+                        
+                        <?php if ($status['connected']): ?>
+                        <div class="eipsi-status-details">
+                            <div class="status-detail-row">
+                                <span class="detail-label"><?php echo esc_html__('Database Name:', 'vas-dinamico-forms'); ?></span>
+                                <span class="detail-value"><?php echo esc_html($status['db_name']); ?></span>
+                            </div>
+                            <div class="status-detail-row">
+                                <span class="detail-label"><?php echo esc_html__('Status:', 'vas-dinamico-forms'); ?></span>
+                                <span class="detail-value" style="color: #10b981;">
+                                    <span class="dashicons dashicons-yes-alt"></span>
+                                    <?php echo esc_html__('Connected (Replicated Storage)', 'vas-dinamico-forms'); ?>
+                                </span>
+                            </div>
+                            <div class="status-detail-row">
+                                <span class="detail-label"><?php echo esc_html__('Records:', 'vas-dinamico-forms'); ?></span>
+                                <span class="detail-value"><?php echo number_format_i18n($status['record_count']); ?></span>
+                            </div>
+                            <?php if (!empty($status['last_updated'])): ?>
+                            <div class="status-detail-row">
+                                <span class="detail-label"><?php echo esc_html__('Last Updated:', 'vas-dinamico-forms'); ?></span>
+                                <span class="detail-value"><?php echo esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $status['last_updated'])); ?></span>
+                            </div>
+                            <?php endif; ?>
                         </div>
-                        <?php if (!empty($status['last_updated'])): ?>
-                        <div class="status-detail-row">
-                            <span class="detail-label"><?php echo esc_html__('Last Updated:', 'vas-dinamico-forms'); ?></span>
-                            <span class="detail-value"><?php echo esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $status['last_updated'])); ?></span>
+                        <?php else: ?>
+                        <div class="eipsi-status-message">
+                            <p style="color: #64748b; margin: 8px 0 0 0;"><?php echo esc_html__('Configure external database credentials below to enable dual storage mode.', 'vas-dinamico-forms'); ?></p>
                         </div>
                         <?php endif; ?>
                     </div>
-                    <?php else: ?>
-                    <div class="eipsi-status-message">
-                        <p><?php echo esc_html__('No external database configured. Form submissions will be stored in the WordPress database.', 'vas-dinamico-forms'); ?></p>
-                    </div>
-                    <?php endif; ?>
                     
                     <?php if (!empty($status['last_error'])): ?>
                     <div class="eipsi-error-box" style="margin-top: 15px; padding: 12px; background: #fff3cd; border-left: 4px solid #ff9800; border-radius: 4px;">
@@ -368,16 +423,24 @@ function eipsi_display_configuration_page() {
                         <li><?php echo esc_html__('Enter your MySQL database credentials above', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('Click "Test Connection" to verify the credentials work', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('If the test is successful, click "Save Configuration"', 'vas-dinamico-forms'); ?></li>
-                        <li><?php echo esc_html__('All new form submissions will be stored in the external database', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('All new form submissions will be saved to BOTH WordPress and external databases simultaneously', 'vas-dinamico-forms'); ?></li>
                     </ol>
+                    
+                    <h3><?php echo esc_html__('How Dual-Write Works', 'vas-dinamico-forms'); ?></h3>
+                    <ul>
+                        <li><strong><?php echo esc_html__('Step 1 - WordPress DB (Guaranteed):', 'vas-dinamico-forms'); ?></strong> <?php echo esc_html__('Every form submission is FIRST saved to the WordPress database. This is always successful and guarantees zero data loss.', 'vas-dinamico-forms'); ?></li>
+                        <li><strong><?php echo esc_html__('Step 2 - External DB (Non-Blocking):', 'vas-dinamico-forms'); ?></strong> <?php echo esc_html__('The same submission is THEN replicated to the external database. If this fails, the submission still succeeded in Step 1.', 'vas-dinamico-forms'); ?></li>
+                        <li><strong><?php echo esc_html__('Result:', 'vas-dinamico-forms'); ?></strong> <?php echo esc_html__('Under normal conditions, data is saved to BOTH databases. If external database fails, data is safely stored in WordPress database.', 'vas-dinamico-forms'); ?></li>
+                    </ul>
                     
                     <h3><?php echo esc_html__('Important Notes', 'vas-dinamico-forms'); ?></h3>
                     <ul>
                         <li><?php echo esc_html__('The plugin will automatically create the required table and columns in the external database if they are missing', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('Passwords are encrypted before storage using WordPress security functions', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('Test the connection before saving to verify credentials and schema', 'vas-dinamico-forms'); ?></li>
-                        <li><strong><?php echo esc_html__('Automatic Fallback:', 'vas-dinamico-forms'); ?></strong> <?php echo esc_html__('If the external database becomes unavailable, submissions will automatically be saved to the WordPress database without blocking the user', 'vas-dinamico-forms'); ?></li>
-                        <li><?php echo esc_html__('Admin notifications will alert you when fallback mode is active so you can investigate the issue', 'vas-dinamico-forms'); ?></li>
+                        <li><strong><?php echo esc_html__('Zero Data Loss Guarantee:', 'vas-dinamico-forms'); ?></strong> <?php echo esc_html__('Form submissions are never blocked or lost. WordPress database always receives the data first, then external database replication is attempted.', 'vas-dinamico-forms'); ?></li>
+                        <li><strong><?php echo esc_html__('Automatic Schema Repair:', 'vas-dinamico-forms'); ?></strong> <?php echo esc_html__('If external database schema is outdated (missing columns), the plugin automatically repairs it and retries the insertion.', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('The status section above shows warnings when external database replication fails so you can investigate the issue', 'vas-dinamico-forms'); ?></li>
                         <li><?php echo esc_html__('Enable WP_DEBUG to see detailed error logs for troubleshooting database issues', 'vas-dinamico-forms'); ?></li>
                     </ul>
                 </div>

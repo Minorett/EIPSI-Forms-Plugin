@@ -365,125 +365,167 @@ function vas_dinamico_submit_form_handler() {
         'form_responses' => wp_json_encode($form_responses)
     );
     
-    // Check if external database is configured
+    // =============================================================================
+    // DUAL-WRITE IMPLEMENTATION: Save to BOTH databases
+    // Priority: WordPress DB (guaranteed) → External DB (non-blocking)
+    // =============================================================================
+    
+    // STEP 1: ALWAYS insert to WordPress DB FIRST (guaranteed persistence)
+    $wordpress_insert_id = null;
+    $wordpress_success = false;
+    
+    $table_name = $wpdb->prefix . 'vas_form_results';
+    
+    $wpdb_result = $wpdb->insert(
+        $table_name,
+        $data,
+        array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s', '%s')
+    );
+    
+    if ($wpdb_result === false) {
+        // Check if it's an "Unknown column" error (schema issue)
+        $wpdb_error = $wpdb->last_error;
+        
+        if (strpos($wpdb_error, 'Unknown column') !== false || strpos($wpdb_error, "doesn't exist") !== false) {
+            // Emergency schema repair
+            error_log('[EIPSI Forms] WordPress DB schema error detected, triggering auto-repair: ' . $wpdb_error);
+            
+            EIPSI_Database_Schema_Manager::repair_local_schema();
+            
+            // Retry insert once after repair
+            $wpdb_result = $wpdb->insert(
+                $table_name,
+                $data,
+                array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s', '%s')
+            );
+            
+            if ($wpdb_result !== false) {
+                // Success after repair!
+                error_log('[EIPSI Forms] WordPress DB schema auto-repaired and data saved');
+                $wordpress_insert_id = $wpdb->insert_id;
+                $wordpress_success = true;
+            } else {
+                // Still failed after repair - CRITICAL ERROR
+                error_log('[EIPSI Forms CRITICAL] WordPress DB schema repair failed: ' . $wpdb->last_error);
+                wp_send_json_error(array(
+                    'message' => __('Database error (recovery attempted)', 'vas-dinamico-forms'),
+                    'wordpress_db_error' => $wpdb->last_error
+                ));
+                return;
+            }
+        } else {
+            // Other database error (not schema-related) - CRITICAL ERROR
+            error_log('[EIPSI Forms CRITICAL] WordPress DB insert failed: ' . $wpdb_error);
+            
+            wp_send_json_error(array(
+                'message' => __('Failed to submit form. Please try again.', 'vas-dinamico-forms'),
+                'wordpress_db_error' => $wpdb_error
+            ));
+            return;
+        }
+    } else {
+        // WordPress DB insert succeeded
+        $wordpress_insert_id = $wpdb->insert_id;
+        $wordpress_success = true;
+    }
+    
+    // At this point, WordPress DB insert ALWAYS succeeded (or we returned with error)
+    // Now proceed to STEP 2: External DB (non-blocking)
+    
+    // STEP 2: Try to insert to External DB (if enabled) - NON-BLOCKING
     require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
     
     $external_db_enabled = $db_helper->is_enabled();
-    $used_fallback = false;
-    $error_info = null;
+    $external_db_success = false;
+    $external_db_error = null;
     
     if ($external_db_enabled) {
-        // Try external database first
+        // Attempt external DB insert
         $result = $db_helper->insert_form_submission($data);
         
         if ($result['success']) {
             // External DB insert succeeded
-            wp_send_json_success(array(
-                'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
-                'external_db' => true,
-                'insert_id' => $result['insert_id']
-            ));
+            $external_db_success = true;
+            error_log('[EIPSI Forms] Dual-write successful - saved to both WordPress and External DB');
         } else {
-            // External DB failed, record error and fall back to WordPress DB
-            $error_info = array(
+            // External DB failed - log error but don't block submission
+            $external_db_error = array(
                 'error' => $result['error'],
                 'error_code' => $result['error_code'],
                 'mysql_errno' => isset($result['mysql_errno']) ? $result['mysql_errno'] : null
             );
             
-            // Record error for admin diagnostics
-            $db_helper->record_error($result['error'], $result['error_code']);
-            
-            // Log the fallback
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('EIPSI Forms: External DB insert failed, falling back to WordPress DB - ' . $result['error']);
+            // Check if schema error and try auto-repair
+            if (strpos($result['error'], 'Unknown column') !== false || 
+                strpos($result['error'], "doesn't exist") !== false ||
+                $result['error_code'] === 'SCHEMA_ERROR') {
+                
+                error_log('[EIPSI Forms] External DB schema error detected, attempting auto-repair: ' . $result['error']);
+                
+                // Try to get connection and repair schema
+                $mysqli = $db_helper->get_connection();
+                if ($mysqli) {
+                    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
+                    $repair_result = EIPSI_Database_Schema_Manager::verify_and_sync_schema($mysqli);
+                    $mysqli->close();
+                    
+                    if ($repair_result['success']) {
+                        error_log('[EIPSI Forms] External DB schema repaired, retrying insert');
+                        
+                        // Retry insert after schema repair
+                        $retry_result = $db_helper->insert_form_submission($data);
+                        
+                        if ($retry_result['success']) {
+                            $external_db_success = true;
+                            $external_db_error = null;
+                            error_log('[EIPSI Forms] External DB insert succeeded after schema repair');
+                        } else {
+                            error_log('[EIPSI Forms] External DB insert failed even after schema repair: ' . $retry_result['error']);
+                        }
+                    }
+                }
             }
             
-            $used_fallback = true;
+            // If still failed, record error for admin diagnostics
+            if (!$external_db_success) {
+                $db_helper->record_error($result['error'], $result['error_code']);
+                error_log('[EIPSI Forms] External DB insert failed (WordPress DB saved successfully) - ' . $result['error']);
+            }
         }
     }
     
-    // Use WordPress database (either as default or as fallback)
-    if (!$external_db_enabled || $used_fallback) {
-        $table_name = $wpdb->prefix . 'vas_form_results';
-        
-        $wpdb_result = $wpdb->insert(
-            $table_name,
-            $data,
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s', '%s')
-        );
-        
-        if ($wpdb_result === false) {
-            // Check if it's an "Unknown column" error (schema issue)
-            $wpdb_error = $wpdb->last_error;
-            
-            if (strpos($wpdb_error, 'Unknown column') !== false || strpos($wpdb_error, "doesn't exist") !== false) {
-                // Emergency schema repair
-                error_log('[EIPSI Forms] Detected schema error, triggering auto-repair: ' . $wpdb_error);
-                
-                EIPSI_Database_Schema_Manager::repair_local_schema();
-                
-                // Retry insert once after repair
-                $wpdb_result = $wpdb->insert(
-                    $table_name,
-                    $data,
-                    array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s', '%s')
-                );
-                
-                if ($wpdb_result !== false) {
-                    // Success after repair!
-                    error_log('[EIPSI Forms] Auto-repaired schema and recovered data insertion');
-                    $insert_id = $wpdb->insert_id;
-                    
-                    wp_send_json_success(array(
-                        'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
-                        'external_db' => false,
-                        'schema_repaired' => true,
-                        'insert_id' => $insert_id
-                    ));
-                } else {
-                    // Still failed after repair
-                    error_log('[EIPSI Forms CRITICAL] Schema repair failed: ' . $wpdb->last_error);
-                    wp_send_json_error(array(
-                        'message' => __('Database error (recovery attempted)', 'vas-dinamico-forms'),
-                        'external_db_error' => $error_info,
-                        'wordpress_db_error' => $wpdb->last_error
-                    ));
-                }
-            } else {
-                // Other database error (not schema-related)
-                error_log('EIPSI Forms: WordPress DB insert failed - ' . $wpdb_error);
-                
-                wp_send_json_error(array(
-                    'message' => __('Failed to submit form. Please try again.', 'vas-dinamico-forms'),
-                    'external_db_error' => $error_info,
-                    'wordpress_db_error' => $wpdb_error
-                ));
-            }
-            return;
-        }
-        
-        $insert_id = $wpdb->insert_id;
-        
-        if ($used_fallback) {
-            // Fallback succeeded - inform user with warning
-            wp_send_json_success(array(
-                'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
-                'external_db' => false,
-                'fallback_used' => true,
-                'warning' => __('Form was saved to local database (external database temporarily unavailable).', 'vas-dinamico-forms'),
-                'insert_id' => $insert_id,
-                'error_code' => $error_info['error_code']
-            ));
-        } else {
-            // Normal WordPress DB submission
-            wp_send_json_success(array(
-                'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
-                'external_db' => false,
-                'insert_id' => $insert_id
-            ));
-        }
+    // STEP 3: Send success response to user
+    // Success is guaranteed because WordPress DB insert succeeded
+    
+    if ($external_db_enabled && $external_db_success) {
+        // Dual-write successful - both databases saved
+        wp_send_json_success(array(
+            'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
+            'dual_write' => true,
+            'wordpress_db' => true,
+            'external_db' => true,
+            'insert_id' => $wordpress_insert_id
+        ));
+    } elseif ($external_db_enabled && !$external_db_success) {
+        // WordPress DB saved, but external DB failed (graceful fallback)
+        wp_send_json_success(array(
+            'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
+            'dual_write' => false,
+            'wordpress_db' => true,
+            'external_db' => false,
+            'fallback_active' => true,
+            'insert_id' => $wordpress_insert_id
+        ));
+    } else {
+        // Only WordPress DB configured (normal single-write)
+        wp_send_json_success(array(
+            'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
+            'dual_write' => false,
+            'wordpress_db' => true,
+            'external_db' => false,
+            'insert_id' => $wordpress_insert_id
+        ));
     }
 }
 
