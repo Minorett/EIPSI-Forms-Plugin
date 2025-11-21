@@ -401,7 +401,7 @@ const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
 							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
 						</strong>{ ' ' }
 						{ __(
-							'Text Muted on Background Subtle: ',
+							'Text Muted on Background Subtle:',
 							'vas-dinamico-forms'
 						) }
 						{ textMutedSubtleRating.message }
@@ -612,7 +612,7 @@ const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
 							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
 						</strong>{ ' ' }
 						{ __(
-							'Button Text on Hover Background: ',
+							'Button Text on Hover Background:',
 							'vas-dinamico-forms'
 						) }
 						{ buttonHoverRating.message }
@@ -653,7 +653,7 @@ const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
 							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
 						</strong>{ ' ' }
 						{ __(
-							'Error messages must be readable. ',
+							'Error messages must be readable.',
 							'vas-dinamico-forms'
 						) }
 						{ errorBgRating.message }
@@ -689,7 +689,7 @@ const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
 							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
 						</strong>{ ' ' }
 						{ __(
-							'Success messages must be readable. ',
+							'Success messages must be readable.',
 							'vas-dinamico-forms'
 						) }
 						{ successBgRating.message }
@@ -725,7 +725,7 @@ const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
 							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
 						</strong>{ ' ' }
 						{ __(
-							'Warning messages must be readable. ',
+							'Warning messages must be readable.',
 							'vas-dinamico-forms'
 						) }
 						{ warningBgRating.message }
@@ -930,7 +930,7 @@ const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
 						updateConfig( 'typography', 'lineHeightBase', value )
 					}
 					help={ __(
-						'Recommended: 1.6-1.8 for comfortable reading',
+						'Recommended: 1.6–1.8 for comfortable reading',
 						'vas-dinamico-forms'
 					) }
 				/>
@@ -1273,9 +1273,8 @@ const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
 					onChange={ ( value ) =>
 						updateConfig( 'interactivity', 'hoverScale', value )
 					}
-					/* translators: Example value for hover scale effect */
 					help={ __(
-						'E.g., 1.02 for 2% growth on hover',
+						'E.g., 1.02 for slight growth on hover',
 						'vas-dinamico-forms'
 					) }
 				/>
@@ -1294,7 +1293,7 @@ const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
 					max={ 10 }
 					step={ 1 }
 					help={ __(
-						'Recommended: 2-3px for accessibility',
+						'Recommended: 2–3px for accessibility',
 						'vas-dinamico-forms'
 					) }
 				/>
