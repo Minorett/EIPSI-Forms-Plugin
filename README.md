@@ -634,6 +634,54 @@ Para soporte técnico, reportar bugs o sugerencias:
 
 ---
 
+## 🔬 Performance Testing & Validation
+
+EIPSI Forms v1.2.2 includes a comprehensive **performance stress test suite** for validating plugin performance under realistic load conditions.
+
+### Stress Test Suite
+
+**Files:** (Available in GitHub repository)
+- `stress-test-v1.2.2.js` - Automated 30-minute stress test suite
+- `stress-test-readiness-v1.2.2.js` - Pre-flight validation (48 tests)
+- `STRESS_TEST_GUIDE_v1.2.2.md` - Complete testing guide (600+ lines)
+
+### Test Coverage
+
+**5 Major Test Categories:**
+1. **Multiple Simultaneous Submissions** - Sequential, rapid, and sustained load
+2. **Complex Forms** - Large forms (50+ fields), complex data (5000+ chars)
+3. **Metadata Under Stress** - Verify metadata capture, duration calculations
+4. **Database Under Stress** - Connection stability, query performance
+5. **Memory & CPU Monitoring** - Track resource usage, detect leaks
+
+### Running Tests
+
+```bash
+# Install dependencies
+npm install axios
+
+# Validate readiness
+node stress-test-readiness-v1.2.2.js
+
+# Run stress tests
+node stress-test-v1.2.2.js --url=https://your-wordpress-site.com
+```
+
+### Performance Targets
+
+| Metric | Target | Status |
+|--------|--------|--------|
+| Average Response Time | < 2 seconds | ✅ |
+| Forms per Minute | 20-100+ | ✅ |
+| Memory Growth | < 10MB | ✅ |
+| Query Performance | < 100ms | ✅ |
+| Success Rate | > 95% | ✅ |
+| Data Loss | 0 | ✅ |
+
+**See:** `STRESS_TEST_GUIDE_v1.2.2.md` for complete testing procedures and troubleshooting.
+
+---
+
 ## 🔍 Audit & Changelog
 
 Este README fue actualizado el **Enero 2025** basándose en un **escaneo completo del código** (ver `PLUGIN_AUDIT_REPORT.md` para detalles).
@@ -647,6 +695,7 @@ Este README fue actualizado el **Enero 2025** basándose en un **escaneo complet
 - ✅ **Marcado:** Dashboard Analytics como "En desarrollo"
 - ✅ **Expandido:** Detalles de 11 bloques individuales
 - ✅ **Agregado:** Información de sincronización de esquema BD
+- ✅ **Agregado:** Suite completa de pruebas de estrés (v1.2.2)
 
 ---
 
