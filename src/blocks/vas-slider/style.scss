@@ -209,21 +209,30 @@
         padding: 0.5em 0.8em;
     }
 
-    // Value position below
-    &.vas-value-below {
+    // Value position below - Apply flexbox to the container
+    &.vas-value-below .vas-slider-container {
         display: flex;
         flex-direction: column;
+    }
 
-        .vas-current-value,
-        .vas-current-value-solo {
+    &.vas-value-below .vas-slider-labels {
+        flex-direction: column;
+        
+        .vas-current-value {
             order: 2;
             margin-top: 1em;
             margin-bottom: 0;
         }
+    }
 
-        .vas-slider {
-            order: 1;
-        }
+    &.vas-value-below .vas-current-value-solo {
+        order: 2;
+        margin-top: 1em;
+        margin-bottom: 0;
+    }
+
+    &.vas-value-below .vas-slider {
+        order: 1;
     }
 
     // SLIDER NEUTRAL MEJORADO
