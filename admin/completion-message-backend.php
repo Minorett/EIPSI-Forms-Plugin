@@ -63,13 +63,4 @@ class EIPSI_Completion_Message {
         
         return update_option( self::$option_key, $sanitized );
     }
-    
-    /**
-     * Get the completion page URL
-     * 
-     * @return string URL to completion page
-     */
-    public static function get_page_url() {
-        return home_url( '/eipsi-completion/' );
-    }
 }
