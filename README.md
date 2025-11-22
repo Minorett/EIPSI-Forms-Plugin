@@ -123,13 +123,13 @@ Paleta calmante para estudios de reducción de estrés
 - **Background Subtle:** #f0f9ff (Light cyan)
 - **Características:** Tonos teal/cyan calmantes, bordes balanceados (10-16px), sombras teal
 
-#### 5. **Dark EIPSI** ✅
-Modo oscuro profesional con fondo EIPSI blue
-- **Primary:** #22d3ee (Cyan brillante)
-- **Background:** #005a87 (EIPSI Blue oscuro)
-- **Background Subtle:** #003d5b
-- **Text:** #ffffff (White)
-- **Características:** Alto contraste para dark mode, inputs con fondo claro, sombras oscuras
+### **Universal Dark Mode Toggle** 🌙
+Todos los presets ahora soportan modo oscuro mediante un toggle accesible
+- **Activación:** Botón toggle en el encabezado (fixed en móviles)
+- **Persistencia:** localStorage (mantiene preferencia entre páginas)
+- **Cobertura:** Re-tema completo (todos los elementos del formulario)
+- **Shortcut:** Ctrl/Cmd + Shift + D
+- **Características:** WCAG AAA, transiciones suaves, responsive
 
 ### **Controles Personalizables**
 - Color primario, hover y activo
@@ -595,7 +595,7 @@ apply_filters('eipsi_style_tokens', $style_config, $form_id);
 ### Completado Recientemente
 - ✅ **Admin Panel Consolidation** (Phase 16 - January 2025) - 3 tabs organizadas
 - ✅ **Completion Message Global Config** (Phase 15 - January 2025)
-- ✅ **Dark EIPSI Preset** (Phase 13 - November 2025)
+- ✅ **Universal Dark Mode Toggle** (Phase 13/v4 - January 2025) - Single toggle, complete theming
 - ✅ **Database Schema Synchronization** (Phase 14 - January 2025)
 - ✅ **WCAG 2.1 AA Compliance** (Phase 5 - validado 100%)
 - ✅ **Code Quality & Linting** (0 errors, 0 warnings)
@@ -688,9 +688,10 @@ Este README fue actualizado el **Enero 2025** basándose en un **escaneo complet
 
 ### Cambios vs. Versión Anterior
 - ✅ **Agregado:** Preset "Serene Teal" (no documentado anteriormente)
-- ✅ **Agregado:** Preset "Dark EIPSI" (implementado Phase 13)
+- ✅ **Agregado:** Universal Dark Mode Toggle (Phase 13 v4.0 - January 2025)
+- ❌ **Removido:** Preset "Dark EIPSI" (reemplazado por toggle universal)
 - ❌ **Removido:** Preset "High Contrast" (no existe en código)
-- ✅ **Actualizado:** Número de presets (4 → 5)
+- ✅ **Actualizado:** Número de presets (5 → 4 presets + dark mode toggle)
 - ✅ **Clarificado:** HIPAA "Ready" vs. "Compliant"
 - ✅ **Marcado:** Dashboard Analytics como "En desarrollo"
 - ✅ **Expandido:** Detalles de 11 bloques individuales

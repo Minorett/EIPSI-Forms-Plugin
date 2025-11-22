@@ -8,7 +8,7 @@
 
 ## Overview
 
-The EIPSI Forms plugin provides **5 professionally designed theme presets** with **Universal Dark Mode** support. Each preset is optimized for different clinical research contexts and participant needs. All presets can be toggled between light and dark modes for optimal viewing comfort.
+The EIPSI Forms plugin provides **4 professionally designed theme presets** with **Universal Dark Mode Toggle** support. Each preset is optimized for different clinical research contexts and participant needs. All presets can be toggled between light and dark modes for optimal viewing comfort using a single, accessible toggle button.
 
 ### Quick Selection Guide
 
@@ -18,7 +18,15 @@ The EIPSI Forms plugin provides **5 professionally designed theme presets** with
 | **Minimal White** | Sensitive assessments | Ultra-clean, distraction-free | Sharp corners, no shadows, generous spacing |
 | **Warm Neutral** | Psychotherapy research | Inviting, approachable | Rounded corners, serif headings, warm tones |
 | **Serene Teal** | Stress/anxiety studies | Calming, therapeutic | Soft teal palette, balanced curves |
-| **Dark EIPSI** | Evening studies, eye strain reduction | Dark mode with EIPSI branding | Dark blue background, light text, reduced glare |
+
+### Universal Dark Mode Toggle 🌙
+
+All presets now support dark mode through a single toggle button:
+- **Location:** Header (top-right on desktop, fixed bottom-right on mobile)
+- **Activation:** Click toggle or press Ctrl/Cmd + Shift + D
+- **Persistence:** Theme choice saved in localStorage
+- **Coverage:** Complete form re-theming (all elements)
+- **Accessibility:** WCAG AAA compliant with keyboard support
 
 ---
 
@@ -200,65 +208,6 @@ Warning: #b35900
 
 ---
 
-## 5. Dark EIPSI
-
-### Visual Identity
-Professional dark mode with EIPSI blue background and high-contrast light text. Designed to reduce eye strain during evening studies while maintaining EIPSI brand identity.
-
-### Color Palette
-```css
-Primary: #22d3ee (Cyan Accent)
-Primary Hover: #06b6d4
-Text: #ffffff (White)
-Text Muted: #94a3b8 (Light Gray)
-Background: #005a87 (EIPSI Blue - Dark)
-Background Subtle: #003d5b (Darker Blue)
-Border: #cbd5e1 (Light Gray)
-Button BG: #0e7490 (Dark Teal)
-Button Text: #ffffff (White)
-Error: #fecaca (Light Pink)
-Success: #6ee7b7 (Light Green)
-Warning: #fcd34d (Light Yellow)
-```
-
-### Typography
-- **Headings:** System default
-- **Body:** System default
-- **Base Size:** 16px
-- **H1:** 2rem (32px)
-- **Line Height:** 1.65 (body), 1.3 (headings)
-
-### Spacing & Borders
-- **Container Padding:** 2.5rem (40px)
-- **Border Radius:** 8-12px (medium curves)
-- **Shadows:** Dark shadows (black with transparency)
-- **Field Gap:** 1.75rem
-
-### Use Cases
-- Evening or night-time studies
-- Long-duration assessments (reduce eye strain)
-- Dark mode preference participants
-- Extended screen time protocols
-- EIPSI-branded dark theme
-
-### Design Rationale
-- **Dark background reduces glare** from screens in low-light environments
-- **Light input fields** maintain familiarity and readability for form entries
-- **Cyan accent** provides high visibility on dark blue without being harsh
-- **EIPSI blue** maintained as primary background for brand consistency
-
-### Contrast Ratios (WCAG AA ✓)
-- Text vs Background: 7.47:1 (AAA)
-- Text Muted vs Background Subtle: 4.50:1
-- Button Text vs Button Background: 5.36:1
-- Button Text vs Button Hover: 7.27:1
-- Input Text vs Input Background: 13.88:1 (AAA)
-- Error vs Background: 5.16:1
-- Success vs Background: 4.90:1
-- Borders: 5.03:1
-
----
-
 ## Design Token Comparison
 
 ### Border Radius (Roundness)
@@ -267,9 +216,7 @@ Warning: #fcd34d (Light Yellow)
 | Clinical Blue | 8px | 12px | 20px | Professional |
 | Minimal White | 4px | 6px | 8px | Sharp, clean |
 | Warm Neutral | 10px | 14px | 20px | Soft, inviting |
-| High Contrast | 4px | 6px | 8px | Functional |
 | Serene Teal | 10px | 16px | 24px | Balanced curves |
-| Dark EIPSI | 8px | 12px | 16px | Professional |
 
 ### Container Padding (Spaciousness)
 | Preset | Padding | Feel |
@@ -277,9 +224,7 @@ Warning: #fcd34d (Light Yellow)
 | Clinical Blue | 2.5rem (40px) | Balanced |
 | Minimal White | 3.5rem (56px) | Most spacious |
 | Warm Neutral | 2.5rem (40px) | Cozy |
-| High Contrast | 2rem (32px) | Compact |
 | Serene Teal | 2.75rem (44px) | Comfortable |
-| Dark EIPSI | 2.5rem (40px) | Balanced |
 
 ### Shadows
 | Preset | Usage | Effect |
@@ -287,9 +232,7 @@ Warning: #fcd34d (Light Yellow)
 | Clinical Blue | Subtle with blue tint | Depth |
 | Minimal White | None | Flat, clean |
 | Warm Neutral | Warm-toned | Gentle depth |
-| High Contrast | None | No distraction |
 | Serene Teal | Soft with teal tint | Calming depth |
-| Dark EIPSI | Dark shadows (black) | Dark mode depth |
 
 ### Font Size (H1)
 | Preset | Desktop | Feel |
@@ -297,9 +240,7 @@ Warning: #fcd34d (Light Yellow)
 | Clinical Blue | 2rem (32px) | Standard |
 | Minimal White | 1.875rem (30px) | Subtle |
 | Warm Neutral | 2rem (32px) | Warm |
-| High Contrast | 2.25rem (36px) | Largest |
 | Serene Teal | 2rem (32px) | Balanced |
-| Dark EIPSI | 2rem (32px) | Standard |
 
 ---
 
@@ -341,10 +282,10 @@ All presets validated using automated contrast ratio calculation (WCAG 2.1):
 ✓ Clinical Blue    12/12 tests passed
 ✓ Minimal White    12/12 tests passed
 ✓ Warm Neutral     12/12 tests passed
-✓ High Contrast    12/12 tests passed (AAA)
 ✓ Serene Teal      12/12 tests passed
-✓ Dark EIPSI       12/12 tests passed
 ```
+
+**Note:** Dark mode uses a separate color system with WCAG AAA compliance (7:1+ text contrast).
 
 **Validation Script:** `wcag-contrast-validation.js` in plugin root
 
@@ -357,21 +298,18 @@ All presets validated using automated contrast ratio calculation (WCAG 2.1):
 **Clinical Blue:** Trust, professionalism, medical authority  
 **Minimal White:** Clarity, purity, mental space  
 **Warm Neutral:** Comfort, safety, therapeutic alliance  
-**High Contrast:** Accessibility, inclusivity, clarity  
 **Serene Teal:** Calm, healing, stress reduction  
-**Dark EIPSI:** Eye comfort, modern professionalism, brand consistency in dark mode
+**Dark Mode:** Eye comfort, modern professionalism, reduced glare in low-light environments
 
 ### Typography Choices
 
-- **System fonts (Clinical Blue, Minimal White, Serene Teal, Dark EIPSI):** Familiar, fast-loading, reduces cognitive load
-- **Georgia serif (Warm Neutral):** Traditional, warm, literary feel for psychotherapy
-- **Arial (High Contrast):** Maximum legibility for low vision
+- **System fonts (all presets):** Familiar, fast-loading, reduces cognitive load
+- **Georgia serif (Warm Neutral only):** Traditional, warm, literary feel for psychotherapy
 
 ### Spacing Strategy
 
 - **Generous spacing (Minimal White):** Reduces overwhelm in sensitive assessments
-- **Balanced spacing (Clinical Blue, Warm Neutral, Serene Teal, Dark EIPSI):** Professional without being sterile
-- **Compact spacing (High Contrast):** Reduces scroll distance for mobility-impaired users
+- **Balanced spacing (Clinical Blue, Warm Neutral, Serene Teal):** Professional without being sterile
 
 ---
 
