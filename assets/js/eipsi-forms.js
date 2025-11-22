@@ -1680,46 +1680,9 @@
                             }
                         }
 
-                        // Redirect to completion page after 1.5 seconds
+                        // Show integrated thank-you page after 1.5 seconds
                         setTimeout( () => {
-                            if (
-                                this.config.completionUrl &&
-                                this.config.completionUrl !== ''
-                            ) {
-                                window.location.href =
-                                    this.config.completionUrl;
-                            } else {
-                                // Fallback: reset form if no completion URL configured
-                                form.reset();
-
-                                const navigator = this.getNavigator( form );
-                                if ( navigator ) {
-                                    navigator.reset();
-                                }
-
-                                this.setCurrentPage( form, 1, {
-                                    trackChange: false,
-                                } );
-
-                                if ( navigator ) {
-                                    navigator.pushHistory( 1 );
-                                }
-
-                                const sliders =
-                                    form.querySelectorAll( '.vas-slider' );
-                                sliders.forEach( ( slider ) => {
-                                    slider.dataset.touched = 'false';
-                                    const valueDisplay =
-                                        document.getElementById(
-                                            slider.getAttribute(
-                                                'aria-labelledby'
-                                            )
-                                        );
-                                    if ( valueDisplay ) {
-                                        valueDisplay.textContent = slider.value;
-                                    }
-                                } );
-                            }
+                            this.showIntegratedThankYouPage( form );
                         }, 1500 );
                     } else {
                         this.showMessage(
@@ -1791,7 +1754,6 @@
                     </div>
                     <div class="form-message__content">
                         <div class="form-message__title">${ message }</div>
-                        <div class="form-message__subtitle">Redirigiendo a la página de confirmación...</div>
                     </div>
                     <div class="form-message__confetti" aria-hidden="true"></div>
                 `;
@@ -2166,6 +2128,175 @@
             }
 
             this.setCurrentPage( form, targetPage );
+        },
+
+        showIntegratedThankYouPage( form ) {
+            // Fetch completion config from backend
+            fetch( this.config.ajaxUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams( {
+                    action: 'eipsi_get_completion_config',
+                } ),
+            } )
+                .then( ( response ) => response.json() )
+                .then( ( data ) => {
+                    if ( ! data.success ) {
+                        // Fallback to default message if AJAX fails
+                        this.createThankYouPage( form, {
+                            title: '¡Gracias por completar el formulario!',
+                            message: 'Sus respuestas han sido registradas correctamente.',
+                            show_logo: true,
+                            show_home_button: true,
+                            button_text: 'Comenzar de nuevo',
+                            button_action: 'reload',
+                            show_animation: false,
+                        } );
+                        return;
+                    }
+
+                    this.createThankYouPage( form, data.data.config );
+                } )
+                .catch( () => {
+                    // Fallback to default message if network error
+                    this.createThankYouPage( form, {
+                        title: '¡Gracias por completar el formulario!',
+                        message: 'Sus respuestas han sido registradas correctamente.',
+                        show_logo: true,
+                        show_home_button: true,
+                        button_text: 'Comenzar de nuevo',
+                        button_action: 'reload',
+                        show_animation: false,
+                    } );
+                } );
+        },
+
+        createThankYouPage( form, config ) {
+            // Hide all existing pages
+            const pages = form.querySelectorAll( '.eipsi-page' );
+            pages.forEach( ( page ) => {
+                page.style.display = 'none';
+            } );
+
+            // Hide navigation buttons
+            const navigation = form.querySelector( '.form-navigation' );
+            if ( navigation ) {
+                navigation.style.display = 'none';
+            }
+
+            // Hide progress indicator
+            const progress = form.querySelector( '.form-progress' );
+            if ( progress ) {
+                progress.style.display = 'none';
+            }
+
+            // Clear any existing messages
+            this.clearMessages( form );
+
+            // Create thank-you page
+            const thankYouPage = document.createElement( 'div' );
+            thankYouPage.className = 'eipsi-page eipsi-thank-you-page';
+            thankYouPage.dataset.page = 'thank-you';
+            thankYouPage.style.display = 'block';
+
+            // Build page content
+            let logoHtml = '';
+            if ( config.show_logo ) {
+                // Try to get the logo from the theme customizer
+                const siteLogo = document.querySelector( '.custom-logo' );
+                if ( siteLogo ) {
+                    const logoSrc = siteLogo.src;
+                    const logoAlt = siteLogo.alt || 'Site Logo';
+                    logoHtml = `<div class="eipsi-thank-you-logo">
+                        <img src="${ logoSrc }" alt="${ this.escapeHtml( logoAlt ) }" class="eipsi-logo-image">
+                    </div>`;
+                }
+            }
+
+            let buttonHtml = '';
+            if ( config.show_home_button ) {
+                const buttonAction =
+                    config.button_action === 'close'
+                        ? 'onclick="window.close();"'
+                        : config.button_action === 'reload'
+                        ? 'onclick="window.location.reload();"'
+                        : '';
+
+                buttonHtml = `
+                    <div class="eipsi-thank-you-actions">
+                        <button type="button" 
+                                class="eipsi-thank-you-button" 
+                                ${ buttonAction }>
+                            ${ this.escapeHtml( config.button_text ) }
+                        </button>
+                    </div>
+                `;
+            }
+
+            thankYouPage.innerHTML = `
+                <div class="eipsi-thank-you-content">
+                    ${ logoHtml }
+                    <h2 class="eipsi-thank-you-title">${ this.escapeHtml(
+                        config.title
+                    ) }</h2>
+                    <div class="eipsi-thank-you-message">${ config.message }</div>
+                    ${ buttonHtml }
+                </div>
+            `;
+
+            // Add animation if enabled
+            if ( config.show_animation ) {
+                const prefersReducedMotion =
+                    window.matchMedia &&
+                    window.matchMedia( '(prefers-reduced-motion: reduce)' )
+                        .matches;
+
+                if ( ! prefersReducedMotion ) {
+                    thankYouPage.classList.add(
+                        'eipsi-thank-you-animated'
+                    );
+                }
+            }
+
+            // Append to form
+            const formContent = form.querySelector( '.eipsi-form-content' );
+            if ( formContent ) {
+                formContent.appendChild( thankYouPage );
+            } else {
+                form.appendChild( thankYouPage );
+            }
+
+            // Scroll to top of form
+            if ( this.config.settings?.enableAutoScroll ) {
+                this.scrollToElement( form );
+            }
+
+            // Update progress to 100%
+            const currentPageSpan = form.querySelector(
+                '.form-progress .current-page'
+            );
+            const totalPagesSpan = form.querySelector(
+                '.form-progress .total-pages'
+            );
+
+            if ( currentPageSpan && totalPagesSpan ) {
+                const totalPages = pages.length;
+                currentPageSpan.textContent = totalPages;
+                totalPagesSpan.textContent = totalPages;
+            }
+        },
+
+        escapeHtml( text ) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;',
+            };
+            return text.replace( /[&<>"']/g, ( m ) => map[ m ] );
         },
     };
 
