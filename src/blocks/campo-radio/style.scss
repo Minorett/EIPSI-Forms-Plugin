@@ -39,15 +39,19 @@
                 width: 100%;
                 padding: 0.8em 1em;
                 position: relative;
+                min-height: 44px;
 
                 input[type="radio"] {
                     position: absolute;
                     opacity: 0;
                     width: 1px;
                     height: 1px;
-                    margin: 0;
+                    margin: -1px;
                     padding: 0;
-                    pointer-events: none;
+                    overflow: hidden;
+                    clip: rect(0, 0, 0, 0);
+                    white-space: nowrap;
+                    border-width: 0;
                 }
             }
 

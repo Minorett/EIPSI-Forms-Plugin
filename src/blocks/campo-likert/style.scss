@@ -71,6 +71,7 @@
             height: 100%;
             padding: 0;
             position: relative;
+            min-height: 44px;
 
             @media (min-width: 768px) {
                 flex-direction: column;
@@ -83,9 +84,12 @@
                 opacity: 0;
                 width: 1px;
                 height: 1px;
-                margin: 0;
+                margin: -1px;
                 padding: 0;
-                pointer-events: none;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border-width: 0;
             }
         }
 
