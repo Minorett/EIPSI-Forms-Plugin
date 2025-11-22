@@ -42,7 +42,7 @@ function vas_display_form_responses() {
             <a href="?page=vas-dinamico-results&tab=completion" 
                class="nav-tab <?php echo esc_attr(($active_tab === 'completion') ? 'nav-tab-active' : ''); ?>"
                data-tab="completion">
-                ✅ <?php esc_html_e('Completion Message', 'vas-dinamico-forms'); ?>
+                ✅ <?php esc_html_e('Finalización', 'vas-dinamico-forms'); ?>
             </a>
             <a href="?page=vas-dinamico-results&tab=privacy" 
                class="nav-tab <?php echo esc_attr(($active_tab === 'privacy') ? 'nav-tab-active' : ''); ?>"

@@ -1031,7 +1031,6 @@ function eipsi_check_table_status_handler() {
 
 /**
  * AJAX Handler: Save completion message configuration
- * Phase 16 will create the admin UI that calls this
  */
 function eipsi_save_completion_message_handler() {
     check_ajax_referer('eipsi_admin_nonce', 'nonce');
@@ -1041,10 +1040,13 @@ function eipsi_save_completion_message_handler() {
     }
     
     $config = array(
+        'title'            => isset($_POST['title']) ? sanitize_text_field($_POST['title']) : '',
         'message'          => isset($_POST['message']) ? wp_kses_post($_POST['message']) : '',
         'show_logo'        => isset($_POST['show_logo']),
         'show_home_button' => isset($_POST['show_home_button']),
-        'redirect_url'     => isset($_POST['redirect_url']) ? esc_url_raw($_POST['redirect_url']) : '',
+        'button_text'      => isset($_POST['button_text']) ? sanitize_text_field($_POST['button_text']) : '',
+        'button_action'    => isset($_POST['button_action']) ? sanitize_text_field($_POST['button_action']) : 'reload',
+        'show_animation'   => isset($_POST['show_animation']),
     );
     
     require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/completion-message-backend.php';
@@ -1059,4 +1061,19 @@ function eipsi_save_completion_message_handler() {
     }
 }
 add_action('wp_ajax_eipsi_save_completion_message', 'eipsi_save_completion_message_handler');
+
+/**
+ * AJAX Handler: Get completion message configuration for frontend
+ */
+function eipsi_get_completion_config_handler() {
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/completion-message-backend.php';
+    
+    $config = EIPSI_Completion_Message::get_config();
+    
+    wp_send_json_success(array(
+        'config' => $config,
+    ));
+}
+add_action('wp_ajax_nopriv_eipsi_get_completion_config', 'eipsi_get_completion_config_handler');
+add_action('wp_ajax_eipsi_get_completion_config', 'eipsi_get_completion_config_handler');
 ?>

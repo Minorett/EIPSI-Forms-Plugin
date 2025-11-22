@@ -1888,5 +1888,157 @@ body.page-template-eipsi-form {
 }
 
 /* ============================================================================
+   INTEGRATED THANK-YOU PAGE
+   ============================================================================ */
+
+.eipsi-thank-you-page {
+    padding: var(--eipsi-spacing-container-padding, 2.5rem);
+    text-align: center;
+    animation: eipsi-fadeIn 0.5s ease-in-out;
+}
+
+.eipsi-thank-you-content {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--eipsi-color-background, #ffffff);
+    padding: var(--eipsi-spacing-lg, 2rem);
+    border-radius: var(--eipsi-border-radius-md, 12px);
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+}
+
+.eipsi-thank-you-logo {
+    margin-bottom: var(--eipsi-spacing-md, 1.5rem);
+}
+
+.eipsi-logo-image {
+    max-width: 200px;
+    height: auto;
+}
+
+.eipsi-thank-you-title {
+    font-family: var(--eipsi-font-family-heading, 'Segoe UI', sans-serif);
+    font-size: var(--eipsi-font-size-h2, 1.75rem);
+    font-weight: var(--eipsi-font-weight-bold, 700);
+    color: var(--eipsi-color-primary, #005a87);
+    margin: 0 0 var(--eipsi-spacing-md, 1.5rem) 0;
+    line-height: var(--eipsi-line-height-heading, 1.3);
+}
+
+.eipsi-thank-you-message {
+    font-family: var(--eipsi-font-family-body, 'Segoe UI', sans-serif);
+    font-size: var(--eipsi-font-size-base, 16px);
+    color: var(--eipsi-color-text, #2c3e50);
+    line-height: var(--eipsi-line-height-base, 1.6);
+    margin-bottom: var(--eipsi-spacing-lg, 2rem);
+}
+
+.eipsi-thank-you-message p:last-child {
+    margin-bottom: 0;
+}
+
+.eipsi-thank-you-actions {
+    margin-top: var(--eipsi-spacing-lg, 2rem);
+}
+
+.eipsi-thank-you-button {
+    display: inline-block;
+    padding: var(--eipsi-spacing-sm, 1rem) var(--eipsi-spacing-lg, 2rem);
+    background-color: var(--eipsi-color-button-bg, #005a87);
+    color: var(--eipsi-color-button-text, #ffffff);
+    font-family: var(--eipsi-font-family-body, 'Segoe UI', sans-serif);
+    font-size: var(--eipsi-font-size-base, 16px);
+    font-weight: var(--eipsi-font-weight-medium, 500);
+    border: none;
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    cursor: pointer;
+    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.08));
+    text-decoration: none;
+}
+
+.eipsi-thank-you-button:hover {
+    background-color: var(--eipsi-color-button-hover-bg, #003d5b);
+    transform: scale(var(--eipsi-hover-scale, 1.02));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+}
+
+.eipsi-thank-you-button:focus {
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-input-border-focus, #005a87);
+    outline-offset: var(--eipsi-focus-outline-offset, 2px);
+}
+
+.eipsi-thank-you-button:active {
+    transform: scale(0.98);
+}
+
+/* Animation */
+@keyframes eipsi-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.eipsi-thank-you-animated {
+    animation: eipsi-fadeIn 0.5s ease-in-out, eipsi-confettiPulse 2s ease-in-out infinite;
+}
+
+@keyframes eipsi-confettiPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .eipsi-thank-you-page {
+        padding: var(--eipsi-spacing-md, 1.5rem);
+    }
+
+    .eipsi-thank-you-content {
+        padding: var(--eipsi-spacing-md, 1.5rem);
+    }
+
+    .eipsi-thank-you-title {
+        font-size: 1.5rem;
+    }
+
+    .eipsi-logo-image {
+        max-width: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .eipsi-thank-you-title {
+        font-size: 1.25rem;
+    }
+
+    .eipsi-thank-you-button {
+        width: 100%;
+        padding: var(--eipsi-spacing-sm, 1rem);
+    }
+}
+
+/* Dark mode support (if theme toggle is enabled) */
+[data-theme="dark"] .eipsi-thank-you-content {
+    background: #1a1a1a;
+}
+
+[data-theme="dark"] .eipsi-thank-you-title {
+    color: #4a9fd8;
+}
+
+[data-theme="dark"] .eipsi-thank-you-message {
+    color: #e2e8f0;
+}
+
+/* ============================================================================
    END OF EIPSI FORMS CSS
    ============================================================================ */
