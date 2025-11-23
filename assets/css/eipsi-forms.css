@@ -1294,6 +1294,37 @@ select[aria-invalid="true"]:focus {
     background: var(--eipsi-color-input-error-bg, #fff5f5);
 }
 
+/* VAS Value Position Below - Flexbox Layout Reordering */
+.eipsi-vas-slider-field.vas-value-below .vas-slider-container,
+.eipsi-vas-slider-field[data-value-position="below"] .vas-slider-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.eipsi-vas-slider-field.vas-value-below .vas-slider-labels,
+.eipsi-vas-slider-field[data-value-position="below"] .vas-slider-labels {
+    flex-direction: column;
+}
+
+.eipsi-vas-slider-field.vas-value-below .vas-slider-labels .vas-current-value,
+.eipsi-vas-slider-field[data-value-position="below"] .vas-slider-labels .vas-current-value {
+    order: 2;
+    margin-top: 1em;
+    margin-bottom: 0;
+}
+
+.eipsi-vas-slider-field.vas-value-below .vas-current-value-solo,
+.eipsi-vas-slider-field[data-value-position="below"] .vas-current-value-solo {
+    order: 2;
+    margin-top: 1em;
+    margin-bottom: 0;
+}
+
+.eipsi-vas-slider-field.vas-value-below .vas-slider,
+.eipsi-vas-slider-field[data-value-position="below"] .vas-slider {
+    order: 1;
+}
+
 /* ============================================================================
    13. DESCRIPTION FIELDS
    ============================================================================ */
