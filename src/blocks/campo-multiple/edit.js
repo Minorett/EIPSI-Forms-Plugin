@@ -3,6 +3,11 @@ import { PanelBody, TextareaControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import FieldSettings from '../../components/FieldSettings';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
+import {
+	parseOptions,
+	normalizeOptionsInput,
+	stringifyOptions,
+} from '../../utils/optionParser';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -32,21 +37,6 @@ const getFieldId = ( fieldName, suffix = '' ) => {
 	const sanitized = normalized.replace( /[^a-zA-Z0-9_-]/g, '-' );
 
 	return suffix ? `field-${ sanitized }-${ suffix }` : `field-${ sanitized }`;
-};
-
-const parseOptions = ( optionsString ) => {
-	if ( ! optionsString || optionsString.trim() === '' ) {
-		return [];
-	}
-
-	// Detectar formato: newline (estándar) o comma (legacy)
-	// Si contiene \n, usar newline; si no, usar comma (backward compatibility)
-	const separator = optionsString.includes( '\n' ) ? '\n' : ',';
-
-	return optionsString
-		.split( separator )
-		.map( ( option ) => option.trim() )
-		.filter( ( option ) => option !== '' );
 };
 
 export default function Edit( { attributes, setAttributes, clientId } ) {
@@ -109,21 +99,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							'Options (one per line)',
 							'vas-dinamico-forms'
 						) }
-						value={
-							options ? parseOptions( options ).join( '\n' ) : ''
-						}
+						value={ stringifyOptions( parseOptions( options ) ) }
 						onChange={ ( value ) => {
-							// Dividir por newline, limpiar y filtrar
-							const cleanedOptions = value
-								.split( '\n' )
-								.map( ( opt ) => opt.trim() )
-								.filter( ( opt ) => opt !== '' );
 							setAttributes( {
-								options: cleanedOptions.join( '\n' ),
+								options: normalizeOptionsInput( value ),
 							} );
 						} }
 						help={ __(
-							'Enter one option per line. Options can contain commas, periods, quotes, etc.',
+							'Ingresá una opción por línea. Podés escribir comas o signos de puntuación dentro de cada opción; si pegás una lista vieja separada por comas la convertimos sola.',
 							'vas-dinamico-forms'
 						) }
 						placeholder={

@@ -12,6 +12,7 @@ FINAL_AUDIT_v1.2.2_REPORT.md
 # Build output
 build/
 node_modules/
+assets/
 
 # WordPress core
 /wordpress/
