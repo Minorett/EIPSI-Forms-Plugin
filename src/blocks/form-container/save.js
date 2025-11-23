@@ -98,29 +98,32 @@ export default function Save( { attributes } ) {
 
                 { /* NAVEGACIÓN - EL JS EXISTENTE MANEJARÁ LA VISIBILIDAD */ }
                 <div className="form-navigation">
-                    <div className="form-nav-left">
-                        <button
-                            type="button"
-                            className="eipsi-prev-button"
-                            style={ { display: 'none' } }
-                            data-testid="prev-button"
-                        >
-                            Anterior
-                        </button>
-                    </div>
+                    { allowBackwardsNav && (
+                        <div className="form-nav-left">
+                            <button
+                                type="button"
+                                className="eipsi-prev-button is-hidden"
+                                data-testid="prev-button"
+                                aria-label="Ir a la página anterior"
+                            >
+                                Anterior
+                            </button>
+                        </div>
+                    ) }
                     <div className="form-nav-right">
                         <button
                             type="button"
                             className="eipsi-next-button"
                             data-testid="next-button"
+                            aria-label="Ir a la siguiente página"
                         >
                             Siguiente
                         </button>
                         <button
                             type="submit"
-                            className="eipsi-submit-button"
-                            style={ { display: 'none' } }
+                            className="eipsi-submit-button is-hidden"
                             data-testid="submit-button"
+                            aria-label="Enviar el formulario"
                         >
                             { submitButtonLabel || 'Enviar' }
                         </button>

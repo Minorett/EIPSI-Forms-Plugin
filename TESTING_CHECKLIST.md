@@ -220,6 +220,78 @@
 - [ ] Verify multi-page navigation still works
 - [ ] Verify all field types still work
 
+## Navigation Controls Testing (Critical)
+
+### First Page (Page 1 of N)
+- [ ] Previous button is hidden
+- [ ] Next button is visible
+- [ ] Submit button is hidden
+- [ ] Progress shows "Página 1 de N"
+- [ ] Clicking Next advances to page 2
+
+### Middle Page (e.g., Page 2 of 3)
+#### With allowBackwardsNav = true
+- [ ] Previous button is visible
+- [ ] Next button is visible
+- [ ] Submit button is hidden
+- [ ] Progress shows "Página 2 de 3"
+- [ ] Clicking Previous goes to page 1
+- [ ] Clicking Next goes to page 3
+
+#### With allowBackwardsNav = false
+- [ ] Previous button is hidden
+- [ ] Next button is visible
+- [ ] Submit button is hidden
+- [ ] Progress shows "Página 2 de 3"
+- [ ] Clicking Next goes to page 3
+
+### Last Page (Page N of N)
+- [ ] Previous button is visible (if allowBackwardsNav = true)
+- [ ] Next button is hidden
+- [ ] Submit button is visible
+- [ ] Progress shows "Página N de N"
+- [ ] Clicking Submit submits the form
+- [ ] During submission: all buttons show disabled state (opacity 0.6)
+
+### Conditional Navigation
+#### Auto-submit from middle page
+- [ ] Create form with conditional rule: "If field X = value Y, submit"
+- [ ] Fill field X with value Y on page 2 (of 3 pages)
+- [ ] Click Next
+- [ ] Verify form submits immediately (no page 3 shown)
+- [ ] Verify thank-you page appears
+
+#### Jump to last page
+- [ ] Create form with conditional rule: "If field X = value Y, go to page 3"
+- [ ] Fill field X with value Y on page 1 (of 3 pages)
+- [ ] Click Next
+- [ ] Verify form shows page 3 (page 2 is skipped)
+- [ ] Verify Submit button is visible (not Next)
+
+### Mobile Layout (< 768px)
+- [ ] All buttons stack vertically
+- [ ] Button order on mobile: Progress → Next/Submit → Previous
+- [ ] All buttons are full-width
+- [ ] Touch targets are at least 44×44 px
+- [ ] No overlapping buttons
+
+### Submitting State
+- [ ] Click Submit on last page
+- [ ] Verify Submit button shows "Enviando..." text
+- [ ] Verify Submit button has is-disabled class (opacity 0.6)
+- [ ] Verify Previous button is disabled during submission
+- [ ] Verify all buttons re-enable after submission completes
+- [ ] If submission fails: verify error message appears and buttons re-enable
+
+### ARIA & Screen Reader
+- [ ] Previous button has aria-label with page context
+- [ ] Next button has aria-label with page context
+- [ ] Submit button has aria-label with page context
+- [ ] Hidden buttons have aria-hidden="true"
+- [ ] Disabled buttons have aria-disabled="true"
+- [ ] Navigate form with keyboard only (Tab, Enter)
+- [ ] Test with screen reader (NVDA/JAWS/VoiceOver)
+
 ## Final Verification
 - [ ] No console errors
 - [ ] No PHP warnings/notices
