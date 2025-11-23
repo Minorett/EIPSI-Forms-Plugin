@@ -1,4 +1,5 @@
 import { useBlockProps } from '@wordpress/block-editor';
+import { parseOptions } from '../../utils/optionParser';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -28,21 +29,6 @@ const getFieldId = ( fieldName ) => {
 	const sanitized = normalized.replace( /[^a-zA-Z0-9_-]/g, '-' );
 
 	return `field-${ sanitized }`;
-};
-
-const parseOptions = ( optionsString ) => {
-	if ( ! optionsString || optionsString.trim() === '' ) {
-		return [];
-	}
-
-	// Detectar formato: newline (estándar) o comma (legacy)
-	// Si contiene \n, usar newline; si no, usar comma (backward compatibility)
-	const separator = optionsString.includes( '\n' ) ? '\n' : ',';
-
-	return optionsString
-		.split( separator )
-		.map( ( option ) => option.trim() )
-		.filter( ( option ) => option !== '' );
 };
 
 export default function Save( { attributes } ) {
