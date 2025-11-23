@@ -3,11 +3,7 @@ import { PanelBody, TextareaControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import FieldSettings from '../../components/FieldSettings';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
-import {
-	parseOptions,
-	normalizeOptionsInput,
-	stringifyOptions,
-} from '../../utils/optionParser';
+import { parseOptions, normalizeLineEndings } from '../../utils/optionParser';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -100,10 +96,10 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							'Options (one per line)',
 							'vas-dinamico-forms'
 						) }
-						value={ stringifyOptions( parseOptions( options ) ) }
+						value={ options || '' }
 						onChange={ ( value ) => {
 							setAttributes( {
-								options: normalizeOptionsInput( value ),
+								options: normalizeLineEndings( value ),
 							} );
 						} }
 						help={ __(
