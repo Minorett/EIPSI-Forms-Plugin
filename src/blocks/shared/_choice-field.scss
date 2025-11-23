@@ -1,0 +1,183 @@
+/**
+ * EIPSI Forms - Shared Choice Field Mixin
+ * 
+ * Unified styling for radio, checkbox, and Likert blocks.
+ * Enforces:
+ * - 44×44px minimum touch targets (WCAG 2.1 AA)
+ * - Full-width label wrappers (entire card clickable)
+ * - Visible focus rings
+ * - Hidden native inputs (absolute positioning + clip)
+ * - Consistent hover, focus, checked states
+ * 
+ * Usage:
+ * @include choice-field-base($input-type, $indicator-shape);
+ * 
+ * @param {string} $input-type - "radio" or "checkbox"
+ * @param {string} $indicator-shape - "circle" (50%) or "square" (4px)
+ */
+
+@mixin choice-field-base($input-type: "radio", $indicator-shape: "circle") {
+    // List container
+    list-style: none;
+    margin: 0.8em 0;
+    padding: 0;
+
+    // Individual option card
+    li {
+        margin-bottom: 0.9em;
+        background: var(--eipsi-color-input-bg, #ffffff);
+        border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 44px;
+
+        &:hover {
+            background: var(--eipsi-color-background-subtle, #f8f9fa);
+            border-color: var(--eipsi-color-primary, #005a87);
+            transform: translateX(4px);
+            box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+
+        // Checked state on the card (using :has pseudo-class)
+        &:has(input[type="#{$input-type}"]:checked) {
+            background: rgba(0, 90, 135, 0.05);
+            border-color: var(--eipsi-color-primary, #005a87);
+            box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
+        }
+    }
+
+    // Empty state message
+    .empty-state {
+        padding: 1em;
+        text-align: center;
+        color: var(--eipsi-color-text-muted, #64748b);
+        font-style: italic;
+    }
+}
+
+/**
+ * Label wrapper mixin - makes the entire card clickable
+ */
+@mixin choice-label-wrapper($input-type: "radio") {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+    padding: 0.8em 1em;
+    position: relative;
+    min-height: 44px;
+
+    // Hide the native input completely (accessibility-friendly)
+    input[type="#{$input-type}"] {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    // Remove outline from hidden input (focus ring will be on custom indicator)
+    input[type="#{$input-type}"]:focus {
+        outline: none;
+    }
+}
+
+/**
+ * Label text with custom visual indicator
+ */
+@mixin choice-label-text($input-type: "radio", $indicator-shape: "circle") {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.95em;
+    line-height: 1.4;
+    color: var(--eipsi-color-text, #2c3e50);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+
+    // Custom visual indicator (radio circle or checkbox square)
+    &::before {
+        content: '';
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--eipsi-color-border-dark, #cbd5e0);
+        border-radius: if($indicator-shape == "circle", 50%, 4px);
+        background: transparent;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+    }
+
+    // Checked state styling for the label
+    // Note: This is applied when the hidden input is checked
+    // Selector pattern depends on DOM structure
+}
+
+/**
+ * Checked state for radio buttons (filled circle with inset ring)
+ */
+@mixin choice-checked-radio() {
+    font-weight: 700;
+    color: var(--eipsi-color-primary, #005a87);
+
+    &::before {
+        background: var(--eipsi-color-primary, #005a87);
+        border-color: var(--eipsi-color-primary, #005a87);
+        box-shadow: inset 0 0 0 4px var(--eipsi-color-background, #ffffff);
+    }
+}
+
+/**
+ * Checked state for checkboxes (filled square with checkmark)
+ */
+@mixin choice-checked-checkbox() {
+    font-weight: 700;
+    color: var(--eipsi-color-primary, #005a87);
+
+    &::before {
+        background: var(--eipsi-color-primary, #005a87);
+        border-color: var(--eipsi-color-primary, #005a87);
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        left: 7px;
+        top: 50%;
+        transform: translateY(-50%) rotate(45deg);
+        width: 6px;
+        height: 11px;
+        border: solid var(--eipsi-color-background, #ffffff);
+        border-width: 0 2px 2px 0;
+    }
+}
+
+/**
+ * Hover state for the custom indicator
+ */
+@mixin choice-hover-indicator() {
+    border-color: var(--eipsi-color-primary, #005a87);
+    transform: scale(1.05);
+}
+
+/**
+ * Focus state for keyboard navigation (WCAG 2.1 AA)
+ */
+@mixin choice-focus-indicator() {
+    border-color: var(--eipsi-color-primary, #005a87);
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.2);
+}

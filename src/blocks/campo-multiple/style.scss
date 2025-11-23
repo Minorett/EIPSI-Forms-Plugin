@@ -1,127 +1,29 @@
+@use '../shared/choice-field' as choice;
+
 .wp-block-vas-dinamico-campo-multiple {
     .checkbox-list {
-        list-style: none;
-        margin: 0.8em 0;
-        padding: 0;
+        @include choice.choice-field-base("checkbox", "square");
 
         li {
-            margin-bottom: 0.9em;
-            background: var(--eipsi-color-input-bg, #ffffff);
-            border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            min-height: 44px;
-
-            &:hover {
-                background: var(--eipsi-color-background-subtle, #f8f9fa);
-                border-color: var(--eipsi-color-primary, #005a87);
-                transform: translateX(4px);
-                box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
-            }
-
-            &:last-child {
-                margin-bottom: 0;
-            }
-
-            &:has(input[type="checkbox"]:checked) {
-                background: rgba(0, 90, 135, 0.05);
-                border-color: var(--eipsi-color-primary, #005a87);
-                box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
-            }
-
             .checkbox-label-wrapper {
-                display: flex;
-                align-items: center;
-                gap: 0.8em;
-                cursor: pointer;
-                user-select: none;
-                width: 100%;
-                padding: 0.8em 1em;
-                position: relative;
-                min-height: 44px;
-
-                input[type="checkbox"] {
-                    position: absolute;
-                    opacity: 0;
-                    width: 1px;
-                    height: 1px;
-                    margin: -1px;
-                    padding: 0;
-                    overflow: hidden;
-                    clip: rect(0, 0, 0, 0);
-                    white-space: nowrap;
-                    border-width: 0;
-                }
+                @include choice.choice-label-wrapper("checkbox");
             }
 
             .checkbox-label-text {
-                margin: 0;
-                cursor: pointer;
-                font-weight: 500;
-                font-size: 0.95em;
-                line-height: 1.4;
-                color: var(--eipsi-color-text, #2c3e50);
-                position: relative;
-                display: flex;
-                align-items: center;
-                gap: 0.8em;
+                @include choice.choice-label-text("checkbox", "square");
+            }
 
-                &::before {
-                    content: '';
-                    display: inline-block;
-                    width: 20px;
-                    height: 20px;
-                    border: 2px solid var(--eipsi-color-border-dark, #cbd5e0);
-                    border-radius: 4px;
-                    background: transparent;
-                    flex-shrink: 0;
-                    transition: all 0.2s ease;
-                }
-
-                input[type="checkbox"]:checked ~ & {
-                    font-weight: 700;
-                    color: var(--eipsi-color-primary, #005a87);
-
-                    &::before {
-                        background: var(--eipsi-color-primary, #005a87);
-                        border-color: var(--eipsi-color-primary, #005a87);
-                    }
-
-                    &::after {
-                        content: '';
-                        position: absolute;
-                        left: 7px;
-                        top: 50%;
-                        transform: translateY(-50%) rotate(45deg);
-                        width: 6px;
-                        height: 11px;
-                        border: solid var(--eipsi-color-background, #ffffff);
-                        border-width: 0 2px 2px 0;
-                    }
-                }
+            .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text {
+                @include choice.choice-checked-checkbox();
             }
 
             &:hover .checkbox-label-text::before {
-                border-color: var(--eipsi-color-primary, #005a87);
-                transform: scale(1.05);
+                @include choice.choice-hover-indicator();
             }
 
             .checkbox-label-wrapper:focus-within .checkbox-label-text::before {
-                border-color: var(--eipsi-color-primary, #005a87);
-                box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.2);
+                @include choice.choice-focus-indicator();
             }
-
-            .checkbox-label-wrapper input[type="checkbox"]:focus {
-                outline: none;
-            }
-        }
-
-        .empty-state {
-            padding: 1em;
-            text-align: center;
-            color: var(--eipsi-color-text-muted, #64748b);
-            font-style: italic;
         }
     }
 
