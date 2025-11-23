@@ -36,8 +36,6 @@ export default function Save( { attributes } ) {
 		label,
 		required,
 		helperText,
-		leftLabel,
-		rightLabel,
 		labels,
 		minValue,
 		maxValue,
@@ -82,19 +80,63 @@ export default function Save( { attributes } ) {
 	const blockProps = useBlockProps.save( blockPropsData );
 
 	const inputId = getFieldId( normalizedFieldName );
-	const currentValue =
-		initialValue >= minValue && initialValue <= maxValue
-			? initialValue
-			: Math.floor( ( minValue + maxValue ) / 2 );
 
-	const labelArray =
-		labels && labels.trim() !== ''
-			? labels
-					.split( ',' )
-					.map( ( l ) => l.trim() )
-					.filter( ( l ) => l !== '' )
-			: [];
-	const hasMultiLabels = labelArray.length > 0;
+	const safeStep = step && step > 0 ? step : 1;
+	const sliderMin =
+		typeof minValue === 'number' && ! Number.isNaN( minValue )
+			? minValue
+			: 0;
+	const sliderMaxCandidate =
+		typeof maxValue === 'number' && ! Number.isNaN( maxValue )
+			? maxValue
+			: sliderMin + safeStep;
+	const sliderMax =
+		sliderMaxCandidate > sliderMin
+			? sliderMaxCandidate
+			: sliderMin + safeStep;
+
+	const safeInitialValue =
+		typeof initialValue === 'number' &&
+		! Number.isNaN( initialValue ) &&
+		initialValue >= sliderMin &&
+		initialValue <= sliderMax
+			? initialValue
+			: Math.floor( ( sliderMin + sliderMax ) / 2 );
+
+	const parsedLabels = labels
+		? labels
+				.split( ',' )
+				.map( ( labelText ) => labelText.trim() )
+				.filter( Boolean )
+		: [];
+	const resolvedLabels =
+		parsedLabels.length > 0
+			? parsedLabels
+			: [ `${ sliderMin }`, `${ sliderMax }` ];
+
+	const shouldShowValue =
+		showCurrentValue !== undefined ? showCurrentValue : showValue !== false;
+	const valueElementId =
+		shouldShowValue && inputId ? `${ inputId }-value` : undefined;
+
+	let alignmentPercentValue = 50;
+	if (
+		typeof labelAlignmentPercent === 'number' &&
+		! Number.isNaN( labelAlignmentPercent )
+	) {
+		alignmentPercentValue = labelAlignmentPercent;
+	} else if (
+		typeof labelSpacing === 'number' &&
+		! Number.isNaN( labelSpacing )
+	) {
+		alignmentPercentValue = labelSpacing;
+	}
+	const clampedAlignmentPercent = Math.min(
+		Math.max( alignmentPercentValue, 0 ),
+		100
+	);
+	const alignmentRatio = clampedAlignmentPercent / 100;
+	const compactnessRatio = 1 - alignmentRatio;
 
 	return (
 		<div { ...blockProps }>
@@ -107,93 +149,59 @@ export default function Save( { attributes } ) {
 				</label>
 			) }
 			<div
-				className={ `vas-slider-container ${
-					showLabelContainers ? 'vas-show-label-containers' : ''
-				} ${ showValueContainer ? 'vas-show-value-container' : '' } ${
-					boldLabels !== false ? 'vas-bold-labels' : ''
-				} ${ valuePosition === 'below' ? 'vas-value-below' : '' }` }
-				data-scale={ `${ minValue }-${ maxValue }` }
+				className={ `vas-slider-container${
+					showLabelContainers ? ' vas-show-label-containers' : ''
+				}${ showValueContainer ? ' vas-show-value-container' : '' }${
+					boldLabels !== false ? ' vas-bold-labels' : ''
+				}${ valuePosition === 'below' ? ' vas-value-below' : '' }` }
+				data-scale={ `${ sliderMin }-${ sliderMax }` }
 				style={ {
-					'--vas-label-alignment':
-						( labelAlignmentPercent !== undefined
-							? labelAlignmentPercent
-							: labelSpacing || 50 ) / 100,
+					'--vas-label-alignment': alignmentRatio,
+					'--vas-label-compactness': compactnessRatio,
 					'--vas-label-size': `${ labelFontSize || 16 }px`,
 					'--vas-value-size': `${ valueFontSize || 36 }px`,
-					'--vas-label-spacing': `${
-						labelSpacing !== undefined ? labelSpacing : 100
-					}%`,
 				} }
 			>
-				{ ! hasMultiLabels && (
-					<div className="vas-slider-labels">
-						{ leftLabel && (
-							<span className="vas-label-left">
-								{ leftLabel }
-							</span>
-						) }
-						{ ( showCurrentValue !== undefined
-							? showCurrentValue
-							: showValue !== false ) && (
-							<span
-								className="vas-current-value"
-								id={ `${ inputId }-value` }
-							>
-								{ currentValue }
-							</span>
-						) }
-						{ rightLabel && (
-							<span className="vas-label-right">
-								{ rightLabel }
-							</span>
-						) }
-					</div>
-				) }
-				{ hasMultiLabels && (
-					<div className="vas-multi-labels">
-						{ labelArray.map( ( labelText, index ) => (
-							<span key={ index } className="vas-multi-label">
-								{ labelText }
-							</span>
-						) ) }
-					</div>
-				) }
-				{ hasMultiLabels &&
-					( showCurrentValue !== undefined
-						? showCurrentValue
-						: showValue !== false ) && (
-						<div
-							className="vas-current-value-solo"
-							id={ `${ inputId }-value` }
+				<div
+					className="vas-multi-labels"
+					data-label-count={ resolvedLabels.length }
+				>
+					{ resolvedLabels.map( ( labelText, index ) => (
+						<span
+							key={ `${ labelText }-${ index }` }
+							className="vas-multi-label"
 						>
-							{ currentValue }
-						</div>
-					) }
+							{ labelText }
+						</span>
+					) ) }
+				</div>
+
+				{ shouldShowValue && (
+					<div
+						className="vas-current-value-solo"
+						id={ valueElementId }
+					>
+						{ safeInitialValue }
+					</div>
+				) }
+
 				<input
 					type="range"
 					name={ normalizedFieldName }
 					id={ inputId }
 					className="vas-slider"
-					min={ minValue }
-					max={ maxValue }
-					step={ step }
-					defaultValue={ currentValue }
+					min={ sliderMin }
+					max={ sliderMax }
+					step={ safeStep }
+					defaultValue={ safeInitialValue }
 					required={ required }
 					data-required={ required ? 'true' : 'false' }
-					data-show-value={
-						(
-							showCurrentValue !== undefined
-								? showCurrentValue
-								: showValue !== false
-						)
-							? 'true'
-							: 'false'
-					}
+					data-show-value={ shouldShowValue ? 'true' : 'false' }
 					data-touched="false"
-					aria-valuemin={ minValue }
-					aria-valuemax={ maxValue }
-					aria-valuenow={ currentValue }
-					aria-labelledby={ `${ inputId }-value` }
+					aria-valuemin={ sliderMin }
+					aria-valuemax={ sliderMax }
+					aria-valuenow={ safeInitialValue }
+					aria-labelledby={ valueElementId }
 				/>
 			</div>
 			{ renderHelperText( helperText ) }
