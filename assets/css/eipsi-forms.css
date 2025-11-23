@@ -535,30 +535,27 @@ select[aria-invalid="true"]:focus {
 }
 
 /* ============================================================================
-   9. RADIO BUTTONS
+   9. RADIO BUTTONS - UNIFIED WITH BLOCK STYLES
    ============================================================================ */
 
 .eipsi-radio-field .radio-list,
 .vas-dinamico-form .radio-list,
 .eipsi-form .radio-list {
     list-style: none;
-    margin: 0.75rem 0 0 0;
+    margin: 0.8rem 0;
     padding: 0;
 }
 
 .eipsi-radio-field .radio-list li,
 .vas-dinamico-form .radio-list li,
 .eipsi-form .radio-list li {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.875rem 1rem;
-    margin: 0 0 0.75rem 0;
+    margin-bottom: 0.9rem;
     background: var(--eipsi-color-input-bg, #ffffff);
     border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
-    border-radius: var(--eipsi-border-radius-sm, 8px);
+    border-radius: 8px;
+    transition: all 0.3s ease;
     cursor: pointer;
-    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+    min-height: 44px;
 }
 
 .eipsi-radio-field .radio-list li:last-child,
@@ -573,35 +570,126 @@ select[aria-invalid="true"]:focus {
     background: var(--eipsi-color-background-subtle, #f8f9fa);
     border-color: var(--eipsi-color-primary, #005a87);
     transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.1);
 }
 
-.eipsi-radio-field .radio-list li input[type="radio"],
-.vas-dinamico-form .radio-list li input[type="radio"],
-.eipsi-form .radio-list li input[type="radio"] {
+/* Checked state on the card */
+.eipsi-radio-field .radio-list li:has(input[type="radio"]:checked),
+.vas-dinamico-form .radio-list li:has(input[type="radio"]:checked),
+.eipsi-form .radio-list li:has(input[type="radio"]:checked) {
+    background: rgba(0, 90, 135, 0.05);
+    border-color: var(--eipsi-color-primary, #005a87);
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+}
+
+/* Label wrapper - full clickable area */
+.eipsi-radio-field .radio-list li .radio-label-wrapper,
+.vas-dinamico-form .radio-list li .radio-label-wrapper,
+.eipsi-form .radio-list li .radio-label-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    position: relative;
+    min-height: 44px;
+}
+
+/* Hide native radio input completely (accessibility-friendly) */
+.eipsi-radio-field .radio-list li .radio-label-wrapper input[type="radio"],
+.vas-dinamico-form .radio-list li .radio-label-wrapper input[type="radio"],
+.eipsi-form .radio-list li .radio-label-wrapper input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.eipsi-radio-field .radio-list li .radio-label-wrapper input[type="radio"]:focus,
+.vas-dinamico-form .radio-list li .radio-label-wrapper input[type="radio"]:focus,
+.eipsi-form .radio-list li .radio-label-wrapper input[type="radio"]:focus {
+    outline: none;
+}
+
+/* Label text with custom visual indicator */
+.eipsi-radio-field .radio-list li .radio-label-text,
+.vas-dinamico-form .radio-list li .radio-label-text,
+.eipsi-form .radio-list li .radio-label-text {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--eipsi-color-text, #2c3e50);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+/* Custom radio circle */
+.eipsi-radio-field .radio-list li .radio-label-text::before,
+.vas-dinamico-form .radio-list li .radio-label-text::before,
+.eipsi-form .radio-list li .radio-label-text::before {
+    content: '';
+    display: inline-block;
     width: 20px;
     height: 20px;
-    margin: 0;
-    cursor: pointer;
+    border: 2px solid var(--eipsi-color-border-dark, #cbd5e0);
+    border-radius: 50%;
+    background: transparent;
     flex-shrink: 0;
-    accent-color: var(--eipsi-color-primary, #005a87);
+    transition: all 0.2s ease;
 }
 
-.eipsi-radio-field .radio-list li label,
-.vas-dinamico-form .radio-list li label,
-.eipsi-form .radio-list li label {
-    margin: 0;
-    cursor: pointer;
-    font-weight: var(--eipsi-font-weight-medium, 500);
-    color: var(--eipsi-color-input-text, #2c3e50);
+/* Checked state styling */
+.eipsi-radio-field .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text,
+.vas-dinamico-form .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text,
+.eipsi-form .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text {
+    font-weight: 700;
+    color: var(--eipsi-color-primary, #005a87);
 }
 
+.eipsi-radio-field .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text::before,
+.vas-dinamico-form .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text::before,
+.eipsi-form .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text::before {
+    background: var(--eipsi-color-primary, #005a87);
+    border-color: var(--eipsi-color-primary, #005a87);
+    box-shadow: inset 0 0 0 4px var(--eipsi-color-background, #ffffff);
+}
+
+/* Hover state on indicator */
+.eipsi-radio-field .radio-list li:hover .radio-label-text::before,
+.vas-dinamico-form .radio-list li:hover .radio-label-text::before,
+.eipsi-form .radio-list li:hover .radio-label-text::before {
+    border-color: var(--eipsi-color-primary, #005a87);
+    transform: scale(1.05);
+}
+
+/* Focus visible for keyboard navigation (WCAG AA) */
+.eipsi-radio-field .radio-list li .radio-label-wrapper:focus-within .radio-label-text::before,
+.vas-dinamico-form .radio-list li .radio-label-wrapper:focus-within .radio-label-text::before,
+.eipsi-form .radio-list li .radio-label-wrapper:focus-within .radio-label-text::before {
+    border-color: var(--eipsi-color-primary, #005a87);
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.2);
+}
+
+/* Error state */
 .has-error .radio-list li {
     border-color: var(--eipsi-color-error, #d32f2f);
     background: var(--eipsi-color-input-error-bg, #fff5f5);
 }
 
 /* ============================================================================
-   10. CHECKBOXES
+   10. CHECKBOXES - UNIFIED WITH BLOCK STYLES
    ============================================================================ */
 
 .eipsi-checkbox-field .checkbox-list,
@@ -609,7 +697,7 @@ select[aria-invalid="true"]:focus {
 .vas-dinamico-form .checkbox-list,
 .eipsi-form .checkbox-list {
     list-style: none;
-    margin: 0.75rem 0 0 0;
+    margin: 0.8rem 0;
     padding: 0;
 }
 
@@ -617,16 +705,13 @@ select[aria-invalid="true"]:focus {
 .eipsi-multiple-field .checkbox-list li,
 .vas-dinamico-form .checkbox-list li,
 .eipsi-form .checkbox-list li {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.875rem 1rem;
-    margin: 0 0 0.75rem 0;
+    margin-bottom: 0.9rem;
     background: var(--eipsi-color-input-bg, #ffffff);
     border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
-    border-radius: var(--eipsi-border-radius-sm, 8px);
+    border-radius: 8px;
+    transition: all 0.3s ease;
     cursor: pointer;
-    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+    min-height: 44px;
 }
 
 .eipsi-checkbox-field .checkbox-list li:last-child,
@@ -643,28 +728,132 @@ select[aria-invalid="true"]:focus {
     background: var(--eipsi-color-background-subtle, #f8f9fa);
     border-color: var(--eipsi-color-primary, #005a87);
     transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.1);
 }
 
-.eipsi-checkbox-field .checkbox-list li input[type="checkbox"],
-.eipsi-multiple-field .checkbox-list li input[type="checkbox"],
-.vas-dinamico-form .checkbox-list li input[type="checkbox"],
-.eipsi-form .checkbox-list li input[type="checkbox"] {
+.eipsi-checkbox-field .checkbox-list li:has(input[type="checkbox"]:checked),
+.eipsi-multiple-field .checkbox-list li:has(input[type="checkbox"]:checked),
+.vas-dinamico-form .checkbox-list li:has(input[type="checkbox"]:checked),
+.eipsi-form .checkbox-list li:has(input[type="checkbox"]:checked) {
+    background: rgba(0, 90, 135, 0.05);
+    border-color: var(--eipsi-color-primary, #005a87);
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+}
+
+.eipsi-checkbox-field .checkbox-list li .checkbox-label-wrapper,
+.eipsi-multiple-field .checkbox-list li .checkbox-label-wrapper,
+.vas-dinamico-form .checkbox-list li .checkbox-label-wrapper,
+.eipsi-form .checkbox-list li .checkbox-label-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    position: relative;
+    min-height: 44px;
+}
+
+.eipsi-checkbox-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"],
+.eipsi-multiple-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"],
+.vas-dinamico-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"],
+.eipsi-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.eipsi-checkbox-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:focus,
+.eipsi-multiple-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:focus,
+.vas-dinamico-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:focus,
+.eipsi-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:focus {
+    outline: none;
+}
+
+.eipsi-checkbox-field .checkbox-list li .checkbox-label-text,
+.eipsi-multiple-field .checkbox-list li .checkbox-label-text,
+.vas-dinamico-form .checkbox-list li .checkbox-label-text,
+.eipsi-form .checkbox-list li .checkbox-label-text {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--eipsi-color-text, #2c3e50);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.eipsi-checkbox-field .checkbox-list li .checkbox-label-text::before,
+.eipsi-multiple-field .checkbox-list li .checkbox-label-text::before,
+.vas-dinamico-form .checkbox-list li .checkbox-label-text::before,
+.eipsi-form .checkbox-list li .checkbox-label-text::before {
+    content: '';
+    display: inline-block;
     width: 20px;
     height: 20px;
-    margin: 0;
-    cursor: pointer;
+    border: 2px solid var(--eipsi-color-border-dark, #cbd5e0);
+    border-radius: 4px;
+    background: transparent;
     flex-shrink: 0;
-    accent-color: var(--eipsi-color-primary, #005a87);
+    transition: all 0.2s ease;
 }
 
-.eipsi-checkbox-field .checkbox-list li label,
-.eipsi-multiple-field .checkbox-list li label,
-.vas-dinamico-form .checkbox-list li label,
-.eipsi-form .checkbox-list li label {
-    margin: 0;
-    cursor: pointer;
-    font-weight: var(--eipsi-font-weight-medium, 500);
-    color: var(--eipsi-color-input-text, #2c3e50);
+.eipsi-checkbox-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text,
+.eipsi-multiple-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text,
+.vas-dinamico-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text,
+.eipsi-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text {
+    font-weight: 700;
+    color: var(--eipsi-color-primary, #005a87);
+}
+
+.eipsi-checkbox-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::before,
+.eipsi-multiple-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::before,
+.vas-dinamico-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::before,
+.eipsi-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::before {
+    background: var(--eipsi-color-primary, #005a87);
+    border-color: var(--eipsi-color-primary, #005a87);
+}
+
+.eipsi-checkbox-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::after,
+.eipsi-multiple-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::after,
+.vas-dinamico-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::after,
+.eipsi-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::after {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 6px;
+    height: 11px;
+    border: solid var(--eipsi-color-background, #ffffff);
+    border-width: 0 2px 2px 0;
+}
+
+.eipsi-checkbox-field .checkbox-list li:hover .checkbox-label-text::before,
+.eipsi-multiple-field .checkbox-list li:hover .checkbox-label-text::before,
+.vas-dinamico-form .checkbox-list li:hover .checkbox-label-text::before,
+.eipsi-form .checkbox-list li:hover .checkbox-label-text::before {
+    border-color: var(--eipsi-color-primary, #005a87);
+    transform: scale(1.05);
+}
+
+.eipsi-checkbox-field .checkbox-list li .checkbox-label-wrapper:focus-within .checkbox-label-text::before,
+.eipsi-multiple-field .checkbox-list li .checkbox-label-wrapper:focus-within .checkbox-label-text::before,
+.vas-dinamico-form .checkbox-list li .checkbox-label-wrapper:focus-within .checkbox-label-text::before,
+.eipsi-form .checkbox-list li .checkbox-label-wrapper:focus-within .checkbox-label-text::before {
+    border-color: var(--eipsi-color-primary, #005a87);
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.2);
 }
 
 .has-error .checkbox-list li {
@@ -673,7 +862,7 @@ select[aria-invalid="true"]:focus {
 }
 
 /* ============================================================================
-   11. LIKERT SCALE FIELDS - RESEARCH-GRADE DESIGN
+   11. LIKERT SCALE FIELDS - UNIFIED CARD STYLES
    ============================================================================ */
 
 .eipsi-likert-field {
@@ -681,17 +870,17 @@ select[aria-invalid="true"]:focus {
 }
 
 .eipsi-likert-field .likert-scale {
-    margin: 1rem 0 0 0;
+    margin: 1rem 0 0;
     padding: 1.5rem;
-    background: #f8f9fa;
-    border: 2px solid #e2e8f0;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border: 2px solid var(--eipsi-color-border, #e2e8f0);
     border-radius: 12px;
     transition: all 0.3s ease;
 }
 
 .eipsi-likert-field .likert-scale:hover {
-    background: #ffffff;
-    border-color: #cbd5e0;
+    background: var(--eipsi-color-background, #ffffff);
+    border-color: var(--eipsi-color-border-dark, #cbd5e0);
 }
 
 .eipsi-likert-field .likert-list {
@@ -715,14 +904,14 @@ select[aria-invalid="true"]:focus {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: #ffffff;
-    border: 2px solid #e2e8f0;
+    gap: 0.6rem;
+    padding: 0.9rem 1rem;
+    background: var(--eipsi-color-input-bg, #ffffff);
+    border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
     border-radius: 10px;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     cursor: pointer;
-    position: relative;
+    min-height: 44px;
 }
 
 @media (min-width: 768px) {
@@ -731,40 +920,39 @@ select[aria-invalid="true"]:focus {
         flex-direction: column;
         text-align: center;
         justify-content: center;
-        padding: 1.25rem 0.75rem;
+        padding: 1.1rem 0.75rem;
     }
 }
 
 .eipsi-likert-field .likert-item:hover {
-    background: #f8f9fa;
-    border-color: #005a87;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border-color: var(--eipsi-color-primary, #005a87);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.1);
 }
 
 .eipsi-likert-field .likert-item:active {
     transform: translateY(0);
 }
 
-/* Selected State */
 .eipsi-likert-field .likert-item:has(input[type="radio"]:checked) {
     background: rgba(0, 90, 135, 0.05);
-    border-color: #005a87;
+    border-color: var(--eipsi-color-primary, #005a87);
     box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
 }
 
-/* Label Wrapper - Full Clickable Area */
 .eipsi-likert-field .likert-label-wrapper {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.6rem;
     cursor: pointer;
     user-select: none;
     width: 100%;
     height: 100%;
     padding: 0;
     position: relative;
+    min-height: 44px;
 }
 
 @media (min-width: 768px) {
@@ -775,48 +963,58 @@ select[aria-invalid="true"]:focus {
     }
 }
 
-/* Hidden Radio Input */
 .eipsi-likert-field .likert-label-wrapper input[type="radio"] {
     position: absolute;
     opacity: 0;
-    z-index: 1;
-    width: 24px;
-    height: 24px;
-    margin: 0;
-    cursor: pointer;
-    flex-shrink: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
 }
 
-/* Custom Radio Label with Visual Indicator */
+.eipsi-likert-field .likert-label-wrapper input[type="radio"]:focus {
+    outline: none;
+}
+
 .eipsi-likert-field .likert-label-text {
     margin: 0;
     cursor: pointer;
     font-weight: 500;
-    font-size: 0.9375rem;
+    font-size: 0.95rem;
     line-height: 1.4;
-    color: #2c3e50;
+    color: var(--eipsi-color-text, #2c3e50);
     position: relative;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.6rem;
 }
 
 @media (min-width: 768px) {
     .eipsi-likert-field .likert-label-text {
-        font-size: 0.875rem;
+        font-size: 0.9rem;
         flex-direction: column;
         text-align: center;
+        gap: 0.4rem;
+    }
+}
+
+@media (max-width: 374px) {
+    .eipsi-likert-field .likert-label-text {
+        font-size: 0.875rem;
         gap: 0.5rem;
     }
 }
 
-/* Custom Radio Button Visual */
 .eipsi-likert-field .likert-label-text::before {
     content: '';
     display: inline-block;
-    width: 22px;
-    height: 22px;
-    border: 2px solid #cbd5e0;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--eipsi-color-border-dark, #cbd5e0);
     border-radius: 50%;
     background: transparent;
     flex-shrink: 0;
@@ -825,44 +1023,39 @@ select[aria-invalid="true"]:focus {
 
 @media (min-width: 768px) {
     .eipsi-likert-field .likert-label-text::before {
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
     }
 }
 
-/* Checked State */
-.eipsi-likert-field input[type="radio"]:checked + .likert-label-text {
+.eipsi-likert-field .likert-label-wrapper input[type="radio"]:checked + .likert-label-text {
     font-weight: 700;
-    color: #005a87;
+    color: var(--eipsi-color-primary, #005a87);
 }
 
-.eipsi-likert-field input[type="radio"]:checked + .likert-label-text::before {
-    background: #005a87;
-    border-color: #005a87;
-    box-shadow: inset 0 0 0 4px #ffffff;
+.eipsi-likert-field .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: var(--eipsi-color-primary, #005a87);
+    border-color: var(--eipsi-color-primary, #005a87);
+    box-shadow: inset 0 0 0 4px var(--eipsi-color-background, #ffffff);
 }
 
-/* Hover State */
-.eipsi-likert-field input[type="radio"]:hover + .likert-label-text::before {
-    border-color: #005a87;
-    transform: scale(1.1);
+.eipsi-likert-field .likert-item:hover .likert-label-text::before {
+    border-color: var(--eipsi-color-primary, #005a87);
+    transform: scale(1.05);
 }
 
-/* Focus State for Accessibility */
-.eipsi-likert-field input[type="radio"]:focus + .likert-label-text {
-    outline: 2px solid #005a87;
-    outline-offset: 4px;
-    border-radius: 4px;
+.eipsi-likert-field .likert-label-wrapper:focus-within .likert-label-text::before {
+    border-color: var(--eipsi-color-primary, #005a87);
+    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.2);
 }
 
-/* Error State */
 .eipsi-likert-field.has-error .likert-scale {
-    border-color: #ff6b6b;
+    border-color: var(--eipsi-color-error, #d32f2f);
     background: #fff5f5;
 }
 
 .eipsi-likert-field.has-error .likert-item {
-    border-color: rgba(255, 107, 107, 0.5);
+    border-color: var(--eipsi-color-error, #d32f2f);
 }
 
 /* ============================================================================

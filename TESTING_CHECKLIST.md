@@ -275,6 +275,12 @@
 - [ ] Touch targets are at least 44×44 px
 - [ ] No overlapping buttons
 
+### Choice Field Touch Targets (Chrome DevTools Mobile Emulation)
+- [ ] Load a form with radio, checkbox y Likert en modo tablet/móvil y confirmar que toda la tarjeta responde al toque (no solo el círculo/cuadrado)
+- [ ] Cada tarjeta muestra un anillo de foco accesible al navegar con Tab/Shift+Tab (solo un foco por opción)
+- [ ] Los estados hover/focus mantienen contraste WCAG AA tanto en modo claro como oscuro
+- [ ] Mantener pulsado (long press) no desplaza ni selecciona texto accidentalmente
+
 ### Submitting State
 - [ ] Click Submit on last page
 - [ ] Verify Submit button shows "Enviando..." text
