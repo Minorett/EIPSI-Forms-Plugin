@@ -29,6 +29,23 @@
 
 ---
 
+## 🧪 Verificación rápida de build clínico
+
+Para evitar sorpresas antes de una sesión o demo clínica, corré la verificación de build cada vez que clones el repo:
+
+- **Requisitos mínimos:** Node.js 14+ y npm 7+ (cualquier SO)
+- **Linux / macOS:** `./scripts/verify-build.sh`
+- **Windows (PowerShell):** `./scripts/verify-build.ps1`
+
+Cada script:
+1. Instala dependencias con `npm install --legacy-peer-deps`
+2. Ejecuta `npm run build`
+3. Confirma que `build/index.js`, `build/index.css` y `build/style-index.css` existan y tengan tamaño > 0 bytes
+
+> Documentación completa del proceso: [BUILD_VERIFICATION.md](BUILD_VERIFICATION.md)
+
+---
+
 ## 🎯 Características Principales
 
 ### 📋 Bloques de Gutenberg Personalizables
