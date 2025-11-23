@@ -14,55 +14,111 @@
  * Dark theme colors
  * Applied when data-theme="dark" is set on .vas-dinamico-form
  * Overrides ALL --eipsi-color-* variables for complete dark mode coverage
+ * 
+ * IMPORTANT: Input fields remain LIGHT for clinical readability
  */
 .vas-dinamico-form[data-theme="dark"],
 .eipsi-form[data-theme="dark"] {
-	/* Core Colors */
-	--eipsi-color-primary: #60a5fa;
-	--eipsi-color-primary-hover: #3b82f6;
-	--eipsi-color-secondary: #1e3a8a;
-	--eipsi-color-background: #0f172a;
-	--eipsi-color-background-subtle: #1e293b;
-	--eipsi-color-text: #e2e8f0;
-	--eipsi-color-text-muted: #94a3b8;
+    /* Core Colors */
+    --eipsi-color-primary: #60a5fa;
+    --eipsi-color-primary-hover: #3b82f6;
+    --eipsi-color-secondary: #1e3a8a;
+    --eipsi-color-background: #0f172a;
+    --eipsi-color-background-subtle: #1e293b;
+    --eipsi-color-text: #e2e8f0;
+    --eipsi-color-text-muted: #94a3b8;
 
-	/* Input Colors */
-	--eipsi-color-input-bg: #1e293b;
-	--eipsi-color-input-text: #e2e8f0;
-	--eipsi-color-input-border: #475569;
-	--eipsi-color-input-border-focus: #60a5fa;
-	--eipsi-color-input-error-bg: #2d1f1f;
-	--eipsi-color-input-icon: #60a5fa;
+    /* Input Colors - REMAIN LIGHT for clinical readability */
+    --eipsi-color-input-bg: #ffffff;
+    --eipsi-color-input-text: #2c3e50;
+    --eipsi-color-input-border: #475569;
+    --eipsi-color-input-border-focus: #60a5fa;
+    --eipsi-color-input-error-bg: #fff5f5;
+    --eipsi-color-input-icon: #60a5fa;
 
-	/* Button Colors */
-	--eipsi-color-button-bg: #3b82f6;
-	--eipsi-color-button-text: #ffffff;
-	--eipsi-color-button-hover-bg: #2563eb;
+    /* Button Colors */
+    --eipsi-color-button-bg: #3b82f6;
+    --eipsi-color-button-text: #ffffff;
+    --eipsi-color-button-hover-bg: #2563eb;
 
-	/* Semantic Colors */
-	--eipsi-color-error: #fca5a5;
-	--eipsi-color-success: #86efac;
-	--eipsi-color-warning: #fcd34d;
+    /* Semantic Colors */
+    --eipsi-color-error: #fca5a5;
+    --eipsi-color-error-text: #ffffff;
+    --eipsi-color-error-border-strong: rgba(252, 165, 165, 0.3);
+    --eipsi-shadow-error-strong: 0 4px 16px rgba(252, 165, 165, 0.25);
+    --eipsi-color-success: #86efac;
+    --eipsi-color-success-dark: #6ee7b7;
+    --eipsi-color-success-text: #ffffff;
+    --eipsi-color-success-overlay: rgba(134, 239, 172, 0.15);
+    --eipsi-color-success-subtitle: rgba(255, 255, 255, 0.95);
+    --eipsi-color-success-note: rgba(255, 255, 255, 0.85);
+    --eipsi-color-success-shadow: rgba(0, 0, 0, 0.3);
+    --eipsi-color-warning: #fcd34d;
 
-	/* Border Colors */
-	--eipsi-color-border: #334155;
-	--eipsi-color-border-dark: #475569;
+    /* Border Colors */
+    --eipsi-color-border: #334155;
+    --eipsi-color-border-dark: #475569;
+    
+    /* Cards & Surfaces */
+    --eipsi-color-card-bg: #1e293b;
+    --eipsi-color-card-bg-hover: #334155;
+    --eipsi-color-card-border: #475569;
+    --eipsi-color-checked-bg: rgba(96, 165, 250, 0.15);
+    --eipsi-color-checked-shadow: rgba(96, 165, 250, 0.25);
+    
+    /* Progress & Navigation */
+    --eipsi-color-progress-bg: #1e293b;
+    --eipsi-color-progress-border: #475569;
+    --eipsi-color-progress-text: #e2e8f0;
+    --eipsi-color-progress-text-highlight: #60a5fa;
+    
+    /* VAS Slider */
+    --eipsi-color-vas-container-bg: #1e3a5c;
+    --eipsi-color-vas-container-bg-hover: #2d4a73;
+    --eipsi-color-vas-container-border: #3b5a8a;
+    --eipsi-color-vas-container-border-hover: #4a6fa0;
+    --eipsi-color-vas-label-bg: rgba(96, 165, 250, 0.15);
+    --eipsi-color-vas-label-border: rgba(96, 165, 250, 0.3);
+    --eipsi-color-vas-label-text: #60a5fa;
+    --eipsi-color-vas-slider-track: #334155;
+    --eipsi-color-vas-slider-track-hover: #475569;
+    --eipsi-color-vas-slider-thumb: #60a5fa;
+    --eipsi-color-vas-slider-thumb-secondary: #3b82f6;
+    --eipsi-color-vas-slider-thumb-border: #1e293b;
+    --eipsi-shadow-slider-thumb: 0 3px 8px rgba(0, 0, 0, 0.6);
+    --eipsi-shadow-slider-thumb-hover: 0 5px 15px rgba(96, 165, 250, 0.5);
+    --eipsi-color-vas-value-text: #60a5fa;
+    --eipsi-color-vas-value-bg: rgba(96, 165, 250, 0.1);
+    --eipsi-color-vas-value-border: rgba(96, 165, 250, 0.3);
+    --eipsi-shadow-vas-value: 0 2px 8px rgba(96, 165, 250, 0.2);
+    
+    /* Description & Info Blocks */
+    --eipsi-color-description-bg: #1e293b;
+    --eipsi-color-description-border: #60a5fa;
+    --eipsi-color-description-text: #e2e8f0;
+    
+    /* Skip Links & Accessibility */
+    --eipsi-color-skip-link-bg: #60a5fa;
+    --eipsi-color-skip-link-text: #0f172a;
+    
+    /* Print & High Contrast */
+    --eipsi-color-print-border: #ffffff;
 
-	/* Shadows (darker for dark mode) */
-	--eipsi-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-	--eipsi-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-	--eipsi-shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.6);
-	--eipsi-shadow-focus: 0 0 0 3px rgba(96, 165, 250, 0.3);
-	--eipsi-shadow-error: 0 0 0 3px rgba(252, 165, 165, 0.3);
+    /* Shadows (darker for dark mode) */
+    --eipsi-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --eipsi-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --eipsi-shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.6);
+    --eipsi-shadow-focus: 0 0 0 3px rgba(96, 165, 250, 0.3);
+    --eipsi-shadow-error: 0 0 0 3px rgba(252, 165, 165, 0.3);
 
-	/* Legacy dark mode variables (for backwards compatibility) */
-	--eipsi-bg: #0f172a;
-	--eipsi-surface: #1e293b;
-	--eipsi-text: #e2e8f0;
-	--eipsi-border: #334155;
-	--eipsi-text-muted: #94a3b8;
-	--eipsi-primary: #60a5fa;
-	--eipsi-primary-hover: #3b82f6;
+    /* Legacy dark mode variables (for backwards compatibility) */
+    --eipsi-bg: #0f172a;
+    --eipsi-surface: #1e293b;
+    --eipsi-text: #e2e8f0;
+    --eipsi-border: #334155;
+    --eipsi-text-muted: #94a3b8;
+    --eipsi-primary: #60a5fa;
+    --eipsi-primary-hover: #3b82f6;
 }
 
 /* ========================================
@@ -75,19 +131,19 @@
  */
 .eipsi-form,
 .eipsi-form * {
-	transition:
-		background-color 0.3s ease,
-		border-color 0.3s ease,
-		color 0.3s ease,
-		box-shadow 0.3s ease;
+    transition:
+        background-color 0.3s ease,
+        border-color 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease;
 }
 
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
-	.eipsi-form,
-	.eipsi-form * {
-		transition-duration: 0.01ms !important;
-	}
+    .eipsi-form,
+    .eipsi-form * {
+        transition-duration: 0.01ms !important;
+    }
 }
 
 /* ========================================
@@ -99,51 +155,51 @@
  * Responsive positioning: inline on desktop, fixed on mobile
  */
 .eipsi-toggle {
-	padding: 10px 16px;
-	border-radius: 6px;
-	border: 2px solid var(--eipsi-color-primary, var(--eipsi-primary, #005a87));
-	background: var(--eipsi-color-primary, var(--eipsi-primary, #005a87));
-	color: #ffffff;
-	font-size: 13px;
-	font-weight: 600;
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	cursor: pointer;
-	transition: all 0.3s ease;
-	line-height: 1;
-	white-space: nowrap;
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: 2px solid var(--eipsi-color-primary, var(--eipsi-primary, #005a87));
+    background: var(--eipsi-color-primary, var(--eipsi-primary, #005a87));
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 /* Hover state */
 .eipsi-toggle:hover {
-	background: var(--eipsi-color-primary-hover, var(--eipsi-primary-hover, #003d5b));
-	border-color: var(--eipsi-color-primary-hover, var(--eipsi-primary-hover, #003d5b));
-	transform: translateY(-2px);
-	box-shadow: 0 4px 12px rgba(0, 90, 135, 0.3);
+    background: var(--eipsi-color-primary-hover, var(--eipsi-primary-hover, #003d5b));
+    border-color: var(--eipsi-color-primary-hover, var(--eipsi-primary-hover, #003d5b));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.3);
 }
 
 /* Focus state - WCAG AAA */
 .eipsi-toggle:focus-visible {
-	outline: 3px solid var(--eipsi-color-primary, var(--eipsi-primary, #005a87));
-	outline-offset: 2px;
-	box-shadow: 0 0 0 4px rgba(0, 90, 135, 0.2);
+    outline: 3px solid var(--eipsi-color-primary, var(--eipsi-primary, #005a87));
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(0, 90, 135, 0.2);
 }
 
 /* Active state */
 .eipsi-toggle:active {
-	transform: translateY(0);
+    transform: translateY(0);
 }
 
 /* Loading state */
 .eipsi-toggle.eipsi-toggle--loading {
-	opacity: 0.7;
-	pointer-events: none;
-	transform: scale(0.95);
+    opacity: 0.7;
+    pointer-events: none;
+    transform: scale(0.95);
 }
 
 /* Disabled state */
 .eipsi-toggle:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* ========================================
@@ -155,60 +211,60 @@
  * Responsive: inline on desktop/tablet, fixed on mobile
  */
 .eipsi-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 20px;
-	padding-bottom: 16px;
-	border-bottom: 2px solid var(--eipsi-color-border, var(--eipsi-border, #64748b));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--eipsi-color-border, var(--eipsi-border, #64748b));
 }
 
 .eipsi-header h2 {
-	color: var(--eipsi-color-text, var(--eipsi-text, #2c3e50));
-	margin: 0;
-	font-size: 1.5rem;
-	font-weight: 600;
+    color: var(--eipsi-color-text, var(--eipsi-text, #2c3e50));
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
 }
 
 /* Toggle button in header - inline by default */
 .eipsi-header .eipsi-toggle {
-	position: relative;
+    position: relative;
 }
 
 /* On mobile: make toggle fixed in bottom-right corner */
 @media (max-width: 768px) {
-	.eipsi-header .eipsi-toggle {
-		position: fixed;
-		bottom: 20px;
-		right: 20px;
-		z-index: 999;
-		width: 48px;
-		height: 48px;
-		padding: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 20px;
-		border-radius: 50%;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-	}
+    .eipsi-header .eipsi-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
 
-	/* Enhanced focus for mobile */
-	.eipsi-header .eipsi-toggle:focus-visible {
-		outline: 4px solid var(--eipsi-color-primary, var(--eipsi-primary, #005a87));
-		outline-offset: 3px;
-	}
+    /* Enhanced focus for mobile */
+    .eipsi-header .eipsi-toggle:focus-visible {
+        outline: 4px solid var(--eipsi-color-primary, var(--eipsi-primary, #005a87));
+        outline-offset: 3px;
+    }
 }
 
 /* On small mobile: adjust position */
 @media (max-width: 480px) {
-	.eipsi-header .eipsi-toggle {
-		bottom: 16px;
-		right: 16px;
-		width: 44px;
-		height: 44px;
-		font-size: 18px;
-	}
+    .eipsi-header .eipsi-toggle {
+        bottom: 16px;
+        right: 16px;
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
 }
 
 /* ========================================
@@ -220,7 +276,7 @@
  * Graceful degradation for accessibility
  */
 noscript .eipsi-header .eipsi-toggle {
-	display: none !important;
+    display: none !important;
 }
 
 /* ========================================
@@ -229,31 +285,31 @@ noscript .eipsi-header .eipsi-toggle {
 
 /* Tablet adjustments */
 @media (max-width: 1024px) {
-	.eipsi-header {
-		padding-bottom: 12px;
-	}
+    .eipsi-header {
+        padding-bottom: 12px;
+    }
 
-	.eipsi-header h2 {
-		font-size: 1.35rem;
-	}
+    .eipsi-header h2 {
+        font-size: 1.35rem;
+    }
 
-	.eipsi-header .eipsi-toggle {
-		padding: 8px 14px;
-		font-size: 12px;
-	}
+    .eipsi-header .eipsi-toggle {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
 }
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
-	.eipsi-header {
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 12px;
-	}
+    .eipsi-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
 
-	.eipsi-header h2 {
-		font-size: 1.25rem;
-	}
+    .eipsi-header h2 {
+        font-size: 1.25rem;
+    }
 }
 
 /* ========================================
@@ -265,14 +321,14 @@ noscript .eipsi-header .eipsi-toggle {
  * System-level accessibility feature
  */
 @media (prefers-contrast: high) {
-	.eipsi-toggle {
-		border-width: 3px;
-		font-weight: 700;
-	}
+    .eipsi-toggle {
+        border-width: 3px;
+        font-weight: 700;
+    }
 
-	.eipsi-header {
-		border-bottom-width: 3px;
-	}
+    .eipsi-header {
+        border-bottom-width: 3px;
+    }
 }
 
 /* ========================================
@@ -283,7 +339,7 @@ noscript .eipsi-header .eipsi-toggle {
  * Hide toggle control in print
  */
 @media print {
-	.eipsi-header .eipsi-toggle {
-		display: none !important;
-	}
+    .eipsi-header .eipsi-toggle {
+        display: none !important;
+    }
 }
