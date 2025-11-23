@@ -1168,6 +1168,34 @@
                 '.form-progress .total-pages'
             );
             const navigator = this.getNavigator( form );
+            const isSubmitting = form.dataset.submitting === 'true';
+
+            const toggleVisibility = ( button, isVisible ) => {
+                if ( ! button ) {
+                    return;
+                }
+                if ( isVisible ) {
+                    button.classList.remove( 'is-hidden' );
+                    button.removeAttribute( 'aria-hidden' );
+                } else {
+                    button.classList.add( 'is-hidden' );
+                    button.setAttribute( 'aria-hidden', 'true' );
+                }
+            };
+
+            const setDisabledState = ( button, disabled ) => {
+                if ( ! button ) {
+                    return;
+                }
+                button.disabled = !! disabled;
+                if ( disabled ) {
+                    button.classList.add( 'is-disabled' );
+                    button.setAttribute( 'aria-disabled', 'true' );
+                } else {
+                    button.classList.remove( 'is-disabled' );
+                    button.removeAttribute( 'aria-disabled' );
+                }
+            };
 
             const rawAllowBackwards = form.dataset.allowBackwardsNav;
             const allowBackwardsNav =
@@ -1180,33 +1208,50 @@
                   currentPage === totalPages
                 : currentPage === totalPages;
 
+            // Handle Previous button visibility
             if ( prevButton ) {
                 const shouldShowPrev = currentPage > 1 && allowBackwardsNav;
+                toggleVisibility( prevButton, shouldShowPrev );
+
                 if ( shouldShowPrev ) {
-                    prevButton.style.display = '';
-                    prevButton.removeAttribute( 'disabled' );
+                    setDisabledState( prevButton, isSubmitting );
+                    prevButton.setAttribute(
+                        'aria-label',
+                        `Ir a la página anterior (página ${ currentPage - 1 } de ${ totalPages })`
+                    );
                 } else {
-                    prevButton.style.display = 'none';
+                    setDisabledState( prevButton, true );
                 }
             }
 
+            // Handle Next/Submit mutual exclusion
             const shouldShowNext = ! isLastPage;
 
             if ( nextButton ) {
+                toggleVisibility( nextButton, shouldShowNext );
+
                 if ( shouldShowNext ) {
-                    nextButton.style.display = '';
-                    nextButton.removeAttribute( 'disabled' );
+                    setDisabledState( nextButton, isSubmitting );
+                    nextButton.setAttribute(
+                        'aria-label',
+                        `Ir a la siguiente página (página ${ currentPage + 1 } de ${ totalPages })`
+                    );
                 } else {
-                    nextButton.style.display = 'none';
+                    setDisabledState( nextButton, true );
                 }
             }
 
             if ( submitButton ) {
+                toggleVisibility( submitButton, isLastPage );
+
                 if ( isLastPage ) {
-                    submitButton.style.display = '';
-                    submitButton.removeAttribute( 'disabled' );
+                    setDisabledState( submitButton, isSubmitting );
+                    submitButton.setAttribute(
+                        'aria-label',
+                        `Enviar el formulario (página ${ currentPage } de ${ totalPages })`
+                    );
                 } else {
-                    submitButton.style.display = 'none';
+                    setDisabledState( submitButton, true );
                 }
 
                 const strings = this.config.strings || {};
@@ -1625,6 +1670,8 @@
 
         submitForm( form ) {
             const submitButton = form.querySelector( 'button[type="submit"]' );
+            const prevButton = form.querySelector( '.eipsi-prev-button' );
+            const nextButton = form.querySelector( '.eipsi-next-button' );
             const formData = new FormData( form );
 
             // Obtener IDs antes de enviar
@@ -1651,10 +1698,25 @@
             form.dataset.submitting = 'true';
             this.setFormLoading( form, true );
 
+            // Disable all navigation buttons during submission
             if ( submitButton ) {
                 submitButton.disabled = true;
+                submitButton.classList.add( 'is-disabled' );
+                submitButton.setAttribute( 'aria-disabled', 'true' );
                 submitButton.dataset.originalText = submitButton.textContent;
                 submitButton.textContent = 'Enviando...';
+            }
+
+            if ( prevButton ) {
+                prevButton.disabled = true;
+                prevButton.classList.add( 'is-disabled' );
+                prevButton.setAttribute( 'aria-disabled', 'true' );
+            }
+
+            if ( nextButton ) {
+                nextButton.disabled = true;
+                nextButton.classList.add( 'is-disabled' );
+                nextButton.setAttribute( 'aria-disabled', 'true' );
             }
 
             fetch( this.config.ajaxUrl, {
@@ -1705,8 +1767,22 @@
 
                     if ( submitButton ) {
                         submitButton.disabled = false;
+                        submitButton.classList.remove( 'is-disabled' );
+                        submitButton.removeAttribute( 'aria-disabled' );
                         submitButton.textContent =
                             submitButton.dataset.originalText || 'Enviar';
+                    }
+
+                    if ( prevButton ) {
+                        prevButton.disabled = false;
+                        prevButton.classList.remove( 'is-disabled' );
+                        prevButton.removeAttribute( 'aria-disabled' );
+                    }
+
+                    if ( nextButton ) {
+                        nextButton.disabled = false;
+                        nextButton.classList.remove( 'is-disabled' );
+                        nextButton.removeAttribute( 'aria-disabled' );
                     }
                 } );
         },

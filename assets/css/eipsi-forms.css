@@ -1068,12 +1068,23 @@ select[aria-invalid="true"]:focus {
 
 .form-navigation {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
+    flex-wrap: wrap;
+    gap: var(--eipsi-spacing-md, 1.5rem);
     margin: var(--eipsi-spacing-xl, 2.5rem) 0 0 0;
     padding: var(--eipsi-spacing-lg, 2rem) 0 0 0;
     border-top: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-border, #e2e8f0);
-    gap: var(--eipsi-spacing-md, 1.5rem);
+}
+
+.form-navigation .form-nav-left,
+.form-navigation .form-nav-right {
+    display: flex;
+    gap: 1em;
+}
+
+.form-navigation .form-nav-right {
+    margin-left: auto;
 }
 
 /* Navigation Buttons */
@@ -1831,6 +1842,43 @@ select[aria-invalid="true"]:focus {
     clip: rect(0, 0, 0, 0) !important;
     white-space: nowrap !important;
     border-width: 0 !important;
+}
+
+/* Navigation control states */
+.is-hidden {
+    display: none !important;
+}
+
+.is-disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+.is-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.is-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    margin-left: -8px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: eipsi-spinner 0.6s linear infinite;
+}
+
+@keyframes eipsi-spinner {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Text Alignment */
