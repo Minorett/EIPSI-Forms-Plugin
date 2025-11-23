@@ -3,188 +3,107 @@
     .vas-slider-container {
         margin: 1.5em 0;
         padding: 2em;
-        background: var(--eipsi-color-background-subtle, #f8f9fa);
-        border: 2px solid var(--eipsi-color-border, #e2e8f0);
+        background: var( --eipsi-color-background-subtle, #f8f9fa );
+        border: 2px solid var( --eipsi-color-border, #e2e8f0 );
         border-radius: 10px;
         transition: all 0.3s ease;
 
         // CSS variables for appearance control
         --vas-label-size: 16px;
         --vas-value-size: 36px;
-        --vas-label-spacing: 100%;
+        --vas-label-alignment: 0.5;
+        --vas-label-compactness: 0.5;
 
-        @media (max-width: 480px) {
+        @media ( max-width: 480px ) {
             padding: 1.5rem;
         }
 
-        @media (max-width: 374px) {
+        @media ( max-width: 374px ) {
             padding: 1rem;
         }
 
         &:hover {
-            background: var(--eipsi-color-background, #ffffff);
-            border-color: var(--eipsi-color-border-dark, #cbd5e0);
+            background: var( --eipsi-color-background, #ffffff );
+            border-color: var( --eipsi-color-border-dark, #cbd5e0 );
         }
     }
 
-    // LABELS SUPERIORES - Dynamic alignment based on CSS variable
-    .vas-slider-labels {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1em;
-        gap: calc(0.5em + var(--vas-label-alignment, 0.5) * 2em);
-
-        @media (max-width: 767px) {
-            flex-direction: column;
-            gap: 0.75em;
-        }
-        
-        .vas-label-left,
-        .vas-label-right {
-            font-weight: normal;
-            font-size: var(--vas-label-size, 16px);
-            flex: calc(1 - var(--vas-label-alignment, 0.5) * 0.5);
-            color: var(--eipsi-color-text, #2c3e50);
-            padding: 0.8em 1em;
-            background: transparent;
-            border-radius: 8px;
-            border: none;
-            text-align: center;
-            transition: all 0.2s ease;
-
-            @media (max-width: 767px) {
-                width: 100%;
-            }
-        }
-
-        .vas-label-left {
-            background: rgba(211, 47, 47, 0.08);
-            border: 2px solid var(--eipsi-color-error, #d32f2f);
-        }
-
-        .vas-label-right {
-            background: rgba(25, 135, 84, 0.08);
-            border: 2px solid var(--eipsi-color-success, #198754);
-        }
-
-        .vas-current-value {
-            font-size: var(--vas-value-size, 36px);
-            font-weight: 800;
-            color: var(--eipsi-color-primary, #005a87);
-            text-align: center;
-            min-width: 2em;
-            padding: 0;
-            background: transparent;
-            border-radius: 8px;
-            border: none;
-            flex-shrink: 0;
-            transition: all 0.2s ease;
-
-            @media (max-width: 480px) {
-                font-size: max(20px, calc(var(--vas-value-size, 36px) * 0.85));
-            }
-
-            @media (max-width: 374px) {
-                font-size: max(20px, calc(var(--vas-value-size, 36px) * 0.75));
-            }
-        }
-    }
-
-    // Bold labels modifier
-    &.vas-bold-labels .vas-slider-labels {
-        .vas-label-left,
-        .vas-label-right {
-            font-weight: 700;
-        }
-    }
-
-    // Show label containers modifier
-    &.vas-show-label-containers .vas-slider-labels {
-        .vas-label-left,
-        .vas-label-right {
-            background: var(--eipsi-color-background, #ffffff);
-            border: 2px solid var(--eipsi-color-border, #e2e8f0);
-        }
-
-        .vas-label-left {
-            background: rgba(211, 47, 47, 0.08);
-            border-color: var(--eipsi-color-error, #d32f2f);
-        }
-
-        .vas-label-right {
-            background: rgba(25, 135, 84, 0.08);
-            border-color: var(--eipsi-color-success, #198754);
-        }
-    }
-
-    // Show value container modifier
-    &.vas-show-value-container .vas-slider-labels .vas-current-value {
-        background: rgba(0, 90, 135, 0.05);
-        border: 2px solid var(--eipsi-color-primary, #005a87);
-        padding: 0.5em 0.8em;
-    }
-
-    // LABELS MÚLTIPLES - Dynamic alignment based on CSS variable
+    // LABELS MÚLTIPLES - Dynamic alignment based on --vas-label-alignment (0-1)
+    // 0 = tight spacing (centered/compact), 1 = wide spacing (edge-to-edge)
     .vas-multi-labels {
         display: flex;
         justify-content: space-between;
         margin-bottom: 1em;
-        gap: calc(0.3em + var(--vas-label-alignment, 0.5) * 1em);
+        // Calculate spacing: alignment closer to 1 = more gap
+        gap: calc( 0.2em + var( --vas-label-alignment, 0.5 ) * 1.5em );
+        // Padding inverse: alignment closer to 0 = more padding (pushes to center)
+        padding: 0 calc( var( --vas-label-compactness, 0.5 ) * 3em );
 
-        @media (max-width: 767px) {
+        @media ( max-width: 767px ) {
             flex-wrap: wrap;
+            padding: 0 calc( var( --vas-label-compactness, 0.5 ) * 1em );
         }
-        
+
         .vas-multi-label {
-            flex: calc(1 - var(--vas-label-alignment, 0.5) * 0.3);
+            flex: 0 1 auto;
             text-align: center;
             font-weight: normal;
-            font-size: var(--vas-label-size, 16px);
+            font-size: var( --vas-label-size, 16px );
             padding: 0.6em 0.5em;
             background: transparent;
             border-radius: 6px;
             border: none;
-            color: var(--eipsi-color-text, #2c3e50);
+            color: var( --eipsi-color-text, #2c3e50 );
             transition: all 0.2s ease;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
 
-            @media (max-width: 767px) {
-                font-size: max(12px, calc(var(--vas-label-size, 16px) * 0.9));
+            &:first-child {
+                margin-left: calc( var( --vas-label-compactness, 0.5 ) * 12% );
             }
 
-            @media (max-width: 374px) {
-                font-size: max(12px, calc(var(--vas-label-size, 16px) * 0.8));
+            &:last-child {
+                margin-right: calc( var( --vas-label-compactness, 0.5 ) * 12% );
+            }
+
+            @media ( max-width: 767px ) {
+                font-size: max( 12px, calc( var( --vas-label-size, 16px ) * 0.9 ) );
+            }
+
+            @media ( max-width: 374px ) {
+                font-size: max( 12px, calc( var( --vas-label-size, 16px ) * 0.8 ) );
                 padding: 0.5em 0.4em;
             }
-            
+
             &:hover {
-                transform: translateY(-1px);
+                transform: translateY( -1px );
             }
         }
     }
 
     // Bold labels modifier for multi-labels
-    &.vas-bold-labels .vas-multi-labels .vas-multi-label {
+    .vas-slider-container.vas-bold-labels .vas-multi-labels .vas-multi-label {
         font-weight: 700;
     }
 
     // Show label containers modifier for multi-labels
-    &.vas-show-label-containers .vas-multi-labels .vas-multi-label {
-        background: rgba(0, 90, 135, 0.05);
-        border: 2px solid var(--eipsi-color-primary, #005a87);
+    .vas-slider-container.vas-show-label-containers
+        .vas-multi-labels
+        .vas-multi-label {
+        background: rgba( 0, 90, 135, 0.05 );
+        border: 2px solid var( --eipsi-color-primary, #005a87 );
+        padding: 0.8em 1em;
 
         &:hover {
-            background: rgba(0, 90, 135, 0.1);
+            background: rgba( 0, 90, 135, 0.1 );
         }
     }
 
     .vas-current-value-solo {
-        font-size: var(--vas-value-size, 36px);
+        font-size: var( --vas-value-size, 36px );
         font-weight: 800;
-        color: var(--eipsi-color-primary, #005a87);
+        color: var( --eipsi-color-primary, #005a87 );
         text-align: center;
         margin-bottom: 1em;
         padding: 0;
@@ -193,19 +112,19 @@
         border: none;
         transition: all 0.2s ease;
 
-        @media (max-width: 480px) {
-            font-size: max(20px, calc(var(--vas-value-size, 36px) * 0.85));
+        @media ( max-width: 480px ) {
+            font-size: max( 20px, calc( var( --vas-value-size, 36px ) * 0.85 ) );
         }
 
-        @media (max-width: 374px) {
-            font-size: max(20px, calc(var(--vas-value-size, 36px) * 0.75));
+        @media ( max-width: 374px ) {
+            font-size: max( 20px, calc( var( --vas-value-size, 36px ) * 0.75 ) );
         }
     }
 
     // Show value container modifier for solo value
     &.vas-show-value-container .vas-current-value-solo {
-        background: rgba(0, 90, 135, 0.05);
-        border: 2px solid var(--eipsi-color-primary, #005a87);
+        background: rgba( 0, 90, 135, 0.05 );
+        border: 2px solid var( --eipsi-color-primary, #005a87 );
         padding: 0.5em 0.8em;
     }
 
@@ -213,16 +132,6 @@
     &.vas-value-below .vas-slider-container {
         display: flex;
         flex-direction: column;
-    }
-
-    &.vas-value-below .vas-slider-labels {
-        flex-direction: column;
-        
-        .vas-current-value {
-            order: 2;
-            margin-top: 1em;
-            margin-bottom: 0;
-        }
     }
 
     &.vas-value-below .vas-current-value-solo {
@@ -242,27 +151,32 @@
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
-        background: linear-gradient(to right,
-            var(--eipsi-color-border, #e2e8f0) 0%,
-            var(--eipsi-color-border-dark, #cbd5e0) 50%,
-            var(--eipsi-color-border, #e2e8f0) 100%
+        background: linear-gradient(
+            to right,
+            var( --eipsi-color-border, #e2e8f0 ) 0%,
+            var( --eipsi-color-border-dark, #cbd5e0 ) 50%,
+            var( --eipsi-color-border, #e2e8f0 ) 100%
         );
         border-radius: 8px;
         outline: none;
         cursor: pointer;
-        border: 2px solid var(--eipsi-color-border-dark, #cbd5e0);
-        box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.08));
+        border: 2px solid var( --eipsi-color-border-dark, #cbd5e0 );
+        box-shadow: var(
+            --eipsi-shadow-sm,
+            0 2px 8px rgba( 0, 90, 135, 0.08 )
+        );
 
         &:hover {
-            background: linear-gradient(to right,
-                var(--eipsi-color-border-dark, #cbd5e0) 0%,
+            background: linear-gradient(
+                to right,
+                var( --eipsi-color-border-dark, #cbd5e0 ) 0%,
                 #a0aec0 50%,
-                var(--eipsi-color-border-dark, #cbd5e0) 100%
+                var( --eipsi-color-border-dark, #cbd5e0 ) 100%
             );
         }
 
         &:focus {
-            outline: 2px solid var(--eipsi-color-primary, #005a87);
+            outline: 2px solid var( --eipsi-color-primary, #005a87 );
             outline-offset: 4px;
         }
 
@@ -271,36 +185,44 @@
             appearance: none;
             width: 32px;
             height: 32px;
-            background: linear-gradient(135deg, var(--eipsi-color-primary, #005a87) 0%, var(--eipsi-color-primary-hover, #003d5b) 100%);
-            border: 4px solid var(--eipsi-color-background, #ffffff);
+            background: linear-gradient(
+                135deg,
+                var( --eipsi-color-primary, #005a87 ) 0%,
+                var( --eipsi-color-primary-hover, #003d5b ) 100%
+            );
+            border: 4px solid var( --eipsi-color-background, #ffffff );
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 3px 8px rgba( 0, 0, 0, 0.3 );
             transition: all 0.2s ease;
 
             &:hover {
-                transform: scale(1.15);
-                box-shadow: 0 5px 15px rgba(0, 90, 135, 0.4);
+                transform: scale( 1.15 );
+                box-shadow: 0 5px 15px rgba( 0, 90, 135, 0.4 );
             }
 
             &:active {
-                transform: scale(1.05);
+                transform: scale( 1.05 );
             }
         }
 
         &::-moz-range-thumb {
             width: 32px;
             height: 32px;
-            background: linear-gradient(135deg, var(--eipsi-color-primary, #005a87) 0%, var(--eipsi-color-primary-hover, #003d5b) 100%);
-            border: 4px solid var(--eipsi-color-background, #ffffff);
+            background: linear-gradient(
+                135deg,
+                var( --eipsi-color-primary, #005a87 ) 0%,
+                var( --eipsi-color-primary-hover, #003d5b ) 100%
+            );
+            border: 4px solid var( --eipsi-color-background, #ffffff );
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 3px 8px rgba( 0, 0, 0, 0.3 );
             transition: all 0.2s ease;
 
             &:hover {
-                transform: scale(1.15);
-                box-shadow: 0 5px 15px rgba(0, 90, 135, 0.4);
+                transform: scale( 1.15 );
+                box-shadow: 0 5px 15px rgba( 0, 90, 135, 0.4 );
             }
         }
     }

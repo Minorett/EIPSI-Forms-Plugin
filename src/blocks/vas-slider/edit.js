@@ -8,6 +8,8 @@ import {
 	SelectControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- UnitControl is the standard component for this use case
 	__experimentalUnitControl as UnitControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- NumberControl is the standard component for numeric input
+	__experimentalNumberControl as NumberControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useState, useEffect } from '@wordpress/element';
@@ -43,14 +45,30 @@ const getFieldId = ( fieldName ) => {
 	return `field-${ sanitized }`;
 };
 
+const sanitizeNumber = ( value, fallback = 0 ) => {
+	return typeof value === 'number' && ! Number.isNaN( value )
+		? value
+		: fallback;
+};
+
+const clampValueToRange = ( value, min, max ) => {
+	if ( typeof value !== 'number' || Number.isNaN( value ) ) {
+		return ( min + max ) / 2;
+	}
+
+	if ( max <= min ) {
+		return min;
+	}
+
+	return Math.min( Math.max( value, min ), max );
+};
+
 export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
 		fieldName,
 		label,
 		required,
 		helperText,
-		leftLabel,
-		rightLabel,
 		labels,
 		minValue,
 		maxValue,
@@ -71,10 +89,19 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} = attributes;
 
 	useEffect( () => {
+		if ( labelAlignmentPercent !== undefined ) {
+			return;
+		}
+
 		if (
-			labelAlignmentPercent === undefined &&
-			( labelStyle !== undefined || labelAlignment !== undefined )
+			typeof labelSpacing === 'number' &&
+			! Number.isNaN( labelSpacing )
 		) {
+			setAttributes( { labelAlignmentPercent: labelSpacing } );
+			return;
+		}
+
+		if ( labelStyle !== undefined || labelAlignment !== undefined ) {
 			let migratedValue = 50;
 			if ( labelAlignment === 'justified' ) {
 				migratedValue = 0;
@@ -109,20 +136,161 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			: __( 'VAS Slider', 'vas-dinamico-forms' );
 	const inputId = getFieldId( normalizedFieldName );
 
-	const currentValue =
-		initialValue >= minValue && initialValue <= maxValue
-			? initialValue
-			: Math.floor( ( minValue + maxValue ) / 2 );
-	const [ previewValue, setPreviewValue ] = useState( currentValue );
+	const safeStep = step && step > 0 ? step : 1;
+	const sliderMin = sanitizeNumber( minValue, 0 );
+	const sliderMaxCandidate = sanitizeNumber( maxValue, sliderMin + safeStep );
+	const sliderMax =
+		sliderMaxCandidate > sliderMin
+			? sliderMaxCandidate
+			: sliderMin + safeStep;
 
-	const labelArray =
-		labels && labels.trim() !== ''
-			? labels
-					.split( ',' )
-					.map( ( l ) => l.trim() )
-					.filter( ( l ) => l !== '' )
-			: [];
-	const hasMultiLabels = labelArray.length > 0;
+	let alignmentPercentValue = 50;
+	if ( Number.isFinite( labelAlignmentPercent ) ) {
+		alignmentPercentValue = labelAlignmentPercent;
+	} else if ( Number.isFinite( labelSpacing ) ) {
+		alignmentPercentValue = labelSpacing;
+	}
+	const clampedAlignmentPercent = Math.min(
+		Math.max( alignmentPercentValue, 0 ),
+		100
+	);
+	const alignmentRatio = clampedAlignmentPercent / 100;
+	const compactnessRatio = 1 - alignmentRatio;
+
+	const [ previewValue, setPreviewValue ] = useState(
+		clampValueToRange(
+			sanitizeNumber( initialValue, sliderMin ),
+			sliderMin,
+			sliderMax
+		)
+	);
+
+	useEffect( () => {
+		const safeInitial = sanitizeNumber( initialValue, sliderMin );
+		const clampedInitial = clampValueToRange(
+			safeInitial,
+			sliderMin,
+			sliderMax
+		);
+		if ( clampedInitial !== initialValue ) {
+			setAttributes( { initialValue: clampedInitial } );
+		}
+	}, [ initialValue, sliderMin, sliderMax, setAttributes ] );
+
+	useEffect( () => {
+		const safeInitial = sanitizeNumber( initialValue, sliderMin );
+		const clampedInitial = clampValueToRange(
+			safeInitial,
+			sliderMin,
+			sliderMax
+		);
+		if ( clampedInitial !== previewValue ) {
+			setPreviewValue( clampedInitial );
+		}
+	}, [ initialValue, sliderMin, sliderMax, previewValue ] );
+
+	const parsedLabels = labels
+		? labels
+				.split( ',' )
+				.map( ( labelText ) => labelText.trim() )
+				.filter( Boolean )
+		: [];
+	const resolvedLabels =
+		parsedLabels.length > 0
+			? parsedLabels
+			: [ `${ sliderMin }`, `${ sliderMax }` ];
+
+	const shouldShowValue =
+		showCurrentValue !== undefined ? showCurrentValue : showValue !== false;
+	const valueElementId =
+		shouldShowValue && inputId ? `${ inputId }-value` : undefined;
+
+	const handleMinValueChange = ( value ) => {
+		const parsedValue = parseFloat( value );
+		if ( Number.isNaN( parsedValue ) ) {
+			return;
+		}
+
+		let nextMax =
+			typeof maxValue === 'number' && ! Number.isNaN( maxValue )
+				? maxValue
+				: parsedValue + safeStep;
+
+		if ( parsedValue >= nextMax ) {
+			nextMax = parsedValue + safeStep;
+		}
+
+		const nextInitial = clampValueToRange(
+			sanitizeNumber( initialValue, parsedValue ),
+			parsedValue,
+			nextMax
+		);
+		const nextPreview = clampValueToRange(
+			previewValue,
+			parsedValue,
+			nextMax
+		);
+
+		setAttributes( {
+			minValue: parsedValue,
+			maxValue: nextMax,
+			initialValue: nextInitial,
+		} );
+		setPreviewValue( nextPreview );
+	};
+
+	const handleMaxValueChange = ( value ) => {
+		const parsedValue = parseFloat( value );
+		if ( Number.isNaN( parsedValue ) ) {
+			return;
+		}
+
+		let nextMin =
+			typeof minValue === 'number' && ! Number.isNaN( minValue )
+				? minValue
+				: parsedValue - safeStep;
+
+		if ( parsedValue <= nextMin ) {
+			nextMin = parsedValue - safeStep;
+		}
+
+		const nextInitial = clampValueToRange(
+			sanitizeNumber( initialValue, nextMin ),
+			nextMin,
+			parsedValue
+		);
+		const nextPreview = clampValueToRange(
+			previewValue,
+			nextMin,
+			parsedValue
+		);
+
+		setAttributes( {
+			minValue: nextMin,
+			maxValue: parsedValue,
+			initialValue: nextInitial,
+		} );
+		setPreviewValue( nextPreview );
+	};
+
+	const handleStepChange = ( value ) => {
+		const parsedValue =
+			typeof value === 'number' ? value : parseFloat( value );
+		if ( Number.isNaN( parsedValue ) ) {
+			return;
+		}
+		const nextStep = parsedValue > 0 ? parsedValue : 0.1;
+		setAttributes( { step: parseFloat( nextStep.toFixed( 2 ) ) } );
+	};
+
+	const minControlHelp = __(
+		'Debe ser menor que el máximo. Si lo igualás o superás, ajustamos el rango automáticamente.',
+		'vas-dinamico-forms'
+	);
+	const maxControlHelp = __(
+		'Debe ser mayor que el mínimo. Si lo igualás o bajás demasiado, movemos el mínimo para mantener el slider usable.',
+		'vas-dinamico-forms'
+	);
 
 	return (
 		<>
@@ -186,76 +354,32 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							setAttributes( { labels: value } )
 						}
 						help={ __(
-							'Optional: Multiple labels for scale points (e.g., "Muy mal,Mal,Neutral,Bien,Muy bien")',
+							'Los labels visibles salen de esta lista (ej.: "100, 0" o "Muy mal,Mal,Neutral,Bien,Muy bien"). Si lo dejás vacío, mostramos solo los extremos numéricos.',
 							'vas-dinamico-forms'
 						) }
 					/>
-					<TextControl
-						label={ __( 'Left Label', 'vas-dinamico-forms' ) }
-						value={ leftLabel || '' }
-						onChange={ ( value ) =>
-							setAttributes( { leftLabel: value } )
-						}
-						help={ __(
-							'Label for the minimum value (used when multi-labels are not set)',
-							'vas-dinamico-forms'
-						) }
-					/>
-					<TextControl
-						label={ __( 'Right Label', 'vas-dinamico-forms' ) }
-						value={ rightLabel || '' }
-						onChange={ ( value ) =>
-							setAttributes( { rightLabel: value } )
-						}
-						help={ __(
-							'Label for the maximum value (used when multi-labels are not set)',
-							'vas-dinamico-forms'
-						) }
-					/>
-					<RangeControl
+					<NumberControl
 						label={ __( 'Minimum Value', 'vas-dinamico-forms' ) }
 						value={ minValue }
-						onChange={ ( value ) => {
-							setAttributes( { minValue: value } );
-							if ( maxValue <= value ) {
-								setAttributes( { maxValue: value + 1 } );
-							}
-							if ( initialValue < value ) {
-								const newInitial = Math.floor(
-									( value + maxValue ) / 2
-								);
-								setAttributes( { initialValue: newInitial } );
-								setPreviewValue( newInitial );
-							}
-						} }
-						min={ 0 }
-						max={ 100 }
+						onChange={ handleMinValueChange }
+						min={ -1000 }
+						max={ 1000 }
+						step="any"
+						help={ minControlHelp }
 					/>
-					<RangeControl
+					<NumberControl
 						label={ __( 'Maximum Value', 'vas-dinamico-forms' ) }
 						value={ maxValue }
-						onChange={ ( value ) => {
-							setAttributes( { maxValue: value } );
-							if ( minValue >= value ) {
-								setAttributes( { minValue: value - 1 } );
-							}
-							if ( initialValue > value ) {
-								const newInitial = Math.floor(
-									( minValue + value ) / 2
-								);
-								setAttributes( { initialValue: newInitial } );
-								setPreviewValue( newInitial );
-							}
-						} }
-						min={ 1 }
+						onChange={ handleMaxValueChange }
+						min={ -1000 }
 						max={ 1000 }
+						step="any"
+						help={ maxControlHelp }
 					/>
 					<RangeControl
 						label={ __( 'Step', 'vas-dinamico-forms' ) }
-						value={ step }
-						onChange={ ( value ) =>
-							setAttributes( { step: value } )
-						}
+						value={ step && step > 0 ? step : 1 }
+						onChange={ handleStepChange }
 						min={ 0.1 }
 						max={ 10 }
 						step={ 0.1 }
@@ -266,28 +390,22 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					/>
 					<RangeControl
 						label={ __( 'Initial Value', 'vas-dinamico-forms' ) }
-						value={ initialValue }
+						value={
+							typeof initialValue === 'number'
+								? initialValue
+								: sliderMin
+						}
 						onChange={ ( value ) => {
 							setAttributes( { initialValue: value } );
 							setPreviewValue( value );
 						} }
-						min={ minValue }
-						max={ maxValue }
-						step={ step }
+						min={ sliderMin }
+						max={ sliderMax }
+						step={ safeStep }
 						help={ __(
 							'Default slider position',
 							'vas-dinamico-forms'
 						) }
-					/>
-					<ToggleControl
-						label={ __(
-							'Show current value',
-							'vas-dinamico-forms'
-						) }
-						checked={ !! showValue }
-						onChange={ ( value ) =>
-							setAttributes( { showValue: !! value } )
-						}
 					/>
 				</PanelBody>
 
@@ -325,9 +443,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 						<ToggleControl
 							label={ __( 'Bold labels', 'vas-dinamico-forms' ) }
-							checked={
-								boldLabels !== undefined ? !! boldLabels : true
-							}
+							checked={ boldLabels !== false }
 							onChange={ ( value ) =>
 								setAttributes( { boldLabels: !! value } )
 							}
@@ -341,7 +457,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							label={ __( 'Label size', 'vas-dinamico-forms' ) }
 							value={ `${ labelFontSize || 16 }px` }
 							onChange={ ( value ) => {
-								const numValue = parseInt( value ) || 16;
+								const numValue = parseInt( value, 10 ) || 16;
 								setAttributes( { labelFontSize: numValue } );
 							} }
 							min={ 12 }
@@ -355,20 +471,22 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 						<RangeControl
 							label={ __(
-								'Label spacing',
+								'Label alignment (0–100)',
 								'vas-dinamico-forms'
 							) }
-							value={
-								labelSpacing !== undefined ? labelSpacing : 100
-							}
-							onChange={ ( value ) =>
-								setAttributes( { labelSpacing: value } )
-							}
+							value={ clampedAlignmentPercent }
+							onChange={ ( value ) => {
+								if ( typeof value === 'number' ) {
+									setAttributes( {
+										labelAlignmentPercent: value,
+									} );
+								}
+							} }
 							min={ 0 }
 							max={ 100 }
 							step={ 1 }
 							help={ __(
-								'0 = tight spacing (edge-to-edge), 100 = wide spacing (centered with gaps)',
+								'0 = etiquetas compactas hacia el centro, 100 = cada extremo bien marcado.',
 								'vas-dinamico-forms'
 							) }
 						/>
@@ -397,11 +515,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								'Show current value',
 								'vas-dinamico-forms'
 							) }
-							checked={
-								showCurrentValue !== undefined
-									? !! showCurrentValue
-									: showValue !== false
-							}
+							checked={ shouldShowValue }
 							onChange={ ( value ) => {
 								setAttributes( {
 									showCurrentValue: !! value,
@@ -435,7 +549,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							label={ __( 'Value size', 'vas-dinamico-forms' ) }
 							value={ `${ valueFontSize || 36 }px` }
 							onChange={ ( value ) => {
-								const numValue = parseInt( value ) || 36;
+								const numValue = parseInt( value, 10 ) || 36;
 								setAttributes( { valueFontSize: numValue } );
 							} }
 							min={ 20 }
@@ -492,97 +606,67 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					{ displayLabel }
 				</label>
 				<div
-					className={ `vas-slider-container vas-slider-preview ${
-						showLabelContainers ? 'vas-show-label-containers' : ''
-					} ${
-						showValueContainer ? 'vas-show-value-container' : ''
-					} ${ boldLabels !== false ? 'vas-bold-labels' : '' } ${
-						valuePosition === 'below' ? 'vas-value-below' : ''
+					className={ `vas-slider-container vas-slider-preview${
+						showLabelContainers ? ' vas-show-label-containers' : ''
+					}${
+						showValueContainer ? ' vas-show-value-container' : ''
+					}${ boldLabels !== false ? ' vas-bold-labels' : '' }${
+						valuePosition === 'below' ? ' vas-value-below' : ''
 					}` }
-					data-scale={ `${ minValue }-${ maxValue }` }
+					data-scale={ `${ sliderMin }-${ sliderMax }` }
 					style={ {
-						'--vas-label-alignment':
-							( labelAlignmentPercent !== undefined
-								? labelAlignmentPercent
-								: labelSpacing || 50 ) / 100,
+						'--vas-label-alignment': alignmentRatio,
+						'--vas-label-compactness': compactnessRatio,
 						'--vas-label-size': `${ labelFontSize || 16 }px`,
 						'--vas-value-size': `${ valueFontSize || 36 }px`,
-						'--vas-label-spacing': `${
-							labelSpacing !== undefined ? labelSpacing : 100
-						}%`,
 					} }
 				>
-					{ ! hasMultiLabels && (
-						<div className="vas-slider-labels">
-							{ leftLabel && (
-								<span className="vas-label-left">
-									{ leftLabel }
-								</span>
-							) }
-							{ ( showCurrentValue !== undefined
-								? showCurrentValue
-								: showValue !== false ) && (
-								<span
-									className="vas-current-value"
-									id={ `${ inputId }-value` }
-								>
-									{ previewValue }
-								</span>
-							) }
-							{ rightLabel && (
-								<span className="vas-label-right">
-									{ rightLabel }
-								</span>
-							) }
-						</div>
-					) }
-					{ hasMultiLabels && (
-						<div className="vas-multi-labels">
-							{ labelArray.map( ( labelText, index ) => (
-								<span key={ index } className="vas-multi-label">
-									{ labelText }
-								</span>
-							) ) }
-						</div>
-					) }
-					{ hasMultiLabels &&
-						( showCurrentValue !== undefined
-							? showCurrentValue
-							: showValue !== false ) && (
-							<div
-								className="vas-current-value-solo"
-								id={ `${ inputId }-value` }
+					<div
+						className="vas-multi-labels"
+						data-label-count={ resolvedLabels.length }
+					>
+						{ resolvedLabels.map( ( labelText, index ) => (
+							<span
+								key={ `${ labelText }-${ index }` }
+								className="vas-multi-label"
 							>
-								{ previewValue }
-							</div>
-						) }
+								{ labelText }
+							</span>
+						) ) }
+					</div>
+
+					{ shouldShowValue && (
+						<div
+							className="vas-current-value-solo"
+							id={ valueElementId }
+						>
+							{ previewValue }
+						</div>
+					) }
+
 					<input
 						type="range"
 						name={ normalizedFieldName }
 						id={ inputId }
 						className="vas-slider"
-						min={ minValue }
-						max={ maxValue }
-						step={ step }
+						min={ sliderMin }
+						max={ sliderMax }
+						step={ safeStep }
 						value={ previewValue }
-						onChange={ ( e ) =>
-							setPreviewValue( parseFloat( e.target.value ) )
-						}
+						onChange={ ( event ) => {
+							const nextValue = parseFloat( event.target.value );
+							if ( Number.isNaN( nextValue ) ) {
+								return;
+							}
+							setPreviewValue( nextValue );
+						} }
 						required={ required }
 						data-required={ required ? 'true' : 'false' }
-						data-show-value={
-							(
-								showCurrentValue !== undefined
-									? showCurrentValue
-									: showValue !== false
-							)
-								? 'true'
-								: 'false'
-						}
-						aria-valuemin={ minValue }
-						aria-valuemax={ maxValue }
+						data-show-value={ shouldShowValue ? 'true' : 'false' }
+						aria-valuemin={ sliderMin }
+						aria-valuemax={ sliderMax }
 						aria-valuenow={ previewValue }
-						aria-labelledby={ `${ inputId }-value` }
+						aria-labelledby={ valueElementId }
 					/>
 				</div>
 				{ renderHelperText( helperText ) }

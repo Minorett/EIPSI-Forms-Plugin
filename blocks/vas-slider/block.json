@@ -45,14 +45,6 @@
             "type": "string",
             "default": ""
         },
-        "leftLabel": {
-            "type": "string",
-            "default": ""
-        },
-        "rightLabel": {
-            "type": "string",
-            "default": ""
-        },
         "labels": {
             "type": "string",
             "default": ""
@@ -140,8 +132,7 @@
             "fieldName": "pain_level",
             "label": "Nivel de dolor",
             "required": true,
-            "leftLabel": "Sin dolor",
-            "rightLabel": "Dolor máximo",
+            "labels": "0,10",
             "minValue": 0,
             "maxValue": 10,
             "step": 1,
