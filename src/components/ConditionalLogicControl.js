@@ -158,14 +158,14 @@ const ConditionalLogicControl = ( {
 					id: `rule-${ Date.now() }`,
 					operator: '>=',
 					threshold: 0,
-					action: 'goToPage',
-					targetPage: pages.length > 0 ? pages[ 0 ].index : 1,
+					action: 'nextPage',
+					targetPage: null,
 			  }
 			: {
 					id: `rule-${ Date.now() }`,
 					matchValue: '',
-					action: 'goToPage',
-					targetPage: pages.length > 0 ? pages[ 0 ].index : 1,
+					action: 'nextPage',
+					targetPage: null,
 			  };
 
 		const newRules = [ ...normalizedLogic.rules, newRule ];
@@ -178,12 +178,21 @@ const ConditionalLogicControl = ( {
 		} );
 	};
 
-	const updateRule = ( index, field, value ) => {
+	const updateRule = ( index, fieldOrUpdates, value ) => {
 		const newRules = [ ...normalizedLogic.rules ];
-		newRules[ index ] = {
-			...newRules[ index ],
-			[ field ]: value,
-		};
+		const currentRule = newRules[ index ] || {};
+
+		if ( typeof fieldOrUpdates === 'object' ) {
+			newRules[ index ] = {
+				...currentRule,
+				...fieldOrUpdates,
+			};
+		} else {
+			newRules[ index ] = {
+				...currentRule,
+				[ fieldOrUpdates ]: value,
+			};
+		}
 
 		setAttributes( {
 			conditionalLogic: {
@@ -465,34 +474,27 @@ const ConditionalLogicControl = ( {
 
 							<SelectControl
 								label={ __( 'Entonces', 'vas-dinamico-forms' ) }
-								value={
-									rule.action === 'goToPage'
-										? 'goToPage'
-										: rule.action
-								}
+								value={ rule.action || 'nextPage' }
 								options={ getActionOptions() }
 								onChange={ ( action ) => {
 									if ( action === 'nextPage' ) {
-										updateRule(
-											index,
-											'action',
-											'nextPage'
-										);
-										updateRule( index, 'targetPage', null );
+										updateRule( index, {
+											action: 'nextPage',
+											targetPage: null,
+										} );
 									} else if ( action === 'submit' ) {
-										updateRule( index, 'action', 'submit' );
-										updateRule( index, 'targetPage', null );
+										updateRule( index, {
+											action: 'submit',
+											targetPage: null,
+										} );
 									} else if ( action === 'goToPage' ) {
-										updateRule(
-											index,
-											'action',
-											'goToPage'
-										);
-										updateRule(
-											index,
-											'targetPage',
-											pages[ 0 ]?.index || 1
-										);
+										updateRule( index, {
+											action: 'goToPage',
+											targetPage:
+												rule.targetPage ||
+												pages[ 0 ]?.index ||
+												1,
+										} );
 									}
 								} }
 							/>
