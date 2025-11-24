@@ -72,24 +72,40 @@
                     border-radius: var(--eipsi-border-radius-sm, 8px);
                 }
 
-                input[type="checkbox"] {
-                    margin: 0;
-                    cursor: pointer;
-                    accent-color: var(--eipsi-color-primary, #005a87);
-                    
-                    &:checked + label {
-                        color: var(--eipsi-color-primary, #005a87);
-                        font-weight: var(--eipsi-font-weight-bold, 600);
-                    }
-                }
+                // Override frontend styles that hide inputs completely
+                .checkbox-label-wrapper {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5em;
 
-                label {
-                    margin: 0;
-                    cursor: pointer;
-                    font-weight: var(--eipsi-font-weight-normal, 400);
-                    font-family: var(--eipsi-font-family-body, inherit);
-                    color: var(--eipsi-color-text, #2c3e50);
-                    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+                    input[type="checkbox"] {
+                        // Make inputs visible in editor for better block selection
+                        position: static !important;
+                        opacity: 1 !important;
+                        width: auto !important;
+                        height: auto !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        clip: auto !important;
+                        overflow: visible !important;
+                        
+                        cursor: not-allowed;
+                        accent-color: var(--eipsi-color-primary, #005a87);
+                    }
+
+                    .checkbox-label-text {
+                        margin: 0;
+                        cursor: default;
+                        font-weight: var(--eipsi-font-weight-normal, 400);
+                        font-family: var(--eipsi-font-family-body, inherit);
+                        color: var(--eipsi-color-text, #2c3e50);
+                        
+                        // Hide custom indicator in editor since we show native input
+                        &::before,
+                        &::after {
+                            display: none !important;
+                        }
+                    }
                 }
             }
         }
