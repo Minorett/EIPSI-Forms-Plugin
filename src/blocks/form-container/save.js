@@ -11,6 +11,7 @@ export default function Save( { attributes } ) {
 		description,
 		className,
 		styleConfig,
+		presetName,
 		allowBackwardsNav,
 	} = attributes;
 
@@ -21,6 +22,7 @@ export default function Save( { attributes } ) {
 	const blockProps = useBlockProps.save( {
 		className: 'vas-dinamico-form eipsi-form ' + ( className || '' ),
 		style: cssVars,
+		'data-preset': presetName || 'Clinical Blue',
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps.save( {

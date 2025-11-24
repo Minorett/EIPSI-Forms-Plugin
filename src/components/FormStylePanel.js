@@ -28,8 +28,13 @@ import { getContrastRating } from '../utils/contrastChecker';
 import { STYLE_PRESETS, getPresetPreview } from '../utils/stylePresets';
 import './FormStylePanel.css';
 
-const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
-	const [ activePreset, setActivePreset ] = useState( null );
+const FormStylePanel = ( {
+	styleConfig,
+	setStyleConfig,
+	presetName,
+	setPresetName,
+} ) => {
+	const [ activePreset, setActivePreset ] = useState( presetName || null );
 
 	const config = styleConfig || DEFAULT_STYLE_CONFIG;
 
@@ -50,6 +55,7 @@ const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
 	const applyPreset = ( preset ) => {
 		setStyleConfig( JSON.parse( JSON.stringify( preset.config ) ) );
 		setActivePreset( preset.name );
+		setPresetName( preset.name ); // Save preset name to attributes
 	};
 
 	// Reset to defaults
@@ -67,6 +73,7 @@ const FormStylePanel = ( { styleConfig, setStyleConfig } ) => {
 				JSON.parse( JSON.stringify( DEFAULT_STYLE_CONFIG ) )
 			);
 			setActivePreset( 'Clinical Blue' );
+			setPresetName( 'Clinical Blue' );
 		}
 	};
 

@@ -24,14 +24,24 @@ export default function Edit( { attributes, setAttributes } ) {
 		submitButtonLabel,
 		description,
 		styleConfig,
+		presetName,
 		allowBackwardsNav,
 	} = attributes;
 
 	// Migration: Convert legacy attributes to styleConfig on mount
 	useEffect( () => {
+		const updates = {};
+
 		if ( ! styleConfig ) {
-			const migratedConfig = migrateToStyleConfig( attributes );
-			setAttributes( { styleConfig: migratedConfig } );
+			updates.styleConfig = migrateToStyleConfig( attributes );
+		}
+
+		if ( ! presetName ) {
+			updates.presetName = 'Clinical Blue';
+		}
+
+		if ( Object.keys( updates ).length ) {
+			setAttributes( updates );
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- Migration runs only once on mount
 	}, [] );
@@ -142,6 +152,10 @@ export default function Edit( { attributes, setAttributes } ) {
 				<FormStylePanel
 					styleConfig={ currentConfig }
 					setStyleConfig={ updateStyleConfig }
+					presetName={ presetName || 'Clinical Blue' }
+					setPresetName={ ( name ) =>
+						setAttributes( { presetName: name } )
+					}
 				/>
 			</InspectorControls>
 
