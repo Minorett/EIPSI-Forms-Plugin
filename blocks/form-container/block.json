@@ -38,6 +38,10 @@
             "type": "object",
             "default": null
         },
+        "presetName": {
+            "type": "string",
+            "default": "Clinical Blue"
+        },
         "allowBackwardsNav": {
             "type": "boolean",
             "default": true
