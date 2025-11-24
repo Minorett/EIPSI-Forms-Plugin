@@ -3,13 +3,19 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 } from '@wordpress/block-editor';
-import { PanelBody, TextControl } from '@wordpress/components';
+import { PanelBody, TextControl, ToggleControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 
 export default function Edit( { attributes, setAttributes, clientId } ) {
-	const { title, pageIndex } = attributes;
+	const {
+		title,
+		pageIndex,
+		pageType,
+		enableRestartButton,
+		restartButtonLabel,
+	} = attributes;
 
 	const computedPageIndex = useSelect(
 		( select ) => {
@@ -79,56 +85,157 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		}
 	);
 
+	const isThankYouPage = pageType === 'thank_you';
+
 	return (
 		<>
 			<InspectorControls>
 				<PanelBody
 					title={ __( 'Page Settings', 'vas-dinamico-forms' ) }
 				>
-					<TextControl
-						label={ __(
-							'Page Title (Optional)',
+					<ToggleControl
+						label={ __( 'Thank-You Page', 'vas-dinamico-forms' ) }
+						help={ __(
+							'Mark this page as the thank-you/completion page. It will be shown after form submission.',
 							'vas-dinamico-forms'
 						) }
-						value={ title }
+						checked={ isThankYouPage }
 						onChange={ ( value ) =>
-							setAttributes( { title: value } )
+							setAttributes( {
+								pageType: value ? 'thank_you' : 'standard',
+							} )
 						}
-						help={ __(
-							'Enter an optional title for this page (e.g., Personal Information)',
-							'vas-dinamico-forms'
-						) }
 					/>
-					<TextControl
-						label={ __( 'Page Number', 'vas-dinamico-forms' ) }
-						type="number"
-						value={ currentPageIndex }
-						help={ __(
-							'This page number updates automatically based on block order.',
-							'vas-dinamico-forms'
-						) }
-						disabled
-					/>
+
+					{ ! isThankYouPage && (
+						<>
+							<TextControl
+								label={ __(
+									'Page Title (Optional)',
+									'vas-dinamico-forms'
+								) }
+								value={ title }
+								onChange={ ( value ) =>
+									setAttributes( { title: value } )
+								}
+								help={ __(
+									'Enter an optional title for this page (e.g., Personal Information)',
+									'vas-dinamico-forms'
+								) }
+							/>
+							<TextControl
+								label={ __(
+									'Page Number',
+									'vas-dinamico-forms'
+								) }
+								type="number"
+								value={ currentPageIndex }
+								help={ __(
+									'This page number updates automatically based on block order.',
+									'vas-dinamico-forms'
+								) }
+								disabled
+							/>
+						</>
+					) }
+
+					{ isThankYouPage && (
+						<>
+							<TextControl
+								label={ __(
+									'Thank-You Title',
+									'vas-dinamico-forms'
+								) }
+								value={ title }
+								onChange={ ( value ) =>
+									setAttributes( { title: value } )
+								}
+								placeholder="¡Gracias por completar el formulario!"
+								help={ __(
+									'Title shown after form submission',
+									'vas-dinamico-forms'
+								) }
+							/>
+							<ToggleControl
+								label={ __(
+									'Show Restart Button',
+									'vas-dinamico-forms'
+								) }
+								checked={ !! enableRestartButton }
+								onChange={ ( value ) =>
+									setAttributes( {
+										enableRestartButton: !! value,
+									} )
+								}
+								help={ __(
+									'Add a button to start a new form submission',
+									'vas-dinamico-forms'
+								) }
+							/>
+							{ enableRestartButton && (
+								<TextControl
+									label={ __(
+										'Restart Button Label',
+										'vas-dinamico-forms'
+									) }
+									value={ restartButtonLabel }
+									onChange={ ( value ) =>
+										setAttributes( {
+											restartButtonLabel: value,
+										} )
+									}
+								/>
+							) }
+						</>
+					) }
 				</PanelBody>
 			</InspectorControls>
 
 			<div { ...blockProps }>
 				<div className="eipsi-page-preview">
 					<div className="page-header">
-						<span className="page-badge">
-							{ __( 'Page', 'vas-dinamico-forms' ) }{ ' ' }
-							{ currentPageIndex }
-						</span>
-						{ title && (
-							<h3 className="eipsi-page-title">{ title }</h3>
-						) }
-						{ ! title && (
-							<p className="page-placeholder-text">
-								{ __(
-									'Add a page title in the block settings (optional)',
-									'vas-dinamico-forms'
+						{ isThankYouPage ? (
+							<>
+								<span className="page-badge page-badge--thank-you">
+									{ __(
+										'Thank-You Page',
+										'vas-dinamico-forms'
+									) }
+								</span>
+								{ title && (
+									<h3 className="eipsi-page-title">
+										{ title }
+									</h3>
 								) }
-							</p>
+								{ ! title && (
+									<p className="page-placeholder-text">
+										{ __(
+											'Add a thank-you title in the block settings',
+											'vas-dinamico-forms'
+										) }
+									</p>
+								) }
+							</>
+						) : (
+							<>
+								<span className="page-badge">
+									{ __( 'Page', 'vas-dinamico-forms' ) }{ ' ' }
+									{ currentPageIndex }
+								</span>
+								{ title && (
+									<h3 className="eipsi-page-title">
+										{ title }
+									</h3>
+								) }
+								{ ! title && (
+									<p className="page-placeholder-text">
+										{ __(
+											'Add a page title in the block settings (optional)',
+											'vas-dinamico-forms'
+										) }
+									</p>
+								) }
+							</>
 						) }
 					</div>
 					<div { ...innerBlocksProps } />
