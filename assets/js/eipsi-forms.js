@@ -251,6 +251,19 @@
                                 Math.max( targetPage, 1 ),
                                 totalPages
                             );
+                            const targetElement =
+                                EIPSIForms.getPageElement(
+                                    this.form,
+                                    boundedTarget
+                                );
+
+                            if (
+                                targetElement &&
+                                EIPSIForms.isThankYouPageElement( targetElement )
+                            ) {
+                                return { action: 'submit' };
+                            }
+
                             return {
                                 action: 'goToPage',
                                 targetPage: boundedTarget,
@@ -292,6 +305,18 @@
                                 Math.max( targetPage, 1 ),
                                 totalPages
                             );
+                            const targetElement = EIPSIForms.getPageElement(
+                                this.form,
+                                boundedTarget
+                            );
+
+                            if (
+                                targetElement &&
+                                EIPSIForms.isThankYouPageElement( targetElement )
+                            ) {
+                                return { action: 'submit' };
+                            }
+
                             return {
                                 action: 'goToPage',
                                 targetPage: boundedTarget,
@@ -971,7 +996,6 @@
                     ! page.classList.contains( 'eipsi-thank-you-page-block' )
             );
             const totalPages = regularPages.length || 1;
-            form.dataset.totalPages = totalPages;
 
             return totalPages;
         },
@@ -1194,6 +1218,17 @@
         },
 
         updatePaginationDisplay( form, currentPage, totalPages ) {
+            // Defense against currentPage > totalPages (should never happen, but prevents UI glitches)
+            if ( currentPage > totalPages ) {
+                if ( window.console && window.console.error ) {
+                    window.console.error(
+                        '[EIPSI] CURRENT PAGE OUT OF BOUNDS',
+                        { currentPage, totalPages }
+                    );
+                }
+                currentPage = totalPages;
+            }
+
             const prevButton = form.querySelector( '.eipsi-prev-button' );
             const nextButton = form.querySelector( '.eipsi-next-button' );
             const submitButton = form.querySelector( '.eipsi-submit-button' );
@@ -1304,29 +1339,9 @@
                 progressText.textContent = currentPage;
             }
 
-            if (
-                totalPagesText &&
-                navigator &&
-                navigator.visitedPages.size > 0
-            ) {
-                const activePath = navigator.getActivePath();
-                const currentIndex = activePath.indexOf( currentPage );
-
-                if ( currentIndex !== -1 ) {
-                    const remainingPages =
-                        totalPages - activePath[ activePath.length - 1 ];
-                    const estimatedTotal =
-                        activePath.length + Math.max( 0, remainingPages );
-
-                    if ( estimatedTotal !== totalPages ) {
-                        totalPagesText.textContent = `${ estimatedTotal }*`;
-                        totalPagesText.title =
-                            'Estimado basado en tu ruta actual';
-                    } else {
-                        totalPagesText.textContent = totalPages;
-                        totalPagesText.title = '';
-                    }
-                }
+            if ( totalPagesText ) {
+                totalPagesText.textContent = totalPages;
+                totalPagesText.title = '';
             }
 
             this.updatePageVisibility( form, currentPage );
@@ -2156,6 +2171,14 @@
                         Math.max( parsedTarget, 1 ),
                         totalPages
                     );
+                    const targetElement = this.getPageElement(
+                        form,
+                        boundedTarget
+                    );
+
+                    if ( this.isThankYouPageElement( targetElement ) ) {
+                        return 'submit';
+                    }
 
                     return boundedTarget;
                 }
@@ -2227,6 +2250,18 @@
             return null;
         },
 
+        isThankYouPageElement( page ) {
+            if ( ! page ) {
+                return false;
+            }
+
+            return (
+                page.dataset.pageType === 'thank_you' ||
+                page.dataset.page === 'thank-you' ||
+                page.classList.contains( 'eipsi-thank-you-page-block' )
+            );
+        },
+
         goToPage( form, pageNumber ) {
             if ( ! form ) {
                 return;
@@ -2244,6 +2279,27 @@
             }
 
             this.setCurrentPage( form, targetPage );
+        },
+
+        markFormCompleted( form ) {
+            if ( ! form ) {
+                return;
+            }
+
+            form.dataset.formStatus = 'completed';
+
+            if ( window.EIPSITracking ) {
+                const trackingFormId =
+                    this.getTrackingFormId( form ) || this.getFormId( form );
+
+                if ( trackingFormId ) {
+                    window.EIPSITracking.setCurrentPage(
+                        trackingFormId,
+                        'completed',
+                        { trackChange: true }
+                    );
+                }
+            }
         },
 
         showIntegratedThankYouPage( form ) {
@@ -2302,6 +2358,9 @@
         },
 
         showExistingThankYouPage( form, thankYouPageElement ) {
+            // Mark form as completed (sets state + tracking)
+            this.markFormCompleted( form );
+
             // Hide all regular pages
             const pages = form.querySelectorAll(
                 '.eipsi-page:not([data-page="thank-you"]):not(.eipsi-thank-you-page-block)'
@@ -2357,6 +2416,9 @@
         },
 
         createThankYouPage( form, config ) {
+            // Mark form as completed (sets state + tracking)
+            this.markFormCompleted( form );
+
             // Hide all existing pages
             const pages = form.querySelectorAll( '.eipsi-page' );
             pages.forEach( ( page ) => {
