@@ -25,6 +25,47 @@
             }
         }
     }
+
+    &.eipsi-thank-you-page-block {
+        text-align: center;
+
+        .eipsi-page-title {
+            border: none;
+            margin-bottom: 0.5em;
+        }
+
+        .eipsi-thank-you-restart {
+            margin-top: 2rem;
+
+            .eipsi-restart-button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.35rem;
+                background: var(--eipsi-color-primary, #005a87);
+                color: #fff;
+                border: none;
+                border-radius: 999px;
+                padding: 0.85rem 1.75rem;
+                font-weight: 600;
+                font-size: 1rem;
+                cursor: pointer;
+                box-shadow: 0 6px 18px rgba(0, 90, 135, 0.2);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+                &:hover,
+                &:focus {
+                    transform: translateY(-1px);
+                    box-shadow: 0 8px 24px rgba(0, 90, 135, 0.3);
+                }
+
+                &:focus-visible {
+                    outline: 3px solid rgba(0, 90, 135, 0.5);
+                    outline-offset: 2px;
+                }
+            }
+        }
+    }
 }
 
 @keyframes fadeIn {

@@ -37,6 +37,15 @@
                 &:hover {
                     background: var(--eipsi-color-primary-hover, #003d5b);
                 }
+
+                &.page-badge--thank-you {
+                    background: #198754;
+                    color: #fff;
+
+                    &:hover {
+                        background: #146c43;
+                    }
+                }
             }
 
             .eipsi-page-title {
