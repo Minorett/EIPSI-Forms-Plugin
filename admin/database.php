@@ -11,6 +11,15 @@ class EIPSI_External_Database {
     
     private $option_prefix = 'eipsi_external_db_';
     
+    private $critical_columns = array(
+        'form_id',
+        'participant_id',
+        'session_id',
+        'duration_seconds',
+        'quality_flag',
+        'form_responses'
+    );
+    
     /**
      * Encrypt credentials before storing
      * Uses WordPress salts for encryption
@@ -164,6 +173,21 @@ class EIPSI_External_Database {
                     $schema_result['error']
                 ),
                 'error_code' => 'SCHEMA_ERROR'
+            );
+        }
+        
+        // Validate critical columns before confirming connection
+        $column_validation = $this->validate_required_columns($mysqli, $schema_result['table_name']);
+        
+        if (!$column_validation['success']) {
+            $mysqli->close();
+            return array(
+                'success' => false,
+                'message' => sprintf(
+                    __('La base de datos externa no tiene columnas críticas requeridas para EIPSI Forms: %s', 'vas-dinamico-forms'),
+                    implode(', ', $column_validation['missing'])
+                ),
+                'error_code' => 'SCHEMA_MISSING_COLUMNS'
             );
         }
         
@@ -366,6 +390,47 @@ class EIPSI_External_Database {
     }
 
     /**
+     * Validate that the external table includes the critical columns required for tracking.
+     *
+     * @param mysqli $mysqli Active database connection
+     * @param string $table_name Table name to inspect
+     * @return array Result with success flag and missing columns (if any)
+     */
+    private function validate_required_columns($mysqli, $table_name) {
+        $result = $mysqli->query("DESCRIBE `{$table_name}`");
+
+        if (!$result) {
+            return array(
+                'success' => false,
+                'error' => 'Unable to inspect external table schema',
+                'missing' => $this->critical_columns
+            );
+        }
+
+        $columns = array();
+        while ($row = $result->fetch_assoc()) {
+            if (isset($row['Field'])) {
+                $columns[] = strtolower($row['Field']);
+            }
+        }
+
+        $missing = array_diff($this->critical_columns, $columns);
+
+        if (!empty($missing)) {
+            return array(
+                'success' => false,
+                'error' => 'Missing columns: ' . implode(', ', $missing),
+                'missing' => $missing
+            );
+        }
+
+        return array(
+            'success' => true,
+            'missing' => array()
+        );
+    }
+
+    /**
      * Get active database connection (custom or WordPress)
      * 
      * @return mysqli|null Custom database connection or null
@@ -455,6 +520,23 @@ class EIPSI_External_Database {
         }
         
         $table_name = $schema_result['table_name'];
+        
+        $column_validation = $this->validate_required_columns($mysqli, $table_name);
+        
+        if (!$column_validation['success']) {
+            $error_msg = 'Missing critical columns: ' . implode(', ', $column_validation['missing']);
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('EIPSI Forms External DB: ' . $error_msg);
+            }
+            $mysqli->close();
+            return array(
+                'success' => false,
+                'error' => $error_msg,
+                'error_code' => 'SCHEMA_MISSING_COLUMNS',
+                'missing_columns' => $column_validation['missing'],
+                'insert_id' => null
+            );
+        }
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('EIPSI Forms External DB: Attempting insert into table ' . $table_name);
