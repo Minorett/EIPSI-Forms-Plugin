@@ -1,5 +1,6 @@
 import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
 import { PanelBody, TextareaControl } from '@wordpress/components';
+import { useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import FieldSettings from '../../components/FieldSettings';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
@@ -37,6 +38,7 @@ const getFieldId = ( fieldName, suffix = '' ) => {
 
 export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
+		fieldKey,
 		fieldName,
 		label,
 		required,
@@ -45,8 +47,20 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		conditionalLogic,
 	} = attributes;
 
-	const normalizedFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
+	useEffect( () => {
+		if ( ! fieldKey ) {
+			const generatedKey = `radio-${ clientId.replace(
+				/[^a-zA-Z0-9]/g,
+				''
+			) }`;
+			setAttributes( { fieldKey: generatedKey } );
+		}
+	}, [ fieldKey, clientId, setAttributes ] );
+
+	const effectiveFieldName =
+		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
+
+	const normalizedFieldName = effectiveFieldName;
 
 	const hasConditionalLogic =
 		conditionalLogic &&
@@ -58,7 +72,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 	const blockProps = useBlockProps( {
 		className: 'form-group eipsi-field eipsi-radio-field',
-		'data-field-name': normalizedFieldName,
+		'data-field-name': normalizedFieldName || undefined,
 		'data-required': required ? 'true' : 'false',
 		'data-field-type': 'radio',
 		'data-conditional-logic': hasConditionalLogic ? 'true' : undefined,

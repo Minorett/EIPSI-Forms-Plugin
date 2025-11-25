@@ -33,6 +33,7 @@ const getFieldId = ( fieldName, suffix = '' ) => {
 
 export default function Save( { attributes } ) {
 	const {
+		fieldKey,
 		fieldName,
 		label,
 		required,
@@ -41,12 +42,14 @@ export default function Save( { attributes } ) {
 		conditionalLogic,
 	} = attributes;
 
-	const normalizedFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
+	const effectiveFieldName =
+		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
+
+	const normalizedFieldName = effectiveFieldName;
 
 	const blockProps = useBlockProps.save( {
 		className: 'form-group eipsi-field eipsi-radio-field',
-		'data-field-name': normalizedFieldName,
+		'data-field-name': normalizedFieldName || undefined,
 		'data-required': required ? 'true' : 'false',
 		'data-field-type': 'radio',
 		'data-conditional-logic': conditionalLogic

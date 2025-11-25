@@ -40,19 +40,32 @@ export default function Save( { attributes } ) {
 		minValue,
 		maxValue,
 		labels,
+		conditionalLogic,
 	} = attributes;
 
 	const effectiveFieldName =
 		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
 
-	const blockProps = useBlockProps.save( {
+	const blockPropsData = {
 		className: 'form-group eipsi-field eipsi-likert-field',
 		'data-field-name': effectiveFieldName,
 		'data-required': required ? 'true' : 'false',
 		'data-field-type': 'likert',
 		'data-min': minValue,
 		'data-max': maxValue,
-	} );
+	};
+
+	if (
+		conditionalLogic &&
+		conditionalLogic.enabled &&
+		conditionalLogic.rules &&
+		conditionalLogic.rules.length > 0
+	) {
+		blockPropsData[ 'data-conditional-logic' ] =
+			JSON.stringify( conditionalLogic );
+	}
+
+	const blockProps = useBlockProps.save( blockPropsData );
 
 	const labelArray =
 		labels && labels.trim() !== ''
