@@ -47,7 +47,6 @@ export default function Save( { attributes } ) {
 		labelFontSize,
 		valueFontSize,
 		showLabelContainers,
-		showValueContainer,
 		boldLabels,
 		showCurrentValue,
 		valuePosition,
@@ -151,9 +150,9 @@ export default function Save( { attributes } ) {
 			<div
 				className={ `vas-slider-container${
 					showLabelContainers ? ' vas-show-label-containers' : ''
-				}${ showValueContainer ? ' vas-show-value-container' : '' }${
-					boldLabels !== false ? ' vas-bold-labels' : ''
-				}${ valuePosition === 'below' ? ' vas-value-below' : '' }` }
+				}${ boldLabels !== false ? ' vas-bold-labels' : '' }${
+					valuePosition === 'below' ? ' vas-value-below' : ''
+				}` }
 				data-scale={ `${ sliderMin }-${ sliderMax }` }
 				style={ {
 					'--vas-label-alignment': alignmentRatio,

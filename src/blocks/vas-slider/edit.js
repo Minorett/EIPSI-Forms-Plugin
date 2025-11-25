@@ -82,7 +82,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		labelFontSize,
 		valueFontSize,
 		showLabelContainers,
-		showValueContainer,
 		boldLabels,
 		showCurrentValue,
 		valuePosition,
@@ -528,23 +527,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							) }
 						/>
 
-						<ToggleControl
-							label={ __(
-								'Show value container',
-								'vas-dinamico-forms'
-							) }
-							checked={ !! showValueContainer }
-							onChange={ ( value ) =>
-								setAttributes( {
-									showValueContainer: !! value,
-								} )
-							}
-							help={ __(
-								'Display background box around the value number',
-								'vas-dinamico-forms'
-							) }
-						/>
-
 						<UnitControl
 							label={ __( 'Value size', 'vas-dinamico-forms' ) }
 							value={ `${ valueFontSize || 36 }px` }
@@ -595,6 +577,8 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					setAttributes={ setAttributes }
 					clientId={ clientId }
 					mode="numeric"
+					numericMin={ sliderMin }
+					numericMax={ sliderMax }
 				/>
 			</InspectorControls>
 
@@ -608,8 +592,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				<div
 					className={ `vas-slider-container vas-slider-preview${
 						showLabelContainers ? ' vas-show-label-containers' : ''
-					}${
-						showValueContainer ? ' vas-show-value-container' : ''
 					}${ boldLabels !== false ? ' vas-bold-labels' : '' }${
 						valuePosition === 'below' ? ' vas-value-below' : ''
 					}` }

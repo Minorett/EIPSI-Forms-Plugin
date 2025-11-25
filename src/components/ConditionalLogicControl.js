@@ -2,9 +2,10 @@ import {
 	PanelBody,
 	ToggleControl,
 	SelectControl,
-	TextControl,
 	Button,
 	Dashicon,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- NumberControl ensures numeric-only threshold inputs
+	__experimentalNumberControl as NumberControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useSelect } from '@wordpress/data';
@@ -17,6 +18,8 @@ const ConditionalLogicControl = ( {
 	options = [],
 	clientId,
 	mode = 'discrete',
+	numericMin = null,
+	numericMax = null,
 } ) => {
 	const { conditionalLogic } = attributes;
 	const [ validationErrors, setValidationErrors ] = useState( {} );
@@ -432,25 +435,68 @@ const ConditionalLogicControl = ( {
 										}
 									/>
 
-									<TextControl
+									<NumberControl
 										label={ __(
 											'Valor umbral',
 											'vas-dinamico-forms'
 										) }
-										type="number"
 										value={
 											rule.threshold !== undefined
 												? rule.threshold
 												: ''
 										}
-										onChange={ ( value ) =>
+										onChange={ ( value ) => {
+											if (
+												value === '' ||
+												value === undefined
+											) {
+												updateRule(
+													index,
+													'threshold',
+													''
+												);
+												return;
+											}
+
+											let numValue =
+												typeof value === 'string'
+													? parseFloat( value )
+													: value;
+
+											if ( Number.isNaN( numValue ) ) {
+												return;
+											}
+
+											// Aplicar clamp si hay min/max definidos
+											if (
+												numericMin !== null &&
+												numValue < numericMin
+											) {
+												numValue = numericMin;
+											}
+
+											if (
+												numericMax !== null &&
+												numValue > numericMax
+											) {
+												numValue = numericMax;
+											}
+
 											updateRule(
 												index,
 												'threshold',
-												value !== ''
-													? parseFloat( value )
-													: ''
-											)
+												numValue
+											);
+										} }
+										min={
+											numericMin !== null
+												? numericMin
+												: undefined
+										}
+										max={
+											numericMax !== null
+												? numericMax
+												: undefined
 										}
 										help={ __(
 											'El valor con el que se comparará la respuesta del slider',
