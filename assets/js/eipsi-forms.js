@@ -515,21 +515,36 @@
             } );
         },
 
-        recordBranchingPreview( formId, currentPage, nextPageResult ) {
-            if ( ! window.EIPSITracking || ! window.EIPSITracking.trackEvent ) {
+        recordBranchingPreview( formId, currentPage, result ) {
+            if ( ! window.EIPSITracking?.trackEvent ) {
                 return;
             }
 
-            if (
-                this.config.settings?.debug &&
-                window.console &&
-                window.console.log
-            ) {
-                window.console.log(
-                    '[EIPSI Forms] Branching route updated:',
-                    `Page ${ currentPage } → Page ${ nextPageResult.targetPage }`,
-                    nextPageResult
-                );
+            const nextPage =
+                result.action === 'goToPage'
+                    ? result.targetPage
+                    : currentPage + 1;
+
+            // Solo trackeamos si NO es el flujo lineal normal
+            if ( nextPage !== currentPage + 1 ) {
+                window.EIPSITracking.trackEvent( 'branch_jump', formId, {
+                    from_page: currentPage,
+                    to_page: nextPage,
+                    field_id:
+                        result.triggeringField?.dataset?.fieldName || null,
+                    matched_value: result.fieldValue ?? null,
+                    timestamp: Date.now(),
+                } );
+            }
+
+            // Mantener logs de debug si ya existen
+            if ( this.config.settings?.debug && window.console?.log ) {
+                window.console.log( '[EIPSI Forms] Branching route updated:', {
+                    formId,
+                    currentPage,
+                    nextPage,
+                    result,
+                } );
             }
         },
 

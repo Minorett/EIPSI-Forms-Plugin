@@ -119,30 +119,84 @@ function eipsi_calculate_engagement_score($responses, $duration_seconds) {
 
 /**
  * Calcula consistency score (coherencia de respuestas)
+ * v1 mínima: PHQ-9 / GAD-7 inconsistency detection
  */
 function eipsi_calculate_consistency_score($responses) {
-    // TODO: Implementar lógica de coherencia
-    // Por ahora retorna 1.0 (perfecta coherencia)
-    return 1.0;
+    $inconsistencies = 0;
+
+    // Regla mínima para escalas tipo PHQ-9 / GAD-7 (ítems 0-3)
+    // Buscamos un ítem de riesgo alto (p.ej. ideación suicida) y lo comparamos
+    // con el promedio del resto de los ítems de la misma escala.
+    $suicidal_item = $responses['phq9_q9'] ?? $responses['gad7_q7'] ?? null;
+
+    if ($suicidal_item !== null) {
+        $total_score = 0;
+        $count = 0;
+
+        foreach ($responses as $k => $v) {
+            // Consideramos preguntas de PHQ-9 o GAD-7
+            if (strpos($k, 'phq9_q') === 0 || strpos($k, 'gad7_q') === 0) {
+                // Excluimos los ítems de riesgo clave (q9 PHQ, q7 GAD)
+                if (strpos($k, '_q9') === false && strpos($k, '_q7') === false) {
+                    $total_score += intval($v);
+                    $count++;
+                }
+            }
+        }
+
+        $avg_score = $count > 0 ? $total_score / $count : 0;
+        $suicidal_val = intval($suicidal_item);
+
+        // Inconsistencias básicas:
+        // - Promedio bajo (<1.5) pero ítem de riesgo alto (>=2)
+        if ($avg_score < 1.5 && $suicidal_val >= 2) {
+            $inconsistencies++;
+        }
+
+        // - Promedio alto (>=2.5) pero ítem de riesgo en 0
+        if ($avg_score >= 2.5 && $suicidal_val === 0) {
+            $inconsistencies++;
+        }
+    }
+
+    // v1: score binario simple
+    return $inconsistencies === 0 ? 1.0 : 0.6;
 }
 
 /**
  * Detecta patrones de evitación (saltos, retrocesos)
  */
-function eipsi_detect_avoidance_patterns($responses) {
-    // TODO: Implementar detección
-    // Por ahora retorna array vacío
-    return array();
+function eipsi_detect_avoidance_patterns($duration_seconds, $total_pages) {
+    $patterns = array();
+
+    // Regla mínima: respuesta demasiado rápida en relación a la cantidad de páginas
+    // (umbral aproximado: < 9 segundos por página)
+    if ($total_pages > 0 && $duration_seconds > 0 && $duration_seconds < ($total_pages * 9)) {
+        $patterns[] = 'respuesta_extremadamente_rápida';
+    }
+
+    return $patterns;
 }
 
 /**
  * Calcula quality flag basado en múltiples factores
  */
-function eipsi_calculate_quality_flag($responses, $duration_seconds) {
+function eipsi_calculate_quality_flag($responses, $duration_seconds, $total_pages = null) {
+    // Estimar total_pages si no se proporciona (aproximación: ~5 campos por página)
+    if ($total_pages === null) {
+        $total_pages = max(1, ceil(count($responses) / 5));
+    }
+    
     $engagement = eipsi_calculate_engagement_score($responses, $duration_seconds);
     $consistency = eipsi_calculate_consistency_score($responses);
+    $avoidance = eipsi_detect_avoidance_patterns($duration_seconds, $total_pages);
     
     $avg_score = ($engagement + $consistency) / 2;
+    
+    // Opcional: si hay avoidance patterns, penalizar un poco más
+    if (!empty($avoidance) && $avg_score > 0.6) {
+        $avg_score = 0.6;
+    }
     
     if ($avg_score >= 0.8) {
         return 'HIGH';
@@ -323,6 +377,9 @@ function vas_dinamico_submit_form_handler() {
     // CLINICAL INSIGHTS
     $metadata['clinical_insights'] = array();
     
+    // Estimar total_pages basado en cantidad de campos (aproximación: ~5 campos por página)
+    $estimated_total_pages = max(1, ceil(count($form_responses) / 5));
+    
     if ($privacy_config['therapeutic_engagement']) {
         $metadata['clinical_insights']['therapeutic_engagement'] = eipsi_calculate_engagement_score($form_responses, $duration_seconds);
     }
@@ -332,11 +389,11 @@ function vas_dinamico_submit_form_handler() {
     }
     
     if ($privacy_config['avoidance_patterns']) {
-        $metadata['clinical_insights']['avoidance_patterns'] = eipsi_detect_avoidance_patterns($form_responses);
+        $metadata['clinical_insights']['avoidance_patterns'] = eipsi_detect_avoidance_patterns($duration_seconds, $estimated_total_pages);
     }
     
     // QUALITY METRICS (SIEMPRE)
-    $quality_flag = eipsi_calculate_quality_flag($form_responses, $duration_seconds);
+    $quality_flag = eipsi_calculate_quality_flag($form_responses, $duration_seconds, $estimated_total_pages);
     $metadata['quality_metrics'] = array(
         'quality_flag' => $quality_flag,
         'completion_rate' => 1.0
