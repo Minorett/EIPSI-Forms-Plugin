@@ -302,19 +302,7 @@
    ---------------------------------------- */
 .eipsi-field[data-conditional-logic="true"] {
     position: relative;
-}
-
-.eipsi-field[data-conditional-logic="true"]::before {
-    content: "";
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border: 2px solid #005a87;
-    border-radius: 8px;
-    pointer-events: none;
-    z-index: 1;
+    border-left: 4px solid #005a87 !important;
 }
 
 .eipsi-field[data-conditional-logic="true"]::after {
@@ -322,25 +310,31 @@
     position: absolute;
     top: 8px;
     right: 8px;
-    font-size: 18px;
+    font-size: 16px;
     z-index: 2;
-    opacity: 0.8;
+    opacity: 0.9;
     background: #005a87;
     color: #ffffff;
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
+    box-shadow: 0 2px 4px rgba(0, 90, 135, 0.2);
+    transition: all 0.2s ease;
+}
+
+.eipsi-field[data-conditional-logic="true"]:hover::after {
+    opacity: 1;
+    transform: scale(1.05);
 }
 
 /* ----------------------------------------
    Enhanced Block Styles with Conditional Logic
    ---------------------------------------- */
 .wp-block[data-conditional-logic="true"] {
-    box-shadow: 0 0 0 2px rgba(0, 90, 135, 0.2);
     border-radius: 8px;
 }
 
