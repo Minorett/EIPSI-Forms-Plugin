@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: EIPSI Forms
- * Plugin URI: https://github.com/roofkat/VAS-dinamico-mvp
+ * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
  * Version: 1.2.2
- * Author: Mathias Rojas
- * Author URI: https://github.com/roofkat
+ * Author: Mathias N. Rojas de la Fuente
+ * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: vas-dinamico-forms
  * Domain Path: /languages
  * Requires at least: 5.8
