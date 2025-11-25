@@ -1232,30 +1232,30 @@
             }
         },
 
-        updatePaginationDisplay( form, currentPage, totalPages ) {
-            // Defense against currentPage > totalPages (should never happen, but prevents UI glitches)
-            if ( currentPage > totalPages ) {
-                if ( window.console && window.console.error ) {
-                    window.console.error(
-                        '[EIPSI] CURRENT PAGE OUT OF BOUNDS',
-                        { currentPage, totalPages }
-                    );
-                }
-                currentPage = totalPages;
+        /**
+         * CENTRAL NAVIGATION BUTTON VISIBILITY LOGIC
+         * Single source of truth for what buttons appear on each page
+         * 
+         * Clinical rules (immutable):
+         * - First page (1/n, n>1): Only "Next"
+         * - Single-page form (1/1): Only "Submit"
+         * - Intermediate pages (2..n-1): "Prev" (if allowBackwardsNav) + "Next"
+         * - Last page (n/n, n>1): "Prev" (if allowBackwardsNav) + "Submit"
+         * - Thank-you page: No navigation buttons
+         * 
+         * SACRED RULE: NEVER show "Next" + "Submit" simultaneously
+         */
+        updateNavigationButtons( form, currentPage, totalPages ) {
+            if ( ! form ) {
+                return;
             }
 
             const prevButton = form.querySelector( '.eipsi-prev-button' );
             const nextButton = form.querySelector( '.eipsi-next-button' );
             const submitButton = form.querySelector( '.eipsi-submit-button' );
-            const progressText = form.querySelector(
-                '.form-progress .current-page'
-            );
-            const totalPagesText = form.querySelector(
-                '.form-progress .total-pages'
-            );
-            const navigator = this.getNavigator( form );
             const isSubmitting = form.dataset.submitting === 'true';
 
+            // Helper: Show/hide button
             const toggleVisibility = ( button, isVisible ) => {
                 if ( ! button ) {
                     return;
@@ -1269,6 +1269,7 @@
                 }
             };
 
+            // Helper: Enable/disable button
             const setDisabledState = ( button, disabled ) => {
                 if ( ! button ) {
                     return;
@@ -1283,73 +1284,151 @@
                 }
             };
 
+            const currentPageElement = this.getPageElement( form, currentPage );
+
+            // Check if form/page is in thank-you mode
+            const isThankYouPage =
+                form.dataset.formStatus === 'completed' ||
+                this.isThankYouPageElement( currentPageElement );
+
+            if ( isThankYouPage ) {
+                // Thank-you page: hide ALL navigation buttons and disable them
+                toggleVisibility( prevButton, false );
+                toggleVisibility( nextButton, false );
+                toggleVisibility( submitButton, false );
+                setDisabledState( prevButton, true );
+                setDisabledState( nextButton, true );
+                setDisabledState( submitButton, true );
+                return;
+            }
+
+            // Get allowBackwardsNav setting
             const rawAllowBackwards = form.dataset.allowBackwardsNav;
             const allowBackwardsNav =
                 rawAllowBackwards === 'false' || rawAllowBackwards === '0'
                     ? false
                     : true;
 
-            const isLastPage = navigator
+            // Determine if current page should trigger submit
+            // (either it's the last page, or conditional logic says to submit)
+            const navigator = this.getNavigator( form );
+            const shouldSubmitOnThisPage = navigator
                 ? navigator.shouldSubmit( currentPage ) ||
                   currentPage === totalPages
                 : currentPage === totalPages;
 
-            // Handle Previous button visibility
-            if ( prevButton ) {
-                const shouldShowPrev = currentPage > 1 && allowBackwardsNav;
-                toggleVisibility( prevButton, shouldShowPrev );
+            const isFirstPage = currentPage === 1;
+            const isSinglePageForm = totalPages === 1;
 
-                if ( shouldShowPrev ) {
-                    setDisabledState( prevButton, isSubmitting );
-                    prevButton.setAttribute(
+            // DECISION TREE (follows clinical rules exactly)
+            // Rule 1: Single-page form (1/1)
+            if ( isSinglePageForm ) {
+                toggleVisibility( prevButton, false );
+                setDisabledState( prevButton, true );
+                toggleVisibility( nextButton, false );
+                setDisabledState( nextButton, true );
+                toggleVisibility( submitButton, true );
+                setDisabledState( submitButton, isSubmitting );
+                if ( submitButton ) {
+                    submitButton.setAttribute(
                         'aria-label',
-                        `Ir a la página anterior (página ${
-                            currentPage - 1
-                        } de ${ totalPages })`
+                        'Enviar el formulario (página única)'
                     );
-                } else {
-                    setDisabledState( prevButton, true );
                 }
+                return;
             }
 
-            // Handle Next/Submit mutual exclusion
-            const shouldShowNext = ! isLastPage;
-
-            if ( nextButton ) {
-                toggleVisibility( nextButton, shouldShowNext );
-
-                if ( shouldShowNext ) {
-                    setDisabledState( nextButton, isSubmitting );
+            // Rule 2: First page of multi-page form (1/n, n>1)
+            if ( isFirstPage && ! shouldSubmitOnThisPage ) {
+                toggleVisibility( prevButton, false );
+                setDisabledState( prevButton, true );
+                toggleVisibility( nextButton, true );
+                setDisabledState( nextButton, isSubmitting );
+                toggleVisibility( submitButton, false );
+                setDisabledState( submitButton, true );
+                if ( nextButton ) {
                     nextButton.setAttribute(
                         'aria-label',
-                        `Ir a la siguiente página (página ${
-                            currentPage + 1
-                        } de ${ totalPages })`
+                        `Ir a la siguiente página (página ${ currentPage + 1 } de ${ totalPages })`
                     );
-                } else {
-                    setDisabledState( nextButton, true );
                 }
+                return;
             }
 
-            if ( submitButton ) {
-                toggleVisibility( submitButton, isLastPage );
+            // Rule 3: Last page (should submit)
+            if ( shouldSubmitOnThisPage ) {
+                const shouldShowPrev = currentPage > 1 && allowBackwardsNav;
+                toggleVisibility( prevButton, shouldShowPrev );
+                setDisabledState( prevButton, shouldShowPrev ? isSubmitting : true );
+                toggleVisibility( nextButton, false );
+                setDisabledState( nextButton, true );
+                toggleVisibility( submitButton, true );
+                setDisabledState( submitButton, isSubmitting );
 
-                if ( isLastPage ) {
-                    setDisabledState( submitButton, isSubmitting );
+                if ( shouldShowPrev && prevButton ) {
+                    prevButton.setAttribute(
+                        'aria-label',
+                        `Ir a la página anterior (página ${ currentPage - 1 } de ${ totalPages })`
+                    );
+                }
+
+                if ( submitButton ) {
                     submitButton.setAttribute(
                         'aria-label',
                         `Enviar el formulario (página ${ currentPage } de ${ totalPages })`
                     );
-                } else {
-                    setDisabledState( submitButton, true );
+                    const strings = this.config.strings || {};
+                    if ( strings.submit ) {
+                        submitButton.textContent = strings.submit;
+                    }
                 }
-
-                const strings = this.config.strings || {};
-                if ( isLastPage && strings.submit ) {
-                    submitButton.textContent = strings.submit;
-                }
+                return;
             }
 
+            // Rule 4: Intermediate pages (2..n-1, not submitting yet)
+            const shouldShowPrev = currentPage > 1 && allowBackwardsNav;
+            toggleVisibility( prevButton, shouldShowPrev );
+            setDisabledState( prevButton, shouldShowPrev ? isSubmitting : true );
+            toggleVisibility( nextButton, true );
+            setDisabledState( nextButton, isSubmitting );
+            toggleVisibility( submitButton, false );
+            setDisabledState( submitButton, true );
+
+            if ( shouldShowPrev && prevButton ) {
+                prevButton.setAttribute(
+                    'aria-label',
+                    `Ir a la página anterior (página ${ currentPage - 1 } de ${ totalPages })`
+                );
+            }
+
+            if ( nextButton ) {
+                nextButton.setAttribute(
+                    'aria-label',
+                    `Ir a la siguiente página (página ${ currentPage + 1 } de ${ totalPages })`
+                );
+            }
+        },
+
+        updatePaginationDisplay( form, currentPage, totalPages ) {
+            // Defense against currentPage > totalPages (should never happen, but prevents UI glitches)
+            if ( currentPage > totalPages ) {
+                if ( window.console && window.console.error ) {
+                    window.console.error(
+                        '[EIPSI] CURRENT PAGE OUT OF BOUNDS',
+                        { currentPage, totalPages }
+                    );
+                }
+                currentPage = totalPages;
+            }
+
+            const progressText = form.querySelector(
+                '.form-progress .current-page'
+            );
+            const totalPagesText = form.querySelector(
+                '.form-progress .total-pages'
+            );
+
+            // Update progress text
             if ( progressText ) {
                 progressText.textContent = currentPage;
             }
@@ -1359,9 +1438,14 @@
                 totalPagesText.title = '';
             }
 
+            // CALL CENTRAL NAVIGATION BUTTON LOGIC
+            this.updateNavigationButtons( form, currentPage, totalPages );
+
+            // Update page visibility and aria attributes
             this.updatePageVisibility( form, currentPage );
             this.updatePageAriaAttributes( form, currentPage );
 
+            // Update tracking
             if ( window.EIPSITracking ) {
                 const trackingFormId = this.getTrackingFormId( form );
                 if ( trackingFormId ) {
