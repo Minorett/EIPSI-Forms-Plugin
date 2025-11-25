@@ -1280,14 +1280,14 @@
         /**
          * CENTRAL NAVIGATION BUTTON VISIBILITY LOGIC
          * Single source of truth for what buttons appear on each page
-         * 
+         *
          * Clinical rules (immutable):
          * - First page (1/n, n>1): Only "Next"
          * - Single-page form (1/1): Only "Submit"
          * - Intermediate pages (2..n-1): "Prev" (if allowBackwardsNav) + "Next"
          * - Last page (n/n, n>1): "Prev" (if allowBackwardsNav) + "Submit"
          * - Thank-you page: No navigation buttons
-         * 
+         *
          * SACRED RULE: NEVER show "Next" + "Submit" simultaneously
          */
         updateNavigationButtons( form, currentPage, totalPages ) {
@@ -1300,21 +1300,24 @@
             const submitButton = form.querySelector( '.eipsi-submit-button' );
             const isSubmitting = form.dataset.submitting === 'true';
 
-            // Helper: Show/hide button
+            // Helper: Show/hide button (no disabled ghosts)
             const toggleVisibility = ( button, isVisible ) => {
                 if ( ! button ) {
                     return;
                 }
+
                 if ( isVisible ) {
                     button.classList.remove( 'is-hidden' );
                     button.removeAttribute( 'aria-hidden' );
+                    button.style.display = '';
                 } else {
                     button.classList.add( 'is-hidden' );
                     button.setAttribute( 'aria-hidden', 'true' );
+                    button.style.display = 'none';
                 }
             };
 
-            // Helper: Enable/disable button
+            // Helper: Enable/disable button while keeping accessibility attrs aligned
             const setDisabledState = ( button, disabled ) => {
                 if ( ! button ) {
                     return;
@@ -1331,19 +1334,23 @@
 
             const currentPageElement = this.getPageElement( form, currentPage );
 
-            // Check if form/page is in thank-you mode
+            // Thank-you page: hide everything and bail
             const isThankYouPage =
                 form.dataset.formStatus === 'completed' ||
                 this.isThankYouPageElement( currentPageElement );
 
-            if ( isThankYouPage ) {
-                // Thank-you page: hide ALL navigation buttons and disable them
+            const hideAllButtons = () => {
                 toggleVisibility( prevButton, false );
-                toggleVisibility( nextButton, false );
-                toggleVisibility( submitButton, false );
                 setDisabledState( prevButton, true );
+                toggleVisibility( nextButton, false );
                 setDisabledState( nextButton, true );
+                toggleVisibility( submitButton, false );
                 setDisabledState( submitButton, true );
+            };
+
+            hideAllButtons();
+
+            if ( isThankYouPage ) {
                 return;
             }
 
@@ -1354,24 +1361,13 @@
                     ? false
                     : true;
 
-            // Determine if current page should trigger submit
-            // (either it's the last page, or conditional logic says to submit)
-            const navigator = this.getNavigator( form );
-            const shouldSubmitOnThisPage = navigator
-                ? navigator.shouldSubmit( currentPage ) ||
-                  currentPage === totalPages
-                : currentPage === totalPages;
+            const isSinglePageForm = totalPages <= 1;
+            const isFirstPage = currentPage <= 1;
+            const isLastPage = currentPage >= totalPages;
+            const strings = this.config.strings || {};
 
-            const isFirstPage = currentPage === 1;
-            const isSinglePageForm = totalPages === 1;
-
-            // DECISION TREE (follows clinical rules exactly)
             // Rule 1: Single-page form (1/1)
             if ( isSinglePageForm ) {
-                toggleVisibility( prevButton, false );
-                setDisabledState( prevButton, true );
-                toggleVisibility( nextButton, false );
-                setDisabledState( nextButton, true );
                 toggleVisibility( submitButton, true );
                 setDisabledState( submitButton, isSubmitting );
                 if ( submitButton ) {
@@ -1379,18 +1375,17 @@
                         'aria-label',
                         'Enviar el formulario (página única)'
                     );
+                    if ( strings.submit ) {
+                        submitButton.textContent = strings.submit;
+                    }
                 }
                 return;
             }
 
             // Rule 2: First page of multi-page form (1/n, n>1)
-            if ( isFirstPage && ! shouldSubmitOnThisPage ) {
-                toggleVisibility( prevButton, false );
-                setDisabledState( prevButton, true );
+            if ( isFirstPage ) {
                 toggleVisibility( nextButton, true );
                 setDisabledState( nextButton, isSubmitting );
-                toggleVisibility( submitButton, false );
-                setDisabledState( submitButton, true );
                 if ( nextButton ) {
                     nextButton.setAttribute(
                         'aria-label',
@@ -1400,29 +1395,24 @@
                 return;
             }
 
-            // Rule 3: Last page (should submit)
-            if ( shouldSubmitOnThisPage ) {
-                const shouldShowPrev = currentPage > 1 && allowBackwardsNav;
-                toggleVisibility( prevButton, shouldShowPrev );
-                setDisabledState( prevButton, shouldShowPrev ? isSubmitting : true );
-                toggleVisibility( nextButton, false );
-                setDisabledState( nextButton, true );
-                toggleVisibility( submitButton, true );
-                setDisabledState( submitButton, isSubmitting );
-
-                if ( shouldShowPrev && prevButton ) {
+            // Rule 3: Last page (n/n, n>1)
+            if ( isLastPage ) {
+                if ( allowBackwardsNav && prevButton ) {
+                    toggleVisibility( prevButton, true );
+                    setDisabledState( prevButton, isSubmitting );
                     prevButton.setAttribute(
                         'aria-label',
                         `Ir a la página anterior (página ${ currentPage - 1 } de ${ totalPages })`
                     );
                 }
 
+                toggleVisibility( submitButton, true );
+                setDisabledState( submitButton, isSubmitting );
                 if ( submitButton ) {
                     submitButton.setAttribute(
                         'aria-label',
                         `Enviar el formulario (página ${ currentPage } de ${ totalPages })`
                     );
-                    const strings = this.config.strings || {};
                     if ( strings.submit ) {
                         submitButton.textContent = strings.submit;
                     }
@@ -1430,22 +1420,18 @@
                 return;
             }
 
-            // Rule 4: Intermediate pages (2..n-1, not submitting yet)
-            const shouldShowPrev = currentPage > 1 && allowBackwardsNav;
-            toggleVisibility( prevButton, shouldShowPrev );
-            setDisabledState( prevButton, shouldShowPrev ? isSubmitting : true );
-            toggleVisibility( nextButton, true );
-            setDisabledState( nextButton, isSubmitting );
-            toggleVisibility( submitButton, false );
-            setDisabledState( submitButton, true );
-
-            if ( shouldShowPrev && prevButton ) {
+            // Rule 4: Intermediate pages (2..n-1)
+            if ( allowBackwardsNav && prevButton ) {
+                toggleVisibility( prevButton, true );
+                setDisabledState( prevButton, isSubmitting );
                 prevButton.setAttribute(
                     'aria-label',
                     `Ir a la página anterior (página ${ currentPage - 1 } de ${ totalPages })`
                 );
             }
 
+            toggleVisibility( nextButton, true );
+            setDisabledState( nextButton, isSubmitting );
             if ( nextButton ) {
                 nextButton.setAttribute(
                     'aria-label',
