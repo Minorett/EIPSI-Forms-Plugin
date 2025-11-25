@@ -2365,5 +2365,15 @@ body.page-template-eipsi-form {
 /* Dark mode support moved to theme-toggle.css */
 
 /* ============================================================================
+   DARK MODE TEMPORARILY DISABLED - Feb 2025
+   ========================================================================== */
+
+/* Ocultar completamente cualquier toggle de dark mode que pueda quedar en plantillas antiguas */
+.eipsi-theme-toggle-container,
+.eipsi-toggle {
+    display: none !important;
+}
+
+/* ============================================================================
    END OF EIPSI FORMS CSS
    ============================================================================ */

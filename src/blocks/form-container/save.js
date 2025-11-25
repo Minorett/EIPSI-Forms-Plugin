@@ -34,14 +34,20 @@ export default function Save( { attributes } ) {
 			{ /* HEADER CON DARK MODE TOGGLE */ }
 			<header className="eipsi-header">
 				<h2>{ description || 'Formulario' }</h2>
-				<button
-					type="button"
-					className="eipsi-toggle"
-					id="eipsi-theme-toggle"
-					aria-label="Toggle dark mode"
-				>
-					🌙 Nocturno
-				</button>
+				{ /*
+                DARK MODE TEMPORARILY DISABLED - Feb 2025
+                Reason: VAS slider, success messages, and preset consistency need fixing
+                See: DARK_MODE_AUDIT.md for details
+
+                <button
+                    type="button"
+                    className="eipsi-toggle"
+                    id="eipsi-theme-toggle"
+                    aria-label="Toggle dark mode"
+                >
+                    🌙 Nocturno
+                </button>
+                */ }
 			</header>
 
 			<form
