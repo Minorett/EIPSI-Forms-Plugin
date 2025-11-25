@@ -84,7 +84,8 @@ function save_privacy_config($form_id, $config) {
         'browser',
         'os',
         'screen_width',
-        'ip_address'
+        'ip_address',
+        'quality_flag'
     );
     
     foreach ($config as $key => $value) {
