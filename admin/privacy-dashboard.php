@@ -37,12 +37,6 @@ function render_privacy_dashboard($form_id = null) {
                     <strong>Participant ID</strong>
                     <span class="eipsi-tooltip">(ID anónimo: p-a1b2c3d4e5f6)</span>
                 </label>
-                
-                <label>
-                    <input type="checkbox" checked disabled> 
-                    <strong>Quality Flag</strong>
-                    <span class="eipsi-tooltip">(Control automático: HIGH/NORMAL/LOW)</span>
-                </label>
             </div>
             
             <!-- COMPORTAMIENTO CLÍNICO (RECOMENDADO) -->
@@ -82,6 +76,12 @@ function render_privacy_dashboard($form_id = null) {
                     <input type="checkbox" name="ip_address" <?php checked($privacy_config['ip_address'] ?? true); ?>>
                     <strong>IP Address</strong>
                     <span class="eipsi-tooltip">(Auditoría clínica - GDPR/HIPAA - retención 90 días)</span>
+                </label>
+                
+                <label>
+                    <input type="checkbox" name="quality_flag" <?php checked($privacy_config['quality_flag'] ?? true); ?>>
+                    <strong>Quality Flag</strong>
+                    <span class="eipsi-tooltip">(Control automático: HIGH/NORMAL/LOW)</span>
                 </label>
             </div>
             
@@ -224,5 +224,55 @@ function render_privacy_dashboard($form_id = null) {
             margin: 6px 0;
         }
     </style>
+    
+    <script>
+    jQuery(document).ready(function($) {
+        $('#eipsi-privacy-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = $(this).serialize();
+            var $submitButton = $(this).find('button[type="submit"]');
+            var originalText = $submitButton.text();
+            
+            $submitButton.prop('disabled', true).text('💾 Guardando...');
+            
+            $('.eipsi-message').remove();
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: formData + '&action=eipsi_save_privacy_config',
+                success: function(response) {
+                    if (response.success) {
+                        showMessage('success', response.data.message);
+                    } else {
+                        showMessage('error', response.data.message || 'Error al guardar la configuración.');
+                    }
+                },
+                error: function() {
+                    showMessage('error', 'Error al guardar la configuración. Por favor, inténtelo de nuevo.');
+                },
+                complete: function() {
+                    $submitButton.prop('disabled', false).text(originalText);
+                }
+            });
+        });
+        
+        function showMessage(type, message) {
+            var $message = $('<div>')
+                .addClass('eipsi-message notice is-dismissible')
+                .addClass(type === 'success' ? 'notice-success' : 'notice-error')
+                .html('<p>' + message + '</p>');
+            
+            $('#eipsi-privacy-form').before($message);
+            
+            setTimeout(function() {
+                $message.fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 3000);
+        }
+    });
+    </script>
     <?php
 }
