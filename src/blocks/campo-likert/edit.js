@@ -9,6 +9,7 @@ import {
 	Notice,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
+import ConditionalLogicControl from '../../components/ConditionalLogicControl';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -50,6 +51,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		minValue,
 		maxValue,
 		labels,
+		conditionalLogic,
 	} = attributes;
 
 	// Generate fieldKey from clientId if not set
@@ -66,6 +68,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const effectiveFieldName =
 		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
 
+	const hasConditionalLogic =
+		conditionalLogic &&
+		( Array.isArray( conditionalLogic )
+			? conditionalLogic.length > 0
+			: conditionalLogic.enabled &&
+			  conditionalLogic.rules &&
+			  conditionalLogic.rules.length > 0 );
+
 	const blockProps = useBlockProps( {
 		className: 'form-group eipsi-field eipsi-likert-field',
 		'data-field-name': effectiveFieldName,
@@ -73,6 +83,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		'data-field-type': 'likert',
 		'data-min': minValue,
 		'data-max': maxValue,
+		'data-conditional-logic': hasConditionalLogic ? 'true' : undefined,
 	} );
 
 	const displayLabel =
@@ -95,6 +106,17 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 	const hasLabelMismatch =
 		labelArray.length > 0 && labelArray.length !== scale.length;
+
+	const likertOptions = scale.map( ( value, index ) => {
+		const baseValue = value.toString();
+		const optionLabel = labelArray[ index ]
+			? `${ baseValue } – ${ labelArray[ index ] }`
+			: baseValue;
+		return {
+			label: optionLabel,
+			value: baseValue,
+		};
+	} );
 
 	return (
 		<>
@@ -206,6 +228,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						</Notice>
 					) }
 				</PanelBody>
+
+				<ConditionalLogicControl
+					attributes={ attributes }
+					setAttributes={ setAttributes }
+					options={ likertOptions }
+					clientId={ clientId }
+				/>
 			</InspectorControls>
 
 			<div { ...blockProps }>

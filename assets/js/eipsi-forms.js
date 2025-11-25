@@ -110,6 +110,12 @@
                     );
                     return checkedRadio ? checkedRadio.value : '';
 
+                case 'likert':
+                    const checkedLikert = field.querySelector(
+                        'input[type="radio"]:checked'
+                    );
+                    return checkedLikert ? checkedLikert.value : '';
+
                 case 'checkbox':
                     const checkedBoxes = field.querySelectorAll(
                         'input[type="checkbox"]:checked'
@@ -953,39 +959,78 @@
                 );
 
                 radioInputs.forEach( ( radio ) => {
-                    // Validate when radio selection changes
                     radio.addEventListener( 'change', () => {
                         this.validateField( radio );
                     } );
+                } );
+
+                const likertItems = field.querySelectorAll( '.likert-item' );
+                likertItems.forEach( ( item ) => {
+                    item.addEventListener( 'click', ( e ) => {
+                        if (
+                            e.target.tagName === 'INPUT' ||
+                            e.target.tagName === 'LABEL'
+                        ) {
+                            return;
+                        }
+
+                        const radio = item.querySelector( 'input[type="radio"]' );
+                        if ( radio && ! radio.disabled ) {
+                            radio.checked = true;
+                            radio.dispatchEvent(
+                                new Event( 'change', { bubbles: true } )
+                            );
+                        }
+                    } );
+
+                    item.style.cursor = 'pointer';
                 } );
             } );
         },
 
         initRadioFields( form ) {
             const radioFields = form.querySelectorAll( '.eipsi-radio-field' );
+            const formIdBaseRaw = this.getFormId( form ) || 'eipsi-form';
+            const formIdBase = formIdBaseRaw
+                .toString()
+                .replace( /[^a-zA-Z0-9_-]/g, '' )
+                .toLowerCase()
+                .trim() || 'eipsi-form';
 
-            radioFields.forEach( ( field ) => {
+            radioFields.forEach( ( field, index ) => {
                 const radioInputs = field.querySelectorAll(
                     'input[type="radio"]'
                 );
 
-                let lastSelected = null;
+                if ( radioInputs.length === 0 ) {
+                    return;
+                }
+
+                let groupName =
+                    ( field.dataset.fieldName &&
+                        field.dataset.fieldName !== 'undefined'
+                        ? field.dataset.fieldName
+                        : '' ) || radioInputs[ 0 ].name;
+
+                if ( ! groupName ) {
+                    groupName = `${ formIdBase }_radio_${ index + 1 }`;
+                    field.dataset.fieldName = groupName;
+                }
+
+                radioInputs.forEach( ( radio ) => {
+                    if ( ! radio.name ) {
+                        radio.name = groupName;
+                    }
+                } );
 
                 radioInputs.forEach( ( radio ) => {
                     radio.addEventListener( 'change', () => {
+                        radioInputs.forEach( ( other ) => {
+                            if ( other !== radio ) {
+                                other.checked = false;
+                            }
+                        } );
                         this.validateField( radio );
-                        lastSelected = radio.value;
-                    } );
-
-                    radio.addEventListener( 'click', () => {
-                        if ( lastSelected === radio.value && radio.checked ) {
-                            radio.checked = false;
-                            lastSelected = null;
-                            this.validateField( radio );
-                            radio.dispatchEvent(
-                                new Event( 'change', { bubbles: true } )
-                            );
-                        }
                     } );
                 } );
             } );

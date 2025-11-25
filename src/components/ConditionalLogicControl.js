@@ -98,10 +98,12 @@ const ConditionalLogicControl = ( {
 					);
 				}
 
+				const thresholdValue = parseFloat( rule.threshold );
 				if (
 					rule.threshold === undefined ||
 					rule.threshold === null ||
-					rule.threshold === ''
+					rule.threshold === '' ||
+					Number.isNaN( thresholdValue )
 				) {
 					errors[ index ] = __(
 						'Introduce un valor numérico',
@@ -308,15 +310,26 @@ const ConditionalLogicControl = ( {
 			];
 		}
 
+		const normalizedOptions = options.map( ( option ) => {
+			if ( typeof option === 'object' && option !== null ) {
+				return {
+					label: option.label ?? option.value ?? '',
+					value: option.value ?? option.label ?? '',
+				};
+			}
+
+			return {
+				label: option,
+				value: option,
+			};
+		} );
+
 		return [
 			{
 				label: __( 'Selecciona un valor…', 'vas-dinamico-forms' ),
 				value: '',
 			},
-			...options.map( ( option ) => ( {
-				label: option,
-				value: option,
-			} ) ),
+			...normalizedOptions,
 		];
 	};
 
@@ -441,14 +454,21 @@ const ConditionalLogicControl = ( {
 											'vas-dinamico-forms'
 										) }
 										value={
-											rule.threshold !== undefined
+											rule.threshold !== undefined &&
+											rule.threshold !== null
 												? rule.threshold
 												: ''
 										}
 										onChange={ ( value ) => {
+											const trimmedValue =
+												typeof value === 'string'
+													? value.trim()
+													: value;
+
 											if (
-												value === '' ||
-												value === undefined
+												trimmedValue === '' ||
+												trimmedValue === undefined ||
+												trimmedValue === null
 											) {
 												updateRule(
 													index,
@@ -459,15 +479,14 @@ const ConditionalLogicControl = ( {
 											}
 
 											let numValue =
-												typeof value === 'string'
-													? parseFloat( value )
-													: value;
+												typeof trimmedValue === 'string'
+													? parseFloat( trimmedValue )
+													: trimmedValue;
 
 											if ( Number.isNaN( numValue ) ) {
 												return;
 											}
 
-											// Aplicar clamp si hay min/max definidos
 											if (
 												numericMin !== null &&
 												numValue < numericMin
@@ -498,6 +517,7 @@ const ConditionalLogicControl = ( {
 												? numericMax
 												: undefined
 										}
+										step="any"
 										help={ __(
 											'El valor con el que se comparará la respuesta del slider',
 											'vas-dinamico-forms'
@@ -688,28 +708,59 @@ function normalizeConditionalLogic( conditionalLogic ) {
 		return { enabled: false, rules: [], defaultAction: 'nextPage' };
 	}
 
+	const normalizeRuleShape = ( rule = {}, index = 0 ) => {
+		const baseRule = {
+			id: rule.id || `rule-${ index }`,
+			action: rule.action || 'goToPage',
+			targetPage: rule.targetPage || null,
+		};
+
+		const hasNumericOperator = typeof rule.operator === 'string';
+		const rawThreshold = rule.threshold ?? rule.valueThreshold;
+		const parsedThreshold =
+			rawThreshold !== undefined && rawThreshold !== ''
+				? parseFloat( rawThreshold )
+				: rawThreshold;
+		const hasNumericThreshold =
+			rawThreshold !== undefined &&
+			rawThreshold !== '' &&
+			! Number.isNaN( parsedThreshold );
+
+		if ( hasNumericOperator || hasNumericThreshold ) {
+			return {
+				...baseRule,
+				operator: rule.operator || '>=',
+				threshold: hasNumericThreshold ? parsedThreshold : '',
+			};
+		}
+
+		return {
+			...baseRule,
+			matchValue: rule.matchValue ?? rule.value ?? '',
+		};
+	};
+
 	if ( Array.isArray( conditionalLogic ) ) {
 		return {
-			enabled: true,
-			rules: conditionalLogic.map( ( rule, index ) => ( {
-				id: rule.id || `rule-legacy-${ index }`,
-				matchValue: rule.value || rule.matchValue || '',
-				action: rule.action || 'goToPage',
-				targetPage: rule.targetPage || null,
-			} ) ),
+			enabled: conditionalLogic.length > 0,
+			rules: conditionalLogic.map( ( rule, index ) =>
+				normalizeRuleShape( rule, index )
+			),
 			defaultAction: 'nextPage',
+			defaultTargetPage: null,
 		};
 	}
 
 	if ( typeof conditionalLogic === 'object' ) {
+		const rawRules = Array.isArray( conditionalLogic.rules )
+			? conditionalLogic.rules
+			: [];
+
 		return {
 			enabled: conditionalLogic.enabled !== false,
-			rules: ( conditionalLogic.rules || [] ).map( ( rule, index ) => ( {
-				id: rule.id || `rule-${ index }`,
-				matchValue: rule.value || rule.matchValue || '',
-				action: rule.action || 'goToPage',
-				targetPage: rule.targetPage || null,
-			} ) ),
+			rules: rawRules.map( ( rule, index ) =>
+				normalizeRuleShape( rule, index )
+			),
 			defaultAction: conditionalLogic.defaultAction || 'nextPage',
 			defaultTargetPage: conditionalLogic.defaultTargetPage || null,
 		};
