@@ -373,6 +373,7 @@ function eipsi_form_library_tools_scripts() {
     wp_localize_script('eipsi-form-library-tools', 'eipsiFormTools', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_form_tools_nonce'),
+        'clinicalTemplatesNonce' => wp_create_nonce('eipsi_clinical_templates_nonce'),
         'strings' => array(
             'exportSuccess' => __('Formulario exportado correctamente', 'vas-dinamico-forms'),
             'exportError' => __('Error al exportar el formulario', 'vas-dinamico-forms'),
@@ -386,6 +387,9 @@ function eipsi_form_library_tools_scripts() {
             'importSuccess' => __('Formulario importado correctamente', 'vas-dinamico-forms'),
             'importError' => __('Error al importar el formulario', 'vas-dinamico-forms'),
             'invalidFile' => __('Por favor, seleccioná un archivo JSON válido.', 'vas-dinamico-forms'),
+            'clinicalTemplateConfirm' => __('¿Crear un formulario nuevo basado en %s? Vas a poder editarlo antes de usarlo con pacientes.', 'vas-dinamico-forms'),
+            'clinicalTemplateCreating' => __('Creando...', 'vas-dinamico-forms'),
+            'clinicalTemplateError' => __('No pudimos crear la plantilla. Reintentá en unos segundos.', 'vas-dinamico-forms'),
         ),
     ));
 }

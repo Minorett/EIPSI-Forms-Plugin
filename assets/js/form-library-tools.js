@@ -20,6 +20,7 @@
             this.bindExportActions();
             this.bindDuplicateActions();
             this.bindImportButton();
+            this.bindClinicalTemplatesButtons();
         },
 
         /**
@@ -142,6 +143,89 @@
             $(document).on('click', '.eipsi-import-form-btn', function(e) {
                 e.preventDefault();
                 FormLibraryTools.showImportModal();
+            });
+        },
+
+        /**
+         * Create a new template from official clinical scales
+         */
+        bindClinicalTemplatesButtons() {
+            $(document).on('click', '.eipsi-create-from-template', function(e) {
+                e.preventDefault();
+
+                const $button = $(this);
+
+                if ($button.hasClass('is-busy')) {
+                    return;
+                }
+
+                const templateId = $button.data('template-id');
+                const templateName = $button.data('template-name') || templateId;
+
+                if (!templateId) {
+                    return;
+                }
+
+                const confirmTemplate = eipsiFormTools.strings.clinicalTemplateConfirm || '';
+                const confirmMessage = confirmTemplate ? confirmTemplate.replace('%s', templateName) : '';
+
+                if (confirmMessage && !confirm(confirmMessage)) {
+                    return;
+                }
+
+                const originalText = $button.text();
+
+                $button
+                    .text(eipsiFormTools.strings.clinicalTemplateCreating)
+                    .addClass('is-busy')
+                    .prop('disabled', true);
+
+                $.ajax({
+                    url: eipsiFormTools.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'eipsi_create_from_clinical_template',
+                        nonce: eipsiFormTools.clinicalTemplatesNonce,
+                        template_id: templateId
+                    },
+                    success(response) {
+                        if (response.success) {
+                            FormLibraryTools.showNotice(
+                                response.data.message,
+                                'success'
+                            );
+
+                            setTimeout(() => {
+                                if (response.data.edit_url) {
+                                    window.location.href = response.data.edit_url;
+                                } else {
+                                    window.location.reload();
+                                }
+                            }, 1200);
+                        } else {
+                            FormLibraryTools.showNotice(
+                                (response.data && response.data.message) || eipsiFormTools.strings.clinicalTemplateError,
+                                'error'
+                            );
+
+                            $button
+                                .text(originalText)
+                                .removeClass('is-busy')
+                                .prop('disabled', false);
+                        }
+                    },
+                    error() {
+                        FormLibraryTools.showNotice(
+                            eipsiFormTools.strings.clinicalTemplateError,
+                            'error'
+                        );
+
+                        $button
+                            .text(originalText)
+                            .removeClass('is-busy')
+                            .prop('disabled', false);
+                    }
+                });
             });
         },
 
