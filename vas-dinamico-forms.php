@@ -38,6 +38,7 @@ require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/configuration.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/ajax-handlers.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/completion-message-backend.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/form-library.php';
+require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/form-library-tools.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'includes/form-template-render.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'includes/shortcodes.php';
 

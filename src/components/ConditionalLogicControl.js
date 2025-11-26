@@ -4,11 +4,11 @@ import {
 	SelectControl,
 	Button,
 	Dashicon,
-	__experimentalNumberControl as NumberControl,
+	TextControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useSelect } from '@wordpress/data';
-import { useEffect, useMemo, useState } from '@wordpress/element';
+import { useCallback, useEffect, useMemo, useState } from '@wordpress/element';
 import { parseOptions } from '../utils/optionParser';
 import './ConditionalLogicControl.css';
 
@@ -53,11 +53,8 @@ const SUPPORTED_FIELD_BLOCKS = {
 const ConditionalLogicControl = ( {
 	attributes,
 	setAttributes,
-	options = [],
 	clientId,
 	mode = 'discrete',
-	numericMin = null,
-	numericMax = null,
 } ) => {
 	const { conditionalLogic } = attributes;
 	const [ validationErrors, setValidationErrors ] = useState( {} );
@@ -69,22 +66,11 @@ const ConditionalLogicControl = ( {
 		return normalizeConditionalLogic(
 			conditionalLogic,
 			defaultFieldId,
-			defaultFieldType,
-			options,
-			mode,
-			{ numericMin, numericMax }
+			defaultFieldType
 		);
-	}, [
-		conditionalLogic,
-		defaultFieldId,
-		defaultFieldType,
-		options,
-		mode,
-		numericMin,
-		numericMax,
-	] );
+	}, [ conditionalLogic, defaultFieldId, defaultFieldType ] );
 
-	const { pages, hasPages, availableFields, currentPageId } = useSelect(
+	const { pages, hasPages, availableFields } = useSelect(
 		( select ) => {
 			const { getSelectedBlock, getBlockParentsByBlockName, getBlock } =
 				select( 'core/block-editor' );
@@ -98,7 +84,6 @@ const ConditionalLogicControl = ( {
 					pages: [],
 					hasPages: false,
 					availableFields: [],
-					currentPageId: null,
 				};
 			}
 
@@ -112,7 +97,6 @@ const ConditionalLogicControl = ( {
 					pages: [],
 					hasPages: false,
 					availableFields: [],
-					currentPageId: null,
 				};
 			}
 
@@ -124,7 +108,6 @@ const ConditionalLogicControl = ( {
 					pages: [],
 					hasPages: false,
 					availableFields: [],
-					currentPageId: null,
 				};
 			}
 
@@ -154,7 +137,6 @@ const ConditionalLogicControl = ( {
 				pages: pagesData,
 				hasPages: pagesData.length > 0,
 				availableFields: collectConditionableFields( currentPageBlock ),
-				currentPageId: currentPageClientId,
 			};
 		},
 		[ clientId ]
@@ -190,6 +172,78 @@ const ConditionalLogicControl = ( {
 
 	const hasRequiredData = hasPages && availableFields.length > 0;
 
+	const validateRules = useCallback(
+		( rules ) => {
+			const errors = {};
+
+			rules.forEach( ( rule, ruleIndex ) => {
+				if (
+					! Array.isArray( rule.conditions ) ||
+					rule.conditions.length === 0
+				) {
+					errors[ ruleIndex ] = __(
+						'Cada regla necesita al menos una condición',
+						'vas-dinamico-forms'
+					);
+					return;
+				}
+
+				for ( let i = 0; i < rule.conditions.length; i++ ) {
+					const condition = rule.conditions[ i ];
+					const fieldMeta = condition.fieldId
+						? fieldMap[ condition.fieldId ]
+						: null;
+
+					if ( ! fieldMeta ) {
+						errors[ ruleIndex ] = __(
+							'Selecciona un campo válido para esta condición',
+							'vas-dinamico-forms'
+						);
+						break;
+					}
+
+					if ( fieldMeta.type === 'numeric' ) {
+						if ( ! condition.operator ) {
+							errors[ ruleIndex ] = __(
+								'Eligí un operador numérico',
+								'vas-dinamico-forms'
+							);
+							break;
+						}
+
+						const numValue = parseFloat( condition.threshold );
+						if ( Number.isNaN( numValue ) ) {
+							errors[ ruleIndex ] = __(
+								'Ingresá un valor numérico válido',
+								'vas-dinamico-forms'
+							);
+							break;
+						}
+					} else if ( ! condition.value ) {
+						errors[ ruleIndex ] = __(
+							'Selecciona el valor que dispara la condición',
+							'vas-dinamico-forms'
+						);
+						break;
+					}
+				}
+
+				if (
+					rule.action === 'goToPage' &&
+					( ! rule.targetPage || rule.targetPage < 1 )
+				) {
+					errors[ ruleIndex ] = __(
+						'Elegí una página de destino válida',
+						'vas-dinamico-forms'
+					);
+				}
+			} );
+
+			setValidationErrors( errors );
+		},
+		[ fieldMap ]
+	);
+
 	useEffect( () => {
 		if ( normalizedLogic.enabled && normalizedLogic.rules.length > 0 ) {
 			validateRules( normalizedLogic.rules );
@@ -201,76 +255,8 @@ const ConditionalLogicControl = ( {
 		normalizedLogic.rules,
 		availableFields,
 		pages,
+		validateRules,
 	] );
-
-	const validateRules = ( rules ) => {
-		const errors = {};
-
-		rules.forEach( ( rule, ruleIndex ) => {
-			if (
-				! Array.isArray( rule.conditions ) ||
-				rule.conditions.length === 0
-			) {
-				errors[ ruleIndex ] = __(
-					'Cada regla necesita al menos una condición',
-					'vas-dinamico-forms'
-				);
-				return;
-			}
-
-			for ( let i = 0; i < rule.conditions.length; i++ ) {
-				const condition = rule.conditions[ i ];
-				const fieldMeta = condition.fieldId
-					? fieldMap[ condition.fieldId ]
-					: null;
-
-				if ( ! fieldMeta ) {
-					errors[ ruleIndex ] = __(
-						'Selecciona un campo válido para esta condición',
-						'vas-dinamico-forms'
-					);
-					break;
-				}
-
-				if ( fieldMeta.type === 'numeric' ) {
-					if ( ! condition.operator ) {
-						errors[ ruleIndex ] = __(
-							'Eligí un operador numérico',
-							'vas-dinamico-forms'
-						);
-						break;
-					}
-
-					const numValue = parseFloat( condition.threshold );
-					if ( Number.isNaN( numValue ) ) {
-						errors[ ruleIndex ] = __(
-							'Ingresá un valor numérico válido',
-							'vas-dinamico-forms'
-						);
-						break;
-					}
-				} else if ( ! condition.value ) {
-					errors[ ruleIndex ] = __(
-						'Selecciona el valor que dispara la condición',
-						'vas-dinamico-forms'
-					);
-					break;
-				}
-			}
-
-			if (
-				rule.action === 'goToPage' &&
-				( ! rule.targetPage || rule.targetPage < 1 )
-			) {
-				errors[ ruleIndex ] = __(
-					'Elegí una página de destino válida',
-					'vas-dinamico-forms'
-				);
-			}
-		} );
-
-		setValidationErrors( errors );
-	};
 
 	const toggleConditionalLogic = ( enabled ) => {
 		if ( enabled ) {
@@ -526,13 +512,12 @@ const ConditionalLogicControl = ( {
 		const fieldMeta = condition.fieldId
 			? fieldMap[ condition.fieldId ]
 			: null;
-		const isNumeric =
-			fieldMeta?.type === 'numeric' || condition.fieldType === 'numeric';
 		const discreteOptions = fieldMeta?.options || [];
 		const logicalLabel =
 			conditionIndex === 0
 				? __( 'Si se cumple', 'vas-dinamico-forms' )
 				: __( 'Unir con', 'vas-dinamico-forms' );
+		const currentRule = normalizedLogic.rules[ ruleIndex ];
 
 		return (
 			<div
@@ -607,12 +592,13 @@ const ConditionalLogicControl = ( {
 								} )
 							}
 						/>
-						<NumberControl
+						<TextControl
 							label={ __( 'Valor umbral', 'vas-dinamico-forms' ) }
+							type="number"
 							value={
 								condition.threshold !== undefined &&
 								condition.threshold !== null
-									? condition.threshold
+									? String( condition.threshold )
 									: ''
 							}
 							onChange={ ( value ) => {
@@ -671,7 +657,7 @@ const ConditionalLogicControl = ( {
 					</div>
 				) }
 
-				{ rule.conditions.length > 1 && (
+				{ currentRule && currentRule.conditions.length > 1 && (
 					<Button
 						isLink
 						isDestructive
@@ -1051,10 +1037,7 @@ function createCondition( fieldMeta, fallbackType = 'discrete' ) {
 function normalizeConditionalLogic(
 	conditionalLogic,
 	defaultFieldId,
-	defaultFieldType,
-	options,
-	mode,
-	range
+	defaultFieldType
 ) {
 	if ( ! conditionalLogic ) {
 		return { enabled: false, rules: [], defaultAction: 'nextPage' };

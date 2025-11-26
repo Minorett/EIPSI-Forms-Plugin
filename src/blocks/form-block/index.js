@@ -77,7 +77,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 					) }
 					initialOpen={ true }
 				>
-					{ isLoading ? (
+					{ isLoading && (
 						<div style={ { textAlign: 'center', padding: '20px' } }>
 							<Spinner />
 							<p style={ { marginTop: '10px', color: '#666' } }>
@@ -87,7 +87,8 @@ const Edit = ( { attributes, setAttributes } ) => {
 								) }
 							</p>
 						</div>
-					) : formTemplates.length === 0 ? (
+					) }
+					{ ! isLoading && formTemplates.length === 0 && (
 						<div
 							style={ {
 								padding: '12px',
@@ -124,7 +125,8 @@ const Edit = ( { attributes, setAttributes } ) => {
 								</a>
 							</p>
 						</div>
-					) : (
+					) }
+					{ ! isLoading && formTemplates.length > 0 && (
 						<SelectControl
 							label={ __(
 								'Formulario a mostrar',
