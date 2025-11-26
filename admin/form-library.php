@@ -292,6 +292,151 @@ function eipsi_form_library_admin_scripts() {
 add_action('admin_footer', 'eipsi_form_library_admin_scripts');
 
 /**
+ * Add clinical templates section at the top of Form Library
+ */
+function eipsi_form_library_clinical_templates_section() {
+    $screen = get_current_screen();
+    
+    if (!$screen || $screen->post_type !== 'eipsi_form_template' || $screen->base !== 'edit') {
+        return;
+    }
+    
+    $templates = eipsi_get_clinical_templates();
+    ?>
+    <div class="eipsi-clinical-templates-section">
+        <div class="eipsi-clinical-templates-header">
+            <h2><?php _e('Plantillas oficiales EIPSI', 'vas-dinamico-forms'); ?></h2>
+            <p><?php _e('Escalas clínicas validadas listas para usar. Hacé clic en "Crear formulario" para generar una copia editable en tu librería.', 'vas-dinamico-forms'); ?></p>
+        </div>
+        
+        <div class="eipsi-clinical-templates-grid">
+            <?php foreach ($templates as $template_id => $template_data): ?>
+                <div class="eipsi-clinical-template-card">
+                    <div class="eipsi-template-icon"><?php echo esc_html($template_data['icon']); ?></div>
+                    <h3 class="eipsi-template-name"><?php echo esc_html($template_data['name']); ?></h3>
+                    <p class="eipsi-template-full-name"><?php echo esc_html($template_data['full_name']); ?></p>
+                    <p class="eipsi-template-description"><?php echo esc_html($template_data['description']); ?></p>
+                    <div class="eipsi-template-meta">
+                        <small><?php echo esc_html($template_data['author']); ?></small>
+                    </div>
+                    <button type="button" 
+                            class="button button-primary button-large eipsi-create-from-template" 
+                            data-template-id="<?php echo esc_attr($template_id); ?>"
+                            data-template-name="<?php echo esc_attr($template_data['name']); ?>">
+                        <?php _e('Crear formulario', 'vas-dinamico-forms'); ?>
+                    </button>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    
+    <style>
+        .eipsi-clinical-templates-section {
+            background: white;
+            padding: 24px;
+            margin: 20px 0;
+            border: 1px solid #c3c4c7;
+            border-radius: 4px;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        }
+        
+        .eipsi-clinical-templates-header {
+            margin-bottom: 24px;
+        }
+        
+        .eipsi-clinical-templates-header h2 {
+            margin: 0 0 8px 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #1d2327;
+        }
+        
+        .eipsi-clinical-templates-header p {
+            margin: 0;
+            color: #646970;
+            font-size: 14px;
+        }
+        
+        .eipsi-clinical-templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .eipsi-clinical-template-card {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .eipsi-clinical-template-card:hover {
+            border-color: #2271b1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .eipsi-template-icon {
+            font-size: 48px;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+        
+        .eipsi-template-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 4px 0;
+            color: #1d2327;
+        }
+        
+        .eipsi-template-full-name {
+            font-size: 13px;
+            color: #646970;
+            margin: 0 0 12px 0;
+            font-weight: 500;
+        }
+        
+        .eipsi-template-description {
+            font-size: 13px;
+            color: #50575e;
+            margin: 0 0 12px 0;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        
+        .eipsi-template-meta {
+            margin-bottom: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #e0e0e0;
+            width: 100%;
+        }
+        
+        .eipsi-template-meta small {
+            color: #646970;
+            font-size: 12px;
+        }
+        
+        .eipsi-create-from-template {
+            width: 100%;
+            padding: 8px 16px;
+            height: auto;
+        }
+        
+        .eipsi-create-from-template:hover {
+            background: #135e96;
+            border-color: #135e96;
+        }
+    </style>
+    <?php
+}
+add_action('admin_notices', 'eipsi_form_library_clinical_templates_section');
+
+/**
  * Add helpful notice at the top of Form Library
  */
 function eipsi_form_library_admin_notice() {
