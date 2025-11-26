@@ -13,7 +13,14 @@ export default function Save( { attributes } ) {
 		styleConfig,
 		presetName,
 		allowBackwardsNav,
+		showProgressBar,
 	} = attributes;
+
+	const allowBackwardsNavEnabled =
+		typeof allowBackwardsNav === 'boolean' ? allowBackwardsNav : true;
+
+	const showProgressBarEnabled =
+		typeof showProgressBar === 'boolean' ? showProgressBar : true;
 
 	// Get style configuration (migrate if needed)
 	const currentConfig = styleConfig || migrateToStyleConfig( attributes );
@@ -54,7 +61,10 @@ export default function Save( { attributes } ) {
 				className="vas-form eipsi-form-element"
 				data-form-id={ formId }
 				data-allow-backwards-nav={
-					allowBackwardsNav ? 'true' : 'false'
+					allowBackwardsNavEnabled ? 'true' : 'false'
+				}
+				data-show-progress-bar={
+					showProgressBarEnabled ? 'true' : 'false'
 				}
 			>
 				<input type="hidden" name="form_id" value={ formId } />
@@ -106,7 +116,7 @@ export default function Save( { attributes } ) {
 
 				{ /* NAVEGACIÓN - EL JS EXISTENTE MANEJARÁ LA VISIBILIDAD */ }
 				<div className="form-navigation">
-					{ allowBackwardsNav && (
+					{ allowBackwardsNavEnabled && (
 						<div className="form-nav-left">
 							<button
 								type="button"
@@ -139,10 +149,12 @@ export default function Save( { attributes } ) {
 				</div>
 
 				{ /* INDICADOR DE PROGRESO - EL JS ACTUALIZARÁ LOS NÚMEROS */ }
-				<div className="form-progress">
-					Página <span className="current-page">1</span> de{ ' ' }
-					<span className="total-pages">?</span>
-				</div>
+				{ showProgressBarEnabled && (
+					<div className="form-progress">
+						Página <span className="current-page">1</span> de{ ' ' }
+						<span className="total-pages">?</span>
+					</div>
+				) }
 			</form>
 
 			{ /* NOSCRIPT FALLBACK */ }

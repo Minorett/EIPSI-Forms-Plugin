@@ -28,7 +28,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		styleConfig,
 		presetName,
 		allowBackwardsNav,
+		showProgressBar,
 	} = attributes;
+
+	const allowBackwardsNavEnabled =
+		typeof allowBackwardsNav === 'boolean' ? allowBackwardsNav : true;
+
+	const showProgressBarEnabled =
+		typeof showProgressBar === 'boolean' ? showProgressBar : true;
 
 	const [ isMapOpen, setIsMapOpen ] = useState( false );
 
@@ -139,15 +146,29 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				>
 					<ToggleControl
 						label={ __(
-							'Allow backwards navigation',
+							'Mostrar botón "Anterior"',
 							'vas-dinamico-forms'
 						) }
-						checked={ !! allowBackwardsNav }
+						checked={ allowBackwardsNavEnabled }
 						onChange={ ( value ) =>
 							setAttributes( { allowBackwardsNav: !! value } )
 						}
 						help={ __(
-							'When disabled, the "Previous" button will be hidden on all pages.',
+							'Permite al paciente volver a la página anterior. Si está desactivado, el botón "Anterior" no aparecerá nunca.',
+							'vas-dinamico-forms'
+						) }
+					/>
+					<ToggleControl
+						label={ __(
+							'Mostrar barra de progreso',
+							'vas-dinamico-forms'
+						) }
+						checked={ showProgressBarEnabled }
+						onChange={ ( value ) =>
+							setAttributes( { showProgressBar: !! value } )
+						}
+						help={ __(
+							'Muestra "Página X de Y" en la parte inferior del formulario. Útil en formularios con múltiples páginas.',
 							'vas-dinamico-forms'
 						) }
 					/>
