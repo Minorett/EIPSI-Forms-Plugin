@@ -27,33 +27,76 @@ const FieldSettings = ( {
 					'vas-dinamico-forms'
 				) }
 			/>
+
+			<div style={ { marginTop: '16px', marginBottom: '8px' } }>
+				<strong>
+					{ __( 'Texto que ve el paciente', 'vas-dinamico-forms' ) }
+				</strong>
+			</div>
+
 			<TextControl
-				label={ __( 'Label', 'vas-dinamico-forms' ) }
+				label={ __( 'Label (título del campo)', 'vas-dinamico-forms' ) }
 				value={ label || '' }
 				onChange={ ( value ) => setAttributes( { label: value } ) }
+				help={ __(
+					'Aparece en negrita sobre el campo',
+					'vas-dinamico-forms'
+				) }
 			/>
+
+			<TextareaControl
+				label={ __(
+					'Descripción / Helper text',
+					'vas-dinamico-forms'
+				) }
+				value={ helperText || '' }
+				onChange={ ( value ) => setAttributes( { helperText: value } ) }
+				rows={ 4 }
+				help={ __(
+					'Texto de ayuda permanente que se muestra debajo del campo. Ideal para instrucciones clínicas.',
+					'vas-dinamico-forms'
+				) }
+			/>
+
+			{ showPlaceholder && (
+				<>
+					<div style={ { marginTop: '16px', marginBottom: '8px' } }>
+						<strong>
+							{ __(
+								'Placeholder (opcional)',
+								'vas-dinamico-forms'
+							) }
+						</strong>
+					</div>
+					<TextControl
+						label={ __(
+							'Texto fantasma (desaparece al escribir)',
+							'vas-dinamico-forms'
+						) }
+						value={ placeholder || '' }
+						onChange={ ( value ) =>
+							setAttributes( { placeholder: value } )
+						}
+						help={ __(
+							'Ejemplo: "Escribe tu respuesta aquí…"',
+							'vas-dinamico-forms'
+						) }
+					/>
+				</>
+			) }
+
+			<div style={ { marginTop: '16px', marginBottom: '8px' } }>
+				<strong>{ __( 'Validación', 'vas-dinamico-forms' ) }</strong>
+			</div>
+
 			<ToggleControl
-				label={ __( 'Required field', 'vas-dinamico-forms' ) }
+				label={ __( 'Campo obligatorio', 'vas-dinamico-forms' ) }
 				checked={ !! required }
 				onChange={ ( value ) =>
 					setAttributes( { required: !! value } )
 				}
-			/>
-			{ showPlaceholder && (
-				<TextControl
-					label={ __( 'Placeholder', 'vas-dinamico-forms' ) }
-					value={ placeholder || '' }
-					onChange={ ( value ) =>
-						setAttributes( { placeholder: value } )
-					}
-				/>
-			) }
-			<TextareaControl
-				label={ __( 'Helper text', 'vas-dinamico-forms' ) }
-				value={ helperText || '' }
-				onChange={ ( value ) => setAttributes( { helperText: value } ) }
 				help={ __(
-					'Displayed below the field to provide additional guidance.',
+					'Si está activo, el paciente debe completar este campo',
 					'vas-dinamico-forms'
 				) }
 			/>

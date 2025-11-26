@@ -803,6 +803,13 @@
                 form.dataset.totalPages = totalPages;
                 form.dataset.hasThankYouPage = thankYouPage ? 'true' : 'false';
 
+                const rawShowProgressPref = form.dataset.showProgressBar;
+                const showProgressBar =
+                    rawShowProgressPref === undefined ||
+                    rawShowProgressPref === '' ||
+                    rawShowProgressPref === 'true' ||
+                    rawShowProgressPref === '1';
+
                 const totalPagesField =
                     form.querySelector( '.form-progress .total-pages' ) ||
                     form.querySelector( '.total-pages' );
@@ -813,8 +820,12 @@
                 const progressContainer =
                     form.querySelector( '.form-progress' );
                 if ( progressContainer ) {
-                    progressContainer.style.display =
-                        totalPages > 1 ? '' : 'none';
+                    if ( ! showProgressBar ) {
+                        progressContainer.style.display = 'none';
+                    } else {
+                        progressContainer.style.display =
+                            totalPages > 1 ? '' : 'none';
+                    }
                 }
 
                 const normalizedPage = this.getCurrentPage( form );

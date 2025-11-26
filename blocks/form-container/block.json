@@ -46,6 +46,10 @@
             "type": "boolean",
             "default": true
         },
+        "showProgressBar": {
+            "type": "boolean",
+            "default": true
+        },
 
         "backgroundColor": {
             "type": "string",
