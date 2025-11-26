@@ -495,3 +495,69 @@ function eipsi_extract_form_name_on_save($post_id, $post, $update) {
     }
 }
 add_action('save_post', 'eipsi_extract_form_name_on_save', 10, 3);
+
+/**
+ * Limit which blocks can be inserted based on post type context
+ * 
+ * This ensures that:
+ * - Form Container + campos solo aparecen en la Form Library (CPT eipsi_form_template)
+ * - El bloque de inserción (Formulario EIPSI) no se ofrece dentro del editor interno
+ * - Sitios con bloques antiguos no se rompen: si ya existen, se mantienen permitidos
+ * 
+ * @param array|bool $allowed_block_types Array of allowed block types, or true to allow all.
+ * @param object     $editor_context The current editor context.
+ * @return array|bool Modified array of allowed block types.
+ */
+function eipsi_limit_blocks_by_context($allowed_block_types, $editor_context) {
+    if (!isset($editor_context->post)) {
+        return $allowed_block_types;
+    }
+    
+    $post = $editor_context->post;
+    $post_type = $post->post_type;
+    $post_content = isset($post->post_content) ? $post->post_content : '';
+    
+    $form_building_blocks = array(
+        'vas-dinamico/form-container',
+        'vas-dinamico/pagina',
+        'vas-dinamico/campo-texto',
+        'vas-dinamico/campo-textarea',
+        'vas-dinamico/campo-descripcion',
+        'vas-dinamico/campo-select',
+        'vas-dinamico/campo-radio',
+        'vas-dinamico/campo-multiple',
+        'vas-dinamico/campo-likert',
+        'vas-dinamico/vas-slider',
+    );
+    $form_embed_block = 'vas-dinamico/form-block';
+    
+    if ($allowed_block_types === true || !is_array($allowed_block_types)) {
+        $registered_blocks = \WP_Block_Type_Registry::get_instance()->get_all_registered();
+        $allowed_block_types = array_keys($registered_blocks);
+    }
+    
+    // Dentro de la Form Library (CPT) ocultamos el bloque público
+    if ($post_type === 'eipsi_form_template') {
+        // Solo quitamos el bloque embed si no existe ya en el contenido (compatibilidad)
+        if (!has_block($form_embed_block, $post_content)) {
+            $allowed_block_types = array_diff($allowed_block_types, array($form_embed_block));
+        }
+        
+        return array_values($allowed_block_types);
+    }
+    
+    // Fuera de la Form Library ocultamos el Container + campos a menos que ya existan
+    $blocks_to_hide = array();
+    foreach ($form_building_blocks as $block_name) {
+        if (!has_block($block_name, $post_content)) {
+            $blocks_to_hide[] = $block_name;
+        }
+    }
+    
+    if (!empty($blocks_to_hide)) {
+        $allowed_block_types = array_diff($allowed_block_types, $blocks_to_hide);
+    }
+    
+    return array_values($allowed_block_types);
+}
+add_filter('allowed_block_types_all', 'eipsi_limit_blocks_by_context', 10, 2);
