@@ -2,7 +2,7 @@
 /**
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
- * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
+ * Description: Formularios clínicos multipágina para psicólogos y psiquiatras hispanohablantes, con navegación cuidada, lógica condicional y página de agradecimiento integrada en la misma URL. Bloques Gutenberg nativos, accesibilidad WCAG 2.1 AA y cero pérdida de datos para consultorio e investigación.
  * Version: 1.2.2
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
