@@ -1,0 +1,352 @@
+<?php
+/**
+ * Form Library Management
+ * 
+ * Handles the Form Library admin page where clinicians can:
+ * - View all saved form templates
+ * - Copy shortcodes for reuse
+ * - Create, edit, and delete form templates
+ * 
+ * @package VAS_Dinamico_Forms
+ * @since 1.3.0
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * Register Custom Post Type for Form Templates
+ */
+function eipsi_register_form_template_cpt() {
+    $labels = array(
+        'name'                  => __('Form Templates', 'vas-dinamico-forms'),
+        'singular_name'         => __('Form Template', 'vas-dinamico-forms'),
+        'menu_name'             => __('Form Library', 'vas-dinamico-forms'),
+        'add_new'               => __('Add New', 'vas-dinamico-forms'),
+        'add_new_item'          => __('Add New Form Template', 'vas-dinamico-forms'),
+        'edit_item'             => __('Edit Form Template', 'vas-dinamico-forms'),
+        'new_item'              => __('New Form Template', 'vas-dinamico-forms'),
+        'view_item'             => __('View Form Template', 'vas-dinamico-forms'),
+        'search_items'          => __('Search Form Templates', 'vas-dinamico-forms'),
+        'not_found'             => __('No form templates found', 'vas-dinamico-forms'),
+        'not_found_in_trash'    => __('No form templates found in trash', 'vas-dinamico-forms'),
+        'all_items'             => __('All Forms', 'vas-dinamico-forms'),
+    );
+
+    $args = array(
+        'labels'              => $labels,
+        'public'              => false,
+        'show_ui'             => true,
+        'show_in_menu'        => false, // We'll add it manually to EIPSI Forms menu
+        'show_in_rest'        => true, // Enable Gutenberg
+        'capability_type'     => 'post',
+        'capabilities'        => array(
+            'edit_post'          => 'manage_options',
+            'edit_posts'         => 'manage_options',
+            'edit_others_posts'  => 'manage_options',
+            'publish_posts'      => 'manage_options',
+            'read_post'          => 'manage_options',
+            'read_private_posts' => 'manage_options',
+            'delete_post'        => 'manage_options',
+        ),
+        'hierarchical'        => false,
+        'supports'            => array('title', 'editor', 'custom-fields'),
+        'has_archive'         => false,
+        'rewrite'             => false,
+        'query_var'           => false,
+        'menu_icon'           => 'dashicons-feedback',
+    );
+
+    register_post_type('eipsi_form_template', $args);
+}
+add_action('init', 'eipsi_register_form_template_cpt');
+
+/**
+ * Add Form Library submenu to EIPSI Forms menu
+ */
+function eipsi_add_form_library_menu() {
+    add_submenu_page(
+        'vas-dinamico-results',
+        __('Form Library', 'vas-dinamico-forms'),
+        __('Form Library', 'vas-dinamico-forms'),
+        'manage_options',
+        'edit.php?post_type=eipsi_form_template'
+    );
+}
+add_action('admin_menu', 'eipsi_add_form_library_menu', 11);
+
+/**
+ * Customize columns in Form Library list table
+ */
+function eipsi_form_library_columns($columns) {
+    $new_columns = array(
+        'cb'                => $columns['cb'],
+        'title'             => __('Form Name', 'vas-dinamico-forms'),
+        'shortcode'         => __('Shortcode', 'vas-dinamico-forms'),
+        'last_response'     => __('Last Response', 'vas-dinamico-forms'),
+        'total_responses'   => __('Total Responses', 'vas-dinamico-forms'),
+        'date'              => __('Created', 'vas-dinamico-forms'),
+    );
+    
+    return $new_columns;
+}
+add_filter('manage_eipsi_form_template_posts_columns', 'eipsi_form_library_columns');
+
+/**
+ * Populate custom columns in Form Library list table
+ */
+function eipsi_form_library_column_content($column, $post_id) {
+    switch ($column) {
+        case 'shortcode':
+            $shortcode = '[eipsi_form id="' . $post_id . '"]';
+            echo '<code class="eipsi-shortcode-display">' . esc_html($shortcode) . '</code>';
+            echo '<button type="button" class="button button-small eipsi-copy-shortcode" data-shortcode="' . esc_attr($shortcode) . '" style="margin-left: 8px;">';
+            echo '<span class="dashicons dashicons-clipboard" style="vertical-align: middle; margin-top: 3px;"></span>';
+            echo '</button>';
+            break;
+            
+        case 'last_response':
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'vas_form_results';
+            
+            // Get form_name from post meta (stored when form is used)
+            $form_name = get_post_meta($post_id, '_eipsi_form_name', true);
+            
+            if (!$form_name) {
+                echo '<span style="color: #999;">—</span>';
+                break;
+            }
+            
+            $last_response = $wpdb->get_var($wpdb->prepare(
+                "SELECT MAX(submitted_at) FROM {$table_name} WHERE form_name = %s",
+                $form_name
+            ));
+            
+            if ($last_response) {
+                $time_diff = human_time_diff(strtotime($last_response), current_time('timestamp'));
+                echo '<span title="' . esc_attr($last_response) . '">' . sprintf(__('%s ago', 'vas-dinamico-forms'), $time_diff) . '</span>';
+            } else {
+                echo '<span style="color: #999;">' . __('Never', 'vas-dinamico-forms') . '</span>';
+            }
+            break;
+            
+        case 'total_responses':
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'vas_form_results';
+            
+            $form_name = get_post_meta($post_id, '_eipsi_form_name', true);
+            
+            if (!$form_name) {
+                echo '<span style="color: #999;">0</span>';
+                break;
+            }
+            
+            $count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table_name} WHERE form_name = %s",
+                $form_name
+            ));
+            
+            echo '<strong>' . number_format_i18n((int)$count) . '</strong>';
+            break;
+    }
+}
+add_action('manage_eipsi_form_template_posts_custom_column', 'eipsi_form_library_column_content', 10, 2);
+
+/**
+ * Make shortcode and responses columns sortable
+ */
+function eipsi_form_library_sortable_columns($columns) {
+    $columns['total_responses'] = 'total_responses';
+    $columns['last_response'] = 'last_response';
+    return $columns;
+}
+add_filter('manage_edit-eipsi_form_template_sortable_columns', 'eipsi_form_library_sortable_columns');
+
+/**
+ * Add admin CSS for Form Library
+ */
+function eipsi_form_library_admin_styles() {
+    $screen = get_current_screen();
+    
+    if (!$screen || $screen->post_type !== 'eipsi_form_template') {
+        return;
+    }
+    ?>
+    <style>
+        .eipsi-shortcode-display {
+            background: #f0f0f1;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 12px;
+            color: #2271b1;
+        }
+        
+        .eipsi-copy-shortcode {
+            vertical-align: middle;
+            cursor: pointer;
+            padding: 2px 8px;
+            height: 24px;
+        }
+        
+        .eipsi-copy-shortcode:hover {
+            background: #2271b1;
+            color: white;
+            border-color: #2271b1;
+        }
+        
+        .eipsi-copy-shortcode .dashicons {
+            font-size: 16px;
+        }
+        
+        .column-shortcode {
+            width: 280px;
+        }
+        
+        .column-last_response {
+            width: 120px;
+        }
+        
+        .column-total_responses {
+            width: 100px;
+            text-align: center;
+        }
+        
+        /* Success message after copy */
+        .eipsi-copy-success {
+            position: fixed;
+            top: 32px;
+            right: 20px;
+            background: #00a32a;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 999999;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+    <?php
+}
+add_action('admin_head', 'eipsi_form_library_admin_styles');
+
+/**
+ * Add admin JS for copying shortcodes
+ */
+function eipsi_form_library_admin_scripts() {
+    $screen = get_current_screen();
+    
+    if (!$screen || $screen->post_type !== 'eipsi_form_template') {
+        return;
+    }
+    ?>
+    <script>
+    jQuery(document).ready(function($) {
+        // Copy shortcode to clipboard
+        $(document).on('click', '.eipsi-copy-shortcode', function(e) {
+            e.preventDefault();
+            
+            const button = $(this);
+            const shortcode = button.data('shortcode');
+            
+            // Create temporary textarea to copy from
+            const temp = $('<textarea>');
+            $('body').append(temp);
+            temp.val(shortcode).select();
+            
+            try {
+                document.execCommand('copy');
+                
+                // Show success message
+                const message = $('<div class="eipsi-copy-success">✓ Shortcode copiado</div>');
+                $('body').append(message);
+                
+                setTimeout(() => {
+                    message.fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }, 2000);
+                
+            } catch (err) {
+                alert('Error al copiar. Por favor, copie manualmente: ' + shortcode);
+            }
+            
+            temp.remove();
+        });
+    });
+    </script>
+    <?php
+}
+add_action('admin_footer', 'eipsi_form_library_admin_scripts');
+
+/**
+ * Add helpful notice at the top of Form Library
+ */
+function eipsi_form_library_admin_notice() {
+    $screen = get_current_screen();
+    
+    if (!$screen || ($screen->post_type !== 'eipsi_form_template' && $screen->base !== 'post')) {
+        return;
+    }
+    
+    if ($screen->base === 'edit') {
+        ?>
+        <div class="notice notice-info" style="margin-top: 20px;">
+            <p>
+                <strong><?php _e('¿Cómo usar la librería de formularios?', 'vas-dinamico-forms'); ?></strong><br>
+                1. Hacé clic en <strong>"Añadir nuevo"</strong> para crear un formulario reutilizable.<br>
+                2. Usá el bloque <strong>"EIPSI Form Container"</strong> para armar tu formulario con páginas y campos.<br>
+                3. Una vez guardado, copiá el <strong>shortcode</strong> o usá el bloque <strong>"Formulario EIPSI"</strong> para insertarlo en cualquier página.
+            </p>
+        </div>
+        <?php
+    }
+}
+add_action('admin_notices', 'eipsi_form_library_admin_notice');
+
+/**
+ * Extract form_name from form-container block when saving a template
+ * This allows us to track responses for this form
+ */
+function eipsi_extract_form_name_on_save($post_id, $post, $update) {
+    // Only for our CPT
+    if ($post->post_type !== 'eipsi_form_template') {
+        return;
+    }
+    
+    // Avoid infinite loops
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    
+    // Parse blocks to find form-container
+    $blocks = parse_blocks($post->post_content);
+    $form_name = '';
+    
+    foreach ($blocks as $block) {
+        if ($block['blockName'] === 'vas-dinamico/form-container') {
+            $form_name = isset($block['attrs']['formId']) ? $block['attrs']['formId'] : '';
+            break;
+        }
+    }
+    
+    // Save form_name as post meta for easy querying
+    if ($form_name) {
+        update_post_meta($post_id, '_eipsi_form_name', sanitize_text_field($form_name));
+    } else {
+        delete_post_meta($post_id, '_eipsi_form_name');
+    }
+}
+add_action('save_post', 'eipsi_extract_form_name_on_save', 10, 3);

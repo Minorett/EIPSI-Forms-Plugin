@@ -37,6 +37,9 @@ require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/configuration.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/ajax-handlers.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/completion-message-backend.php';
+require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/form-library.php';
+require_once VAS_DINAMICO_PLUGIN_DIR . 'includes/form-template-render.php';
+require_once VAS_DINAMICO_PLUGIN_DIR . 'includes/shortcodes.php';
 
 function vas_dinamico_activate() {
     global $wpdb;
@@ -332,9 +335,17 @@ function vas_dinamico_register_blocks() {
     foreach ($block_dirs as $block_dir) {
         $block_path = VAS_DINAMICO_PLUGIN_DIR . 'blocks/' . $block_dir;
         
-        if (file_exists($block_path . '/block.json')) {
-            register_block_type($block_path);
+        if (!file_exists($block_path . '/block.json')) {
+            continue;
         }
+
+        $args = array();
+
+        if ('form-block' === $block_dir) {
+            $args['render_callback'] = 'eipsi_render_form_block';
+        }
+
+        register_block_type($block_path, $args);
     }
 }
 

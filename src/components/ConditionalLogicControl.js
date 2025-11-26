@@ -74,15 +74,20 @@ const ConditionalLogicControl = ( {
 			mode,
 			{ numericMin, numericMax }
 		);
-	}, [ conditionalLogic, defaultFieldId, defaultFieldType, options, mode, numericMin, numericMax ] );
+	}, [
+		conditionalLogic,
+		defaultFieldId,
+		defaultFieldType,
+		options,
+		mode,
+		numericMin,
+		numericMax,
+	] );
 
 	const { pages, hasPages, availableFields, currentPageId } = useSelect(
 		( select ) => {
-			const {
-				getSelectedBlock,
-				getBlockParentsByBlockName,
-				getBlock,
-			} = select( 'core/block-editor' );
+			const { getSelectedBlock, getBlockParentsByBlockName, getBlock } =
+				select( 'core/block-editor' );
 
 			const selectedBlock = clientId
 				? getBlock( clientId )
@@ -191,13 +196,21 @@ const ConditionalLogicControl = ( {
 		} else {
 			setValidationErrors( {} );
 		}
-	}, [ normalizedLogic.enabled, normalizedLogic.rules, availableFields, pages ] );
+	}, [
+		normalizedLogic.enabled,
+		normalizedLogic.rules,
+		availableFields,
+		pages,
+	] );
 
 	const validateRules = ( rules ) => {
 		const errors = {};
 
 		rules.forEach( ( rule, ruleIndex ) => {
-			if ( ! Array.isArray( rule.conditions ) || rule.conditions.length === 0 ) {
+			if (
+				! Array.isArray( rule.conditions ) ||
+				rule.conditions.length === 0
+			) {
 				errors[ ruleIndex ] = __(
 					'Cada regla necesita al menos una condición',
 					'vas-dinamico-forms'
@@ -236,14 +249,12 @@ const ConditionalLogicControl = ( {
 						);
 						break;
 					}
-				} else {
-					if ( ! condition.value ) {
-						errors[ ruleIndex ] = __(
-							'Selecciona el valor que dispara la condición',
-							'vas-dinamico-forms'
-						);
-						break;
-					}
+				} else if ( ! condition.value ) {
+					errors[ ruleIndex ] = __(
+						'Selecciona el valor que dispara la condición',
+						'vas-dinamico-forms'
+					);
+					break;
 				}
 			}
 
@@ -277,7 +288,8 @@ const ConditionalLogicControl = ( {
 	};
 
 	const addRule = () => {
-		const defaultField = fieldMap[ defaultFieldId ] || availableFields[ 0 ] || null;
+		const defaultField =
+			fieldMap[ defaultFieldId ] || availableFields[ 0 ] || null;
 		const newRule = {
 			id: `rule-${ Date.now() }`,
 			conditions: [ createCondition( defaultField, defaultFieldType ) ],
@@ -314,7 +326,9 @@ const ConditionalLogicControl = ( {
 	};
 
 	const removeRule = ( index ) => {
-		const newRules = normalizedLogic.rules.filter( ( _, i ) => i !== index );
+		const newRules = normalizedLogic.rules.filter(
+			( _, i ) => i !== index
+		);
 
 		if ( newRules.length === 0 ) {
 			setAttributes( { conditionalLogic: null } );
@@ -331,18 +345,25 @@ const ConditionalLogicControl = ( {
 	};
 
 	const addConditionToRule = ( ruleIndex ) => {
-		const defaultField = fieldMap[ defaultFieldId ] || availableFields[ 0 ] || null;
+		const defaultField =
+			fieldMap[ defaultFieldId ] || availableFields[ 0 ] || null;
 
 		const newRules = normalizedLogic.rules.map( ( rule, index ) => {
 			if ( index !== ruleIndex ) {
 				return rule;
 			}
 
-			const newCondition = createCondition( defaultField, defaultFieldType );
+			const newCondition = createCondition(
+				defaultField,
+				defaultFieldType
+			);
 
 			return {
 				...rule,
-				conditions: [ ...rule.conditions, newCondition ].slice( 0, MAX_CONDITIONS ),
+				conditions: [ ...rule.conditions, newCondition ].slice(
+					0,
+					MAX_CONDITIONS
+				),
 			};
 		} );
 
@@ -360,13 +381,20 @@ const ConditionalLogicControl = ( {
 				return rule;
 			}
 
-			const remaining = rule.conditions.filter( ( _, i ) => i !== conditionIndex );
+			const remaining = rule.conditions.filter(
+				( _, i ) => i !== conditionIndex
+			);
 
 			return {
 				...rule,
 				conditions:
 					remaining.length === 0
-						? [ createCondition( fieldMap[ defaultFieldId ], defaultFieldType ) ]
+						? [
+								createCondition(
+									fieldMap[ defaultFieldId ],
+									defaultFieldType
+								),
+						  ]
 						: remaining,
 			};
 		} );
@@ -385,16 +413,18 @@ const ConditionalLogicControl = ( {
 				return rule;
 			}
 
-			const newConditions = rule.conditions.map( ( condition, cIndex ) => {
-				if ( cIndex !== conditionIndex ) {
-					return condition;
-				}
+			const newConditions = rule.conditions.map(
+				( condition, cIndex ) => {
+					if ( cIndex !== conditionIndex ) {
+						return condition;
+					}
 
-				return {
-					...condition,
-					...updates,
-				};
-			} );
+					return {
+						...condition,
+						...updates,
+					};
+				}
+			);
 
 			return {
 				...rule,
@@ -410,7 +440,11 @@ const ConditionalLogicControl = ( {
 		} );
 	};
 
-	const handleConditionFieldChange = ( ruleIndex, conditionIndex, fieldId ) => {
+	const handleConditionFieldChange = (
+		ruleIndex,
+		conditionIndex,
+		fieldId
+	) => {
 		const fieldMeta = fieldMap[ fieldId ] || null;
 		const nextCondition = createCondition( fieldMeta, defaultFieldType );
 
@@ -442,7 +476,10 @@ const ConditionalLogicControl = ( {
 		if ( pages.length === 0 ) {
 			return [
 				{
-					label: __( 'No hay páginas disponibles', 'vas-dinamico-forms' ),
+					label: __(
+						'No hay páginas disponibles',
+						'vas-dinamico-forms'
+					),
 					value: '',
 					disabled: true,
 				},
@@ -451,7 +488,9 @@ const ConditionalLogicControl = ( {
 
 		return pages.map( ( page ) => {
 			const label = page.title
-				? `${ __( 'Página', 'vas-dinamico-forms' ) } ${ page.index } – ${ page.title }`
+				? `${ __( 'Página', 'vas-dinamico-forms' ) } ${
+						page.index
+				  } – ${ page.title }`
 				: `${ __( 'Página', 'vas-dinamico-forms' ) } ${ page.index }`;
 
 			return {
@@ -484,15 +523,22 @@ const ConditionalLogicControl = ( {
 	};
 
 	const renderCondition = ( ruleIndex, condition, conditionIndex ) => {
-		const fieldMeta = condition.fieldId ? fieldMap[ condition.fieldId ] : null;
-		const isNumeric = fieldMeta?.type === 'numeric' || condition.fieldType === 'numeric';
+		const fieldMeta = condition.fieldId
+			? fieldMap[ condition.fieldId ]
+			: null;
+		const isNumeric =
+			fieldMeta?.type === 'numeric' || condition.fieldType === 'numeric';
 		const discreteOptions = fieldMeta?.options || [];
-		const logicalLabel = conditionIndex === 0
-			? __( 'Si se cumple', 'vas-dinamico-forms' )
-			: __( 'Unir con', 'vas-dinamico-forms' );
+		const logicalLabel =
+			conditionIndex === 0
+				? __( 'Si se cumple', 'vas-dinamico-forms' )
+				: __( 'Unir con', 'vas-dinamico-forms' );
 
 		return (
-			<div className="conditional-logic-condition" key={ condition.id || `${ ruleIndex }-${ conditionIndex }` }>
+			<div
+				className="conditional-logic-condition"
+				key={ condition.id || `${ ruleIndex }-${ conditionIndex }` }
+			>
 				{ conditionIndex > 0 && (
 					<SelectControl
 						label={ __( 'Operador lógico', 'vas-dinamico-forms' ) }
@@ -510,7 +556,13 @@ const ConditionalLogicControl = ( {
 					label={ logicalLabel }
 					value={ condition.fieldId || '' }
 					options={ fieldOptions }
-					onChange={ ( value ) => handleConditionFieldChange( ruleIndex, conditionIndex, value ) }
+					onChange={ ( value ) =>
+						handleConditionFieldChange(
+							ruleIndex,
+							conditionIndex,
+							value
+						)
+					}
 				/>
 
 				{ fieldMeta && fieldMeta.type === 'discrete' && (
@@ -522,7 +574,10 @@ const ConditionalLogicControl = ( {
 						value={ condition.value || '' }
 						options={ [
 							{
-								label: __( 'Selecciona un valor…', 'vas-dinamico-forms' ),
+								label: __(
+									'Selecciona un valor…',
+									'vas-dinamico-forms'
+								),
 								value: '',
 							},
 							...discreteOptions,
@@ -565,19 +620,32 @@ const ConditionalLogicControl = ( {
 									value === '' || value === null
 										? ''
 										: parseFloat( value );
-								if ( value === '' || Number.isNaN( numericValue ) ) {
-									updateCondition( ruleIndex, conditionIndex, {
-										threshold: '',
-									} );
+								if (
+									value === '' ||
+									Number.isNaN( numericValue )
+								) {
+									updateCondition(
+										ruleIndex,
+										conditionIndex,
+										{
+											threshold: '',
+										}
+									);
 									return;
 								}
 
 								let boundedValue = numericValue;
 								if ( fieldMeta.min !== undefined ) {
-									boundedValue = Math.max( fieldMeta.min, boundedValue );
+									boundedValue = Math.max(
+										fieldMeta.min,
+										boundedValue
+									);
 								}
 								if ( fieldMeta.max !== undefined ) {
-									boundedValue = Math.min( fieldMeta.max, boundedValue );
+									boundedValue = Math.min(
+										fieldMeta.max,
+										boundedValue
+									);
 								}
 
 								updateCondition( ruleIndex, conditionIndex, {
@@ -607,7 +675,9 @@ const ConditionalLogicControl = ( {
 					<Button
 						isLink
 						isDestructive
-						onClick={ () => removeConditionFromRule( ruleIndex, conditionIndex ) }
+						onClick={ () =>
+							removeConditionFromRule( ruleIndex, conditionIndex )
+						}
 					>
 						{ __( 'Eliminar condición', 'vas-dinamico-forms' ) }
 					</Button>
@@ -673,24 +743,38 @@ const ConditionalLogicControl = ( {
 					) }
 
 					{ normalizedLogic.rules.map( ( rule, index ) => (
-						<div key={ rule.id || index } className="conditional-logic-rule">
+						<div
+							key={ rule.id || index }
+							className="conditional-logic-rule"
+						>
 							<div className="conditional-logic-rule-header">
 								<h4>
-									{ __( 'Regla', 'vas-dinamico-forms' ) } { index + 1 }
+									{ __( 'Regla', 'vas-dinamico-forms' ) }{ ' ' }
+									{ index + 1 }
 								</h4>
 							</div>
 
-							{ rule.conditions.map( ( condition, conditionIndex ) =>
-								renderCondition( index, condition, conditionIndex )
+							{ rule.conditions.map(
+								( condition, conditionIndex ) =>
+									renderCondition(
+										index,
+										condition,
+										conditionIndex
+									)
 							) }
 
 							{ rule.conditions.length < MAX_CONDITIONS && (
 								<Button
 									variant="secondary"
-									onClick={ () => addConditionToRule( index ) }
+									onClick={ () =>
+										addConditionToRule( index )
+									}
 									className="conditional-logic-add-condition-button"
 								>
-									{ __( '+ Añadir otra condición (AND/OR)', 'vas-dinamico-forms' ) }
+									{ __(
+										'+ Añadir otra condición (AND/OR)',
+										'vas-dinamico-forms'
+									) }
 								</Button>
 							) }
 
@@ -712,7 +796,10 @@ const ConditionalLogicControl = ( {
 									} else if ( action === 'goToPage' ) {
 										updateRule( index, {
 											action: 'goToPage',
-											targetPage: rule.targetPage || pages[ 0 ]?.index || 1,
+											targetPage:
+												rule.targetPage ||
+												pages[ 0 ]?.index ||
+												1,
 										} );
 									}
 								} }
@@ -720,9 +807,14 @@ const ConditionalLogicControl = ( {
 
 							{ rule.action === 'goToPage' && (
 								<SelectControl
-									label={ __( 'Ir a la página', 'vas-dinamico-forms' ) }
+									label={ __(
+										'Ir a la página',
+										'vas-dinamico-forms'
+									) }
 									value={
-										rule.targetPage ? rule.targetPage.toString() : ''
+										rule.targetPage
+											? rule.targetPage.toString()
+											: ''
 									}
 									options={ getPageOptions() }
 									onChange={ ( value ) =>
@@ -746,7 +838,10 @@ const ConditionalLogicControl = ( {
 									isSmall
 									onClick={ () => removeRule( index ) }
 								>
-									{ __( 'Eliminar regla', 'vas-dinamico-forms' ) }
+									{ __(
+										'Eliminar regla',
+										'vas-dinamico-forms'
+									) }
 								</Button>
 							</div>
 						</div>
@@ -754,7 +849,12 @@ const ConditionalLogicControl = ( {
 
 					{ hasRequiredData && normalizedLogic.rules.length > 0 && (
 						<div className="conditional-logic-default-action">
-							<h4>{ __( 'Acción predeterminada', 'vas-dinamico-forms' ) }</h4>
+							<h4>
+								{ __(
+									'Acción predeterminada',
+									'vas-dinamico-forms'
+								) }
+							</h4>
 							<p>
 								{ __(
 									'Qué ocurre cuando ninguna condición coincide.',
@@ -762,16 +862,23 @@ const ConditionalLogicControl = ( {
 								) }
 							</p>
 							<SelectControl
-								label={ __( 'Para otros casos', 'vas-dinamico-forms' ) }
+								label={ __(
+									'Para otros casos',
+									'vas-dinamico-forms'
+								) }
 								value={
 									normalizedLogic.defaultAction === 'goToPage'
 										? 'goToPage'
-										: normalizedLogic.defaultAction || 'nextPage'
+										: normalizedLogic.defaultAction ||
+										  'nextPage'
 								}
 								options={ getActionOptions() }
 								onChange={ ( action ) => {
 									if ( action === 'goToPage' ) {
-										updateDefaultAction( action, pages[ 0 ]?.index || 1 );
+										updateDefaultAction(
+											action,
+											pages[ 0 ]?.index || 1
+										);
 									} else {
 										updateDefaultAction( action );
 									}
@@ -780,11 +887,15 @@ const ConditionalLogicControl = ( {
 
 							{ normalizedLogic.defaultAction === 'goToPage' && (
 								<SelectControl
-									label={ __( 'Ir a la página', 'vas-dinamico-forms' ) }
+									label={ __(
+										'Ir a la página',
+										'vas-dinamico-forms'
+									) }
 									value={
 										normalizedLogic.defaultTargetPage
 											? normalizedLogic.defaultTargetPage.toString()
-											: pages[ 0 ]?.index.toString() || '1'
+											: pages[ 0 ]?.index.toString() ||
+											  '1'
 									}
 									options={ getPageOptions() }
 									onChange={ ( value ) =>
@@ -857,9 +968,7 @@ function buildLikertOptions( attributes ) {
 
 function buildSliderRange( attributes ) {
 	const min =
-		typeof attributes.minValue === 'number'
-			? attributes.minValue
-			: 0;
+		typeof attributes.minValue === 'number' ? attributes.minValue : 0;
 	const maxCandidate =
 		typeof attributes.maxValue === 'number'
 			? attributes.maxValue
@@ -895,7 +1004,9 @@ function collectConditionableFields( pageBlock ) {
 					};
 
 					if ( config.type === 'discrete' ) {
-						const optionValues = config.getOptions( block.attributes );
+						const optionValues = config.getOptions(
+							block.attributes
+						);
 						meta.options = optionValues.map( ( value ) => ( {
 							label: value,
 							value,
@@ -932,9 +1043,7 @@ function createCondition( fieldMeta, fallbackType = 'discrete' ) {
 		fieldType: isNumeric ? 'numeric' : 'discrete',
 		operator: isNumeric ? '>=' : '==',
 		value: isNumeric ? undefined : '',
-		threshold: isNumeric
-			? fieldMeta?.min ?? 0
-			: undefined,
+		threshold: isNumeric ? fieldMeta?.min ?? 0 : undefined,
 		logicalOperator: 'AND',
 	};
 }
@@ -969,7 +1078,9 @@ function normalizeConditionalLogic(
 			fieldLabel: condition.fieldLabel || '',
 			fieldType: isNumeric ? 'numeric' : 'discrete',
 			operator: condition.operator || ( isNumeric ? '>=' : '==' ),
-			value: isNumeric ? undefined : condition.value ?? condition.matchValue ?? '',
+			value: isNumeric
+				? undefined
+				: condition.value ?? condition.matchValue ?? '',
 			threshold: isNumeric
 				? condition.threshold ?? condition.value ?? null
 				: undefined,
@@ -987,8 +1098,12 @@ function normalizeConditionalLogic(
 		if ( Array.isArray( rule.conditions ) && rule.conditions.length > 0 ) {
 			return {
 				...baseRule,
-				conditions: rule.conditions.map( ( condition, conditionIndex ) =>
-					normalizeConditionShape( condition, `${ index }-${ conditionIndex }` )
+				conditions: rule.conditions.map(
+					( condition, conditionIndex ) =>
+						normalizeConditionShape(
+							condition,
+							`${ index }-${ conditionIndex }`
+						)
 				),
 			};
 		}
@@ -997,12 +1112,16 @@ function normalizeConditionalLogic(
 			return {
 				...baseRule,
 				conditions: [
-					normalizeConditionShape( {
-						fieldId: rule.fieldId || defaultFieldId,
-						fieldType: 'numeric',
-						operator: rule.operator,
-						threshold: rule.threshold ?? rule.valueThreshold ?? null,
-					}, `${ index }-0` ),
+					normalizeConditionShape(
+						{
+							fieldId: rule.fieldId || defaultFieldId,
+							fieldType: 'numeric',
+							operator: rule.operator,
+							threshold:
+								rule.threshold ?? rule.valueThreshold ?? null,
+						},
+						`${ index }-0`
+					),
 				],
 			};
 		}
@@ -1011,12 +1130,15 @@ function normalizeConditionalLogic(
 			return {
 				...baseRule,
 				conditions: [
-					normalizeConditionShape( {
-						fieldId: rule.fieldId || defaultFieldId,
-						fieldType: 'discrete',
-						operator: '==',
-						value: rule.matchValue ?? rule.value ?? '',
-					}, `${ index }-0` ),
+					normalizeConditionShape(
+						{
+							fieldId: rule.fieldId || defaultFieldId,
+							fieldType: 'discrete',
+							operator: '==',
+							value: rule.matchValue ?? rule.value ?? '',
+						},
+						`${ index }-0`
+					),
 				],
 			};
 		}
