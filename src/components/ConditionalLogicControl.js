@@ -4,13 +4,51 @@ import {
 	SelectControl,
 	Button,
 	Dashicon,
-	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- NumberControl ensures numeric-only threshold inputs
 	__experimentalNumberControl as NumberControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useSelect } from '@wordpress/data';
-import { useEffect, useState } from '@wordpress/element';
+import { useEffect, useMemo, useState } from '@wordpress/element';
+import { parseOptions } from '../utils/optionParser';
 import './ConditionalLogicControl.css';
+
+const MAX_CONDITIONS = 3;
+
+const LOGICAL_OPERATOR_OPTIONS = [
+	{ label: __( 'Y (AND)', 'vas-dinamico-forms' ), value: 'AND' },
+	{ label: __( 'O (OR)', 'vas-dinamico-forms' ), value: 'OR' },
+];
+
+const NUMERIC_OPERATOR_OPTIONS = [
+	{ label: __( 'Mayor o igual (≥)', 'vas-dinamico-forms' ), value: '>=' },
+	{ label: __( 'Menor o igual (≤)', 'vas-dinamico-forms' ), value: '<=' },
+	{ label: __( 'Mayor que (>)', 'vas-dinamico-forms' ), value: '>' },
+	{ label: __( 'Menor que (<)', 'vas-dinamico-forms' ), value: '<' },
+	{ label: __( 'Igual a (=)', 'vas-dinamico-forms' ), value: '==' },
+];
+
+const SUPPORTED_FIELD_BLOCKS = {
+	'vas-dinamico/campo-radio': {
+		type: 'discrete',
+		getOptions: ( attributes ) => parseOptions( attributes.options ),
+	},
+	'vas-dinamico/campo-select': {
+		type: 'discrete',
+		getOptions: ( attributes ) => parseOptions( attributes.options ),
+	},
+	'vas-dinamico/campo-multiple': {
+		type: 'discrete',
+		getOptions: ( attributes ) => parseOptions( attributes.options ),
+	},
+	'vas-dinamico/campo-likert': {
+		type: 'discrete',
+		getOptions: ( attributes ) => buildLikertOptions( attributes ),
+	},
+	'vas-dinamico/vas-slider': {
+		type: 'numeric',
+		getRange: ( attributes ) => buildSliderRange( attributes ),
+	},
+};
 
 const ConditionalLogicControl = ( {
 	attributes,
@@ -24,107 +62,188 @@ const ConditionalLogicControl = ( {
 	const { conditionalLogic } = attributes;
 	const [ validationErrors, setValidationErrors ] = useState( {} );
 
-	const normalizedLogic = normalizeConditionalLogic( conditionalLogic );
-	const isNumericMode = mode === 'numeric';
+	const defaultFieldId = getFieldIdentifier( attributes );
+	const defaultFieldType = mode === 'numeric' ? 'numeric' : 'discrete';
 
-	const { pages, hasPages } = useSelect(
+	const normalizedLogic = useMemo( () => {
+		return normalizeConditionalLogic(
+			conditionalLogic,
+			defaultFieldId,
+			defaultFieldType,
+			options,
+			mode,
+			{ numericMin, numericMax }
+		);
+	}, [ conditionalLogic, defaultFieldId, defaultFieldType, options, mode, numericMin, numericMax ] );
+
+	const { pages, hasPages, availableFields, currentPageId } = useSelect(
 		( select ) => {
-			const { getSelectedBlock, getBlockParentsByBlockName, getBlock } =
-				select( 'core/block-editor' );
+			const {
+				getSelectedBlock,
+				getBlockParentsByBlockName,
+				getBlock,
+			} = select( 'core/block-editor' );
 
-			try {
-				const selectedBlock = clientId
-					? getBlock( clientId )
-					: getSelectedBlock();
+			const selectedBlock = clientId
+				? getBlock( clientId )
+				: getSelectedBlock();
 
-				if ( ! selectedBlock ) {
-					return { pages: [], hasPages: false };
-				}
-
-				const parentIds = getBlockParentsByBlockName(
-					selectedBlock.clientId,
-					'vas-dinamico/form-container'
-				);
-
-				if ( parentIds.length === 0 ) {
-					return { pages: [], hasPages: false };
-				}
-
-				const formContainerId = parentIds[ parentIds.length - 1 ];
-				const formContainer = getBlock( formContainerId );
-
-				if ( ! formContainer || ! formContainer.innerBlocks ) {
-					return { pages: [], hasPages: false };
-				}
-
-				const pageBlocks = formContainer.innerBlocks.filter(
-					( block ) => block.name === 'vas-dinamico/form-page'
-				);
-
-				const pagesData = pageBlocks.map( ( page, index ) => ( {
-					index: index + 1,
-					title: page.attributes.title || '',
-					clientId: page.clientId,
-				} ) );
-
+			if ( ! selectedBlock ) {
 				return {
-					pages: pagesData,
-					hasPages: pagesData.length > 0,
+					pages: [],
+					hasPages: false,
+					availableFields: [],
+					currentPageId: null,
 				};
-			} catch ( error ) {
-				return { pages: [], hasPages: false };
 			}
+
+			const formParentIds = getBlockParentsByBlockName(
+				selectedBlock.clientId,
+				'vas-dinamico/form-container'
+			);
+
+			if ( formParentIds.length === 0 ) {
+				return {
+					pages: [],
+					hasPages: false,
+					availableFields: [],
+					currentPageId: null,
+				};
+			}
+
+			const formContainerId = formParentIds[ formParentIds.length - 1 ];
+			const formContainer = getBlock( formContainerId );
+
+			if ( ! formContainer || ! formContainer.innerBlocks ) {
+				return {
+					pages: [],
+					hasPages: false,
+					availableFields: [],
+					currentPageId: null,
+				};
+			}
+
+			const pageBlocks = formContainer.innerBlocks.filter(
+				( block ) => block.name === 'vas-dinamico/form-page'
+			);
+
+			const pagesData = pageBlocks.map( ( page, index ) => ( {
+				index: index + 1,
+				title: page.attributes.title || '',
+				clientId: page.clientId,
+			} ) );
+
+			const pageParents = getBlockParentsByBlockName(
+				selectedBlock.clientId,
+				'vas-dinamico/form-page'
+			);
+			const currentPageClientId =
+				pageParents.length > 0
+					? pageParents[ pageParents.length - 1 ]
+					: null;
+			const currentPageBlock = currentPageClientId
+				? getBlock( currentPageClientId )
+				: null;
+
+			return {
+				pages: pagesData,
+				hasPages: pagesData.length > 0,
+				availableFields: collectConditionableFields( currentPageBlock ),
+				currentPageId: currentPageClientId,
+			};
 		},
 		[ clientId ]
 	);
 
+	const fieldMap = useMemo( () => {
+		const map = {};
+		availableFields.forEach( ( field ) => {
+			if ( field.fieldId ) {
+				map[ field.fieldId ] = field;
+			}
+		} );
+		return map;
+	}, [ availableFields ] );
+
+	const fieldOptions = useMemo( () => {
+		const choices = [
+			{
+				label: __( 'Selecciona un campo…', 'vas-dinamico-forms' ),
+				value: '',
+			},
+		];
+
+		availableFields.forEach( ( field ) => {
+			choices.push( {
+				label: field.label,
+				value: field.fieldId,
+			} );
+		} );
+
+		return choices;
+	}, [ availableFields ] );
+
+	const hasRequiredData = hasPages && availableFields.length > 0;
+
 	useEffect( () => {
 		if ( normalizedLogic.enabled && normalizedLogic.rules.length > 0 ) {
 			validateRules( normalizedLogic.rules );
+		} else {
+			setValidationErrors( {} );
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- validateRules is a stable function that doesn't need to be in dependencies
-	}, [ normalizedLogic.enabled, normalizedLogic.rules, options, pages ] );
+	}, [ normalizedLogic.enabled, normalizedLogic.rules, availableFields, pages ] );
 
 	const validateRules = ( rules ) => {
 		const errors = {};
-		const usedValues = new Set();
 
-		rules.forEach( ( rule, index ) => {
-			if ( isNumericMode ) {
-				if ( ! rule.operator ) {
-					errors[ index ] = __(
-						'Selecciona un operador',
+		rules.forEach( ( rule, ruleIndex ) => {
+			if ( ! Array.isArray( rule.conditions ) || rule.conditions.length === 0 ) {
+				errors[ ruleIndex ] = __(
+					'Cada regla necesita al menos una condición',
+					'vas-dinamico-forms'
+				);
+				return;
+			}
+
+			for ( let i = 0; i < rule.conditions.length; i++ ) {
+				const condition = rule.conditions[ i ];
+				const fieldMeta = condition.fieldId
+					? fieldMap[ condition.fieldId ]
+					: null;
+
+				if ( ! fieldMeta ) {
+					errors[ ruleIndex ] = __(
+						'Selecciona un campo válido para esta condición',
 						'vas-dinamico-forms'
 					);
+					break;
 				}
 
-				const thresholdValue = parseFloat( rule.threshold );
-				if (
-					rule.threshold === undefined ||
-					rule.threshold === null ||
-					rule.threshold === '' ||
-					Number.isNaN( thresholdValue )
-				) {
-					errors[ index ] = __(
-						'Introduce un valor numérico',
-						'vas-dinamico-forms'
-					);
-				}
-			} else {
-				if ( usedValues.has( rule.matchValue ) ) {
-					errors[ index ] = __(
-						'Este valor ya está siendo usado en otra regla',
-						'vas-dinamico-forms'
-					);
-				} else if ( rule.matchValue ) {
-					usedValues.add( rule.matchValue );
-				}
+				if ( fieldMeta.type === 'numeric' ) {
+					if ( ! condition.operator ) {
+						errors[ ruleIndex ] = __(
+							'Eligí un operador numérico',
+							'vas-dinamico-forms'
+						);
+						break;
+					}
 
-				if ( ! rule.matchValue ) {
-					errors[ index ] = __(
-						'Selecciona un valor para esta regla',
-						'vas-dinamico-forms'
-					);
+					const numValue = parseFloat( condition.threshold );
+					if ( Number.isNaN( numValue ) ) {
+						errors[ ruleIndex ] = __(
+							'Ingresá un valor numérico válido',
+							'vas-dinamico-forms'
+						);
+						break;
+					}
+				} else {
+					if ( ! condition.value ) {
+						errors[ ruleIndex ] = __(
+							'Selecciona el valor que dispara la condición',
+							'vas-dinamico-forms'
+						);
+						break;
+					}
 				}
 			}
 
@@ -132,8 +251,8 @@ const ConditionalLogicControl = ( {
 				rule.action === 'goToPage' &&
 				( ! rule.targetPage || rule.targetPage < 1 )
 			) {
-				errors[ index ] = __(
-					'Selecciona una página válida',
+				errors[ ruleIndex ] = __(
+					'Elegí una página de destino válida',
 					'vas-dinamico-forms'
 				);
 			}
@@ -158,23 +277,15 @@ const ConditionalLogicControl = ( {
 	};
 
 	const addRule = () => {
-		const newRule = isNumericMode
-			? {
-					id: `rule-${ Date.now() }`,
-					operator: '>=',
-					threshold: 0,
-					action: 'nextPage',
-					targetPage: null,
-			  }
-			: {
-					id: `rule-${ Date.now() }`,
-					matchValue: '',
-					action: 'nextPage',
-					targetPage: null,
-			  };
+		const defaultField = fieldMap[ defaultFieldId ] || availableFields[ 0 ] || null;
+		const newRule = {
+			id: `rule-${ Date.now() }`,
+			conditions: [ createCondition( defaultField, defaultFieldType ) ],
+			action: 'nextPage',
+			targetPage: null,
+		};
 
 		const newRules = [ ...normalizedLogic.rules, newRule ];
-
 		setAttributes( {
 			conditionalLogic: {
 				...normalizedLogic,
@@ -183,21 +294,16 @@ const ConditionalLogicControl = ( {
 		} );
 	};
 
-	const updateRule = ( index, fieldOrUpdates, value ) => {
-		const newRules = [ ...normalizedLogic.rules ];
-		const currentRule = newRules[ index ] || {};
-
-		if ( typeof fieldOrUpdates === 'object' ) {
-			newRules[ index ] = {
-				...currentRule,
-				...fieldOrUpdates,
+	const updateRule = ( index, updates ) => {
+		const newRules = normalizedLogic.rules.map( ( rule, ruleIndex ) => {
+			if ( ruleIndex !== index ) {
+				return rule;
+			}
+			return {
+				...rule,
+				...updates,
 			};
-		} else {
-			newRules[ index ] = {
-				...currentRule,
-				[ fieldOrUpdates ]: value,
-			};
-		}
+		} );
 
 		setAttributes( {
 			conditionalLogic: {
@@ -208,21 +314,113 @@ const ConditionalLogicControl = ( {
 	};
 
 	const removeRule = ( index ) => {
-		const newRules = normalizedLogic.rules.filter(
-			( _, i ) => i !== index
-		);
+		const newRules = normalizedLogic.rules.filter( ( _, i ) => i !== index );
 
 		if ( newRules.length === 0 ) {
 			setAttributes( { conditionalLogic: null } );
 			setValidationErrors( {} );
-		} else {
-			setAttributes( {
-				conditionalLogic: {
-					...normalizedLogic,
-					rules: newRules,
-				},
-			} );
+			return;
 		}
+
+		setAttributes( {
+			conditionalLogic: {
+				...normalizedLogic,
+				rules: newRules,
+			},
+		} );
+	};
+
+	const addConditionToRule = ( ruleIndex ) => {
+		const defaultField = fieldMap[ defaultFieldId ] || availableFields[ 0 ] || null;
+
+		const newRules = normalizedLogic.rules.map( ( rule, index ) => {
+			if ( index !== ruleIndex ) {
+				return rule;
+			}
+
+			const newCondition = createCondition( defaultField, defaultFieldType );
+
+			return {
+				...rule,
+				conditions: [ ...rule.conditions, newCondition ].slice( 0, MAX_CONDITIONS ),
+			};
+		} );
+
+		setAttributes( {
+			conditionalLogic: {
+				...normalizedLogic,
+				rules: newRules,
+			},
+		} );
+	};
+
+	const removeConditionFromRule = ( ruleIndex, conditionIndex ) => {
+		const newRules = normalizedLogic.rules.map( ( rule, index ) => {
+			if ( index !== ruleIndex ) {
+				return rule;
+			}
+
+			const remaining = rule.conditions.filter( ( _, i ) => i !== conditionIndex );
+
+			return {
+				...rule,
+				conditions:
+					remaining.length === 0
+						? [ createCondition( fieldMap[ defaultFieldId ], defaultFieldType ) ]
+						: remaining,
+			};
+		} );
+
+		setAttributes( {
+			conditionalLogic: {
+				...normalizedLogic,
+				rules: newRules,
+			},
+		} );
+	};
+
+	const updateCondition = ( ruleIndex, conditionIndex, updates ) => {
+		const newRules = normalizedLogic.rules.map( ( rule, rIndex ) => {
+			if ( rIndex !== ruleIndex ) {
+				return rule;
+			}
+
+			const newConditions = rule.conditions.map( ( condition, cIndex ) => {
+				if ( cIndex !== conditionIndex ) {
+					return condition;
+				}
+
+				return {
+					...condition,
+					...updates,
+				};
+			} );
+
+			return {
+				...rule,
+				conditions: newConditions,
+			};
+		} );
+
+		setAttributes( {
+			conditionalLogic: {
+				...normalizedLogic,
+				rules: newRules,
+			},
+		} );
+	};
+
+	const handleConditionFieldChange = ( ruleIndex, conditionIndex, fieldId ) => {
+		const fieldMeta = fieldMap[ fieldId ] || null;
+		const nextCondition = createCondition( fieldMeta, defaultFieldType );
+
+		updateCondition( ruleIndex, conditionIndex, {
+			...nextCondition,
+			logicalOperator:
+				normalizedLogic.rules[ ruleIndex ].conditions[ conditionIndex ]
+					?.logicalOperator || 'AND',
+			fieldId,
+		} );
 	};
 
 	const updateDefaultAction = ( action, targetPage = null ) => {
@@ -232,46 +430,35 @@ const ConditionalLogicControl = ( {
 		};
 
 		if ( action === 'goToPage' && targetPage ) {
-			updatedLogic.defaultTargetPage = parseInt( targetPage );
+			updatedLogic.defaultTargetPage = parseInt( targetPage, 10 );
 		} else {
 			delete updatedLogic.defaultTargetPage;
 		}
 
-		setAttributes( {
-			conditionalLogic: updatedLogic,
-		} );
+		setAttributes( { conditionalLogic: updatedLogic } );
 	};
 
 	const getPageOptions = () => {
-		const pageOptions = [];
-
 		if ( pages.length === 0 ) {
 			return [
 				{
-					label: __(
-						'No hay páginas disponibles',
-						'vas-dinamico-forms'
-					),
+					label: __( 'No hay páginas disponibles', 'vas-dinamico-forms' ),
 					value: '',
 					disabled: true,
 				},
 			];
 		}
 
-		pages.forEach( ( page ) => {
+		return pages.map( ( page ) => {
 			const label = page.title
-				? `${ __( 'Página', 'vas-dinamico-forms' ) } ${
-						page.index
-				  } – ${ page.title }`
+				? `${ __( 'Página', 'vas-dinamico-forms' ) } ${ page.index } – ${ page.title }`
 				: `${ __( 'Página', 'vas-dinamico-forms' ) } ${ page.index }`;
 
-			pageOptions.push( {
+			return {
 				label,
 				value: page.index.toString(),
-			} );
+			};
 		} );
-
-		return pageOptions;
 	};
 
 	const getActionOptions = () => {
@@ -296,71 +483,138 @@ const ConditionalLogicControl = ( {
 		return actionOptions;
 	};
 
-	const getOptionOptions = () => {
-		if ( options.length === 0 ) {
-			return [
-				{
-					label: __(
-						'No hay opciones disponibles',
-						'vas-dinamico-forms'
-					),
-					value: '',
-					disabled: true,
-				},
-			];
-		}
+	const renderCondition = ( ruleIndex, condition, conditionIndex ) => {
+		const fieldMeta = condition.fieldId ? fieldMap[ condition.fieldId ] : null;
+		const isNumeric = fieldMeta?.type === 'numeric' || condition.fieldType === 'numeric';
+		const discreteOptions = fieldMeta?.options || [];
+		const logicalLabel = conditionIndex === 0
+			? __( 'Si se cumple', 'vas-dinamico-forms' )
+			: __( 'Unir con', 'vas-dinamico-forms' );
 
-		const normalizedOptions = options.map( ( option ) => {
-			if ( typeof option === 'object' && option !== null ) {
-				return {
-					label: option.label ?? option.value ?? '',
-					value: option.value ?? option.label ?? '',
-				};
-			}
+		return (
+			<div className="conditional-logic-condition" key={ condition.id || `${ ruleIndex }-${ conditionIndex }` }>
+				{ conditionIndex > 0 && (
+					<SelectControl
+						label={ __( 'Operador lógico', 'vas-dinamico-forms' ) }
+						value={ condition.logicalOperator || 'AND' }
+						options={ LOGICAL_OPERATOR_OPTIONS }
+						onChange={ ( value ) =>
+							updateCondition( ruleIndex, conditionIndex, {
+								logicalOperator: value,
+							} )
+						}
+					/>
+				) }
 
-			return {
-				label: option,
-				value: option,
-			};
-		} );
+				<SelectControl
+					label={ logicalLabel }
+					value={ condition.fieldId || '' }
+					options={ fieldOptions }
+					onChange={ ( value ) => handleConditionFieldChange( ruleIndex, conditionIndex, value ) }
+				/>
 
-		return [
-			{
-				label: __( 'Selecciona un valor…', 'vas-dinamico-forms' ),
-				value: '',
-			},
-			...normalizedOptions,
-		];
+				{ fieldMeta && fieldMeta.type === 'discrete' && (
+					<SelectControl
+						label={ __(
+							'Cuando el valor sea',
+							'vas-dinamico-forms'
+						) }
+						value={ condition.value || '' }
+						options={ [
+							{
+								label: __( 'Selecciona un valor…', 'vas-dinamico-forms' ),
+								value: '',
+							},
+							...discreteOptions,
+						] }
+						onChange={ ( value ) =>
+							updateCondition( ruleIndex, conditionIndex, {
+								value,
+								fieldType: 'discrete',
+							} )
+						}
+					/>
+				) }
+
+				{ fieldMeta && fieldMeta.type === 'numeric' && (
+					<>
+						<SelectControl
+							label={ __(
+								'Comparar cuando el valor sea',
+								'vas-dinamico-forms'
+							) }
+							value={ condition.operator || '>=' }
+							options={ NUMERIC_OPERATOR_OPTIONS }
+							onChange={ ( value ) =>
+								updateCondition( ruleIndex, conditionIndex, {
+									operator: value,
+									fieldType: 'numeric',
+								} )
+							}
+						/>
+						<NumberControl
+							label={ __( 'Valor umbral', 'vas-dinamico-forms' ) }
+							value={
+								condition.threshold !== undefined &&
+								condition.threshold !== null
+									? condition.threshold
+									: ''
+							}
+							onChange={ ( value ) => {
+								const numericValue =
+									value === '' || value === null
+										? ''
+										: parseFloat( value );
+								if ( value === '' || Number.isNaN( numericValue ) ) {
+									updateCondition( ruleIndex, conditionIndex, {
+										threshold: '',
+									} );
+									return;
+								}
+
+								let boundedValue = numericValue;
+								if ( fieldMeta.min !== undefined ) {
+									boundedValue = Math.max( fieldMeta.min, boundedValue );
+								}
+								if ( fieldMeta.max !== undefined ) {
+									boundedValue = Math.min( fieldMeta.max, boundedValue );
+								}
+
+								updateCondition( ruleIndex, conditionIndex, {
+									threshold: boundedValue,
+									fieldType: 'numeric',
+								} );
+							} }
+							min={ fieldMeta.min }
+							max={ fieldMeta.max }
+							step="any"
+						/>
+					</>
+				) }
+
+				{ ! fieldMeta && (
+					<div className="conditional-logic-warning">
+						<p>
+							{ __(
+								'Este campo ya no está disponible en la página. Seleccioná otro campo para continuar.',
+								'vas-dinamico-forms'
+							) }
+						</p>
+					</div>
+				) }
+
+				{ rule.conditions.length > 1 && (
+					<Button
+						isLink
+						isDestructive
+						onClick={ () => removeConditionFromRule( ruleIndex, conditionIndex ) }
+					>
+						{ __( 'Eliminar condición', 'vas-dinamico-forms' ) }
+					</Button>
+				) }
+			</div>
+		);
 	};
-
-	const getOperatorOptions = () => {
-		return [
-			{
-				label: __( 'Mayor o igual (≥)', 'vas-dinamico-forms' ),
-				value: '>=',
-			},
-			{
-				label: __( 'Menor o igual (≤)', 'vas-dinamico-forms' ),
-				value: '<=',
-			},
-			{
-				label: __( 'Mayor que (>)', 'vas-dinamico-forms' ),
-				value: '>',
-			},
-			{
-				label: __( 'Menor que (<)', 'vas-dinamico-forms' ),
-				value: '<',
-			},
-			{
-				label: __( 'Igual a (=)', 'vas-dinamico-forms' ),
-				value: '==',
-			},
-		];
-	};
-
-	const hasRequiredData = isNumericMode
-		? hasPages
-		: options.length > 0 && hasPages;
 
 	return (
 		<PanelBody
@@ -376,7 +630,7 @@ const ConditionalLogicControl = ( {
 					checked={ normalizedLogic.enabled || false }
 					onChange={ toggleConditionalLogic }
 					help={ __(
-						'Permite configurar el comportamiento del formulario según las respuestas del participante.',
+						'Configura saltos y visibilidad según las respuestas del paciente.',
 						'vas-dinamico-forms'
 					) }
 				/>
@@ -388,18 +642,18 @@ const ConditionalLogicControl = ( {
 						<div className="conditional-logic-warning">
 							<p>
 								{ __(
-									'Para configurar la lógica condicional, primero debes agregar páginas al formulario.',
+									'Para configurar la lógica condicional, primero agregá páginas al formulario.',
 									'vas-dinamico-forms'
 								) }
 							</p>
 						</div>
 					) }
 
-					{ ! isNumericMode && options.length === 0 && (
+					{ hasPages && availableFields.length === 0 && (
 						<div className="conditional-logic-warning">
 							<p>
 								{ __(
-									'Para configurar la lógica condicional, primero debes agregar opciones a este campo.',
+									'Agregá campos compatibles en esta página (select, radio, múltiple, likert o VAS) para crear reglas.',
 									'vas-dinamico-forms'
 								) }
 							</p>
@@ -411,7 +665,7 @@ const ConditionalLogicControl = ( {
 							<Dashicon icon="randomize" />
 							<p>
 								{ __(
-									'No hay reglas configuradas. Las reglas permiten redirigir al participante a diferentes páginas según su respuesta.',
+									'Creá reglas para saltar páginas, ocultar bloques o finalizar según combinaciones de respuestas en esta página.',
 									'vas-dinamico-forms'
 								) }
 							</p>
@@ -419,123 +673,25 @@ const ConditionalLogicControl = ( {
 					) }
 
 					{ normalizedLogic.rules.map( ( rule, index ) => (
-						<div
-							key={ rule.id || index }
-							className="conditional-logic-rule"
-						>
+						<div key={ rule.id || index } className="conditional-logic-rule">
 							<div className="conditional-logic-rule-header">
 								<h4>
-									{ __( 'Regla', 'vas-dinamico-forms' ) }{ ' ' }
-									{ index + 1 }
+									{ __( 'Regla', 'vas-dinamico-forms' ) } { index + 1 }
 								</h4>
 							</div>
 
-							{ isNumericMode ? (
-								<>
-									<SelectControl
-										label={ __(
-											'Cuando el valor del slider sea',
-											'vas-dinamico-forms'
-										) }
-										value={ rule.operator || '>=' }
-										options={ getOperatorOptions() }
-										onChange={ ( value ) =>
-											updateRule(
-												index,
-												'operator',
-												value
-											)
-										}
-									/>
+							{ rule.conditions.map( ( condition, conditionIndex ) =>
+								renderCondition( index, condition, conditionIndex )
+							) }
 
-									<NumberControl
-										label={ __(
-											'Valor umbral',
-											'vas-dinamico-forms'
-										) }
-										value={
-											rule.threshold !== undefined &&
-											rule.threshold !== null
-												? rule.threshold
-												: ''
-										}
-										onChange={ ( value ) => {
-											const trimmedValue =
-												typeof value === 'string'
-													? value.trim()
-													: value;
-
-											if (
-												trimmedValue === '' ||
-												trimmedValue === undefined ||
-												trimmedValue === null
-											) {
-												updateRule(
-													index,
-													'threshold',
-													''
-												);
-												return;
-											}
-
-											let numValue =
-												typeof trimmedValue === 'string'
-													? parseFloat( trimmedValue )
-													: trimmedValue;
-
-											if ( Number.isNaN( numValue ) ) {
-												return;
-											}
-
-											if (
-												numericMin !== null &&
-												numValue < numericMin
-											) {
-												numValue = numericMin;
-											}
-
-											if (
-												numericMax !== null &&
-												numValue > numericMax
-											) {
-												numValue = numericMax;
-											}
-
-											updateRule(
-												index,
-												'threshold',
-												numValue
-											);
-										} }
-										min={
-											numericMin !== null
-												? numericMin
-												: undefined
-										}
-										max={
-											numericMax !== null
-												? numericMax
-												: undefined
-										}
-										step="any"
-										help={ __(
-											'El valor con el que se comparará la respuesta del slider',
-											'vas-dinamico-forms'
-										) }
-									/>
-								</>
-							) : (
-								<SelectControl
-									label={ __(
-										'Cuando el participante seleccione',
-										'vas-dinamico-forms'
-									) }
-									value={ rule.matchValue || '' }
-									options={ getOptionOptions() }
-									onChange={ ( value ) =>
-										updateRule( index, 'matchValue', value )
-									}
-								/>
+							{ rule.conditions.length < MAX_CONDITIONS && (
+								<Button
+									variant="secondary"
+									onClick={ () => addConditionToRule( index ) }
+									className="conditional-logic-add-condition-button"
+								>
+									{ __( '+ Añadir otra condición (AND/OR)', 'vas-dinamico-forms' ) }
+								</Button>
 							) }
 
 							<SelectControl
@@ -556,10 +712,7 @@ const ConditionalLogicControl = ( {
 									} else if ( action === 'goToPage' ) {
 										updateRule( index, {
 											action: 'goToPage',
-											targetPage:
-												rule.targetPage ||
-												pages[ 0 ]?.index ||
-												1,
+											targetPage: rule.targetPage || pages[ 0 ]?.index || 1,
 										} );
 									}
 								} }
@@ -567,22 +720,15 @@ const ConditionalLogicControl = ( {
 
 							{ rule.action === 'goToPage' && (
 								<SelectControl
-									label={ __(
-										'Ir a la página',
-										'vas-dinamico-forms'
-									) }
+									label={ __( 'Ir a la página', 'vas-dinamico-forms' ) }
 									value={
-										rule.targetPage
-											? rule.targetPage.toString()
-											: ''
+										rule.targetPage ? rule.targetPage.toString() : ''
 									}
 									options={ getPageOptions() }
 									onChange={ ( value ) =>
-										updateRule(
-											index,
-											'targetPage',
-											parseInt( value )
-										)
+										updateRule( index, {
+											targetPage: parseInt( value, 10 ),
+										} )
 									}
 								/>
 							) }
@@ -600,10 +746,7 @@ const ConditionalLogicControl = ( {
 									isSmall
 									onClick={ () => removeRule( index ) }
 								>
-									{ __(
-										'Eliminar regla',
-										'vas-dinamico-forms'
-									) }
+									{ __( 'Eliminar regla', 'vas-dinamico-forms' ) }
 								</Button>
 							</div>
 						</div>
@@ -611,42 +754,24 @@ const ConditionalLogicControl = ( {
 
 					{ hasRequiredData && normalizedLogic.rules.length > 0 && (
 						<div className="conditional-logic-default-action">
-							<h4>
+							<h4>{ __( 'Acción predeterminada', 'vas-dinamico-forms' ) }</h4>
+							<p>
 								{ __(
-									'Acción predeterminada',
-									'vas-dinamico-forms'
-								) }
-							</h4>
-							<p
-								style={ {
-									fontSize: '12px',
-									color: '#64748b',
-									marginBottom: '12px',
-								} }
-							>
-								{ __(
-									'Define qué sucede cuando el participante selecciona un valor sin regla configurada.',
+									'Qué ocurre cuando ninguna condición coincide.',
 									'vas-dinamico-forms'
 								) }
 							</p>
 							<SelectControl
-								label={ __(
-									'Para otros valores',
-									'vas-dinamico-forms'
-								) }
+								label={ __( 'Para otros casos', 'vas-dinamico-forms' ) }
 								value={
 									normalizedLogic.defaultAction === 'goToPage'
 										? 'goToPage'
-										: normalizedLogic.defaultAction ||
-										  'nextPage'
+										: normalizedLogic.defaultAction || 'nextPage'
 								}
 								options={ getActionOptions() }
 								onChange={ ( action ) => {
 									if ( action === 'goToPage' ) {
-										updateDefaultAction(
-											action,
-											pages[ 0 ]?.index || 1
-										);
+										updateDefaultAction( action, pages[ 0 ]?.index || 1 );
 									} else {
 										updateDefaultAction( action );
 									}
@@ -655,15 +780,11 @@ const ConditionalLogicControl = ( {
 
 							{ normalizedLogic.defaultAction === 'goToPage' && (
 								<SelectControl
-									label={ __(
-										'Ir a la página',
-										'vas-dinamico-forms'
-									) }
+									label={ __( 'Ir a la página', 'vas-dinamico-forms' ) }
 									value={
 										normalizedLogic.defaultTargetPage
 											? normalizedLogic.defaultTargetPage.toString()
-											: pages[ 0 ]?.index.toString() ||
-											  '1'
+											: pages[ 0 ]?.index.toString() || '1'
 									}
 									options={ getPageOptions() }
 									onChange={ ( value ) =>
@@ -685,13 +806,10 @@ const ConditionalLogicControl = ( {
 					</Button>
 
 					{ hasRequiredData && (
-						<div
-							className="conditional-logic-info"
-							style={ { marginTop: '16px' } }
-						>
+						<div className="conditional-logic-info">
 							<p>
 								{ __(
-									'Las reglas se evalúan en orden. La primera regla que coincida determinará la navegación del formulario.',
+									'Las reglas se evalúan en orden. La primera coincidencia define el camino del participante.',
 									'vas-dinamico-forms'
 								) }
 							</p>
@@ -703,40 +821,209 @@ const ConditionalLogicControl = ( {
 	);
 };
 
-function normalizeConditionalLogic( conditionalLogic ) {
+function getFieldIdentifier( attributes = {} ) {
+	const { fieldName, fieldKey } = attributes;
+
+	if ( fieldName && fieldName.trim() !== '' ) {
+		return fieldName.trim();
+	}
+
+	if ( fieldKey && fieldKey.trim() !== '' ) {
+		return fieldKey.trim();
+	}
+
+	return '';
+}
+
+function buildLikertOptions( attributes ) {
+	const { minValue = 1, maxValue = 5, labels = '' } = attributes;
+	const parsedLabels = labels
+		? labels
+				.split( ',' )
+				.map( ( label ) => label.trim() )
+				.filter( Boolean )
+		: [];
+
+	const options = [];
+	for ( let value = minValue; value <= maxValue; value++ ) {
+		const label = parsedLabels[ value - minValue ]
+			? `${ value } – ${ parsedLabels[ value - minValue ] }`
+			: value.toString();
+		options.push( label );
+	}
+
+	return options;
+}
+
+function buildSliderRange( attributes ) {
+	const min =
+		typeof attributes.minValue === 'number'
+			? attributes.minValue
+			: 0;
+	const maxCandidate =
+		typeof attributes.maxValue === 'number'
+			? attributes.maxValue
+			: min + 10;
+	const max = maxCandidate > min ? maxCandidate : min + 10;
+
+	return { min, max };
+}
+
+function collectConditionableFields( pageBlock ) {
+	if ( ! pageBlock || ! Array.isArray( pageBlock.innerBlocks ) ) {
+		return [];
+	}
+
+	const fields = [];
+
+	const traverse = ( blocks ) => {
+		blocks.forEach( ( block ) => {
+			const config = SUPPORTED_FIELD_BLOCKS[ block.name ];
+
+			if ( config ) {
+				const fieldId = getFieldIdentifier( block.attributes );
+				if ( fieldId ) {
+					const label =
+						block.attributes.label ||
+						block.attributes.fieldName ||
+						__( 'Campo sin nombre', 'vas-dinamico-forms' );
+
+					const meta = {
+						fieldId,
+						label,
+						type: config.type,
+					};
+
+					if ( config.type === 'discrete' ) {
+						const optionValues = config.getOptions( block.attributes );
+						meta.options = optionValues.map( ( value ) => ( {
+							label: value,
+							value,
+						} ) );
+					} else if ( config.type === 'numeric' ) {
+						const range = config.getRange( block.attributes );
+						meta.min = range.min;
+						meta.max = range.max;
+					}
+
+					fields.push( meta );
+				}
+			}
+
+			if ( block.innerBlocks && block.innerBlocks.length > 0 ) {
+				traverse( block.innerBlocks );
+			}
+		} );
+	};
+
+	traverse( pageBlock.innerBlocks );
+	return fields;
+}
+
+function createCondition( fieldMeta, fallbackType = 'discrete' ) {
+	const isNumeric = fieldMeta?.type
+		? fieldMeta.type === 'numeric'
+		: fallbackType === 'numeric';
+
+	return {
+		id: `cond-${ Date.now() }-${ Math.floor( Math.random() * 1000 ) }`,
+		fieldId: fieldMeta?.fieldId || '',
+		fieldLabel: fieldMeta?.label || '',
+		fieldType: isNumeric ? 'numeric' : 'discrete',
+		operator: isNumeric ? '>=' : '==',
+		value: isNumeric ? undefined : '',
+		threshold: isNumeric
+			? fieldMeta?.min ?? 0
+			: undefined,
+		logicalOperator: 'AND',
+	};
+}
+
+function normalizeConditionalLogic(
+	conditionalLogic,
+	defaultFieldId,
+	defaultFieldType,
+	options,
+	mode,
+	range
+) {
 	if ( ! conditionalLogic ) {
 		return { enabled: false, rules: [], defaultAction: 'nextPage' };
 	}
 
+	const fallbackCondition = () => {
+		return createCondition( null, defaultFieldType );
+	};
+
+	const normalizeConditionShape = ( condition = {}, index = 0 ) => {
+		const isNumeric =
+			condition.fieldType === 'numeric' ||
+			condition.operator === '>=' ||
+			condition.operator === '<=' ||
+			condition.operator === '>' ||
+			condition.operator === '<';
+
+		return {
+			id: condition.id || `cond-${ index }`,
+			fieldId: condition.fieldId || defaultFieldId,
+			fieldLabel: condition.fieldLabel || '',
+			fieldType: isNumeric ? 'numeric' : 'discrete',
+			operator: condition.operator || ( isNumeric ? '>=' : '==' ),
+			value: isNumeric ? undefined : condition.value ?? condition.matchValue ?? '',
+			threshold: isNumeric
+				? condition.threshold ?? condition.value ?? null
+				: undefined,
+			logicalOperator: condition.logicalOperator || 'AND',
+		};
+	};
+
 	const normalizeRuleShape = ( rule = {}, index = 0 ) => {
 		const baseRule = {
 			id: rule.id || `rule-${ index }`,
-			action: rule.action || 'goToPage',
+			action: rule.action || 'nextPage',
 			targetPage: rule.targetPage || null,
 		};
 
-		const hasNumericOperator = typeof rule.operator === 'string';
-		const rawThreshold = rule.threshold ?? rule.valueThreshold;
-		const parsedThreshold =
-			rawThreshold !== undefined && rawThreshold !== ''
-				? parseFloat( rawThreshold )
-				: rawThreshold;
-		const hasNumericThreshold =
-			rawThreshold !== undefined &&
-			rawThreshold !== '' &&
-			! Number.isNaN( parsedThreshold );
-
-		if ( hasNumericOperator || hasNumericThreshold ) {
+		if ( Array.isArray( rule.conditions ) && rule.conditions.length > 0 ) {
 			return {
 				...baseRule,
-				operator: rule.operator || '>=',
-				threshold: hasNumericThreshold ? parsedThreshold : '',
+				conditions: rule.conditions.map( ( condition, conditionIndex ) =>
+					normalizeConditionShape( condition, `${ index }-${ conditionIndex }` )
+				),
+			};
+		}
+
+		if ( rule.operator && rule.threshold !== undefined ) {
+			return {
+				...baseRule,
+				conditions: [
+					normalizeConditionShape( {
+						fieldId: rule.fieldId || defaultFieldId,
+						fieldType: 'numeric',
+						operator: rule.operator,
+						threshold: rule.threshold ?? rule.valueThreshold ?? null,
+					}, `${ index }-0` ),
+				],
+			};
+		}
+
+		if ( rule.matchValue !== undefined || rule.value !== undefined ) {
+			return {
+				...baseRule,
+				conditions: [
+					normalizeConditionShape( {
+						fieldId: rule.fieldId || defaultFieldId,
+						fieldType: 'discrete',
+						operator: '==',
+						value: rule.matchValue ?? rule.value ?? '',
+					}, `${ index }-0` ),
+				],
 			};
 		}
 
 		return {
 			...baseRule,
-			matchValue: rule.matchValue ?? rule.value ?? '',
+			conditions: [ fallbackCondition() ],
 		};
 	};
 
@@ -747,7 +1034,6 @@ function normalizeConditionalLogic( conditionalLogic ) {
 				normalizeRuleShape( rule, index )
 			),
 			defaultAction: 'nextPage',
-			defaultTargetPage: null,
 		};
 	}
 

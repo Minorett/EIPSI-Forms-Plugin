@@ -9,16 +9,18 @@ import {
 	TextControl,
 	TextareaControl,
 	ToggleControl,
+	Button,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-import { useEffect } from '@wordpress/element';
+import { useEffect, useState } from '@wordpress/element';
 import {
 	migrateToStyleConfig,
 	serializeToCSSVariables,
 } from '../../utils/styleTokens';
 import FormStylePanel from '../../components/FormStylePanel';
+import ConditionalLogicMap from '../../components/ConditionalLogicMap';
 
-export default function Edit( { attributes, setAttributes } ) {
+export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
 		formId,
 		submitButtonLabel,
@@ -27,6 +29,8 @@ export default function Edit( { attributes, setAttributes } ) {
 		presetName,
 		allowBackwardsNav,
 	} = attributes;
+
+	const [ isMapOpen, setIsMapOpen ] = useState( false );
 
 	// Migration: Convert legacy attributes to styleConfig on mount
 	useEffect( () => {
@@ -157,7 +161,45 @@ export default function Edit( { attributes, setAttributes } ) {
 						setAttributes( { presetName: name } )
 					}
 				/>
+
+				<PanelBody
+					title={ __(
+						'Mapa de lógica condicional',
+						'vas-dinamico-forms'
+					) }
+					initialOpen={ false }
+				>
+					<p
+						style={ {
+							fontSize: '13px',
+							color: '#475467',
+							marginBottom: '12px',
+						} }
+					>
+						{ __(
+							'Visualizá todas las reglas del formulario agrupadas por página. Solo lectura para revisar y explicar flujos clínicos.',
+							'vas-dinamico-forms'
+						) }
+					</p>
+					<Button
+						variant="secondary"
+						onClick={ () => setIsMapOpen( true ) }
+					>
+						{ __(
+							'Ver mapa de condiciones',
+							'vas-dinamico-forms'
+						) }
+					</Button>
+				</PanelBody>
 			</InspectorControls>
+
+			{ isMapOpen && (
+				<ConditionalLogicMap
+					isOpen={ isMapOpen }
+					onClose={ () => setIsMapOpen( false ) }
+					containerClientId={ clientId }
+				/>
+			) }
 
 			<div { ...blockProps }>
 				<div className="eipsi-form-container-preview">
