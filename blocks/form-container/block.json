@@ -51,6 +51,10 @@
             "default": true
         },
         
+        "useCustomCompletion": {
+            "type": "boolean",
+            "default": false
+        },
         "completionTitle": {
             "type": "string",
             "default": "¡Gracias por completar el cuestionario!"

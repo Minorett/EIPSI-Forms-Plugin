@@ -14,6 +14,7 @@ export default function Save( { attributes } ) {
 		presetName,
 		allowBackwardsNav,
 		showProgressBar,
+		useCustomCompletion,
 		completionTitle,
 		completionMessage,
 		completionLogoUrl,
@@ -26,22 +27,32 @@ export default function Save( { attributes } ) {
 	const showProgressBarEnabled =
 		typeof showProgressBar === 'boolean' ? showProgressBar : true;
 
+	const customCompletionEnabled =
+		typeof useCustomCompletion === 'boolean' ? useCustomCompletion : false;
+
 	// Get style configuration (migrate if needed)
 	const currentConfig = styleConfig || migrateToStyleConfig( attributes );
 	const cssVars = serializeToCSSVariables( currentConfig );
+
+	const completionAttributes = customCompletionEnabled
+		? {
+				'data-completion-title':
+					completionTitle ||
+					'¡Gracias por completar el cuestionario!',
+				'data-completion-message':
+					completionMessage ||
+					'Sus respuestas han sido registradas correctamente.',
+				'data-completion-logo': completionLogoUrl || '',
+				'data-completion-button-label':
+					completionButtonLabel || 'Comenzar de nuevo',
+		  }
+		: {};
 
 	const blockProps = useBlockProps.save( {
 		className: 'vas-dinamico-form eipsi-form ' + ( className || '' ),
 		style: cssVars,
 		'data-preset': presetName || 'Clinical Blue',
-		'data-completion-title':
-			completionTitle || '¡Gracias por completar el cuestionario!',
-		'data-completion-message':
-			completionMessage ||
-			'Sus respuestas han sido registradas correctamente.',
-		'data-completion-logo': completionLogoUrl || '',
-		'data-completion-button-label':
-			completionButtonLabel || 'Comenzar de nuevo',
+		...completionAttributes,
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps.save( {

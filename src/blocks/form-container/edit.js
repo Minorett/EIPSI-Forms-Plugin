@@ -22,6 +22,12 @@ import {
 import FormStylePanel from '../../components/FormStylePanel';
 import ConditionalLogicMap from '../../components/ConditionalLogicMap';
 
+const COMPLETION_DEFAULTS = {
+	title: '¡Gracias por completar el cuestionario!',
+	message: 'Sus respuestas han sido registradas correctamente.',
+	buttonLabel: 'Comenzar de nuevo',
+};
+
 export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
 		formId,
@@ -31,6 +37,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		presetName,
 		allowBackwardsNav,
 		showProgressBar,
+		useCustomCompletion,
 		completionTitle,
 		completionMessage,
 		completionLogoId,
@@ -44,6 +51,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const showProgressBarEnabled =
 		typeof showProgressBar === 'boolean' ? showProgressBar : true;
 
+	const customCompletionEnabled =
+		typeof useCustomCompletion === 'boolean' ? useCustomCompletion : false;
+
 	const [ isMapOpen, setIsMapOpen ] = useState( false );
 
 	// Migration: Convert legacy attributes to styleConfig on mount
@@ -56,6 +66,20 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 		if ( ! presetName ) {
 			updates.presetName = 'Clinical Blue';
+		}
+
+		if ( typeof useCustomCompletion !== 'boolean' ) {
+			const hasCustomCompletionOverride =
+				( completionTitle &&
+					completionTitle !== COMPLETION_DEFAULTS.title ) ||
+				( completionMessage &&
+					completionMessage !== COMPLETION_DEFAULTS.message ) ||
+				( completionButtonLabel &&
+					completionButtonLabel !==
+						COMPLETION_DEFAULTS.buttonLabel ) ||
+				!! completionLogoUrl;
+
+			updates.useCustomCompletion = hasCustomCompletionOverride;
 		}
 
 		if ( Object.keys( updates ).length ) {
@@ -185,135 +209,182 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					title={ __( 'Completion Page', 'vas-dinamico-forms' ) }
 					initialOpen={ false }
 				>
-					<TextControl
+					<ToggleControl
 						label={ __(
-							'Título de finalización',
+							'Personalizar página de finalización',
 							'vas-dinamico-forms'
 						) }
-						value={ completionTitle }
+						checked={ customCompletionEnabled }
 						onChange={ ( value ) =>
-							setAttributes( { completionTitle: value } )
+							setAttributes( { useCustomCompletion: !! value } )
 						}
 						help={ __(
-							'Título que se muestra al completar el formulario',
+							'Si está desactivado, se usará la configuración global de Finalización (Results & Experience → Finalización). Si está activado, podrás personalizar el mensaje de finalización solo para este formulario.',
 							'vas-dinamico-forms'
 						) }
 					/>
-					<TextareaControl
-						label={ __(
-							'Mensaje de finalización',
-							'vas-dinamico-forms'
-						) }
-						value={ completionMessage }
-						onChange={ ( value ) =>
-							setAttributes( { completionMessage: value } )
-						}
-						help={ __(
-							'Mensaje que se muestra al completar el formulario',
-							'vas-dinamico-forms'
-						) }
-						rows={ 4 }
-					/>
-					<TextControl
-						label={ __( 'Texto del botón', 'vas-dinamico-forms' ) }
-						value={ completionButtonLabel }
-						onChange={ ( value ) =>
-							setAttributes( { completionButtonLabel: value } )
-						}
-						help={ __(
-							'Por ejemplo: "Comenzar de nuevo" o "Volver a empezar"',
-							'vas-dinamico-forms'
-						) }
-					/>
-					<MediaUploadCheck>
-						<div style={ { marginTop: '16px' } }>
-							<p
-								style={ {
-									marginBottom: '8px',
-									fontWeight: '500',
-								} }
-							>
-								{ __(
-									'Logo o imagen (opcional)',
+
+					{ ! customCompletionEnabled && (
+						<p
+							style={ {
+								marginTop: '12px',
+								fontSize: '13px',
+								color: '#475467',
+								background: '#f8f9fb',
+								padding: '12px',
+								borderRadius: '6px',
+							} }
+						>
+							{ __(
+								'Este formulario usará el mensaje global configurado en Results & Experience → Finalización.',
+								'vas-dinamico-forms'
+							) }
+						</p>
+					) }
+
+					{ customCompletionEnabled && (
+						<>
+							<TextControl
+								label={ __(
+									'Título de finalización',
 									'vas-dinamico-forms'
 								) }
-							</p>
-							{ completionLogoUrl && (
-								<div style={ { marginBottom: '12px' } }>
-									<img
-										src={ completionLogoUrl }
-										alt={ __(
-											'Logo del consultorio',
-											'vas-dinamico-forms'
-										) }
-										style={ {
-											maxWidth: '200px',
-											height: 'auto',
-											borderRadius: '8px',
-										} }
-									/>
-								</div>
-							) }
-							<MediaUpload
-								onSelect={ ( media ) =>
-									setAttributes( {
-										completionLogoId: media.id,
-										completionLogoUrl: media.url,
-									} )
+								value={ completionTitle }
+								onChange={ ( value ) =>
+									setAttributes( { completionTitle: value } )
 								}
-								allowedTypes={ [ 'image' ] }
-								value={ completionLogoId }
-								render={ ( { open } ) => (
-									<div>
-										<Button
-											variant="secondary"
-											onClick={ open }
-										>
-											{ completionLogoUrl
-												? __(
-														'Cambiar imagen',
-														'vas-dinamico-forms'
-												  )
-												: __(
-														'Seleccionar imagen',
-														'vas-dinamico-forms'
-												  ) }
-										</Button>
-										{ completionLogoUrl && (
-											<Button
-												variant="tertiary"
-												isDestructive
-												onClick={ () =>
-													setAttributes( {
-														completionLogoId: 0,
-														completionLogoUrl: '',
-													} )
-												}
-												style={ { marginLeft: '8px' } }
-											>
-												{ __(
-													'Quitar',
-													'vas-dinamico-forms'
-												) }
-											</Button>
-										) }
-									</div>
+								help={ __(
+									'Título que se muestra al completar el formulario',
+									'vas-dinamico-forms'
 								) }
 							/>
-							<p
-								style={ {
-									fontSize: '12px',
-									color: '#757575',
-									marginTop: '8px',
-								} }
-							>
-								{ __(
-									'Se mostrará en la parte superior de la página de finalización',
+							<TextareaControl
+								label={ __(
+									'Mensaje de finalización',
 									'vas-dinamico-forms'
 								) }
-							</p>
-						</div>
-					</MediaUploadCheck>
+								value={ completionMessage }
+								onChange={ ( value ) =>
+									setAttributes( {
+										completionMessage: value,
+									} )
+								}
+								help={ __(
+									'Mensaje que se muestra al completar el formulario',
+									'vas-dinamico-forms'
+								) }
+								rows={ 4 }
+							/>
+							<TextControl
+								label={ __(
+									'Texto del botón',
+									'vas-dinamico-forms'
+								) }
+								value={ completionButtonLabel }
+								onChange={ ( value ) =>
+									setAttributes( {
+										completionButtonLabel: value,
+									} )
+								}
+								help={ __(
+									'Por ejemplo: "Comenzar de nuevo" o "Volver a empezar"',
+									'vas-dinamico-forms'
+								) }
+							/>
+							<MediaUploadCheck>
+								<div style={ { marginTop: '16px' } }>
+									<p
+										style={ {
+											marginBottom: '8px',
+											fontWeight: '500',
+										} }
+									>
+										{ __(
+											'Logo o imagen (opcional)',
+											'vas-dinamico-forms'
+										) }
+									</p>
+									{ completionLogoUrl && (
+										<div style={ { marginBottom: '12px' } }>
+											<img
+												src={ completionLogoUrl }
+												alt={ __(
+													'Logo del consultorio',
+													'vas-dinamico-forms'
+												) }
+												style={ {
+													maxWidth: '200px',
+													height: 'auto',
+													borderRadius: '8px',
+												} }
+											/>
+										</div>
+									) }
+									<MediaUpload
+										onSelect={ ( media ) =>
+											setAttributes( {
+												completionLogoId: media.id,
+												completionLogoUrl: media.url,
+											} )
+										}
+										allowedTypes={ [ 'image' ] }
+										value={ completionLogoId }
+										render={ ( { open } ) => (
+											<div>
+												<Button
+													variant="secondary"
+													onClick={ open }
+												>
+													{ completionLogoUrl
+														? __(
+																'Cambiar imagen',
+																'vas-dinamico-forms'
+														  )
+														: __(
+																'Seleccionar imagen',
+																'vas-dinamico-forms'
+														  ) }
+												</Button>
+												{ completionLogoUrl && (
+													<Button
+														variant="tertiary"
+														isDestructive
+														onClick={ () =>
+															setAttributes( {
+																completionLogoId: 0,
+																completionLogoUrl:
+																	'',
+															} )
+														}
+														style={ {
+															marginLeft: '8px',
+														} }
+													>
+														{ __(
+															'Quitar',
+															'vas-dinamico-forms'
+														) }
+													</Button>
+												) }
+											</div>
+										) }
+									/>
+									<p
+										style={ {
+											fontSize: '12px',
+											color: '#757575',
+											marginTop: '8px',
+										} }
+									>
+										{ __(
+											'Se mostrará en la parte superior de la página de finalización',
+											'vas-dinamico-forms'
+										) }
+									</p>
+								</div>
+							</MediaUploadCheck>
+						</>
+					) }
 				</PanelBody>
 
 				<FormStylePanel
