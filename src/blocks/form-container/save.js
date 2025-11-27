@@ -14,6 +14,10 @@ export default function Save( { attributes } ) {
 		presetName,
 		allowBackwardsNav,
 		showProgressBar,
+		completionTitle,
+		completionMessage,
+		completionLogoUrl,
+		completionButtonLabel,
 	} = attributes;
 
 	const allowBackwardsNavEnabled =
@@ -30,6 +34,14 @@ export default function Save( { attributes } ) {
 		className: 'vas-dinamico-form eipsi-form ' + ( className || '' ),
 		style: cssVars,
 		'data-preset': presetName || 'Clinical Blue',
+		'data-completion-title':
+			completionTitle || '¡Gracias por completar el cuestionario!',
+		'data-completion-message':
+			completionMessage ||
+			'Sus respuestas han sido registradas correctamente.',
+		'data-completion-logo': completionLogoUrl || '',
+		'data-completion-button-label':
+			completionButtonLabel || 'Comenzar de nuevo',
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps.save( {

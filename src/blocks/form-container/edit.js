@@ -3,6 +3,8 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 	InnerBlocks,
+	MediaUpload,
+	MediaUploadCheck,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -29,6 +31,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		presetName,
 		allowBackwardsNav,
 		showProgressBar,
+		completionTitle,
+		completionMessage,
+		completionLogoId,
+		completionLogoUrl,
+		completionButtonLabel,
 	} = attributes;
 
 	const allowBackwardsNavEnabled =
@@ -172,6 +179,141 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							'vas-dinamico-forms'
 						) }
 					/>
+				</PanelBody>
+
+				<PanelBody
+					title={ __( 'Completion Page', 'vas-dinamico-forms' ) }
+					initialOpen={ false }
+				>
+					<TextControl
+						label={ __(
+							'Título de finalización',
+							'vas-dinamico-forms'
+						) }
+						value={ completionTitle }
+						onChange={ ( value ) =>
+							setAttributes( { completionTitle: value } )
+						}
+						help={ __(
+							'Título que se muestra al completar el formulario',
+							'vas-dinamico-forms'
+						) }
+					/>
+					<TextareaControl
+						label={ __(
+							'Mensaje de finalización',
+							'vas-dinamico-forms'
+						) }
+						value={ completionMessage }
+						onChange={ ( value ) =>
+							setAttributes( { completionMessage: value } )
+						}
+						help={ __(
+							'Mensaje que se muestra al completar el formulario',
+							'vas-dinamico-forms'
+						) }
+						rows={ 4 }
+					/>
+					<TextControl
+						label={ __( 'Texto del botón', 'vas-dinamico-forms' ) }
+						value={ completionButtonLabel }
+						onChange={ ( value ) =>
+							setAttributes( { completionButtonLabel: value } )
+						}
+						help={ __(
+							'Por ejemplo: "Comenzar de nuevo" o "Volver a empezar"',
+							'vas-dinamico-forms'
+						) }
+					/>
+					<MediaUploadCheck>
+						<div style={ { marginTop: '16px' } }>
+							<p
+								style={ {
+									marginBottom: '8px',
+									fontWeight: '500',
+								} }
+							>
+								{ __(
+									'Logo o imagen (opcional)',
+									'vas-dinamico-forms'
+								) }
+							</p>
+							{ completionLogoUrl && (
+								<div style={ { marginBottom: '12px' } }>
+									<img
+										src={ completionLogoUrl }
+										alt={ __(
+											'Logo del consultorio',
+											'vas-dinamico-forms'
+										) }
+										style={ {
+											maxWidth: '200px',
+											height: 'auto',
+											borderRadius: '8px',
+										} }
+									/>
+								</div>
+							) }
+							<MediaUpload
+								onSelect={ ( media ) =>
+									setAttributes( {
+										completionLogoId: media.id,
+										completionLogoUrl: media.url,
+									} )
+								}
+								allowedTypes={ [ 'image' ] }
+								value={ completionLogoId }
+								render={ ( { open } ) => (
+									<div>
+										<Button
+											variant="secondary"
+											onClick={ open }
+										>
+											{ completionLogoUrl
+												? __(
+														'Cambiar imagen',
+														'vas-dinamico-forms'
+												  )
+												: __(
+														'Seleccionar imagen',
+														'vas-dinamico-forms'
+												  ) }
+										</Button>
+										{ completionLogoUrl && (
+											<Button
+												variant="tertiary"
+												isDestructive
+												onClick={ () =>
+													setAttributes( {
+														completionLogoId: 0,
+														completionLogoUrl: '',
+													} )
+												}
+												style={ { marginLeft: '8px' } }
+											>
+												{ __(
+													'Quitar',
+													'vas-dinamico-forms'
+												) }
+											</Button>
+										) }
+									</div>
+								) }
+							/>
+							<p
+								style={ {
+									fontSize: '12px',
+									color: '#757575',
+									marginTop: '8px',
+								} }
+							>
+								{ __(
+									'Se mostrará en la parte superior de la página de finalización',
+									'vas-dinamico-forms'
+								) }
+							</p>
+						</div>
+					</MediaUploadCheck>
 				</PanelBody>
 
 				<FormStylePanel
