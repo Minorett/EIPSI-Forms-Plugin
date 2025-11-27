@@ -383,6 +383,60 @@ function eipsi_display_configuration_page() {
                 </div>
             </div>
         </div>
+        
+        <!-- Data Reset Section (Emergency Tool) -->
+        <div class="eipsi-config-container" style="margin-top: 30px;">
+            <div class="eipsi-danger-zone-section" style="border: 2px solid #d32f2f; border-radius: 8px; padding: 24px; background: #fff;">
+                <h2 style="color: #d32f2f; margin-top: 0;">
+                    <span class="dashicons dashicons-warning" style="color: #d32f2f;"></span>
+                    <?php echo esc_html__('Advanced Tools — Data Reset', 'vas-dinamico-forms'); ?>
+                </h2>
+                
+                <p style="margin-bottom: 16px; font-size: 15px; line-height: 1.6;">
+                    <?php echo esc_html__('Use this emergency tool to permanently delete all clinical data stored by EIPSI Forms. This is useful for clearing test data before starting real clinical use.', 'vas-dinamico-forms'); ?>
+                </p>
+                
+                <div style="background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px;">
+                    <p style="margin: 0; color: #856404; font-weight: 600;">
+                        <span class="dashicons dashicons-info" style="color: #ff9800;"></span>
+                        <?php echo esc_html__('What will be deleted:', 'vas-dinamico-forms'); ?>
+                    </p>
+                    <ul style="margin: 8px 0 0 24px; color: #856404;">
+                        <li><?php echo esc_html__('All form responses from all participants', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('All session data and event logs', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('All metadata (durations, quality flags, timestamps)', 'vas-dinamico-forms'); ?></li>
+                    </ul>
+                    <p style="margin: 8px 0 0 0; color: #856404; font-weight: 600;">
+                        <?php echo esc_html__('What will NOT be deleted:', 'vas-dinamico-forms'); ?>
+                    </p>
+                    <ul style="margin: 8px 0 0 24px; color: #856404;">
+                        <li><?php echo esc_html__('Form definitions (structure, questions, blocks)', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('Plugin configuration and database settings', 'vas-dinamico-forms'); ?></li>
+                        <li><?php echo esc_html__('Privacy and design presets', 'vas-dinamico-forms'); ?></li>
+                    </ul>
+                </div>
+                
+                <div style="background: #ffebee; border-left: 4px solid #d32f2f; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px;">
+                    <p style="margin: 0; color: #c62828; font-weight: 700; font-size: 15px;">
+                        <span class="dashicons dashicons-dismiss" style="color: #d32f2f;"></span>
+                        <?php echo esc_html__('⚠️ THIS ACTION CANNOT BE UNDONE', 'vas-dinamico-forms'); ?>
+                    </p>
+                    <p style="margin: 8px 0 0 0; color: #c62828;">
+                        <?php echo esc_html__('All clinical data will be permanently deleted. Make sure to export or backup your data before proceeding if you need to keep it.', 'vas-dinamico-forms'); ?>
+                    </p>
+                </div>
+                
+                <button type="button" id="eipsi-delete-all-data" class="button" style="background: #d32f2f; color: white; border-color: #b71c1c; padding: 8px 24px; height: auto; font-size: 15px; font-weight: 600;">
+                    <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
+                    <?php echo esc_html__('Delete All Clinical Data', 'vas-dinamico-forms'); ?>
+                </button>
+                <input type="hidden" id="eipsi-delete-data-nonce" value="<?php echo esc_attr(wp_create_nonce('eipsi_delete_all_data')); ?>">
+                
+                <p class="description" style="margin-top: 12px; color: #666; font-size: 13px;">
+                    <?php echo esc_html__('You will be asked to confirm this action before any data is deleted.', 'vas-dinamico-forms'); ?>
+                </p>
+            </div>
+        </div>
     </div>
     <?php
 }

@@ -213,20 +213,41 @@ class EIPSI_External_Database {
         global $wpdb;
         $prefixed_table = $wpdb->prefix . 'vas_form_results';
         $bare_table = 'vas_form_results';
-        
+
         // Check prefixed table first
         $result = $mysqli->query("SHOW TABLES LIKE '{$prefixed_table}'");
         if ($result && $result->num_rows > 0) {
             return $prefixed_table;
         }
-        
+
         // Check bare table
         $result = $mysqli->query("SHOW TABLES LIKE '{$bare_table}'");
         if ($result && $result->num_rows > 0) {
             return $bare_table;
         }
-        
+
         // Default to prefixed table for creation
+        return $prefixed_table;
+    }
+
+    /**
+     * Resolve events table name (with or without WP prefix)
+     */
+    private function resolve_events_table_name($mysqli) {
+        global $wpdb;
+        $prefixed_table = $wpdb->prefix . 'vas_form_events';
+        $bare_table = 'vas_form_events';
+
+        $result = $mysqli->query("SHOW TABLES LIKE '{$prefixed_table}'");
+        if ($result && $result->num_rows > 0) {
+            return $prefixed_table;
+        }
+
+        $result = $mysqli->query("SHOW TABLES LIKE '{$bare_table}'");
+        if ($result && $result->num_rows > 0) {
+            return $bare_table;
+        }
+
         return $prefixed_table;
     }
 
@@ -236,13 +257,13 @@ class EIPSI_External_Database {
     private function check_table_exists($mysqli) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'vas_form_results';
-        
+
         $result = $mysqli->query("SHOW TABLES LIKE '{$table_name}'");
-        
+
         if (!$result) {
             return false;
         }
-        
+
         return $result->num_rows > 0;
     }
     
@@ -951,4 +972,130 @@ class EIPSI_External_Database {
             'fallback_active' => !empty($last_error) && !$test_result['success']
         );
     }
+    
+    /**
+     * Delete all clinical data from EIPSI Forms tables
+     * Truncates both vas_form_results and vas_form_events tables
+     * 
+     * @return array Result with success status and message
+     */
+    public function delete_all_data() {
+        global $wpdb;
+        
+        $wordpress_tables = array(
+            $wpdb->prefix . 'vas_form_results',
+            $wpdb->prefix . 'vas_form_events'
+        );
+        
+        // Always clear local WordPress tables first
+        foreach ($wordpress_tables as $table_name) {
+            if ($this->wp_table_exists($table_name)) {
+                if (!$this->truncate_wp_table($table_name)) {
+                    return array(
+                        'success' => false,
+                        'message' => sprintf(
+                            __('Failed to delete table %s: %s', 'vas-dinamico-forms'),
+                            $table_name,
+                            $wpdb->last_error
+                        ),
+                        'error_code' => 'WP_DELETE_FAILED'
+                    );
+                }
+            }
+        }
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[EIPSI Forms] WordPress clinical tables truncated by user ID: ' . get_current_user_id());
+        }
+        
+        $credentials = $this->get_credentials();
+        
+        if (!$credentials) {
+            return array(
+                'success' => true,
+                'message' => __('All clinical data has been successfully deleted from the WordPress database.', 'vas-dinamico-forms'),
+                'database' => 'wordpress'
+            );
+        }
+        
+        $mysqli = $this->get_connection();
+        
+        if (!$mysqli) {
+            return array(
+                'success' => false,
+                'message' => __('Failed to connect to external database', 'vas-dinamico-forms'),
+                'error_code' => 'CONNECTION_FAILED'
+            );
+        }
+        
+        $external_tables = array(
+            $this->resolve_table_name($mysqli),
+            $this->resolve_events_table_name($mysqli)
+        );
+        
+        foreach ($external_tables as $table_name) {
+            if (!$this->truncate_external_table($mysqli, $table_name)) {
+                $error = $mysqli->error;
+                $mysqli->close();
+                return array(
+                    'success' => false,
+                    'message' => sprintf(
+                        __('Failed to delete table %s: %s', 'vas-dinamico-forms'),
+                        $table_name,
+                        $error
+                    ),
+                    'error_code' => 'EXTERNAL_DELETE_FAILED'
+                );
+            }
+        }
+        
+        $mysqli->close();
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[EIPSI Forms] External clinical tables truncated by user ID: ' . get_current_user_id());
+        }
+        
+        return array(
+            'success' => true,
+            'message' => __('All clinical data has been deleted from both WordPress and the external database.', 'vas-dinamico-forms'),
+            'database' => 'wordpress_and_external'
+        );
+    }
+    
+    /**
+     * Check if a WordPress table exists
+     */
+    private function wp_table_exists($table_name) {
+        global $wpdb;
+        $like = $wpdb->prepare('SHOW TABLES LIKE %s', $table_name);
+        $result = $wpdb->get_var($like);
+        return $result === $table_name;
+    }
+    
+    /**
+     * Truncate or delete a WordPress table
+     */
+    private function truncate_wp_table($table_name) {
+        global $wpdb;
+        $truncate = $wpdb->query("TRUNCATE TABLE `{$table_name}`");
+        if ($truncate === false) {
+            $delete = $wpdb->query("DELETE FROM `{$table_name}`");
+            return $delete !== false;
+        }
+        return true;
+    }
+    
+    /**
+     * Truncate or delete an external table
+     */
+    private function truncate_external_table($mysqli, $table_name) {
+        if ($mysqli->query("TRUNCATE TABLE `{$table_name}`")) {
+            return true;
+        }
+        if ($mysqli->query("DELETE FROM `{$table_name}`")) {
+            return true;
+        }
+        return false;
+    }
 }
+

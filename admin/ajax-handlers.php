@@ -98,6 +98,7 @@ add_action('wp_ajax_nopriv_eipsi_check_external_db', 'eipsi_check_external_db_ha
 add_action('wp_ajax_eipsi_save_privacy_config', 'eipsi_save_privacy_config_handler');
 add_action('wp_ajax_eipsi_verify_schema', 'eipsi_verify_schema_handler');
 add_action('wp_ajax_eipsi_check_table_status', 'eipsi_check_table_status_handler');
+add_action('wp_ajax_eipsi_delete_all_data', 'eipsi_delete_all_data_handler');
 
 /**
  * Calcula engagement score basado en tiempo y cambios
@@ -1079,22 +1080,49 @@ function eipsi_verify_schema_handler() {
 
 function eipsi_check_table_status_handler() {
     check_ajax_referer('eipsi_admin_nonce', 'nonce');
-    
+
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array(
             'message' => __('Unauthorized', 'vas-dinamico-forms')
         ));
     }
-    
+
     require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
-    
+
     $result = $db_helper->check_table_status();
-    
+
     if ($result['success']) {
         wp_send_json_success($result);
     } else {
         wp_send_json_error($result);
+    }
+}
+
+function eipsi_delete_all_data_handler() {
+    check_ajax_referer('eipsi_delete_all_data', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Unauthorized', 'vas-dinamico-forms')
+        ), 403);
+    }
+
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    $db_helper = new EIPSI_External_Database();
+
+    $result = $db_helper->delete_all_data();
+
+    if ($result['success']) {
+        wp_send_json_success(array(
+            'message' => $result['message'],
+            'database' => isset($result['database']) ? $result['database'] : 'wordpress'
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => isset($result['message']) ? $result['message'] : __('Failed to delete clinical data.', 'vas-dinamico-forms'),
+            'error_code' => isset($result['error_code']) ? $result['error_code'] : 'UNKNOWN'
+        ));
     }
 }
 
