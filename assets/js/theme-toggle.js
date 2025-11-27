@@ -1,31 +1,21 @@
 /**
- * DARK MODE TEMPORARILY DISABLED - Feb 2025
- *
- * Reason:
- * - VAS slider no adaptado a dark mode (colores de light → ilegibles)
- * - Mensajes de éxito con gradientes mezclando light/dark
- * - Presets (Clinical Blue, Warm Neutral, etc.) pierden identidad en dark
+ * DARK MODE v2.0 - REACTIVATED Feb 2025
  *
  * Auditoría completa: DARK_MODE_AUDIT.md
- *
- * PARA REACTIVAR:
- * 1. Descomentar el toggle en form-container/save.js (JSX del botón)
- * 2. Restaurar el código ejecutable de este archivo (ver historial git)
- * 3. Completar las variables faltantes en _theme-toggle.scss (ver anexo del audit)
- * 4. Ejecutar el testing checklist de DARK_MODE_AUDIT.md
+ * 
+ * CAMBIOS IMPLEMENTADOS:
+ * ✅ Variables CSS completas para VAS slider, success messages, progress, cards
+ * ✅ Presets específicos con dark mode personalizado (Clinical Blue, Warm Neutral, Serene Teal, Minimal White)
+ * ✅ Toggle UI reactivado con mejor UX
+ * ✅ Persistencia en localStorage + respeto de prefers-color-scheme
+ * ✅ Contraste WCAG AA verificado
  *
  * @package EIPSI Forms
- * @version 4.0.0 (DISABLED)
+ * @version 2.0.0
  */
 
 /* global localStorage */
 
-console.log( '[EIPSI Forms] Dark mode temporarily disabled. See DARK_MODE_AUDIT.md for details.' );
-
-// ============================================================================
-// CÓDIGO ORIGINAL DESACTIVADO (mantener para referencia futura)
-// ============================================================================
-/*
 ( function () {
     'use strict';
 
@@ -57,8 +47,8 @@ console.log( '[EIPSI Forms] Dark mode temporarily disabled. See DARK_MODE_AUDIT.
                 toggle.setAttribute(
                     'aria-label',
                     theme === THEME_DARK
-                        ? 'Switch to light mode'
-                        : 'Switch to dark mode'
+                        ? 'Cambiar a modo diurno'
+                        : 'Cambiar a modo nocturno'
                 );
             } );
         };
@@ -140,4 +130,3 @@ console.log( '[EIPSI Forms] Dark mode temporarily disabled. See DARK_MODE_AUDIT.
         initThemeToggle();
     }
 } )();
-*/

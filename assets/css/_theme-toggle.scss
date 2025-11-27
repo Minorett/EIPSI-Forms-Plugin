@@ -63,6 +63,163 @@
     --eipsi-text-muted: #94a3b8;
     --eipsi-primary: #60a5fa;
     --eipsi-primary-hover: #3b82f6;
+
+    /* ========================================
+       DARK MODE v2.0 COMPLETE COVERAGE
+       ======================================== */
+
+    /* Cards & Surfaces */
+    --eipsi-color-card-bg: #1e293b;
+    --eipsi-color-card-bg-hover: #334155;
+    --eipsi-color-card-border: #475569;
+    --eipsi-color-checked-bg: rgba(96, 165, 250, 0.15);
+    --eipsi-color-checked-shadow: rgba(96, 165, 250, 0.25);
+
+    /* Success Message - Complete */
+    --eipsi-color-success-dark: #059669;
+    --eipsi-color-success-text: #ffffff;
+    --eipsi-color-success-overlay: rgba(255, 255, 255, 0.1);
+    --eipsi-color-success-subtitle: rgba(255, 255, 255, 0.95);
+    --eipsi-color-success-note: rgba(255, 255, 255, 0.85);
+    --eipsi-color-success-shadow: rgba(0, 0, 0, 0.3);
+
+    /* Error Message - Complete */
+    --eipsi-color-error-text: #ffffff;
+    --eipsi-color-error-border-strong: rgba(255, 255, 255, 0.3);
+
+    /* Progress Bar */
+    --eipsi-color-progress-bg: #1e293b;
+    --eipsi-color-progress-border: #475569;
+    --eipsi-color-progress-fill: #60a5fa;
+    --eipsi-color-progress-text: #e2e8f0;
+    --eipsi-color-progress-text-highlight: #60a5fa;
+
+    /* VAS Slider - CRITICAL for clinical use */
+    --eipsi-color-vas-container-bg: #1e293b;
+    --eipsi-color-vas-container-bg-hover: #334155;
+    --eipsi-color-vas-container-border: #475569;
+    --eipsi-color-vas-container-border-hover: #60a5fa;
+    --eipsi-color-vas-label-bg: rgba(96, 165, 250, 0.15);
+    --eipsi-color-vas-label-border: rgba(96, 165, 250, 0.3);
+    --eipsi-color-vas-label-text: #60a5fa;
+    --eipsi-color-vas-slider-track: #334155;
+    --eipsi-color-vas-slider-track-hover: #475569;
+    --eipsi-color-vas-slider-thumb: #60a5fa;
+    --eipsi-color-vas-slider-thumb-secondary: #3b82f6;
+    --eipsi-color-vas-slider-thumb-border: #1e293b;
+    --eipsi-color-vas-value-text: #60a5fa;
+    --eipsi-color-vas-value-bg: rgba(96, 165, 250, 0.1);
+    --eipsi-color-vas-value-border: rgba(96, 165, 250, 0.2);
+
+    /* Description & Info Blocks */
+    --eipsi-color-description-bg: #1e293b;
+    --eipsi-color-description-border: #60a5fa;
+    --eipsi-color-description-text: #e2e8f0;
+}
+
+/* ========================================
+   PRESET-SPECIFIC DARK MODE VARIANTS
+   ======================================== */
+
+/**
+ * Clinical Blue Dark
+ * Mantiene la identidad azul clínica en dark mode
+ */
+.vas-dinamico-form[data-theme="dark"][data-preset="Clinical Blue"],
+.eipsi-form[data-theme="dark"][data-preset="Clinical Blue"] {
+    /* Core Colors */
+    --eipsi-color-primary: #60a5fa;
+    --eipsi-color-primary-hover: #3b82f6;
+    --eipsi-color-background: #0f172a;
+    --eipsi-color-background-subtle: #1e293b;
+    
+    /* VAS Slider - Blue variant */
+    --eipsi-color-vas-container-bg: #1e3a5c;
+    --eipsi-color-vas-container-bg-hover: #2d4a73;
+    --eipsi-color-vas-container-border: #3b5a8a;
+    --eipsi-color-vas-container-border-hover: #4a6fa0;
+    --eipsi-color-vas-label-bg: rgba(96, 165, 250, 0.15);
+    --eipsi-color-vas-label-text: #60a5fa;
+    --eipsi-color-vas-slider-thumb: #60a5fa;
+}
+
+/**
+ * Minimal White Dark
+ * Versión minimalista con grises neutros
+ */
+.vas-dinamico-form[data-theme="dark"][data-preset="Minimal White"],
+.eipsi-form[data-theme="dark"][data-preset="Minimal White"] {
+    /* Core Colors */
+    --eipsi-color-primary: #94a3b8;
+    --eipsi-color-primary-hover: #cbd5e1;
+    --eipsi-color-background: #0f172a;
+    --eipsi-color-text: #f1f5f9;
+    
+    /* Button Colors */
+    --eipsi-color-button-bg: #475569;
+    --eipsi-color-button-hover-bg: #1e293b;
+    
+    /* VAS Slider - Neutral variant */
+    --eipsi-color-vas-label-text: #94a3b8;
+    --eipsi-color-vas-slider-thumb: #94a3b8;
+    --eipsi-color-vas-value-text: #94a3b8;
+}
+
+/**
+ * Warm Neutral Dark
+ * Mantiene tonos cálidos incluso en dark mode
+ */
+.vas-dinamico-form[data-theme="dark"][data-preset="Warm Neutral"],
+.eipsi-form[data-theme="dark"][data-preset="Warm Neutral"] {
+    /* Core Colors */
+    --eipsi-color-primary: #d4b896;
+    --eipsi-color-primary-hover: #e5c9a5;
+    --eipsi-color-background: #1a1714;
+    --eipsi-color-background-subtle: #252118;
+    --eipsi-color-text: #e8e3db;
+    --eipsi-color-text-muted: #a39889;
+    
+    /* Button Colors */
+    --eipsi-color-button-bg: #8b6f47;
+    --eipsi-color-button-hover-bg: #6b5437;
+    
+    /* Border Colors */
+    --eipsi-color-border: #4a3f2f;
+    --eipsi-color-border-dark: #6b5437;
+    
+    /* VAS Slider - Warm variant */
+    --eipsi-color-vas-label-text: #d4b896;
+    --eipsi-color-vas-slider-thumb: #d4b896;
+    --eipsi-color-vas-value-text: #d4b896;
+    --eipsi-color-vas-label-bg: rgba(212, 184, 150, 0.15);
+}
+
+/**
+ * Serene Teal Dark
+ * Mantiene la serenidad teal en modo nocturno
+ */
+.vas-dinamico-form[data-theme="dark"][data-preset="Serene Teal"],
+.eipsi-form[data-theme="dark"][data-preset="Serene Teal"] {
+    /* Core Colors */
+    --eipsi-color-primary: #5eead4;
+    --eipsi-color-primary-hover: #2dd4bf;
+    --eipsi-color-background: #0c1821;
+    --eipsi-color-background-subtle: #164e63;
+    --eipsi-color-text: #e0f2fe;
+    
+    /* Button Colors */
+    --eipsi-color-button-bg: #0e7490;
+    --eipsi-color-button-hover-bg: #155e75;
+    
+    /* Border Colors */
+    --eipsi-color-border: #155e75;
+    --eipsi-color-border-dark: #0e7490;
+    
+    /* VAS Slider - Teal variant */
+    --eipsi-color-vas-label-text: #5eead4;
+    --eipsi-color-vas-slider-thumb: #5eead4;
+    --eipsi-color-vas-value-text: #5eead4;
+    --eipsi-color-vas-label-bg: rgba(94, 234, 212, 0.15);
 }
 
 /* ========================================
