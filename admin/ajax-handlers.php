@@ -100,6 +100,14 @@ add_action('wp_ajax_eipsi_verify_schema', 'eipsi_verify_schema_handler');
 add_action('wp_ajax_eipsi_check_table_status', 'eipsi_check_table_status_handler');
 add_action('wp_ajax_eipsi_delete_all_data', 'eipsi_delete_all_data_handler');
 
+// Save & Continue handlers
+add_action('wp_ajax_nopriv_eipsi_save_partial_response', 'eipsi_save_partial_response_handler');
+add_action('wp_ajax_eipsi_save_partial_response', 'eipsi_save_partial_response_handler');
+add_action('wp_ajax_nopriv_eipsi_load_partial_response', 'eipsi_load_partial_response_handler');
+add_action('wp_ajax_eipsi_load_partial_response', 'eipsi_load_partial_response_handler');
+add_action('wp_ajax_nopriv_eipsi_discard_partial_response', 'eipsi_discard_partial_response_handler');
+add_action('wp_ajax_eipsi_discard_partial_response', 'eipsi_discard_partial_response_handler');
+
 /**
  * Calcula engagement score basado en tiempo y cambios
  */
@@ -449,6 +457,7 @@ function vas_dinamico_submit_form_handler() {
         
         if ($result['success']) {
             // External DB insert succeeded
+            EIPSI_Partial_Responses::mark_completed($stable_form_id, $participant_id, $session_id);
             wp_send_json_success(array(
                 'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
                 'external_db' => true,
@@ -505,6 +514,7 @@ function vas_dinamico_submit_form_handler() {
                     // Success after repair!
                     error_log('[EIPSI Forms] Auto-repaired schema and recovered data insertion');
                     $insert_id = $wpdb->insert_id;
+                    EIPSI_Partial_Responses::mark_completed($stable_form_id, $participant_id, $session_id);
                     
                     wp_send_json_success(array(
                         'message' => __('Form submitted successfully!', 'vas-dinamico-forms'),
@@ -535,6 +545,9 @@ function vas_dinamico_submit_form_handler() {
         }
         
         $insert_id = $wpdb->insert_id;
+        
+        // Mark partial response as completed
+        EIPSI_Partial_Responses::mark_completed($stable_form_id, $participant_id, $session_id);
         
         if ($used_fallback) {
             // Fallback succeeded - inform user with warning
@@ -1173,4 +1186,94 @@ function eipsi_get_completion_config_handler() {
 }
 add_action('wp_ajax_nopriv_eipsi_get_completion_config', 'eipsi_get_completion_config_handler');
 add_action('wp_ajax_eipsi_get_completion_config', 'eipsi_get_completion_config_handler');
+
+/**
+ * Save & Continue: Save partial response
+ */
+function eipsi_save_partial_response_handler() {
+    // No check_ajax_referer for save operations (need to work even during connection issues)
+    
+    $form_id = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : '';
+    $participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
+    $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
+    $page_index = isset($_POST['page_index']) ? intval($_POST['page_index']) : 1;
+    $responses = isset($_POST['responses']) ? $_POST['responses'] : array();
+    
+    if (empty($form_id) || empty($participant_id) || empty($session_id)) {
+        wp_send_json_error(array(
+            'message' => __('Missing required parameters', 'vas-dinamico-forms')
+        ));
+    }
+    
+    $result = EIPSI_Partial_Responses::save($form_id, $participant_id, $session_id, $page_index, $responses);
+    
+    if ($result['success']) {
+        wp_send_json_success(array(
+            'message' => __('Partial response saved', 'vas-dinamico-forms'),
+            'action' => $result['action'],
+            'id' => $result['id']
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => __('Failed to save partial response', 'vas-dinamico-forms'),
+            'error' => $result['error']
+        ));
+    }
+}
+
+/**
+ * Save & Continue: Load partial response
+ */
+function eipsi_load_partial_response_handler() {
+    $form_id = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : '';
+    $participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
+    $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
+    
+    if (empty($form_id) || empty($participant_id) || empty($session_id)) {
+        wp_send_json_error(array(
+            'message' => __('Missing required parameters', 'vas-dinamico-forms')
+        ));
+    }
+    
+    $partial = EIPSI_Partial_Responses::load($form_id, $participant_id, $session_id);
+    
+    if ($partial) {
+        wp_send_json_success(array(
+            'found' => true,
+            'partial' => $partial
+        ));
+    } else {
+        wp_send_json_success(array(
+            'found' => false,
+            'partial' => null
+        ));
+    }
+}
+
+/**
+ * Save & Continue: Discard partial response
+ */
+function eipsi_discard_partial_response_handler() {
+    $form_id = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : '';
+    $participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
+    $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
+    
+    if (empty($form_id) || empty($participant_id) || empty($session_id)) {
+        wp_send_json_error(array(
+            'message' => __('Missing required parameters', 'vas-dinamico-forms')
+        ));
+    }
+    
+    $success = EIPSI_Partial_Responses::discard($form_id, $participant_id, $session_id);
+    
+    if ($success) {
+        wp_send_json_success(array(
+            'message' => __('Partial response discarded', 'vas-dinamico-forms')
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => __('Failed to discard partial response', 'vas-dinamico-forms')
+        ));
+    }
+}
 ?>

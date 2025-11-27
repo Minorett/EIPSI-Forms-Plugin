@@ -34,6 +34,7 @@ require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/export.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/handlers.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
+require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/partial-responses.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/configuration.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/ajax-handlers.php';
 require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/completion-message-backend.php';
@@ -106,6 +107,9 @@ function vas_dinamico_activate() {
     ) $charset_collate;";
     
     dbDelta($sql_events);
+    
+    // Create partial responses table for Save & Continue
+    EIPSI_Partial_Responses::create_table();
     
     // Store schema version
     update_option('eipsi_db_schema_version', '1.2.2');
@@ -217,6 +221,9 @@ function vas_dinamico_verify_schema_on_load() {
     if (!$schema_version || version_compare($schema_version, '1.2.2', '<')) {
         EIPSI_Database_Schema_Manager::repair_local_schema();
     }
+    
+    // Ensure partial responses table exists (idempotent)
+    EIPSI_Partial_Responses::create_table();
 }
 
 // Add periodic schema verification (every 24 hours)
@@ -489,6 +496,14 @@ function vas_dinamico_enqueue_frontend_assets() {
         VAS_DINAMICO_VERSION
     );
 
+    // Save & Continue UI styles
+    wp_enqueue_style(
+        'eipsi-save-continue-css',
+        VAS_DINAMICO_PLUGIN_URL . 'assets/css/eipsi-save-continue.css',
+        array('eipsi-forms-css'),
+        VAS_DINAMICO_VERSION
+    );
+
     wp_enqueue_script(
         'eipsi-tracking-js',
         VAS_DINAMICO_PLUGIN_URL . 'assets/js/eipsi-tracking.js',
@@ -530,6 +545,15 @@ function vas_dinamico_enqueue_frontend_assets() {
             'smoothScroll' => apply_filters('vas_dinamico_smooth_scroll', true),
         ),
     ));
+    
+    // Enqueue Save & Continue script
+    wp_enqueue_script(
+        'eipsi-save-continue-js',
+        VAS_DINAMICO_PLUGIN_URL . 'assets/js/eipsi-save-continue.js',
+        array('eipsi-forms-js'),
+        VAS_DINAMICO_VERSION,
+        true
+    );
 
     // Enqueue dark mode toggle script
     wp_enqueue_script(

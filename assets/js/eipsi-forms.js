@@ -33,13 +33,31 @@
     }
 
     /**
-     * Genera Session ID único para cada sesión/envío
+     * Obtiene o genera Session ID único para esta sesión de formulario
+     * Persiste durante toda la sesión (sessionStorage) para Save & Continue
+     * @param {string} formId - ID del formulario
      * @return {string} "sess-[timestamp]-[random]"
      */
-    function getSessionId() {
-        const timestamp = Date.now();
-        const random = Math.random().toString( 36 ).substring( 2, 8 );
-        return 'sess-' + timestamp + '-' + random;
+    function getSessionId( formId ) {
+        const SESSION_KEY = `eipsi_session_${ formId || 'default' }`;
+        let sid = null;
+        try {
+            sid = sessionStorage.getItem( SESSION_KEY );
+        } catch ( error ) {
+            sid = null;
+        }
+
+        if ( ! sid ) {
+            const timestamp = Date.now();
+            const random = Math.random().toString( 36 ).substring( 2, 8 );
+            sid = `sess-${ timestamp }-${ random }`;
+            try {
+                sessionStorage.setItem( SESSION_KEY, sid );
+            } catch ( error ) {
+                // Ignore storage errors (private mode)
+            }
+        }
+        return sid;
     }
 
     class ConditionalNavigator {
@@ -1238,6 +1256,10 @@
             if ( targetPage !== currentPage ) {
                 this.setCurrentPage( form, targetPage );
 
+                if ( form.eipsiSaveContinue && form.eipsiSaveContinue.savePartial ) {
+                    form.eipsiSaveContinue.savePartial( 'page-change' );
+                }
+
                 if ( isBranchJump && branchDetails && window.EIPSITracking ) {
                     this.recordBranchJump(
                         form,
@@ -1871,9 +1893,9 @@
             const formData = new FormData( form );
 
             // Obtener IDs antes de enviar
-            const participantId = getUniversalParticipantId();
-            const sessionId = getSessionId();
             const formId = this.getFormId( form ) || '';
+            const participantId = getUniversalParticipantId();
+            const sessionId = getSessionId( formId );
 
             formData.append( 'action', 'vas_dinamico_submit_form' );
             formData.append( 'nonce', this.config.nonce );
@@ -1927,6 +1949,11 @@
                             'success',
                             '✓ Respuesta guardada correctamente'
                         );
+
+                        // Clean up Save & Continue data
+                        if ( form.eipsiSaveContinue && form.eipsiSaveContinue.handleFormCompleted ) {
+                            form.eipsiSaveContinue.handleFormCompleted();
+                        }
 
                         if ( window.EIPSITracking ) {
                             const trackingFormId =
