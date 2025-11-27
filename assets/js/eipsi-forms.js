@@ -2453,49 +2453,89 @@
                 // Use existing Gutenberg-created thank-you page
                 this.showExistingThankYouPage( form, existingThankYouPage );
             } else {
-                // Fetch completion config from backend and create dynamic page
-                fetch( this.config.ajaxUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams( {
-                        action: 'eipsi_get_completion_config',
-                    } ),
-                } )
-                    .then( ( response ) => response.json() )
-                    .then( ( data ) => {
-                        if ( ! data.success ) {
-                            // Fallback to default message if AJAX fails
-                            this.createThankYouPage( form, {
-                                title: '¡Gracias por completar el formulario!',
-                                message:
-                                    'Sus respuestas han sido registradas correctamente.',
-                                show_logo: true,
-                                show_home_button: true,
-                                button_text: 'Comenzar de nuevo',
-                                button_action: 'reload',
-                                show_animation: false,
-                            } );
-                            return;
-                        }
+                // Try to get completion config from Form Container data attributes
+                const formContainer = form.closest( '.eipsi-form, .vas-dinamico-form' );
+                const completionConfig = this.getCompletionConfigFromContainer( formContainer );
 
-                        this.createThankYouPage( form, data.data.config );
-                    } )
-                    .catch( () => {
-                        // Fallback to default message if network error
+                if ( completionConfig ) {
+                    // Use config from Form Container block
+                    this.createThankYouPage( form, completionConfig );
+                } else {
+                    // Fallback: try to fetch from backend or use default
+                    this.fetchCompletionConfigFromBackend( form );
+                }
+            }
+        },
+
+        getCompletionConfigFromContainer( formContainer ) {
+            if ( ! formContainer ) {
+                return null;
+            }
+
+            const title = formContainer.dataset.completionTitle;
+            const message = formContainer.dataset.completionMessage;
+            const logoUrl = formContainer.dataset.completionLogo;
+            const buttonLabel = formContainer.dataset.completionButtonLabel;
+
+            // If title exists, we consider it configured (even with defaults)
+            if ( title ) {
+                return {
+                    title: title || '¡Gracias por completar el cuestionario!',
+                    message: message || 'Sus respuestas han sido registradas correctamente.',
+                    logo_url: logoUrl || '',
+                    show_logo: !! logoUrl,
+                    show_home_button: true,
+                    button_text: buttonLabel || 'Comenzar de nuevo',
+                    button_action: 'reload',
+                    show_animation: false,
+                };
+            }
+
+            return null;
+        },
+
+        fetchCompletionConfigFromBackend( form ) {
+            fetch( this.config.ajaxUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams( {
+                    action: 'eipsi_get_completion_config',
+                } ),
+            } )
+                .then( ( response ) => response.json() )
+                .then( ( data ) => {
+                    if ( ! data.success ) {
+                        // Fallback to default message if AJAX fails
                         this.createThankYouPage( form, {
-                            title: '¡Gracias por completar el formulario!',
+                            title: '¡Gracias por completar el cuestionario!',
                             message:
                                 'Sus respuestas han sido registradas correctamente.',
-                            show_logo: true,
+                            show_logo: false,
                             show_home_button: true,
                             button_text: 'Comenzar de nuevo',
                             button_action: 'reload',
                             show_animation: false,
                         } );
+                        return;
+                    }
+
+                    this.createThankYouPage( form, data.data.config );
+                } )
+                .catch( () => {
+                    // Fallback to default message if network error
+                    this.createThankYouPage( form, {
+                        title: '¡Gracias por completar el cuestionario!',
+                        message:
+                            'Sus respuestas han sido registradas correctamente.',
+                        show_logo: false,
+                        show_home_button: true,
+                        button_text: 'Comenzar de nuevo',
+                        button_action: 'reload',
+                        show_animation: false,
                     } );
-            }
+                } );
         },
 
         showExistingThankYouPage( form, thankYouPageElement ) {
@@ -2589,8 +2629,15 @@
 
             // Build page content
             let logoHtml = '';
-            if ( config.show_logo ) {
-                // Try to get the logo from the theme customizer
+            if ( config.logo_url ) {
+                // Use the logo URL from config (from Form Container block)
+                logoHtml = `<div class="eipsi-thank-you-logo">
+                    <img src="${ this.escapeHtml(
+                        config.logo_url
+                    ) }" alt="Logo" class="eipsi-logo-image">
+                </div>`;
+            } else if ( config.show_logo ) {
+                // Fallback: try to get the logo from the theme customizer
                 const siteLogo = document.querySelector( '.custom-logo' );
                 if ( siteLogo ) {
                     const logoSrc = siteLogo.src;
@@ -2623,15 +2670,18 @@
                 `;
             }
 
+            const titleText = config.title || '¡Gracias por completar el cuestionario!';
+            const messageHtml = this.formatCompletionMessage(
+                config.message || 'Sus respuestas han sido registradas correctamente.'
+            );
+
             thankYouPage.innerHTML = `
                 <div class="eipsi-thank-you-content">
                     ${ logoHtml }
                     <h2 class="eipsi-thank-you-title">${ this.escapeHtml(
-                        config.title
+                        titleText
                     ) }</h2>
-                    <div class="eipsi-thank-you-message">${
-                        config.message
-                    }</div>
+                    <div class="eipsi-thank-you-message">${ messageHtml }</div>
                     ${ buttonHtml }
                 </div>
             `;
@@ -2685,6 +2735,35 @@
                 "'": '&#039;',
             };
             return text.replace( /[&<>"']/g, ( m ) => map[ m ] );
+        },
+
+        formatCompletionMessage( message ) {
+            if ( ! message ) {
+                return '';
+            }
+
+            const containsHtml = /<\/?[a-z][\s\S]*>/i.test( message );
+
+            if ( containsHtml ) {
+                return message;
+            }
+
+            // Convert double line breaks to paragraphs and single breaks to <br>
+            const escaped = this.escapeHtml( message );
+            const formatted = escaped
+                .split( '\n\n' )
+                .map( ( paragraph ) => {
+                    const trimmed = paragraph.trim();
+                    if ( ! trimmed ) {
+                        return '';
+                    }
+                    const withBreaks = trimmed.replace( /\n/g, '<br>' );
+                    return `<p>${ withBreaks }</p>`;
+                } )
+                .filter( Boolean )
+                .join( '' );
+
+            return formatted || `<p>${ escaped }</p>`;
         },
     };
 

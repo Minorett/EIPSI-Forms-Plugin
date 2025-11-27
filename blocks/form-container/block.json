@@ -50,6 +50,27 @@
             "type": "boolean",
             "default": true
         },
+        
+        "completionTitle": {
+            "type": "string",
+            "default": "¡Gracias por completar el cuestionario!"
+        },
+        "completionMessage": {
+            "type": "string",
+            "default": "Sus respuestas han sido registradas correctamente."
+        },
+        "completionLogoId": {
+            "type": "number",
+            "default": 0
+        },
+        "completionLogoUrl": {
+            "type": "string",
+            "default": ""
+        },
+        "completionButtonLabel": {
+            "type": "string",
+            "default": "Comenzar de nuevo"
+        },
 
         "backgroundColor": {
             "type": "string",
