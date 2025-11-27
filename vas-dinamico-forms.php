@@ -277,7 +277,13 @@ function vas_dinamico_enqueue_admin_assets($hook) {
             'saveError' => __('Failed to save configuration.', 'vas-dinamico-forms'),
             'disableError' => __('Failed to disable external database.', 'vas-dinamico-forms'),
             'confirmDisable' => __('Are you sure you want to disable the external database? Form submissions will be stored in the WordPress database.', 'vas-dinamico-forms'),
-            'disableExternal' => __('Disable External Database', 'vas-dinamico-forms')
+            'disableExternal' => __('Disable External Database', 'vas-dinamico-forms'),
+            'confirmDeleteTitle' => __('⚠️ Delete All Clinical Data?', 'vas-dinamico-forms'),
+            'confirmDeleteMessage' => __('This action will PERMANENTLY delete all form responses, session data, and event logs from EIPSI Forms.\n\nThis CANNOT be undone.\n\nAre you absolutely sure?', 'vas-dinamico-forms'),
+            'confirmDeleteYes' => __('Yes, delete all data', 'vas-dinamico-forms'),
+            'confirmDeleteNo' => __('Cancel', 'vas-dinamico-forms'),
+            'deleteSuccess' => __('All clinical data has been successfully deleted.', 'vas-dinamico-forms'),
+            'deleteError' => __('Failed to delete data. Please check the error logs.', 'vas-dinamico-forms')
         ));
     }
 }
