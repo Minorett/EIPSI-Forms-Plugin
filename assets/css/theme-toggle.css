@@ -8,6 +8,108 @@
  */
 
 /* ========================================
+   DARK MODE BASELINE TOKENS
+   ======================================== */
+
+.vas-dinamico-form[data-theme="dark"],
+.eipsi-form[data-theme="dark"] {
+    /* Core Colors */
+    --eipsi-color-primary: #60a5fa;
+    --eipsi-color-primary-hover: #3b82f6;
+    --eipsi-color-secondary: #1e3a8a;
+    --eipsi-color-background: #0f172a;
+    --eipsi-color-background-subtle: #1e293b;
+    --eipsi-color-text: #e2e8f0;
+    --eipsi-color-text-muted: #94a3b8;
+
+    /* Input Colors */
+    --eipsi-color-input-bg: #1e293b;
+    --eipsi-color-input-text: #e2e8f0;
+    --eipsi-color-input-border: #475569;
+    --eipsi-color-input-border-focus: #60a5fa;
+    --eipsi-color-input-error-bg: #2d1f1f;
+    --eipsi-color-input-icon: #60a5fa;
+
+    /* Button Colors */
+    --eipsi-color-button-bg: #3b82f6;
+    --eipsi-color-button-text: #ffffff;
+    --eipsi-color-button-hover-bg: #2563eb;
+
+    /* Semantic Colors */
+    --eipsi-color-error: #fca5a5;
+    --eipsi-color-success: #86efac;
+    --eipsi-color-warning: #fcd34d;
+
+    /* Border Colors */
+    --eipsi-color-border: #334155;
+    --eipsi-color-border-dark: #475569;
+
+    /* Shadows (darker for dark mode) */
+    --eipsi-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --eipsi-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --eipsi-shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.6);
+    --eipsi-shadow-focus: 0 0 0 3px rgba(96, 165, 250, 0.3);
+    --eipsi-shadow-error: 0 0 0 3px rgba(252, 165, 165, 0.3);
+
+    /* Legacy dark mode variables (for backwards compatibility) */
+    --eipsi-bg: #0f172a;
+    --eipsi-surface: #1e293b;
+    --eipsi-text: #e2e8f0;
+    --eipsi-border: #334155;
+    --eipsi-text-muted: #94a3b8;
+    --eipsi-primary: #60a5fa;
+    --eipsi-primary-hover: #3b82f6;
+
+    /* Cards & Surfaces */
+    --eipsi-color-card-bg: #1e293b;
+    --eipsi-color-card-bg-hover: #334155;
+    --eipsi-color-card-border: #475569;
+    --eipsi-color-checked-bg: rgba(96, 165, 250, 0.15);
+    --eipsi-color-checked-shadow: rgba(96, 165, 250, 0.25);
+
+    /* Success Message - Complete */
+    --eipsi-color-success-dark: #059669;
+    --eipsi-color-success-text: #ffffff;
+    --eipsi-color-success-overlay: rgba(255, 255, 255, 0.1);
+    --eipsi-color-success-subtitle: rgba(255, 255, 255, 0.95);
+    --eipsi-color-success-note: rgba(255, 255, 255, 0.85);
+    --eipsi-color-success-shadow: rgba(0, 0, 0, 0.3);
+
+    /* Error Message - Complete */
+    --eipsi-color-error-text: #ffffff;
+    --eipsi-color-error-border-strong: rgba(255, 255, 255, 0.3);
+
+    /* Progress Bar */
+    --eipsi-color-progress-bg: #1e293b;
+    --eipsi-color-progress-border: #475569;
+    --eipsi-color-progress-fill: #60a5fa;
+    --eipsi-color-progress-text: #e2e8f0;
+    --eipsi-color-progress-text-highlight: #60a5fa;
+
+    /* VAS Slider - CRITICAL for clinical use */
+    --eipsi-color-vas-container-bg: #1e293b;
+    --eipsi-color-vas-container-bg-hover: #334155;
+    --eipsi-color-vas-container-border: #475569;
+    --eipsi-color-vas-container-border-hover: #60a5fa;
+    --eipsi-color-vas-label-bg: rgba(96, 165, 250, 0.15);
+    --eipsi-color-vas-label-border: rgba(96, 165, 250, 0.3);
+    --eipsi-color-vas-label-text: #60a5fa;
+    --eipsi-color-vas-slider-track: #334155;
+    --eipsi-color-vas-slider-track-hover: #475569;
+    --eipsi-color-vas-slider-thumb: #60a5fa;
+    --eipsi-color-vas-slider-thumb-secondary: #3b82f6;
+    --eipsi-color-vas-slider-thumb-border: #1e293b;
+    --eipsi-color-vas-value-text: #60a5fa;
+    --eipsi-color-vas-value-bg: rgba(96, 165, 250, 0.1);
+    --eipsi-color-vas-value-border: rgba(96, 165, 250, 0.2);
+
+    /* Description & Info Blocks */
+    --eipsi-color-description-bg: #1e293b;
+    --eipsi-color-description-border: #60a5fa;
+    --eipsi-color-description-text: #e2e8f0;
+}
+
+/* ========================================
    DARK MODE COLOR SYSTEM - PER PRESET
    ======================================== */
 
@@ -161,6 +263,11 @@
     --eipsi-shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.6);
     --eipsi-shadow-focus: 0 0 0 3px rgba(148, 163, 184, 0.3);
     --eipsi-shadow-error: 0 0 0 3px rgba(252, 165, 165, 0.3);
+
+    /* VAS Slider - Neutral variant */
+    --eipsi-color-vas-label-text: #94a3b8;
+    --eipsi-color-vas-slider-thumb: #94a3b8;
+    --eipsi-color-vas-value-text: #94a3b8;
 }
 
 /**
@@ -206,6 +313,12 @@
     --eipsi-shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.7);
     --eipsi-shadow-focus: 0 0 0 3px rgba(212, 184, 150, 0.3);
     --eipsi-shadow-error: 0 0 0 3px rgba(252, 165, 165, 0.3);
+
+    /* VAS Slider - Warm variant */
+    --eipsi-color-vas-label-text: #d4b896;
+    --eipsi-color-vas-slider-thumb: #d4b896;
+    --eipsi-color-vas-value-text: #d4b896;
+    --eipsi-color-vas-label-bg: rgba(212, 184, 150, 0.15);
 }
 
 /**
@@ -251,6 +364,12 @@
     --eipsi-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
     --eipsi-shadow-focus: 0 0 0 3px rgba(94, 234, 212, 0.3);
     --eipsi-shadow-error: 0 0 0 3px rgba(252, 165, 165, 0.3);
+
+    /* VAS Slider - Teal variant */
+    --eipsi-color-vas-label-text: #5eead4;
+    --eipsi-color-vas-slider-thumb: #5eead4;
+    --eipsi-color-vas-value-text: #5eead4;
+    --eipsi-color-vas-label-bg: rgba(94, 234, 212, 0.15);
 }
 
 /* ========================================
