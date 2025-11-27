@@ -24,7 +24,7 @@ $config = EIPSI_Completion_Message::get_config();
     </div>
     
     <form id="eipsi-completion-message-form" method="post">
-        <?php wp_nonce_field('eipsi_admin_nonce', 'eipsi_nonce'); ?>
+        <?php wp_nonce_field('eipsi_admin_nonce', 'eipsi_admin_nonce'); ?>
         
         <!-- Title Field -->
         <div style="margin: 20px 0;">
@@ -163,8 +163,8 @@ document.getElementById('eipsi-completion-message-form').addEventListener('submi
     const formData = new FormData(form);
     formData.append('action', 'eipsi_save_completion_message');
     // Rename nonce field to match what AJAX handler expects
-    formData.set('nonce', formData.get('eipsi_nonce'));
-    formData.delete('eipsi_nonce');
+    formData.set('nonce', formData.get('eipsi_admin_nonce'));
+    formData.delete('eipsi_admin_nonce');
     
     fetch(ajaxurl, {
         method: 'POST',
