@@ -1,0 +1,126 @@
+/**
+ * EIPSI Forms - Save & Continue Styles
+ * Popup de recuperación de sesión
+ */
+
+.eipsi-recovery-popup {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.eipsi-recovery-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(3px);
+}
+
+.eipsi-recovery-modal {
+	position: relative;
+	background: #ffffff;
+	border-radius: 12px;
+	padding: 32px;
+	max-width: 480px;
+	width: 90%;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+	animation: eipsi-recovery-slide-in 0.3s ease-out;
+}
+
+@keyframes eipsi-recovery-slide-in {
+	from {
+		transform: translateY(-20px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+.eipsi-recovery-modal h3 {
+	margin: 0 0 16px 0;
+	font-size: 24px;
+	font-weight: 600;
+	color: #2c3e50;
+}
+
+.eipsi-recovery-modal p {
+	margin: 0 0 12px 0;
+	font-size: 16px;
+	line-height: 1.5;
+	color: #64748b;
+}
+
+.eipsi-recovery-modal p:last-of-type {
+	margin-bottom: 24px;
+}
+
+.eipsi-recovery-modal strong {
+	color: #005a87;
+	font-weight: 600;
+}
+
+.eipsi-recovery-buttons {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.eipsi-btn {
+	flex: 1;
+	min-width: 140px;
+	padding: 12px 24px;
+	border: none;
+	border-radius: 8px;
+	font-size: 16px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	text-align: center;
+}
+
+.eipsi-btn-primary {
+	background: #005a87;
+	color: #ffffff;
+}
+
+.eipsi-btn-primary:hover {
+	background: #003d5b;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 90, 135, 0.25);
+}
+
+.eipsi-btn-secondary {
+	background: #f8f9fa;
+	color: #64748b;
+	border: 1px solid #e2e8f0;
+}
+
+.eipsi-btn-secondary:hover {
+	background: #e2e8f0;
+	color: #2c3e50;
+}
+
+@media (max-width: 600px) {
+	.eipsi-recovery-modal {
+		padding: 24px;
+	}
+
+	.eipsi-recovery-buttons {
+		flex-direction: column;
+	}
+
+	.eipsi-btn {
+		width: 100%;
+	}
+}
