@@ -1,27 +1,42 @@
 .form-group.eipsi-field {
     &.eipsi-description-field {
-        .description-content {
-            padding: 1em;
-            background: var(--eipsi-color-background-subtle, #f8f9fa);
-            border-radius: 8px;
-            border-left: 3px solid var(--eipsi-color-primary, #005a87);
+        padding: 1.5em;
+        background: var(--eipsi-color-background-subtle, #f8f9fa);
+        border-radius: 8px;
+        border-left: 4px solid var(--eipsi-color-primary, #005a87);
+        margin: 1.5em 0;
+
+        .description-title {
+            margin: 0 0 1em 0;
+            font-size: 1.2em;
+            font-weight: 700;
             color: var(--eipsi-color-text, #2c3e50);
-            line-height: 1.6;
         }
 
-        .description-placeholder {
-            margin-top: 0.5em;
-            margin-bottom: 0.75em;
+        .description-body {
+            color: var(--eipsi-color-text, #2c3e50);
+            line-height: 1.6;
+
+            p {
+                margin: 0.5em 0;
+
+                &:first-child {
+                    margin-top: 0;
+                }
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+            }
+        }
+
+        .description-note {
+            margin-top: 1em;
+            padding-top: 0.75em;
+            border-top: 1px solid var(--eipsi-color-border, #e2e8f0);
+            font-size: 0.9em;
             font-style: italic;
             color: var(--eipsi-color-text-muted, #64748b);
         }
-    }
-
-    .field-helper {
-        margin-top: 0.6em;
-        font-size: 0.9em;
-        color: var(--eipsi-color-helper-text, #64748b);
-        font-style: italic;
-        line-height: 1.5;
     }
 }

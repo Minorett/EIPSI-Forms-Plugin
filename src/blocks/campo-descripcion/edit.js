@@ -1,8 +1,8 @@
 import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
 import { __ } from '@wordpress/i18n';
-import FieldSettings from '../../components/FieldSettings';
+import DescriptionSettings from '../../components/DescriptionSettings';
 
-const renderHelperText = ( text ) => {
+const renderDescriptionBody = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
 		return null;
 	}
@@ -10,27 +10,19 @@ const renderHelperText = ( text ) => {
 	const lines = text.split( '\n' );
 
 	return (
-		<p className="field-helper">
+		<div className="description-body">
 			{ lines.map( ( line, index ) => (
-				<span key={ index }>
-					{ line }
-					{ index < lines.length - 1 && <br /> }
-				</span>
+				<p key={ `${ line }-${ index }` }>{ line }</p>
 			) ) }
-		</p>
+		</div>
 	);
 };
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { fieldName, label, required, placeholder, helperText } = attributes;
-
-	const normalizedFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
+	const { label, placeholder, helperText } = attributes;
 
 	const blockProps = useBlockProps( {
 		className: 'form-group eipsi-field eipsi-description-field',
-		'data-field-name': normalizedFieldName,
-		'data-required': required ? 'true' : 'false',
 		'data-field-type': 'description',
 	} );
 
@@ -40,7 +32,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	return (
 		<>
 			<InspectorControls>
-				<FieldSettings
+				<DescriptionSettings
 					attributes={ attributes }
 					setAttributes={ setAttributes }
 				/>
@@ -48,15 +40,12 @@ export default function Edit( { attributes, setAttributes } ) {
 
 			<div { ...blockProps }>
 				{ displayLabel && (
-					<span className={ required ? 'required' : undefined }>
-						{ displayLabel }
-					</span>
+					<h3 className="description-title">{ displayLabel }</h3>
 				) }
+				{ renderDescriptionBody( helperText ) }
 				{ placeholder && (
-					<p className="description-placeholder">{ placeholder }</p>
+					<p className="description-note">{ placeholder }</p>
 				) }
-				{ renderHelperText( helperText ) }
-				<div className="form-error" aria-live="polite" />
 			</div>
 		</>
 	);
