@@ -34,18 +34,22 @@
         display: flex;
         justify-content: space-between;
         margin-bottom: 1em;
+        width: calc( 100% - ( var( --vas-label-compactness, 0.5 ) * 20% ) );
+        margin-left: calc( var( --vas-label-compactness, 0.5 ) * 10% );
+        margin-right: calc( var( --vas-label-compactness, 0.5 ) * 10% );
         // Calculate spacing: alignment closer to 1 = more gap
-        gap: calc( 0.2em + var( --vas-label-alignment, 0.5 ) * 1.5em );
-        // Padding inverse: alignment closer to 0 = more padding (pushes to center)
-        padding: 0 calc( var( --vas-label-compactness, 0.5 ) * 3em );
+        gap: calc( 0.4em + var( --vas-label-alignment, 0.5 ) * 2em );
 
         @media ( max-width: 767px ) {
             flex-wrap: wrap;
-            padding: 0 calc( var( --vas-label-compactness, 0.5 ) * 1em );
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+            gap: 0.6em;
         }
 
         .vas-multi-label {
-            flex: 0 1 auto;
+            flex: 1;
             text-align: center;
             font-weight: normal;
             font-size: var( --vas-label-size, 16px );
@@ -59,15 +63,8 @@
             overflow: hidden;
             text-overflow: ellipsis;
 
-            &:first-child {
-                margin-left: calc( var( --vas-label-compactness, 0.5 ) * 12% );
-            }
-
-            &:last-child {
-                margin-right: calc( var( --vas-label-compactness, 0.5 ) * 12% );
-            }
-
             @media ( max-width: 767px ) {
+                flex: 1 1 45%;
                 font-size: max( 12px, calc( var( --vas-label-size, 16px ) * 0.9 ) );
             }
 
@@ -146,7 +143,9 @@
 
     // SLIDER NEUTRAL MEJORADO
     .vas-slider {
-        width: 100%;
+        width: calc( 100% - ( var( --vas-label-compactness, 0.5 ) * 20% ) );
+        margin-left: calc( var( --vas-label-compactness, 0.5 ) * 10% );
+        margin-right: calc( var( --vas-label-compactness, 0.5 ) * 10% );
         height: 12px;
         -webkit-appearance: none;
         -moz-appearance: none;
@@ -165,6 +164,12 @@
             --eipsi-shadow-sm,
             0 2px 8px rgba( 0, 90, 135, 0.08 )
         );
+
+        @media ( max-width: 767px ) {
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+        }
 
         &:hover {
             background: linear-gradient(
