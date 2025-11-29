@@ -387,15 +387,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					) }
 				</PanelBody>
 
-				<FormStylePanel
-					styleConfig={ currentConfig }
-					setStyleConfig={ updateStyleConfig }
-					presetName={ presetName || 'Clinical Blue' }
-					setPresetName={ ( name ) =>
-						setAttributes( { presetName: name } )
-					}
-				/>
-
 				<PanelBody
 					title={ __(
 						'Mapa de lógica condicional',
@@ -424,6 +415,23 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							'vas-dinamico-forms'
 						) }
 					</Button>
+				</PanelBody>
+
+				<PanelBody
+					title={ __(
+						'Apariencia del formulario',
+						'vas-dinamico-forms'
+					) }
+					initialOpen={ false }
+				>
+					<FormStylePanel
+						styleConfig={ currentConfig }
+						setStyleConfig={ updateStyleConfig }
+						presetName={ presetName || 'Clinical Blue' }
+						setPresetName={ ( name ) =>
+							setAttributes( { presetName: name } )
+						}
+					/>
 				</PanelBody>
 			</InspectorControls>
 

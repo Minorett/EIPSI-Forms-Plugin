@@ -19,7 +19,6 @@ function get_privacy_defaults() {
 
         // RECOMENDADOS - ON por default
         'therapeutic_engagement' => true,
-        'clinical_consistency' => true,
         'avoidance_patterns' => true,
         'device_type' => true,
 
@@ -78,7 +77,6 @@ function save_privacy_config($form_id, $config) {
     $sanitized = array();
     $allowed_toggles = array(
         'therapeutic_engagement',
-        'clinical_consistency',
         'avoidance_patterns',
         'device_type',
         'browser',

@@ -236,7 +236,6 @@ function eipsi_save_privacy_config_handler() {
     
     $config = array(
         'therapeutic_engagement' => isset($_POST['therapeutic_engagement']),
-        'clinical_consistency' => isset($_POST['clinical_consistency']),
         'avoidance_patterns' => isset($_POST['avoidance_patterns']),
         'device_type' => isset($_POST['device_type']),
         'browser' => isset($_POST['browser']),
@@ -398,15 +397,11 @@ function vas_dinamico_submit_form_handler() {
         $metadata['clinical_insights']['therapeutic_engagement'] = eipsi_calculate_engagement_score($form_responses, $duration_seconds);
     }
     
-    if ($privacy_config['clinical_consistency']) {
-        $metadata['clinical_insights']['clinical_consistency'] = eipsi_calculate_consistency_score($form_responses);
-    }
-    
     if ($privacy_config['avoidance_patterns']) {
         $metadata['clinical_insights']['avoidance_patterns'] = eipsi_detect_avoidance_patterns($duration_seconds, $estimated_total_pages);
     }
     
-    // QUALITY METRICS (según privacy config)
+    // QUALITY METRICS (según privacidad config)
     $quality_flag = null;
     if ($privacy_config['quality_flag'] ?? true) {
         $quality_flag = eipsi_calculate_quality_flag($form_responses, $duration_seconds, $estimated_total_pages);

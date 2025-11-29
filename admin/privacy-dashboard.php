@@ -50,12 +50,6 @@ function render_privacy_dashboard($form_id = null) {
                 </label>
                 
                 <label>
-                    <input type="checkbox" name="clinical_consistency" <?php checked($privacy_config['clinical_consistency'] ?? true); ?>>
-                    <strong>Clinical Consistency</strong>
-                    <span class="eipsi-tooltip">(Incoherencias lógicas detectadas)</span>
-                </label>
-                
-                <label>
                     <input type="checkbox" name="avoidance_patterns" <?php checked($privacy_config['avoidance_patterns'] ?? true); ?>>
                     <strong>Avoidance Patterns</strong>
                     <span class="eipsi-tooltip">(Saltos, retrocesos, omisiones)</span>
@@ -116,7 +110,7 @@ function render_privacy_dashboard($form_id = null) {
         <div class="eipsi-info-box">
             <p><strong>ℹ️ Información de Privacidad:</strong></p>
             <ul>
-                <li>✅ <strong>Datos clínicos:</strong> Siempre capturados (therapy engagement, consistency, etc.)</li>
+                <li>✅ <strong>Datos clínicos:</strong> Siempre capturados (therapeutic engagement y avoidance patterns)</li>
                 <li>✅ <strong>IP Address:</strong> Por defecto ON - Auditoría clínica (GDPR/HIPAA compliant)</li>
                 <li>⚠️ <strong>Dispositivo (navegador/OS/pantalla):</strong> Por defecto OFF - Solo para debugging</li>
                 <li>🔄 <strong>Retención de IP:</strong> 90 días (configurable)</li>
