@@ -758,7 +758,7 @@ const ConditionalLogicControl = ( {
 									className="conditional-logic-add-condition-button"
 								>
 									{ __(
-										'+ Añadir otra condición (AND/OR)',
+										'+ Combinar (Y/O)',
 										'vas-dinamico-forms'
 									) }
 								</Button>

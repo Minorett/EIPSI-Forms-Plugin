@@ -127,12 +127,46 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 	const formatConditionText = ( rule ) => {
 		// Advanced rule with multiple conditions (AND/OR)
 		if ( rule.conditions && Array.isArray( rule.conditions ) ) {
-			const parts = rule.conditions.map( ( cond, index ) => {
-				const operator = cond.operator === '==' ? '=' : cond.operator;
-				const prefix =
-					index > 0 ? ` ${ cond.logicalOperator || 'Y' } ` : '';
-				return `${ prefix }[Bloque ${ cond.blockId }] ${ operator } "${ cond.value }"`;
+			const parts = [];
+			rule.conditions.forEach( ( cond, index ) => {
+				// Formatear cada condición
+				let condText = '';
+
+				// Mostrar el campo (fieldId o fieldLabel)
+				const fieldName =
+					cond.fieldLabel ||
+					cond.fieldId ||
+					__( 'Campo', 'vas-dinamico-forms' );
+
+				// Condición numérica (VAS, Likert)
+				if (
+					cond.fieldType === 'numeric' &&
+					cond.operator &&
+					cond.threshold !== undefined
+				) {
+					const op = cond.operator === '==' ? '=' : cond.operator;
+					condText = `[${ fieldName }] ${ op } ${ cond.threshold }`;
+				}
+				// Condición discreta (RADIO, CHECKBOX, SELECT, LIKERT)
+				else if ( cond.value !== undefined ) {
+					condText = `[${ fieldName }] = "${ cond.value }"`;
+				} else {
+					condText = `[${ fieldName }]`;
+				}
+
+				// Agregar operador lógico (AND/OR) antes de la condición (excepto la primera)
+				if ( index > 0 ) {
+					const operator = cond.logicalOperator || 'AND';
+					const operatorLabel =
+						operator === 'OR'
+							? __( 'O', 'vas-dinamico-forms' )
+							: __( 'Y', 'vas-dinamico-forms' );
+					parts.push( ` ${ operatorLabel } ` );
+				}
+
+				parts.push( condText );
 			} );
+
 			return parts.join( '' );
 		}
 
@@ -162,6 +196,40 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 			default:
 				return __( 'Acción desconocida', 'vas-dinamico-forms' );
 		}
+	};
+
+	const getRuleOperatorChip = ( rule ) => {
+		if ( ! rule.conditions || rule.conditions.length < 2 ) {
+			return null;
+		}
+
+		const operators = rule.conditions
+			.map( ( cond, index ) =>
+				index === 0 ? null : cond.logicalOperator || 'AND'
+			)
+			.filter( Boolean );
+
+		const hasOr = operators.some( ( op ) => op === 'OR' );
+		const hasAnd = operators.some( ( op ) => op !== 'OR' );
+
+		if ( hasOr && hasAnd ) {
+			return {
+				label: __( 'AND/OR combinados', 'vas-dinamico-forms' ),
+				type: 'mixed',
+			};
+		}
+
+		if ( hasOr ) {
+			return {
+				label: __( 'O', 'vas-dinamico-forms' ),
+				type: 'or',
+			};
+		}
+
+		return {
+			label: __( 'Y', 'vas-dinamico-forms' ),
+			type: 'and',
+		};
 	};
 
 	if ( ! isOpen ) {
@@ -201,32 +269,46 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 									</h4>
 									<ul className="logic-map-rules">
 										{ field.logic.rules.map(
-											( rule, ruleIndex ) => (
-												<li
-													key={ ruleIndex }
-													className="logic-map-rule"
-												>
-													<span className="logic-map-rule-condition">
-														<strong>
-															{ __(
-																'SI',
-																'vas-dinamico-forms'
+											( rule, ruleIndex ) => {
+												const operatorChip =
+													getRuleOperatorChip( rule );
+
+												return (
+													<li
+														key={ ruleIndex }
+														className="logic-map-rule"
+													>
+														<span className="logic-map-rule-condition">
+															<strong>
+																{ __(
+																	'SI',
+																	'vas-dinamico-forms'
+																) }
+															</strong>{ ' ' }
+															{ formatConditionText(
+																rule
 															) }
-														</strong>{ ' ' }
-														{ formatConditionText(
-															rule
+														</span>
+														{ operatorChip && (
+															<span
+																className={ `logic-map-operator-badge logic-map-operator-badge--${ operatorChip.type }` }
+															>
+																{
+																	operatorChip.label
+																}
+															</span>
 														) }
-													</span>{ ' ' }
-													<span className="logic-map-rule-arrow">
-														→
-													</span>{ ' ' }
-													<span className="logic-map-rule-action">
-														{ formatActionText(
-															rule
-														) }
-													</span>
-												</li>
-											)
+														<span className="logic-map-rule-arrow">
+															→
+														</span>{ ' ' }
+														<span className="logic-map-rule-action">
+															{ formatActionText(
+																rule
+															) }
+														</span>
+													</li>
+												);
+											}
 										) }
 									</ul>
 									{ field.logic.defaultAction &&

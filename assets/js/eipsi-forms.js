@@ -153,10 +153,223 @@
             }
         }
 
+        /**
+         * Evalúa una condición individual (nueva estructura con conditions[])
+         * @param {Object} condition - Condición individual con fieldId, operator, value/threshold
+         * @param {HTMLElement} pageElement - Elemento de la página actual
+         * @return {boolean} true si la condición se cumple
+         */
+        evaluateCondition( condition, pageElement ) {
+            if ( ! condition || ! pageElement ) {
+                return false;
+            }
+
+            // Buscar el campo por fieldId o fieldName
+            const fieldId = condition.fieldId;
+            if ( ! fieldId ) {
+                return false;
+            }
+
+            const field = pageElement.querySelector(
+                `[data-field-name="${ fieldId }"]`
+            );
+
+            if ( ! field ) {
+                return false;
+            }
+
+            const fieldValue = this.getFieldValue( field );
+
+            if (
+                ! fieldValue &&
+                fieldValue !== 0 &&
+                ( ! Array.isArray( fieldValue ) || fieldValue.length === 0 )
+            ) {
+                return false;
+            }
+
+            // Condición numérica (VAS, Likert con operadores numéricos)
+            if (
+                condition.operator &&
+                condition.threshold !== undefined &&
+                condition.fieldType === 'numeric'
+            ) {
+                const numValue =
+                    typeof fieldValue === 'number'
+                        ? fieldValue
+                        : parseFloat( fieldValue );
+
+                if ( Number.isNaN( numValue ) ) {
+                    return false;
+                }
+
+                const threshold = parseFloat( condition.threshold );
+                if ( Number.isNaN( threshold ) ) {
+                    return false;
+                }
+
+                switch ( condition.operator ) {
+                    case '>=':
+                        return numValue >= threshold;
+                    case '<=':
+                        return numValue <= threshold;
+                    case '>':
+                        return numValue > threshold;
+                    case '<':
+                        return numValue < threshold;
+                    case '==':
+                        return numValue === threshold;
+                    default:
+                        return false;
+                }
+            }
+
+            // Condición discreta (RADIO, CHECKBOX, SELECT)
+            if ( condition.value !== undefined ) {
+                // CHECKBOX (array de valores)
+                if ( Array.isArray( fieldValue ) ) {
+                    return fieldValue.includes( condition.value );
+                }
+
+                // RADIO, SELECT, LIKERT (valor único)
+                return String( fieldValue ) === String( condition.value );
+            }
+
+            return false;
+        }
+
+        /**
+         * Evalúa una regla completa con múltiples condiciones AND/OR
+         * @param {Object} rule - Regla con conditions[] y logicalOperator
+         * @param {HTMLElement} pageElement - Elemento de la página actual
+         * @return {boolean} true si la regla se cumple
+         */
+        evaluateRule( rule, pageElement ) {
+            if ( ! rule || ! pageElement ) {
+                return false;
+            }
+
+            // Nueva estructura: rule.conditions[]
+            if ( Array.isArray( rule.conditions ) && rule.conditions.length > 0 ) {
+                // Evaluar cada condición
+                const results = rule.conditions.map( ( cond ) =>
+                    this.evaluateCondition( cond, pageElement )
+                );
+
+                // Si solo hay una condición, devolver su resultado
+                if ( results.length === 1 ) {
+                    return results[ 0 ];
+                }
+
+                // Múltiples condiciones: aplicar AND/OR
+                // La primera condición no tiene logicalOperator, las siguientes sí
+                let finalResult = results[ 0 ];
+
+                for ( let i = 1; i < results.length; i++ ) {
+                    const operator =
+                        rule.conditions[ i ].logicalOperator || 'AND';
+
+                    if ( operator === 'OR' ) {
+                        finalResult = finalResult || results[ i ];
+                    } else {
+                        // AND por defecto
+                        finalResult = finalResult && results[ i ];
+                    }
+                }
+
+                return finalResult;
+            }
+
+            // Estructura legacy: rule.operator + rule.threshold (sin conditions[])
+            // Mantener compatibilidad hacia atrás
+            if ( rule.operator && rule.threshold !== undefined ) {
+                // Buscar campo por rule.fieldId si existe
+                const fieldId = rule.fieldId;
+                if ( ! fieldId ) {
+                    return false;
+                }
+
+                const field = pageElement.querySelector(
+                    `[data-field-name="${ fieldId }"]`
+                );
+
+                if ( ! field ) {
+                    return false;
+                }
+
+                const fieldValue = this.getFieldValue( field );
+
+                if ( typeof fieldValue === 'number' ) {
+                    const threshold = parseFloat( rule.threshold );
+
+                    if ( Number.isNaN( threshold ) ) {
+                        return false;
+                    }
+
+                    switch ( rule.operator ) {
+                        case '>=':
+                            return fieldValue >= threshold;
+                        case '<=':
+                            return fieldValue <= threshold;
+                        case '>':
+                            return fieldValue > threshold;
+                        case '<':
+                            return fieldValue < threshold;
+                        case '==':
+                            return fieldValue === threshold;
+                    }
+                }
+            }
+
+            // Estructura legacy: rule.matchValue o rule.value (sin conditions[])
+            if (
+                rule.matchValue !== undefined ||
+                rule.value !== undefined
+            ) {
+                const fieldId = rule.fieldId;
+                if ( ! fieldId ) {
+                    return false;
+                }
+
+                const field = pageElement.querySelector(
+                    `[data-field-name="${ fieldId }"]`
+                );
+
+                if ( ! field ) {
+                    return false;
+                }
+
+                const fieldValue = this.getFieldValue( field );
+
+                if ( Array.isArray( fieldValue ) ) {
+                    for ( const value of fieldValue ) {
+                        if (
+                            rule.matchValue === value ||
+                            rule.value === value
+                        ) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                return (
+                    rule.matchValue === fieldValue ||
+                    rule.value === fieldValue
+                );
+            }
+
+            return false;
+        }
+
         findMatchingRule( rules, fieldValue ) {
             if ( ! Array.isArray( rules ) ) {
                 return null;
             }
+
+            // DEPRECATED: Este método se mantiene solo para compatibilidad legacy
+            // El nuevo sistema usa evaluateRule() que soporta AND/OR
+            // Este método solo se usa si la regla NO tiene conditions[]
 
             for ( const rule of rules ) {
                 if ( rule.operator && rule.threshold !== undefined ) {
@@ -239,74 +452,73 @@
                     continue;
                 }
 
-                const fieldValue = this.getFieldValue( field );
-
-                if (
-                    ! fieldValue ||
-                    ( Array.isArray( fieldValue ) && fieldValue.length === 0 )
-                ) {
+                // Nuevo sistema: evaluar reglas con conditions[] usando evaluateRule()
+                if ( ! Array.isArray( conditionalLogic.rules ) ) {
                     continue;
                 }
 
-                const matchingRule = this.findMatchingRule(
-                    conditionalLogic.rules,
-                    fieldValue
-                );
+                // Evaluar cada regla en orden
+                for ( const rule of conditionalLogic.rules ) {
+                    // Usar evaluateRule() que soporta AND/OR
+                    const ruleMatches = this.evaluateRule(
+                        rule,
+                        currentPageElement
+                    );
 
-                if ( matchingRule ) {
-                    if ( matchingRule.action === 'submit' ) {
-                        return { action: 'submit' };
-                    }
+                    if ( ruleMatches ) {
+                        if ( rule.action === 'submit' ) {
+                            return { action: 'submit' };
+                        }
 
-                    if (
-                        matchingRule.action === 'goToPage' &&
-                        matchingRule.targetPage
-                    ) {
-                        const targetPage = parseInt(
-                            matchingRule.targetPage,
-                            10
-                        );
-
-                        if ( ! Number.isNaN( targetPage ) ) {
-                            const totalPages = EIPSIForms.getTotalPages(
-                                this.form
+                        if (
+                            rule.action === 'goToPage' &&
+                            rule.targetPage
+                        ) {
+                            const targetPage = parseInt(
+                                rule.targetPage,
+                                10
                             );
-                            const boundedTarget = Math.min(
-                                Math.max( targetPage, 1 ),
-                                totalPages
-                            );
-                            const targetElement =
-                                EIPSIForms.getPageElement(
-                                    this.form,
-                                    boundedTarget
+
+                            if ( ! Number.isNaN( targetPage ) ) {
+                                const totalPages = EIPSIForms.getTotalPages(
+                                    this.form
                                 );
+                                const boundedTarget = Math.min(
+                                    Math.max( targetPage, 1 ),
+                                    totalPages
+                                );
+                                const targetElement =
+                                    EIPSIForms.getPageElement(
+                                        this.form,
+                                        boundedTarget
+                                    );
 
-                            if (
-                                targetElement &&
-                                EIPSIForms.isThankYouPageElement( targetElement )
-                            ) {
-                                return { action: 'submit' };
+                                if (
+                                    targetElement &&
+                                    EIPSIForms.isThankYouPageElement( targetElement )
+                                ) {
+                                    return { action: 'submit' };
+                                }
+
+                                return {
+                                    action: 'goToPage',
+                                    targetPage: boundedTarget,
+                                    fieldId: field.id || field.dataset.fieldName,
+                                    rule,
+                                };
                             }
+                        }
 
+                        if ( rule.action === 'nextPage' ) {
                             return {
-                                action: 'goToPage',
-                                targetPage: boundedTarget,
-                                fieldId: field.id || field.dataset.fieldName,
-                                matchedValue: Array.isArray( fieldValue )
-                                    ? fieldValue[ 0 ]
-                                    : fieldValue,
+                                action: 'nextPage',
+                                targetPage: currentPage + 1,
                             };
                         }
                     }
-
-                    if ( matchingRule.action === 'nextPage' ) {
-                        return {
-                            action: 'nextPage',
-                            targetPage: currentPage + 1,
-                        };
-                    }
                 }
 
+                // Si ninguna regla coincidió, usar defaultAction
                 if ( conditionalLogic.defaultAction ) {
                     if ( conditionalLogic.defaultAction === 'submit' ) {
                         return { action: 'submit' };
