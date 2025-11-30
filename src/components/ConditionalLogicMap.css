@@ -84,6 +84,36 @@
     font-weight: 600;
 }
 
+/* AND/OR Operator Badges */
+.logic-map-operator-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 6px;
+}
+
+.logic-map-operator-badge--and {
+    background: #e3f2fd;
+    color: #005a87;
+    border: 1px solid #005a87;
+}
+
+.logic-map-operator-badge--or {
+    background: #fff4e6;
+    color: #f57c00;
+    border: 1px solid #f57c00;
+}
+
+.logic-map-operator-badge--mixed {
+    background: #f3e5f5;
+    color: #7b1fa2;
+    border: 1px solid #7b1fa2;
+}
+
 .logic-map-default-action {
     margin-top: 12px;
     background: #fff7ed;
