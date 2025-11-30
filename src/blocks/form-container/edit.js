@@ -5,6 +5,7 @@ import {
 	InnerBlocks,
 	MediaUpload,
 	MediaUploadCheck,
+	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -12,9 +13,13 @@ import {
 	TextareaControl,
 	ToggleControl,
 	Button,
+	SelectControl,
+	Notice,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useEffect, useState } from '@wordpress/element';
+import { parse } from '@wordpress/blocks';
+import { useDispatch, useSelect } from '@wordpress/data';
 import {
 	migrateToStyleConfig,
 	serializeToCSSVariables,
@@ -55,6 +60,10 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		typeof useCustomCompletion === 'boolean' ? useCustomCompletion : false;
 
 	const [ isMapOpen, setIsMapOpen ] = useState( false );
+	const [ selectedTemplate, setSelectedTemplate ] = useState( '' );
+	const [ applyingTemplate, setApplyingTemplate ] = useState( false );
+
+	const { replaceInnerBlocks } = useDispatch( blockEditorStore );
 
 	// Migration: Convert legacy attributes to styleConfig on mount
 	useEffect( () => {
@@ -127,9 +136,247 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		setAttributes( { styleConfig: newConfig } );
 	};
 
+	// Get inner blocks count
+	const innerBlocks = useSelect(
+		( select ) => {
+			return select( blockEditorStore ).getBlocks( clientId );
+		},
+		[ clientId ]
+	);
+
+	const hasContent = innerBlocks && innerBlocks.length > 0;
+
+	const templateData = window?.EIPSIDemoTemplates || {};
+	const templates = templateData.templates || [];
+	const strings = templateData.strings || {};
+
+	const [ templateNotice, setTemplateNotice ] = useState( null );
+
+	// Template options for SelectControl
+	const templateOptions = [
+		{
+			label:
+				strings.selectPlaceholder ||
+				__( 'Elegí una plantilla', 'vas-dinamico-forms' ),
+			value: '',
+		},
+		...templates.map( ( t ) => ( {
+			label: `${ t.icon || '' } ${ t.name }`.trim(),
+			value: t.id,
+		} ) ),
+	];
+
+	const selectedTemplateData = templates.find(
+		( template ) => template.id === selectedTemplate
+	);
+
+	// Handler: Apply selected template
+	const handleApplyTemplate = () => {
+		if ( ! selectedTemplate ) {
+			return;
+		}
+
+		// Confirm if container already has content
+		if ( hasContent ) {
+			// eslint-disable-next-line no-alert
+			const confirmed = window.confirm(
+				strings.confirmReplace ||
+					__(
+						'Esto reemplazará el contenido actual del formulario. ¿Continuar?',
+						'vas-dinamico-forms'
+					)
+			);
+
+			if ( ! confirmed ) {
+				return;
+			}
+		}
+
+		setApplyingTemplate( true );
+		setTemplateNotice( null );
+
+		const template = selectedTemplateData;
+
+		if ( ! template || ! template.content ) {
+			setApplyingTemplate( false );
+			setTemplateNotice( {
+				status: 'error',
+				message: __(
+					'No pudimos cargar la plantilla seleccionada.',
+					'vas-dinamico-forms'
+				),
+			} );
+			return;
+		}
+
+		try {
+			// Parse the template content
+			const parsedBlocks = parse( template.content );
+
+			if (
+				! parsedBlocks ||
+				parsedBlocks.length === 0 ||
+				parsedBlocks[ 0 ].name !== 'vas-dinamico/form-container'
+			) {
+				throw new Error( 'Invalid template structure' );
+			}
+
+			const containerBlock = parsedBlocks[ 0 ];
+			const newInnerBlocks = containerBlock.innerBlocks || [];
+			const containerAttrs = containerBlock.attributes || {};
+
+			const allowedAttrKeys = [
+				'formId',
+				'submitButtonLabel',
+				'description',
+				'presetName',
+				'allowBackwardsNav',
+				'showProgressBar',
+				'useCustomCompletion',
+				'completionTitle',
+				'completionMessage',
+				'completionButtonLabel',
+				'styleConfig',
+			];
+
+			const updatedAttrs = {};
+
+			allowedAttrKeys.forEach( ( key ) => {
+				if (
+					Object.prototype.hasOwnProperty.call( containerAttrs, key )
+				) {
+					updatedAttrs[ key ] = containerAttrs[ key ];
+				}
+			} );
+
+			if ( Object.keys( updatedAttrs ).length > 0 ) {
+				setAttributes( updatedAttrs );
+			}
+
+			// Replace inner blocks
+			replaceInnerBlocks( clientId, newInnerBlocks, false );
+
+			// Reset selection
+			setSelectedTemplate( '' );
+			setTemplateNotice( {
+				status: 'success',
+				message:
+					strings.success ||
+					__(
+						'Plantilla aplicada correctamente.',
+						'vas-dinamico-forms'
+					),
+			} );
+		} catch ( error ) {
+			// eslint-disable-next-line no-console
+			console.error( 'Error applying template:', error );
+			setTemplateNotice( {
+				status: 'error',
+				message: __(
+					'No pudimos aplicar la plantilla. Intentá nuevamente.',
+					'vas-dinamico-forms'
+				),
+			} );
+		} finally {
+			setApplyingTemplate( false );
+		}
+	};
+
 	return (
 		<>
 			<InspectorControls>
+				<PanelBody
+					title={ __( 'Plantillas EIPSI', 'vas-dinamico-forms' ) }
+					initialOpen={ false }
+				>
+					{ templateNotice && (
+						<Notice
+							status={ templateNotice.status }
+							onRemove={ () => setTemplateNotice( null ) }
+							isDismissible={ true }
+							style={ { marginBottom: '16px' } }
+						>
+							{ templateNotice.message }
+						</Notice>
+					) }
+
+					{ templates.length === 0 && (
+						<Notice status="info" isDismissible={ false }>
+							{ strings.empty ||
+								__(
+									'Próximamente agregaremos más demos pensados para tu consultorio.',
+									'vas-dinamico-forms'
+								) }
+						</Notice>
+					) }
+
+					{ templates.length > 0 && (
+						<>
+							<p
+								style={ {
+									fontSize: '13px',
+									color: '#475467',
+									marginBottom: '12px',
+								} }
+							>
+								{ __(
+									'Estas plantillas son demos genéricos con bloques EIPSI reales. No son escalas clínicas oficiales.',
+									'vas-dinamico-forms'
+								) }
+							</p>
+
+							<SelectControl
+								label={
+									strings.selectLabel ||
+									__(
+										'Plantillas EIPSI (demo)',
+										'vas-dinamico-forms'
+									)
+								}
+								value={ selectedTemplate }
+								options={ templateOptions }
+								onChange={ ( value ) =>
+									setSelectedTemplate( value )
+								}
+							/>
+
+							{ selectedTemplateData && (
+								<div
+									style={ {
+										marginTop: '8px',
+										padding: '8px',
+										background: '#f8f9fb',
+										borderRadius: '4px',
+										fontSize: '12px',
+										color: '#646970',
+									} }
+								>
+									{ selectedTemplateData.description }
+								</div>
+							) }
+
+							{ selectedTemplate && (
+								<Button
+									variant="primary"
+									onClick={ handleApplyTemplate }
+									isBusy={ applyingTemplate }
+									disabled={ applyingTemplate }
+									style={ {
+										marginTop: '12px',
+										width: '100%',
+									} }
+								>
+									{ strings.apply ||
+										__(
+											'Aplicar plantilla',
+											'vas-dinamico-forms'
+										) }
+								</Button>
+							) }
+						</>
+					) }
+				</PanelBody>
+
 				<PanelBody
 					title={ __( 'Form Settings', 'vas-dinamico-forms' ) }
 					initialOpen={ true }
