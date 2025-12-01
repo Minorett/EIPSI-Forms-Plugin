@@ -1,4 +1,5 @@
 import { useBlockProps } from '@wordpress/block-editor';
+import { parseOptions } from '../../utils/optionParser';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -67,13 +68,7 @@ export default function Save( { attributes } ) {
 
 	const blockProps = useBlockProps.save( blockPropsData );
 
-	const labelArray =
-		labels && labels.trim() !== ''
-			? labels
-					.split( ',' )
-					.map( ( l ) => l.trim() )
-					.filter( ( l ) => l !== '' )
-			: [];
+	const labelArray = labels ? parseOptions( labels ) : [];
 
 	const scale = [];
 	for ( let i = minValue; i <= maxValue; i++ ) {

@@ -10,6 +10,7 @@ import {
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
+import { parseOptions, normalizeLineEndings } from '../../utils/optionParser';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -91,13 +92,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			? label
 			: __( 'Escala Likert', 'vas-dinamico-forms' );
 
-	const labelArray =
-		labels && labels.trim() !== ''
-			? labels
-					.split( ',' )
-					.map( ( l ) => l.trim() )
-					.filter( ( l ) => l !== '' )
-			: [];
+	const labelArray = labels ? parseOptions( labels ) : [];
 
 	const scale = [];
 	for ( let i = minValue; i <= maxValue; i++ ) {
@@ -202,17 +197,20 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					/>
 					<TextareaControl
 						label={ __(
-							'Labels (comma-separated)',
+							'Labels (separated by semicolon)',
 							'vas-dinamico-forms'
 						) }
 						value={ labels || '' }
 						onChange={ ( value ) =>
-							setAttributes( { labels: value } )
+							setAttributes( {
+								labels: normalizeLineEndings( value ),
+							} )
 						}
 						help={ __(
-							'Optional labels for each scale point. Must match the number of scale points.',
+							'Etiquetas opcionales para cada punto de la escala (deben coincidir con la cantidad de puntos). Separá con punto y coma (;). Formatos anteriores (líneas o comas) siguen funcionando.',
 							'vas-dinamico-forms'
 						) }
+						placeholder={ 'Nada; Poco; Moderado; Bastante; Mucho' }
 					/>
 					{ hasLabelMismatch && (
 						<Notice status="warning" isDismissible={ false }>

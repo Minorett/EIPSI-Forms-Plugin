@@ -1,4 +1,5 @@
 import { useBlockProps } from '@wordpress/block-editor';
+import { parseOptions } from '../../utils/optionParser';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -102,12 +103,7 @@ export default function Save( { attributes } ) {
 			? initialValue
 			: Math.floor( ( sliderMin + sliderMax ) / 2 );
 
-	const parsedLabels = labels
-		? labels
-				.split( ',' )
-				.map( ( labelText ) => labelText.trim() )
-				.filter( Boolean )
-		: [];
+	const parsedLabels = labels ? parseOptions( labels ) : [];
 	const resolvedLabels =
 		parsedLabels.length > 0
 			? parsedLabels

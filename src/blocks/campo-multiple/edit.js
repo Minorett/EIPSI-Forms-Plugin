@@ -92,7 +92,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				>
 					<TextareaControl
 						label={ __(
-							'Options (one per line)',
+							'Options (separated by semicolon)',
 							'vas-dinamico-forms'
 						) }
 						value={ options || '' }
@@ -102,11 +102,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							} );
 						} }
 						help={ __(
-							'Ingresá una opción por línea. Podés escribir comas o signos de puntuación dentro de cada opción; si pegás una lista vieja separada por comas la convertimos sola.',
+							'Separá las opciones con punto y coma (;). Las comas dentro de cada opción son totalmente seguras. Formatos anteriores (líneas o comas) siguen funcionando.',
 							'vas-dinamico-forms'
 						) }
 						placeholder={
-							'Sí, absolutamente\nSí, pero no tan frecuente\nNo, no ocurre a menudo\nNunca'
+							'Sí, absolutamente; Sí, pero no tan frecuente; No, no ocurre a menudo; Nunca'
 						}
 						rows={ 8 }
 					/>
