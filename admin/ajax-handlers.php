@@ -266,7 +266,8 @@ function vas_dinamico_submit_form_handler() {
     // Capturar otros campos del frontend (siempre los recibimos)
     $browser_raw = isset($_POST['browser']) ? sanitize_text_field($_POST['browser']) : '';
     $os_raw = isset($_POST['os']) ? sanitize_text_field($_POST['os']) : '';
-    $screen_width_raw = isset($_POST['screen_width']) ? intval($_POST['screen_width']) : 0;
+    // Screen puede venir como "1920" o "1920x1080"
+    $screen_width_raw = isset($_POST['screen_width']) ? sanitize_text_field($_POST['screen_width']) : '';
     
     // Capturar IP del participante con detección de proxy
     $ip_address_raw = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
@@ -721,9 +722,55 @@ function eipsi_ajax_get_response_details() {
     
     // ESTAS LÍNEAS QUEDAN IGUAL:
     $html .= '<p><strong>⏱️ Duración registrada:</strong> ' . (!empty($response->duration_seconds) ? number_format($response->duration_seconds, 3) : intval($response->duration)) . ' segundos</p>';
-    $html .= '<p><strong>📍 Dispositivo:</strong> ' . esc_html($response->device) . ' (' . esc_html($response->browser) . ' on ' . esc_html($response->os) . ')</p>';
-    $html .= '<p><strong>🖥️ Ancho pantalla:</strong> ' . ($response->screen_width ? esc_html($response->screen_width) . 'px' : 'N/A') . '</p>';
+    $html .= '<p><strong>📍 Dispositivo:</strong> ' . esc_html($response->device) . '</p>';
     $html .= '</div>';
+    
+    // =============================================================================
+    // DETALLES TÉCNICOS DEL DISPOSITIVO (COLAPSABLE)
+    // =============================================================================
+    $has_device_info = !empty($response->browser) || !empty($response->os) || !empty($response->screen_width) || !empty($response->ip_address);
+    
+    if ($has_device_info) {
+        $html .= '<div style="margin-bottom: 20px;">';
+        $html .= '<button type="button" id="toggle-device-info" class="button" style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-bottom: 10px;">';
+        $html .= '🖥️ Mostrar Detalles Técnicos del Dispositivo';
+        $html .= '</button>';
+        
+        $html .= '<div id="device-info-section" style="display: none; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d;">';
+        $html .= '<h4 style="margin-top: 0;">🖥️ Fingerprint Liviano (Dispositivo)</h4>';
+        $html .= '<p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">Ayuda a distinguir envíos desde la misma IP (ej. wifi de clínica). Solo se captura si los toggles están ON en Privacy & Metadata.</p>';
+        
+        if (!empty($response->ip_address)) {
+            $html .= '<p><strong>🌐 IP Address:</strong> ' . esc_html($response->ip_address) . '</p>';
+        } else {
+            $html .= '<p><strong>🌐 IP Address:</strong> <em style="color: #999;">No disponible (toggle OFF)</em></p>';
+        }
+        
+        if (!empty($response->browser)) {
+            $html .= '<p><strong>🌍 Navegador:</strong> ' . esc_html($response->browser) . '</p>';
+        } else {
+            $html .= '<p><strong>🌍 Navegador:</strong> <em style="color: #999;">No disponible (toggle OFF)</em></p>';
+        }
+        
+        if (!empty($response->os)) {
+            $html .= '<p><strong>💻 Sistema Operativo:</strong> ' . esc_html($response->os) . '</p>';
+        } else {
+            $html .= '<p><strong>💻 Sistema Operativo:</strong> <em style="color: #999;">No disponible (toggle OFF)</em></p>';
+        }
+        
+        if (!empty($response->screen_width)) {
+            $html .= '<p><strong>📐 Tamaño de Pantalla:</strong> ' . esc_html($response->screen_width) . '</p>';
+        } else {
+            $html .= '<p><strong>📐 Tamaño de Pantalla:</strong> <em style="color: #999;">No disponible (toggle OFF)</em></p>';
+        }
+        
+        if (!empty($response->session_id)) {
+            $html .= '<p><strong>🔑 Session ID:</strong> <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 0.85em;">' . esc_html($response->session_id) . '</code></p>';
+        }
+        
+        $html .= '</div>';
+        $html .= '</div>';
+    }
     
     // =============================================================================
     // SESSION IDENTIFIERS

@@ -251,6 +251,19 @@ jQuery(document).ready(function($) {
                         }
                     });
                     
+                    $('#toggle-device-info').on('click', function() {
+                        var section = $('#device-info-section');
+                        if (section.is(':visible')) {
+                            section.slideUp('fast');
+                            $(this).html('🖥️ <?php _e('Show Device Fingerprint', 'vas-dinamico-forms'); ?>');
+                            $(this).css('background', '#6c757d');
+                        } else {
+                            section.slideDown('fast');
+                            $(this).html('🖥️ <?php _e('Hide Device Fingerprint', 'vas-dinamico-forms'); ?>');
+                            $(this).css('background', '#495057');
+                        }
+                    });
+                    
                 } else {
                     $('#vas-modal-body').html(
                         '<div style="text-align: center; padding: 20px; color: #d63638;">' +

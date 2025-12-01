@@ -81,25 +81,25 @@ function render_privacy_dashboard($form_id = null) {
             
             <!-- DISPOSITIVO (OPCIONAL - OFF por defecto) -->
             <div class="eipsi-toggle-group">
-                <h3>🖥️ Información de Dispositivo <span class="eipsi-optional">(Opcional)</span></h3>
-                <p class="eipsi-section-description">⚠️ Estos datos son <strong>opcionales</strong> y están <strong>desactivados por defecto</strong>. Solo activa si necesitas contexto técnico.</p>
+                <h3>🖥️ Fingerprint Liviano del Dispositivo <span class="eipsi-optional">(Opcional)</span></h3>
+                <p class="eipsi-section-description">⚠️ Estos datos son <strong>opcionales</strong> y están <strong>desactivados por defecto</strong>. Actívalos si necesitas distinguir pacientes con IP compartida (ej. wifi de clínica).</p>
                 
                 <label>
                     <input type="checkbox" name="browser" <?php checked($privacy_config['browser'] ?? false); ?>>
                     <strong>Navegador</strong>
-                    <span class="eipsi-tooltip">(Chrome, Firefox, Safari, Edge, etc.)</span>
+                    <span class="eipsi-tooltip">(ej: Chrome 131, Firefox 132, Safari 17)</span>
                 </label>
                 
                 <label>
                     <input type="checkbox" name="os" <?php checked($privacy_config['os'] ?? false); ?>>
                     <strong>Sistema Operativo</strong>
-                    <span class="eipsi-tooltip">(Windows, macOS, Linux, iOS, Android)</span>
+                    <span class="eipsi-tooltip">(ej: Windows 10, Android 15, iOS 18)</span>
                 </label>
                 
                 <label>
                     <input type="checkbox" name="screen_width" <?php checked($privacy_config['screen_width'] ?? false); ?>>
-                    <strong>Ancho de Pantalla</strong>
-                    <span class="eipsi-tooltip">(Resolución en píxeles)</span>
+                    <strong>Tamaño de Pantalla</strong>
+                    <span class="eipsi-tooltip">(ej: 1920x1080, 1080x2400)</span>
                 </label>
             </div>
             
