@@ -23,10 +23,16 @@ EIPSI Forms convierte WordPress en una herramienta clínica para recolección de
 - **Campos:** VAS Slider, Likert, Radio, Multiple (checkboxes), Select, Texto, Textarea, Campo informativo y utilidades específicas para instrucciones/avisos.
 - Todos los campos incluyen validaciones básicas, soporte para requisitos obligatorios y compatibilidad total con la lógica condicional.
 
-### Lógica condicional aplicada
+### Plantillas demo EIPSI (estado actual)
+- Plantillas prearmadas como **“Ingreso ansiedad breve (demo)”**, **“Seguimiento emocional (demo)”** o **“Satisfacción de sesión (demo)”** listas para cargar desde el dropdown del **EIPSI Form Container**.
+- Cada plantilla demo son bloques EIPSI reales con navegación multipágina, condicionales y estilos ya configurados para que puedas partir de algo clínico.
+- No son escalas oficiales ni incluyen scoring automático; son ejemplos listos para personalizar mientras terminamos de liberar los botones “crear PHQ-9 / GAD-7 / PCL-5 / AUDIT / DASS-21”.
+
+### Lógica condicional avanzada (AND/OR v1.1)
 - Mostrar/ocultar bloques dentro del formulario según respuestas previas.
 - Saltos de página (`jump_to_page`) para ramificar entrevistas.
-- Reglas múltiples con operadores AND/OR y evaluación en tiempo real (sin recargar).
+- Reglas múltiples con operadores **AND** y **OR** combinables, compatibles con todos los tipos de campo (RADIO, CHECKBOX, VAS, LIKERT, SELECT) y evaluación en tiempo real (sin recargar).
+- Soporte para opciones con caracteres especiales (comas, comillas, tildes) gracias a la migración interna a separador `;`.
 
 ### Diseño accesible y consistente
 - 5 presets de color clínicos preconfigurados + toggle universal de modo oscuro.
@@ -38,6 +44,7 @@ EIPSI Forms convierte WordPress en una herramienta clínica para recolección de
 ### Identificación y trazabilidad sin inventar datos
 - **Participant ID** y **Session ID** automáticos (anonimizados, persistidos durante la sesión).
 - **Quality Flag** en cada envío para detectar completaciones dudosas.
+- **Fingerprint clínico liviano opcional:** captura de browser, OS y resolución solo si lo activás en la pestaña Privacy & Metadata; pensado para tablets compartidas.
 - Timestamps precisos (inicio/fin, duración en milisegundos) y eventos clave (`view`, `start`, `page_change`, `submit`, `abandon`, `branch_jump`).
 - Dashboard con privacidad por defecto: IP opcional, datos de navegador/OS/pantalla desactivados hasta que el equipo clínico lo habilite explícitamente.
 
@@ -52,6 +59,15 @@ EIPSI Forms convierte WordPress en una herramienta clínica para recolección de
 - Tablas clínicas (`wp_vas_form_results` y `wp_vas_form_events`) con índices preparados para auditoría.
 - Sincronización/auto-reparación del esquema cada 24 h (Hotfix 1.2.2) para garantizar **Zero Data Loss** incluso si WordPress se actualiza.
 - Exportación inmediata a **Excel (XLSX)** y **CSV UTF-8** con todas las respuestas, metadatos e indicadores de calidad.
+
+## Novedades clínicas post tickets 1–7
+- **Submissions & Finalización v1:** página de agradecimiento integrada en la misma URL, con botón “Comenzar de nuevo” y distinción entre finalización global y por formulario.
+- **VAS clínico v1.1:** alineación editor/frontend idéntica, valor 100 ubicado en el extremo derecho y soporte condicional consistente con radios y checkboxes.
+- **UX del Form Container:** se reorganizaron paneles de navegación, finalización, mapa condicional y apariencia para editar formularios largos sin perderte.
+- **Plantillas demo EIPSI:** demos genéricas listas para cargar desde el contenedor y personalizar en minutos.
+- **Lógica AND/OR v1.1:** combinación de reglas en vivo para RADIO, CHECKBOX, VAS, LIKERT y SELECT dentro de la misma página.
+- **Fingerprint liviano + Privacy & Metadata:** metadata opcional para tablets compartidas, configurable por formulario.
+- **Separador seguro `;` para opciones:** evita errores cuando las respuestas contienen comas o descripciones largas, manteniendo compatibilidad con formularios legacy.
 
 ## Requisitos técnicos
 
@@ -96,9 +112,9 @@ EIPSI Forms convierte WordPress en una herramienta clínica para recolección de
 
 Para evitar falsas expectativas:
 
+- **Plantillas clínicas oficiales con un clic (PHQ-9, GAD-7, PCL-5, AUDIT, DASS-21):** el diseño de bloques y lógica condicional están listos, pero **todavía no hay botón "crear PHQ-9" ni scoring automático** en producción. Las plantillas **demo EIPSI** sí están disponibles como ejemplos genéricos desde el dropdown del Form Container.
 - **Save & Continue Later / autosave de 30 s / drafts en IndexedDB:** en desarrollo.
 - **Condicional required dentro de la misma página (campos que se vuelven obligatorios según respuesta):** diseño en curso.
-- **Plantillas clínicas pre-armadas (PHQ-9, GAD-7, PCL-5, AUDIT, DASS-21) con scoring automático:** todavía no liberadas en `main`.
 - **Dashboard gráfico de analytics:** tracking ya guarda los eventos, pero la UI aún no está disponible.
 - **Integración nativa con Elementor, APIs externas, webhooks y cifrado de campos:** planificado, sin fecha.
 - **Importar/exportar formularios en JSON:** actualmente se hace duplicando páginas/bloques desde Gutenberg.
