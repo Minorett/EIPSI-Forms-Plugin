@@ -14,6 +14,7 @@ import {
 import { __ } from '@wordpress/i18n';
 import { useState, useEffect } from '@wordpress/element';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
+import { parseOptions, normalizeLineEndings } from '../../utils/optionParser';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -188,12 +189,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		}
 	}, [ initialValue, sliderMin, sliderMax, previewValue ] );
 
-	const parsedLabels = labels
-		? labels
-				.split( ',' )
-				.map( ( labelText ) => labelText.trim() )
-				.filter( Boolean )
-		: [];
+	const parsedLabels = labels ? parseOptions( labels ) : [];
 	const resolvedLabels =
 		parsedLabels.length > 0
 			? parsedLabels
@@ -345,15 +341,17 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				>
 					<TextareaControl
 						label={ __(
-							'Labels (comma-separated)',
+							'Labels (separated by semicolon)',
 							'vas-dinamico-forms'
 						) }
 						value={ labels || '' }
 						onChange={ ( value ) =>
-							setAttributes( { labels: value } )
+							setAttributes( {
+								labels: normalizeLineEndings( value ),
+							} )
 						}
 						help={ __(
-							'Los labels visibles salen de esta lista (ej.: "100, 0" o "Muy mal,Mal,Neutral,Bien,Muy bien"). Si lo dejás vacío, mostramos solo los extremos numéricos.',
+							'Usá punto y coma (;) para separar cada etiqueta (ej.: "Nada; Poco; Bastante; Mucho"). Si lo dejás vacío, mostramos solo los extremos numéricos. Formatos anteriores con comas o saltos de línea se mantienen activos.',
 							'vas-dinamico-forms'
 						) }
 					/>

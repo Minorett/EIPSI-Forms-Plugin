@@ -5,15 +5,19 @@
  * - campo-radio
  * - campo-multiple
  * - campo-select
+ * - campo-likert (labels)
+ * - vas-slider (labels)
  *
  * Ensures zero data loss for rich options containing:
  * - Commas: "Sí, a veces"
  * - Periods: "Nunca."
  * - Quotes: "Dijo \"no\""
- * - Spanish punctuation: "¿Alguna vez?"
+ * - Spanish punctuation: "¿Alguna ver?"
  *
- * Canonical storage format: newline-delimited string
- * Legacy support: comma-separated with CSV-style quote escaping
+ * Format priority (for backwards compatibility):
+ * 1. Semicolon-separated (;) – NEW STANDARD (v1.3+)
+ * 2. Newline-delimited (\n) – Current format (v1.2)
+ * 3. Comma-separated with CSV quoting (,) – Legacy format
  */
 
 /**
@@ -88,7 +92,12 @@ export function parseCommaSeparated( str ) {
 }
 
 /**
- * Parses options from a string (newline or legacy comma-separated)
+ * Parses options from a string with intelligent format detection
+ *
+ * Priority (for backwards compatibility):
+ * 1. Semicolon-separated (;) – NEW STANDARD
+ * 2. Newline-delimited (\n) – Current format
+ * 3. Comma-separated with CSV quoting (,) – Legacy format
  *
  * @param {string} optionsString Raw options string from block attributes
  * @return {string[]} Array of trimmed, non-empty option strings
@@ -100,7 +109,15 @@ export function parseOptions( optionsString ) {
 
 	const normalized = normalizeLineEndings( optionsString );
 
-	// Canonical format: newline-delimited
+	// Priority 1: Semicolon-separated (NEW STANDARD)
+	if ( normalized.includes( ';' ) ) {
+		return normalized
+			.split( ';' )
+			.map( ( option ) => option.trim() )
+			.filter( ( option ) => option !== '' );
+	}
+
+	// Priority 2: Newline-delimited (v1.2 format)
 	if ( normalized.includes( '\n' ) ) {
 		return normalized
 			.split( '\n' )
@@ -108,16 +125,16 @@ export function parseOptions( optionsString ) {
 			.filter( ( option ) => option !== '' );
 	}
 
-	// Legacy format: comma-separated with CSV-style quoting
+	// Priority 3: Legacy comma-separated with CSV-style quoting
 	return parseCommaSeparated( normalized );
 }
 
 /**
- * Converts an array of options back to newline-delimited string
- * (canonical storage format)
+ * Converts an array of options back to semicolon-separated string
+ * (NEW canonical storage format as of v1.3)
  *
  * @param {string[]} options Array of option strings
- * @return {string} Newline-delimited string
+ * @return {string} Semicolon-separated string
  */
 export function stringifyOptions( options ) {
 	if ( ! Array.isArray( options ) ) {
@@ -127,14 +144,17 @@ export function stringifyOptions( options ) {
 	return options
 		.map( ( opt ) => ( opt || '' ).trim() )
 		.filter( ( opt ) => opt !== '' )
-		.join( '\n' );
+		.join( '; ' );
 }
 
 /**
  * Normalizes options input from TextareaControl onChange
  *
+ * Converts any mix of separators (semicolon, newline, comma) into the
+ * canonical semicolon-separated format without blank options.
+ *
  * @param {string} value Raw value from textarea
- * @return {string} Normalized newline-delimited string
+ * @return {string} Normalized semicolon-delimited string
  */
 export function normalizeOptionsInput( value ) {
 	if ( ! value || value.trim() === '' ) {
@@ -142,10 +162,8 @@ export function normalizeOptionsInput( value ) {
 	}
 
 	const normalized = normalizeLineEndings( value );
-	const options = normalized
-		.split( '\n' )
-		.map( ( opt ) => opt.trim() )
-		.filter( ( opt ) => opt !== '' );
+
+	const options = parseOptions( normalized );
 
 	return stringifyOptions( options );
 }
