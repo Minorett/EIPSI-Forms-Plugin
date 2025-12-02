@@ -34,47 +34,149 @@
                 const templateId = $link.data('template-id');
                 const templateName = $link.data('template-name');
                 
-                // Visual feedback
-                const originalText = $link.text();
-                $link.text('⏳ Exportando...');
-                
-                $.ajax({
-                    url: eipsiFormTools.ajaxUrl,
-                    type: 'POST',
-                    data: {
-                        action: 'eipsi_export_form',
-                        nonce: eipsiFormTools.nonce,
-                        template_id: templateId
-                    },
-                    success(response) {
-                        if (response.success) {
-                            // Trigger download
-                            FormLibraryTools.downloadJSON(
-                                response.data.data,
-                                response.data.filename
-                            );
+                // Show export mode selection modal
+                FormLibraryTools.showExportModeModal(templateId, templateName, $link);
+            });
+        },
+
+        /**
+         * Show export mode selection modal
+         */
+        showExportModeModal(templateId, templateName, $triggerLink) {
+            const modalHTML = `
+                <div id="eipsi-export-mode-modal" style="display: none;">
+                    <div class="eipsi-import-modal-backdrop"></div>
+                    <div class="eipsi-import-modal-content" style="max-width: 540px;">
+                        <div class="eipsi-import-modal-header">
+                            <h2>Exportar formulario</h2>
+                            <button type="button" class="eipsi-import-modal-close" aria-label="Cerrar">×</button>
+                        </div>
+                        <div class="eipsi-import-modal-body">
+                            <p style="margin-bottom: 20px; color: #666;">
+                                <strong>${templateName}</strong><br>
+                                Seleccioná el formato de exportación:
+                            </p>
                             
-                            FormLibraryTools.showNotice(
-                                eipsiFormTools.strings.exportSuccess + ': ' + templateName,
-                                'success'
-                            );
-                        } else {
-                            FormLibraryTools.showNotice(
-                                response.data.message || eipsiFormTools.strings.exportError,
-                                'error'
-                            );
-                        }
-                    },
-                    error() {
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: flex; align-items: start; cursor: pointer; padding: 16px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8f9fa; transition: all 0.2s;">
+                                    <input type="radio" name="export_mode" value="lite" checked style="margin-top: 4px; margin-right: 12px; cursor: pointer;">
+                                    <div>
+                                        <strong style="color: #005a87; display: block; margin-bottom: 4px;">✨ Formato simplificado (recomendado)</strong>
+                                        <span style="color: #666; font-size: 13px;">
+                                            JSON limpio, editable a mano, ideal para demos y plantillas clínicas.
+                                        </span>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <div>
+                                <label style="display: flex; align-items: start; cursor: pointer; padding: 16px; border: 2px solid #e2e8f0; border-radius: 8px; transition: all 0.2s;">
+                                    <input type="radio" name="export_mode" value="full" style="margin-top: 4px; margin-right: 12px; cursor: pointer;">
+                                    <div>
+                                        <strong style="color: #333; display: block; margin-bottom: 4px;">Formato completo</strong>
+                                        <span style="color: #666; font-size: 13px;">
+                                            Incluye HTML generado y metadatos internos (más pesado).
+                                        </span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="eipsi-import-modal-footer">
+                            <button type="button" class="button button-secondary eipsi-export-mode-cancel">
+                                Cancelar
+                            </button>
+                            <button type="button" class="button button-primary eipsi-export-mode-confirm">
+                                Exportar JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if ($('#eipsi-export-mode-modal').length === 0) {
+                $('body').append(modalHTML);
+                this.addImportModalStyles(); // Reuse existing modal styles
+            }
+            
+            $('#eipsi-export-mode-modal').fadeIn(200);
+            
+            // Bind actions
+            const $modal = $('#eipsi-export-mode-modal');
+            
+            // Highlight selected option
+            $modal.find('input[name="export_mode"]').on('change', function() {
+                $modal.find('label').css({
+                    'border-color': '#e2e8f0',
+                    'background': '#f8f9fa'
+                });
+                $(this).closest('label').css({
+                    'border-color': '#005a87',
+                    'background': 'rgba(0, 90, 135, 0.05)'
+                });
+            }).first().trigger('change');
+            
+            // Close modal
+            $modal.find('.eipsi-import-modal-close, .eipsi-export-mode-cancel, .eipsi-import-modal-backdrop').off('click').on('click', function() {
+                $modal.fadeOut(200, function() {
+                    $(this).remove();
+                });
+            });
+            
+            // Confirm export
+            $modal.find('.eipsi-export-mode-confirm').off('click').on('click', function() {
+                const mode = $modal.find('input[name="export_mode"]:checked').val();
+                $modal.fadeOut(200, function() {
+                    $(this).remove();
+                });
+                FormLibraryTools.performExport(templateId, templateName, mode, $triggerLink);
+            });
+        },
+
+        /**
+         * Perform export with selected mode
+         */
+        performExport(templateId, templateName, mode, $triggerLink) {
+            const originalText = $triggerLink.text();
+            $triggerLink.text('⏳ Exportando...');
+            
+            $.ajax({
+                url: eipsiFormTools.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_export_form',
+                    nonce: eipsiFormTools.nonce,
+                    template_id: templateId,
+                    mode: mode
+                },
+                success(response) {
+                    if (response.success) {
+                        // Trigger download
+                        FormLibraryTools.downloadJSON(
+                            response.data.data,
+                            response.data.filename
+                        );
+                        
+                        const modeLabel = mode === 'lite' ? ' (simplificado)' : ' (completo)';
                         FormLibraryTools.showNotice(
-                            eipsiFormTools.strings.exportError,
+                            eipsiFormTools.strings.exportSuccess + ': ' + templateName + modeLabel,
+                            'success'
+                        );
+                    } else {
+                        FormLibraryTools.showNotice(
+                            response.data.message || eipsiFormTools.strings.exportError,
                             'error'
                         );
-                    },
-                    complete() {
-                        $link.text(originalText);
                     }
-                });
+                },
+                error() {
+                    FormLibraryTools.showNotice(
+                        eipsiFormTools.strings.exportError,
+                        'error'
+                    );
+                },
+                complete() {
+                    $triggerLink.text(originalText);
+                }
             });
         },
 

@@ -151,6 +151,7 @@ export default function Save( { attributes } ) {
 				}` }
 				data-scale={ `${ sliderMin }-${ sliderMax }` }
 				style={ {
+					// STATIC designer setting. Never touches patient’s slider value.
 					'--vas-label-alignment': alignmentRatio,
 					'--vas-label-compactness': compactnessRatio,
 					'--vas-label-size': `${ labelFontSize || 16 }px`,

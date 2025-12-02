@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0.0",
+  "meta": {
+    "exportedAt": "2025-02-05T10:00:00+00:00",
+    "exportedBy": "Test Manual",
+    "pluginVersion": "1.3.0",
+    "formTitle": "Demo Simplificado – PHQ-2",
+    "formName": "demo_phq2"
+  },
+  "form": {
+    "title": "Demo Simplificado – PHQ-2",
+    "formId": "demo_phq2",
+    "blocks": [
+      {
+        "blockName": "vas-dinamico/form-container",
+        "attrs": {
+          "formId": "demo_phq2"
+        },
+        "innerBlocks": [
+          {
+            "blockName": "vas-dinamico/form-page",
+            "attrs": {
+              "pageIndex": 1
+            },
+            "innerBlocks": [
+              {
+                "blockName": "vas-dinamico/campo-informativo",
+                "attrs": {
+                  "fieldKey": "intro",
+                  "title": "PHQ-2 – Screening de depresión",
+                  "content": "Las siguientes preguntas se refieren a cómo te sentiste en las últimas 2 semanas."
+                },
+                "innerBlocks": []
+              },
+              {
+                "blockName": "vas-dinamico/campo-likert",
+                "attrs": {
+                  "fieldName": "phq2_q1",
+                  "label": "1. Poco interés o placer en hacer cosas",
+                  "options": "0: Nunca; 1: Varios días; 2: Más de la mitad de los días; 3: Casi todos los días",
+                  "required": true
+                },
+                "innerBlocks": []
+              },
+              {
+                "blockName": "vas-dinamico/campo-likert",
+                "attrs": {
+                  "fieldName": "phq2_q2",
+                  "label": "2. Se ha sentido decaído/a, deprimido/a o sin esperanza",
+                  "options": "0: Nunca; 1: Varios días; 2: Más de la mitad de los días; 3: Casi todos los días",
+                  "required": true
+                },
+                "innerBlocks": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "_eipsi_form_name": "demo_phq2"
+  }
+}
