@@ -1161,6 +1161,7 @@
                     }
                 };
 
+                // ONLY updates display value, NOT --vas-label-alignment (stays fixed per designer config)
                 const throttledUpdate = ( value ) => {
                     if ( rafId ) {
                         return;

@@ -24,9 +24,10 @@ define('EIPSI_FORM_SCHEMA_VERSION', '1.0.0');
  * Export a form template as structured JSON
  * 
  * @param int $template_id Post ID of the form template
+ * @param string $mode Export mode: 'full' (default) or 'lite'
  * @return array|WP_Error Structured data or error
  */
-function eipsi_export_form_as_json($template_id) {
+function eipsi_export_form_as_json($template_id, $mode = 'full') {
     $template = get_post($template_id);
     
     if (!$template || $template->post_type !== 'eipsi_form_template') {
@@ -48,7 +49,7 @@ function eipsi_export_form_as_json($template_id) {
         }
     }
     
-    // Build structured export
+    // Build base export structure
     $export_data = array(
         'schemaVersion' => EIPSI_FORM_SCHEMA_VERSION,
         'meta' => array(
@@ -61,20 +62,60 @@ function eipsi_export_form_as_json($template_id) {
         'form' => array(
             'title' => $template->post_title,
             'formId' => $form_name,
-            'blocks' => $blocks,
-            'postContent' => $template->post_content,
-            'formContainerAttrs' => $form_container_attrs,
         ),
         'metadata' => array(
             '_eipsi_form_name' => get_post_meta($template_id, '_eipsi_form_name', true),
         ),
     );
     
+    // Modo 'lite': solo blocks simplificados (sin innerHTML/innerContent)
+    // Ideal para edición manual y demos clínicos
+    if ($mode === 'lite') {
+        $export_data['form']['blocks'] = eipsi_simplify_blocks_for_export($blocks);
+    } else {
+        // Modo 'full': incluye todo (compatible con export anterior)
+        $export_data['form']['blocks'] = $blocks;
+        $export_data['form']['postContent'] = $template->post_content;
+        $export_data['form']['formContainerAttrs'] = $form_container_attrs;
+    }
+    
     return $export_data;
 }
 
 /**
+ * Simplify blocks for lite export mode
+ * Removes innerHTML, innerContent, and renders only structure + attrs
+ * 
+ * @param array $blocks Parsed blocks from parse_blocks()
+ * @return array Simplified blocks
+ */
+function eipsi_simplify_blocks_for_export($blocks) {
+    $simplified = array();
+    
+    foreach ($blocks as $block) {
+        $simple_block = array(
+            'blockName' => $block['blockName'],
+            'attrs' => isset($block['attrs']) ? $block['attrs'] : array(),
+        );
+        
+        // Recursively simplify innerBlocks
+        if (isset($block['innerBlocks']) && is_array($block['innerBlocks']) && count($block['innerBlocks']) > 0) {
+            $simple_block['innerBlocks'] = eipsi_simplify_blocks_for_export($block['innerBlocks']);
+        } else {
+            $simple_block['innerBlocks'] = array();
+        }
+        
+        $simplified[] = $simple_block;
+    }
+    
+    return $simplified;
+}
+
+/**
  * Import a form from JSON structure
+ * Supports two formats:
+ * - 'full': includes postContent, innerHTML, innerContent (backward compatible)
+ * - 'lite': only blockName, attrs, innerBlocks (editable by hand, for demos)
  * 
  * @param array $json_data Decoded JSON data
  * @return int|WP_Error New template ID or error
@@ -100,10 +141,15 @@ function eipsi_import_form_from_json($json_data) {
     
     // Validate required fields
     if (!isset($json_data['form']) || !isset($json_data['form']['title'])) {
-        return new WP_Error('invalid_structure', __('El archivo JSON no tiene la estructura requerida.', 'vas-dinamico-forms'));
+        return new WP_Error('invalid_structure', __('El archivo JSON no tiene la estructura requerida (falta form.title).', 'vas-dinamico-forms'));
     }
     
     $form_data = $json_data['form'];
+    
+    // Validate that blocks exist
+    if (!isset($form_data['blocks']) || !is_array($form_data['blocks'])) {
+        return new WP_Error('invalid_structure', __('El archivo JSON no tiene bloques válidos (falta form.blocks).', 'vas-dinamico-forms'));
+    }
     
     // Prepare post data
     $post_title = sanitize_text_field($form_data['title']);
@@ -114,7 +160,22 @@ function eipsi_import_form_from_json($json_data) {
         $post_title .= ' (importado)';
     }
     
-    $post_content = isset($form_data['postContent']) ? $form_data['postContent'] : '';
+    // Detect format: 'full' (has postContent) vs 'lite' (blocks only)
+    $is_lite_format = !isset($form_data['postContent']) || empty($form_data['postContent']);
+    
+    if ($is_lite_format) {
+        // Lite format: rebuild postContent from blocks
+        $blocks = $form_data['blocks'];
+        
+        // Enrich blocks with missing keys for serialize_blocks()
+        $enriched_blocks = eipsi_enrich_blocks_for_serialization($blocks);
+        
+        // Serialize blocks to Gutenberg HTML
+        $post_content = serialize_blocks($enriched_blocks);
+    } else {
+        // Full format: use postContent as-is
+        $post_content = $form_data['postContent'];
+    }
     
     // Create new form template post
     $new_post_id = wp_insert_post(array(
@@ -142,6 +203,39 @@ function eipsi_import_form_from_json($json_data) {
     }
     
     return $new_post_id;
+}
+
+/**
+ * Enrich simplified blocks for serialize_blocks()
+ * Adds missing innerHTML, innerContent keys required by WordPress
+ * 
+ * @param array $blocks Simplified blocks from lite JSON
+ * @return array Enriched blocks ready for serialize_blocks()
+ */
+function eipsi_enrich_blocks_for_serialization($blocks) {
+    $enriched = array();
+    
+    foreach ($blocks as $block) {
+        $enriched_block = array(
+            'blockName' => isset($block['blockName']) ? $block['blockName'] : null,
+            'attrs' => isset($block['attrs']) ? $block['attrs'] : array(),
+            'innerHTML' => '',
+            'innerContent' => array(),
+        );
+        
+        // Recursively enrich innerBlocks
+        if (isset($block['innerBlocks']) && is_array($block['innerBlocks']) && count($block['innerBlocks']) > 0) {
+            $enriched_block['innerBlocks'] = eipsi_enrich_blocks_for_serialization($block['innerBlocks']);
+            // Add placeholder for inner content
+            $enriched_block['innerContent'] = array_fill(0, count($enriched_block['innerBlocks']), null);
+        } else {
+            $enriched_block['innerBlocks'] = array();
+        }
+        
+        $enriched[] = $enriched_block;
+    }
+    
+    return $enriched;
 }
 
 /**
@@ -200,24 +294,32 @@ function eipsi_ajax_export_form() {
     }
     
     $template_id = isset($_POST['template_id']) ? absint($_POST['template_id']) : 0;
+    $mode = isset($_POST['mode']) ? sanitize_text_field($_POST['mode']) : 'full';
     
     if (!$template_id) {
         wp_send_json_error(array('message' => __('ID de formulario inválido.', 'vas-dinamico-forms')));
     }
     
-    $export_data = eipsi_export_form_as_json($template_id);
+    // Validate mode
+    if (!in_array($mode, array('full', 'lite'), true)) {
+        $mode = 'full';
+    }
+    
+    $export_data = eipsi_export_form_as_json($template_id, $mode);
     
     if (is_wp_error($export_data)) {
         wp_send_json_error(array('message' => $export_data->get_error_message()));
     }
     
-    // Generate filename
+    // Generate filename with mode suffix
     $template = get_post($template_id);
-    $filename = sanitize_title($template->post_title) . '-' . date('Y-m-d') . '.json';
+    $mode_suffix = ($mode === 'lite') ? '-lite' : '';
+    $filename = sanitize_title($template->post_title) . $mode_suffix . '-' . date('Y-m-d') . '.json';
     
     wp_send_json_success(array(
         'data' => $export_data,
         'filename' => $filename,
+        'mode' => $mode,
     ));
 }
 add_action('wp_ajax_eipsi_export_form', 'eipsi_ajax_export_form');
@@ -365,10 +467,13 @@ function eipsi_form_library_tools_scripts() {
     wp_enqueue_script(
         'eipsi-form-library-tools',
         VAS_DINAMICO_PLUGIN_URL . 'assets/js/form-library-tools.js',
-        array('jquery'),
+        array('jquery', 'wp-blocks'),
         VAS_DINAMICO_VERSION,
         true
     );
+
+    // Ensure custom blocks (and their save() implementations) are available to serialize lite JSON
+    wp_enqueue_script('vas-dinamico-blocks-editor');
     
     wp_localize_script('eipsi-form-library-tools', 'eipsiFormTools', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
@@ -377,6 +482,14 @@ function eipsi_form_library_tools_scripts() {
         'strings' => array(
             'exportSuccess' => __('Formulario exportado correctamente', 'vas-dinamico-forms'),
             'exportError' => __('Error al exportar el formulario', 'vas-dinamico-forms'),
+            'exportModalTitle' => __('Exportar formulario', 'vas-dinamico-forms'),
+            'exportModalSubtitle' => __('Seleccioná el tipo de JSON que necesitás:', 'vas-dinamico-forms'),
+            'exportLiteTitle' => __('✨ Formato simplificado (recomendado)', 'vas-dinamico-forms'),
+            'exportLiteDescription' => __('JSON limpio, editable a mano. Ideal para demos clínicas y control de versiones.', 'vas-dinamico-forms'),
+            'exportFullTitle' => __('Formato completo', 'vas-dinamico-forms'),
+            'exportFullDescription' => __('Incluye HTML Gutenberg, innerHTML y metadatos internos. Útil para backups exactos.', 'vas-dinamico-forms'),
+            'exportModeConfirm' => __('Exportar JSON', 'vas-dinamico-forms'),
+            'exportModeCancel' => __('Cancelar', 'vas-dinamico-forms'),
             'duplicateConfirm' => __('¿Duplicar este formulario?', 'vas-dinamico-forms'),
             'duplicateSuccess' => __('Formulario duplicado correctamente', 'vas-dinamico-forms'),
             'duplicateError' => __('Error al duplicar el formulario', 'vas-dinamico-forms'),
@@ -387,6 +500,9 @@ function eipsi_form_library_tools_scripts() {
             'importSuccess' => __('Formulario importado correctamente', 'vas-dinamico-forms'),
             'importError' => __('Error al importar el formulario', 'vas-dinamico-forms'),
             'invalidFile' => __('Por favor, seleccioná un archivo JSON válido.', 'vas-dinamico-forms'),
+            'importParseError' => __('El archivo JSON está incompleto o corrupto.', 'vas-dinamico-forms'),
+            'importLiteError' => __('No pudimos convertir el JSON simplificado. Revisá que todos los bloques tengan "blockName" y "attrs".', 'vas-dinamico-forms'),
+            'importLiteEngineError' => __('WordPress todavía no cargó el motor de bloques. Recargá la página e intentá nuevamente.', 'vas-dinamico-forms'),
             'clinicalTemplateConfirm' => __('¿Crear un formulario nuevo basado en %s? Vas a poder editarlo antes de usarlo con pacientes.', 'vas-dinamico-forms'),
             'clinicalTemplateCreating' => __('Creando...', 'vas-dinamico-forms'),
             'clinicalTemplateError' => __('No pudimos crear la plantilla. Reintentá en unos segundos.', 'vas-dinamico-forms'),

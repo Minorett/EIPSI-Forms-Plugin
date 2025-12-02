@@ -595,6 +595,8 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					}` }
 					data-scale={ `${ sliderMin }-${ sliderMax }` }
 					style={ {
+						// CRITICAL: labelAlignmentPercent is STATIC (block config)
+						// NOT affected by slider value (clinical response)
 						'--vas-label-alignment': alignmentRatio,
 						'--vas-label-compactness': compactnessRatio,
 						'--vas-label-size': `${ labelFontSize || 16 }px`,
