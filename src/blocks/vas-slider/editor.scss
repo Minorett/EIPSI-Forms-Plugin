@@ -93,11 +93,9 @@
         }
 
         // SLIDER MEJORADO
+        // Track siempre ocupa el ancho completo; solo las etiquetas se compactan
         .vas-slider {
-            width: calc( 100% - ( var( --vas-label-compactness, 0.5 ) * 20% ) );
-            margin-left: calc( var( --vas-label-compactness, 0.5 ) * 10% );
-            margin-right: calc( var( --vas-label-compactness, 0.5 ) * 10% );
-            height: 12px;
+            width: 100%;
             margin-top: 1em;
             margin-bottom: 1em;
             -webkit-appearance: none;
