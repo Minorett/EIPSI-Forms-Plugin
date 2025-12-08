@@ -81,21 +81,31 @@ $colspan = $show_form_column ? 8 : 7;
     
     <!-- Filters & Export -->
     <div class="eipsi-submissions-toolbar">
-        <!-- Filtro por formulario -->
+        <!-- Filtro por formulario y botón de sincronización -->
         <div class="vas-form-filter" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 5px;">
-            <form method="get">
-                <input type="hidden" name="page" value="vas-dinamico-results">
-                <input type="hidden" name="tab" value="submissions">
-                <label for="form_filter" style="font-weight: bold; margin-right: 10px;"><?php _e('Filter by Form ID:', 'vas-dinamico-forms'); ?></label>
-                <select name="form_filter" id="form_filter" onchange="this.form.submit()" style="padding: 8px; min-width: 200px;">
-                    <option value=""><?php _e('All Forms', 'vas-dinamico-forms'); ?></option>
-                    <?php foreach ($forms as $form): ?>
-                        <option value="<?php echo esc_attr($form); ?>" <?php selected($current_form, $form); ?>>
-                            <?php echo esc_html($form); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </form>
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <form method="get" style="flex: 1; min-width: 300px;">
+                    <input type="hidden" name="page" value="vas-dinamico-results">
+                    <input type="hidden" name="tab" value="submissions">
+                    <label for="form_filter" style="font-weight: bold; margin-right: 10px;"><?php _e('Filter by Form ID:', 'vas-dinamico-forms'); ?></label>
+                    <select name="form_filter" id="form_filter" onchange="this.form.submit()" style="padding: 8px; min-width: 200px;">
+                        <option value=""><?php _e('All Forms', 'vas-dinamico-forms'); ?></option>
+                        <?php foreach ($forms as $form): ?>
+                            <option value="<?php echo esc_attr($form); ?>" <?php selected($current_form, $form); ?>>
+                                <?php echo esc_html($form); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+                
+                <!-- Botón de Sincronización -->
+                <button type="button" id="eipsi-sync-submissions" 
+                        class="button button-secondary" 
+                        style="padding: 8px 12px; font-size: 13px; white-space: nowrap;"
+                        title="<?php _e('Sync form list with database', 'vas-dinamico-forms'); ?>">
+                    🔄 <?php _e('Sync', 'vas-dinamico-forms'); ?>
+                </button>
+            </div>
         </div>
 
         <!-- Botones de exportación -->
@@ -296,6 +306,51 @@ jQuery(document).ready(function($) {
         if ($(e.target).is('#vas-response-modal')) {
             $('#vas-response-modal').hide();
         }
+    });
+
+    // FUNCIONALIDAD DE SINCRONIZACIÓN
+    $('#eipsi-sync-submissions').on('click', function(e) {
+        e.preventDefault();
+        var $button = $(this);
+        var originalText = $button.html();
+        
+        // Mostrar spinner y deshabilitar temporalmente
+        $button.html('⏳ <?php _e('Syncing...', 'vas-dinamico-forms'); ?>').prop('disabled', true);
+        
+        $.ajax({
+            url: '<?php echo admin_url('admin-ajax.php'); ?>',
+            type: 'POST',
+            data: {
+                action: 'eipsi_sync_submissions',
+                nonce: '<?php echo wp_create_nonce('eipsi_admin_nonce'); ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Mostrar mensaje de éxito
+                    $button.html('✓ <?php _e('Updated!', 'vas-dinamico-forms'); ?>').removeClass('button-secondary').addClass('button-primary');
+                    
+                    // Recargar la página después de 2.5 segundos
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 2500);
+                } else {
+                    // Mostrar error
+                    $button.html('❌ <?php _e('Error', 'vas-dinamico-forms'); ?>');
+                    setTimeout(function() {
+                        $button.html(originalText).removeClass('button-primary').addClass('button-secondary').prop('disabled', false);
+                    }, 2000);
+                    console.error('Sync error:', response.data);
+                }
+            },
+            error: function(xhr, status, error) {
+                // Mostrar error de conexión
+                $button.html('❌ <?php _e('Connection Error', 'vas-dinamico-forms'); ?>');
+                setTimeout(function() {
+                    $button.html(originalText).removeClass('button-primary').addClass('button-secondary').prop('disabled', false);
+                }, 2000);
+                console.error('AJAX Error:', error);
+            }
+        });
     });
 });
 </script>
