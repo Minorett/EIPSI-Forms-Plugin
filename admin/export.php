@@ -70,13 +70,43 @@ function vas_export_to_excel() {
     }
     
     global $wpdb;
-    
     $table_name = $wpdb->prefix . 'vas_form_results';
     
-    // Obtener formulario específico si se filtra
-    $form_filter = isset($_GET['form_id']) ? $wpdb->prepare('AND form_id = %s', $_GET['form_id']) : '';
+    // Instanciar clase de BD externa
+    $external_db = new EIPSI_External_Database();
+    $results = array();
     
-    $results = $wpdb->get_results("SELECT * FROM $table_name WHERE 1=1 $form_filter ORDER BY created_at DESC");
+    if ($external_db->is_enabled()) {
+        // Usar BD externa si está habilitada
+        $mysqli = $external_db->get_connection();
+        if ($mysqli) {
+            // Preparar filtro de forma segura para mysqli
+            $where = "WHERE 1=1";
+            if (isset($_GET['form_id']) && !empty($_GET['form_id'])) {
+                $form_id = $mysqli->real_escape_string($_GET['form_id']);
+                $where .= " AND form_id = '{$form_id}'";
+            }
+            
+            $query = "SELECT * FROM `{$table_name}` {$where} ORDER BY created_at DESC";
+            $result = $mysqli->query($query);
+            
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    // Convertir array asociativo a stdClass para mantener compatibilidad
+                    $results[] = (object) $row;
+                }
+            }
+            $mysqli->close();
+        } else {
+            // Fallback a BD local si conexión externa falla
+            $form_filter = isset($_GET['form_id']) ? $wpdb->prepare('AND form_id = %s', $_GET['form_id']) : '';
+            $results = $wpdb->get_results("SELECT * FROM $table_name WHERE 1=1 $form_filter ORDER BY created_at DESC");
+        }
+    } else {
+        // Fallback a BD local si no hay BD externa
+        $form_filter = isset($_GET['form_id']) ? $wpdb->prepare('AND form_id = %s', $_GET['form_id']) : '';
+        $results = $wpdb->get_results("SELECT * FROM $table_name WHERE 1=1 $form_filter ORDER BY created_at DESC");
+    }
     
     if (empty($results)) {
         wp_die(__('No data to export.', 'vas-dinamico-forms'));
@@ -206,13 +236,43 @@ function vas_export_to_csv() {
     }
     
     global $wpdb;
-    
     $table_name = $wpdb->prefix . 'vas_form_results';
     
-    // Obtener formulario específico si se filtra
-    $form_filter = isset($_GET['form_id']) ? $wpdb->prepare('AND form_id = %s', $_GET['form_id']) : '';
+    // Instanciar clase de BD externa
+    $external_db = new EIPSI_External_Database();
+    $results = array();
     
-    $results = $wpdb->get_results("SELECT * FROM $table_name WHERE 1=1 $form_filter ORDER BY created_at DESC");
+    if ($external_db->is_enabled()) {
+        // Usar BD externa si está habilitada
+        $mysqli = $external_db->get_connection();
+        if ($mysqli) {
+            // Preparar filtro de forma segura para mysqli
+            $where = "WHERE 1=1";
+            if (isset($_GET['form_id']) && !empty($_GET['form_id'])) {
+                $form_id = $mysqli->real_escape_string($_GET['form_id']);
+                $where .= " AND form_id = '{$form_id}'";
+            }
+            
+            $query = "SELECT * FROM `{$table_name}` {$where} ORDER BY created_at DESC";
+            $result = $mysqli->query($query);
+            
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    // Convertir array asociativo a stdClass para mantener compatibilidad
+                    $results[] = (object) $row;
+                }
+            }
+            $mysqli->close();
+        } else {
+            // Fallback a BD local si conexión externa falla
+            $form_filter = isset($_GET['form_id']) ? $wpdb->prepare('AND form_id = %s', $_GET['form_id']) : '';
+            $results = $wpdb->get_results("SELECT * FROM $table_name WHERE 1=1 $form_filter ORDER BY created_at DESC");
+        }
+    } else {
+        // Fallback a BD local si no hay BD externa
+        $form_filter = isset($_GET['form_id']) ? $wpdb->prepare('AND form_id = %s', $_GET['form_id']) : '';
+        $results = $wpdb->get_results("SELECT * FROM $table_name WHERE 1=1 $form_filter ORDER BY created_at DESC");
+    }
     
     if (empty($results)) {
         wp_die(__('No data to export.', 'vas-dinamico-forms'));
