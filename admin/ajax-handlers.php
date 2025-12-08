@@ -1348,4 +1348,35 @@ function eipsi_discard_partial_response_handler() {
         ));
     }
 }
+
+/**
+ * Submissions: Sync form list with database
+ */
+function eipsi_sync_submissions_handler() {
+    // Security check
+    if (!current_user_can('manage_options') || !check_ajax_referer('eipsi_admin_nonce', 'nonce', false)) {
+        wp_send_json_error(array(
+            'message' => __('Permission denied or invalid security token.', 'vas-dinamico-forms')
+        ));
+    }
+    
+    global $wpdb;
+    
+    // Query para obtener formularios únicos con respuestas
+    $table_name = $wpdb->prefix . 'vas_form_results';
+    $forms = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+    
+    // Log para debugging (solo si está habilitado)
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('EIPSI Sync Submissions: Found ' . count($forms) . ' unique forms in database');
+    }
+    
+    // Retornar éxito - el frontend se encarga del refresh
+    wp_send_json_success(array(
+        'forms_found' => count($forms),
+        'message' => __('Submissions synchronized with database.', 'vas-dinamico-forms')
+    ));
+}
+
+add_action('wp_ajax_eipsi_sync_submissions', 'eipsi_sync_submissions_handler');
 ?>
