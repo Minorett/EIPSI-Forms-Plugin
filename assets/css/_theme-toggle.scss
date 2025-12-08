@@ -7,8 +7,8 @@
  */
 
 /* ========================================
-   DARK MODE COLOR SYSTEM
-   ======================================== */
+    DARK MODE COLOR SYSTEM
+    ======================================== */
 
 /**
  * Dark theme colors
@@ -115,6 +115,299 @@
     --eipsi-color-description-bg: #1e293b;
     --eipsi-color-description-border: #60a5fa;
     --eipsi-color-description-text: #e2e8f0;
+}
+
+/* ========================================
+    APPLY DARK MODE VARIABLES TO ALL ELEMENTS
+    ======================================== */
+
+/**
+ * General form background and text
+ */
+.vas-dinamico-form[data-theme="dark"],
+.eipsi-form[data-theme="dark"] {
+    background-color: var(--eipsi-color-background);
+    color: var(--eipsi-color-text);
+}
+
+/**
+ * All form fields: input[text], input[email], input[number], textarea, select
+ */
+.vas-dinamico-form[data-theme="dark"] input[type="text"],
+.vas-dinamico-form[data-theme="dark"] input[type="email"],
+.vas-dinamico-form[data-theme="dark"] input[type="number"],
+.vas-dinamico-form[data-theme="dark"] input[type="date"],
+.vas-dinamico-form[data-theme="dark"] input[type="time"],
+.vas-dinamico-form[data-theme="dark"] input[type="search"],
+.vas-dinamico-form[data-theme="dark"] textarea,
+.vas-dinamico-form[data-theme="dark"] select {
+    background-color: var(--eipsi-color-input-bg);
+    color: var(--eipsi-color-input-text);
+    border-color: var(--eipsi-color-input-border);
+
+    &:focus {
+        border-color: var(--eipsi-color-input-border-focus);
+        box-shadow: var(--eipsi-shadow-focus);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+    }
+}
+
+/**
+ * Labels and form text
+ */
+.vas-dinamico-form[data-theme="dark"] label,
+.vas-dinamico-form[data-theme="dark"] .form-label {
+    color: var(--eipsi-color-text);
+}
+
+/**
+ * Help text and hints
+ */
+.vas-dinamico-form[data-theme="dark"] .help-text,
+.vas-dinamico-form[data-theme="dark"] .field-hint {
+    color: var(--eipsi-color-text-muted);
+}
+
+/**
+ * Radio buttons and checkboxes
+ */
+.vas-dinamico-form[data-theme="dark"] input[type="radio"],
+.vas-dinamico-form[data-theme="dark"] input[type="checkbox"] {
+    border-color: var(--eipsi-color-input-border);
+    background-color: var(--eipsi-color-input-bg);
+
+    &:checked {
+        background-color: var(--eipsi-color-checked-bg);
+        border-color: var(--eipsi-color-primary);
+        box-shadow: var(--eipsi-shadow-focus);
+    }
+
+    &:focus-visible {
+        box-shadow: var(--eipsi-shadow-focus);
+    }
+}
+
+/**
+ * Buttons (Submit, Next, Previous, Primary, Secondary)
+ */
+.vas-dinamico-form[data-theme="dark"] button,
+.vas-dinamico-form[data-theme="dark"] .button,
+.vas-dinamico-form[data-theme="dark"] input[type="submit"],
+.vas-dinamico-form[data-theme="dark"] input[type="button"] {
+    background-color: var(--eipsi-color-button-bg);
+    color: var(--eipsi-color-button-text);
+    border: none;
+
+    &:hover {
+        background-color: var(--eipsi-color-button-hover-bg);
+    }
+
+    &:focus-visible {
+        outline: 3px solid var(--eipsi-color-primary);
+        outline-offset: 2px;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+/**
+ * Links
+ */
+.vas-dinamico-form[data-theme="dark"] a {
+    color: var(--eipsi-color-primary);
+
+    &:hover {
+        color: var(--eipsi-color-primary-hover);
+    }
+
+    &:focus-visible {
+        outline: 3px solid var(--eipsi-color-primary);
+        outline-offset: 2px;
+    }
+}
+
+/**
+ * Likert scale options
+ */
+.vas-dinamico-form[data-theme="dark"] .likert-option {
+    background-color: var(--eipsi-color-card-bg);
+    border-color: var(--eipsi-color-border);
+    color: var(--eipsi-color-text);
+
+    &:hover {
+        background-color: var(--eipsi-color-card-bg-hover);
+    }
+
+    &.selected,
+    &.checked {
+        background-color: var(--eipsi-color-checked-bg);
+        border-color: var(--eipsi-color-primary);
+    }
+}
+
+/**
+ * VAS Slider containers and components
+ */
+.vas-dinamico-form[data-theme="dark"] .vas-container,
+.vas-dinamico-form[data-theme="dark"] .vas-slider-wrapper {
+    background-color: var(--eipsi-color-vas-container-bg);
+    border-color: var(--eipsi-color-vas-container-border);
+
+    &:hover {
+        background-color: var(--eipsi-color-vas-container-bg-hover);
+        border-color: var(--eipsi-color-vas-container-border-hover);
+    }
+}
+
+.vas-dinamico-form[data-theme="dark"] .vas-slider {
+    background: var(--eipsi-color-vas-slider-track);
+
+    &::-webkit-slider-track {
+        background: var(--eipsi-color-vas-slider-track);
+    }
+
+    &::-webkit-slider-thumb {
+        background: var(--eipsi-color-vas-slider-thumb);
+        border-color: var(--eipsi-color-vas-slider-thumb-border);
+        box-shadow: var(--eipsi-shadow-slider-thumb);
+    }
+
+    &::-moz-range-track {
+        background: var(--eipsi-color-vas-slider-track);
+    }
+
+    &::-moz-range-thumb {
+        background: var(--eipsi-color-vas-slider-thumb);
+        border-color: var(--eipsi-color-vas-slider-thumb-border);
+        box-shadow: var(--eipsi-shadow-slider-thumb);
+    }
+}
+
+.vas-dinamico-form[data-theme="dark"] .vas-value-display {
+    background-color: var(--eipsi-color-vas-value-bg);
+    color: var(--eipsi-color-vas-value-text);
+    border-color: var(--eipsi-color-vas-value-border);
+}
+
+/**
+ * Modal dialogs and response details
+ */
+.vas-dinamico-form[data-theme="dark"] .modal,
+.vas-dinamico-form[data-theme="dark"] .vas-modal-content {
+    background-color: var(--eipsi-color-background-subtle);
+    color: var(--eipsi-color-text);
+    border-color: var(--eipsi-color-border);
+}
+
+.vas-dinamico-form[data-theme="dark"] .modal-header {
+    border-bottom-color: var(--eipsi-color-border);
+    color: var(--eipsi-color-text);
+}
+
+/**
+ * Error and validation messages
+ */
+.vas-dinamico-form[data-theme="dark"] .form-error,
+.vas-dinamico-form[data-theme="dark"] .error-message,
+.vas-dinamico-form[data-theme="dark"] .validation-error {
+    background-color: var(--eipsi-color-input-error-bg);
+    color: var(--eipsi-color-error);
+    border-color: var(--eipsi-color-error);
+}
+
+/**
+ * Success messages
+ */
+.vas-dinamico-form[data-theme="dark"] .success-message {
+    background-color: rgba(6, 150, 105, 0.15);
+    color: var(--eipsi-color-success);
+    border-color: var(--eipsi-color-success);
+}
+
+/**
+ * Description and info blocks
+ */
+.vas-dinamico-form[data-theme="dark"] .description-block,
+.vas-dinamico-form[data-theme="dark"] .field-description,
+.vas-dinamico-form[data-theme="dark"] .info-block {
+    background-color: var(--eipsi-color-description-bg);
+    color: var(--eipsi-color-description-text);
+    border-left-color: var(--eipsi-color-description-border);
+}
+
+/**
+ * Thank-you page (applies variables to all elements)
+ */
+.vas-dinamico-form[data-theme="dark"] .eipsi-thank-you-page,
+.eipsi-form[data-theme="dark"] .eipsi-thank-you-page {
+    background-color: var(--eipsi-color-background);
+    color: var(--eipsi-color-text);
+}
+
+.vas-dinamico-form[data-theme="dark"] .eipsi-thank-you-content,
+.eipsi-form[data-theme="dark"] .eipsi-thank-you-content {
+    background-color: var(--eipsi-color-background-subtle);
+    border-color: var(--eipsi-color-border);
+    box-shadow: var(--eipsi-shadow-md);
+}
+
+.vas-dinamico-form[data-theme="dark"] .eipsi-thank-you-title,
+.eipsi-form[data-theme="dark"] .eipsi-thank-you-title {
+    color: var(--eipsi-color-text);
+}
+
+.vas-dinamico-form[data-theme="dark"] .eipsi-thank-you-message,
+.eipsi-form[data-theme="dark"] .eipsi-thank-you-message {
+    color: var(--eipsi-color-text);
+}
+
+.vas-dinamico-form[data-theme="dark"] .eipsi-thank-you-button,
+.eipsi-form[data-theme="dark"] .eipsi-thank-you-button {
+    background-color: var(--eipsi-color-button-bg);
+    color: var(--eipsi-color-button-text);
+
+    &:hover {
+        background-color: var(--eipsi-color-button-hover-bg);
+    }
+
+    &:focus-visible {
+        outline-color: var(--eipsi-color-primary);
+    }
+}
+
+/**
+ * Progress bar (already has variables, ensure they're applied)
+ */
+.vas-dinamico-form[data-theme="dark"] .form-progress {
+    background-color: var(--eipsi-color-progress-bg);
+    border-color: var(--eipsi-color-progress-border);
+}
+
+.vas-dinamico-form[data-theme="dark"] .progress-bar,
+.vas-dinamico-form[data-theme="dark"] .progress-fill {
+    background-color: var(--eipsi-color-progress-fill);
+}
+
+.vas-dinamico-form[data-theme="dark"] .progress-text {
+    color: var(--eipsi-color-progress-text);
+}
+
+.vas-dinamico-form[data-theme="dark"] .current-page {
+    color: var(--eipsi-color-progress-text-highlight);
+}
+
+/**
+ * Borders and separators
+ */
+.vas-dinamico-form[data-theme="dark"] hr,
+.vas-dinamico-form[data-theme="dark"] .form-divider {
+    border-color: var(--eipsi-color-border);
 }
 
 /* ========================================
