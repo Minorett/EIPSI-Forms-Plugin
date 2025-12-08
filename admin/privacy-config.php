@@ -45,6 +45,59 @@ function get_privacy_defaults() {
 }
 
 /**
+ * Obtiene la configuración global por defecto de privacidad
+ */
+function get_global_privacy_defaults() {
+    $saved = get_option('eipsi_global_privacy_defaults');
+    
+    if (!$saved) {
+        // Si no existe configuración global, usar defaults estándar
+        return array(
+            'ip_address' => true,
+            'browser' => false,
+            'os' => false,
+            'screen_width' => false,
+            'therapeutic_engagement' => true,
+            'avoidance_patterns' => true,
+            'device_type' => true,
+            'quality_flag' => true
+        );
+    }
+    
+    return $saved;
+}
+
+/**
+ * Guarda la configuración global de privacidad
+ */
+function save_global_privacy_defaults($config) {
+    if (!current_user_can('manage_options')) {
+        return false;
+    }
+    
+    // Sanitizar configuración - SOLO toggles permitidos
+    $sanitized = array();
+    $allowed_toggles = array(
+        'therapeutic_engagement',
+        'avoidance_patterns',
+        'device_type',
+        'browser',
+        'os',
+        'screen_width',
+        'ip_address',
+        'quality_flag'
+    );
+    
+    foreach ($config as $key => $value) {
+        if (in_array($key, $allowed_toggles)) {
+            $sanitized[$key] = (bool) $value;
+        }
+    }
+    
+    return update_option('eipsi_global_privacy_defaults', $sanitized);
+}
+
+/**
  * Obtiene configuración de privacidad para un formulario
  */
 function get_privacy_config($form_id = null) {
@@ -54,13 +107,20 @@ function get_privacy_config($form_id = null) {
         return $defaults;
     }
     
+    // Obtener configuración global por defecto
+    $global_defaults = get_global_privacy_defaults();
+    
+    // Obtener configuración específica del formulario
     $saved = get_option("eipsi_privacy_config_{$form_id}");
     
+    // Si no hay configuración específica, usar la global
     if (!$saved) {
-        return $defaults;
+        $config = array_merge($defaults, $global_defaults);
+        return $config;
     }
     
-    $config = array_merge($defaults, (array) $saved);
+    // Si hay configuración específica, mezclar con defaults y global
+    $config = array_merge($defaults, $global_defaults, (array) $saved);
     
     return $config;
 }

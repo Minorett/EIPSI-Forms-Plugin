@@ -96,6 +96,7 @@ add_action('wp_ajax_eipsi_check_external_db', 'eipsi_check_external_db_handler')
 add_action('wp_ajax_nopriv_eipsi_check_external_db', 'eipsi_check_external_db_handler');
 
 add_action('wp_ajax_eipsi_save_privacy_config', 'eipsi_save_privacy_config_handler');
+add_action('wp_ajax_eipsi_save_global_privacy_config', 'eipsi_save_global_privacy_config_handler');
 add_action('wp_ajax_eipsi_verify_schema', 'eipsi_verify_schema_handler');
 add_action('wp_ajax_eipsi_check_table_status', 'eipsi_check_table_status_handler');
 add_action('wp_ajax_eipsi_delete_all_data', 'eipsi_delete_all_data_handler');
@@ -251,6 +252,35 @@ function eipsi_save_privacy_config_handler() {
         wp_send_json_success(array('message' => __('✅ Configuración guardada correctamente.', 'vas-dinamico-forms')));
     } else {
         wp_send_json_error(array('message' => __('Error al guardar la configuración.', 'vas-dinamico-forms')));
+    }
+}
+
+function eipsi_save_global_privacy_config_handler() {
+    check_ajax_referer('eipsi_global_privacy_nonce', 'eipsi_global_privacy_nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('No tienes permisos para realizar esta acción.', 'vas-dinamico-forms')));
+    }
+    
+    require_once dirname(__FILE__) . '/privacy-config.php';
+    
+    $config = array(
+        'therapeutic_engagement' => isset($_POST['therapeutic_engagement']),
+        'avoidance_patterns' => isset($_POST['avoidance_patterns']),
+        'device_type' => isset($_POST['device_type']),
+        'browser' => isset($_POST['browser']),
+        'os' => isset($_POST['os']),
+        'screen_width' => isset($_POST['screen_width']),
+        'ip_address' => isset($_POST['ip_address']),
+        'quality_flag' => isset($_POST['quality_flag'])
+    );
+    
+    $result = save_global_privacy_defaults($config);
+    
+    if ($result) {
+        wp_send_json_success(array('message' => __('✅ Configuración global guardada correctamente.', 'vas-dinamico-forms')));
+    } else {
+        wp_send_json_error(array('message' => __('Error al guardar la configuración global.', 'vas-dinamico-forms')));
     }
 }
 
