@@ -150,12 +150,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} else if ( Number.isFinite( labelSpacing ) ) {
 		alignmentPercentValue = labelSpacing;
 	}
+	// Allow extended alignment up to 200 for clinical flexibility
 	const clampedAlignmentPercent = Math.min(
 		Math.max( alignmentPercentValue, 0 ),
-		100
+		200
 	);
+	// Extended ratio: 0→0, 100→1, 200→2 (allowing more extreme separation)
 	const alignmentRatio = clampedAlignmentPercent / 100;
-	const compactnessRatio = 1 - alignmentRatio;
+	const compactnessRatio = Math.max( 0, 1 - alignmentRatio );
 
 	const [ previewValue, setPreviewValue ] = useState(
 		clampValueToRange(
@@ -468,7 +470,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 						<RangeControl
 							label={ __(
-								'Label alignment (0–100)',
+								'Label alignment (0–200)',
 								'vas-dinamico-forms'
 							) }
 							value={ clampedAlignmentPercent }
@@ -480,10 +482,10 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								}
 							} }
 							min={ 0 }
-							max={ 100 }
+							max={ 200 }
 							step={ 1 }
 							help={ __(
-								'0 = etiquetas compactas hacia el centro, 100 = cada extremo bien marcado.',
+								'0 = etiquetas compactas hacia el centro, 100 = cada extremo bien marcado, 150–200 = separación extrema.',
 								'vas-dinamico-forms'
 							) }
 						/>

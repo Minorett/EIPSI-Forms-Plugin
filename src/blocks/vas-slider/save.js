@@ -126,12 +126,14 @@ export default function Save( { attributes } ) {
 	) {
 		alignmentPercentValue = labelSpacing;
 	}
+	// Allow extended alignment up to 200 for clinical flexibility
 	const clampedAlignmentPercent = Math.min(
 		Math.max( alignmentPercentValue, 0 ),
-		100
+		200
 	);
+	// Extended ratio: 0→0, 100→1, 200→2 (allowing more extreme separation)
 	const alignmentRatio = clampedAlignmentPercent / 100;
-	const compactnessRatio = 1 - alignmentRatio;
+	const compactnessRatio = Math.max( 0, 1 - alignmentRatio );
 
 	return (
 		<div { ...blockProps }>
