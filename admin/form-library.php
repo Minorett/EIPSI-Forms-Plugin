@@ -94,6 +94,32 @@ function eipsi_form_library_columns($columns) {
 add_filter('manage_eipsi_form_template_posts_columns', 'eipsi_form_library_columns');
 
 /**
+ * Check if a column exists in a given database table
+ * 
+ * Uses INFORMATION_SCHEMA to safely query column existence
+ * without generating errors if the column is missing.
+ * 
+ * @param string $table_name Table name (with or without wp_ prefix)
+ * @param string $column_name Column name to check
+ * @return bool True if column exists, false otherwise
+ */
+function eipsi_column_exists_in_table($table_name, $column_name) {
+    global $wpdb;
+    
+    $result = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+            DB_NAME,
+            $table_name,
+            $column_name
+        )
+    );
+    
+    return !empty($result);
+}
+
+/**
  * Populate custom columns in Form Library list table
  */
 function eipsi_form_library_column_content($column, $post_id) {
@@ -118,6 +144,17 @@ function eipsi_form_library_column_content($column, $post_id) {
                 break;
             }
             
+            // Verify that submitted_at column exists before querying
+            if (!eipsi_column_exists_in_table($table_name, 'submitted_at')) {
+                echo '<span style="color: #999;">—</span>';
+                // Log the issue for diagnostic purposes
+                error_log(sprintf(
+                    'EIPSI Forms: Column submitted_at does not exist in table %s',
+                    $table_name
+                ));
+                break;
+            }
+            
             $last_response = $wpdb->get_var($wpdb->prepare(
                 "SELECT MAX(submitted_at) FROM {$table_name} WHERE form_name = %s",
                 $form_name
@@ -139,6 +176,18 @@ function eipsi_form_library_column_content($column, $post_id) {
             
             if (!$form_name) {
                 echo '<span style="color: #999;">0</span>';
+                break;
+            }
+            
+            // Verify that the table exists and is accessible before querying
+            // (COUNT(*) should work, but we validate for safety)
+            if (!eipsi_column_exists_in_table($table_name, 'form_name')) {
+                echo '<span style="color: #999;">—</span>';
+                // Log the issue for diagnostic purposes
+                error_log(sprintf(
+                    'EIPSI Forms: Table %s or column form_name does not exist',
+                    $table_name
+                ));
                 break;
             }
             
