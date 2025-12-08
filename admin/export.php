@@ -74,7 +74,7 @@ function vas_export_to_excel() {
     $table_name = $wpdb->prefix . 'vas_form_results';
     
     // Obtener formulario específico si se filtra
-    $form_filter = isset($_GET['form_name']) ? $wpdb->prepare('AND form_name = %s', $_GET['form_name']) : '';
+    $form_filter = isset($_GET['form_id']) ? $wpdb->prepare('AND form_id = %s', $_GET['form_id']) : '';
     
     $results = $wpdb->get_results("SELECT * FROM $table_name WHERE 1=1 $form_filter ORDER BY created_at DESC");
     
@@ -210,7 +210,7 @@ function vas_export_to_csv() {
     $table_name = $wpdb->prefix . 'vas_form_results';
     
     // Obtener formulario específico si se filtra
-    $form_filter = isset($_GET['form_name']) ? $wpdb->prepare('AND form_name = %s', $_GET['form_name']) : '';
+    $form_filter = isset($_GET['form_id']) ? $wpdb->prepare('AND form_id = %s', $_GET['form_id']) : '';
     
     $results = $wpdb->get_results("SELECT * FROM $table_name WHERE 1=1 $form_filter ORDER BY created_at DESC");
     

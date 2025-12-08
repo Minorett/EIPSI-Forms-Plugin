@@ -12,8 +12,8 @@ global $wpdb;
 
 $table_name = $wpdb->prefix . 'vas_form_results';
 
-// Obtener lista de formularios únicos
-$forms = $wpdb->get_col("SELECT DISTINCT form_name FROM $table_name ORDER BY form_name");
+// Obtener lista de formularios únicos con respuestas
+$forms = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
 
 // Filtro actual
 $current_form = isset($_GET['form_filter']) ? sanitize_text_field($_GET['form_filter']) : '';
@@ -21,8 +21,8 @@ $current_form = isset($_GET['form_filter']) ? sanitize_text_field($_GET['form_fi
 // NUEVO: Determinar si mostrar columna Form
 $show_form_column = empty($current_form);
 
-// Construir query con filtro
-$where = $current_form ? $wpdb->prepare("WHERE form_name = %s", $current_form) : '';
+// Construir query con filtro usando form_id
+$where = $current_form ? $wpdb->prepare("WHERE form_id = %s", $current_form) : '';
 $results = $wpdb->get_results("SELECT * FROM $table_name $where ORDER BY created_at DESC");
 
 // NUEVO: Calcular colspan dinámico (Form ID, Participant ID, Date, Time, Duration, Device, Browser, Actions)
@@ -86,7 +86,7 @@ $colspan = $show_form_column ? 8 : 7;
             <form method="get">
                 <input type="hidden" name="page" value="vas-dinamico-results">
                 <input type="hidden" name="tab" value="submissions">
-                <label for="form_filter" style="font-weight: bold; margin-right: 10px;"><?php _e('Filter by Form:', 'vas-dinamico-forms'); ?></label>
+                <label for="form_filter" style="font-weight: bold; margin-right: 10px;"><?php _e('Filter by Form ID:', 'vas-dinamico-forms'); ?></label>
                 <select name="form_filter" id="form_filter" onchange="this.form.submit()" style="padding: 8px; min-width: 200px;">
                     <option value=""><?php _e('All Forms', 'vas-dinamico-forms'); ?></option>
                     <?php foreach ($forms as $form): ?>
@@ -101,7 +101,7 @@ $colspan = $show_form_column ? 8 : 7;
         <!-- Botones de exportación -->
         <div class="vas-export-buttons" style="margin: 20px 0;">
             <?php
-            $export_params = $current_form ? ['form_name' => $current_form] : [];
+            $export_params = $current_form ? ['form_id' => $current_form] : [];
             $csv_url = add_query_arg(array_merge(['action' => 'export_csv'], $export_params));
             $excel_url = add_query_arg(array_merge(['action' => 'export_excel'], $export_params));
             ?>

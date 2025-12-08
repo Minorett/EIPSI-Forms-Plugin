@@ -8,20 +8,100 @@ function render_privacy_dashboard($form_id = null) {
     
     // Obtener configuración actual
     require_once dirname(__FILE__) . '/privacy-config.php';
+    $global_config = get_global_privacy_defaults();
     $privacy_config = get_privacy_config($current_form_id);
     
     ?>
     <div class="eipsi-privacy-dashboard">
         <h2>🔒 Configuración de Metadatos y Privacidad</h2>
         
-        <?php if ($current_form_id): ?>
-            <p><strong>Formulario:</strong> <code><?php echo esc_html($current_form_id); ?></code></p>
-        <?php endif; ?>
+        <!-- SECCIÓN A: CONFIGURACIÓN GLOBAL (SIEMPRE VISIBLE) -->
+        <div class="eipsi-global-config">
+            <h3>🌍 Configuración Global (por defecto para todos los formularios)</h3>
+            <p style="color: #666; margin-bottom: 15px; font-size: 13px;">
+                Estos valores se aplican a todos los formularios, salvo a aquellos que tengan una configuración específica en la sección 'Por formulario'.
+            </p>
+            
+            <form id="eipsi-global-privacy-form" method="post">
+                <?php wp_nonce_field('eipsi_global_privacy_nonce', 'eipsi_global_privacy_nonce'); ?>
+                <input type="hidden" name="action" value="save_global_privacy_config">
+                
+                <!-- CAPTURA BÁSICA -->
+                <div class="eipsi-toggle-group">
+                    <h3>📋 Captura Básica</h3>
+                    
+                    <label>
+                        <input type="checkbox" name="ip_address" <?php checked($global_config['ip_address']); ?>>
+                        <strong>Capturar IP del dispositivo</strong>
+                        <span class="eipsi-tooltip">(Auditoría clínica - GDPR/HIPAA - retención 90 días)</span>
+                    </label>
+                </div>
+                
+                <!-- FINGERPRINT LIVIANO DEL DISPOSITIVO -->
+                <div class="eipsi-toggle-group">
+                    <h3>🖥️ Fingerprint Liviano del Dispositivo</h3>
+                    <p class="eipsi-section-description">⚠️ Estos datos son <strong>opcionales</strong> y están <strong>desactivados por defecto</strong>. Útiles para distinguir pacientes con IP compartida.</p>
+                    
+                    <label>
+                        <input type="checkbox" name="browser" <?php checked($global_config['browser']); ?>>
+                        <strong>Capturar navegador y sistema operativo</strong>
+                        <span class="eipsi-tooltip">(ej: Chrome 131, Firefox 132, Windows 10)</span>
+                    </label>
+                    
+                    <label>
+                        <input type="checkbox" name="screen_width" <?php checked($global_config['screen_width']); ?>>
+                        <strong>Capturar tamaño de pantalla</strong>
+                        <span class="eipsi-tooltip">(ej: 1920x1080, 1080x2400)</span>
+                    </label>
+                </div>
+                
+                <!-- COMPORTAMIENTO CLÍNICO -->
+                <div class="eipsi-toggle-group">
+                    <h3>🎯 Comportamiento Clínico</h3>
+                    
+                    <label>
+                        <input type="checkbox" name="therapeutic_engagement" <?php checked($global_config['therapeutic_engagement']); ?>>
+                        <strong>Engagement Terapéutico</strong>
+                        <span class="eipsi-tooltip">(Tiempo por campo, cambios, navegación)</span>
+                    </label>
+                    
+                    <label>
+                        <input type="checkbox" name="avoidance_patterns" <?php checked($global_config['avoidance_patterns']); ?>>
+                        <strong>Patrones de Evitación</strong>
+                        <span class="eipsi-tooltip">(Saltos, retrocesos, omisiones)</span>
+                    </label>
+                    
+                    <label>
+                        <input type="checkbox" name="device_type" <?php checked($global_config['device_type']); ?>>
+                        <strong>Tipo de Dispositivo</strong>
+                        <span class="eipsi-tooltip">(mobile/desktop/tablet)</span>
+                    </label>
+                    
+                    <label>
+                        <input type="checkbox" name="quality_flag" <?php checked($global_config['quality_flag']); ?>>
+                        <strong>Quality Flag</strong>
+                        <span class="eipsi-tooltip">(Control automático: HIGH/NORMAL/LOW)</span>
+                    </label>
+                </div>
+                
+                <button type="submit" class="button button-primary">💾 Guardar Configuración Global</button>
+            </form>
+        </div>
         
-        <form id="eipsi-privacy-form" method="post">
-            <?php wp_nonce_field('eipsi_privacy_nonce', 'eipsi_privacy_nonce'); ?>
-            <input type="hidden" name="action" value="save_privacy_config">
-            <input type="hidden" name="form_id" value="<?php echo esc_attr($current_form_id); ?>">
+        <!-- SEPARADOR -->
+        <hr style="margin: 30px 0; border: none; height: 1px; background: #e2e8f0;">
+        
+        <!-- SECCIÓN B: CONFIGURACIÓN POR FORMULARIO (OVERRIDE) -->
+        <div class="eipsi-per-form-config">
+            <h3>🎯 Configuración por Formulario (override)</h3>
+            
+            <?php if ($current_form_id): ?>
+                <p><strong>Formulario:</strong> <code><?php echo esc_html($current_form_id); ?></code></p>
+                
+                <form id="eipsi-privacy-form" method="post">
+                    <?php wp_nonce_field('eipsi_privacy_nonce', 'eipsi_privacy_nonce'); ?>
+                    <input type="hidden" name="action" value="save_privacy_config">
+                    <input type="hidden" name="form_id" value="<?php echo esc_attr($current_form_id); ?>">
             
             <!-- SEGURIDAD BÁSICA (OBLIGATORIO) -->
             <div class="eipsi-toggle-group">
@@ -103,8 +183,15 @@ function render_privacy_dashboard($form_id = null) {
                 </label>
             </div>
             
-            <button type="submit" class="button button-primary">💾 Guardar Configuración</button>
+            <button type="submit" class="button button-primary">💾 Guardar Configuración para este Formulario</button>
         </form>
+    <?php else: ?>
+        <div class="notice notice-info">
+            <p>👆 <strong>Selecciona un formulario arriba para sobrescribir la configuración global solo para ese formulario.</strong></p>
+            <p>Mientras tanto, puedes configurar los valores globales que se aplicarán por defecto a todos los formularios.</p>
+        </div>
+    <?php endif; ?>
+        </div>
         
         <!-- INFO BOX -->
         <div class="eipsi-info-box">
@@ -221,6 +308,39 @@ function render_privacy_dashboard($form_id = null) {
     
     <script>
     jQuery(document).ready(function($) {
+        // Manejar envío del formulario global
+        $('#eipsi-global-privacy-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = $(this).serialize();
+            var $submitButton = $(this).find('button[type="submit"]');
+            var originalText = $submitButton.text();
+            
+            $submitButton.prop('disabled', true).text('💾 Guardando...');
+            
+            $('.eipsi-message').remove();
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: formData + '&action=eipsi_save_global_privacy_config',
+                success: function(response) {
+                    if (response.success) {
+                        showGlobalMessage('success', response.data.message);
+                    } else {
+                        showGlobalMessage('error', response.data.message || 'Error al guardar la configuración global.');
+                    }
+                },
+                error: function() {
+                    showGlobalMessage('error', 'Error al guardar la configuración global. Por favor, inténtelo de nuevo.');
+                },
+                complete: function() {
+                    $submitButton.prop('disabled', false).text(originalText);
+                }
+            });
+        });
+        
+        // Manejar envío del formulario por formulario
         $('#eipsi-privacy-form').on('submit', function(e) {
             e.preventDefault();
             
@@ -238,13 +358,13 @@ function render_privacy_dashboard($form_id = null) {
                 data: formData + '&action=eipsi_save_privacy_config',
                 success: function(response) {
                     if (response.success) {
-                        showMessage('success', response.data.message);
+                        showFormMessage('success', response.data.message);
                     } else {
-                        showMessage('error', response.data.message || 'Error al guardar la configuración.');
+                        showFormMessage('error', response.data.message || 'Error al guardar la configuración.');
                     }
                 },
                 error: function() {
-                    showMessage('error', 'Error al guardar la configuración. Por favor, inténtelo de nuevo.');
+                    showFormMessage('error', 'Error al guardar la configuración. Por favor, inténtelo de nuevo.');
                 },
                 complete: function() {
                     $submitButton.prop('disabled', false).text(originalText);
@@ -252,7 +372,22 @@ function render_privacy_dashboard($form_id = null) {
             });
         });
         
-        function showMessage(type, message) {
+        function showGlobalMessage(type, message) {
+            var $message = $('<div>')
+                .addClass('eipsi-message notice is-dismissible')
+                .addClass(type === 'success' ? 'notice-success' : 'notice-error')
+                .html('<p>' + message + '</p>');
+            
+            $('#eipsi-global-privacy-form').before($message);
+            
+            setTimeout(function() {
+                $message.fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 3000);
+        }
+        
+        function showFormMessage(type, message) {
             var $message = $('<div>')
                 .addClass('eipsi-message notice is-dismissible')
                 .addClass(type === 'success' ? 'notice-success' : 'notice-error')
