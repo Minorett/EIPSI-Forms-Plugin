@@ -1,20 +1,20 @@
 {
   "schemaVersion": "1.0.0",
   "meta": {
-    "exportedAt": "2025-02-05T10:00:00+00:00",
-    "exportedBy": "Test Manual",
+    "exportedAt": "2025-12-03T16:00:00-03:00",
+    "exportedBy": "EIPSI Demo",
     "pluginVersion": "1.3.0",
-    "formTitle": "Demo Simplificado – PHQ-2",
-    "formName": "demo_phq2"
+    "formTitle": "Demo – Estrés y recursos (4 páginas)",
+    "formName": "demo_stress_resources_4p"
   },
   "form": {
-    "title": "Demo Simplificado – PHQ-2",
-    "formId": "demo_phq2",
+    "title": "Demo – Estrés y recursos (4 páginas)",
+    "formId": "demo_stress_resources_4p",
     "blocks": [
       {
         "blockName": "vas-dinamico/form-container",
         "attrs": {
-          "formId": "demo_phq2"
+          "formId": "demo_stress_resources_4p"
         },
         "innerBlocks": [
           {
@@ -24,20 +24,11 @@
             },
             "innerBlocks": [
               {
-                "blockName": "vas-dinamico/campo-informativo",
-                "attrs": {
-                  "fieldKey": "intro",
-                  "title": "PHQ-2 – Screening de depresión",
-                  "content": "Las siguientes preguntas se refieren a cómo te sentiste en las últimas 2 semanas."
-                },
-                "innerBlocks": []
-              },
-              {
                 "blockName": "vas-dinamico/campo-likert",
                 "attrs": {
-                  "fieldName": "phq2_q1",
-                  "label": "1. Poco interés o placer en hacer cosas",
-                  "options": "0: Nunca; 1: Varios días; 2: Más de la mitad de los días; 3: Casi todos los días",
+                  "fieldName": "estres_general",
+                  "label": "En la última semana, ¿cuánto estrés sentiste en general?",
+                  "options": "Nada; Un poco; Moderado; Mucho; Extremadamente",
                   "required": true
                 },
                 "innerBlocks": []
@@ -45,10 +36,113 @@
               {
                 "blockName": "vas-dinamico/campo-likert",
                 "attrs": {
-                  "fieldName": "phq2_q2",
-                  "label": "2. Se ha sentido decaído/a, deprimido/a o sin esperanza",
-                  "options": "0: Nunca; 1: Varios días; 2: Más de la mitad de los días; 3: Casi todos los días",
+                  "fieldName": "calidad_sueno",
+                  "label": "En la última semana, ¿cómo describirías tu sueño en general?",
+                  "options": "Muy mala; Mala; Aceptable; Buena; Muy buena",
+                  "required": false
+                },
+                "innerBlocks": []
+              }
+            ]
+          },
+          {
+            "blockName": "vas-dinamico/form-page",
+            "attrs": {
+              "pageIndex": 2
+            },
+            "innerBlocks": [
+              {
+                "blockName": "vas-dinamico/vas-slider",
+                "attrs": {
+                  "fieldName": "vas_estres_hoy",
+                  "label": "¿Cuánto estrés sentís hoy (ahora mismo)?",
+                  "labels": "Nada de estrés; Estrés moderado; Estrés muy alto",
+                  "showValue": false,
+                  "labelAlignmentPercent": 100,
+                  "showCurrentValue": false,
+                  "valuePosition": "below"
+                },
+                "innerBlocks": []
+              },
+              {
+                "blockName": "vas-dinamico/vas-slider",
+                "attrs": {
+                  "fieldName": "vas_energia_hoy",
+                  "label": "¿Cuánta energía sentís que tenés hoy?",
+                  "labels": "Sin energía; Energía media; Mucha energía",
+                  "showValue": false,
+                  "labelAlignmentPercent": 100,
+                  "showCurrentValue": false,
+                  "valuePosition": "below"
+                },
+                "innerBlocks": []
+              }
+            ]
+          },
+          {
+            "blockName": "vas-dinamico/form-page",
+            "attrs": {
+              "pageIndex": 3
+            },
+            "innerBlocks": [
+              {
+                "blockName": "vas-dinamico/campo-likert",
+                "attrs": {
+                  "fieldName": "interferencia_vida_diaria",
+                  "label": "¿Cuánto sentís que todo esto interfiere con tu vida diaria?",
+                  "options": "Nada; Un poco; Moderado; Mucho; Extremadamente",
                   "required": true
+                },
+                "innerBlocks": []
+              },
+              {
+                "blockName": "vas-dinamico/campo-radio",
+                "attrs": {
+                  "fieldName": "area_mas_afectada",
+                  "label": "Si tuvieras que elegir el área más afectada, ¿cuál dirías que es?",
+                  "options": "Trabajo o estudio\nRelación de pareja\nFamilia en general\nVida social / amistades\nTiempo libre / hobbies\nNo estoy seguro/a",
+                  "required": false
+                },
+                "innerBlocks": []
+              }
+            ]
+          },
+          {
+            "blockName": "vas-dinamico/form-page",
+            "attrs": {
+              "pageIndex": 4
+            },
+            "innerBlocks": [
+              {
+                "blockName": "vas-dinamico/campo-radio",
+                "attrs": {
+                  "fieldName": "tiene_apoyo",
+                  "label": "¿Sentís que tenés a alguien con quien hablar si esto empeora?",
+                  "options": "No\nNo estoy seguro/a\nSí",
+                  "required": false
+                },
+                "innerBlocks": []
+              },
+              {
+                "blockName": "vas-dinamico/campo-radio",
+                "attrs": {
+                  "fieldName": "se_siente_superado",
+                  "label": "En los últimos días, ¿sentiste que todo esto te supera por completo?",
+                  "options": "No\nA veces\nSí",
+                  "required": false
+                },
+                "innerBlocks": []
+              },
+              {
+                "blockName": "vas-dinamico/vas-slider",
+                "attrs": {
+                  "fieldName": "vas_control_situacion",
+                  "label": "En este momento, ¿cuánto sentís que podés manejar la situación?",
+                  "labels": "Nada bajo control; Algo bajo control; Bastante bajo control",
+                  "showValue": false,
+                  "labelAlignmentPercent": 100,
+                  "showCurrentValue": false,
+                  "valuePosition": "below"
                 },
                 "innerBlocks": []
               }
@@ -59,6 +153,6 @@
     ]
   },
   "metadata": {
-    "_eipsi_form_name": "demo_phq2"
+    "_eipsi_form_name": "demo_stress_resources_4p"
   }
 }
