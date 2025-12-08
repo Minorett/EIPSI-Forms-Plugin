@@ -448,7 +448,7 @@ function eipsi_limit_blocks_by_context($allowed_block_types, $editor_context) {
         $allowed_block_types = array_keys($registered_blocks);
     }
     
-    // Dentro de la Form Library (CPT) ocultamos el bloque público
+    // Dentro de la Form Library (CPT) ocultamos el bloque público (embed)
     if ($post_type === 'eipsi_form_template') {
         // Solo quitamos el bloque embed si no existe ya en el contenido (compatibilidad)
         if (!has_block($form_embed_block, $post_content)) {
@@ -458,17 +458,9 @@ function eipsi_limit_blocks_by_context($allowed_block_types, $editor_context) {
         return array_values($allowed_block_types);
     }
     
-    // Fuera de la Form Library ocultamos el Container + campos a menos que ya existan
-    $blocks_to_hide = array();
-    foreach ($form_building_blocks as $block_name) {
-        if (!has_block($block_name, $post_content)) {
-            $blocks_to_hide[] = $block_name;
-        }
-    }
-    
-    if (!empty($blocks_to_hide)) {
-        $allowed_block_types = array_diff($allowed_block_types, $blocks_to_hide);
-    }
+    // Fuera de la Form Library: PERMITIR SIEMPRE todos los bloques de construcción + embed
+    // Los psicólogos pueden crear formularios desde cero en cualquier página
+    // No ocultamos nada para eliminar fricción y "zero excusas"
     
     return array_values($allowed_block_types);
 }
