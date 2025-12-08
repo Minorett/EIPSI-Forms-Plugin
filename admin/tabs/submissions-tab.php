@@ -13,7 +13,29 @@ global $wpdb;
 $table_name = $wpdb->prefix . 'vas_form_results';
 
 // Obtener lista de formularios únicos con respuestas
-$forms = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+// Instanciar clase de BD externa
+$external_db = new EIPSI_External_Database();
+$forms = array();
+
+if ($external_db->is_enabled()) {
+    // Usar BD externa si está habilitada
+    $mysqli = $external_db->get_connection();
+    if ($mysqli) {
+        $result = $mysqli->query("SELECT DISTINCT form_id FROM `{$table_name}` WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $forms[] = $row['form_id'];
+            }
+        }
+        $mysqli->close();
+    } else {
+        // Fallback a BD local si conexión externa falla
+        $forms = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+    }
+} else {
+    // Fallback a BD local si no hay BD externa
+    $forms = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+}
 
 // Filtro actual
 $current_form = isset($_GET['form_filter']) ? sanitize_text_field($_GET['form_filter']) : '';
@@ -23,7 +45,30 @@ $show_form_column = empty($current_form);
 
 // Construir query con filtro usando form_id
 $where = $current_form ? $wpdb->prepare("WHERE form_id = %s", $current_form) : '';
-$results = $wpdb->get_results("SELECT * FROM $table_name $where ORDER BY created_at DESC");
+
+// Obtener resultados usando BD externa si está habilitada
+if ($external_db->is_enabled()) {
+    // Usar BD externa
+    $mysqli = $external_db->get_connection();
+    if ($mysqli) {
+        $query = "SELECT * FROM `{$table_name}` {$where} ORDER BY created_at DESC";
+        $query_result = $mysqli->query($query);
+        $results = array();
+        if ($query_result) {
+            while ($row = $query_result->fetch_assoc()) {
+                // Convertir array asociativo a stdClass para mantener compatibilidad
+                $results[] = (object) $row;
+            }
+        }
+        $mysqli->close();
+    } else {
+        // Fallback a BD local si conexión externa falla
+        $results = $wpdb->get_results("SELECT * FROM $table_name $where ORDER BY created_at DESC");
+    }
+} else {
+    // Fallback a BD local
+    $results = $wpdb->get_results("SELECT * FROM $table_name $where ORDER BY created_at DESC");
+}
 
 // NUEVO: Calcular colspan dinámico (Form ID, Participant ID, Date, Time, Duration, Device, Browser, Actions)
 $colspan = $show_form_column ? 8 : 7;

@@ -1364,17 +1364,73 @@ function eipsi_sync_submissions_handler() {
     
     // Query para obtener formularios únicos con respuestas
     $table_name = $wpdb->prefix . 'vas_form_results';
-    $forms = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+    $forms = array();
     
-    // Log para debugging (solo si está habilitado)
+    // Instanciar clase de BD externa
+    $external_db = new EIPSI_External_Database();
+    
+    if (!$external_db->is_enabled()) {
+        // Fallback a BD local si BD externa no está habilitada
+        $forms = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+        
+        // Log para debugging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('EIPSI Sync Submissions: Found ' . count($forms) . ' unique forms in local database');
+        }
+        
+        wp_send_json_success(array(
+            'forms_found' => count($forms),
+            'count' => count($forms),
+            'forms' => $forms,
+            'message' => __('Submissions synchronized with database.', 'vas-dinamico-forms'),
+            'source' => 'local'
+        ));
+        return;
+    }
+    
+    // Conectarse a BD externa
+    $mysqli = $external_db->get_connection();
+    if (!$mysqli) {
+        // Si conexión externa falla, fallback a BD local
+        $forms = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('EIPSI Sync Submissions: Could not connect to external database, using local fallback. Found ' . count($forms) . ' forms');
+        }
+        
+        wp_send_json_success(array(
+            'forms_found' => count($forms),
+            'count' => count($forms),
+            'forms' => $forms,
+            'message' => __('Submissions synchronized with local database (external connection unavailable).', 'vas-dinamico-forms'),
+            'source' => 'local_fallback'
+        ));
+        return;
+    }
+    
+    // Ejecutar query en BD externa
+    $result = $mysqli->query("SELECT DISTINCT form_id FROM `{$table_name}` WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+    
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $forms[] = $row['form_id'];
+        }
+    }
+    
+    $mysqli->close();
+    
+    // Log para debugging
     if (defined('WP_DEBUG') && WP_DEBUG) {
-        error_log('EIPSI Sync Submissions: Found ' . count($forms) . ' unique forms in database');
+        error_log('EIPSI Sync Submissions: Found ' . count($forms) . ' unique forms in external database');
     }
     
     // Retornar éxito - el frontend se encarga del refresh
     wp_send_json_success(array(
         'forms_found' => count($forms),
-        'message' => __('Submissions synchronized with database.', 'vas-dinamico-forms')
+        'count' => count($forms),
+        'forms' => $forms,
+        'message' => __('Submissions synchronized with database.', 'vas-dinamico-forms'),
+        'source' => 'external'
     ));
 }
 
