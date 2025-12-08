@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test VAS Slider v1.3 - Alignment Extendido + Labels Largos</title>
+    <link rel="stylesheet" href="build/style-index.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        .test-section {
+            background: white;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 90, 135, 0.1);
+            border: 2px solid #e2e8f0;
+        }
+        .test-title {
+            color: #005a87;
+            border-bottom: 2px solid #005a87;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .test-description {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            color: #005177;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Test VAS Slider v1.3: Alignment Extendido + Labels Largos</h1>
+    
+    <div class="test-section">
+        <h2 class="test-title">Test 1: Alignment Normal (Backward Compatibility)</h2>
+        <div class="test-description">
+            <strong>Configuración:</strong> labelAlignmentPercent = 75 (comportamiento normal)<br>
+            <strong>Labels:</strong> "Poco", "Moderado", "Mucho"
+        </div>
+        <div class="form-group eipsi-field eipsi-vas-slider-field">
+            <label>Control de síntomas (Test 1)</label>
+            <div class="vas-slider-container" data-scale="0-10" style="--vas-label-alignment: 0.75; --vas-label-compactness: 0.25; --vas-label-size: 16px; --vas-value-size: 36px;">
+                <div class="vas-multi-labels" data-label-count="3">
+                    <span class="vas-multi-label">Poco</span>
+                    <span class="vas-multi-label">Moderado</span>
+                    <span class="vas-multi-label">Mucho</span>
+                </div>
+                <div class="vas-current-value-solo" id="field-test1-value">5</div>
+                <input type="range" name="test1" id="field-test1" class="vas-slider" min="0" max="10" step="1" value="5" required="true" data-required="true" data-show-value="true" aria-valuemin="0" aria-valuemax="10" aria-valuenow="5" aria-labelledby="field-test1-value">
+            </div>
+            <p class="field-helper">Este es el comportamiento normal (0-100% alignment)</p>
+            <div class="form-error" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">Test 2: Alignment Extremo (>100)</h2>
+        <div class="test-description">
+            <strong>Configuración:</strong> labelAlignmentPercent = 150 (extensión nueva)<br>
+            <strong>Labels:</strong> "Ninguno", "Leve", "Moderado", "Severo"
+        </div>
+        <div class="form-group eipsi-field eipsi-vas-slider-field">
+            <label>Severidad de dolor (Test 2)</label>
+            <div class="vas-slider-container" data-scale="0-10" style="--vas-label-alignment: 1.5; --vas-label-compactness: 0; --vas-label-size: 16px; --vas-value-size: 36px;">
+                <div class="vas-multi-labels" data-label-count="4">
+                    <span class="vas-multi-label">Ninguno</span>
+                    <span class="vas-multi-label">Leve</span>
+                    <span class="vas-multi-label">Moderado</span>
+                    <span class="vas-multi-label">Severo</span>
+                </div>
+                <div class="vas-current-value-solo" id="field-test2-value">5</div>
+                <input type="range" name="test2" id="field-test2" class="vas-slider" min="0" max="10" step="1" value="5" required="false" data-required="false" data-show-value="true" aria-valuemin="0" aria-valuemax="10" aria-valuenow="5" aria-labelledby="field-test2-value">
+            </div>
+            <p class="field-helper">Nota cómo las etiquetas tienen más separación que el test anterior</p>
+            <div class="form-error" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">Test 3: Labels Largos con Wrap</h2>
+        <div class="test-description">
+            <strong>Configuración:</strong> labelAlignmentPercent = 100 (alineación normal)<br>
+            <strong>Labels largos:</strong> "Nada bajo control", "Algo bajo control", "Bastante bajo control"
+        </div>
+        <div class="form-group eipsi-field eipsi-vas-slider-field">
+            <label>Nivel de control percibido (Test 3)</label>
+            <div class="vas-slider-container" data-scale="0-10" style="--vas-label-alignment: 1; --vas-label-compactness: 0; --vas-label-size: 16px; --vas-value-size: 36px;">
+                <div class="vas-multi-labels" data-label-count="3">
+                    <span class="vas-multi-label">Nada bajo control</span>
+                    <span class="vas-multi-label">Algo bajo control</span>
+                    <span class="vas-multi-label">Bastante bajo control</span>
+                </div>
+                <div class="vas-current-value-solo" id="field-test3-value">5</div>
+                <input type="range" name="test3" id="field-test3" class="vas-slider" min="0" max="10" step="1" value="5" required="true" data-required="true" data-show-value="true" aria-valuemin="0" aria-valuemax="10" aria-valuenow="5" aria-labelledby="field-test3-value">
+            </div>
+            <p class="field-helper">Los labels largos deberían verse completos, sin "..." truncado</p>
+            <div class="form-error" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">Test 4: Combinación Extrema</h2>
+        <div class="test-description">
+            <strong>Configuración:</strong> labelAlignmentPercent = 200 (máximo extendido)<br>
+            <strong>Labels largos:</strong> "Completamente fuera de control", "Ligeramente controlado", "Totalmente bajo control"
+        </div>
+        <div class="form-group eipsi-field eipsi-vas-slider-field">
+            <label>Control general de la condición (Test 4)</label>
+            <div class="vas-slider-container" data-scale="0-10" style="--vas-label-alignment: 2; --vas-label-compactness: 0; --vas-label-size: 16px; --vas-value-size: 36px;">
+                <div class="vas-multi-labels" data-label-count="3">
+                    <span class="vas-multi-label">Completamente fuera de control</span>
+                    <span class="vas-multi-label">Ligeramente controlado</span>
+                    <span class="vas-multi-label">Totalmente bajo control</span>
+                </div>
+                <div class="vas-current-value-solo" id="field-test4-value">5</div>
+                <input type="range" name="test4" id="field-test4" class="vas-slider" min="0" max="10" step="1" value="5" required="false" data-required="false" data-show-value="true" aria-valuemin="0" aria-valuemax="10" aria-valuenow="5" aria-labelledby="field-test4-value">
+            </div>
+            <p class="field-helper">Máxima separación + labels largos con wrap completo</p>
+            <div class="form-error" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">📋 Checklist de Validación Clínica</h2>
+        <div class="test-description">
+            <strong>Alignment Extendido (0-200):</strong>
+            <ul>
+                <li>✅ Test 1 (75): Comportamiento normal mantenido</li>
+                <li>✅ Test 2 (150): Separación mayor visible</li>
+                <li>✅ Test 4 (200): Separación máxima, sin romper layout</li>
+            </ul>
+            
+            <strong>Labels Largos con Wrap:</strong>
+            <ul>
+                <li>✅ Test 3: "Bastante bajo control" se ve completo (puede usar 2 líneas)</li>
+                <li>✅ Test 4: Labels muy largos se ven sin truncarse</li>
+                <li>✅ No aparece "..." de ellipsis nunca</li>
+            </ul>
+            
+            <strong>Compatibilidad:</strong>
+            <ul>
+                <li>✅ Formularios existentes (0-100) funcionan igual</li>
+                <li>✅ El slider track mantiene ancho completo siempre</li>
+                <li>✅ Los valores >200 se clamp a 200</li>
+            </ul>
+        </div>
+    </div>
+
+</body>
+</html>

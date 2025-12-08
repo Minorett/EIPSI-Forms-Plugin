@@ -43,17 +43,17 @@
         --vas-label-alignment: 0.5;
         --vas-label-compactness: 0.5;
 
-        // LABELS MÚLTIPLES - Dynamic alignment based on --vas-label-alignment (0-1)
-        // 0 = tight spacing (centered/compact), 1 = wide spacing (edge-to-edge)
+        // LABELS MÚLTIPLES - Dynamic alignment based on --vas-label-alignment (0-2)
+        // 0 = tight spacing (centered/compact), 1 = wide spacing (edge-to-edge), 2 = extreme separation
         .vas-multi-labels {
             display: flex;
             justify-content: space-between;
             margin-bottom: 1em;
-            width: calc( 100% - ( var( --vas-label-compactness, 0.5 ) * 20% ) );
-            margin-left: calc( var( --vas-label-compactness, 0.5 ) * 10% );
-            margin-right: calc( var( --vas-label-compactness, 0.5 ) * 10% );
-            // Calculate spacing: alignment closer to 1 = more gap
-            gap: calc( 0.4em + var( --vas-label-alignment, 0.5 ) * 2em );
+            width: calc( 100% - ( min(var( --vas-label-compactness, 0.5 ), 1) * 20% ) );
+            margin-left: calc( min(var( --vas-label-compactness, 0.5 ), 1) * 10% );
+            margin-right: calc( min(var( --vas-label-compactness, 0.5 ), 1) * 10% );
+            // Calculate spacing: alignment closer to 1 = more gap, up to 2x gap for extreme values
+            gap: calc( 0.4em + min(var( --vas-label-alignment, 0.5 ), 2) * 1.6em );
 
             .vas-multi-label {
                 flex: 1;
@@ -66,9 +66,15 @@
                 border: none;
                 color: var( --eipsi-color-text, #2c3e50 );
                 transition: all 0.2s ease;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                // Allow text wrapping for long labels (max 2 lines)
+                white-space: normal;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                line-height: 1.4;
+                max-height: 2.8em; // Approximately 2 lines of text
+                display: flex;
+                align-items: center;
+                justify-content: center;
 
                 &:hover {
                     transform: translateY( -1px );
