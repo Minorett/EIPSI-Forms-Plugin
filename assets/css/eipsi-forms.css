@@ -2231,14 +2231,18 @@ body.page-template-eipsi-form {
     padding: var(--eipsi-spacing-container-padding, 2.5rem);
     text-align: center;
     animation: eipsi-fadeIn 0.5s ease-in-out;
+    /* Dark mode support: use background and text variables */
+    background-color: var(--eipsi-color-background, #ffffff);
+    color: var(--eipsi-color-text, #2c3e50);
 }
 
 .eipsi-thank-you-content {
     max-width: 600px;
     margin: 0 auto;
-    background: var(--eipsi-color-card-bg, var(--eipsi-color-background, #ffffff));
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
     padding: var(--eipsi-spacing-lg, 2rem);
     border-radius: var(--eipsi-border-radius-md, 12px);
+    border: 1px solid var(--eipsi-color-border, #e2e8f0);
     box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
 }
 
@@ -2255,7 +2259,7 @@ body.page-template-eipsi-form {
     font-family: var(--eipsi-font-family-heading, 'Segoe UI', sans-serif);
     font-size: var(--eipsi-font-size-h2, 1.75rem);
     font-weight: var(--eipsi-font-weight-bold, 700);
-    color: var(--eipsi-color-primary, #005a87);
+    color: var(--eipsi-color-text, #2c3e50);
     margin: 0 0 var(--eipsi-spacing-md, 1.5rem) 0;
     line-height: var(--eipsi-line-height-heading, 1.3);
 }
@@ -2298,8 +2302,8 @@ body.page-template-eipsi-form {
     box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
 }
 
-.eipsi-thank-you-button:focus {
-    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-input-border-focus, #005a87);
+.eipsi-thank-you-button:focus-visible {
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
     outline-offset: var(--eipsi-focus-outline-offset, 2px);
 }
 
