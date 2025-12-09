@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUDITORÍA VAS LABELS - Diagnóstico Visual Completo</title>
+    <link rel="stylesheet" href="assets/css/eipsi-forms.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .audit-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-section {
+            border: 2px solid #e0e0e0;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .measurement-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .measure-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .debug-info {
+            background: #e8f4f8;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .slider-visual {
+            position: relative;
+            height: 80px;
+            border: 2px dashed #ff6b6b;
+            margin: 20px 0;
+        }
+        .slider-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #ff6b6b;
+            transform: translateY(-50%);
+        }
+        .point-marker {
+            position: absolute;
+            top: 50%;
+            width: 4px;
+            height: 20px;
+            background: #ff0000;
+            transform: translateY(-50%);
+        }
+        .point-0 { left: 0; }
+        .point-100 { right: 0; }
+        .label-extremes {
+            position: absolute;
+            top: 10px;
+            background: #ff6b6b;
+            color: white;
+            padding: 2px 6px;
+            font-size: 10px;
+            border-radius: 3px;
+        }
+        .label-extremes.left { left: 0; }
+        .label-extremes.right { right: 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 AUDITORÍA VAS LABELS - Diagnóstico Visual Completo</h1>
+    
+    <div class="audit-container">
+        <h2>Test 1: Estado Actual del Código (Sin Fix de Padding)</h2>
+        <p><strong>Esperado:</strong> Los labels deberían tener espacio de padding que los aleja de los extremos</p>
+        
+        <div class="test-section">
+            <h3>VAS con Alignment = 100 (Debería tocar extremos)</h3>
+            
+            <div class="slider-visual">
+                <div class="slider-line"></div>
+                <div class="point-marker point-0"></div>
+                <div class="point-marker point-100"></div>
+                <div class="label-extremes left">Punto 0</div>
+                <div class="label-extremes right">Punto 100</div>
+            </div>
+            
+            <!-- VAS ACTUAL del código actual -->
+            <div class="vas-slider-container" style="--vas-label-alignment: 1; --vas-label-size: 16px; --vas-label-weight: 600; --vas-label-compactness: 0; width: 100%; max-width: 600px;">
+                <div class="vas-multi-labels">
+                    <span class="vas-multi-label vas-multi-label--first">Nada bajo control</span>
+                    <span class="vas-multi-label">Algo bajo control</span>
+                    <span class="vas-multi-label vas-multi-label--last">Bastante bajo control</span>
+                </div>
+                <input type="range" class="vas-slider" min="0" max="100" step="1" value="50" style="width: 100%;">
+            </div>
+            
+            <div class="debug-info" id="measurements-100">
+                <strong>MEDICIONES CON getBoundingClientRect():</strong><br>
+                <span id="results-100">Ejecutar mediciones...</span>
+                <br><br>
+                <button onclick="measureLabels(100)">📏 Medir labels</button>
+                <button onclick="measurePadding(100)">📐 Medir padding</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="audit-container">
+        <h2>Test 2: Con Fix de Padding (Propuesto)</h2>
+        <p><strong>Esperado:</strong> Labels extremos sin padding-left/padding-right deberían tocar exactamente</p>
+        
+        <div class="test-section">
+            <h3>Mismo VAS con Fix de Padding aplicado</h3>
+            
+            <div class="slider-visual">
+                <div class="slider-line"></div>
+                <div class="point-marker point-0"></div>
+                <div class="point-marker point-100"></div>
+                <div class="label-extremes left">Punto 0</div>
+                <div class="label-extremes right">Punto 100</div>
+            </div>
+            
+            <!-- Mismo VAS pero con fix aplicado manualmente -->
+            <div class="vas-slider-container" style="--vas-label-alignment: 1; --vas-label-size: 16px; --vas-label-weight: 600; --vas-label-compactness: 0; width: 100%; max-width: 600px;">
+                <div class="vas-multi-labels">
+                    <span class="vas-multi-label vas-multi-label--first" style="padding-left: 0;">Nada bajo control</span>
+                    <span class="vas-multi-label">Algo bajo control</span>
+                    <span class="vas-multi-label vas-multi-label--last" style="padding-right: 0;">Bastante bajo control</span>
+                </div>
+                <input type="range" class="vas-slider" min="0" max="100" step="1" value="50" style="width: 100%;">
+            </div>
+            
+            <div class="debug-info" id="measurements-100-fixed">
+                <strong>MEDICIONES CON FIX APLICADO:</strong><br>
+                <span id="results-100-fixed">Ejecutar mediciones...</span>
+                <br><br>
+                <button onclick="measureLabels(100, true)">📏 Medir labels</button>
+                <button onclick="measurePadding(100, true)">📐 Medir padding</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="audit-container">
+        <h2>Test 3: Comparación con Alignment = 50 (Normal)</h2>
+        
+        <div class="test-section">
+            <h3>Estado Actual vs Con Fix</h3>
+            
+            <div class="measurement-grid">
+                <div>
+                    <h4>Actual (Sin Fix)</h4>
+                    <div class="vas-slider-container" style="--vas-label-alignment: 0.5; width: 100%; max-width: 400px;">
+                        <div class="vas-multi-labels">
+                            <span class="vas-multi-label vas-multi-label--first">Nada</span>
+                            <span class="vas-multi-label">Medio</span>
+                            <span class="vas-multi-label vas-multi-label--last">Mucho</span>
+                        </div>
+                        <input type="range" class="vas-slider" min="0" max="100" step="1" value="50" style="width: 100%;">
+                    </div>
+                </div>
+                
+                <div>
+                    <h4>Con Fix (Propuesto)</h4>
+                    <div class="vas-slider-container" style="--vas-label-alignment: 0.5; width: 100%; max-width: 400px;">
+                        <div class="vas-multi-labels">
+                            <span class="vas-multi-label vas-multi-label--first" style="padding-left: 0;">Nada</span>
+                            <span class="vas-multi-label">Medio</span>
+                            <span class="vas-multi-label vas-multi-label--last" style="padding-right: 0;">Mucho</span>
+                        </div>
+                        <input type="range" class="vas-slider" min="0" max="100" step="1" value="50" style="width: 100%;">
+                    </div>
+                </div>
+                
+                <div>
+                    <h4>Diferencia Visual</h4>
+                    <div class="measure-box">
+                        <div id="comparison-50">Comparando...</div>
+                        <br>
+                        <button onclick="compareAlignment(50)">🔍 Comparar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="audit-container">
+        <h2>Test 4: Alignment = 0 (Compacto)</h2>
+        
+        <div class="test-section">
+            <h3>Labels centrados (padding fix no debería afectar)</h3>
+            
+            <div class="vas-slider-container" style="--vas-label-alignment: 0; width: 100%; max-width: 600px;">
+                <div class="vas-multi-labels">
+                    <span class="vas-multi-label vas-multi-label--first">Nada bajo control</span>
+                    <span class="vas-multi-label">Algo bajo control</span>
+                    <span class="vas-multi-label vas-multi-label--last">Bastante bajo control</span>
+                </div>
+                <input type="range" class="vas-slider" min="0" max="100" step="1" value="50" style="width: 100%;">
+            </div>
+            
+            <div class="debug-info">
+                <div id="measurements-0">Labels centrados sin padding fix...</div>
+                <button onclick="measureAlignment(0)">📏 Medir centrado</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function measureLabels(alignment, fixed = false) {
+            const suffix = fixed ? '-fixed' : '';
+            const container = document.querySelectorAll('.vas-slider-container')[fixed ? 1 : 0];
+            const slider = container.querySelector('.vas-slider');
+            const labels = container.querySelectorAll('.vas-multi-label');
+            const firstLabel = labels[0];
+            const lastLabel = labels[labels.length - 1];
+            const middleLabel = labels[1];
+            
+            const sliderRect = slider.getBoundingClientRect();
+            const firstRect = firstLabel.getBoundingClientRect();
+            const lastRect = lastLabel.getBoundingClientRect();
+            const middleRect = middleLabel.getBoundingClientRect();
+            
+            const results = document.getElementById('results-' + alignment + suffix);
+            
+            results.innerHTML = `
+                <strong>SLIDER:</strong> left=${Math.round(sliderRect.left)}px, right=${Math.round(sliderRect.right)}px, width=${Math.round(sliderRect.width)}px<br>
+                <strong>PRIMER LABEL:</strong> left=${Math.round(firstRect.left)}px, right=${Math.round(firstRect.right)}px, width=${Math.round(firstRect.width)}px<br>
+                <strong>ÚLTIMO LABEL:</strong> left=${Math.round(lastRect.left)}px, right=${Math.round(lastRect.right)}px, width=${Math.round(lastRect.width)}px<br>
+                <strong>LABEL MEDIO:</strong> left=${Math.round(middleRect.left)}px, right=${Math.round(middleRect.right)}px, width=${Math.round(middleRect.width)}px<br>
+                <br>
+                <strong>GAP ANALYSIS:</strong><br>
+                • Left gap: ${Math.round(firstRect.left - sliderRect.left)}px (debería ser 0 con alignment=100)<br>
+                • Right gap: ${Math.round(sliderRect.right - lastRect.right)}px (debería ser 0 con alignment=100)<br>
+                • Middle centered: ${Math.round(Math.abs((middleRect.left + middleRect.width/2) - (sliderRect.left + sliderRect.width/2)))}px from center<br>
+            `;
+        }
+        
+        function measurePadding(alignment, fixed = false) {
+            const suffix = fixed ? '-fixed' : '';
+            const container = document.querySelectorAll('.vas-slider-container')[fixed ? 1 : 0];
+            const labels = container.querySelectorAll('.vas-multi-label');
+            const firstLabel = labels[0];
+            const lastLabel = labels[labels.length - 1];
+            
+            const firstStyles = window.getComputedStyle(firstLabel);
+            const lastStyles = window.getComputedStyle(lastLabel);
+            
+            const results = document.getElementById('results-' + alignment + suffix);
+            const paddingInfo = `
+                <br><strong>PADDING ANALYSIS:</strong><br>
+                <strong>PRIMER LABEL:</strong><br>
+                • padding-left: ${firstStyles.paddingLeft}<br>
+                • padding-right: ${firstStyles.paddingRight}<br>
+                <strong>ÚLTIMO LABEL:</strong><br>
+                • padding-left: ${lastStyles.paddingLeft}<br>
+                • padding-right: ${lastStyles.paddingRight}<br>
+            `;
+            
+            results.innerHTML += paddingInfo;
+        }
+        
+        function compareAlignment(alignment) {
+            const containers = document.querySelectorAll('.vas-slider-container');
+            const original = containers[2]; // Third section
+            const fixed = containers[3]; // Fourth section
+            
+            const originalSlider = original.querySelector('.vas-slider');
+            const fixedSlider = fixed.querySelector('.vas-slider');
+            const originalFirstLabel = original.querySelector('.vas-multi-label--first');
+            const fixedFirstLabel = fixed.querySelector('.vas-multi-label--first');
+            
+            const originalRect = originalFirstLabel.getBoundingClientRect();
+            const fixedRect = fixedFirstLabel.getBoundingClientRect();
+            
+            const originalGap = Math.round(originalRect.left - originalSlider.getBoundingClientRect().left);
+            const fixedGap = Math.round(fixedRect.left - fixedSlider.getBoundingClientRect().left);
+            
+            const results = document.getElementById('comparison-' + alignment);
+            results.innerHTML = `
+                <strong>COMPARACIÓN A L=${alignment}:</strong><br>
+                • Original gap: ${originalGap}px<br>
+                • Fixed gap: ${fixedGap}px<br>
+                <strong>MEJORA:</strong> ${originalGap - fixedGap}px de reducción<br>
+                ${fixedGap === 0 ? '✅ TOQUE EXACTO' : '⚠️ Aún hay gap'}
+            `;
+        }
+        
+        function measureAlignment(alignment) {
+            const container = document.querySelectorAll('.vas-slider-container')[4]; // Fifth section
+            const slider = container.querySelector('.vas-slider');
+            const labels = container.querySelectorAll('.vas-multi-label');
+            
+            const sliderRect = slider.getBoundingClientRect();
+            const labelRects = Array.from(labels).map(label => label.getBoundingClientRect());
+            
+            const results = document.getElementById('measurements-' + alignment);
+            results.innerHTML = `
+                <strong>ALIGNMENT=${alignment} (Todos centrados):</strong><br>
+                ${labelRects.map((rect, i) => 
+                    `Label ${i+1}: center=${Math.round(rect.left + rect.width/2)}px, gap from slider center=${Math.round((rect.left + rect.width/2) - (sliderRect.left + sliderRect.width/2))}px`
+                ).join('<br>')}
+            `;
+        }
+        
+        // Auto-run initial measurements
+        window.addEventListener('load', function() {
+            console.log('🔍 AUDITORÍA VAS LABELS - Iniciando diagnósticos...');
+            console.log('📁 Código actual analizado en:', document.querySelectorAll('.vas-slider-container')[0]);
+            console.log('🔧 Fix propuesto en:', document.querySelectorAll('.vas-slider-container')[1]);
+        });
+    </script>
+</body>
+</html>
