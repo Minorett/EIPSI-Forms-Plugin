@@ -143,6 +143,10 @@
                 case 'vas-slider':
                     const slider = field.querySelector( 'input[type="range"]' );
                     if ( slider ) {
+                        // If untouched, treat as null (no answer)
+                        if ( slider.dataset.touched === 'false' ) {
+                            return null;
+                        }
                         const value = parseFloat( slider.value );
                         return ! Number.isNaN( value ) ? value : null;
                     }
@@ -1185,6 +1189,8 @@
                     once: true,
                 } );
 
+                slider.addEventListener( 'input', markAsTouched );
+
                 slider.addEventListener( 'keydown', ( e ) => {
                     if (
                         e.key === 'ArrowLeft' ||
@@ -1903,7 +1909,7 @@
                     isValid = false;
                     errorMessage =
                         strings.sliderRequired ||
-                        'Por favor, interactúe con la escala para continuar.';
+                        'Por favor desliza el slider para responder';
                 }
             } else if ( isSelect ) {
                 if ( isRequired && ( ! field.value || field.value === '' ) ) {
@@ -2139,6 +2145,16 @@
             const prevButton = form.querySelector( '.eipsi-prev-button' );
             const nextButton = form.querySelector( '.eipsi-next-button' );
             const formData = new FormData( form );
+
+            // Sanitize untouched VAS sliders (prevent "50" from being sent)
+            form.querySelectorAll( '.vas-slider' ).forEach( ( slider ) => {
+                if (
+                    slider.dataset.touched === 'false' &&
+                    formData.has( slider.name )
+                ) {
+                    formData.set( slider.name, '' );
+                }
+            } );
 
             // Obtener IDs antes de enviar
             const formId = this.getFormId( form ) || '';
