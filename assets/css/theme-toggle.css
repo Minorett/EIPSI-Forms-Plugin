@@ -156,7 +156,8 @@
  * Labels and form text
  */
 .vas-dinamico-form[data-theme=dark] label,
-.vas-dinamico-form[data-theme=dark] .form-label {
+.vas-dinamico-form[data-theme=dark] .form-label,
+.vas-dinamico-form[data-theme=dark] .eipsi-field label {
   color: var(--eipsi-color-text);
 }
 
@@ -164,7 +165,8 @@
  * Help text and hints
  */
 .vas-dinamico-form[data-theme=dark] .help-text,
-.vas-dinamico-form[data-theme=dark] .field-hint {
+.vas-dinamico-form[data-theme=dark] .field-hint,
+.vas-dinamico-form[data-theme=dark] .field-helper {
   color: var(--eipsi-color-text-muted);
 }
 
@@ -402,6 +404,40 @@
 .vas-dinamico-form[data-theme=dark] hr,
 .vas-dinamico-form[data-theme=dark] .form-divider {
   border-color: var(--eipsi-color-border);
+}
+
+/**
+ * Form groups, fields, pages, and containers
+ */
+.vas-dinamico-form[data-theme=dark] .form-group,
+.vas-dinamico-form[data-theme=dark] .eipsi-field,
+.vas-dinamico-form[data-theme=dark] .eipsi-text-field,
+.vas-dinamico-form[data-theme=dark] .eipsi-textarea-field,
+.vas-dinamico-form[data-theme=dark] .eipsi-select-field,
+.vas-dinamico-form[data-theme=dark] .eipsi-radio-field,
+.vas-dinamico-form[data-theme=dark] .eipsi-checkbox-field,
+.vas-dinamico-form[data-theme=dark] .eipsi-likert-field {
+  color: var(--eipsi-color-text);
+}
+
+/**
+ * Page titles and headings
+ */
+.vas-dinamico-form[data-theme=dark] .eipsi-page-title,
+.vas-dinamico-form[data-theme=dark] .form-title,
+.vas-dinamico-form[data-theme=dark] h1,
+.vas-dinamico-form[data-theme=dark] h2,
+.vas-dinamico-form[data-theme=dark] h3 {
+  color: var(--eipsi-color-primary);
+}
+
+/**
+ * Form descriptions and info boxes
+ */
+.vas-dinamico-form[data-theme=dark] .form-description {
+  background-color: var(--eipsi-color-background-subtle);
+  border-left-color: var(--eipsi-color-primary);
+  color: var(--eipsi-color-text);
 }
 
 /* ========================================
