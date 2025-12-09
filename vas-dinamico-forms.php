@@ -488,13 +488,8 @@ function vas_dinamico_enqueue_frontend_assets() {
         VAS_DINAMICO_VERSION
     );
 
-    // Enqueue dark mode toggle styles
-    wp_enqueue_style(
-        'eipsi-theme-toggle-css',
-        VAS_DINAMICO_PLUGIN_URL . 'assets/css/theme-toggle.css',
-        array('eipsi-forms-css'),
-        VAS_DINAMICO_VERSION
-    );
+    // Theme toggle styles are now bundled in eipsi-forms.css
+
 
     // Save & Continue UI styles
     wp_enqueue_style(
