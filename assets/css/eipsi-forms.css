@@ -2558,7 +2558,12 @@ body.page-template-eipsi-form {
 .vas-dinamico-form[data-theme=dark] input[type=number],
 .vas-dinamico-form[data-theme=dark] input[type=date],
 .vas-dinamico-form[data-theme=dark] input[type=time],
-.vas-dinamico-form[data-theme=dark] input[type=search],
+.vas-dinamico-form[data-theme=dark] input[type="text"],
+.vas-dinamico-form[data-theme=dark] input[type="email"],
+.vas-dinamico-form[data-theme=dark] input[type="number"],
+.vas-dinamico-form[data-theme=dark] input[type="date"],
+.vas-dinamico-form[data-theme=dark] input[type="time"],
+.vas-dinamico-form[data-theme=dark] input[type="search"],
 .vas-dinamico-form[data-theme=dark] textarea,
 .vas-dinamico-form[data-theme=dark] select {
   background-color: var(--eipsi-color-input-bg);
@@ -2599,15 +2604,18 @@ body.page-template-eipsi-form {
  * Help text and hints
  */
 .vas-dinamico-form[data-theme=dark] .help-text,
-.vas-dinamico-form[data-theme=dark] .field-hint {
+.vas-dinamico-form[data-theme=dark] .field-hint,
+.vas-dinamico-form[data-theme=dark] .field-helper,
+.vas-dinamico-form[data-theme=dark] .form-description {
   color: var(--eipsi-color-text-muted);
 }
 
 /**
  * Radio buttons and checkboxes
  */
-.vas-dinamico-form[data-theme=dark] input[type=radio],
-.vas-dinamico-form[data-theme=dark] input[type=checkbox] {
+.vas-dinamico-form[data-theme=dark] input[type="radio"],
+.vas-dinamico-form[data-theme=dark] input[type="checkbox"] {
+  accent-color: var(--eipsi-color-primary);
   border-color: var(--eipsi-color-input-border);
   background-color: var(--eipsi-color-input-bg);
 }
@@ -2684,6 +2692,22 @@ body.page-template-eipsi-form {
   border-color: var(--eipsi-color-primary);
 }
 
+.vas-dinamico-form[data-theme=dark] .likert-scale,
+.vas-dinamico-form[data-theme=dark] .likert-item {
+  color: var(--eipsi-color-text);
+}
+
+.vas-dinamico-form[data-theme=dark] .likert-label-text {
+  color: var(--eipsi-color-text);
+}
+
+.vas-dinamico-form[data-theme=dark] .form-group,
+.vas-dinamico-form[data-theme=dark] .eipsi-field,
+.vas-dinamico-form[data-theme=dark] .eipsi-page-content {
+  background-color: var(--eipsi-color-background-subtle);
+  border-color: var(--eipsi-color-border);
+}
+
 /**
  * VAS Slider containers and components
  */
@@ -2742,7 +2766,11 @@ body.page-template-eipsi-form {
 /**
  * Error and validation messages
  */
-.vas-dinamico-form[data-theme=dark] .form-error,
+.vas-dinamico-form[data-theme=dark] .form-error {
+  color: var(--eipsi-color-error);
+  background-color: rgba(252, 165, 165, 0.1);
+}
+
 .vas-dinamico-form[data-theme=dark] .error-message,
 .vas-dinamico-form[data-theme=dark] .validation-error {
   background-color: var(--eipsi-color-input-error-bg);
@@ -2757,6 +2785,13 @@ body.page-template-eipsi-form {
   background-color: rgba(6, 150, 105, 0.15);
   color: var(--eipsi-color-success);
   border-color: var(--eipsi-color-success);
+}
+
+.vas-dinamico-form[data-theme=dark] .eipsi-success-message,
+.vas-dinamico-form[data-theme=dark] .success-title,
+.vas-dinamico-form[data-theme=dark] .success-text {
+  color: var(--eipsi-color-text);
+  background-color: rgba(var(--eipsi-color-success), 0.1);
 }
 
 /**
