@@ -470,8 +470,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								style={ {
 									display: 'flex',
 									justifyContent: 'space-between',
-									alignItems: 'center',
-									marginBottom: '8px',
+									alignItems: 'flex-start',
+									flexDirection: 'column',
+									gap: '12px',
 								} }
 							>
 								<span
@@ -487,13 +488,16 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									style={ {
 										display: 'flex',
 										alignItems: 'center',
-										gap: '6px',
+										gap: '8px',
+										width: '100%',
 									} }
 								>
 									<span
 										style={ {
-											fontSize: '12px',
+											fontSize: '13px',
 											color: '#1e1e1e',
+											fontWeight: 500,
+											minWidth: '50px',
 										} }
 									>
 										{ __( 'Valor:', 'vas-dinamico-forms' ) }
@@ -512,33 +516,35 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 												} );
 											}
 										} }
+										placeholder="0-200"
+										min={ 0 }
+										max={ 200 }
+										step={ 1 }
 										style={ {
-											width: '60px',
-											height: '30px',
-											padding: '0 8px',
+											flex: 1,
+											height: '36px',
+											padding: '0 10px',
 											fontSize: '13px',
+											border: '1px solid #ccc',
+											borderRadius: '4px',
 										} }
 									/>
 								</div>
+								<p
+									style={ {
+										fontSize: '12px',
+										color: '#666',
+										fontStyle: 'italic',
+										margin: 0,
+										lineHeight: 1.4,
+									} }
+								>
+									{ __(
+										'0 = compactas | 100 = bien marcadas | >100 = separación extrema',
+										'vas-dinamico-forms'
+									) }
+								</p>
 							</div>
-							<RangeControl
-								value={ Math.min( alignmentPercentValue, 100 ) }
-								onChange={ ( value ) => {
-									if ( typeof value === 'number' ) {
-										setAttributes( {
-											labelAlignmentPercent: value,
-										} );
-									}
-								} }
-								min={ 0 }
-								max={ 100 }
-								step={ 1 }
-								withInputField={ false }
-								help={ __(
-									'0 = compactas | 100 = bien marcadas',
-									'vas-dinamico-forms'
-								) }
-							/>
 						</div>
 					</div>
 
@@ -674,14 +680,26 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						className="vas-multi-labels"
 						data-label-count={ resolvedLabels.length }
 					>
-						{ resolvedLabels.map( ( labelText, index ) => (
-							<span
-								key={ `${ labelText }-${ index }` }
-								className="vas-multi-label"
-							>
-								{ labelText }
-							</span>
-						) ) }
+						{ resolvedLabels.map( ( labelText, index ) => {
+							const isFirst = index === 0;
+							const isLast = index === resolvedLabels.length - 1;
+							const labelClasses = [
+								'vas-multi-label',
+								isFirst && 'vas-multi-label--first',
+								isLast && 'vas-multi-label--last',
+							]
+								.filter( Boolean )
+								.join( ' ' );
+
+							return (
+								<span
+									key={ `${ labelText }-${ index }` }
+									className={ labelClasses }
+								>
+									{ labelText }
+								</span>
+							);
+						} ) }
 					</div>
 
 					{ shouldShowValue && (

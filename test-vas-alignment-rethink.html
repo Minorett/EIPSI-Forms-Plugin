@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>VAS Label Alignment Rethink - Test Visual Interactivo</title>
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+			background: #f5f5f5;
+			padding: 20px;
+			color: #333;
+		}
+
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+		}
+
+		h1 {
+			color: #005a87;
+			font-size: 28px;
+			margin-bottom: 10px;
+		}
+
+		.subtitle {
+			color: #666;
+			font-size: 14px;
+			margin-bottom: 30px;
+			font-style: italic;
+		}
+
+		.control-section {
+			background: white;
+			border: 1px solid #e2e8f0;
+			border-radius: 8px;
+			padding: 20px;
+			margin-bottom: 30px;
+		}
+
+		.control-group {
+			display: flex;
+			gap: 15px;
+			align-items: center;
+			margin-bottom: 15px;
+			flex-wrap: wrap;
+		}
+
+		.control-group label {
+			font-weight: 600;
+			color: #005a87;
+			min-width: 150px;
+		}
+
+		.control-group input[type="number"] {
+			padding: 8px 12px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			font-size: 14px;
+			width: 120px;
+		}
+
+		.presets {
+			display: flex;
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+
+		.preset-btn {
+			padding: 6px 12px;
+			background: #e3f2fd;
+			border: 1px solid #005a87;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 12px;
+			font-weight: 600;
+			color: #005a87;
+			transition: all 0.2s ease;
+		}
+
+		.preset-btn:hover {
+			background: #005a87;
+			color: white;
+		}
+
+		.test-case {
+			background: white;
+			border: 1px solid #e2e8f0;
+			border-radius: 8px;
+			padding: 25px;
+			margin-bottom: 20px;
+		}
+
+		.test-case h3 {
+			color: #005a87;
+			margin: 0 0 15px 0;
+			font-size: 16px;
+		}
+
+		.test-info {
+			font-size: 13px;
+			color: #666;
+			margin-bottom: 15px;
+			padding: 10px;
+			background: #f8f9fa;
+			border-left: 3px solid #005a87;
+			border-radius: 4px;
+		}
+
+		.vas-slider-container {
+			margin-bottom: 20px;
+			padding: 30px 20px;
+			background: #fafbfc;
+			border: 2px dashed #cbd5e0;
+			border-radius: 8px;
+			/* CSS variables for dynamic alignment */
+			--vas-label-alignment: 0.5;
+			--vas-label-size: 14px;
+			--vas-value-size: 28px;
+		}
+
+		.vas-slider-container.alignment-0 { --vas-label-alignment: 0; }
+		.vas-slider-container.alignment-25 { --vas-label-alignment: 0.25; }
+		.vas-slider-container.alignment-50 { --vas-label-alignment: 0.5; }
+		.vas-slider-container.alignment-75 { --vas-label-alignment: 0.75; }
+		.vas-slider-container.alignment-100 { --vas-label-alignment: 1; }
+		.vas-slider-container.alignment-150 { --vas-label-alignment: 1.5; }
+		.vas-slider-container.alignment-200 { --vas-label-alignment: 2; }
+
+		/* Multi-Labels with NEW positioning logic */
+		.vas-multi-labels {
+			position: relative;
+			height: 100%;
+			width: 100%;
+			margin: 0 0 20px 0;
+			font-size: var(--vas-label-size, 14px);
+			font-weight: 600;
+		}
+
+		.vas-multi-label {
+			position: absolute;
+			white-space: nowrap;
+			padding: 8px 12px;
+			background: rgba(0, 90, 135, 0.1);
+			border: 2px solid rgba(0, 90, 135, 0.2);
+			border-radius: 6px;
+			color: #005a87;
+			font-weight: 600;
+			font-size: inherit;
+			overflow: visible;
+			transition: all 0.2s ease;
+			text-align: center;
+		}
+
+		/* First label: aligned to LEFT */
+		.vas-multi-label--first {
+			left: calc((1 - var(--vas-label-alignment, 0.5)) * 50%);
+			text-align: left;
+			transform: translateX(-100%);
+		}
+
+		/* Last label: aligned to RIGHT */
+		.vas-multi-label--last {
+			right: calc((1 - var(--vas-label-alignment, 0.5)) * 50%);
+			text-align: right;
+			transform: translateX(100%);
+		}
+
+		/* Middle labels */
+		.vas-multi-label:nth-child(2):not(.vas-multi-label--last) {
+			left: 50%;
+			transform: translateX(-50%);
+			text-align: center;
+		}
+
+		.vas-slider-wrapper {
+			margin: 20px 0;
+			position: relative;
+		}
+
+		.vas-slider {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 100%;
+			height: 12px;
+			background: linear-gradient(to right, #e2e8f0 0%, #cbd5e0 50%, #e2e8f0 100%);
+			border: 2px solid #cbd5e0;
+			border-radius: 8px;
+			outline: none;
+			cursor: pointer;
+		}
+
+		.vas-slider::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 28px;
+			height: 28px;
+			background: linear-gradient(135deg, #005a87, #003d5b);
+			border: 4px solid #fff;
+			border-radius: 50%;
+			cursor: pointer;
+			box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+		}
+
+		.vas-slider::-moz-range-thumb {
+			width: 28px;
+			height: 28px;
+			background: linear-gradient(135deg, #005a87, #003d5b);
+			border: 4px solid #fff;
+			border-radius: 50%;
+			cursor: pointer;
+			box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+		}
+
+		.vas-current-value {
+			text-align: center;
+			font-size: var(--vas-value-size, 28px);
+			font-weight: 700;
+			color: #005a87;
+			margin: 15px 0;
+		}
+
+		.test-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+			margin-top: 20px;
+		}
+
+		@media (max-width: 768px) {
+			.test-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+
+		.feature-highlight {
+			background: #e8f5e9;
+			border-left: 4px solid #198754;
+			padding: 12px;
+			border-radius: 4px;
+			font-size: 13px;
+			margin-top: 15px;
+		}
+
+		.feature-highlight strong {
+			color: #156b47;
+		}
+
+		.alignment-value-display {
+			text-align: center;
+			font-size: 12px;
+			color: #666;
+			margin-bottom: 10px;
+			font-weight: 600;
+		}
+
+		code {
+			background: #f0f0f0;
+			padding: 2px 6px;
+			border-radius: 3px;
+			font-family: 'Courier New', monospace;
+			font-size: 12px;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>🎯 VAS Label Alignment Rethink</h1>
+		<p class="subtitle">
+			Test visual interactivo del nuevo sistema de alineación de labels.
+			Los labels deben tocar EXACTAMENTE los extremos del slider cuando <code>alignment = 100</code>.
+		</p>
+
+		<div class="control-section">
+			<div class="control-group">
+				<label for="global-alignment">Alignment global para todos:</label>
+				<input
+					type="number"
+					id="global-alignment"
+					min="0"
+					max="200"
+					value="100"
+					step="1"
+				>
+				<span style="color: #666; font-size: 12px;">
+					(rango 0-200, cambia todos los sliders debajo)
+				</span>
+			</div>
+			<div class="presets">
+				<button class="preset-btn" data-value="0">0 - Compactas</button>
+				<button class="preset-btn" data-value="25">25</button>
+				<button class="preset-btn" data-value="50">50</button>
+				<button class="preset-btn" data-value="75">75</button>
+				<button class="preset-btn" data-value="100">100 - Bien Marcadas</button>
+				<button class="preset-btn" data-value="125">125</button>
+				<button class="preset-btn" data-value="150">150 - Extrema</button>
+				<button class="preset-btn" data-value="200">200</button>
+			</div>
+		</div>
+
+		<div id="test-cases" class="test-grid"></div>
+
+		<div class="feature-highlight">
+			<strong>✅ Característica clave:</strong>
+			En los sliders con <code>alignment = 100</code>, observa cómo el label izquierdo ("Nada")
+			toca EXACTAMENTE el punto 0 del slider, y el label derecho ("Bastante") toca EXACTAMENTE el punto 100.
+			Esto es lo que hace clínicamente correcto el VAS.
+		</div>
+	</div>
+
+	<script>
+		const alignmentValues = [0, 25, 50, 75, 100, 150, 200];
+		const testCases = document.getElementById('test-cases');
+
+		function createVASSlider(alignment) {
+			const alignmentRatio = alignment / 100;
+			const labelClasses = alignment === 100 ? 'CRÍTICO (labelstocan extremos)' : `Alignment ${alignment}`;
+
+			return `
+				<div class="test-case">
+					<h3>Alignment = ${alignment}</h3>
+					<div class="test-info">
+						CSS Variable: <code>--vas-label-alignment: ${alignmentRatio}</code>
+						<br>
+						${alignment === 100 ? '⭐ Caso crítico: Labels deben tocar EXACTAMENTE los extremos' : ''}
+					</div>
+					<div class="vas-slider-container alignment-${alignment}" style="--vas-label-alignment: ${alignmentRatio};">
+						<div class="vas-multi-labels">
+							<span class="vas-multi-label vas-multi-label--first">Nada bajo control</span>
+							<span class="vas-multi-label">Algo bajo control</span>
+							<span class="vas-multi-label vas-multi-label--last">Bastante bajo control</span>
+						</div>
+						<div class="alignment-value-display">left: calc((1 - ${alignmentRatio}) * 50%)</div>
+						<div class="vas-slider-wrapper">
+							<div class="vas-current-value">50</div>
+							<input type="range" class="vas-slider" min="0" max="100" value="50" step="1">
+						</div>
+					</div>
+					<div class="feature-highlight">
+						${
+							alignment === 100
+								? '<strong>✓ ESPERADO:</strong> "Nada" toca punta izquierda, "Bastante" toca punta derecha'
+								: alignment === 0
+									? '<strong>ℹ️ COMPACTO:</strong> Todos los labels se superponen en el centro'
+									: alignment > 100
+										? `<strong>↔️ EXTREMO:</strong> Labels separados más allá de los extremos del slider`
+										: `<strong>↔️ MODERADO:</strong> Labels separados pero sin tocar los extremos exactamente`
+						}
+					</div>
+				</div>
+			`;
+		}
+
+		// Render todos los test cases
+		testCases.innerHTML = alignmentValues.map((value) => createVASSlider(value)).join('');
+
+		// Interactividad del input global
+		const globalInput = document.getElementById('global-alignment');
+		const presetBtns = document.querySelectorAll('.preset-btn');
+
+		function updateAllSliders(value) {
+			const alignmentRatio = value / 100;
+			const allContainers = document.querySelectorAll('.vas-slider-container');
+
+			allContainers.forEach((container) => {
+				container.style.setProperty('--vas-label-alignment', alignmentRatio);
+				// Actualizar el display de la fórmula
+				const display = container.querySelector('.alignment-value-display');
+				if (display) {
+					display.textContent = `left: calc((1 - ${alignmentRatio}) * 50%) = calc(${
+						(1 - alignmentRatio) * 50
+					}%)`;
+				}
+			});
+
+			// Actualizar el input global
+			globalInput.value = value;
+		}
+
+		globalInput.addEventListener('change', (e) => {
+			updateAllSliders(parseFloat(e.target.value) || 100);
+		});
+
+		presetBtns.forEach((btn) => {
+			btn.addEventListener('click', () => {
+				const value = parseInt(btn.dataset.value, 10);
+				updateAllSliders(value);
+			});
+		});
+
+		// Actualizar sliders al mover
+		document.querySelectorAll('.vas-slider').forEach((slider) => {
+			slider.addEventListener('input', (e) => {
+				const container = e.target.closest('.vas-slider-container');
+				const valueDisplay = container.querySelector('.vas-current-value');
+				if (valueDisplay) {
+					valueDisplay.textContent = e.target.value;
+				}
+			});
+		});
+
+		// Inicializar con valor 100
+		updateAllSliders(100);
+	</script>
+</body>
+</html>

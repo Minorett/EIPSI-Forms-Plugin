@@ -161,14 +161,26 @@ export default function Save( { attributes } ) {
 					className="vas-multi-labels"
 					data-label-count={ resolvedLabels.length }
 				>
-					{ resolvedLabels.map( ( labelText, index ) => (
-						<span
-							key={ `${ labelText }-${ index }` }
-							className="vas-multi-label"
-						>
-							{ labelText }
-						</span>
-					) ) }
+					{ resolvedLabels.map( ( labelText, index ) => {
+						const isFirst = index === 0;
+						const isLast = index === resolvedLabels.length - 1;
+						const labelClasses = [
+							'vas-multi-label',
+							isFirst && 'vas-multi-label--first',
+							isLast && 'vas-multi-label--last',
+						]
+							.filter( Boolean )
+							.join( ' ' );
+
+						return (
+							<span
+								key={ `${ labelText }-${ index }` }
+								className={ labelClasses }
+							>
+								{ labelText }
+							</span>
+						);
+					} ) }
 				</div>
 
 				{ shouldShowValue && (
