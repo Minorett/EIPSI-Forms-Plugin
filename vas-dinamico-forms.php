@@ -488,14 +488,19 @@ function vas_dinamico_enqueue_frontend_assets() {
         VAS_DINAMICO_VERSION
     );
 
-    // Theme toggle styles are now bundled in eipsi-forms.css
-
+    // Dark mode theme toggle styles - CRITICAL for all form fields
+    wp_enqueue_style(
+        'eipsi-theme-toggle-css',
+        VAS_DINAMICO_PLUGIN_URL . 'assets/css/theme-toggle.css',
+        array('eipsi-forms-css'),
+        VAS_DINAMICO_VERSION
+    );
 
     // Save & Continue UI styles
     wp_enqueue_style(
         'eipsi-save-continue-css',
         VAS_DINAMICO_PLUGIN_URL . 'assets/css/eipsi-save-continue.css',
-        array('eipsi-forms-css'),
+        array('eipsi-theme-toggle-css'),
         VAS_DINAMICO_VERSION
     );
 
