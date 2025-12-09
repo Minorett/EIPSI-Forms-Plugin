@@ -466,11 +466,62 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						/>
 
 						<div className="eipsi-label-alignment-control">
+							<div
+								style={ {
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: 'center',
+									marginBottom: '8px',
+								} }
+							>
+								<span
+									className="components-base-control__label"
+									style={ { marginBottom: 0 } }
+								>
+									{ __(
+										'Label Alignment',
+										'vas-dinamico-forms'
+									) }
+								</span>
+								<div
+									style={ {
+										display: 'flex',
+										alignItems: 'center',
+										gap: '6px',
+									} }
+								>
+									<span
+										style={ {
+											fontSize: '12px',
+											color: '#1e1e1e',
+										} }
+									>
+										{ __( 'Valor:', 'vas-dinamico-forms' ) }
+									</span>
+									<input
+										type="number"
+										className="components-text-control__input"
+										value={ alignmentPercentValue }
+										onChange={ ( e ) => {
+											const val = parseFloat(
+												e.target.value
+											);
+											if ( ! isNaN( val ) ) {
+												setAttributes( {
+													labelAlignmentPercent: val,
+												} );
+											}
+										} }
+										style={ {
+											width: '60px',
+											height: '30px',
+											padding: '0 8px',
+											fontSize: '13px',
+										} }
+									/>
+								</div>
+							</div>
 							<RangeControl
-								label={ __(
-									'Label Alignment',
-									'vas-dinamico-forms'
-								) }
 								value={ Math.min( alignmentPercentValue, 100 ) }
 								onChange={ ( value ) => {
 									if ( typeof value === 'number' ) {
@@ -482,38 +533,12 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								min={ 0 }
 								max={ 100 }
 								step={ 1 }
+								withInputField={ false }
 								help={ __(
 									'0 = compactas | 100 = bien marcadas',
 									'vas-dinamico-forms'
 								) }
 							/>
-							<div className="eipsi-alignment-advanced">
-								<NumberControl
-									label={ __(
-										'Precise value',
-										'vas-dinamico-forms'
-									) }
-									value={ alignmentPercentValue }
-									onChange={ ( value ) => {
-										const parsedValue =
-											typeof value === 'number'
-												? value
-												: parseFloat( value );
-										if ( Number.isNaN( parsedValue ) ) {
-											return;
-										}
-										setAttributes( {
-											labelAlignmentPercent: parsedValue,
-										} );
-									} }
-									min={ 0 }
-									step={ 1 }
-									help={ __(
-										'Para separación extrema: valores > 100 (ej: 150, 200)',
-										'vas-dinamico-forms'
-									) }
-								/>
-							</div>
 						</div>
 					</div>
 
@@ -532,99 +557,113 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								marginBottom: '12px',
 							} }
 						>
-							{ __( 'Value Display', 'vas-dinamico-forms' ) }
+							{ __( 'Values', 'vas-dinamico-forms' ) }
 						</h3>
 
 						<ToggleControl
 							label={ __(
-								'Show current value',
+								'Show selected value',
 								'vas-dinamico-forms'
 							) }
 							checked={ shouldShowValue }
-							onChange={ ( value ) => {
-								setAttributes( {
-									showCurrentValue: !! value,
-									showValue: !! value,
-								} );
-							} }
-							help={ __(
-								'Display the current slider value',
-								'vas-dinamico-forms'
-							) }
-						/>
-
-						<UnitControl
-							label={ __( 'Value size', 'vas-dinamico-forms' ) }
-							value={ `${ valueFontSize || 36 }px` }
-							onChange={ ( value ) => {
-								const numValue = parseInt( value, 10 ) || 36;
-								setAttributes( { valueFontSize: numValue } );
-							} }
-							min={ 20 }
-							max={ 80 }
-							step={ 1 }
-							units={ [
-								{ value: 'px', label: 'px', default: 36 },
-							] }
-							isUnitSelectTabbable={ false }
-						/>
-
-						<SelectControl
-							label={ __(
-								'Value position',
-								'vas-dinamico-forms'
-							) }
-							value={ valuePosition || 'above' }
-							options={ [
-								{
-									label: __(
-										'Above slider',
-										'vas-dinamico-forms'
-									),
-									value: 'above',
-								},
-								{
-									label: __(
-										'Below slider',
-										'vas-dinamico-forms'
-									),
-									value: 'below',
-								},
-							] }
 							onChange={ ( value ) =>
-								setAttributes( { valuePosition: value } )
+								setAttributes( { showCurrentValue: !! value } )
 							}
+							help={ __(
+								'Show the number selected by the user',
+								'vas-dinamico-forms'
+							) }
 						/>
+
+						{ shouldShowValue && (
+							<>
+								<SelectControl
+									label={ __(
+										'Value Position',
+										'vas-dinamico-forms'
+									) }
+									value={ valuePosition || 'above' }
+									options={ [
+										{
+											label: __(
+												'Above slider',
+												'vas-dinamico-forms'
+											),
+											value: 'above',
+										},
+										{
+											label: __(
+												'Below slider',
+												'vas-dinamico-forms'
+											),
+											value: 'below',
+										},
+									] }
+									onChange={ ( value ) =>
+										setAttributes( {
+											valuePosition: value,
+										} )
+									}
+								/>
+
+								<UnitControl
+									label={ __(
+										'Value font size',
+										'vas-dinamico-forms'
+									) }
+									value={ `${ valueFontSize || 36 }px` }
+									onChange={ ( value ) => {
+										const numValue =
+											parseInt( value, 10 ) || 36;
+										setAttributes( {
+											valueFontSize: numValue,
+										} );
+									} }
+									min={ 16 }
+									max={ 72 }
+									step={ 1 }
+									units={ [
+										{
+											value: 'px',
+											label: 'px',
+											default: 36,
+										},
+									] }
+									isUnitSelectTabbable={ false }
+								/>
+							</>
+						) }
 					</div>
 				</PanelBody>
 
-				<ConditionalLogicControl
-					attributes={ attributes }
-					setAttributes={ setAttributes }
-					clientId={ clientId }
-					mode="numeric"
-					numericMin={ sliderMin }
-					numericMax={ sliderMax }
-				/>
+				<PanelBody
+					title={ __( 'Conditional Logic', 'vas-dinamico-forms' ) }
+					initialOpen={ false }
+				>
+					<ConditionalLogicControl
+						attributes={ attributes }
+						setAttributes={ setAttributes }
+						clientId={ clientId }
+					/>
+				</PanelBody>
 			</InspectorControls>
 
 			<div { ...blockProps }>
-				<label
-					className={ required ? 'required' : undefined }
-					htmlFor={ inputId }
-				>
-					{ displayLabel }
-				</label>
+				{ displayLabel && (
+					<label
+						className={ required ? 'required' : undefined }
+						htmlFor={ inputId }
+					>
+						{ displayLabel }
+					</label>
+				) }
 				<div
-					className={ `vas-slider-container vas-slider-preview${
+					className={ `vas-slider-container${
 						showLabelContainers ? ' vas-show-label-containers' : ''
 					}${ boldLabels !== false ? ' vas-bold-labels' : '' }${
 						valuePosition === 'below' ? ' vas-value-below' : ''
 					}` }
-					data-scale={ `${ sliderMin }-${ sliderMax }` }
 					style={ {
-						// CRITICAL: labelAlignmentPercent is STATIC (block config)
-						// NOT affected by slider value (clinical response)
 						'--vas-label-alignment': alignmentRatio,
 						'--vas-label-compactness': compactnessRatio,
 						'--vas-label-size': `${ labelFontSize || 16 }px`,
@@ -656,31 +695,20 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 					<input
 						type="range"
-						name={ normalizedFieldName }
-						id={ inputId }
 						className="vas-slider"
 						min={ sliderMin }
 						max={ sliderMax }
 						step={ safeStep }
 						value={ previewValue }
-						onChange={ ( event ) => {
-							const nextValue = parseFloat( event.target.value );
-							if ( Number.isNaN( nextValue ) ) {
-								return;
+						onChange={ ( e ) => {
+							const val = parseFloat( e.target.value );
+							if ( ! isNaN( val ) ) {
+								setPreviewValue( val );
 							}
-							setPreviewValue( nextValue );
 						} }
-						required={ required }
-						data-required={ required ? 'true' : 'false' }
-						data-show-value={ shouldShowValue ? 'true' : 'false' }
-						aria-valuemin={ sliderMin }
-						aria-valuemax={ sliderMax }
-						aria-valuenow={ previewValue }
-						aria-labelledby={ valueElementId }
 					/>
 				</div>
 				{ renderHelperText( helperText ) }
-				<div className="form-error" aria-live="polite" />
 			</div>
 		</>
 	);
