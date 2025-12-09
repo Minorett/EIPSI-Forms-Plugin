@@ -1195,11 +1195,13 @@ select[aria-invalid="true"]:focus {
 
 .vas-multi-label:first-child {
     margin-left: 0;
+    padding-left: 0;
     text-align: left;
 }
 
 .vas-multi-label:last-child {
     margin-right: 0;
+    padding-right: 0;
     text-align: right;
 }
 
