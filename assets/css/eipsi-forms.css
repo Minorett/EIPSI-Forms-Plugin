@@ -1165,20 +1165,18 @@ select[aria-invalid="true"]:focus {
 
 /* Multi-Labels with Dynamic Alignment */
 .vas-multi-labels {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    position: relative;
+    height: 100%;
+    width: 100%;
     margin: 0 0 1.5rem 0;
     font-size: var(--vas-label-size, 16px);
     font-weight: var(--vas-label-weight, 600);
-    /* Use CSS variables for dynamic alignment */
-    justify-content: space-between;
-    padding: 0 calc(var(--vas-label-compactness, 0.5) * 2rem);
+    /* Positioning context for absolutely positioned labels */
 }
 
 .vas-multi-label {
-    flex: 0 1 auto;
-    text-align: center;
+    position: absolute;
+    white-space: nowrap;
     padding: 0.625rem 0.875rem;
     background: var(--eipsi-color-vas-label-bg, rgba(0, 90, 135, 0.1));
     border: 2px solid var(--eipsi-color-vas-label-border, rgba(0, 90, 135, 0.2));
@@ -1186,46 +1184,33 @@ select[aria-invalid="true"]:focus {
     color: var(--eipsi-color-vas-label-text, #005a87);
     font-weight: 600;
     font-size: inherit;
-    white-space: nowrap;
     overflow: visible;
     transition: all 0.2s ease;
-    /* Dynamic positioning based on alignment */
-    margin: 0 calc(var(--vas-label-alignment, 0.5) * 0.25rem);
+    /* Default center for middle labels */
+    text-align: center;
 }
 
-.vas-multi-label:first-child {
-    margin-left: 0;
-    padding-left: 0;
+/* First label: aligned to LEFT */
+.vas-multi-label--first {
+    left: calc((1 - var(--vas-label-alignment, 0.5)) * 50%);
     text-align: left;
+    /* Move label to the left so it aligns to the left edge of that position */
+    transform: translateX(-100%);
 }
 
-.vas-multi-label:last-child {
-    margin-right: 0;
-    padding-right: 0;
+/* Last label: aligned to RIGHT */
+.vas-multi-label--last {
+    right: calc((1 - var(--vas-label-alignment, 0.5)) * 50%);
     text-align: right;
+    /* Move label to the right so it aligns to the right edge of that position */
+    transform: translateX(100%);
 }
 
-/* When alignment > 1 (extended separation), increase spacing */
-.vas-slider-container[style*="--vas-label-alignment:1."] .vas-multi-label,
-.vas-slider-container[style*="--vas-label-alignment:2."] .vas-multi-label,
-.vas-slider-container[style*="--vas-label-alignment:3."] .vas-multi-label {
-    margin: 0 calc(var(--vas-label-alignment, 0.5) * 0.5rem);
-}
-
-/* When compactness is high (alignment close to 0), bring labels to center */
-.vas-slider-container[style*="--vas-label-compactness:1."] .vas-multi-labels {
-    justify-content: center;
-    padding: 0 2rem;
-}
-
-.vas-slider-container[style*="--vas-label-compactness:0.9"] .vas-multi-labels {
-    justify-content: center;
-    padding: 0 1.5rem;
-}
-
-.vas-slider-container[style*="--vas-label-compactness:0.8"] .vas-multi-labels {
-    justify-content: center;
-    padding: 0 1rem;
+/* Middle labels (any label that's not first or last) */
+.vas-multi-label:nth-child(2):not(.vas-multi-label--last) {
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
 }
 
 @media (max-width: 767px) {
