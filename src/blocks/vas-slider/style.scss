@@ -34,11 +34,18 @@
         display: flex;
         justify-content: space-between;
         margin-bottom: 1em;
-        width: calc( 100% - ( min(var( --vas-label-compactness, 0.5 ), 1) * 20% ) );
-        margin-left: calc( min(var( --vas-label-compactness, 0.5 ), 1) * 10% );
-        margin-right: calc( min(var( --vas-label-compactness, 0.5 ), 1) * 10% );
-        // Calculate spacing: alignment closer to 1 = more gap, up to 2x gap for extreme values
-        gap: calc( 0.4em + min(var( --vas-label-alignment, 0.5 ), 2) * 1.6em );
+        // Formula: Width = 80% + (Alignment * 20%)
+        // Alignment 0 => width 80%
+        // Alignment 1 => width 100%
+        // Alignment 2 => width 120%
+        width: calc( 80% + ( var( --vas-label-alignment, 0.5 ) * 20% ) );
+
+        // Margin = (100% - Width) / 2 = 10% - (Alignment * 10%)
+        margin-left: calc( 10% - ( var( --vas-label-alignment, 0.5 ) * 10% ) );
+        margin-right: calc( 10% - ( var( --vas-label-alignment, 0.5 ) * 10% ) );
+
+        // Gap scaling - linear without cap
+        gap: calc( 0.4em + var( --vas-label-alignment, 0.5 ) * 1.6em );
 
         @media ( max-width: 767px ) {
             flex-wrap: wrap;
