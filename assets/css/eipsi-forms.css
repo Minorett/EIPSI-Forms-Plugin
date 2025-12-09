@@ -1204,6 +1204,13 @@ select[aria-invalid="true"]:focus {
     text-align: right;
     /* Move label to the right so it aligns to the right edge of that position */
     transform: translateX(100%);
+    /* REMOVE PADDING ENVELOPING IN LABELS EXTREMES - DEFINITIVE FIX */
+    padding-right: 0;
+}
+
+/* First label: remove padding envelope to touch exact extremes */
+.vas-multi-label--first {
+    padding-left: 0;
 }
 
 /* Middle labels (any label that's not first or last) */
