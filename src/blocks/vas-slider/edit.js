@@ -150,13 +150,10 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} else if ( Number.isFinite( labelSpacing ) ) {
 		alignmentPercentValue = labelSpacing;
 	}
-	// Allow extended alignment up to 200 for clinical flexibility
-	const clampedAlignmentPercent = Math.min(
-		Math.max( alignmentPercentValue, 0 ),
-		200
-	);
-	// Extended ratio: 0→0, 100→1, 200→2 (allowing more extreme separation)
-	const alignmentRatio = clampedAlignmentPercent / 100;
+	// Allow unlimited alignment values for clinical flexibility
+	const safeAlignmentPercent = Math.max( alignmentPercentValue, 0 );
+	// Normalize to 0-1 scale: 0→0, 100→1, >1→extended separation
+	const alignmentRatio = safeAlignmentPercent / 100;
 	const compactnessRatio = Math.max( 0, 1 - alignmentRatio );
 
 	const [ previewValue, setPreviewValue ] = useState(
@@ -468,27 +465,56 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							isUnitSelectTabbable={ false }
 						/>
 
-						<RangeControl
-							label={ __(
-								'Label alignment (0–200)',
-								'vas-dinamico-forms'
-							) }
-							value={ clampedAlignmentPercent }
-							onChange={ ( value ) => {
-								if ( typeof value === 'number' ) {
-									setAttributes( {
-										labelAlignmentPercent: value,
-									} );
-								}
-							} }
-							min={ 0 }
-							max={ 200 }
-							step={ 1 }
-							help={ __(
-								'0 = etiquetas compactas hacia el centro, 100 = cada extremo bien marcado, 150–200 = separación extrema.',
-								'vas-dinamico-forms'
-							) }
-						/>
+						<div className="eipsi-label-alignment-control">
+							<RangeControl
+								label={ __(
+									'Label Alignment',
+									'vas-dinamico-forms'
+								) }
+								value={ Math.min( alignmentPercentValue, 100 ) }
+								onChange={ ( value ) => {
+									if ( typeof value === 'number' ) {
+										setAttributes( {
+											labelAlignmentPercent: value,
+										} );
+									}
+								} }
+								min={ 0 }
+								max={ 100 }
+								step={ 1 }
+								help={ __(
+									'0 = compactas | 100 = bien marcadas',
+									'vas-dinamico-forms'
+								) }
+							/>
+							<div className="eipsi-alignment-advanced">
+								<NumberControl
+									label={ __(
+										'Precise value',
+										'vas-dinamico-forms'
+									) }
+									value={ alignmentPercentValue }
+									onChange={ ( value ) => {
+										const parsedValue =
+											typeof value === 'number'
+												? value
+												: parseFloat( value );
+										if ( Number.isNaN( parsedValue ) ) {
+											return;
+										}
+										setAttributes( {
+											labelAlignmentPercent: parsedValue,
+										} );
+									} }
+									min={ 0 }
+									step={ 1 }
+									help={ __(
+										'Para separación extrema: valores > 100 (ej: 150, 200)',
+										'vas-dinamico-forms'
+									) }
+								/>
+							</div>
+						</div>
 					</div>
 
 					<div
