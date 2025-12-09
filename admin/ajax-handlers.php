@@ -675,10 +675,43 @@ function eipsi_ajax_get_response_details() {
     
     $table_name = $wpdb->prefix . 'vas_form_results';
     
-    $response = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM $table_name WHERE id = %d",
-        $id
-    ));
+    // INTENTO 1: Buscar en BD Externa si está habilitada
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    $external_db = new EIPSI_External_Database();
+    $response = null;
+
+    if ($external_db->is_enabled()) {
+        $mysqli = $external_db->get_connection();
+        if ($mysqli) {
+             // Determinar nombre de tabla (con o sin prefijo)
+             // Esto es crítico porque algunos servidores externos no usan el prefijo WP
+             $ext_table_name = $table_name;
+             $check = $mysqli->query("SHOW TABLES LIKE '{$ext_table_name}'");
+             if (!$check || $check->num_rows === 0) {
+                $ext_table_name = 'vas_form_results';
+             }
+
+             $stmt = $mysqli->prepare("SELECT * FROM `{$ext_table_name}` WHERE id = ?");
+             if ($stmt) {
+                 $stmt->bind_param("i", $id);
+                 $stmt->execute();
+                 $result = $stmt->get_result();
+                 if ($result && $row = $result->fetch_object()) {
+                     $response = $row;
+                 }
+                 $stmt->close();
+             }
+             $mysqli->close();
+        }
+    }
+    
+    // INTENTO 2: Fallback a BD Local
+    if (!$response) {
+        $response = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE id = %d",
+            $id
+        ));
+    }
     
     if (!$response) {
         wp_send_json_error(__('Response not found', 'vas-dinamico-forms'));

@@ -18,7 +18,49 @@ $selected_form_id = isset($_GET['privacy_form_id']) ? sanitize_text_field($_GET[
 // Get all unique form IDs from database
 global $wpdb;
 $table_name = $wpdb->prefix . 'vas_form_results';
-$form_ids = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+
+// Obtener lista de formularios únicos con respuestas de BD Externa (Prioridad) o Local
+require_once dirname(dirname(__FILE__)) . '/database.php';
+$external_db = new EIPSI_External_Database();
+$form_counts = array();
+$form_ids = array();
+
+if ($external_db->is_enabled()) {
+    $mysqli = $external_db->get_connection();
+    if ($mysqli) {
+        // Intentar obtener form_id y conteo
+        $query = "SELECT form_id, COUNT(*) as count FROM `{$table_name}` WHERE form_id IS NOT NULL AND form_id != '' GROUP BY form_id ORDER BY form_id";
+        
+        // Si falla (ej. tabla sin prefijo), intentar sin prefijo
+        if (!$mysqli->query("SHOW TABLES LIKE '{$table_name}'")) {
+            $table_name = 'vas_form_results';
+        }
+        
+        $result = $mysqli->query($query);
+        
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $form_ids[] = $row['form_id'];
+                $form_counts[$row['form_id']] = $row['count'];
+            }
+        }
+        $mysqli->close();
+    } else {
+        // Fallback a BD local
+        $results = $wpdb->get_results("SELECT form_id, COUNT(*) as count FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' GROUP BY form_id ORDER BY form_id");
+        foreach ($results as $row) {
+            $form_ids[] = $row->form_id;
+            $form_counts[$row->form_id] = $row->count;
+        }
+    }
+} else {
+    // Solo BD local
+    $results = $wpdb->get_results("SELECT form_id, COUNT(*) as count FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' GROUP BY form_id ORDER BY form_id");
+    foreach ($results as $row) {
+        $form_ids[] = $row->form_id;
+        $form_counts[$row->form_id] = $row->count;
+    }
+}
 
 ?>
 <div class="eipsi-privacy-tab-header" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px;">
@@ -38,8 +80,11 @@ $form_ids = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_
             <select name="privacy_form_id" id="privacy_form_id" onchange="this.form.submit()" style="padding: 8px; min-width: 250px;">
                 <option value="">-- Usar configuración global --</option>
                 <?php foreach ($form_ids as $form_id): ?>
+                    <?php 
+                        $count_display = isset($form_counts[$form_id]) ? " ({$form_counts[$form_id]} respuestas)" : "";
+                    ?>
                     <option value="<?php echo esc_attr($form_id); ?>" <?php selected($selected_form_id, $form_id); ?>>
-                        <?php echo esc_html($form_id); ?>
+                        <?php echo esc_html($form_id . $count_display); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
