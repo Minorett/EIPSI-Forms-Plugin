@@ -465,87 +465,25 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							isUnitSelectTabbable={ false }
 						/>
 
-						<div className="eipsi-label-alignment-control">
-							<div
-								style={ {
-									display: 'flex',
-									justifyContent: 'space-between',
-									alignItems: 'flex-start',
-									flexDirection: 'column',
-									gap: '12px',
-								} }
-							>
-								<span
-									className="components-base-control__label"
-									style={ { marginBottom: 0 } }
-								>
-									{ __(
-										'Label Alignment',
-										'vas-dinamico-forms'
-									) }
-								</span>
-								<div
-									style={ {
-										display: 'flex',
-										alignItems: 'center',
-										gap: '8px',
-										width: '100%',
-									} }
-								>
-									<span
-										style={ {
-											fontSize: '13px',
-											color: '#1e1e1e',
-											fontWeight: 500,
-											minWidth: '50px',
-										} }
-									>
-										{ __( 'Valor:', 'vas-dinamico-forms' ) }
-									</span>
-									<input
-										type="number"
-										className="components-text-control__input"
-										value={ alignmentPercentValue }
-										onChange={ ( e ) => {
-											const val = parseFloat(
-												e.target.value
-											);
-											if ( ! isNaN( val ) ) {
-												setAttributes( {
-													labelAlignmentPercent: val,
-												} );
-											}
-										} }
-										placeholder="0-200"
-										min={ 0 }
-										max={ 200 }
-										step={ 1 }
-										style={ {
-											flex: 1,
-											height: '36px',
-											padding: '0 10px',
-											fontSize: '13px',
-											border: '1px solid #ccc',
-											borderRadius: '4px',
-										} }
-									/>
-								</div>
-								<p
-									style={ {
-										fontSize: '12px',
-										color: '#666',
-										fontStyle: 'italic',
-										margin: 0,
-										lineHeight: 1.4,
-									} }
-								>
-									{ __(
-										'0 = compactas | 100 = bien marcadas | >100 = separación extrema',
-										'vas-dinamico-forms'
-									) }
-								</p>
-							</div>
-						</div>
+						<RangeControl
+							label={ __(
+								'Label Alignment',
+								'vas-dinamico-forms'
+							) }
+							value={ alignmentPercentValue }
+							onChange={ ( value ) =>
+								setAttributes( {
+									labelAlignmentPercent: value,
+								} )
+							}
+							min={ 0 }
+							max={ 100 }
+							step={ 1 }
+							help={ __(
+								'0 = compactas | 100 = bien marcadas',
+								'vas-dinamico-forms'
+							) }
+						/>
 					</div>
 
 					<div
