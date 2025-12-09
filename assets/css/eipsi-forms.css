@@ -1163,6 +1163,71 @@ select[aria-invalid="true"]:focus {
     text-overflow: ellipsis;
 }
 
+/* Multi-Labels with Dynamic Alignment */
+.vas-multi-labels {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1.5rem 0;
+    font-size: var(--vas-label-size, 16px);
+    font-weight: var(--vas-label-weight, 600);
+    /* Use CSS variables for dynamic alignment */
+    justify-content: space-between;
+    padding: 0 calc(var(--vas-label-compactness, 0.5) * 2rem);
+}
+
+.vas-multi-label {
+    flex: 1;
+    text-align: center;
+    padding: 0.625rem 0.875rem;
+    background: var(--eipsi-color-vas-label-bg, rgba(0, 90, 135, 0.1));
+    border: 2px solid var(--eipsi-color-vas-label-border, rgba(0, 90, 135, 0.2));
+    border-radius: 8px;
+    color: var(--eipsi-color-vas-label-text, #005a87);
+    font-weight: 600;
+    font-size: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.2s ease;
+    /* Dynamic positioning based on alignment */
+    margin: 0 calc(var(--vas-label-alignment, 0.5) * 0.25rem);
+    max-width: calc(var(--vas-label-compactness, 0.5) * 150px + 50px);
+}
+
+.vas-multi-label:first-child {
+    margin-left: 0;
+    text-align: left;
+}
+
+.vas-multi-label:last-child {
+    margin-right: 0;
+    text-align: right;
+}
+
+/* When alignment > 1 (extended separation), increase spacing */
+.vas-slider-container[style*="--vas-label-alignment:1."] .vas-multi-label,
+.vas-slider-container[style*="--vas-label-alignment:2."] .vas-multi-label,
+.vas-slider-container[style*="--vas-label-alignment:3."] .vas-multi-label {
+    margin: 0 calc(var(--vas-label-alignment, 0.5) * 0.5rem);
+}
+
+/* When compactness is high (alignment close to 0), bring labels to center */
+.vas-slider-container[style*="--vas-label-compactness:1."] .vas-multi-labels {
+    justify-content: center;
+    padding: 0 2rem;
+}
+
+.vas-slider-container[style*="--vas-label-compactness:0.9"] .vas-multi-labels {
+    justify-content: center;
+    padding: 0 1.5rem;
+}
+
+.vas-slider-container[style*="--vas-label-compactness:0.8"] .vas-multi-labels {
+    justify-content: center;
+    padding: 0 1rem;
+}
+
 @media (max-width: 767px) {
     .vas-labels {
         flex-direction: column;
