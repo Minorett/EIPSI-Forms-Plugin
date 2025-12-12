@@ -452,15 +452,21 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								'Label Alignment',
 								'vas-dinamico-forms'
 							) }
-							value={ alignmentPercentValue }
+							value={
+								Math.round(
+									( alignmentPercentValue / 80 ) * 100 * 4
+								) / 4
+							}
 							onChange={ ( value ) =>
 								setAttributes( {
-									labelAlignmentPercent: value,
+									labelAlignmentPercent:
+										Math.round( ( value / 100 ) * 80 * 4 ) /
+										4,
 								} )
 							}
 							min={ 0 }
 							max={ 100 }
-							step={ 1 }
+							step={ 0.25 }
 							help={ __(
 								'0 = compactas | 100 = bien marcadas',
 								'vas-dinamico-forms'
@@ -601,6 +607,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						{ resolvedLabels.map( ( labelText, index ) => {
 							const isFirst = index === 0;
 							const isLast = index === resolvedLabels.length - 1;
+							const totalLabels = resolvedLabels.length;
 							const labelClasses = [
 								'vas-multi-label',
 								isFirst && 'vas-multi-label--first',
@@ -609,6 +616,19 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								.filter( Boolean )
 								.join( ' ' );
 
+							// Calcular posición para labels intermedios (3+)
+							// Para N labels: posición = (índice / (N-1)) * 100%
+							let positionStyle = {};
+							if ( ! isFirst && ! isLast && totalLabels > 2 ) {
+								const positionPercent =
+									( index / ( totalLabels - 1 ) ) * 100;
+								positionStyle = {
+									left: `${ positionPercent }%`,
+									transform: 'translateX(-50%)',
+									textAlign: 'center',
+								};
+							}
+
 							return (
 								<span
 									key={ `label-${ index }` }
@@ -616,6 +636,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									dangerouslySetInnerHTML={ {
 										__html: labelText,
 									} }
+									style={ positionStyle }
 								/>
 							);
 						} ) }

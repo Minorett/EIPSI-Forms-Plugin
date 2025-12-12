@@ -164,6 +164,7 @@ export default function Save( { attributes } ) {
 					{ resolvedLabels.map( ( labelText, index ) => {
 						const isFirst = index === 0;
 						const isLast = index === resolvedLabels.length - 1;
+						const totalLabels = resolvedLabels.length;
 						const labelClasses = [
 							'vas-multi-label',
 							isFirst && 'vas-multi-label--first',
@@ -172,10 +173,24 @@ export default function Save( { attributes } ) {
 							.filter( Boolean )
 							.join( ' ' );
 
+						// Calcular posición para labels intermedios (3+)
+						// Para N labels: posición = (índice / (N-1)) * 100%
+						let positionStyle = {};
+						if ( ! isFirst && ! isLast && totalLabels > 2 ) {
+							const positionPercent =
+								( index / ( totalLabels - 1 ) ) * 100;
+							positionStyle = {
+								left: `${ positionPercent }%`,
+								transform: 'translateX(-50%)',
+								textAlign: 'center',
+							};
+						}
+
 						return (
 							<span
 								key={ `label-${ index }` }
 								className={ labelClasses }
+								style={ positionStyle }
 							>
 								{ labelText }
 							</span>
