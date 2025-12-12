@@ -28,36 +28,24 @@
         }
     }
 
-    // LABELS MÚLTIPLES - Dynamic alignment based on --vas-label-alignment (0-2)
-    // 0 = tight spacing (centered/compact), 1 = wide spacing (edge-to-edge), 2 = extreme separation
+    // LABELS MÚLTIPLES - Dynamic alignment with absolute positioning
+    // Arquitectura: Cambio de flexbox a absolute positioning para alineación exacta
+    // Alignment variable (0-1): 0 = compacto (centrado), 1 = expandido (extremos), >1 = sobrepasado
     .vas-multi-labels {
-        display: flex;
-        justify-content: space-between;
+        position: relative;
+        width: 100%;
         margin-bottom: 1em;
-        // Formula: Width = 80% + (Alignment * 20%)
-        // Alignment 0 => width 80%
-        // Alignment 1 => width 100%
-        // Alignment 2 => width 120%
-        width: calc( 80% + ( var( --vas-label-alignment, 0.5 ) * 20% ) );
-
-        // Margin = (100% - Width) / 2 = 10% - (Alignment * 10%)
-        margin-left: calc( 10% - ( var( --vas-label-alignment, 0.5 ) * 10% ) );
-        margin-right: calc( 10% - ( var( --vas-label-alignment, 0.5 ) * 10% ) );
-
-        // Gap scaling - linear without cap
-        gap: calc( 0.4em + var( --vas-label-alignment, 0.5 ) * 1.6em );
+        padding: 0;
+        min-height: 2.8em; // Aproximadamente 2 líneas de texto para acomodar labels
 
         @media ( max-width: 767px ) {
-            flex-wrap: wrap;
             width: 100%;
-            margin-left: 0;
-            margin-right: 0;
-            gap: 0.6em;
+            margin-bottom: 1em;
         }
 
         .vas-multi-label {
-            flex: 1;
-            text-align: center;
+            position: absolute;
+            white-space: nowrap;
             font-weight: normal;
             font-size: var( --vas-label-size, 16px );
             padding: 0.6em 0.5em;
@@ -66,18 +54,11 @@
             border: none;
             color: var( --eipsi-color-text, #2c3e50 );
             transition: all 0.2s ease;
-            // Allow text wrapping for long labels (max 2 lines)
-            white-space: normal;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
             line-height: 1.4;
-            max-height: 2.8em; // Approximately 2 lines of text
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: auto;
+            top: 0;
 
             @media ( max-width: 767px ) {
-                flex: 1 1 45%;
                 font-size: max( 12px, calc( var( --vas-label-size, 16px ) * 0.9 ) );
             }
 
@@ -88,6 +69,28 @@
 
             &:hover {
                 transform: translateY( -1px );
+            }
+
+            // PRIMER LABEL - aligned to left edge
+            &.vas-multi-label--first {
+                left: calc( ( 1 - var( --vas-label-alignment, 0.5 ) ) * 50% );
+                transform: translateX( -100% );
+                text-align: left;
+            }
+
+            // ÚLTIMO LABEL - aligned to right edge
+            &.vas-multi-label--last {
+                right: calc( ( 1 - var( --vas-label-alignment, 0.5 ) ) * 50% );
+                transform: translateX( 100% );
+                text-align: right;
+                left: auto;
+            }
+
+            // LABELS DEL MEDIO - always centered
+            &:nth-child(2):not(.vas-multi-label--last) {
+                left: 50%;
+                transform: translateX( -50% );
+                text-align: center;
             }
         }
     }
