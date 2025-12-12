@@ -82,7 +82,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		labelSpacing,
 		labelFontSize,
 		valueFontSize,
-		showLabelContainers,
 		boldLabels,
 		showCurrentValue,
 		valuePosition,
@@ -421,23 +420,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						</h3>
 
 						<ToggleControl
-							label={ __(
-								'Show label containers',
-								'vas-dinamico-forms'
-							) }
-							checked={ !! showLabelContainers }
-							onChange={ ( value ) =>
-								setAttributes( {
-									showLabelContainers: !! value,
-								} )
-							}
-							help={ __(
-								'Display background boxes around each label',
-								'vas-dinamico-forms'
-							) }
-						/>
-
-						<ToggleControl
 							label={ __( 'Bold labels', 'vas-dinamico-forms' ) }
 							checked={ boldLabels !== false }
 							onChange={ ( value ) =>
@@ -603,10 +585,8 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				) }
 				<div
 					className={ `vas-slider-container${
-						showLabelContainers ? ' vas-show-label-containers' : ''
-					}${ boldLabels !== false ? ' vas-bold-labels' : '' }${
-						valuePosition === 'below' ? ' vas-value-below' : ''
-					}` }
+						boldLabels !== false ? ' vas-bold-labels' : ''
+					}${ valuePosition === 'below' ? ' vas-value-below' : '' }` }
 					style={ {
 						'--vas-label-alignment': alignmentRatio,
 						'--vas-label-compactness': compactnessRatio,
@@ -633,9 +613,10 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								<span
 									key={ `label-${ index }` }
 									className={ labelClasses }
-								>
-									{ labelText }
-								</span>
+									dangerouslySetInnerHTML={ {
+										__html: labelText,
+									} }
+								/>
 							);
 						} ) }
 					</div>

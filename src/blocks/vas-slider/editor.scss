@@ -37,6 +37,22 @@
         border: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-primary, #005a87);
         border-radius: var(--eipsi-border-radius-md, 12px);
 
+        // Value position below - Apply flexbox to the container
+        &.vas-value-below {
+            display: flex;
+            flex-direction: column;
+        }
+
+        &.vas-value-below .vas-current-value-solo {
+            order: 2;
+            margin-top: 1em;
+            margin-bottom: 0;
+        }
+
+        &.vas-value-below .vas-slider {
+            order: 1;
+        }
+
         // CSS variables for appearance control (same as frontend)
         --vas-label-size: 16px;
         --vas-value-size: 36px;
@@ -55,7 +71,10 @@
 
             .vas-multi-label {
                 position: absolute;
-                white-space: nowrap;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                max-width: 30%;
                 font-weight: normal;
                 font-size: var( --vas-label-size, 16px );
                 padding: 0.6em 0.5em;
@@ -64,9 +83,13 @@
                 border: none;
                 color: var( --eipsi-color-text, #2c3e50 );
                 transition: all 0.2s ease;
-                line-height: 1.4;
+                line-height: 1.2;
                 width: auto;
                 top: 0;
+
+                @media ( max-width: 768px ) {
+                    max-width: 40%;
+                }
 
                 &:hover {
                     transform: translateY( -1px );
@@ -99,17 +122,15 @@
         // Bold labels modifier for multi-labels
         &.vas-bold-labels .vas-multi-labels .vas-multi-label {
             font-weight: 700;
+
+            strong {
+                font-weight: 800;
+            }
         }
 
-        // Show label containers modifier for multi-labels
-        &.vas-show-label-containers .vas-multi-labels .vas-multi-label {
-            background: rgba( 0, 90, 135, 0.05 );
-            border: 2px solid var( --eipsi-color-primary, #005a87 );
-            padding: 0.8em 1em;
-
-            &:hover {
-                background: rgba( 0, 90, 135, 0.1 );
-            }
+        // Support for HTML tags inside labels
+        .vas-multi-labels .vas-multi-label strong {
+            font-weight: 700;
         }
 
         // SLIDER MEJORADO
