@@ -631,7 +631,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 							return (
 								<span
-									key={ `${ labelText }-${ index }` }
+									key={ `label-${ index }` }
 									className={ labelClasses }
 								>
 									{ labelText }
