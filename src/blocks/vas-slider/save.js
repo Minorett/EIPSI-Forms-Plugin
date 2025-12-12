@@ -174,7 +174,7 @@ export default function Save( { attributes } ) {
 
 						return (
 							<span
-								key={ `${ labelText }-${ index }` }
+								key={ `label-${ index }` }
 								className={ labelClasses }
 							>
 								{ labelText }
