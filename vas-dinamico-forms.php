@@ -555,14 +555,9 @@ function vas_dinamico_enqueue_frontend_assets() {
         true
     );
 
-    // Enqueue dark mode toggle script
-    wp_enqueue_script(
-        'eipsi-theme-toggle-js',
-        VAS_DINAMICO_PLUGIN_URL . 'assets/js/theme-toggle.js',
-        array(),
-        VAS_DINAMICO_VERSION,
-        true
-    );
+    // Dark mode is now CSS-only via @media (prefers-color-scheme: dark)
+    // No JavaScript needed - the theme-toggle.js file is deprecated as of v4.0.0
+    // wp_enqueue_script( 'eipsi-theme-toggle-js', ... ) is removed
 
     $assets_enqueued = true;
 }

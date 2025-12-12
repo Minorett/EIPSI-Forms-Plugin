@@ -61,18 +61,12 @@ export default function Save( { attributes } ) {
 
 	return (
 		<div { ...blockProps }>
-			{ /* HEADER CON DARK MODE TOGGLE */ }
-			<header className="eipsi-header">
-				<h2>{ description || 'Formulario' }</h2>
-				<button
-					type="button"
-					className="eipsi-toggle"
-					id="eipsi-theme-toggle"
-					aria-label="Cambiar a modo nocturno"
-				>
-					🌙 Nocturno
-				</button>
-			</header>
+			{ /* HEADER SIMPLIFICADO - DARK MODE AUTOMÁTICO */ }
+			{ description && (
+				<header className="eipsi-header">
+					<h2>{ description }</h2>
+				</header>
+			) }
 
 			<form
 				className="vas-form eipsi-form-element"
@@ -173,13 +167,6 @@ export default function Save( { attributes } ) {
 					</div>
 				) }
 			</form>
-
-			{ /* NOSCRIPT FALLBACK */ }
-			<noscript>
-				<style>
-					{ `.eipsi-header .eipsi-toggle { display: none !important; }` }
-				</style>
-			</noscript>
 		</div>
 	);
 }
