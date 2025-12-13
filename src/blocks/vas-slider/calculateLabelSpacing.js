@@ -1,16 +1,156 @@
 /**
- * Calculate dynamic label spacing for VAS slider based on alignment value
+ * VAS Slider – Label positioning helpers
  *
- * Algoritmo de distribución dinámica que proporciona valores coherentes para gap,
- * padding y distribución visual de labels según el porcentaje de alineación.
+ * Objetivo clínico:
+ * - Labels SIEMPRE equidistantes (0–100%)
+ * - Control "Label Alignment" comprime/expande TODA la distribución
+ * - Misma lógica compartida entre edit.js y save.js (WYSIWYG real)
  */
 
+export const VAS_ALIGNMENT_INTERNAL_MAX = 80;
+
 /**
- * Calcula spacing dinámico de labels basado en alignment value
+ * Normaliza el valor almacenado en el atributo a un rango interno 0–80.
  *
- * @param {number} value      - 0-100 (alignment percent from editor)
- * @param {number} labelCount - Cantidad de labels
- * @return {Object} { gap, padding, distribution }
+ * Backward compatibility:
+ * - Versiones previas podían guardar 0–100 (display) → lo convertimos a 0–80.
+ *
+ * @param {number} value    Valor crudo desde atributos
+ * @param {number} fallback Valor por defecto (interno)
+ * @return {number} Valor interno 0–80
+ */
+export function sanitizeAlignmentInternal( value, fallback = 40 ) {
+	if ( typeof value !== 'number' || Number.isNaN( value ) ) {
+		return fallback;
+	}
+
+	let nextValue = value;
+
+	// Si viene de formatos antiguos (0–100), lo convertimos al rango interno 0–80.
+	if ( nextValue > VAS_ALIGNMENT_INTERNAL_MAX ) {
+		nextValue = ( nextValue / 100 ) * VAS_ALIGNMENT_INTERNAL_MAX;
+	}
+
+	return Math.min( Math.max( nextValue, 0 ), VAS_ALIGNMENT_INTERNAL_MAX );
+}
+
+/**
+ * Convierte el valor interno 0–80 a display 0–100 (lo que ve la persona en el editor).
+ *
+ * @param {number} internal Valor interno 0–80
+ * @return {number} Valor display 0–100
+ */
+export function alignmentInternalToDisplay( internal ) {
+	const safeInternal = sanitizeAlignmentInternal( internal );
+	return Math.round( ( safeInternal / VAS_ALIGNMENT_INTERNAL_MAX ) * 100 );
+}
+
+/**
+ * Convierte el valor display 0–100 a interno 0–80.
+ *
+ * @param {number} display Valor display 0–100
+ * @return {number} Valor interno 0–80
+ */
+export function alignmentDisplayToInternal( display ) {
+	if ( typeof display !== 'number' || Number.isNaN( display ) ) {
+		return 40;
+	}
+	const normalizedDisplay = Math.min( Math.max( display, 0 ), 100 );
+	return Math.round(
+		( normalizedDisplay / 100 ) * VAS_ALIGNMENT_INTERNAL_MAX
+	);
+}
+
+/**
+ * Obtiene ratio 0–1 a partir del valor interno.
+ *
+ * @param {number} internal Valor interno 0–80
+ * @return {number} ratio 0–1
+ */
+export function getAlignmentRatio( internal ) {
+	const safeInternal = sanitizeAlignmentInternal( internal );
+	return safeInternal / VAS_ALIGNMENT_INTERNAL_MAX;
+}
+
+/**
+ * Calcula la posición porcentual (0–100) para cada label dado un alignment ratio.
+ *
+ * Distribución base: i/(N-1) * 100
+ * Compresión: escala hacia el centro (50%) según ratio.
+ *
+ * @param {number} index Índice del label
+ * @param {number} total Cantidad total de labels
+ * @param {number} ratio 0–1 (0 = súper compacto, 1 = full spread)
+ * @return {number} Posición en % (0–100)
+ */
+export function calculateLabelPositionPercent( index, total, ratio ) {
+	if ( total <= 1 ) {
+		return 50;
+	}
+
+	const safeRatio = Math.min( Math.max( ratio, 0 ), 1 );
+	const base = ( index / ( total - 1 ) ) * 100;
+
+	// Escala desde el centro: 0 → todo al 50%, 1 → distribución original
+	return 50 + ( base - 50 ) * safeRatio;
+}
+
+/**
+ * Calcula el style inline para cada label.
+ *
+ * Importante:
+ * - Incluye transform inline para evitar que :hover del CSS rompa el posicionamiento.
+ * - First/Last se anclan fuera del track para evitar solapamiento con labels internos.
+ *
+ * @param {Object} params
+ * @param {number} params.index
+ * @param {number} params.totalLabels
+ * @param {number} params.alignmentInternal 0–80
+ * @return {Object} style inline
+ */
+export function calculateLabelPositionStyle( {
+	index,
+	totalLabels,
+	alignmentInternal,
+} ) {
+	const ratio = getAlignmentRatio( alignmentInternal );
+	const positionPercent = calculateLabelPositionPercent(
+		index,
+		totalLabels,
+		ratio
+	);
+
+	const isFirst = index === 0;
+	const isLast = totalLabels > 0 && index === totalLabels - 1;
+
+	let transform = 'translateX(-50%)';
+	let textAlign = 'center';
+
+	if ( isFirst ) {
+		transform = 'translateX(-100%)';
+		textAlign = 'right';
+	} else if ( isLast ) {
+		transform = 'translateX(0%)';
+		textAlign = 'left';
+	}
+
+	return {
+		left: `${ positionPercent }%`,
+		transform,
+		textAlign,
+	};
+}
+
+/**
+ * Legacy: calculateLabelSpacing
+ *
+ * Se mantiene exportado para backward compatibility interna.
+ * Actualmente NO se usa en el VAS (usamos posicionamiento absoluto),
+ * pero lo dejamos para evitar roturas si alguien lo importó en forks.
+ *
+ * @param {number} value      Valor 0–100 (display histórico)
+ * @param {number} labelCount Cantidad de labels
+ * @return {Object}           { gap, paddingLeft, paddingRight, distribution }
  */
 export function calculateLabelSpacing( value, labelCount ) {
 	// Casos especiales - 1 label
@@ -50,107 +190,4 @@ export function calculateLabelSpacing( value, labelCount ) {
 		paddingRight: `${ alignment * 10 }px`,
 		distribution: alignment > 0.8 ? 'expanded' : 'normal',
 	};
-}
-
-/**
- * Test cases para validar la función calculateLabelSpacing
- *
- * Estos tests verifican que el algoritmo funciona correctamente
- * en todos los casos de uso clínico comunes.
- */
-export function testCalculateLabelSpacing() {
-	if ( typeof window === 'undefined' || ! window.console ) {
-		return;
-	}
-
-	// eslint-disable-next-line no-console
-	console.log( '=== Testing calculateLabelSpacing ===' );
-
-	const tests = [
-		{
-			name: '3 labels, alignment 0 (compacto)',
-			value: 0,
-			labelCount: 3,
-			expectedGap: '0.20em',
-		},
-		{
-			name: '3 labels, alignment 50 (moderado)',
-			value: 50,
-			labelCount: 3,
-			expectedGap: '1.10em',
-		},
-		{
-			name: '3 labels, alignment 100 (bien marcado)',
-			value: 100,
-			labelCount: 3,
-			expectedGap: '2.00em',
-		},
-		{
-			name: '5 labels, alignment 0 (compacto)',
-			value: 0,
-			labelCount: 5,
-			expectedGap: '0.20em',
-		},
-		{
-			name: '5 labels, alignment 100 (bien marcado)',
-			value: 100,
-			labelCount: 5,
-			expectedGap: '2.00em',
-		},
-		{
-			name: '1 label (centrado)',
-			value: 100,
-			labelCount: 1,
-			expectedDistribution: 'centered',
-		},
-		{
-			name: '2 labels, alignment 100',
-			value: 100,
-			labelCount: 2,
-			expectedDistribution: 'expanded',
-		},
-	];
-
-	let passCount = 0;
-	let failCount = 0;
-
-	tests.forEach( ( test ) => {
-		const result = calculateLabelSpacing( test.value, test.labelCount );
-
-		let passed = true;
-
-		if ( test.expectedGap && result.gap !== test.expectedGap ) {
-			passed = false;
-			// eslint-disable-next-line no-console
-			console.warn(
-				`❌ ${ test.name }: expected gap ${ test.expectedGap }, got ${ result.gap }`
-			);
-		}
-
-		if (
-			test.expectedDistribution &&
-			result.distribution !== test.expectedDistribution
-		) {
-			passed = false;
-			// eslint-disable-next-line no-console
-			console.warn(
-				`❌ ${ test.name }: expected distribution ${ test.expectedDistribution }, got ${ result.distribution }`
-			);
-		}
-
-		if ( passed ) {
-			// eslint-disable-next-line no-console
-			console.log( `✅ ${ test.name }`, result );
-			passCount++;
-		} else {
-			failCount++;
-		}
-	} );
-
-	// eslint-disable-next-line no-console
-	console.log(
-		`\n=== Results: ${ passCount } passed, ${ failCount } failed ===\n`
-	);
-
-	return failCount === 0;
 }

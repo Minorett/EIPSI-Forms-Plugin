@@ -36,7 +36,7 @@
         width: 100%;
         margin-bottom: 1em;
         padding: 0;
-        min-height: 2.8em; // Aproximadamente 2 líneas de texto para acomodar labels
+        min-height: 4.8em; // 2 líneas con padding real (y tolera 3 si hace falta)
 
         @media ( max-width: 767px ) {
             width: 100%;
@@ -45,22 +45,28 @@
 
         .vas-multi-label {
             position: absolute;
+            top: 0;
             white-space: normal;
             word-wrap: break-word;
             overflow-wrap: break-word;
             word-break: break-word;
+            hyphens: none;
             max-width: 22%;
             font-weight: normal;
             font-size: var( --vas-label-size, 16px );
+            line-height: 1.2;
+            text-align: center;
             padding: 0.6em 0.5em;
             background: transparent;
             border-radius: 6px;
             border: none;
             color: var( --eipsi-color-text, #2c3e50 );
             transition: all 0.2s ease;
-            line-height: 1.2;
             width: auto;
-            top: 0;
+
+            &.has-manual-breaks {
+                white-space: pre-wrap;
+            }
 
             @media ( max-width: 767px ) {
                 font-size: max( 12px, calc( var( --vas-label-size, 16px ) * 0.9 ) );
@@ -70,32 +76,6 @@
             @media ( max-width: 374px ) {
                 font-size: max( 12px, calc( var( --vas-label-size, 16px ) * 0.8 ) );
                 padding: 0.5em 0.4em;
-            }
-
-            &:hover {
-                transform: translateY( -1px );
-            }
-
-            // PRIMER LABEL - aligned to left edge
-            &.vas-multi-label--first {
-                left: calc( ( 1 - var( --vas-label-alignment, 0.5 ) ) * 50% );
-                transform: translateX( -100% );
-                text-align: left;
-            }
-
-            // ÚLTIMO LABEL - aligned to right edge
-            &.vas-multi-label--last {
-                right: calc( ( 1 - var( --vas-label-alignment, 0.5 ) ) * 50% );
-                transform: translateX( 100% );
-                text-align: right;
-                left: auto;
-            }
-
-            // LABELS DEL MEDIO - always centered
-            &:nth-child(2):not(.vas-multi-label--last) {
-                left: 50%;
-                transform: translateX( -50% );
-                text-align: center;
             }
         }
     }

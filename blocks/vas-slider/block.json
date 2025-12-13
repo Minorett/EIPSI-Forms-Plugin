@@ -71,7 +71,11 @@
         },
         "labelAlignmentPercent": {
             "type": "number",
-            "default": 50
+            "default": 40
+        },
+        "enableManualLabelLineBreaks": {
+            "type": "boolean",
+            "default": false
         },
         "labelSpacing": {
             "type": "number",

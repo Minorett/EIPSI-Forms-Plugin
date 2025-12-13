@@ -1,5 +1,10 @@
 import { useBlockProps } from '@wordpress/block-editor';
 import { parseOptions } from '../../utils/optionParser';
+import {
+	calculateLabelPositionStyle,
+	sanitizeAlignmentInternal,
+	getAlignmentRatio,
+} from './calculateLabelSpacing';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -114,22 +119,22 @@ export default function Save( { attributes } ) {
 	const valueElementId =
 		shouldShowValue && inputId ? `${ inputId }-value` : undefined;
 
-	let alignmentPercentValue = 50;
+	let alignmentInternalValue = 40;
 	if (
 		typeof labelAlignmentPercent === 'number' &&
 		! Number.isNaN( labelAlignmentPercent )
 	) {
-		alignmentPercentValue = labelAlignmentPercent;
+		alignmentInternalValue = sanitizeAlignmentInternal(
+			labelAlignmentPercent
+		);
 	} else if (
 		typeof labelSpacing === 'number' &&
 		! Number.isNaN( labelSpacing )
 	) {
-		alignmentPercentValue = labelSpacing;
+		alignmentInternalValue = sanitizeAlignmentInternal( labelSpacing );
 	}
-	// Allow unlimited alignment values for clinical flexibility
-	const safeAlignmentPercent = Math.max( alignmentPercentValue, 0 );
-	// Normalize to 0-1 scale: 0→0, 100→1, >1→extended separation
-	const alignmentRatio = safeAlignmentPercent / 100;
+
+	const alignmentRatio = getAlignmentRatio( alignmentInternalValue );
 	const compactnessRatio = Math.max( 0, 1 - alignmentRatio );
 
 	return (
@@ -162,29 +167,27 @@ export default function Save( { attributes } ) {
 					data-label-count={ resolvedLabels.length }
 				>
 					{ resolvedLabels.map( ( labelText, index ) => {
-						const isFirst = index === 0;
-						const isLast = index === resolvedLabels.length - 1;
 						const totalLabels = resolvedLabels.length;
+						const isFirst = index === 0;
+						const isLast = index === totalLabels - 1;
+						const hasManualBreaks =
+							typeof labelText === 'string' &&
+							labelText.includes( '\n' );
+
 						const labelClasses = [
 							'vas-multi-label',
 							isFirst && 'vas-multi-label--first',
 							isLast && 'vas-multi-label--last',
+							hasManualBreaks && 'has-manual-breaks',
 						]
 							.filter( Boolean )
 							.join( ' ' );
 
-						// Calcular posición para labels intermedios (3+)
-						// Para N labels: posición = (índice / (N-1)) * 100%
-						let positionStyle = {};
-						if ( ! isFirst && ! isLast && totalLabels > 2 ) {
-							const positionPercent =
-								( index / ( totalLabels - 1 ) ) * 100;
-							positionStyle = {
-								left: `${ positionPercent }%`,
-								transform: 'translateX(-50%)',
-								textAlign: 'center',
-							};
-						}
+						const positionStyle = calculateLabelPositionStyle( {
+							index,
+							totalLabels,
+							alignmentInternal: alignmentInternalValue,
+						} );
 
 						return (
 							<span
