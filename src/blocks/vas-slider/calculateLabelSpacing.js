@@ -96,44 +96,81 @@ export function calculateLabelPositionPercent( index, total, ratio ) {
 }
 
 /**
- * Calcula el style inline para cada label.
+ * Calcula el style inline para cada label con márgenes dinámicos.
+ *
+ * Fórmula implementada basada en casos observados:
+ * - minMargin = (3 + (1 - ratio) * 110) * (fontSize / 16)
+ * - Factor 110 para encajar mejor con alignments 70-73
+ * - Scaling proporcional por font size
  *
  * Importante:
  * - Incluye transform inline para evitar que :hover del CSS rompa el posicionamiento.
- * - First/Last se anclan fuera del track para evitar solapamiento con labels internos.
+ * - First/Last se anclan con márgenes dinámicos para evitar solapamiento.
+ * - Last label: translateX(50%) según testing real observado.
  *
  * @param {Object} params
  * @param {number} params.index
  * @param {number} params.totalLabels
  * @param {number} params.alignmentInternal 0–80
+ * @param {number} params.labelFontSize     Tamaño de fuente en px (default: 16)
  * @return {Object} style inline
  */
 export function calculateLabelPositionStyle( {
 	index,
 	totalLabels,
 	alignmentInternal,
+	labelFontSize = 16,
 } ) {
 	const ratio = getAlignmentRatio( alignmentInternal );
-	const positionPercent = calculateLabelPositionPercent(
+	const isFirst = index === 0;
+	const isLast = totalLabels > 0 && index === totalLabels - 1;
+
+	// FACTOR 1: Font size adjustment
+	const fontSizeFactor = Math.max( 1, labelFontSize / 16 );
+
+	// FACTOR 2: Alignment compression
+	// Fórmula empírica que encaja con los casos observados:
+	// minMargin = (3 + (1 - ratio) * 110) * fontSizeFactor
+	//
+	// Esto produce:
+	// - Alignment 100 (ratio 1.0): 3% (ratio = 1.0, so 1-ratio = 0)
+	// - Alignment 79 (ratio 0.9875): ~4.375% base (con ajuste, se acerca más)
+	// - Alignment 73 (ratio 0.9125): ~11.375% base
+	// - Alignment 70 (ratio 0.875): ~15.25% base
+	//
+	// Nota: esta fórmula es una aproximación. El factor 110 se eligió
+	// para encajar mejor con alignment 70 y 73 (casos de compresión media-alta)
+	const alignmentCompression = 1 - ratio; // 0 a 1
+	const minMargin = ( 3 + alignmentCompression * 110 ) * fontSizeFactor;
+
+	// Clampear a máximo razonable (40%)
+	const clampedMinMargin = Math.min( minMargin, 40 );
+	const maxMargin = 100 - clampedMinMargin;
+
+	// Calcular posición base
+	let positionPercent = calculateLabelPositionPercent(
 		index,
 		totalLabels,
 		ratio
 	);
 
-	const isFirst = index === 0;
-	const isLast = totalLabels > 0 && index === totalLabels - 1;
+	// Clamping para first y last
+	if ( isFirst ) {
+		positionPercent = Math.max( positionPercent, clampedMinMargin );
+	}
+	if ( isLast ) {
+		positionPercent = Math.min( positionPercent, maxMargin );
+	}
 
+	// Transform y text-align
 	let transform = 'translateX(-50%)';
 	let textAlign = 'center';
 
-	// Refinamiento UX (2025): espejo en los extremos
-	// - First label: text-align left, crece hacia la derecha
-	// - Last label: text-align right, crece hacia la izquierda (translateX 0% evita compresión)
 	if ( isFirst ) {
 		transform = 'translateX(-100%)';
 		textAlign = 'left';
 	} else if ( isLast ) {
-		transform = 'translateX(0%)';
+		transform = 'translateX(50%)'; // ← CONFIRMADO por testing real
 		textAlign = 'right';
 	}
 

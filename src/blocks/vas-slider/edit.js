@@ -735,6 +735,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								index,
 								totalLabels,
 								alignmentInternal: alignmentInternalValue,
+								labelFontSize: labelFontSize || 16,
 							} );
 
 							return (
