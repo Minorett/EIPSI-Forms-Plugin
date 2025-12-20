@@ -12,6 +12,38 @@
 
 export const VAS_LABEL_FIRST_LEFT_PERCENT = 3;
 export const VAS_LABEL_LAST_LEFT_PERCENT = 90;
+export const VAS_ALIGNMENT_INTERNAL_MAX = 80;
+
+export function sanitizeAlignmentInternal( value, fallback = 40 ) {
+	if ( typeof value !== 'number' || Number.isNaN( value ) ) {
+		return fallback;
+	}
+	let nextValue = value;
+	if ( nextValue > VAS_ALIGNMENT_INTERNAL_MAX ) {
+		nextValue = ( nextValue / 100 ) * VAS_ALIGNMENT_INTERNAL_MAX;
+	}
+	return Math.min( Math.max( nextValue, 0 ), VAS_ALIGNMENT_INTERNAL_MAX );
+}
+
+export function alignmentInternalToDisplay( internal ) {
+	const safeInternal = sanitizeAlignmentInternal( internal );
+	return Math.round( ( safeInternal / VAS_ALIGNMENT_INTERNAL_MAX ) * 100 );
+}
+
+export function alignmentDisplayToInternal( display ) {
+	if ( typeof display !== 'number' || Number.isNaN( display ) ) {
+		return 40;
+	}
+	const normalizedDisplay = Math.min( Math.max( display, 0 ), 100 );
+	return Math.round(
+		( normalizedDisplay / 100 ) * VAS_ALIGNMENT_INTERNAL_MAX
+	);
+}
+
+export function getAlignmentRatio( internal ) {
+	const safeInternal = sanitizeAlignmentInternal( internal );
+	return safeInternal / VAS_ALIGNMENT_INTERNAL_MAX;
+}
 
 /**
  * Calcula la posición (en %) para cada label.

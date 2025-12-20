@@ -15,7 +15,11 @@ import { __ } from '@wordpress/i18n';
 import { useState, useEffect } from '@wordpress/element';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
 import { parseOptions, normalizeLineEndings } from '../../utils/optionParser';
-import { calculateLabelPositionStyle } from './calculateLabelSpacing';
+import {
+	calculateLabelPositionStyle,
+	alignmentInternalToDisplay,
+	alignmentDisplayToInternal,
+} from './calculateLabelSpacing';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -82,6 +86,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		boldLabels,
 		showCurrentValue,
 		valuePosition,
+		labelAlignment,
 	} = attributes;
 
 	const normalizedFieldName =
@@ -423,6 +428,30 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								{ value: 'px', label: 'px', default: 16 },
 							] }
 							isUnitSelectTabbable={ false }
+						/>
+
+						<RangeControl
+							label={ __(
+								'Label Alignment',
+								'vas-dinamico-forms'
+							) }
+							value={ alignmentInternalToDisplay(
+								labelAlignment
+							) }
+							onChange={ ( displayValue ) => {
+								const internalValue =
+									alignmentDisplayToInternal( displayValue );
+								setAttributes( {
+									labelAlignment: internalValue,
+								} );
+							} }
+							min={ 0 }
+							max={ 100 }
+							step={ 1 }
+							help={ __(
+								'Expand (higher) or compress (lower) label spacing. 0–100 range.',
+								'vas-dinamico-forms'
+							) }
 						/>
 					</div>
 
