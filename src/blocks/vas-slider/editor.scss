@@ -70,14 +70,18 @@
             min-height: 4.8em; // 2 líneas con padding real (y tolera 3 si hace falta)
 
             .vas-multi-label {
+                // DEFAULT: sin word-wrap automático (solo saltos básicos por espacios)
                 position: absolute;
                 top: 0;
                 white-space: normal;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-                word-break: break-word;
+                word-wrap: normal;
+                overflow-wrap: normal;
+                word-break: normal;
                 hyphens: none;
-                max-width: 22%;
+
+                // Espacio suficiente para la mayoría de casos clínicos
+                max-width: 30%;
+
                 font-weight: normal;
                 font-size: var( --vas-label-size, 16px );
                 line-height: 1.2;
@@ -90,36 +94,26 @@
                 transition: all 0.2s ease;
                 width: auto;
 
+                // Si el usuario puso Shift+Enter (\n), respetamos EXACTAMENTE esos saltos.
                 &.has-manual-breaks {
                     white-space: pre-wrap;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
                 }
 
-                // Si es una palabra única (sin espacios ni \n), NO rompemos letras.
-                // Si sobrepasa el max-width, mostramos ellipsis.
-                &.vas-multi-label--single-word {
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-
-                // Alineación espejo en extremos
+                // First-child y last-child
                 &:first-child {
                     text-align: left;
+                    max-width: 30%;
                 }
 
                 &:last-child {
                     text-align: right;
-                }
-
-                // Aumentar max-width en first-child y last-child para evitar word-wrap por letras
-                &:first-child,
-                &:last-child {
                     max-width: 30%;
                 }
 
                 @media ( max-width: 767px ) {
                     font-size: max( 12px, calc( var( --vas-label-size, 16px ) * 0.9 ) );
-                    max-width: 40%;
                 }
 
                 @media ( max-width: 374px ) {
