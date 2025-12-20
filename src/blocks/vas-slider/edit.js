@@ -14,7 +14,18 @@ import {
 import { __ } from '@wordpress/i18n';
 import { useState, useEffect } from '@wordpress/element';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
-import { parseOptions, normalizeLineEndings } from '../../utils/optionParser';
+import {
+	parseOptions,
+	normalizeLineEndings,
+	stringifyOptions,
+} from '../../utils/optionParser';
+import {
+	alignmentInternalToDisplay,
+	alignmentDisplayToInternal,
+	calculateLabelPositionStyle,
+	sanitizeAlignmentInternal,
+	getAlignmentRatio,
+} from './calculateLabelSpacing';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -71,6 +82,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		required,
 		helperText,
 		labels,
+		enableManualLabelLineBreaks,
 		minValue,
 		maxValue,
 		step,
@@ -92,26 +104,35 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			return;
 		}
 
+		// Legacy fallback: labelSpacing (histórico 0–100) → interno 0–80
 		if (
 			typeof labelSpacing === 'number' &&
 			! Number.isNaN( labelSpacing )
 		) {
-			setAttributes( { labelAlignmentPercent: labelSpacing } );
+			setAttributes( {
+				labelAlignmentPercent:
+					sanitizeAlignmentInternal( labelSpacing ),
+			} );
 			return;
 		}
 
+		// Legacy fallback: combinaciones de labelStyle/labelAlignment → display 0–100 → interno 0–80
 		if ( labelStyle !== undefined || labelAlignment !== undefined ) {
-			let migratedValue = 50;
+			let migratedDisplayValue = 50;
 			if ( labelAlignment === 'justified' ) {
-				migratedValue = 0;
+				migratedDisplayValue = 0;
 			} else if ( labelAlignment === 'centered' ) {
-				migratedValue = 100;
+				migratedDisplayValue = 100;
 			} else if ( labelStyle === 'simple' ) {
-				migratedValue = 30;
+				migratedDisplayValue = 30;
 			} else if ( labelStyle === 'centered' ) {
-				migratedValue = 70;
+				migratedDisplayValue = 70;
 			}
-			setAttributes( { labelAlignmentPercent: migratedValue } );
+
+			setAttributes( {
+				labelAlignmentPercent:
+					alignmentDisplayToInternal( migratedDisplayValue ),
+			} );
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- Only run once on mount to migrate legacy attributes
 	}, [] );
@@ -143,16 +164,19 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			? sliderMaxCandidate
 			: sliderMin + safeStep;
 
-	let alignmentPercentValue = 50;
+	let alignmentInternalValue = 40;
 	if ( Number.isFinite( labelAlignmentPercent ) ) {
-		alignmentPercentValue = labelAlignmentPercent;
+		alignmentInternalValue = sanitizeAlignmentInternal(
+			labelAlignmentPercent
+		);
 	} else if ( Number.isFinite( labelSpacing ) ) {
-		alignmentPercentValue = labelSpacing;
+		alignmentInternalValue = sanitizeAlignmentInternal( labelSpacing );
 	}
-	// Allow unlimited alignment values for clinical flexibility
-	const safeAlignmentPercent = Math.max( alignmentPercentValue, 0 );
-	// Normalize to 0-1 scale: 0→0, 100→1, >1→extended separation
-	const alignmentRatio = safeAlignmentPercent / 100;
+
+	const alignmentDisplayValue = alignmentInternalToDisplay(
+		alignmentInternalValue
+	);
+	const alignmentRatio = getAlignmentRatio( alignmentInternalValue );
 	const compactnessRatio = Math.max( 0, 1 - alignmentRatio );
 
 	const [ previewValue, setPreviewValue ] = useState(
@@ -452,26 +476,103 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								'Label Alignment',
 								'vas-dinamico-forms'
 							) }
-							value={
-								Math.round(
-									( alignmentPercentValue / 80 ) * 100 * 4
-								) / 4
-							}
+							value={ alignmentDisplayValue }
 							onChange={ ( value ) =>
 								setAttributes( {
 									labelAlignmentPercent:
-										Math.round( ( value / 100 ) * 80 * 4 ) /
-										4,
+										alignmentDisplayToInternal( value ),
 								} )
 							}
 							min={ 0 }
 							max={ 100 }
-							step={ 0.25 }
+							step={ 1 }
 							help={ __(
 								'0 = compactas | 100 = bien marcadas',
 								'vas-dinamico-forms'
 							) }
 						/>
+
+						<ToggleControl
+							label={ __(
+								'Enable manual line breaks',
+								'vas-dinamico-forms'
+							) }
+							checked={ !! enableManualLabelLineBreaks }
+							onChange={ ( value ) => {
+								const nextEnabled = !! value;
+
+								if ( nextEnabled ) {
+									const currentOptions = labels
+										? parseOptions( labels )
+										: [];
+
+									// For manual breaks, we force canonical semicolon format so that "\n" inside a label
+									// is NOT interpreted as a label separator.
+									if ( currentOptions.length > 0 ) {
+										setAttributes( {
+											enableManualLabelLineBreaks: true,
+											labels: stringifyOptions(
+												currentOptions
+											),
+										} );
+										return;
+									}
+
+									setAttributes( {
+										enableManualLabelLineBreaks: true,
+									} );
+									return;
+								}
+
+								setAttributes( {
+									enableManualLabelLineBreaks: false,
+								} );
+							} }
+							help={ __(
+								'Permite forzar saltos de línea dentro de cada etiqueta (Shift+Enter). Ideal para textos clínicos largos sin que se te rompa el layout.',
+								'vas-dinamico-forms'
+							) }
+						/>
+
+						{ !! enableManualLabelLineBreaks && (
+							<div style={ { marginTop: '12px' } }>
+								{ parsedLabels.length === 0 && (
+									<p style={ { marginTop: 0 } }>
+										{ __(
+											'Primero agregá tus etiquetas en “Labels” (separadas por punto y coma). Después acá podés poner saltos manuales.',
+											'vas-dinamico-forms'
+										) }
+									</p>
+								) }
+
+								{ parsedLabels.map( ( labelText, index ) => (
+									<TextareaControl
+										key={ `vas-manual-label-${ index }` }
+										label={ `${ __(
+											'Label',
+											'vas-dinamico-forms'
+										) } ${ index + 1 }` }
+										value={ labelText }
+										onChange={ ( value ) => {
+											const nextOptions = [
+												...parsedLabels,
+											];
+											nextOptions[ index ] =
+												normalizeLineEndings( value );
+											setAttributes( {
+												labels: stringifyOptions(
+													nextOptions
+												),
+											} );
+										} }
+										help={ __(
+											'Usá Shift+Enter para saltos de línea dentro de la etiqueta.',
+											'vas-dinamico-forms'
+										) }
+									/>
+								) ) }
+							</div>
+						) }
 					</div>
 
 					<div
@@ -605,39 +706,36 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						data-label-count={ resolvedLabels.length }
 					>
 						{ resolvedLabels.map( ( labelText, index ) => {
-							const isFirst = index === 0;
-							const isLast = index === resolvedLabels.length - 1;
 							const totalLabels = resolvedLabels.length;
+							const isFirst = index === 0;
+							const isLast = index === totalLabels - 1;
+							const hasManualBreaks =
+								typeof labelText === 'string' &&
+								labelText.includes( '\n' );
+
 							const labelClasses = [
 								'vas-multi-label',
 								isFirst && 'vas-multi-label--first',
 								isLast && 'vas-multi-label--last',
+								hasManualBreaks && 'has-manual-breaks',
 							]
 								.filter( Boolean )
 								.join( ' ' );
 
-							// Calcular posición para labels intermedios (3+)
-							// Para N labels: posición = (índice / (N-1)) * 100%
-							let positionStyle = {};
-							if ( ! isFirst && ! isLast && totalLabels > 2 ) {
-								const positionPercent =
-									( index / ( totalLabels - 1 ) ) * 100;
-								positionStyle = {
-									left: `${ positionPercent }%`,
-									transform: 'translateX(-50%)',
-									textAlign: 'center',
-								};
-							}
+							const positionStyle = calculateLabelPositionStyle( {
+								index,
+								totalLabels,
+								alignmentInternal: alignmentInternalValue,
+							} );
 
 							return (
 								<span
 									key={ `label-${ index }` }
 									className={ labelClasses }
-									dangerouslySetInnerHTML={ {
-										__html: labelText,
-									} }
 									style={ positionStyle }
-								/>
+								>
+									{ labelText }
+								</span>
 							);
 						} ) }
 					</div>
