@@ -133,7 +133,7 @@ export function calculateLabelPositionStyle( {
 		transform = 'translateX(-100%)';
 		textAlign = 'left';
 	} else if ( isLast ) {
-		transform = 'translateX(0%)';
+		transform = 'translateX(50%)';
 		textAlign = 'right';
 	}
 
