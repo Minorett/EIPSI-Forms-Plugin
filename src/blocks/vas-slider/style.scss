@@ -88,7 +88,7 @@
             // Aumentar max-width en first-child y last-child para evitar word-wrap por letras
             &:first-child,
             &:last-child {
-                max-width: 26%;
+                max-width: 30%;
             }
 
             @media ( max-width: 767px ) {

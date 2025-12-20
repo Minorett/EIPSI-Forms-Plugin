@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAS Last-Child: Visual Comparison BEFORE vs AFTER</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 2em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 1em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2em;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 1024px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: white;
+            padding: 2em;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5em;
+            padding-bottom: 1em;
+            border-bottom: 3px solid #e0e0e0;
+        }
+        
+        .panel-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.4em 1em;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .badge.before {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .badge.after {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        /* VAS Slider Base Styles */
+        .vas-slider-container {
+            margin: 1.5em 0;
+            padding: 2em;
+            background: #f8f9fa;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+        }
+        
+        .vas-multi-labels {
+            position: relative;
+            width: 100%;
+            margin-bottom: 2em;
+            padding: 0;
+            min-height: 4.8em;
+            background: rgba(0, 90, 135, 0.05);
+            border-radius: 8px;
+            padding: 1em 0;
+        }
+        
+        .vas-multi-label {
+            position: absolute;
+            top: 1em;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: none;
+            font-weight: 600;
+            font-size: 16px;
+            line-height: 1.2;
+            text-align: center;
+            padding: 0.6em 0.5em;
+            background: white;
+            border-radius: 6px;
+            border: 2px solid #005a87;
+            color: #2c3e50;
+            width: auto;
+            box-shadow: 0 2px 8px rgba(0, 90, 135, 0.15);
+        }
+        
+        /* BEFORE: 26% max-width */
+        .before-fix .vas-multi-label {
+            max-width: 22%;
+        }
+        
+        .before-fix .vas-multi-label:first-child,
+        .before-fix .vas-multi-label:last-child {
+            max-width: 26%;
+        }
+        
+        /* AFTER: 30% max-width */
+        .after-fix .vas-multi-label {
+            max-width: 22%;
+        }
+        
+        .after-fix .vas-multi-label:first-child,
+        .after-fix .vas-multi-label:last-child {
+            max-width: 30%;
+        }
+        
+        .vas-multi-label:first-child {
+            text-align: left;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%);
+            border-color: #d32f2f;
+        }
+        
+        .vas-multi-label:last-child {
+            text-align: right;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-color: #005a87;
+        }
+        
+        .vas-slider {
+            width: 100%;
+            height: 12px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background: linear-gradient(to right, #e2e8f0 0%, #cbd5e0 50%, #e2e8f0 100%);
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            border: 2px solid #cbd5e0;
+        }
+        
+        .vas-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #005a87 0%, #003d5b 100%);
+            border: 4px solid #ffffff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .vas-slider::-moz-range-thumb {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #005a87 0%, #003d5b 100%);
+            border: 4px solid #ffffff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .explanation {
+            background: #fff3cd;
+            padding: 1em;
+            border-radius: 8px;
+            margin-top: 1em;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .explanation h3 {
+            margin-top: 0;
+            color: #856404;
+            font-size: 1.1em;
+        }
+        
+        .explanation ul {
+            margin: 0.5em 0 0 0;
+            padding-left: 1.5em;
+            color: #856404;
+        }
+        
+        .explanation li {
+            margin-bottom: 0.5em;
+        }
+        
+        code {
+            background: #263238;
+            color: #80cbc4;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.3em 0.6em;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .zoom-note {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1em;
+            border-radius: 12px;
+            margin-bottom: 2em;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .zoom-note p {
+            margin: 0;
+            color: #005a87;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔬 VAS Last-Child: Visual Comparison BEFORE vs AFTER</h1>
+    
+    <div class="zoom-note">
+        <p>👁️ Observa el label <span class="highlight">"Muy bien"</span> (azul, extremo derecho) en ambos casos</p>
+    </div>
+    
+    <div class="comparison-grid">
+        <!-- BEFORE PANEL -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2>BEFORE</h2>
+                <span class="badge before">❌ Problema</span>
+            </div>
+            
+            <div class="vas-slider-container before-fix">
+                <div class="vas-multi-labels">
+                    <span class="vas-multi-label" style="left: 0%; transform: translateX(-100%); text-align: left;">Muy mal</span>
+                    <span class="vas-multi-label" style="left: 25%; transform: translateX(-50%); text-align: center;">Mal</span>
+                    <span class="vas-multi-label" style="left: 50%; transform: translateX(-50%); text-align: center;">Más o menos</span>
+                    <span class="vas-multi-label" style="left: 75%; transform: translateX(-50%); text-align: center;">Bien</span>
+                    <span class="vas-multi-label" style="left: 100%; transform: translateX(50%); text-align: right;">Muy bien</span>
+                </div>
+                <input type="range" class="vas-slider" min="0" max="100" value="50">
+            </div>
+            
+            <div class="explanation">
+                <h3>🐛 Problema Identificado</h3>
+                <ul>
+                    <li><code>max-width: 26%</code> insuficiente</li>
+                    <li><code>transform: translateX(50%)</code> → crece HACIA LA DERECHA</li>
+                    <li>Label toca borde → compresión vertical</li>
+                    <li>Word-wrap forzado → rompe por LETRA</li>
+                    <li>Resultado: <strong>M-u-y-b-i-e-n</strong> (ilegible)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- AFTER PANEL -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2>AFTER</h2>
+                <span class="badge after">✅ Solución</span>
+            </div>
+            
+            <div class="vas-slider-container after-fix">
+                <div class="vas-multi-labels">
+                    <span class="vas-multi-label" style="left: 0%; transform: translateX(-100%); text-align: left;">Muy mal</span>
+                    <span class="vas-multi-label" style="left: 25%; transform: translateX(-50%); text-align: center;">Mal</span>
+                    <span class="vas-multi-label" style="left: 50%; transform: translateX(-50%); text-align: center;">Más o menos</span>
+                    <span class="vas-multi-label" style="left: 75%; transform: translateX(-50%); text-align: center;">Bien</span>
+                    <span class="vas-multi-label" style="left: 100%; transform: translateX(0%); text-align: right;">Muy bien</span>
+                </div>
+                <input type="range" class="vas-slider" min="0" max="100" value="50">
+            </div>
+            
+            <div class="explanation">
+                <h3>✨ Solución Aplicada</h3>
+                <ul>
+                    <li><code>max-width: 30%</code> (+4% espacio)</li>
+                    <li><code>transform: translateX(0%)</code> → crece HACIA LA IZQUIERDA</li>
+                    <li>Label anclado en borde sin compresión</li>
+                    <li>Word-wrap natural → rompe por PALABRA</li>
+                    <li>Resultado: <strong>Muy / bien</strong> (legible)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div style="max-width: 1400px; margin: 2em auto;">
+        <div style="background: rgba(255, 255, 255, 0.95); padding: 2em; border-radius: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
+            <h2 style="color: #005a87; margin-top: 0;">📊 Comparación Técnica</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <th style="padding: 1em; text-align: left; border-radius: 8px 0 0 0;">Aspecto</th>
+                        <th style="padding: 1em; text-align: center;">BEFORE</th>
+                        <th style="padding: 1em; text-align: center; border-radius: 0 8px 0 0;">AFTER</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 0.8em; font-weight: 600;">Last-child max-width</td>
+                        <td style="padding: 0.8em; text-align: center;"><code>26%</code></td>
+                        <td style="padding: 0.8em; text-align: center;"><code>30%</code> <span style="color: #4caf50; font-weight: 600;">(+4%)</span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.8em; font-weight: 600;">Last-child transform</td>
+                        <td style="padding: 0.8em; text-align: center;"><code>translateX(50%)</code></td>
+                        <td style="padding: 0.8em; text-align: center;"><code>translateX(0%)</code> ✅</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 0.8em; font-weight: 600;">Dirección de crecimiento</td>
+                        <td style="padding: 0.8em; text-align: center;">→ Derecha ❌</td>
+                        <td style="padding: 0.8em; text-align: center;">← Izquierda ✅</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.8em; font-weight: 600;">Word-wrap behavior</td>
+                        <td style="padding: 0.8em; text-align: center;">Por LETRA 😢</td>
+                        <td style="padding: 0.8em; text-align: center;">Por PALABRA 🎉</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 0.8em; font-weight: 600;">"Muy bien" display</td>
+                        <td style="padding: 0.8em; text-align: center;">M-u-y-b-i-e-n (vertical) ❌</td>
+                        <td style="padding: 0.8em; text-align: center;">Muy / bien (2 líneas) ✅</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.8em; font-weight: 600;">Archivos modificados</td>
+                        <td style="padding: 0.8em; text-align: center;">-</td>
+                        <td style="padding: 0.8em; text-align: center;">
+                            style.scss<br>
+                            editor.scss<br>
+                            calculateLabelSpacing.js
+                        </td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 0.8em; font-weight: 600;">Lines changed</td>
+                        <td style="padding: 0.8em; text-align: center;">-</td>
+                        <td style="padding: 0.8em; text-align: center;"><strong>4 líneas</strong> (3 CSS + 1 JS)</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5em; border-radius: 12px; margin-top: 2em; color: white;">
+                <h3 style="margin-top: 0; font-size: 1.3em;">🎯 Impacto Clínico</h3>
+                <p style="margin: 0; font-size: 1.1em; line-height: 1.6;">
+                    Un psicólogo hispanohablante configura alignment 100 y ve "Muy bien" en <strong>DOS líneas legibles</strong>.
+                    <br><br>
+                    Piensa: <em style="font-size: 1.2em; font-weight: 600;">"Por fin alguien entendió cómo trabajo de verdad con mis pacientes"</em>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
