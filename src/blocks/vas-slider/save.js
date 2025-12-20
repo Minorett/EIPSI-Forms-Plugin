@@ -170,15 +170,21 @@ export default function Save( { attributes } ) {
 						const totalLabels = resolvedLabels.length;
 						const isFirst = index === 0;
 						const isLast = index === totalLabels - 1;
-						const hasManualBreaks =
-							typeof labelText === 'string' &&
-							labelText.includes( '\n' );
+
+						const safeLabelText =
+							typeof labelText === 'string' ? labelText : '';
+						const hasManualBreaks = safeLabelText.includes( '\n' );
+						const hasWordBreakers =
+							safeLabelText.includes( ' ' ) || hasManualBreaks;
+						const isSingleWord =
+							safeLabelText.trim() !== '' && ! hasWordBreakers;
 
 						const labelClasses = [
 							'vas-multi-label',
 							isFirst && 'vas-multi-label--first',
 							isLast && 'vas-multi-label--last',
 							hasManualBreaks && 'has-manual-breaks',
+							isSingleWord && 'vas-multi-label--single-word',
 						]
 							.filter( Boolean )
 							.join( ' ' );

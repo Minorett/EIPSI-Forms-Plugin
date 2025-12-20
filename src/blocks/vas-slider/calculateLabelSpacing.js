@@ -126,12 +126,15 @@ export function calculateLabelPositionStyle( {
 	let transform = 'translateX(-50%)';
 	let textAlign = 'center';
 
+	// Refinamiento UX (2025): espejo en los extremos
+	// - First label: text-align left
+	// - Last label: text-align right
 	if ( isFirst ) {
 		transform = 'translateX(-100%)';
-		textAlign = 'right';
+		textAlign = 'left';
 	} else if ( isLast ) {
 		transform = 'translateX(0%)';
-		textAlign = 'left';
+		textAlign = 'right';
 	}
 
 	return {

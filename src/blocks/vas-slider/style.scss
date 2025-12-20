@@ -68,6 +68,23 @@
                 white-space: pre-wrap;
             }
 
+            // Si es una palabra única (sin espacios ni \n), NO rompemos letras.
+            // Si sobrepasa el max-width, mostramos ellipsis.
+            &.vas-multi-label--single-word {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            // Alineación espejo en extremos
+            &:first-child {
+                text-align: left;
+            }
+
+            &:last-child {
+                text-align: right;
+            }
+
             // Aumentar max-width en first-child y last-child para evitar word-wrap por letras
             &:first-child,
             &:last-child {
