@@ -38,6 +38,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 - **Reparación automática de esquema (hotfix 1.2.2):** garantía de Zero Data Loss en actualizaciones de WordPress o cambios de estructura de BD, con sincronización cada 24 h y al activar el plugin.
 - **Distinción finalización global vs. por formulario:** el mensaje de agradecimiento configurado en el admin ya no sobreescribe el mensaje de un formulario individual a menos que el formulario no tenga configuración propia.
 - **VAS: validación de obligatorio en página múltiple:** cuando un VAS es obligatorio, la navegación no permite avanzar hasta que el usuario interactúe con el slider.
+- **VAS: compresión vertical del last-child en alignment 100:** el último label ya no se aplasta letra por letra cuando el alignment está en máximo; ahora se divide correctamente por palabra en 2 líneas legibles (ej: "Muy bien" en lugar de M-u-y-b-i-e-n). Aumentó el max-width de 26% a 30% y se cambió el transform para que el label crezca hacia la izquierda desde el borde derecho.
 
 ### Removed
 - **Promesas ambiguas de plantillas clínicas oficiales:** se eliminaron frases del tipo "crear PHQ-9 / GAD-7 / PCL-5 / AUDIT / DASS-21 con un clic" sin implementación real. La documentación ahora aclara que estas escalas están planificadas pero **todavía no disponibles como templates automáticos con scoring**.
