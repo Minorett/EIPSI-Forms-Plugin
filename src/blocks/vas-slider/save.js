@@ -193,6 +193,7 @@ export default function Save( { attributes } ) {
 							index,
 							totalLabels,
 							alignmentInternal: alignmentInternalValue,
+							labelFontSize: labelFontSize || 16,
 						} );
 
 						return (
