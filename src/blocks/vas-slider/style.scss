@@ -68,6 +68,12 @@
                 white-space: pre-wrap;
             }
 
+            // Aumentar max-width en first-child y last-child para evitar word-wrap por letras
+            &:first-child,
+            &:last-child {
+                max-width: 26%;
+            }
+
             @media ( max-width: 767px ) {
                 font-size: max( 12px, calc( var( --vas-label-size, 16px ) * 0.9 ) );
                 max-width: 40%;
