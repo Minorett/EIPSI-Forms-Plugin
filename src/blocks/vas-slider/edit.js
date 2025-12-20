@@ -14,18 +14,8 @@ import {
 import { __ } from '@wordpress/i18n';
 import { useState, useEffect } from '@wordpress/element';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
-import {
-	parseOptions,
-	normalizeLineEndings,
-	stringifyOptions,
-} from '../../utils/optionParser';
-import {
-	alignmentInternalToDisplay,
-	alignmentDisplayToInternal,
-	calculateLabelPositionStyle,
-	sanitizeAlignmentInternal,
-	getAlignmentRatio,
-} from './calculateLabelSpacing';
+import { parseOptions, normalizeLineEndings } from '../../utils/optionParser';
+import { calculateLabelPositionStyle } from './calculateLabelSpacing';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -82,60 +72,17 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		required,
 		helperText,
 		labels,
-		enableManualLabelLineBreaks,
 		minValue,
 		maxValue,
 		step,
 		initialValue,
 		showValue,
-		labelStyle,
-		labelAlignment,
-		labelAlignmentPercent,
-		labelSpacing,
 		labelFontSize,
 		valueFontSize,
 		boldLabels,
 		showCurrentValue,
 		valuePosition,
 	} = attributes;
-
-	useEffect( () => {
-		if ( labelAlignmentPercent !== undefined ) {
-			return;
-		}
-
-		// Legacy fallback: labelSpacing (histórico 0–100) → interno 0–80
-		if (
-			typeof labelSpacing === 'number' &&
-			! Number.isNaN( labelSpacing )
-		) {
-			setAttributes( {
-				labelAlignmentPercent:
-					sanitizeAlignmentInternal( labelSpacing ),
-			} );
-			return;
-		}
-
-		// Legacy fallback: combinaciones de labelStyle/labelAlignment → display 0–100 → interno 0–80
-		if ( labelStyle !== undefined || labelAlignment !== undefined ) {
-			let migratedDisplayValue = 50;
-			if ( labelAlignment === 'justified' ) {
-				migratedDisplayValue = 0;
-			} else if ( labelAlignment === 'centered' ) {
-				migratedDisplayValue = 100;
-			} else if ( labelStyle === 'simple' ) {
-				migratedDisplayValue = 30;
-			} else if ( labelStyle === 'centered' ) {
-				migratedDisplayValue = 70;
-			}
-
-			setAttributes( {
-				labelAlignmentPercent:
-					alignmentDisplayToInternal( migratedDisplayValue ),
-			} );
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- Only run once on mount to migrate legacy attributes
-	}, [] );
 
 	const normalizedFieldName =
 		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
@@ -163,21 +110,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		sliderMaxCandidate > sliderMin
 			? sliderMaxCandidate
 			: sliderMin + safeStep;
-
-	let alignmentInternalValue = 40;
-	if ( Number.isFinite( labelAlignmentPercent ) ) {
-		alignmentInternalValue = sanitizeAlignmentInternal(
-			labelAlignmentPercent
-		);
-	} else if ( Number.isFinite( labelSpacing ) ) {
-		alignmentInternalValue = sanitizeAlignmentInternal( labelSpacing );
-	}
-
-	const alignmentDisplayValue = alignmentInternalToDisplay(
-		alignmentInternalValue
-	);
-	const alignmentRatio = getAlignmentRatio( alignmentInternalValue );
-	const compactnessRatio = Math.max( 0, 1 - alignmentRatio );
 
 	const [ previewValue, setPreviewValue ] = useState(
 		clampValueToRange(
@@ -372,10 +304,32 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								labels: normalizeLineEndings( value ),
 							} )
 						}
-						help={ __(
-							'Usá punto y coma (;) para separar cada etiqueta (ej.: "Nada; Poco; Bastante; Mucho"). Si lo dejás vacío, mostramos solo los extremos numéricos. Formatos anteriores con comas o saltos de línea se mantienen activos.',
-							'vas-dinamico-forms'
-						) }
+						help={
+							<>
+								<strong>
+									{ __(
+										'Ingresá los labels separados por punto y coma (;)',
+										'vas-dinamico-forms'
+									) }
+								</strong>
+								<br />
+								{ __(
+									'Ejemplo: Nada; Poco; Bastante; Mucho; Extremadamente intenso',
+									'vas-dinamico-forms'
+								) }
+								<br />
+								<br />
+								{ __(
+									'¿Querés que un label ocupe dos líneas? Presioná Shift+Enter dentro del label para dividir.',
+									'vas-dinamico-forms'
+								) }
+								<br />
+								{ __(
+									'Los saltos de línea se respetan exactamente como los escribas.',
+									'vas-dinamico-forms'
+								) }
+							</>
+						}
 					/>
 					<NumberControl
 						label={ __( 'Minimum Value', 'vas-dinamico-forms' ) }
@@ -470,109 +424,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							] }
 							isUnitSelectTabbable={ false }
 						/>
-
-						<RangeControl
-							label={ __(
-								'Label Alignment',
-								'vas-dinamico-forms'
-							) }
-							value={ alignmentDisplayValue }
-							onChange={ ( value ) =>
-								setAttributes( {
-									labelAlignmentPercent:
-										alignmentDisplayToInternal( value ),
-								} )
-							}
-							min={ 0 }
-							max={ 100 }
-							step={ 1 }
-							help={ __(
-								'0 = compactas | 100 = bien marcadas',
-								'vas-dinamico-forms'
-							) }
-						/>
-
-						<ToggleControl
-							label={ __(
-								'Enable manual line breaks',
-								'vas-dinamico-forms'
-							) }
-							checked={ !! enableManualLabelLineBreaks }
-							onChange={ ( value ) => {
-								const nextEnabled = !! value;
-
-								if ( nextEnabled ) {
-									const currentOptions = labels
-										? parseOptions( labels )
-										: [];
-
-									// For manual breaks, we force canonical semicolon format so that "\n" inside a label
-									// is NOT interpreted as a label separator.
-									if ( currentOptions.length > 0 ) {
-										setAttributes( {
-											enableManualLabelLineBreaks: true,
-											labels: stringifyOptions(
-												currentOptions
-											),
-										} );
-										return;
-									}
-
-									setAttributes( {
-										enableManualLabelLineBreaks: true,
-									} );
-									return;
-								}
-
-								setAttributes( {
-									enableManualLabelLineBreaks: false,
-								} );
-							} }
-							help={ __(
-								'Permite forzar saltos de línea dentro de cada etiqueta (Shift+Enter). Ideal para textos clínicos largos sin que se te rompa el layout.',
-								'vas-dinamico-forms'
-							) }
-						/>
-
-						{ !! enableManualLabelLineBreaks && (
-							<div style={ { marginTop: '12px' } }>
-								{ parsedLabels.length === 0 && (
-									<p style={ { marginTop: 0 } }>
-										{ __(
-											'Primero agregá tus etiquetas en “Labels” (separadas por punto y coma). Después acá podés poner saltos manuales.',
-											'vas-dinamico-forms'
-										) }
-									</p>
-								) }
-
-								{ parsedLabels.map( ( labelText, index ) => (
-									<TextareaControl
-										key={ `vas-manual-label-${ index }` }
-										label={ `${ __(
-											'Label',
-											'vas-dinamico-forms'
-										) } ${ index + 1 }` }
-										value={ labelText }
-										onChange={ ( value ) => {
-											const nextOptions = [
-												...parsedLabels,
-											];
-											nextOptions[ index ] =
-												normalizeLineEndings( value );
-											setAttributes( {
-												labels: stringifyOptions(
-													nextOptions
-												),
-											} );
-										} }
-										help={ __(
-											'Usá Shift+Enter para saltos de línea dentro de la etiqueta.',
-											'vas-dinamico-forms'
-										) }
-									/>
-								) ) }
-							</div>
-						) }
 					</div>
 
 					<div
@@ -695,8 +546,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						boldLabels !== false ? ' vas-bold-labels' : ''
 					}${ valuePosition === 'below' ? ' vas-value-below' : '' }` }
 					style={ {
-						'--vas-label-alignment': alignmentRatio,
-						'--vas-label-compactness': compactnessRatio,
 						'--vas-label-size': `${ labelFontSize || 16 }px`,
 						'--vas-value-size': `${ valueFontSize || 36 }px`,
 					} }
@@ -707,26 +556,15 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					>
 						{ resolvedLabels.map( ( labelText, index ) => {
 							const totalLabels = resolvedLabels.length;
-							const isFirst = index === 0;
-							const isLast = index === totalLabels - 1;
 
 							const safeLabelText =
 								typeof labelText === 'string' ? labelText : '';
 							const hasManualBreaks =
 								safeLabelText.includes( '\n' );
-							const hasWordBreakers =
-								safeLabelText.includes( ' ' ) ||
-								hasManualBreaks;
-							const isSingleWord =
-								safeLabelText.trim() !== '' &&
-								! hasWordBreakers;
 
 							const labelClasses = [
 								'vas-multi-label',
-								isFirst && 'vas-multi-label--first',
-								isLast && 'vas-multi-label--last',
 								hasManualBreaks && 'has-manual-breaks',
-								isSingleWord && 'vas-multi-label--single-word',
 							]
 								.filter( Boolean )
 								.join( ' ' );
@@ -734,8 +572,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							const positionStyle = calculateLabelPositionStyle( {
 								index,
 								totalLabels,
-								alignmentInternal: alignmentInternalValue,
-								labelFontSize: labelFontSize || 16,
 							} );
 
 							return (

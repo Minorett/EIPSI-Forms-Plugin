@@ -1,10 +1,6 @@
 import { useBlockProps } from '@wordpress/block-editor';
 import { parseOptions } from '../../utils/optionParser';
-import {
-	calculateLabelPositionStyle,
-	sanitizeAlignmentInternal,
-	getAlignmentRatio,
-} from './calculateLabelSpacing';
+import { calculateLabelPositionStyle } from './calculateLabelSpacing';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -48,8 +44,6 @@ export default function Save( { attributes } ) {
 		step,
 		initialValue,
 		showValue,
-		labelAlignmentPercent,
-		labelSpacing,
 		labelFontSize,
 		valueFontSize,
 		showLabelContainers,
@@ -119,24 +113,6 @@ export default function Save( { attributes } ) {
 	const valueElementId =
 		shouldShowValue && inputId ? `${ inputId }-value` : undefined;
 
-	let alignmentInternalValue = 40;
-	if (
-		typeof labelAlignmentPercent === 'number' &&
-		! Number.isNaN( labelAlignmentPercent )
-	) {
-		alignmentInternalValue = sanitizeAlignmentInternal(
-			labelAlignmentPercent
-		);
-	} else if (
-		typeof labelSpacing === 'number' &&
-		! Number.isNaN( labelSpacing )
-	) {
-		alignmentInternalValue = sanitizeAlignmentInternal( labelSpacing );
-	}
-
-	const alignmentRatio = getAlignmentRatio( alignmentInternalValue );
-	const compactnessRatio = Math.max( 0, 1 - alignmentRatio );
-
 	return (
 		<div { ...blockProps }>
 			{ label && (
@@ -155,9 +131,6 @@ export default function Save( { attributes } ) {
 				}` }
 				data-scale={ `${ sliderMin }-${ sliderMax }` }
 				style={ {
-					// STATIC designer setting. Never touches patient’s slider value.
-					'--vas-label-alignment': alignmentRatio,
-					'--vas-label-compactness': compactnessRatio,
 					'--vas-label-size': `${ labelFontSize || 16 }px`,
 					'--vas-value-size': `${ valueFontSize || 36 }px`,
 				} }
@@ -168,23 +141,14 @@ export default function Save( { attributes } ) {
 				>
 					{ resolvedLabels.map( ( labelText, index ) => {
 						const totalLabels = resolvedLabels.length;
-						const isFirst = index === 0;
-						const isLast = index === totalLabels - 1;
 
 						const safeLabelText =
 							typeof labelText === 'string' ? labelText : '';
 						const hasManualBreaks = safeLabelText.includes( '\n' );
-						const hasWordBreakers =
-							safeLabelText.includes( ' ' ) || hasManualBreaks;
-						const isSingleWord =
-							safeLabelText.trim() !== '' && ! hasWordBreakers;
 
 						const labelClasses = [
 							'vas-multi-label',
-							isFirst && 'vas-multi-label--first',
-							isLast && 'vas-multi-label--last',
 							hasManualBreaks && 'has-manual-breaks',
-							isSingleWord && 'vas-multi-label--single-word',
 						]
 							.filter( Boolean )
 							.join( ' ' );
@@ -192,8 +156,6 @@ export default function Save( { attributes } ) {
 						const positionStyle = calculateLabelPositionStyle( {
 							index,
 							totalLabels,
-							alignmentInternal: alignmentInternalValue,
-							labelFontSize: labelFontSize || 16,
 						} );
 
 						return (
