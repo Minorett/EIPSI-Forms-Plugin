@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: VAS Alignment Dynamic Spread - Implementación 2025</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .vas-demo {
+            border: 2px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .vas-slider-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .vas-multi-labels {
+            position: relative;
+            height: 80px;
+            margin-bottom: 20px;
+        }
+        .vas-multi-label {
+            position: absolute;
+            top: 0;
+            font-size: 16px;
+            font-weight: bold;
+            max-width: 22%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+        .vas-slider {
+            width: 100%;
+            margin: 20px 0;
+        }
+        .test-title {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .test-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .formula {
+            background: #f0f8ff;
+            padding: 10px;
+            border-left: 4px solid #0066cc;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .alignment-markers {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .marker {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        .range-control {
+            margin: 10px 0;
+        }
+        .range-control label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .range-control input {
+            width: 100%;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎯 VAS Alignment Dynamic Spread - Implementación Completa</h1>
+        <p><strong>Objetivo:</strong> El slider de Alignment controla dinámicamente el spread de los labels.</p>
+        
+        <div class="formula">
+            <strong>FÓRMULA IMPLEMENTADA:</strong><br>
+            minMargin = 25 - (alignmentRatio * 20)  // 5% (alignment 100) → 25% (alignment 0)<br>
+            maxMargin = 100 - minMargin              // 95% (alignment 100) → 75% (alignment 0)<br>
+            leftPercent = minMargin + (normalizedIndex * (maxMargin - minMargin))
+        </div>
+    </div>
+
+    <div class="test-container">
+        <div class="test-title">✅ DEMO INTERACTIVO: 5 Labels</div>
+        <div class="test-description">
+            Labels: "Nada; Poco; Bastante; Mucho; Muy bien"<br>
+            Usa el slider para ver cómo se comprimen/expanden los labels dinámicamente.
+        </div>
+        
+        <div class="range-control">
+            <label for="alignmentRange">Alignment: <span id="alignmentValue">100</span></label>
+            <input type="range" id="alignmentRange" min="0" max="100" value="100" step="1">
+            <div class="alignment-markers">
+                <span class="marker">Min Spread<br>(0)</span>
+                <span class="marker">Medium Spread<br>(50)</span>
+                <span class="marker">Max Spread<br>(100)</span>
+            </div>
+        </div>
+        
+        <div class="vas-demo">
+            <div class="vas-slider-container">
+                <div class="vas-multi-labels" id="labelsContainer">
+                    <span class="vas-multi-label" id="label0">Nada</span>
+                    <span class="vas-multi-label" id="label1">Poco</span>
+                    <span class="vas-multi-label" id="label2">Bastante</span>
+                    <span class="vas-multi-label" id="label3">Mucho</span>
+                    <span class="vas-multi-label" id="label4">Muy bien</span>
+                </div>
+                <input type="range" class="vas-slider" min="0" max="100" value="50" disabled>
+            </div>
+        </div>
+        
+        <div id="positionsDisplay" style="background: #f0f0f0; padding: 10px; border-radius: 4px; margin-top: 10px;">
+            <strong>Posiciones actuales:</strong><br>
+            <span id="position0">5%</span> | 
+            <span id="position1">25%</span> | 
+            <span id="position2">50%</span> | 
+            <span id="position3">75%</span> | 
+            <span id="position4">90%</span>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <div class="test-title">📋 CASOS DE TESTING AUTOMATIZADOS</div>
+        <div id="testResults">
+            <!-- Se llenarán via JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Constantes del sistema VAS
+        const VAS_ALIGNMENT_INTERNAL_MAX = 80;
+
+        // Funciones de conversión
+        function alignmentDisplayToInternal(display) {
+            if (typeof display !== 'number' || Number.isNaN(display)) {
+                return 40;
+            }
+            const normalizedDisplay = Math.min(Math.max(display, 0), 100);
+            return Math.round((normalizedDisplay / 100) * VAS_ALIGNMENT_INTERNAL_MAX);
+        }
+
+        // Función principal: calculateLabelStyle
+        function calculateLabelStyle(index, totalLabels, alignmentDisplay) {
+            const left = calculateLabelLeftPercent(index, totalLabels, alignmentDisplay);
+            const transform = calculateLabelTransform(index, totalLabels);
+            const textAlign = calculateLabelTextAlign(index, totalLabels);
+            
+            return {
+                left: `${Math.round(left)}%`,
+                transform,
+                textAlign,
+            };
+        }
+
+        function calculateLabelLeftPercent(index, totalLabels, alignmentDisplay) {
+            const alignmentInternal = alignmentDisplayToInternal(alignmentDisplay);
+            const alignmentRatio = alignmentInternal / VAS_ALIGNMENT_INTERNAL_MAX;
+            
+            if (totalLabels === 1) {
+                return 50;
+            }
+            
+            const minMargin = 25 - (alignmentRatio * 20); // 5% a 25%
+            const maxMargin = 100 - minMargin; // 95% a 75%
+            
+            const normalizedIndex = index / (totalLabels - 1);
+            const leftPercent = minMargin + (normalizedIndex * (maxMargin - minMargin));
+            
+            return leftPercent;
+        }
+
+        function calculateLabelTransform(index, totalLabels) {
+            const isFirst = index === 0;
+            const isLast = totalLabels > 0 && index === totalLabels - 1;
+            
+            if (isFirst) {
+                return 'translateX(-100%)';
+            }
+            if (isLast) {
+                return 'translateX(50%)';
+            }
+            return 'translateX(-50%)';
+        }
+
+        function calculateLabelTextAlign(index, totalLabels) {
+            const isFirst = index === 0;
+            const isLast = totalLabels > 0 && index === totalLabels - 1;
+            
+            if (isFirst) {
+                return 'left';
+            }
+            if (isLast) {
+                return 'right';
+            }
+            return 'center';
+        }
+
+        // Actualizar demo interactivo
+        function updateDemo() {
+            const alignment = parseInt(document.getElementById('alignmentRange').value);
+            document.getElementById('alignmentValue').textContent = alignment;
+            
+            const totalLabels = 5;
+            const labels = ['Nada', 'Poco', 'Bastante', 'Mucho', 'Muy bien'];
+            
+            for (let i = 0; i < totalLabels; i++) {
+                const style = calculateLabelStyle(i, totalLabels, alignment);
+                const labelElement = document.getElementById(`label${i}`);
+                const positionElement = document.getElementById(`position${i}`);
+                
+                labelElement.style.left = style.left;
+                labelElement.style.transform = style.transform;
+                labelElement.style.textAlign = style.textAlign;
+                positionElement.textContent = style.left;
+            }
+        }
+
+        // Testing automatizado
+        function runTests() {
+            const testCases = [
+                { alignment: 100, expected: [5, 25, 50, 75, 90], name: 'Alignment 100 (máximo spread)' },
+                { alignment: 50, expected: [15, 37.5, 50, 62.5, 85], name: 'Alignment 50 (spread medio)' },
+                { alignment: 0, expected: [25, 43.75, 50, 56.25, 75], name: 'Alignment 0 (mínimo spread)' }
+            ];
+            
+            const totalLabels = 5;
+            let resultsHTML = '';
+            
+            testCases.forEach(testCase => {
+                let positions = [];
+                let allMatch = true;
+                
+                for (let i = 0; i < totalLabels; i++) {
+                    const leftPercent = calculateLabelLeftPercent(i, totalLabels, testCase.alignment);
+                    positions.push(leftPercent);
+                    
+                    const expected = testCase.expected[i];
+                    const diff = Math.abs(leftPercent - expected);
+                    if (diff > 0.1) allMatch = false; // Tolerancia de 0.1%
+                }
+                
+                const status = allMatch ? '✅ PASS' : '❌ FAIL';
+                resultsHTML += `
+                    <div style="margin: 10px 0; padding: 10px; border-left: 4px solid ${allMatch ? '#4CAF50' : '#f44336'};">
+                        <strong>${testCase.name}</strong><br>
+                        Alignment: ${testCase.alignment}<br>
+                        Esperado: [${testCase.expected.join(', ')}]<br>
+                        Obtenido: [${positions.map(p => p.toFixed(2)).join(', ')}]<br>
+                        <strong>${status}</strong>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('testResults').innerHTML = resultsHTML;
+        }
+
+        // Test adicionales para diferentes números de labels
+        function runAdditionalTests() {
+            const tests = [
+                { labels: 3, alignment: 100, expected: [5, 50, 90], name: '3 labels, alignment 100' },
+                { labels: 4, alignment: 100, expected: [5, 33.33, 66.66, 90], name: '4 labels, alignment 100' },
+                { labels: 1, alignment: 100, expected: [50], name: '1 label, alignment 100' },
+            ];
+            
+            let additionalHTML = '<h3>Tests adicionales:</h3>';
+            
+            tests.forEach(test => {
+                let positions = [];
+                for (let i = 0; i < test.labels; i++) {
+                    const leftPercent = calculateLabelLeftPercent(i, test.labels, test.alignment);
+                    positions.push(leftPercent);
+                }
+                
+                const status = positions.every((pos, idx) => Math.abs(pos - test.expected[idx]) < 0.1) ? '✅' : '❌';
+                additionalHTML += `
+                    <div style="margin: 5px 0; padding: 5px; background: #f9f9f9; border-radius: 4px;">
+                        ${status} <strong>${test.name}</strong>: [${positions.map(p => p.toFixed(2)).join(', ')}]
+                    </div>
+                `;
+            });
+            
+            document.getElementById('testResults').innerHTML += additionalHTML;
+        }
+
+        // Inicializar
+        document.getElementById('alignmentRange').addEventListener('input', updateDemo);
+        
+        // Ejecutar cuando la página esté lista
+        window.addEventListener('load', function() {
+            updateDemo();
+            runTests();
+            runAdditionalTests();
+        });
+    </script>
+</body>
+</html>
