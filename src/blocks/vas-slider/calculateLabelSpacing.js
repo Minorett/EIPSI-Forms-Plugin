@@ -72,6 +72,102 @@ export function calculateLabelPositionPercent( index, total ) {
 }
 
 /**
+ * Calcula left% dinámico según alignment slider
+ * @param {number} index            Índice del label
+ * @param {number} totalLabels      Cantidad total de labels
+ * @param {number} alignmentDisplay Valor del slider 0-100
+ * @return {number} left% (0-100)
+ */
+export function calculateLabelLeftPercent(
+	index,
+	totalLabels,
+	alignmentDisplay
+) {
+	// Convertir display a interno (0-100 → 0-80)
+	const alignmentInternal = alignmentDisplayToInternal( alignmentDisplay );
+	// Convertir interno a ratio (0-80 → 0-1)
+	const alignmentRatio = alignmentInternal / VAS_ALIGNMENT_INTERNAL_MAX;
+
+	// Caso especial: 1 label
+	if ( totalLabels === 1 ) {
+		return 50;
+	}
+
+	// Márgenes dinámicos
+	// Alignment alto (ratio ~1) → margen bajo (5%)
+	// Alignment bajo (ratio ~0) → margen alto (25%)
+	const minMargin = 25 - alignmentRatio * 20; // 5% a 25%
+	const maxMargin = 100 - minMargin; // 95% a 75%
+
+	// Distribución lineal dentro de márgenes
+	const normalizedIndex = index / ( totalLabels - 1 );
+	const leftPercent = minMargin + normalizedIndex * ( maxMargin - minMargin );
+
+	return leftPercent;
+}
+
+/**
+ * Calcula transform basado en posición del label
+ * @param {number} index       Índice del label
+ * @param {number} totalLabels Cantidad total de labels
+ * @return {string} transform CSS
+ */
+export function calculateLabelTransform( index, totalLabels ) {
+	const isFirst = index === 0;
+	const isLast = totalLabels > 0 && index === totalLabels - 1;
+
+	if ( isFirst ) {
+		return 'translateX(-100%)';
+	}
+	if ( isLast ) {
+		return 'translateX(50%)';
+	}
+	return 'translateX(-50%)';
+}
+
+/**
+ * Calcula text-align basado en posición del label
+ * @param {number} index       Índice del label
+ * @param {number} totalLabels Cantidad total de labels
+ * @return {string} text-align CSS
+ */
+export function calculateLabelTextAlign( index, totalLabels ) {
+	const isFirst = index === 0;
+	const isLast = totalLabels > 0 && index === totalLabels - 1;
+
+	if ( isFirst ) {
+		return 'left';
+	}
+	if ( isLast ) {
+		return 'right';
+	}
+	return 'center';
+}
+
+/**
+ * Calcula style completo para cada label (NUEVA FUNCIÓN PRINCIPAL)
+ * @param {number} index            Índice del label
+ * @param {number} totalLabels      Cantidad total de labels
+ * @param {number} alignmentDisplay Valor del slider 0-100
+ * @return {Object} style CSS object con left, transform, textAlign
+ */
+export function calculateLabelStyle( index, totalLabels, alignmentDisplay ) {
+	const left = calculateLabelLeftPercent(
+		index,
+		totalLabels,
+		alignmentDisplay
+	);
+	const transform = calculateLabelTransform( index, totalLabels );
+	const textAlign = calculateLabelTextAlign( index, totalLabels );
+
+	return {
+		left: `${ Math.round( left ) }%`,
+		transform,
+		textAlign,
+	};
+}
+
+/**
  * Calcula el style inline para cada label.
  *
  * Posicionamiento fijo:

@@ -1,6 +1,9 @@
 import { useBlockProps } from '@wordpress/block-editor';
 import { parseOptions } from '../../utils/optionParser';
-import { calculateLabelPositionStyle } from './calculateLabelSpacing';
+import {
+	calculateLabelStyle,
+	alignmentInternalToDisplay,
+} from './calculateLabelSpacing';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -51,6 +54,7 @@ export default function Save( { attributes } ) {
 		showCurrentValue,
 		valuePosition,
 		conditionalLogic,
+		labelAlignment,
 	} = attributes;
 
 	const normalizedFieldName =
@@ -153,10 +157,13 @@ export default function Save( { attributes } ) {
 							.filter( Boolean )
 							.join( ' ' );
 
-						const positionStyle = calculateLabelPositionStyle( {
+						const displayAlignment =
+							alignmentInternalToDisplay( labelAlignment );
+						const positionStyle = calculateLabelStyle(
 							index,
 							totalLabels,
-						} );
+							displayAlignment
+						);
 
 						return (
 							<span

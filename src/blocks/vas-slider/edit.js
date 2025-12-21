@@ -16,9 +16,9 @@ import { useState, useEffect } from '@wordpress/element';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
 import { parseOptions, normalizeLineEndings } from '../../utils/optionParser';
 import {
-	calculateLabelPositionStyle,
 	alignmentInternalToDisplay,
 	alignmentDisplayToInternal,
+	calculateLabelStyle,
 } from './calculateLabelSpacing';
 
 const renderHelperText = ( text ) => {
@@ -598,10 +598,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								.filter( Boolean )
 								.join( ' ' );
 
-							const positionStyle = calculateLabelPositionStyle( {
+							const displayAlignment =
+								alignmentInternalToDisplay( labelAlignment );
+							const positionStyle = calculateLabelStyle(
 								index,
 								totalLabels,
-							} );
+								displayAlignment
+							);
 
 							return (
 								<span
