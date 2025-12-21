@@ -72,38 +72,113 @@ export function calculateLabelPositionPercent( index, total ) {
 }
 
 /**
- * Calcula left% dinámico según alignment slider
+ * Mapeo de posiciones clínicas validadas
+ * Cada fila: [alignment0, alignment50, alignment100]
+ */
+const LABEL_POSITIONS = {
+	3: {
+		100: [ 5, 50, 87 ],
+		50: [ 20, 50, 70 ],
+		0: [ 25, 50, 75 ], // Estimado por simetría
+	},
+	4: {
+		100: [ 5, 30, 70, 88 ],
+		50: [ 15, 35, 65, 80 ],
+		0: [ 25, 37.5, 62.5, 75 ], // Estimado
+	},
+	5: {
+		100: [ 5, 25, 50, 75, 90 ],
+		50: [ 15, 28, 50, 70, 80 ],
+		0: [ 25, 37.5, 50, 62.5, 75 ], // Estimado
+	},
+};
+
+/**
+ * Calcula left% usando mapeo clínico + interpolación
  * @param {number} index            Índice del label
- * @param {number} totalLabels      Cantidad total de labels
+ * @param {number} totalLabels      Cantidad de labels
  * @param {number} alignmentDisplay Valor del slider 0-100
- * @return {number} left% (0-100)
+ * @return {number} left%
  */
 export function calculateLabelLeftPercent(
 	index,
 	totalLabels,
 	alignmentDisplay
 ) {
-	// Convertir display a interno (0-100 → 0-80)
-	const alignmentInternal = alignmentDisplayToInternal( alignmentDisplay );
-	// Convertir interno a ratio (0-80 → 0-1)
-	const alignmentRatio = alignmentInternal / VAS_ALIGNMENT_INTERNAL_MAX;
-
-	// Caso especial: 1 label
+	// Casos especiales
 	if ( totalLabels === 1 ) {
 		return 50;
 	}
+	if ( totalLabels === 2 ) {
+		// 2 labels: distribuir según alignment
+		const ratio = alignmentDisplay / 100;
+		const minMargin = 10 + ( 1 - ratio ) * 15; // 10% a 25%
+		const leftPercents = [ minMargin, 100 - minMargin ];
+		return leftPercents[ index ];
+	}
 
-	// Márgenes dinámicos
-	// Alignment alto (ratio ~1) → margen bajo (5%)
-	// Alignment bajo (ratio ~0) → margen alto (25%)
-	const minMargin = 25 - alignmentRatio * 20; // 5% a 25%
-	const maxMargin = 100 - minMargin; // 95% a 75%
+	// Para 3-5 labels: usar mapeo + interpolación
+	if ( totalLabels >= 3 && totalLabels <= 5 ) {
+		const positions = LABEL_POSITIONS[ totalLabels ];
 
-	// Distribución lineal dentro de márgenes
+		// Encontrar los dos alignments más cercanos para interpolar
+		let lower = 0,
+			upper = 100;
+		let lowerPositions =
+			positions[ 0 ] || positions[ Object.keys( positions )[ 0 ] ];
+		let upperPositions = positions[ 100 ];
+
+		// Interpolación lineal entre alignment 0/50/100
+		if ( alignmentDisplay <= 50 ) {
+			lower = 0;
+			upper = 50;
+			lowerPositions =
+				positions[ 0 ] ||
+				calculatePositionsForAlignment( totalLabels, 0 );
+			upperPositions = positions[ 50 ];
+		} else {
+			lower = 50;
+			upper = 100;
+			lowerPositions = positions[ 50 ];
+			upperPositions = positions[ 100 ];
+		}
+
+		// Interpolar
+		const ratio = ( alignmentDisplay - lower ) / ( upper - lower );
+		const interpolated =
+			lowerPositions[ index ] +
+			( upperPositions[ index ] - lowerPositions[ index ] ) * ratio;
+
+		return interpolated;
+	}
+
+	// Para 6+ labels: extrapolación simple (no validado clínicamente)
+	const minMargin = 5 + ( 1 - alignmentDisplay / 100 ) * 20;
+	const maxMargin = 100 - minMargin * 1.5;
 	const normalizedIndex = index / ( totalLabels - 1 );
-	const leftPercent = minMargin + normalizedIndex * ( maxMargin - minMargin );
+	return minMargin + normalizedIndex * ( maxMargin - minMargin );
+}
 
-	return leftPercent;
+/**
+ * Fallback para generar posiciones si no están mapeadas
+ * (Para alignment 0 o labels > 5)
+ * @param {number} totalLabels Cantidad de labels
+ * @param {number} alignment   Valor del alignment 0-100
+ * @return {Array<number>} Array de posiciones en %
+ */
+function calculatePositionsForAlignment( totalLabels, alignment ) {
+	const ratio = alignment / 100;
+	const minMargin = 5 + ( 1 - ratio ) * 20;
+	const maxMargin = 100 - minMargin * 1.5;
+
+	const positions = [];
+	for ( let i = 0; i < totalLabels; i++ ) {
+		const normalizedIndex = i / ( totalLabels - 1 );
+		positions.push(
+			minMargin + normalizedIndex * ( maxMargin - minMargin )
+		);
+	}
+	return positions;
 }
 
 /**
