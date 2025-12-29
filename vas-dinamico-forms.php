@@ -233,14 +233,14 @@ function vas_dinamico_enqueue_admin_assets($hook) {
     if (strpos($hook, 'vas-dinamico') === false && strpos($hook, 'form-results') === false && strpos($hook, 'eipsi-db-config') === false) {
         return;
     }
-    
+
     wp_enqueue_style(
         'vas-dinamico-admin-style',
         VAS_DINAMICO_PLUGIN_URL . 'assets/css/admin-style.css',
         array(),
         VAS_DINAMICO_VERSION
     );
-    
+
     wp_enqueue_script(
         'vas-dinamico-admin-script',
         VAS_DINAMICO_PLUGIN_URL . 'assets/js/admin-script.js',
@@ -248,13 +248,13 @@ function vas_dinamico_enqueue_admin_assets($hook) {
         VAS_DINAMICO_VERSION,
         true
     );
-    
+
     wp_localize_script('vas-dinamico-admin-script', 'vasdinamico', array(
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('vas_dinamico_nonce'),
         'adminNonce' => wp_create_nonce('eipsi_admin_nonce')
     ));
-    
+
     // Enqueue configuration panel assets
     if (strpos($hook, 'eipsi-db-config') !== false) {
         wp_enqueue_style(
@@ -263,7 +263,7 @@ function vas_dinamico_enqueue_admin_assets($hook) {
             array(),
             VAS_DINAMICO_VERSION
         );
-        
+
         wp_enqueue_script(
             'eipsi-config-panel-script',
             VAS_DINAMICO_PLUGIN_URL . 'assets/js/configuration-panel.js',
@@ -271,7 +271,7 @@ function vas_dinamico_enqueue_admin_assets($hook) {
             VAS_DINAMICO_VERSION,
             true
         );
-        
+
         wp_localize_script('eipsi-config-panel-script', 'eipsiConfigL10n', array(
             'connected' => __('Connected', 'vas-dinamico-forms'),
             'disconnected' => __('Disconnected', 'vas-dinamico-forms'),
@@ -292,6 +292,20 @@ function vas_dinamico_enqueue_admin_assets($hook) {
             'deleteSuccess' => __('All clinical data has been successfully deleted.', 'vas-dinamico-forms'),
             'deleteError' => __('Failed to delete data. Please check the error logs.', 'vas-dinamico-forms')
         ));
+    }
+
+    // Enqueue Privacy Dashboard assets (Smart Save Button)
+    if (strpos($hook, 'vas-dinamico') !== false && isset($_GET['tab']) && $_GET['tab'] === 'privacy') {
+        wp_enqueue_script(
+            'eipsi-privacy-dashboard',
+            VAS_DINAMICO_PLUGIN_URL . 'admin/js/privacy-dashboard.js',
+            array('jquery'),
+            filemtime(VAS_DINAMICO_PLUGIN_DIR . 'admin/js/privacy-dashboard.js'),
+            true
+        );
+
+        // Make ajaxurl available (jQuery already has it via vasdinamico object)
+        // No additional localization needed
     }
 }
 
