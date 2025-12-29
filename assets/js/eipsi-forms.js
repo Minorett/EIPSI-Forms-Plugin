@@ -2918,7 +2918,7 @@
             thankYouPage.dataset.page = 'thank-you';
             thankYouPage.style.display = 'block';
 
-            // Build page content
+            // Build page content - start with empty logo
             let logoHtml = '';
             if ( config.logo_url ) {
                 // Use the logo URL from config (from Form Container block)
@@ -2928,17 +2928,8 @@
                     ) }" alt="Logo" class="eipsi-logo-image">
                 </div>`;
             } else if ( config.show_logo ) {
-                // Fallback: try to get the logo from the theme customizer
-                const siteLogo = document.querySelector( '.custom-logo' );
-                if ( siteLogo ) {
-                    const logoSrc = siteLogo.src;
-                    const logoAlt = siteLogo.alt || 'Site Logo';
-                    logoHtml = `<div class="eipsi-thank-you-logo">
-                        <img src="${ logoSrc }" alt="${ this.escapeHtml(
-                            logoAlt
-                        ) }" class="eipsi-logo-image">
-                    </div>`;
-                }
+                // Fetch logo from WordPress customizer via AJAX
+                this.fetchAndRenderLogo( thankYouPage );
             }
 
             let buttonHtml = '';
@@ -3015,6 +3006,51 @@
                 currentPageSpan.textContent = totalPages;
                 totalPagesSpan.textContent = totalPages;
             }
+        },
+
+        /**
+         * Fetch site logo from WordPress customizer and render to thank-you page
+         * This ensures logo works on ANY page context (Elementor, custom headers, etc.)
+         *
+         * @param {HTMLElement} thankYouPage The thank-you page element
+         */
+        fetchAndRenderLogo( thankYouPage ) {
+            // Get ajax URL from config or construct it
+            const ajaxUrl = this.config.ajaxUrl ||
+                '/wp-admin/admin-ajax.php';
+
+            fetch( ajaxUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams( {
+                    action: 'eipsi_get_site_logo',
+                } ),
+            } )
+                .then( ( response ) => response.json() )
+                .then( ( data ) => {
+                    if ( data.success && data.data.logo_url ) {
+                        // Insert logo at the beginning of content
+                        const thankYouContent = thankYouPage.querySelector( '.eipsi-thank-you-content' );
+                        if ( thankYouContent ) {
+                            const logoDiv = document.createElement( 'div' );
+                            logoDiv.className = 'eipsi-thank-you-logo';
+                            const img = document.createElement( 'img' );
+                            img.src = data.data.logo_url;
+                            img.alt = 'Site Logo';
+                            img.className = 'eipsi-logo-image';
+                            logoDiv.appendChild( img );
+                            thankYouContent.insertBefore( logoDiv, thankYouContent.firstChild );
+                        }
+                    }
+                } )
+                .catch( ( error ) => {
+                    // Silent fail - logo is optional
+                    if ( window.console && window.console.debug ) {
+                        window.console.debug( '[EIPSI] Logo fetch failed:', error );
+                    }
+                } );
         },
 
         escapeHtml( text ) {
