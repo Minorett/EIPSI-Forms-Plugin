@@ -101,6 +101,12 @@ add_action('wp_ajax_eipsi_verify_schema', 'eipsi_verify_schema_handler');
 add_action('wp_ajax_eipsi_check_table_status', 'eipsi_check_table_status_handler');
 add_action('wp_ajax_eipsi_delete_all_data', 'eipsi_delete_all_data_handler');
 
+// Thank-you page handlers
+add_action('wp_ajax_nopriv_eipsi_get_completion_config', 'eipsi_get_completion_config_handler');
+add_action('wp_ajax_eipsi_get_completion_config', 'eipsi_get_completion_config_handler');
+add_action('wp_ajax_nopriv_eipsi_get_site_logo', 'eipsi_get_site_logo_handler');
+add_action('wp_ajax_eipsi_get_site_logo', 'eipsi_get_site_logo_handler');
+
 // Save & Continue handlers
 add_action('wp_ajax_nopriv_eipsi_save_partial_response', 'eipsi_save_partial_response_handler');
 add_action('wp_ajax_eipsi_save_partial_response', 'eipsi_save_partial_response_handler');
@@ -1565,4 +1571,61 @@ function eipsi_save_privacy_config_handler() {
 }
 
 add_action('wp_ajax_eipsi_sync_submissions', 'eipsi_sync_submissions_handler');
+
+/**
+ * AJAX Handler: Get completion config for thank-you page
+ * Returns default or custom completion page settings
+ */
+function eipsi_get_completion_config_handler() {
+    $config = array(
+        'title' => '¡Gracias por completar el cuestionario!',
+        'message' => 'Sus respuestas han sido registradas correctamente.',
+        'logo_url' => '',
+        'show_logo' => true,
+        'show_home_button' => true,
+        'button_text' => 'Comenzar de nuevo',
+        'button_action' => 'reload',
+        'show_animation' => false,
+    );
+
+    wp_send_json_success(array(
+        'config' => $config
+    ));
+}
+
+/**
+ * AJAX Handler: Get site logo URL
+ * Returns the logo URL from WordPress customizer
+ * Guaranteed to work on any page context (Elementor, custom headers, etc.)
+ */
+function eipsi_get_site_logo_handler() {
+    // Try to get logo from theme customizer
+    $logo_url = '';
+
+    // Method 1: WordPress 5.8+ - get_theme_mod('custom_logo')
+    if (function_exists('get_theme_mod')) {
+        $logo_id = get_theme_mod('custom_logo');
+        if ($logo_id) {
+            $logo_src = wp_get_attachment_image_src($logo_id, 'full');
+            if ($logo_src) {
+                $logo_url = $logo_src[0]; // Return URL
+            }
+        }
+    }
+
+    // Fallback: Try site_icon (browser tab icon)
+    if (empty($logo_url)) {
+        $site_icon_id = get_option('site_icon');
+        if ($site_icon_id) {
+            $site_icon_src = wp_get_attachment_image_src($site_icon_id, 'full');
+            if ($site_icon_src) {
+                $logo_url = $site_icon_src[0];
+            }
+        }
+    }
+
+    wp_send_json_success(array(
+        'logo_url' => $logo_url
+    ));
+}
 ?>
