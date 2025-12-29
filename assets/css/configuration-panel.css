@@ -620,3 +620,127 @@
         outline-offset: 3px;
     }
 }
+
+/* ============================================================
+   EIPSI PRIVACY DASHBOARD - SMART SAVE BUTTON STYLES
+   ============================================================ */
+
+.eipsi-privacy-dashboard button[type="submit"] {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px; /* WCAG 2.1 AA touch target */
+}
+
+.eipsi-privacy-dashboard button[type="submit"]:disabled,
+.eipsi-privacy-dashboard button[type="submit"].is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: #ffffff !important;
+}
+
+.eipsi-privacy-dashboard button[type="submit"]:not(:disabled):hover,
+.eipsi-privacy-dashboard button[type="submit"]:not(.is-disabled):hover {
+    background-color: #004a73 !important;
+    border-color: #004a73 !important;
+}
+
+.eipsi-privacy-dashboard button[type="submit"]:not(:disabled):focus-visible,
+.eipsi-privacy-dashboard button[type="submit"]:not(.is-disabled):focus-visible {
+    outline: 2px solid var(--eipsi-color-primary, #005a87);
+    outline-offset: 2px;
+}
+
+/* Privacy Dashboard Notices */
+.eipsi-privacy-dashboard .eipsi-message {
+    animation: slideInDown 0.3s ease;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Privacy Dashboard Toggle Groups */
+.eipsi-privacy-dashboard .eipsi-toggle-group {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-left: 4px solid var(--eipsi-color-primary, #005a87);
+    border-radius: 4px;
+}
+
+.eipsi-privacy-dashboard .eipsi-toggle-group h3 {
+    margin-top: 0;
+    color: var(--eipsi-color-primary, #005a87);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.eipsi-privacy-dashboard .eipsi-toggle-group label {
+    display: block;
+    margin: 10px 0;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.eipsi-privacy-dashboard .eipsi-toggle-group label:hover {
+    background: rgba(0, 90, 135, 0.05);
+}
+
+.eipsi-privacy-dashboard .eipsi-toggle-group input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.eipsi-privacy-dashboard .eipsi-toggle-group input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.eipsi-privacy-dashboard .eipsi-tooltip {
+    font-size: 11px;
+    color: #64748b;
+    margin-left: 8px;
+    font-style: italic;
+}
+
+.eipsi-privacy-dashboard .eipsi-section-description {
+    margin: 10px 0;
+    padding: 8px;
+    background: #fff3cd;
+    border-left: 3px solid #ffc107;
+    color: #856404;
+    font-size: 12px;
+    border-radius: 3px;
+}
+
+.eipsi-privacy-dashboard .eipsi-info-box {
+    margin-top: 20px;
+    padding: 12px;
+    background: #e3f2fd;
+    border-left: 4px solid var(--eipsi-color-primary, #005a87);
+    border-radius: 4px;
+    color: var(--eipsi-color-primary, #005a87);
+    font-size: 12px;
+}
+
+.eipsi-privacy-dashboard .eipsi-info-box ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.eipsi-privacy-dashboard .eipsi-info-box li {
+    margin: 6px 0;
+}

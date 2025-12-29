@@ -1467,5 +1467,102 @@ function eipsi_sync_submissions_handler() {
     ));
 }
 
+/**
+ * AJAX Handler: Save global privacy configuration
+ */
+function eipsi_save_global_privacy_config_handler() {
+    // Security check
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Permission denied.', 'vas-dinamico-forms')
+        ));
+    }
+
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/privacy-config.php';
+
+    // Build config array from POST data
+    $config = array();
+    $allowed_toggles = array(
+        'therapeutic_engagement',
+        'avoidance_patterns',
+        'device_type',
+        'browser',
+        'os',
+        'screen_width',
+        'ip_address',
+        'quality_flag'
+    );
+
+    foreach ($allowed_toggles as $toggle) {
+        $config[$toggle] = isset($_POST[$toggle]) ? (bool) $_POST[$toggle] : false;
+    }
+
+    // Save global config
+    $result = save_global_privacy_defaults($config);
+
+    if ($result) {
+        wp_send_json_success(array(
+            'message' => __('Configuración global guardada correctamente.', 'vas-dinamico-forms')
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => __('Error al guardar la configuración global.', 'vas-dinamico-forms')
+        ));
+    }
+}
+
+/**
+ * AJAX Handler: Save per-form privacy configuration
+ */
+function eipsi_save_privacy_config_handler() {
+    // Security check
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Permission denied.', 'vas-dinamico-forms')
+        ));
+    }
+
+    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/privacy-config.php';
+
+    // Get form_id
+    $form_id = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : '';
+
+    if (empty($form_id)) {
+        wp_send_json_error(array(
+            'message' => __('Form ID is required.', 'vas-dinamico-forms')
+        ));
+    }
+
+    // Build config array from POST data
+    $config = array();
+    $allowed_toggles = array(
+        'therapeutic_engagement',
+        'avoidance_patterns',
+        'device_type',
+        'browser',
+        'os',
+        'screen_width',
+        'ip_address',
+        'quality_flag'
+    );
+
+    foreach ($allowed_toggles as $toggle) {
+        $config[$toggle] = isset($_POST[$toggle]) ? (bool) $_POST[$toggle] : false;
+    }
+
+    // Save per-form config
+    $result = save_privacy_config($form_id, $config);
+
+    if ($result) {
+        wp_send_json_success(array(
+            'message' => __('Configuración guardada correctamente para el formulario.', 'vas-dinamico-forms')
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => __('Error al guardar la configuración.', 'vas-dinamico-forms')
+        ));
+    }
+}
+
 add_action('wp_ajax_eipsi_sync_submissions', 'eipsi_sync_submissions_handler');
 ?>
