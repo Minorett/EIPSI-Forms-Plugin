@@ -102,84 +102,62 @@ function render_privacy_dashboard($form_id = null) {
                     <?php wp_nonce_field('eipsi_privacy_nonce', 'eipsi_privacy_nonce'); ?>
                     <input type="hidden" name="action" value="save_privacy_config">
                     <input type="hidden" name="form_id" value="<?php echo esc_attr($current_form_id); ?>">
-            
-            <!-- SEGURIDAD BÁSICA (OBLIGATORIO) -->
+
+
+            <!-- CAPTURA BÁSICA -->
             <div class="eipsi-toggle-group">
-                <h3>🔐 Seguridad Básica</h3>
-                <label>
-                    <input type="checkbox" checked disabled> 
-                    <strong>Form ID</strong>
-                    <span class="eipsi-tooltip">(Identificador único: ACA-a3f1b2)</span>
-                </label>
-                
-                <label>
-                    <input type="checkbox" checked disabled> 
-                    <strong>Participant ID</strong>
-                    <span class="eipsi-tooltip">(ID anónimo: p-a1b2c3d4e5f6)</span>
-                </label>
-            </div>
-            
-            <!-- COMPORTAMIENTO CLÍNICO (RECOMENDADO) -->
-            <div class="eipsi-toggle-group">
-                <h3>🎯 Comportamiento Clínico <span class="eipsi-recommended">(Recomendado)</span></h3>
-                
-                <label>
-                    <input type="checkbox" name="therapeutic_engagement" <?php checked($privacy_config['therapeutic_engagement'] ?? true); ?>>
-                    <strong>Therapeutic Engagement</strong>
-                    <span class="eipsi-tooltip">(Tiempo por campo, cambios, navegación)</span>
-                </label>
-                
-                <label>
-                    <input type="checkbox" name="avoidance_patterns" <?php checked($privacy_config['avoidance_patterns'] ?? true); ?>>
-                    <strong>Avoidance Patterns</strong>
-                    <span class="eipsi-tooltip">(Saltos, retrocesos, omisiones)</span>
-                </label>
-            </div>
-            
-            <!-- TRAZABILIDAD -->
-            <div class="eipsi-toggle-group">
-                <h3>📋 Trazabilidad</h3>
-                
-                <label>
-                    <input type="checkbox" name="device_type" <?php checked($privacy_config['device_type'] ?? true); ?>>
-                    <strong>Device Type</strong>
-                    <span class="eipsi-tooltip">(mobile/desktop/tablet)</span>
-                </label>
-                
+                <h3>📋 Captura Básica</h3>
                 <label>
                     <input type="checkbox" name="ip_address" <?php checked($privacy_config['ip_address'] ?? true); ?>>
-                    <strong>IP Address</strong>
+                    <strong>Capturar IP del dispositivo</strong>
                     <span class="eipsi-tooltip">(Auditoría clínica - GDPR/HIPAA - retención 90 días)</span>
                 </label>
-                
+            </div>
+
+            <!-- FINGERPRINT LIVIANO DEL DISPOSITIVO -->
+            <div class="eipsi-toggle-group">
+                <h3>🖥️ Fingerprint Liviano del Dispositivo</h3>
+                <p class="eipsi-section-description">⚠️ Estos datos son <strong>opcionales</strong> y están <strong>desactivados por defecto</strong>. Útiles para distinguir pacientes con IP compartida.</p>
+
+                <label>
+                    <input type="checkbox" name="browser" <?php checked($privacy_config['browser'] ?? false); ?>>
+                    <strong>Capturar navegador y sistema operativo</strong>
+                    <span class="eipsi-tooltip">(ej: Chrome 131, Firefox 132, Windows 10)</span>
+                </label>
+
+                <label>
+                    <input type="checkbox" name="screen_width" <?php checked($privacy_config['screen_width'] ?? false); ?>>
+                    <strong>Capturar tamaño de pantalla</strong>
+                    <span class="eipsi-tooltip">(ej: 1920x1080, 1080x2400)</span>
+                </label>
+            </div>
+
+            <!-- COMPORTAMIENTO CLÍNICO -->
+            <div class="eipsi-toggle-group">
+                <h3>🎯 Comportamiento Clínico</h3>
+
+                <label>
+                    <input type="checkbox" name="therapeutic_engagement" <?php checked($privacy_config['therapeutic_engagement'] ?? true); ?>>
+                    <strong>Engagement Terapéutico</strong>
+                    <span class="eipsi-tooltip">(Tiempo por campo, cambios, navegación)</span>
+                </label>
+
+                <label>
+                    <input type="checkbox" name="avoidance_patterns" <?php checked($privacy_config['avoidance_patterns'] ?? true); ?>>
+                    <strong>Patrones de Evitación</strong>
+                    <span class="eipsi-tooltip">(Saltos, retrocesos, omisiones)</span>
+                </label>
+
+                <label>
+                    <input type="checkbox" name="device_type" <?php checked($privacy_config['device_type'] ?? true); ?>>
+                    <strong>Tipo de Dispositivo</strong>
+                    <span class="eipsi-tooltip">(mobile/desktop/tablet)</span>
+                </label>
+
                 <label>
                     <input type="checkbox" name="quality_flag" <?php checked($privacy_config['quality_flag'] ?? true); ?>>
                     <strong>Quality Flag</strong>
                     <span class="eipsi-tooltip">(Control automático: HIGH/NORMAL/LOW)</span>
-                </label>
-            </div>
-            
-            <!-- DISPOSITIVO (OPCIONAL - OFF por defecto) -->
-            <div class="eipsi-toggle-group">
-                <h3>🖥️ Fingerprint Liviano del Dispositivo <span class="eipsi-optional">(Opcional)</span></h3>
-                <p class="eipsi-section-description">⚠️ Estos datos son <strong>opcionales</strong> y están <strong>desactivados por defecto</strong>. Actívalos si necesitas distinguir pacientes con IP compartida (ej. wifi de clínica).</p>
-                
-                <label>
-                    <input type="checkbox" name="browser" <?php checked($privacy_config['browser'] ?? false); ?>>
-                    <strong>Navegador</strong>
-                    <span class="eipsi-tooltip">(ej: Chrome 131, Firefox 132, Safari 17)</span>
-                </label>
-                
-                <label>
-                    <input type="checkbox" name="os" <?php checked($privacy_config['os'] ?? false); ?>>
-                    <strong>Sistema Operativo</strong>
-                    <span class="eipsi-tooltip">(ej: Windows 10, Android 15, iOS 18)</span>
-                </label>
-                
-                <label>
-                    <input type="checkbox" name="screen_width" <?php checked($privacy_config['screen_width'] ?? false); ?>>
-                    <strong>Tamaño de Pantalla</strong>
-                    <span class="eipsi-tooltip">(ej: 1920x1080, 1080x2400)</span>
                 </label>
             </div>
             
@@ -197,11 +175,11 @@ function render_privacy_dashboard($form_id = null) {
         <div class="eipsi-info-box">
             <p><strong>ℹ️ Información de Privacidad:</strong></p>
             <ul>
-                <li>✅ <strong>Datos clínicos:</strong> Siempre capturados (therapeutic engagement y avoidance patterns)</li>
-                <li>✅ <strong>IP Address:</strong> Por defecto ON - Auditoría clínica (GDPR/HIPAA compliant)</li>
-                <li>⚠️ <strong>Dispositivo (navegador/OS/pantalla):</strong> Por defecto OFF - Solo para debugging</li>
-                <li>🔄 <strong>Retención de IP:</strong> 90 días (configurable)</li>
-                <li>📊 <strong>Todos los datos:</strong> Incluidos en exportación Excel/CSV</li>
+                <li>✅ <strong>Captura Básica:</strong> IP Address - Por defecto ON para auditoría clínica (GDPR/HIPAA compliant)</li>
+                <li>🎯 <strong>Comportamiento Clínico:</strong> Engagement Terapéutico, Patrones de Evitación, Tipo de Dispositivo, Quality Flag - Por defecto ON</li>
+                <li>🖥️ <strong>Fingerprint del Dispositivo:</strong> Navegador, Sistema Operativo, Tamaño de Pantalla - Por defecto OFF (opcional para debugging)</li>
+                <li>🔄 <strong>Override por Formulario:</strong> Cada formulario puede tener su propia configuración independientemente de la global</li>
+                <li>📊 <strong>Todos los datos:</strong> Incluidos en exportación Excel/CSV según configuración de privacidad</li>
             </ul>
         </div>
     </div>

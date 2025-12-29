@@ -49,7 +49,7 @@ function get_privacy_defaults() {
  */
 function get_global_privacy_defaults() {
     $saved = get_option('eipsi_global_privacy_defaults');
-    
+
     if (!$saved) {
         // Si no existe configuración global, usar defaults estándar
         return array(
@@ -63,7 +63,7 @@ function get_global_privacy_defaults() {
             'quality_flag' => true
         );
     }
-    
+
     return $saved;
 }
 
@@ -74,7 +74,7 @@ function save_global_privacy_defaults($config) {
     if (!current_user_can('manage_options')) {
         return false;
     }
-    
+
     // Sanitizar configuración - SOLO toggles permitidos
     $sanitized = array();
     $allowed_toggles = array(
@@ -87,52 +87,51 @@ function save_global_privacy_defaults($config) {
         'ip_address',
         'quality_flag'
     );
-    
+
     foreach ($config as $key => $value) {
         if (in_array($key, $allowed_toggles)) {
             $sanitized[$key] = (bool) $value;
         }
     }
-    
+
     return update_option('eipsi_global_privacy_defaults', $sanitized);
 }
 
 /**
- * Obtiene configuración de privacidad para un formulario
+ * Obtiene configuración de privacidad para un formulario específico
+ *
+ * @param string $form_id Form ID
+ * @return array Privacy configuration
  */
 function get_privacy_config($form_id = null) {
-    $defaults = get_privacy_defaults();
-    
+    // Si no hay form_id, devolver defaults generales
     if (!$form_id) {
-        return $defaults;
+        return get_privacy_defaults();
     }
-    
-    // Obtener configuración global por defecto
-    $global_defaults = get_global_privacy_defaults();
-    
+
     // Obtener configuración específica del formulario
     $saved = get_option("eipsi_privacy_config_{$form_id}");
-    
+
     // Si no hay configuración específica, usar la global
-    if (!$saved) {
-        $config = array_merge($defaults, $global_defaults);
-        return $config;
+    if (!$saved || !is_array($saved)) {
+        return get_global_privacy_defaults();
     }
-    
-    // Si hay configuración específica, mezclar con defaults y global
-    $config = array_merge($defaults, $global_defaults, (array) $saved);
-    
-    return $config;
+
+    // Devolver configuración específica del formulario
+    return $saved;
 }
 
 /**
- * Guarda configuración de privacidad
+ * Guarda configuración de privacidad para un formulario específico
+ *
+ * @param string $form_id Form ID
+ * @param array $config Privacy configuration
  */
 function save_privacy_config($form_id, $config) {
     if (!current_user_can('manage_options')) {
         return false;
     }
-    
+
     // Sanitizar configuración - SOLO toggles permitidos
     $sanitized = array();
     $allowed_toggles = array(
@@ -145,12 +144,12 @@ function save_privacy_config($form_id, $config) {
         'ip_address',
         'quality_flag'
     );
-    
+
     foreach ($config as $key => $value) {
         if (in_array($key, $allowed_toggles)) {
             $sanitized[$key] = (bool) $value;
         }
     }
-    
+
     return update_option("eipsi_privacy_config_{$form_id}", $sanitized);
 }
