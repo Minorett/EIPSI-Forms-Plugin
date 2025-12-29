@@ -2240,6 +2240,112 @@ select[aria-invalid="true"]:focus {
 }
 
 /* ============================================================================
+   19. NAVIGATION BUTTONS - Apply preset colors
+   ============================================================================ */
+
+/**
+ * Navigation buttons: Next, Submit, Previous
+ * Use preset colors from styleConfig via CSS variables
+ * Ensures buttons inherit colors from FormStylePanel selections
+ */
+
+.vas-dinamico-form .eipsi-next-button,
+.vas-dinamico-form .eipsi-submit-button,
+.vas-dinamico-form .eipsi-prev-button,
+.eipsi-form .eipsi-next-button,
+.eipsi-form .eipsi-submit-button,
+.eipsi-form .eipsi-prev-button {
+    background-color: var(--eipsi-color-button-bg, #005a87);
+    color: var(--eipsi-color-button-text, #ffffff);
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    font-size: var(--eipsi-font-size-base, 16px);
+    font-weight: var(--eipsi-font-weight-medium, 500);
+    cursor: pointer;
+    transition: background-color var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+    min-width: 120px;
+    display: inline-block;
+    text-align: center;
+    font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    line-height: 1.5;
+    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.08));
+}
+
+/* Hover state */
+.vas-dinamico-form .eipsi-next-button:hover,
+.vas-dinamico-form .eipsi-submit-button:hover,
+.vas-dinamico-form .eipsi-prev-button:hover,
+.eipsi-form .eipsi-next-button:hover,
+.eipsi-form .eipsi-submit-button:hover,
+.eipsi-form .eipsi-prev-button:hover {
+    background-color: var(--eipsi-color-button-hover-bg, #003d5b);
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+}
+
+/* Focus state - accessibility */
+.vas-dinamico-form .eipsi-next-button:focus-visible,
+.vas-dinamico-form .eipsi-submit-button:focus-visible,
+.vas-dinamico-form .eipsi-prev-button:focus-visible,
+.eipsi-form .eipsi-next-button:focus-visible,
+.eipsi-form .eipsi-submit-button:focus-visible,
+.eipsi-form .eipsi-prev-button:focus-visible {
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline-offset: var(--eipsi-focus-outline-offset, 2px);
+}
+
+/* Active/pressed state */
+.vas-dinamico-form .eipsi-next-button:active,
+.vas-dinamico-form .eipsi-submit-button:active,
+.vas-dinamico-form .eipsi-prev-button:active,
+.eipsi-form .eipsi-next-button:active,
+.eipsi-form .eipsi-submit-button:active,
+.eipsi-form .eipsi-prev-button:active {
+    transform: scale(0.98);
+}
+
+/* Disabled state */
+.vas-dinamico-form .eipsi-next-button:disabled,
+.vas-dinamico-form .eipsi-submit-button:disabled,
+.vas-dinamico-form .eipsi-prev-button:disabled,
+.vas-dinamico-form .eipsi-next-button.is-disabled,
+.vas-dinamico-form .eipsi-submit-button.is-disabled,
+.vas-dinamico-form .eipsi-prev-button.is-disabled,
+.eipsi-form .eipsi-next-button:disabled,
+.eipsi-form .eipsi-submit-button:disabled,
+.eipsi-form .eipsi-prev-button:disabled,
+.eipsi-form .eipsi-next-button.is-disabled,
+.eipsi-form .eipsi-submit-button.is-disabled,
+.eipsi-form .eipsi-prev-button.is-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Hidden state - important to override any theme styles */
+.eipsi-next-button.is-hidden,
+.eipsi-submit-button.is-hidden,
+.eipsi-prev-button.is-hidden {
+    display: none !important;
+}
+
+/* Navigation container layout */
+.form-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--eipsi-spacing-lg, 2rem);
+    padding-top: var(--eipsi-spacing-md, 1.5rem);
+    border-top: 1px solid var(--eipsi-color-border, #e2e8f0);
+}
+
+.form-nav-left,
+.form-nav-right {
+    display: flex;
+    gap: var(--eipsi-spacing-sm, 1rem);
+}
+
+/* ============================================================================
    20. WORDPRESS COMPATIBILITY OVERRIDES
    ============================================================================ */
 
