@@ -2346,7 +2346,90 @@ select[aria-invalid="true"]:focus {
 }
 
 /* ============================================================================
-   20. WORDPRESS COMPATIBILITY OVERRIDES
+   20. COMPLETION AND ACTION BUTTONS - Apply preset colors
+   ============================================================================ */
+
+/**
+ * Completion page and secondary action buttons
+ * Use the same preset colors as navigation buttons for visual consistency
+ * Buttons: .eipsi-thank-you-button, .eipsi-btn-primary, .eipsi-btn-secondary
+ */
+
+.vas-dinamico-form .eipsi-thank-you-button,
+.eipsi-form .eipsi-thank-you-button,
+.vas-dinamico-form .eipsi-btn-primary,
+.eipsi-form .eipsi-btn-primary,
+.vas-dinamico-form .eipsi-btn-secondary,
+.eipsi-form .eipsi-btn-secondary {
+    background-color: var(--eipsi-color-button-bg, #005a87);
+    color: var(--eipsi-color-button-text, #ffffff);
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    font-size: var(--eipsi-font-size-base, 16px);
+    font-weight: var(--eipsi-font-weight-medium, 500);
+    cursor: pointer;
+    transition: background-color var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+    display: inline-block;
+    text-align: center;
+    font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    line-height: 1.5;
+    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.08));
+}
+
+/* Hover state */
+.vas-dinamico-form .eipsi-thank-you-button:hover,
+.eipsi-form .eipsi-thank-you-button:hover,
+.vas-dinamico-form .eipsi-btn-primary:hover,
+.eipsi-form .eipsi-btn-primary:hover,
+.vas-dinamico-form .eipsi-btn-secondary:hover,
+.eipsi-form .eipsi-btn-secondary:hover {
+    background-color: var(--eipsi-color-button-hover-bg, #003d5b);
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    transform: translateY(-2px);
+}
+
+/* Focus state - accessibility */
+.vas-dinamico-form .eipsi-thank-you-button:focus-visible,
+.eipsi-form .eipsi-thank-you-button:focus-visible,
+.vas-dinamico-form .eipsi-btn-primary:focus-visible,
+.eipsi-form .eipsi-btn-primary:focus-visible,
+.vas-dinamico-form .eipsi-btn-secondary:focus-visible,
+.eipsi-form .eipsi-btn-secondary:focus-visible {
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline-offset: var(--eipsi-focus-outline-offset, 2px);
+}
+
+/* Active/pressed state */
+.vas-dinamico-form .eipsi-thank-you-button:active,
+.eipsi-form .eipsi-thank-you-button:active,
+.vas-dinamico-form .eipsi-btn-primary:active,
+.eipsi-form .eipsi-btn-primary:active,
+.vas-dinamico-form .eipsi-btn-secondary:active,
+.eipsi-form .eipsi-btn-secondary:active {
+    transform: scale(0.98);
+}
+
+/* Disabled state */
+.vas-dinamico-form .eipsi-thank-you-button:disabled,
+.eipsi-form .eipsi-thank-you-button:disabled,
+.vas-dinamico-form .eipsi-btn-primary:disabled,
+.eipsi-form .eipsi-btn-primary:disabled,
+.vas-dinamico-form .eipsi-btn-secondary:disabled,
+.eipsi-form .eipsi-btn-secondary:disabled,
+.vas-dinamico-form .eipsi-thank-you-button.is-disabled,
+.eipsi-form .eipsi-thank-you-button.is-disabled,
+.vas-dinamico-form .eipsi-btn-primary.is-disabled,
+.eipsi-form .eipsi-btn-primary.is-disabled,
+.vas-dinamico-form .eipsi-btn-secondary.is-disabled,
+.eipsi-form .eipsi-btn-secondary.is-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ============================================================================
+   21. WORDPRESS COMPATIBILITY OVERRIDES
    ============================================================================ */
 
 /* Ensure form elements inherit correct styles despite WordPress defaults */
