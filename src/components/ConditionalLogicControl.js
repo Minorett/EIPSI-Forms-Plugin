@@ -462,10 +462,7 @@ const ConditionalLogicControl = ( {
 		if ( pages.length === 0 ) {
 			return [
 				{
-					label: __(
-						'No hay páginas disponibles',
-						'eipsi-forms'
-					),
+					label: __( 'No hay páginas disponibles', 'eipsi-forms' ),
 					value: '',
 					disabled: true,
 				},
@@ -474,9 +471,9 @@ const ConditionalLogicControl = ( {
 
 		return pages.map( ( page ) => {
 			const label = page.title
-				? `${ __( 'Página', 'eipsi-forms' ) } ${
-						page.index
-				  } – ${ page.title }`
+				? `${ __( 'Página', 'eipsi-forms' ) } ${ page.index } – ${
+						page.title
+				  }`
 				: `${ __( 'Página', 'eipsi-forms' ) } ${ page.index }`;
 
 			return {
@@ -552,10 +549,7 @@ const ConditionalLogicControl = ( {
 
 				{ fieldMeta && fieldMeta.type === 'discrete' && (
 					<SelectControl
-						label={ __(
-							'Cuando el valor sea',
-							'eipsi-forms'
-						) }
+						label={ __( 'Cuando el valor sea', 'eipsi-forms' ) }
 						value={ condition.value || '' }
 						options={ [
 							{
@@ -757,10 +751,7 @@ const ConditionalLogicControl = ( {
 									}
 									className="conditional-logic-add-condition-button"
 								>
-									{ __(
-										'+ Combinar (Y/O)',
-										'eipsi-forms'
-									) }
+									{ __( '+ Combinar (Y/O)', 'eipsi-forms' ) }
 								</Button>
 							) }
 
@@ -824,10 +815,7 @@ const ConditionalLogicControl = ( {
 									isSmall
 									onClick={ () => removeRule( index ) }
 								>
-									{ __(
-										'Eliminar regla',
-										'eipsi-forms'
-									) }
+									{ __( 'Eliminar regla', 'eipsi-forms' ) }
 								</Button>
 							</div>
 						</div>
@@ -836,10 +824,7 @@ const ConditionalLogicControl = ( {
 					{ hasRequiredData && normalizedLogic.rules.length > 0 && (
 						<div className="conditional-logic-default-action">
 							<h4>
-								{ __(
-									'Acción predeterminada',
-									'eipsi-forms'
-								) }
+								{ __( 'Acción predeterminada', 'eipsi-forms' ) }
 							</h4>
 							<p>
 								{ __(

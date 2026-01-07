@@ -45,10 +45,7 @@ const FieldSettings = ( {
 			/>
 
 			<TextareaControl
-				label={ __(
-					'Descripción / Helper text',
-					'eipsi-forms'
-				) }
+				label={ __( 'Descripción / Helper text', 'eipsi-forms' ) }
 				value={ helperText || '' }
 				onChange={ ( value ) => setAttributes( { helperText: value } ) }
 				rows={ 4 }
@@ -62,10 +59,7 @@ const FieldSettings = ( {
 				<>
 					<div style={ { marginTop: '16px', marginBottom: '8px' } }>
 						<strong>
-							{ __(
-								'Placeholder (opcional)',
-								'eipsi-forms'
-							) }
+							{ __( 'Placeholder (opcional)', 'eipsi-forms' ) }
 						</strong>
 					</div>
 					<TextControl

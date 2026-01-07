@@ -268,10 +268,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				status: 'success',
 				message:
 					strings.success ||
-					__(
-						'Plantilla aplicada correctamente.',
-						'eipsi-forms'
-					),
+					__( 'Plantilla aplicada correctamente.', 'eipsi-forms' ),
 			} );
 		} catch ( error ) {
 			// eslint-disable-next-line no-console
@@ -399,20 +396,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						) }
 					/>
 					<TextControl
-						label={ __(
-							'Submit Button Label',
-							'eipsi-forms'
-						) }
+						label={ __( 'Submit Button Label', 'eipsi-forms' ) }
 						value={ submitButtonLabel }
 						onChange={ ( value ) =>
 							setAttributes( { submitButtonLabel: value } )
 						}
 					/>
 					<TextareaControl
-						label={ __(
-							'Description (Optional)',
-							'eipsi-forms'
-						) }
+						label={ __( 'Description (Optional)', 'eipsi-forms' ) }
 						value={ description }
 						onChange={ ( value ) =>
 							setAttributes( { description: value } )
@@ -440,10 +431,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					</Notice>
 
 					<ToggleControl
-						label={ __(
-							'Estado del estudio',
-							'eipsi-forms'
-						) }
+						label={ __( 'Estado del estudio', 'eipsi-forms' ) }
 						checked={ isStudyClosed }
 						onChange={ ( value ) =>
 							setAttributes( {
@@ -569,10 +557,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								rows={ 4 }
 							/>
 							<TextControl
-								label={ __(
-									'Texto del botón',
-									'eipsi-forms'
-								) }
+								label={ __( 'Texto del botón', 'eipsi-forms' ) }
 								value={ completionButtonLabel }
 								onChange={ ( value ) =>
 									setAttributes( {
@@ -681,10 +666,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				</PanelBody>
 
 				<PanelBody
-					title={ __(
-						'Mapa de lógica condicional',
-						'eipsi-forms'
-					) }
+					title={ __( 'Mapa de lógica condicional', 'eipsi-forms' ) }
 					initialOpen={ false }
 				>
 					<p
@@ -703,18 +685,12 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						variant="secondary"
 						onClick={ () => setIsMapOpen( true ) }
 					>
-						{ __(
-							'Ver mapa de condiciones',
-							'eipsi-forms'
-						) }
+						{ __( 'Ver mapa de condiciones', 'eipsi-forms' ) }
 					</Button>
 				</PanelBody>
 
 				<PanelBody
-					title={ __(
-						'Apariencia del formulario',
-						'eipsi-forms'
-					) }
+					title={ __( 'Apariencia del formulario', 'eipsi-forms' ) }
 					initialOpen={ false }
 				>
 					<FormStylePanel

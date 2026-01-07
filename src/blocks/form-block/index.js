@@ -51,10 +51,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 	const formOptions = useMemo(
 		() => [
 			{
-				label: __(
-					'— Seleccioná un formulario —',
-					'eipsi-forms'
-				),
+				label: __( '— Seleccioná un formulario —', 'eipsi-forms' ),
 				value: '',
 			},
 			...formTemplates.map( ( template ) => ( {
@@ -81,10 +78,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 						<div style={ { textAlign: 'center', padding: '20px' } }>
 							<Spinner />
 							<p style={ { marginTop: '10px', color: '#666' } }>
-								{ __(
-									'Cargando formularios…',
-									'eipsi-forms'
-								) }
+								{ __( 'Cargando formularios…', 'eipsi-forms' ) }
 							</p>
 						</div>
 					) }

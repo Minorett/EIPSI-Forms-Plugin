@@ -254,10 +254,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					initialOpen={ true }
 				>
 					<TextControl
-						label={ __(
-							'Field Name / Slug',
-							'eipsi-forms'
-						) }
+						label={ __( 'Field Name / Slug', 'eipsi-forms' ) }
 						value={ fieldName || '' }
 						onChange={ ( value ) =>
 							setAttributes( { fieldName: value } )
@@ -380,10 +377,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						min={ sliderMin }
 						max={ sliderMax }
 						step={ safeStep }
-						help={ __(
-							'Default slider position',
-							'eipsi-forms'
-						) }
+						help={ __( 'Default slider position', 'eipsi-forms' ) }
 					/>
 				</PanelBody>
 
@@ -408,10 +402,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							onChange={ ( value ) =>
 								setAttributes( { boldLabels: !! value } )
 							}
-							help={ __(
-								'Make label text bold',
-								'eipsi-forms'
-							) }
+							help={ __( 'Make label text bold', 'eipsi-forms' ) }
 						/>
 
 						<UnitControl
@@ -431,10 +422,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						/>
 
 						<RangeControl
-							label={ __(
-								'Label Alignment',
-								'eipsi-forms'
-							) }
+							label={ __( 'Label Alignment', 'eipsi-forms' ) }
 							value={ alignmentInternalToDisplay(
 								labelAlignment
 							) }
@@ -474,10 +462,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						</h3>
 
 						<ToggleControl
-							label={ __(
-								'Show selected value',
-								'eipsi-forms'
-							) }
+							label={ __( 'Show selected value', 'eipsi-forms' ) }
 							checked={ shouldShowValue }
 							onChange={ ( value ) =>
 								setAttributes( { showCurrentValue: !! value } )

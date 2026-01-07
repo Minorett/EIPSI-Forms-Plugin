@@ -83,14 +83,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={ __( 'Page Settings', 'eipsi-forms' ) }
-				>
+				<PanelBody title={ __( 'Page Settings', 'eipsi-forms' ) }>
 					<TextControl
-						label={ __(
-							'Page Title (Optional)',
-							'eipsi-forms'
-						) }
+						label={ __( 'Page Title (Optional)', 'eipsi-forms' ) }
 						value={ title }
 						onChange={ ( value ) =>
 							setAttributes( { title: value } )
@@ -117,8 +112,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				<div className="eipsi-page-preview">
 					<div className="page-header">
 						<span className="page-badge">
-							{ __( 'Page', 'eipsi-forms' ) }{ ' ' }
-							{ currentPageIndex }
+							{ __( 'Page', 'eipsi-forms' ) } { currentPageIndex }
 						</span>
 						{ title && (
 							<h3 className="eipsi-page-title">{ title }</h3>

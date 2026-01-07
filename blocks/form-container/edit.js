@@ -76,20 +76,14 @@ export default function Edit( { attributes, setAttributes } ) {
 						) }
 					/>
 					<TextControl
-						label={ __(
-							'Submit Button Label',
-							'eipsi-forms'
-						) }
+						label={ __( 'Submit Button Label', 'eipsi-forms' ) }
 						value={ submitButtonLabel }
 						onChange={ ( value ) =>
 							setAttributes( { submitButtonLabel: value } )
 						}
 					/>
 					<TextareaControl
-						label={ __(
-							'Description (Optional)',
-							'eipsi-forms'
-						) }
+						label={ __( 'Description (Optional)', 'eipsi-forms' ) }
 						value={ description }
 						onChange={ ( value ) =>
 							setAttributes( { description: value } )

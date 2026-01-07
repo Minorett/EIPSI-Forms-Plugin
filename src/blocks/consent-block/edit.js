@@ -16,9 +16,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={ __( 'Consent Settings', 'eipsi-forms' ) }
-				>
+				<PanelBody title={ __( 'Consent Settings', 'eipsi-forms' ) }>
 					<TextControl
 						label={ __( 'Checkbox Label', 'eipsi-forms' ) }
 						value={ consentLabel }

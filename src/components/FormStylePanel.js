@@ -255,9 +255,7 @@ const FormStylePanel = ( {
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
-							<label>
-								{ __( 'Primary', 'eipsi-forms' ) }
-							</label>
+							<label>{ __( 'Primary', 'eipsi-forms' ) }</label>
 						</FlexItem>
 						<FlexItem>
 							<ColorIndicator
@@ -301,9 +299,7 @@ const FormStylePanel = ( {
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
-							<label>
-								{ __( 'Secondary', 'eipsi-forms' ) }
-							</label>
+							<label>{ __( 'Secondary', 'eipsi-forms' ) }</label>
 						</FlexItem>
 						<FlexItem>
 							<ColorIndicator
@@ -329,9 +325,7 @@ const FormStylePanel = ( {
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
-							<label>
-								{ __( 'Background', 'eipsi-forms' ) }
-							</label>
+							<label>{ __( 'Background', 'eipsi-forms' ) }</label>
 						</FlexItem>
 						<FlexItem>
 							<ColorIndicator
@@ -352,9 +346,7 @@ const FormStylePanel = ( {
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
-							<label>
-								{ __( 'Text', 'eipsi-forms' ) }
-							</label>
+							<label>{ __( 'Text', 'eipsi-forms' ) }</label>
 						</FlexItem>
 						<FlexItem>
 							<ColorIndicator colorValue={ config.colors.text } />
@@ -382,9 +374,7 @@ const FormStylePanel = ( {
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
-							<label>
-								{ __( 'Text Muted', 'eipsi-forms' ) }
-							</label>
+							<label>{ __( 'Text Muted', 'eipsi-forms' ) }</label>
 						</FlexItem>
 						<FlexItem>
 							<ColorIndicator
@@ -424,10 +414,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __(
-									'Input Background',
-									'eipsi-forms'
-								) }
+								{ __( 'Input Background', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -449,9 +436,7 @@ const FormStylePanel = ( {
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
-							<label>
-								{ __( 'Input Text', 'eipsi-forms' ) }
-							</label>
+							<label>{ __( 'Input Text', 'eipsi-forms' ) }</label>
 						</FlexItem>
 						<FlexItem>
 							<ColorIndicator
@@ -505,10 +490,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __(
-									'Input Border (Focus)',
-									'eipsi-forms'
-								) }
+								{ __( 'Input Border (Focus)', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -536,10 +518,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __(
-									'Button Background',
-									'eipsi-forms'
-								) }
+								{ __( 'Button Background', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -634,9 +613,7 @@ const FormStylePanel = ( {
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
-							<label>
-								{ __( 'Error', 'eipsi-forms' ) }
-							</label>
+							<label>{ __( 'Error', 'eipsi-forms' ) }</label>
 						</FlexItem>
 						<FlexItem>
 							<ColorIndicator
@@ -670,9 +647,7 @@ const FormStylePanel = ( {
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
-							<label>
-								{ __( 'Success', 'eipsi-forms' ) }
-							</label>
+							<label>{ __( 'Success', 'eipsi-forms' ) }</label>
 						</FlexItem>
 						<FlexItem>
 							<ColorIndicator
@@ -706,9 +681,7 @@ const FormStylePanel = ( {
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
-							<label>
-								{ __( 'Warning', 'eipsi-forms' ) }
-							</label>
+							<label>{ __( 'Warning', 'eipsi-forms' ) }</label>
 						</FlexItem>
 						<FlexItem>
 							<ColorIndicator
@@ -747,9 +720,7 @@ const FormStylePanel = ( {
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
-							<label>
-								{ __( 'Border', 'eipsi-forms' ) }
-							</label>
+							<label>{ __( 'Border', 'eipsi-forms' ) }</label>
 						</FlexItem>
 						<FlexItem>
 							<ColorIndicator
@@ -1098,10 +1069,7 @@ const FormStylePanel = ( {
 					min={ 0 }
 					max={ 20 }
 					step={ 1 }
-					help={ __(
-						'Used for small elements',
-						'eipsi-forms'
-					) }
+					help={ __( 'Used for small elements', 'eipsi-forms' ) }
 				/>
 
 				<RangeControl
@@ -1113,10 +1081,7 @@ const FormStylePanel = ( {
 					min={ 0 }
 					max={ 30 }
 					step={ 1 }
-					help={ __(
-						'Used for inputs and buttons',
-						'eipsi-forms'
-					) }
+					help={ __( 'Used for inputs and buttons', 'eipsi-forms' ) }
 				/>
 
 				<RangeControl

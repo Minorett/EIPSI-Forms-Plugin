@@ -121,10 +121,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					initialOpen={ true }
 				>
 					<TextControl
-						label={ __(
-							'Field Name / Slug',
-							'eipsi-forms'
-						) }
+						label={ __( 'Field Name / Slug', 'eipsi-forms' ) }
 						value={ fieldName || '' }
 						onChange={ ( value ) =>
 							setAttributes( { fieldName: value } )

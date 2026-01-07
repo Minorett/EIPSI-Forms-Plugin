@@ -50,10 +50,7 @@ const DescriptionSettings = ( { attributes, setAttributes } ) => {
 			/>
 
 			<TextControl
-				label={ __(
-					'Texto complementario (opcional)',
-					'eipsi-forms'
-				) }
+				label={ __( 'Texto complementario (opcional)', 'eipsi-forms' ) }
 				value={ placeholder || '' }
 				onChange={ ( value ) =>
 					setAttributes( { placeholder: value } )

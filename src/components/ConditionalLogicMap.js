@@ -83,10 +83,7 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 									label:
 										attributes.label ||
 										attributes.fieldName ||
-										__(
-											'Campo sin nombre',
-											'eipsi-forms'
-										),
+										__( 'Campo sin nombre', 'eipsi-forms' ),
 									logic,
 									clientId: block.clientId,
 								} );

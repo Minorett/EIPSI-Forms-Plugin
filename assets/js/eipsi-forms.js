@@ -2968,9 +2968,7 @@
 		},
 
 		setFormLoading( form, isLoading ) {
-			const formContainer = form.closest(
-				'.eipsi-form, .eipsi-form'
-			);
+			const formContainer = form.closest( '.eipsi-form, .eipsi-form' );
 			if ( formContainer ) {
 				if ( isLoading ) {
 					formContainer.classList.add( 'form-loading' );
@@ -3055,9 +3053,7 @@
 				messageElement.textContent = message;
 			}
 
-			const formContainer = form.closest(
-				'.eipsi-form, .eipsi-form'
-			);
+			const formContainer = form.closest( '.eipsi-form, .eipsi-form' );
 			if ( formContainer ) {
 				formContainer.insertBefore( messageElement, form );
 			} else {
@@ -3120,9 +3116,7 @@
 		},
 
 		clearMessages( form ) {
-			const formContainer = form.closest(
-				'.eipsi-form, .eipsi-form'
-			);
+			const formContainer = form.closest( '.eipsi-form, .eipsi-form' );
 			if ( formContainer ) {
 				const messages =
 					formContainer.querySelectorAll( '.form-message' );

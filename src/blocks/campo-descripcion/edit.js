@@ -26,8 +26,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		'data-field-type': 'description',
 	} );
 
-	const displayLabel =
-		label || __( 'Campo descripción', 'eipsi-forms' );
+	const displayLabel = label || __( 'Campo descripción', 'eipsi-forms' );
 
 	return (
 		<>
