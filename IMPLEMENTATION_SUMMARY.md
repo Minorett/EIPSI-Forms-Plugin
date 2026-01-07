@@ -22,13 +22,10 @@ Expandir la sección "Configuración por Formulario" en Privacy & Metadata para 
 - ✅ Capturar tamaño de pantalla
 
 <!-- COMPORTAMIENTO CLÍNICO -->
-- ✅ Engagement Terapéutico
-- ✅ Patrones de Evitación
 - ✅ Tipo de Dispositivo
-- ✅ Quality Flag
 ```
 
-**TOTAL:** 7 checkboxes (todos configurables, alineados con Global)
+**TOTAL:** 5 checkboxes (todos configurables, alineados con Global)
 
 ### 2. /admin/privacy-config.php
 **CAMBIOS:**

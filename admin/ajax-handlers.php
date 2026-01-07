@@ -154,112 +154,12 @@ add_action('wp_ajax_nopriv_eipsi_discard_partial_response', 'eipsi_discard_parti
 add_action('wp_ajax_eipsi_discard_partial_response', 'eipsi_discard_partial_response_handler');
 
 /**
- * Calcula engagement score basado en tiempo y cambios
+ * NOTE: Quality Flags y Patrones de Evitación fueron removidos en v1.0
+ * RAZÓN CLÍNICA: 
+ * - Quality Flags = ruido sin valor (investigador ve todo en Submissions)
+ * - Patrones de Evitación = indetectable con Save & Continue, falsos positivos altos
+ * RESPONSABILIDAD: Solo investigador decide qué datos usar, no algoritmos
  */
-function eipsi_calculate_engagement_score($responses, $duration_seconds) {
-    if (!$responses || $duration_seconds == 0) {
-        return 0;
-    }
-    
-    $field_count = count($responses);
-    $avg_time_per_field = $duration_seconds / max($field_count, 1);
-    
-    // Score entre 0 y 1
-    // Más tiempo = más engagement (min 5s por campo, max 60s)
-    $score = min(max($avg_time_per_field / 60, 0), 1);
-    
-    return round($score, 2);
-}
-
-/**
- * Calcula consistency score (coherencia de respuestas)
- * v1 mínima: PHQ-9 / GAD-7 inconsistency detection
- */
-function eipsi_calculate_consistency_score($responses) {
-    $inconsistencies = 0;
-
-    // Regla mínima para escalas tipo PHQ-9 / GAD-7 (ítems 0-3)
-    // Buscamos un ítem de riesgo alto (p.ej. ideación suicida) y lo comparamos
-    // con el promedio del resto de los ítems de la misma escala.
-    $suicidal_item = $responses['phq9_q9'] ?? $responses['gad7_q7'] ?? null;
-
-    if ($suicidal_item !== null) {
-        $total_score = 0;
-        $count = 0;
-
-        foreach ($responses as $k => $v) {
-            // Consideramos preguntas de PHQ-9 o GAD-7
-            if (strpos($k, 'phq9_q') === 0 || strpos($k, 'gad7_q') === 0) {
-                // Excluimos los ítems de riesgo clave (q9 PHQ, q7 GAD)
-                if (strpos($k, '_q9') === false && strpos($k, '_q7') === false) {
-                    $total_score += intval($v);
-                    $count++;
-                }
-            }
-        }
-
-        $avg_score = $count > 0 ? $total_score / $count : 0;
-        $suicidal_val = intval($suicidal_item);
-
-        // Inconsistencias básicas:
-        // - Promedio bajo (<1.5) pero ítem de riesgo alto (>=2)
-        if ($avg_score < 1.5 && $suicidal_val >= 2) {
-            $inconsistencies++;
-        }
-
-        // - Promedio alto (>=2.5) pero ítem de riesgo en 0
-        if ($avg_score >= 2.5 && $suicidal_val === 0) {
-            $inconsistencies++;
-        }
-    }
-
-    // v1: score binario simple
-    return $inconsistencies === 0 ? 1.0 : 0.6;
-}
-
-/**
- * Detecta patrones de evitación (saltos, retrocesos)
- */
-function eipsi_detect_avoidance_patterns($duration_seconds, $total_pages) {
-    $patterns = array();
-
-    // Regla mínima: respuesta demasiado rápida en relación a la cantidad de páginas
-    // (umbral aproximado: < 9 segundos por página)
-    if ($total_pages > 0 && $duration_seconds > 0 && $duration_seconds < ($total_pages * 9)) {
-        $patterns[] = 'respuesta_extremadamente_rápida';
-    }
-
-    return $patterns;
-}
-
-/**
- * Calcula quality flag basado en múltiples factores
- */
-function eipsi_calculate_quality_flag($responses, $duration_seconds, $total_pages = null) {
-    // Estimar total_pages si no se proporciona (aproximación: ~5 campos por página)
-    if ($total_pages === null) {
-        $total_pages = max(1, ceil(count($responses) / 5));
-    }
-    
-    $engagement = eipsi_calculate_engagement_score($responses, $duration_seconds);
-    $consistency = eipsi_calculate_consistency_score($responses);
-    $avoidance = eipsi_detect_avoidance_patterns($duration_seconds, $total_pages);
-    
-    $avg_score = ($engagement + $consistency) / 2;
-    
-    // Opcional: si hay avoidance patterns, penalizar un poco más
-    if (!empty($avoidance) && $avg_score > 0.6) {
-        $avg_score = 0.6;
-    }
-    
-    if ($avg_score >= 0.8) {
-        return 'HIGH';
-    } elseif ($avg_score >= 0.5) {
-        return 'NORMAL';
-    } else {
-        return 'LOW';
-    }
-}
 
 /**
  * Handler para guardar configuración de privacidad
@@ -280,14 +180,11 @@ function eipsi_save_privacy_config_handler() {
     require_once dirname(__FILE__) . '/privacy-config.php';
     
     $config = array(
-        'therapeutic_engagement' => isset($_POST['therapeutic_engagement']),
-        'avoidance_patterns' => isset($_POST['avoidance_patterns']),
         'device_type' => isset($_POST['device_type']),
         'browser' => isset($_POST['browser']),
         'os' => isset($_POST['os']),
         'screen_width' => isset($_POST['screen_width']),
-        'ip_address' => isset($_POST['ip_address']),
-        'quality_flag' => isset($_POST['quality_flag'])
+        'ip_address' => isset($_POST['ip_address'])
     );
     
     $result = save_privacy_config($form_id, $config);
@@ -309,14 +206,11 @@ function eipsi_save_global_privacy_config_handler() {
     require_once dirname(__FILE__) . '/privacy-config.php';
     
     $config = array(
-        'therapeutic_engagement' => isset($_POST['therapeutic_engagement']),
-        'avoidance_patterns' => isset($_POST['avoidance_patterns']),
         'device_type' => isset($_POST['device_type']),
         'browser' => isset($_POST['browser']),
         'os' => isset($_POST['os']),
         'screen_width' => isset($_POST['screen_width']),
-        'ip_address' => isset($_POST['ip_address']),
-        'quality_flag' => isset($_POST['quality_flag'])
+        'ip_address' => isset($_POST['ip_address'])
     );
     
     $result = save_global_privacy_defaults($config);
@@ -497,33 +391,11 @@ function vas_dinamico_submit_form_handler() {
         );
     }
     
-    // CLINICAL INSIGHTS
-    $metadata['clinical_insights'] = array();
-    
-    // Estimar total_pages basado en cantidad de campos (aproximación: ~5 campos por página)
-    $estimated_total_pages = max(1, ceil(count($form_responses) / 5));
-    
-    if ($privacy_config['therapeutic_engagement']) {
-        $metadata['clinical_insights']['therapeutic_engagement'] = eipsi_calculate_engagement_score($form_responses, $duration_seconds);
-    }
-    
-    if ($privacy_config['avoidance_patterns']) {
-        $metadata['clinical_insights']['avoidance_patterns'] = eipsi_detect_avoidance_patterns($duration_seconds, $estimated_total_pages);
-    }
-    
-    // QUALITY METRICS (según privacidad config)
-    $quality_flag = null;
-    if ($privacy_config['quality_flag'] ?? true) {
-        $quality_flag = eipsi_calculate_quality_flag($form_responses, $duration_seconds, $estimated_total_pages);
-        $metadata['quality_metrics'] = array(
-            'quality_flag' => $quality_flag,
-            'completion_rate' => 1.0
-        );
-    } else {
-        $metadata['quality_metrics'] = array(
-            'completion_rate' => 1.0
-        );
-    }
+    // Removed in v1.0: Quality Flags and Avoidance Patterns deprecated
+    // Clinical metadata is now strictly objective (Timing and Completion)
+    $metadata['quality_metrics'] = array(
+        'completion_rate' => 1.0
+    );
 
     // CONSENT INFO
     if (isset($_POST['eipsi_consent_accepted']) && $_POST['eipsi_consent_accepted'] === 'on') {
@@ -551,7 +423,6 @@ function vas_dinamico_submit_form_handler() {
         'start_timestamp_ms' => $start_timestamp_ms,
         'end_timestamp_ms' => $end_timestamp_ms,
         'metadata' => wp_json_encode($metadata),
-        'quality_flag' => $quality_flag,
         'status' => 'submitted',
         'form_responses' => wp_json_encode($form_responses)
     );
@@ -603,7 +474,7 @@ function vas_dinamico_submit_form_handler() {
         $wpdb_result = $wpdb->insert(
             $table_name,
             $data,
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s', '%s')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
         );
         
         if ($wpdb_result === false) {
@@ -620,7 +491,7 @@ function vas_dinamico_submit_form_handler() {
                 $wpdb_result = $wpdb->insert(
                     $table_name,
                     $data,
-                    array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s', '%s')
+                    array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
                 );
                 
                 if ($wpdb_result !== false) {
@@ -715,36 +586,6 @@ function vas_get_platform_type($device, $screen_width) {
     }
 }
 
-function vas_get_data_quality($duration, $responses) {
-    if (empty($responses)) return '❌ Sin datos';
-    
-    $empty_fields = count(array_filter($responses, function($value) {
-        return empty($value) || $value === '' || $value === '0';
-    }));
-    
-    $total_fields = count($responses);
-    $completion_rate = (($total_fields - $empty_fields) / $total_fields) * 100;
-    
-    if ($completion_rate < 50) return '❌ Baja calidad';
-    if ($completion_rate < 80) return '⚠️  Calidad media';
-    if ($duration < 5) return '⚠️  Respuestas muy rápidas';
-    return '✅ Buena calidad';
-}
-
-function vas_get_response_speed($duration, $form_name) {
-    // Basado en tipo de formulario psicológico
-    if (strpos($form_name, 'emocional') !== false || strpos($form_name, 'ansiedad') !== false) {
-        if ($duration < 30) return '⚡ Muy rápido (posible falta de reflexión)';
-        if ($duration > 300) return '🐢 Muy lento (posible dificultad emocional)';
-        return '✅ Tiempo adecuado';
-    }
-    
-    // Para formularios generales
-    if ($duration < 10) return '⚡ Respuesta rápida';
-    if ($duration > 120) return '🐢 Respuesta muy reflexiva';
-    return '✅ Tiempo normal';
-}
-
 function eipsi_ajax_get_response_details() {
     check_ajax_referer('eipsi_admin_nonce', 'nonce');
     
@@ -805,36 +646,13 @@ function eipsi_ajax_get_response_details() {
     }
     
     $form_responses = json_decode($response->form_responses, true);
-    
-    $html = '';
-    
-    // =============================================================================
-    // BOTÓN TOGGLE PARA CONTEXTO DE INVESTIGACIÓN
-    // =============================================================================
-    $html .= '<div style="margin-bottom: 15px;">';
-    $html .= '<button type="button" id="toggle-research-context" class="button" style="background: #2271b1; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">';
-    $html .= '🧠 Mostrar Contexto de Investigación';
-    $html .= '</button>';
-    $html .= '</div>';
-    
-    // =============================================================================
-    // CONTEXTO DE INVESTIGACIÓN (OCULTO INICIALMENTE)
-    // =============================================================================
-    $html .= '<div id="research-context-section" style="display: none; margin: 15px 0; padding: 15px; background: #f0f8ff; border-radius: 5px; border-left: 4px solid #2271b1;">';
-    $html .= '<h4>🧠 Contexto de Investigación</h4>';
-    
-    $html .= '<p><strong>🏥 Contexto administración:</strong> ' . vas_get_research_context($response->device, $response->duration) . '</p>';
-    $html .= '<p><strong>⏰ Momento del día:</strong> ' . vas_get_time_context($response->created_at) . '</p>';
-    $html .= '<p><strong>📱 Plataforma:</strong> ' . vas_get_platform_type($response->device, $response->screen_width) . '</p>';
-    $html .= '<p><strong>📈 Calidad de datos:</strong> ' . vas_get_data_quality($response->duration, $form_responses) . '</p>';
-    $html .= '<p><strong>⚡ Velocidad respuesta:</strong> ' . vas_get_response_speed($response->duration, $response->form_name) . '</p>';
-    
-    $html .= '</div>';
 
-        // =============================================================================
-        // ANÁLISIS DE TIEMPOS POR PÁGINA
-        // =============================================================================
-        $html .= '<div style="margin-bottom: 20px;">';
+    $html = '';
+
+    // =============================================================================
+    // ANÁLISIS DE TIEMPOS POR PÁGINA
+    // =============================================================================
+    $html .= '<div style="margin-bottom: 20px;">';
         $html .= '<button type="button" id="toggle-timing-analysis" class="button" style="background: #135e96; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">';
         $html .= '⏱️ Mostrar Análisis de Tiempos';
         $html .= '</button>';
@@ -865,14 +683,9 @@ function eipsi_ajax_get_response_details() {
                 } else {
                     $html .= '<p><strong>⏰ Tiempo total:</strong> ' . sprintf('%d sec', $seconds) . '</p>';
                 }
-
-                // Response quality flag
-                if (isset($metadata_obj['response_quality_flag']) && $metadata_obj['response_quality_flag'] === 'too_fast') {
-                    $html .= '<p style="color: #dc2626; font-weight: bold; background: #fff3cd; padding: 8px; border-radius: 4px;">⚠️ Esta respuesta parece demasiado rápida (' . number_format($total_seconds, 1) . ' segundos). Posible bot o respuesta desatenta.</p>';
                 }
-            }
 
-            // Page breakdown
+                // Page breakdown
             $html .= '<div style="margin-top: 15px; max-height: 200px; overflow-y: auto;">';
             $html .= '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
             $html .= '<thead><tr style="background: #e9ecef;">';

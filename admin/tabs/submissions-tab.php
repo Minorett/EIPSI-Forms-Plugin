@@ -228,13 +228,8 @@ $colspan = $show_form_column ? 8 : 7;
                             } else {
                                 $total_time_display = sprintf('%d sec', $seconds);
                             }
-
-                            // Check for response_quality_flag
-                            if (isset($metadata['response_quality_flag']) && $metadata['response_quality_flag'] === 'too_fast') {
-                                $total_time_display .= ' ⚠️';
                             }
-                        }
-                        }
+                            }
 
                         // Ensure form_id and participant_id have fallbacks
                     $form_id_display = !empty($row->form_id) ? $row->form_id : 'N/A';
@@ -312,20 +307,6 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success) {
                     $('#vas-modal-body').html(response.data);
-                    
-                    // TOGGLE PARA CONTEXTO DE INVESTIGACIÓN
-                    $('#toggle-research-context').on('click', function() {
-                        var section = $('#research-context-section');
-                        if (section.is(':visible')) {
-                            section.hide();
-                            $(this).html('🧠 <?php _e('Show Research Context', 'vas-dinamico-forms'); ?>');
-                            $(this).css('background', '#2271b1');
-                        } else {
-                            section.show();
-                            $(this).html('🧠 <?php _e('Hide Research Context', 'vas-dinamico-forms'); ?>');
-                            $(this).css('background', '#135e96');
-                        }
-                    });
                     
                     $('#toggle-device-info').on('click', function() {
                         var section = $('#device-info-section');

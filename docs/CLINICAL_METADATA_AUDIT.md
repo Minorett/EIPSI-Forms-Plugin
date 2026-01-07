@@ -15,7 +15,6 @@ El sistema recopila **metadatos de nivel macro** con éxito:
 - **IP address** (configurable según privacidad)
 - **ParticipantID anónimo persistente** y SessionID
 - **Eventos de página** (page_change con número de página)
-- **Clinical Insights**: engagement score, avoidance patterns, quality flag
 - **Almacenamiento robusto**: JSON en columna `metadata` + columnas separadas
 - **Schema auto-repair** si falla la inserción
 

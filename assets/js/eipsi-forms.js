@@ -66,7 +66,6 @@
             this.fieldCache = new Map();
             this.history = [];
             this.visitedPages = new Set();
-            this.skippedPages = new Set();
         }
 
         parseConditionalLogic( jsonString ) {
@@ -948,12 +947,6 @@
                 inactive_time: parseFloat( ( window.eipsiTimers.totalInactiveTime / 1000 ).toFixed( 1 ) ),
                 activity_ratio: parseFloat( activityRatio.toFixed( 3 ) )
             };
-        }
-
-        // Quality flag: respuestas demasiado rápidas (< 5 segundos)
-        const totalDuration = calculateTotalDuration();
-        if ( totalDuration > 0 && totalDuration < 5 ) {
-            metadata.response_quality_flag = 'too_fast';
         }
 
         return metadata;

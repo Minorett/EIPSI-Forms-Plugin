@@ -40,10 +40,7 @@ $test_config = array(
     'ip_address' => true,
     'browser' => true,
     'screen_width' => false,
-    'therapeutic_engagement' => true,
-    'avoidance_patterns' => false,
-    'device_type' => true,
-    'quality_flag' => true
+    'device_type' => true
 );
 $result = save_privacy_config('TEST_FORM_ID', $test_config);
 if ($result) {
@@ -61,20 +58,14 @@ if (is_array($config)) {
     echo "   IP Address: " . ($config['ip_address'] ? 'ON' : 'OFF') . "\n";
     echo "   Browser: " . ($config['browser'] ? 'ON' : 'OFF') . "\n";
     echo "   Screen Width: " . ($config['screen_width'] ? 'ON' : 'OFF') . "\n";
-    echo "   Therapeutic Engagement: " . ($config['therapeutic_engagement'] ? 'ON' : 'OFF') . "\n";
-    echo "   Avoidance Patterns: " . ($config['avoidance_patterns'] ? 'ON' : 'OFF') . "\n";
     echo "   Device Type: " . ($config['device_type'] ? 'ON' : 'OFF') . "\n";
-    echo "   Quality Flag: " . ($config['quality_flag'] ? 'ON' : 'OFF') . "\n";
 
     // Verify values match
     if (
         $config['ip_address'] === true &&
         $config['browser'] === true &&
         $config['screen_width'] === false &&
-        $config['therapeutic_engagement'] === true &&
-        $config['avoidance_patterns'] === false &&
-        $config['device_type'] === true &&
-        $config['quality_flag'] === true
+        $config['device_type'] === true
     ) {
         echo "✅ All values match expected\n";
     } else {
@@ -90,7 +81,7 @@ echo "Test 5: get_global_privacy_defaults()\n";
 $global_config = get_global_privacy_defaults();
 if (is_array($global_config)) {
     echo "✅ Returns array\n";
-    if (isset($global_config['ip_address']) && isset($global_config['therapeutic_engagement'])) {
+    if (isset($global_config['ip_address']) && isset($global_config['device_type'])) {
         echo "✅ Has required keys\n";
     } else {
         echo "❌ FAIL: Missing required keys\n";
@@ -105,8 +96,8 @@ echo "Test 6: Override por formulario\n";
 $global_config = get_global_privacy_defaults();
 $form_config = get_privacy_config('TEST_FORM_ID');
 
-if ($global_config['therapeutic_engagement'] !== $form_config['avoidance_patterns']) {
-    echo "✅ Form config differs from global (test uses avoid=false)\n";
+if ($global_config['screen_width'] !== $form_config['browser']) {
+    echo "✅ Form config differs from global\n";
 } else {
     echo "ℹ️  Form config matches global (may be same values)\n";
 }
@@ -118,10 +109,7 @@ $test_form_config = array(
     'ip_address' => false,
     'browser' => true,
     'screen_width' => true,
-    'therapeutic_engagement' => false,
-    'avoidance_patterns' => false,
-    'device_type' => false,
-    'quality_flag' => false
+    'device_type' => false
 );
 save_privacy_config('TEST_FORM_ID_2', $test_form_config);
 $config = get_privacy_config('TEST_FORM_ID_2');

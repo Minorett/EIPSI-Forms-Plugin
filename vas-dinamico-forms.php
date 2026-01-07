@@ -71,7 +71,6 @@ function vas_dinamico_activate() {
         end_timestamp_ms bigint(20) DEFAULT NULL,
         ip_address varchar(45) DEFAULT NULL,
         metadata LONGTEXT DEFAULT NULL,
-        quality_flag enum('HIGH','NORMAL','LOW') DEFAULT 'NORMAL',
         status enum('pending','submitted','error') DEFAULT 'submitted',
         form_responses longtext DEFAULT NULL,
         PRIMARY KEY (id),
@@ -154,8 +153,7 @@ function vas_dinamico_upgrade_database() {
         'start_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
         'end_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms",
         'metadata' => "ALTER TABLE {$table_name} ADD COLUMN metadata LONGTEXT DEFAULT NULL AFTER ip_address",
-        'quality_flag' => "ALTER TABLE {$table_name} ADD COLUMN quality_flag enum('HIGH','NORMAL','LOW') DEFAULT 'NORMAL' AFTER metadata",
-        'status' => "ALTER TABLE {$table_name} ADD COLUMN status enum('pending','submitted','error') DEFAULT 'submitted' AFTER quality_flag"
+        'status' => "ALTER TABLE {$table_name} ADD COLUMN status enum('pending','submitted','error') DEFAULT 'submitted' AFTER metadata"
     );
     
     foreach ($columns_to_add as $column => $alter_sql) {
