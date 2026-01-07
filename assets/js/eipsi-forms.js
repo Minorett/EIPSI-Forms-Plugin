@@ -623,6 +623,75 @@
         }
     }
 
+    /**
+     * Detecta el tipo de dispositivo basado en user agent
+     * @return {string} 'mobile', 'tablet', o 'desktop'
+     */
+    function detectDeviceType() {
+        const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+        
+        if ( /(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test( ua ) ) {
+            return 'tablet';
+        }
+        if ( /Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test( ua ) ) {
+            return 'mobile';
+        }
+        return 'desktop';
+    }
+
+    /**
+     * Inicializa el metadata del formulario incluyendo page_transitions
+     * @param {string} formId - ID del formulario
+     */
+    function initFormMetadata( formId ) {
+        window.eipsiMetadata = window.eipsiMetadata || {};
+        
+        window.eipsiMetadata.form_start_time = Date.now();
+        window.eipsiMetadata.device_type = detectDeviceType();
+        window.eipsiMetadata.page_transitions = [];
+        window.eipsiMetadata.field_interactions = [];
+
+        // Registrar entrada a la primera página
+        addPageTransition( 1 );
+    }
+
+    /**
+     * Registra entrada/salida de páginas en page_transitions
+     * @param {number} pageNumber - Número de página (1, 2, 3, ...)
+     */
+    function addPageTransition( pageNumber ) {
+        if ( ! window.eipsiMetadata || ! Array.isArray( window.eipsiMetadata.page_transitions ) ) {
+            return;
+        }
+
+        // Completar la página anterior (si existe)
+        const transitions = window.eipsiMetadata.page_transitions;
+        if ( transitions.length > 0 ) {
+            const lastPage = transitions[ transitions.length - 1 ];
+            if ( ! lastPage.page_end_time ) {
+                lastPage.page_end_time = Date.now();
+                lastPage.page_duration = lastPage.page_end_time - lastPage.page_start_time;
+            }
+        }
+
+        // Registrar nueva página
+        transitions.push( {
+            page: pageNumber,
+            page_start_time: Date.now(),
+            page_end_time: null,
+            page_duration: null
+        } );
+
+        // Debug logging si está habilitado
+        if ( window.eipsiFormsConfig?.settings?.debug && window.console?.log ) {
+            window.console.log( '📊 Page transition added:', {
+                page: pageNumber,
+                total_transitions: transitions.length,
+                current_transition: transitions[ transitions.length - 1 ]
+            } );
+        }
+    }
+
     const EIPSIForms = {
         forms: [],
         navigators: new Map(),
@@ -658,6 +727,10 @@
             this.forms.push( form );
 
             const formId = this.getFormId( form );
+            
+            // Inicializar metadata del formulario incluyendo page_transitions
+            initFormMetadata( formId );
+            
             const navigator = new ConditionalNavigator( form );
             this.navigators.set( formId || form, navigator );
 
@@ -1567,6 +1640,9 @@
             }
 
             if ( targetPage !== currentPage ) {
+                // Registrar cambio de página en page_transitions
+                addPageTransition( targetPage );
+                
                 this.setCurrentPage( form, targetPage );
 
                 if ( form.eipsiSaveContinue && form.eipsiSaveContinue.savePartial ) {
@@ -2224,6 +2300,9 @@
                 }
             } );
 
+            // Completar la última página y calcular duración total del formulario
+            this.finalizePageTracking();
+
             // Obtener IDs antes de enviar
             const formId = this.getFormId( form ) || '';
             const participantId = getUniversalParticipantId();
@@ -2235,6 +2314,11 @@
             formData.append( 'participant_id', participantId );
             formData.append( 'session_id', sessionId );
 
+            // Enviar metadata incluyendo page_transitions
+            if ( window.eipsiMetadata ) {
+                formData.append( 'metadata', JSON.stringify( window.eipsiMetadata ) );
+            }
+
             // Registrar en console para debugging
             if ( window.console && window.console.log ) {
                 window.console.log( '📊 Form Submission:', {
@@ -2242,6 +2326,7 @@
                     participantId,
                     sessionId,
                     timestamp: new Date().toISOString(),
+                    metadata: window.eipsiMetadata
                 } );
             }
 
@@ -2348,6 +2433,42 @@
                         nextButton.removeAttribute( 'aria-disabled' );
                     }
                 } );
+        },
+
+        /**
+         * Finaliza el tracking de páginas cuando se envía el formulario
+         * Completa la última página y calcula la duración total del formulario
+         */
+        finalizePageTracking() {
+            if ( ! window.eipsiMetadata || ! window.eipsiMetadata.page_transitions ) {
+                return;
+            }
+
+            // Completar la última página si no está completada
+            const transitions = window.eipsiMetadata.page_transitions;
+            if ( transitions.length > 0 ) {
+                const lastPage = transitions[ transitions.length - 1 ];
+                if ( ! lastPage.page_end_time ) {
+                    lastPage.page_end_time = Date.now();
+                    lastPage.page_duration = lastPage.page_end_time - lastPage.page_start_time;
+                }
+            }
+
+            // Calcular duración total del formulario
+            if ( window.eipsiMetadata.form_start_time ) {
+                window.eipsiMetadata.form_end_time = Date.now();
+                window.eipsiMetadata.form_total_duration = 
+                    window.eipsiMetadata.form_end_time - window.eipsiMetadata.form_start_time;
+            }
+
+            // Debug logging
+            if ( window.eipsiFormsConfig?.settings?.debug && window.console?.log ) {
+                window.console.log( '📊 Final page tracking:', {
+                    total_pages: transitions.length,
+                    total_duration_ms: window.eipsiMetadata.form_total_duration,
+                    page_transitions: transitions
+                } );
+            }
         },
 
         setFormLoading( form, isLoading ) {
