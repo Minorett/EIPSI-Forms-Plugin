@@ -16,51 +16,48 @@ const DescriptionSettings = ( { attributes, setAttributes } ) => {
 
 	return (
 		<PanelBody
-			title={ __( 'Description Settings', 'vas-dinamico-forms' ) }
+			title={ __( 'Description Settings', 'eipsi-forms' ) }
 			initialOpen={ true }
 		>
 			<div style={ { marginBottom: '16px' } }>
 				<p style={ { fontSize: '13px', color: '#666' } }>
 					{ __(
 						'Este bloque es solo informativo — no captura respuestas del paciente.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				</p>
 			</div>
 
 			<TextControl
-				label={ __( 'Título', 'vas-dinamico-forms' ) }
+				label={ __( 'Título', 'eipsi-forms' ) }
 				value={ label || '' }
 				onChange={ ( value ) => setAttributes( { label: value } ) }
 				help={ __(
 					'Aparece en negrita (ej: "Instrucciones importantes")',
-					'vas-dinamico-forms'
+					'eipsi-forms'
 				) }
 			/>
 
 			<TextareaControl
-				label={ __( 'Contenido', 'vas-dinamico-forms' ) }
+				label={ __( 'Contenido', 'eipsi-forms' ) }
 				value={ helperText || '' }
 				onChange={ ( value ) => setAttributes( { helperText: value } ) }
 				rows={ 6 }
 				help={ __(
 					'Texto principal que verá el paciente. Puedes usar saltos de línea.',
-					'vas-dinamico-forms'
+					'eipsi-forms'
 				) }
 			/>
 
 			<TextControl
-				label={ __(
-					'Texto complementario (opcional)',
-					'vas-dinamico-forms'
-				) }
+				label={ __( 'Texto complementario (opcional)', 'eipsi-forms' ) }
 				value={ placeholder || '' }
 				onChange={ ( value ) =>
 					setAttributes( { placeholder: value } )
 				}
 				help={ __(
 					'Aparece debajo del contenido principal en estilo discreto.',
-					'vas-dinamico-forms'
+					'eipsi-forms'
 				) }
 			/>
 		</PanelBody>

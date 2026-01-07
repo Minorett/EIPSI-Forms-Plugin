@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 function vas_display_form_responses() {
     // Verify capability
     if (!current_user_can('manage_options')) {
-        wp_die(__('Unauthorized', 'vas-dinamico-forms'));
+        wp_die(__('Unauthorized', 'eipsi-forms'));
     }
 
     // Determine active tab from URL param
@@ -30,24 +30,24 @@ function vas_display_form_responses() {
     ?>
 
     <div class="wrap eipsi-results-page">
-        <h1><?php esc_html_e('Results & Experience', 'vas-dinamico-forms'); ?></h1>
+        <h1><?php esc_html_e('Results & Experience', 'eipsi-forms'); ?></h1>
         
         <!-- Tab Navigation (WordPress native style) -->
         <h2 class="nav-tab-wrapper">
-            <a href="?page=vas-dinamico-results&tab=submissions" 
+            <a href="?page=eipsi-results&tab=submissions" 
                class="nav-tab <?php echo esc_attr(($active_tab === 'submissions') ? 'nav-tab-active' : ''); ?>"
                data-tab="submissions">
-                📊 <?php esc_html_e('Submissions', 'vas-dinamico-forms'); ?>
+                📊 <?php esc_html_e('Submissions', 'eipsi-forms'); ?>
             </a>
-            <a href="?page=vas-dinamico-results&tab=completion" 
+            <a href="?page=eipsi-results&tab=completion" 
                class="nav-tab <?php echo esc_attr(($active_tab === 'completion') ? 'nav-tab-active' : ''); ?>"
                data-tab="completion">
-                ✅ <?php esc_html_e('Finalización', 'vas-dinamico-forms'); ?>
+                ✅ <?php esc_html_e('Finalización', 'eipsi-forms'); ?>
             </a>
-            <a href="?page=vas-dinamico-results&tab=privacy" 
+            <a href="?page=eipsi-results&tab=privacy" 
                class="nav-tab <?php echo esc_attr(($active_tab === 'privacy') ? 'nav-tab-active' : ''); ?>"
                data-tab="privacy">
-                🔒 <?php esc_html_e('Privacy & Metadata', 'vas-dinamico-forms'); ?>
+                🔒 <?php esc_html_e('Privacy & Metadata', 'eipsi-forms'); ?>
             </a>
         </h2>
         

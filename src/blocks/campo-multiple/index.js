@@ -5,7 +5,7 @@ import Save from './save';
 import './editor.scss';
 import './style.scss';
 
-registerBlockType( 'vas-dinamico/campo-multiple', {
+registerBlockType( 'eipsi/campo-multiple', {
 	edit: Edit,
 	save: Save,
 } );

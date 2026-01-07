@@ -81,7 +81,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const displayLabel =
 		label && label.trim() !== ''
 			? label
-			: __( 'Campo de opciones', 'vas-dinamico-forms' );
+			: __( 'Campo de opciones', 'eipsi-forms' );
 	const optionsArray = parseOptions( options );
 
 	return (
@@ -101,13 +101,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				/>
 
 				<PanelBody
-					title={ __( 'Radio Options', 'vas-dinamico-forms' ) }
+					title={ __( 'Radio Options', 'eipsi-forms' ) }
 					initialOpen={ true }
 				>
 					<TextareaControl
 						label={ __(
 							'Options (separated by semicolon)',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						value={ options || '' }
 						onChange={ ( value ) => {
@@ -117,7 +117,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						} }
 						help={ __(
 							'Separá las opciones con punto y coma (;). Las comas dentro de cada opción son totalmente seguras. Formatos anteriores (líneas o comas) siguen funcionando.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						placeholder={
 							'Sí, absolutamente; Sí, pero no tan frecuente; No, no ocurre a menudo; Nunca'
@@ -168,7 +168,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							<li className="empty-state">
 								{ __(
 									'Add options in the sidebar',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</li>
 						) }

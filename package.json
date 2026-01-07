@@ -1,5 +1,5 @@
 {
-	"name": "vas-dinamico-forms",
+	"name": "eipsi-forms",
 	"version": "1.2.2",
 	"description": "Professional form builder with Gutenberg blocks and Excel export capabilities.",
 	"scripts": {
@@ -14,7 +14,7 @@
 		"blocks",
 		"forms"
 	],
-	"author": "VAS Team",
+	"author": "EIPSI Team",
 	"license": "GPL-2.0-or-later",
 	"devDependencies": {
 		"@wordpress/scripts": "^31.0.0",

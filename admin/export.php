@@ -66,7 +66,7 @@ function export_normalizeName($name) {
 
 function vas_export_to_excel() {
     if (!current_user_can('manage_options')) {
-        wp_die(__('You do not have sufficient permissions to perform this action.', 'vas-dinamico-forms'));
+        wp_die(__('You do not have sufficient permissions to perform this action.', 'eipsi-forms'));
     }
     
     global $wpdb;
@@ -109,7 +109,7 @@ function vas_export_to_excel() {
     }
     
     if (empty($results)) {
-        wp_die(__('No data to export.', 'vas-dinamico-forms'));
+        wp_die(__('No data to export.', 'eipsi-forms'));
     }
     
     // Get privacy config for first form (assuming same config per form_name)
@@ -232,7 +232,7 @@ function vas_export_to_excel() {
 
 function vas_export_to_csv() {
     if (!current_user_can('manage_options')) {
-        wp_die(__('You do not have sufficient permissions to perform this action.', 'vas-dinamico-forms'));
+        wp_die(__('You do not have sufficient permissions to perform this action.', 'eipsi-forms'));
     }
     
     global $wpdb;
@@ -275,7 +275,7 @@ function vas_export_to_csv() {
     }
     
     if (empty($results)) {
-        wp_die(__('No data to export.', 'vas-dinamico-forms'));
+        wp_die(__('No data to export.', 'eipsi-forms'));
     }
     
     // Get privacy config for first form (assuming same config per form_name)
@@ -399,7 +399,7 @@ function vas_export_to_csv() {
 }
 
 add_action('admin_init', function() {
-    if (isset($_GET['page']) && $_GET['page'] === 'vas-dinamico-results') {
+    if (isset($_GET['page']) && $_GET['page'] === 'eipsi-results') {
         if (isset($_GET['action']) && $_GET['action'] === 'export_excel') {
             vas_export_to_excel();
         } elseif (isset($_GET['action']) && $_GET['action'] === 'export_csv') {

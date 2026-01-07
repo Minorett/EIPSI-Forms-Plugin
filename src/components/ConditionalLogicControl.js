@@ -15,36 +15,36 @@ import './ConditionalLogicControl.css';
 const MAX_CONDITIONS = 3;
 
 const LOGICAL_OPERATOR_OPTIONS = [
-	{ label: __( 'Y (AND)', 'vas-dinamico-forms' ), value: 'AND' },
-	{ label: __( 'O (OR)', 'vas-dinamico-forms' ), value: 'OR' },
+	{ label: __( 'Y (AND)', 'eipsi-forms' ), value: 'AND' },
+	{ label: __( 'O (OR)', 'eipsi-forms' ), value: 'OR' },
 ];
 
 const NUMERIC_OPERATOR_OPTIONS = [
-	{ label: __( 'Mayor o igual (≥)', 'vas-dinamico-forms' ), value: '>=' },
-	{ label: __( 'Menor o igual (≤)', 'vas-dinamico-forms' ), value: '<=' },
-	{ label: __( 'Mayor que (>)', 'vas-dinamico-forms' ), value: '>' },
-	{ label: __( 'Menor que (<)', 'vas-dinamico-forms' ), value: '<' },
-	{ label: __( 'Igual a (=)', 'vas-dinamico-forms' ), value: '==' },
+	{ label: __( 'Mayor o igual (≥)', 'eipsi-forms' ), value: '>=' },
+	{ label: __( 'Menor o igual (≤)', 'eipsi-forms' ), value: '<=' },
+	{ label: __( 'Mayor que (>)', 'eipsi-forms' ), value: '>' },
+	{ label: __( 'Menor que (<)', 'eipsi-forms' ), value: '<' },
+	{ label: __( 'Igual a (=)', 'eipsi-forms' ), value: '==' },
 ];
 
 const SUPPORTED_FIELD_BLOCKS = {
-	'vas-dinamico/campo-radio': {
+	'eipsi/campo-radio': {
 		type: 'discrete',
 		getOptions: ( attributes ) => parseOptions( attributes.options ),
 	},
-	'vas-dinamico/campo-select': {
+	'eipsi/campo-select': {
 		type: 'discrete',
 		getOptions: ( attributes ) => parseOptions( attributes.options ),
 	},
-	'vas-dinamico/campo-multiple': {
+	'eipsi/campo-multiple': {
 		type: 'discrete',
 		getOptions: ( attributes ) => parseOptions( attributes.options ),
 	},
-	'vas-dinamico/campo-likert': {
+	'eipsi/campo-likert': {
 		type: 'discrete',
 		getOptions: ( attributes ) => buildLikertOptions( attributes ),
 	},
-	'vas-dinamico/vas-slider': {
+	'eipsi/vas-slider': {
 		type: 'numeric',
 		getRange: ( attributes ) => buildSliderRange( attributes ),
 	},
@@ -89,7 +89,7 @@ const ConditionalLogicControl = ( {
 
 			const formParentIds = getBlockParentsByBlockName(
 				selectedBlock.clientId,
-				'vas-dinamico/form-container'
+				'eipsi/form-container'
 			);
 
 			if ( formParentIds.length === 0 ) {
@@ -112,7 +112,7 @@ const ConditionalLogicControl = ( {
 			}
 
 			const pageBlocks = formContainer.innerBlocks.filter(
-				( block ) => block.name === 'vas-dinamico/form-page'
+				( block ) => block.name === 'eipsi/form-page'
 			);
 
 			const pagesData = pageBlocks.map( ( page, index ) => ( {
@@ -123,7 +123,7 @@ const ConditionalLogicControl = ( {
 
 			const pageParents = getBlockParentsByBlockName(
 				selectedBlock.clientId,
-				'vas-dinamico/form-page'
+				'eipsi/form-page'
 			);
 			const currentPageClientId =
 				pageParents.length > 0
@@ -155,7 +155,7 @@ const ConditionalLogicControl = ( {
 	const fieldOptions = useMemo( () => {
 		const choices = [
 			{
-				label: __( 'Selecciona un campo…', 'vas-dinamico-forms' ),
+				label: __( 'Selecciona un campo…', 'eipsi-forms' ),
 				value: '',
 			},
 		];
@@ -183,7 +183,7 @@ const ConditionalLogicControl = ( {
 				) {
 					errors[ ruleIndex ] = __(
 						'Cada regla necesita al menos una condición',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					);
 					return;
 				}
@@ -197,7 +197,7 @@ const ConditionalLogicControl = ( {
 					if ( ! fieldMeta ) {
 						errors[ ruleIndex ] = __(
 							'Selecciona un campo válido para esta condición',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						);
 						break;
 					}
@@ -206,7 +206,7 @@ const ConditionalLogicControl = ( {
 						if ( ! condition.operator ) {
 							errors[ ruleIndex ] = __(
 								'Eligí un operador numérico',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							);
 							break;
 						}
@@ -215,14 +215,14 @@ const ConditionalLogicControl = ( {
 						if ( Number.isNaN( numValue ) ) {
 							errors[ ruleIndex ] = __(
 								'Ingresá un valor numérico válido',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							);
 							break;
 						}
 					} else if ( ! condition.value ) {
 						errors[ ruleIndex ] = __(
 							'Selecciona el valor que dispara la condición',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						);
 						break;
 					}
@@ -234,7 +234,7 @@ const ConditionalLogicControl = ( {
 				) {
 					errors[ ruleIndex ] = __(
 						'Elegí una página de destino válida',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					);
 				}
 			} );
@@ -462,10 +462,7 @@ const ConditionalLogicControl = ( {
 		if ( pages.length === 0 ) {
 			return [
 				{
-					label: __(
-						'No hay páginas disponibles',
-						'vas-dinamico-forms'
-					),
+					label: __( 'No hay páginas disponibles', 'eipsi-forms' ),
 					value: '',
 					disabled: true,
 				},
@@ -474,10 +471,10 @@ const ConditionalLogicControl = ( {
 
 		return pages.map( ( page ) => {
 			const label = page.title
-				? `${ __( 'Página', 'vas-dinamico-forms' ) } ${
-						page.index
-				  } – ${ page.title }`
-				: `${ __( 'Página', 'vas-dinamico-forms' ) } ${ page.index }`;
+				? `${ __( 'Página', 'eipsi-forms' ) } ${ page.index } – ${
+						page.title
+				  }`
+				: `${ __( 'Página', 'eipsi-forms' ) } ${ page.index }`;
 
 			return {
 				label,
@@ -489,18 +486,18 @@ const ConditionalLogicControl = ( {
 	const getActionOptions = () => {
 		const actionOptions = [
 			{
-				label: __( 'Siguiente página', 'vas-dinamico-forms' ),
+				label: __( 'Siguiente página', 'eipsi-forms' ),
 				value: 'nextPage',
 			},
 			{
-				label: __( 'Finalizar formulario', 'vas-dinamico-forms' ),
+				label: __( 'Finalizar formulario', 'eipsi-forms' ),
 				value: 'submit',
 			},
 		];
 
 		if ( pages.length > 0 ) {
 			actionOptions.splice( 1, 0, {
-				label: __( 'Ir a página específica…', 'vas-dinamico-forms' ),
+				label: __( 'Ir a página específica…', 'eipsi-forms' ),
 				value: 'goToPage',
 			} );
 		}
@@ -515,8 +512,8 @@ const ConditionalLogicControl = ( {
 		const discreteOptions = fieldMeta?.options || [];
 		const logicalLabel =
 			conditionIndex === 0
-				? __( 'Si se cumple', 'vas-dinamico-forms' )
-				: __( 'Unir con', 'vas-dinamico-forms' );
+				? __( 'Si se cumple', 'eipsi-forms' )
+				: __( 'Unir con', 'eipsi-forms' );
 		const currentRule = normalizedLogic.rules[ ruleIndex ];
 
 		return (
@@ -526,7 +523,7 @@ const ConditionalLogicControl = ( {
 			>
 				{ conditionIndex > 0 && (
 					<SelectControl
-						label={ __( 'Operador lógico', 'vas-dinamico-forms' ) }
+						label={ __( 'Operador lógico', 'eipsi-forms' ) }
 						value={ condition.logicalOperator || 'AND' }
 						options={ LOGICAL_OPERATOR_OPTIONS }
 						onChange={ ( value ) =>
@@ -552,16 +549,13 @@ const ConditionalLogicControl = ( {
 
 				{ fieldMeta && fieldMeta.type === 'discrete' && (
 					<SelectControl
-						label={ __(
-							'Cuando el valor sea',
-							'vas-dinamico-forms'
-						) }
+						label={ __( 'Cuando el valor sea', 'eipsi-forms' ) }
 						value={ condition.value || '' }
 						options={ [
 							{
 								label: __(
 									'Selecciona un valor…',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								),
 								value: '',
 							},
@@ -581,7 +575,7 @@ const ConditionalLogicControl = ( {
 						<SelectControl
 							label={ __(
 								'Comparar cuando el valor sea',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 							value={ condition.operator || '>=' }
 							options={ NUMERIC_OPERATOR_OPTIONS }
@@ -593,7 +587,7 @@ const ConditionalLogicControl = ( {
 							}
 						/>
 						<TextControl
-							label={ __( 'Valor umbral', 'vas-dinamico-forms' ) }
+							label={ __( 'Valor umbral', 'eipsi-forms' ) }
 							type="number"
 							value={
 								condition.threshold !== undefined &&
@@ -651,7 +645,7 @@ const ConditionalLogicControl = ( {
 						<p>
 							{ __(
 								'Este campo ya no está disponible en la página. Seleccioná otro campo para continuar.',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 						</p>
 					</div>
@@ -665,7 +659,7 @@ const ConditionalLogicControl = ( {
 							removeConditionFromRule( ruleIndex, conditionIndex )
 						}
 					>
-						{ __( 'Eliminar condición', 'vas-dinamico-forms' ) }
+						{ __( 'Eliminar condición', 'eipsi-forms' ) }
 					</Button>
 				) }
 			</div>
@@ -674,20 +668,20 @@ const ConditionalLogicControl = ( {
 
 	return (
 		<PanelBody
-			title={ __( 'Lógica Condicional', 'vas-dinamico-forms' ) }
+			title={ __( 'Lógica Condicional', 'eipsi-forms' ) }
 			initialOpen={ false }
 		>
 			<div className="conditional-logic-toggle-wrapper">
 				<ToggleControl
 					label={ __(
 						'Habilitar lógica condicional',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 					checked={ normalizedLogic.enabled || false }
 					onChange={ toggleConditionalLogic }
 					help={ __(
 						'Configura saltos y visibilidad según las respuestas del paciente.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 			</div>
@@ -699,7 +693,7 @@ const ConditionalLogicControl = ( {
 							<p>
 								{ __(
 									'Para configurar la lógica condicional, primero agregá páginas al formulario.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</p>
 						</div>
@@ -710,7 +704,7 @@ const ConditionalLogicControl = ( {
 							<p>
 								{ __(
 									'Agregá campos compatibles en esta página (select, radio, múltiple, likert o VAS) para crear reglas.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</p>
 						</div>
@@ -722,7 +716,7 @@ const ConditionalLogicControl = ( {
 							<p>
 								{ __(
 									'Creá reglas para saltar páginas, ocultar bloques o finalizar según combinaciones de respuestas en esta página.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</p>
 						</div>
@@ -735,7 +729,7 @@ const ConditionalLogicControl = ( {
 						>
 							<div className="conditional-logic-rule-header">
 								<h4>
-									{ __( 'Regla', 'vas-dinamico-forms' ) }{ ' ' }
+									{ __( 'Regla', 'eipsi-forms' ) }{ ' ' }
 									{ index + 1 }
 								</h4>
 							</div>
@@ -757,15 +751,12 @@ const ConditionalLogicControl = ( {
 									}
 									className="conditional-logic-add-condition-button"
 								>
-									{ __(
-										'+ Combinar (Y/O)',
-										'vas-dinamico-forms'
-									) }
+									{ __( '+ Combinar (Y/O)', 'eipsi-forms' ) }
 								</Button>
 							) }
 
 							<SelectControl
-								label={ __( 'Entonces', 'vas-dinamico-forms' ) }
+								label={ __( 'Entonces', 'eipsi-forms' ) }
 								value={ rule.action || 'nextPage' }
 								options={ getActionOptions() }
 								onChange={ ( action ) => {
@@ -795,7 +786,7 @@ const ConditionalLogicControl = ( {
 								<SelectControl
 									label={ __(
 										'Ir a la página',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									) }
 									value={
 										rule.targetPage
@@ -824,10 +815,7 @@ const ConditionalLogicControl = ( {
 									isSmall
 									onClick={ () => removeRule( index ) }
 								>
-									{ __(
-										'Eliminar regla',
-										'vas-dinamico-forms'
-									) }
+									{ __( 'Eliminar regla', 'eipsi-forms' ) }
 								</Button>
 							</div>
 						</div>
@@ -836,21 +824,18 @@ const ConditionalLogicControl = ( {
 					{ hasRequiredData && normalizedLogic.rules.length > 0 && (
 						<div className="conditional-logic-default-action">
 							<h4>
-								{ __(
-									'Acción predeterminada',
-									'vas-dinamico-forms'
-								) }
+								{ __( 'Acción predeterminada', 'eipsi-forms' ) }
 							</h4>
 							<p>
 								{ __(
 									'Qué ocurre cuando ninguna condición coincide.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</p>
 							<SelectControl
 								label={ __(
 									'Para otros casos',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 								value={
 									normalizedLogic.defaultAction === 'goToPage'
@@ -875,7 +860,7 @@ const ConditionalLogicControl = ( {
 								<SelectControl
 									label={ __(
 										'Ir a la página',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									) }
 									value={
 										normalizedLogic.defaultTargetPage
@@ -899,7 +884,7 @@ const ConditionalLogicControl = ( {
 						disabled={ ! hasRequiredData }
 						className="conditional-logic-add-rule-button"
 					>
-						{ __( '+ Agregar regla', 'vas-dinamico-forms' ) }
+						{ __( '+ Agregar regla', 'eipsi-forms' ) }
 					</Button>
 
 					{ hasRequiredData && (
@@ -907,7 +892,7 @@ const ConditionalLogicControl = ( {
 							<p>
 								{ __(
 									'Las reglas se evalúan en orden. La primera coincidencia define el camino del participante.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</p>
 						</div>
@@ -981,7 +966,7 @@ function collectConditionableFields( pageBlock ) {
 					const label =
 						block.attributes.label ||
 						block.attributes.fieldName ||
-						__( 'Campo sin nombre', 'vas-dinamico-forms' );
+						__( 'Campo sin nombre', 'eipsi-forms' );
 
 					const meta = {
 						fieldId,

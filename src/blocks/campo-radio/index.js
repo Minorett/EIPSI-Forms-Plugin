@@ -5,7 +5,7 @@ import Save from './save';
 import './editor.scss';
 import './style.scss';
 
-registerBlockType( 'vas-dinamico/campo-radio', {
+registerBlockType( 'eipsi/campo-radio', {
 	edit: Edit,
 	save: Save,
 } );

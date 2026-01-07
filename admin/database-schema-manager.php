@@ -439,7 +439,7 @@ class EIPSI_Database_Schema_Manager {
         // Check if tables exist
         if ( ! self::local_table_exists( $results_table ) || ! self::local_table_exists( $events_table ) ) {
             // Tables missing - recreate via activation hook
-            vas_dinamico_activate();
+            eipsi_forms_activate();
             $repair_log['results_table']['exists'] = true;
             $repair_log['events_table']['exists'] = true;
             error_log( '[EIPSI Forms] Schema repair: Tables recreated' );

@@ -4,12 +4,12 @@ import { __ } from '@wordpress/i18n';
 import FieldSettings from '../../components/FieldSettings';
 
 const FIELD_TYPE_OPTIONS = [
-	{ label: __( 'Text', 'vas-dinamico-forms' ), value: 'text' },
-	{ label: __( 'Email', 'vas-dinamico-forms' ), value: 'email' },
-	{ label: __( 'Number', 'vas-dinamico-forms' ), value: 'number' },
-	{ label: __( 'Telephone', 'vas-dinamico-forms' ), value: 'tel' },
-	{ label: __( 'URL', 'vas-dinamico-forms' ), value: 'url' },
-	{ label: __( 'Date', 'vas-dinamico-forms' ), value: 'date' },
+	{ label: __( 'Text', 'eipsi-forms' ), value: 'text' },
+	{ label: __( 'Email', 'eipsi-forms' ), value: 'email' },
+	{ label: __( 'Number', 'eipsi-forms' ), value: 'number' },
+	{ label: __( 'Telephone', 'eipsi-forms' ), value: 'tel' },
+	{ label: __( 'URL', 'eipsi-forms' ), value: 'url' },
+	{ label: __( 'Date', 'eipsi-forms' ), value: 'date' },
 ];
 
 const renderHelperText = ( text ) => {
@@ -60,7 +60,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	const displayLabel =
 		label && label.trim() !== ''
 			? label
-			: __( 'Campo de texto', 'vas-dinamico-forms' );
+			: __( 'Campo de texto', 'eipsi-forms' );
 
 	return (
 		<>
@@ -70,11 +70,11 @@ export default function Edit( { attributes, setAttributes } ) {
 					setAttributes={ setAttributes }
 				/>
 				<PanelBody
-					title={ __( 'Text Field Options', 'vas-dinamico-forms' ) }
+					title={ __( 'Text Field Options', 'eipsi-forms' ) }
 					initialOpen={ false }
 				>
 					<SelectControl
-						label={ __( 'Input type', 'vas-dinamico-forms' ) }
+						label={ __( 'Input type', 'eipsi-forms' ) }
 						value={ fieldType }
 						options={ FIELD_TYPE_OPTIONS }
 						onChange={ ( value ) =>

@@ -13,4 +13,4 @@ if (!defined('ABSPATH')) {
 }
 
 // Render callback is defined in includes/form-template-render.php
-// and registered in vas-dinamico-forms.php main file
+// and registered in eipsi-forms.php main file

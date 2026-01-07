@@ -41,7 +41,7 @@ export default function Save( { attributes } ) {
 						data-testid="thank-you-restart-button"
 					>
 						{ restartButtonLabel ||
-							__( 'Comenzar de nuevo', 'vas-dinamico-forms' ) }
+							__( 'Comenzar de nuevo', 'eipsi-forms' ) }
 					</button>
 				</div>
 			) }

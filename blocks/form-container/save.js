@@ -13,7 +13,7 @@ export default function Save( { attributes } ) {
 	} = attributes;
 
 	const blockProps = useBlockProps.save( {
-		className: 'vas-dinamico-form eipsi-form ' + ( className || '' ),
+		className: 'eipsi-form eipsi-form ' + ( className || '' ),
 		'data-capture-page-timing': capturePageTiming ? 'true' : 'false',
 		'data-capture-field-timing': captureFieldTiming ? 'true' : 'false',
 		'data-capture-inactivity-time': captureInactivityTime

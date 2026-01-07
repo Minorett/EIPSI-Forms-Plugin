@@ -4,7 +4,7 @@ import './editor.scss';
 import Edit from './edit';
 import save from './save';
 
-registerBlockType( 'vas-dinamico/vas-slider', {
+registerBlockType( 'eipsi/vas-slider', {
 	edit: Edit,
 	save,
 } );

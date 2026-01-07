@@ -23,7 +23,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 			const pageClientIds = siblingClientIds.filter( ( siblingId ) => {
 				const block = getBlock( siblingId );
-				return block?.name === 'vas-dinamico/form-page';
+				return block?.name === 'eipsi/form-page';
 			} );
 
 			const index = pageClientIds.indexOf( clientId );
@@ -58,15 +58,15 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		'core/image',
 		'core/buttons',
 		'core/button',
-		'vas-dinamico/consent-block',
-		'vas-dinamico/campo-texto',
-		'vas-dinamico/campo-textarea',
-		'vas-dinamico/campo-descripcion',
-		'vas-dinamico/campo-select',
-		'vas-dinamico/campo-radio',
-		'vas-dinamico/campo-multiple',
-		'vas-dinamico/campo-likert',
-		'vas-dinamico/vas-slider',
+		'eipsi/consent-block',
+		'eipsi/campo-texto',
+		'eipsi/campo-textarea',
+		'eipsi/campo-descripcion',
+		'eipsi/campo-select',
+		'eipsi/campo-radio',
+		'eipsi/campo-multiple',
+		'eipsi/campo-likert',
+		'eipsi/vas-slider',
 	];
 
 	const innerBlocksProps = useInnerBlocksProps(
@@ -83,30 +83,25 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={ __( 'Page Settings', 'vas-dinamico-forms' ) }
-				>
+				<PanelBody title={ __( 'Page Settings', 'eipsi-forms' ) }>
 					<TextControl
-						label={ __(
-							'Page Title (Optional)',
-							'vas-dinamico-forms'
-						) }
+						label={ __( 'Page Title (Optional)', 'eipsi-forms' ) }
 						value={ title }
 						onChange={ ( value ) =>
 							setAttributes( { title: value } )
 						}
 						help={ __(
 							'Enter an optional title for this page (e.g., Personal Information)',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<TextControl
-						label={ __( 'Page Number', 'vas-dinamico-forms' ) }
+						label={ __( 'Page Number', 'eipsi-forms' ) }
 						type="number"
 						value={ currentPageIndex }
 						help={ __(
 							'This page number updates automatically based on block order.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						disabled
 					/>
@@ -117,8 +112,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				<div className="eipsi-page-preview">
 					<div className="page-header">
 						<span className="page-badge">
-							{ __( 'Page', 'vas-dinamico-forms' ) }{ ' ' }
-							{ currentPageIndex }
+							{ __( 'Page', 'eipsi-forms' ) } { currentPageIndex }
 						</span>
 						{ title && (
 							<h3 className="eipsi-page-title">{ title }</h3>
@@ -127,7 +121,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							<p className="page-placeholder-text">
 								{ __(
 									'Add a page title in the block settings (optional)',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</p>
 						) }

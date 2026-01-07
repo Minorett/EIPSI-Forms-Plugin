@@ -5,7 +5,7 @@ import Save from './save';
 import './editor.scss';
 import './style.scss';
 
-registerBlockType( 'vas-dinamico/campo-descripcion', {
+registerBlockType( 'eipsi/campo-descripcion', {
 	edit: Edit,
 	save: Save,
 } );

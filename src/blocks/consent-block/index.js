@@ -5,7 +5,7 @@ import Save from './save';
 import './editor.scss';
 import './style.scss';
 
-registerBlockType( 'vas-dinamico/consent-block', {
+registerBlockType( 'eipsi/consent-block', {
 	edit: Edit,
 	save: Save,
 } );
