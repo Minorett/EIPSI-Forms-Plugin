@@ -122,6 +122,19 @@
         "className": {
             "type": "string",
             "default": ""
+        },
+
+        "capturePageTiming": {
+            "type": "boolean",
+            "default": true
+        },
+        "captureFieldTiming": {
+            "type": "boolean",
+            "default": false
+        },
+        "captureInactivityTime": {
+            "type": "boolean",
+            "default": false
         }
     },
     "providesContext": {

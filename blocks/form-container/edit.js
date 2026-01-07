@@ -10,6 +10,7 @@ import {
 	TextareaControl,
 	ColorPalette,
 	RangeControl,
+	ToggleControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
@@ -23,6 +24,10 @@ export default function Edit( { attributes, setAttributes } ) {
 		textColor,
 		borderRadius,
 		padding,
+		// Analytics & Timing
+		capturePageTiming,
+		captureFieldTiming,
+		captureInactivityTime,
 	} = attributes;
 
 	const blockProps = useBlockProps( {
@@ -148,6 +153,54 @@ export default function Edit( { attributes, setAttributes } ) {
 						min={ 0 }
 						max={ 30 }
 						step={ 2 }
+					/>
+				</PanelBody>
+
+				<PanelBody
+					title={ __( 'Analytics & Timing', 'vas-dinamico-forms' ) }
+					initialOpen={ false }
+				>
+					<ToggleControl
+						label={ __(
+							'Capturar tiempo por página',
+							'vas-dinamico-forms'
+						) }
+						checked={ capturePageTiming }
+						onChange={ ( value ) =>
+							setAttributes( { capturePageTiming: value } )
+						}
+						help={ __(
+							'Registra cuánto tiempo pasa el participante en cada página. Útil para detectar patrones de fatiga, evasión o procesamiento cognitivo.',
+							'vas-dinamico-forms'
+						) }
+					/>
+					<ToggleControl
+						label={ __(
+							'Capturar tiempo por campo individual',
+							'vas-dinamico-forms'
+						) }
+						checked={ captureFieldTiming }
+						onChange={ ( value ) =>
+							setAttributes( { captureFieldTiming: value } )
+						}
+						help={ __(
+							'Registra el tiempo que el participante enfoca cada campo individual. Útil para estudios de psicología experimental. ⚠️ Experimental',
+							'vas-dinamico-forms'
+						) }
+					/>
+					<ToggleControl
+						label={ __(
+							'Registrar tiempo de inactividad',
+							'vas-dinamico-forms'
+						) }
+						checked={ captureInactivityTime }
+						onChange={ ( value ) =>
+							setAttributes( { captureInactivityTime: value } )
+						}
+						help={ __(
+							'Detecta períodos donde el usuario no interactúa con el formulario (30 segundos sin actividad). Útil para estimar tiempo real vs tiempo total. ⚠️ Usa con cautela - no es 100% fiable.',
+							'vas-dinamico-forms'
+						) }
 					/>
 				</PanelBody>
 			</InspectorControls>
