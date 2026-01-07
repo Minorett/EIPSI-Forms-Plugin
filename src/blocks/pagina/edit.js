@@ -58,6 +58,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		'core/image',
 		'core/buttons',
 		'core/button',
+		'vas-dinamico/consent-block',
 		'vas-dinamico/campo-texto',
 		'vas-dinamico/campo-textarea',
 		'vas-dinamico/campo-descripcion',

@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "vas-dinamico/consent-block",
+	"version": "1.0.0",
+	"title": "Consentimiento Informado",
+	"category": "eipsi-forms",
+	"icon": "shield",
+	"description": "Bloque de consentimiento informado obligatorio para investigaciones clínicas.",
+	"keywords": [ "consent", "ethics", "eipsi", "legal" ],
+	"textdomain": "vas-dinamico-forms",
+	"parent": [ "vas-dinamico/form-container", "vas-dinamico/form-page" ],
+	"editorScript": "file:../../build/index.js",
+	"editorStyle": "file:../../build/index.css",
+	"style": "file:../../build/style-index.css",
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"consentText": {
+			"type": "string",
+			"default": "Acepto participar en este estudio y he leído la información anterior."
+		},
+		"consentLabel": {
+			"type": "string",
+			"default": "He leído y acepto los términos del consentimiento informado"
+		},
+		"isRequired": {
+			"type": "boolean",
+			"default": true
+		},
+		"showTimestamp": {
+			"type": "boolean",
+			"default": true
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		}
+	}
+}

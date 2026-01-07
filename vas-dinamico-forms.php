@@ -351,6 +351,7 @@ function vas_dinamico_register_blocks() {
         'form-block',
         'form-container',
         'pagina', 
+        'consent-block',
         'campo-texto',
         'campo-textarea',
         'campo-descripcion',
@@ -401,6 +402,7 @@ function vas_dinamico_enqueue_block_assets($content) {
     $blocks = array(
         'vas-dinamico/form-container',
         'vas-dinamico/form-block',
+        'vas-dinamico/consent-block',
         'vas-dinamico/campo-texto',
         'vas-dinamico/campo-textarea',
         'vas-dinamico/campo-descripcion',
