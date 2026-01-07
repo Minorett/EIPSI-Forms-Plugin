@@ -524,6 +524,14 @@ function vas_dinamico_submit_form_handler() {
             'completion_rate' => 1.0
         );
     }
+
+    // CONSENT INFO
+    if (isset($_POST['eipsi_consent_accepted']) && $_POST['eipsi_consent_accepted'] === 'on') {
+        $metadata['consent_given'] = true;
+        $metadata['consent_timestamp'] = current_time('Y-m-d\TH:i:s\Z');
+        $metadata['consent_ip'] = ($privacy_config['ip_address'] ?? true) ? $ip_address_raw : 'anonymized';
+        $metadata['consent_user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+    }
     
     // Prepare data for insertion
     $data = array(

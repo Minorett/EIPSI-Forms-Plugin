@@ -114,6 +114,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 	const ALLOWED_BLOCKS = [
 		'vas-dinamico/form-page',
+		'vas-dinamico/consent-block',
 		'vas-dinamico/campo-texto',
 		'vas-dinamico/campo-textarea',
 		'vas-dinamico/campo-descripcion',

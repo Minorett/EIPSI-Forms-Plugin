@@ -1,0 +1,106 @@
+.eipsi-consent-block {
+	margin-bottom: 2rem;
+	padding: 1.5rem;
+	background: var(--eipsi-color-bg-subtle, #f9fafb);
+	border: 1px solid var(--eipsi-color-border, #e5e7eb);
+	border-radius: var(--eipsi-border-radius-md, 8px);
+
+	.eipsi-consent-text {
+		margin-bottom: 1.25rem;
+		font-family: var(--eipsi-font-family-body, inherit);
+		font-size: var(--eipsi-font-size-base, 16px);
+		line-height: 1.6;
+		color: var(--eipsi-color-text, #111827);
+
+		p {
+			margin-bottom: 0.75rem;
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
+	}
+
+	.eipsi-consent-control {
+		.eipsi-checkbox-wrapper {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.75rem;
+			cursor: pointer;
+
+			input[type="checkbox"] {
+				appearance: none;
+				-webkit-appearance: none;
+				width: 20px;
+				height: 20px;
+				border: 2px solid var(--eipsi-color-checkbox-border, #d1d5db);
+				border-radius: 4px;
+				background-color: var(--eipsi-color-bg, #ffffff);
+				cursor: pointer;
+				position: relative;
+				margin-top: 2px;
+				flex-shrink: 0;
+				transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+
+				&:checked {
+					background-color: var(--eipsi-color-button-bg, #2563eb);
+					border-color: var(--eipsi-color-button-bg, #2563eb);
+
+					&::after {
+						content: '';
+						position: absolute;
+						left: 6px;
+						top: 2px;
+						width: 5px;
+						height: 10px;
+						border: solid white;
+						border-width: 0 2px 2px 0;
+						transform: rotate(45deg);
+					}
+				}
+
+				&:focus-visible {
+					outline: 2px solid var(--eipsi-color-button-bg, #2563eb);
+					outline-offset: 2px;
+				}
+			}
+
+			label {
+				font-family: var(--eipsi-font-family-body, inherit);
+				font-size: var(--eipsi-font-size-base, 16px);
+				font-weight: 500;
+				color: var(--eipsi-color-text, #111827);
+				cursor: pointer;
+				user-select: none;
+				line-height: 1.4;
+
+				.eipsi-required-mark {
+					color: #d92d20;
+					margin-left: 4px;
+				}
+			}
+		}
+	}
+}
+
+/* Dark mode compatibility */
+[data-theme="dark"] .eipsi-consent-block {
+	background: var(--eipsi-color-bg-subtle, #1f2937);
+	border-color: var(--eipsi-color-border, #374151);
+
+	.eipsi-consent-text {
+		color: var(--eipsi-color-text, #f9fafb);
+	}
+
+	.eipsi-consent-control {
+		.eipsi-checkbox-wrapper {
+			input[type="checkbox"] {
+				border-color: var(--eipsi-color-checkbox-border, #4b5563);
+				background-color: var(--eipsi-color-bg, #111827);
+			}
+
+			label {
+				color: var(--eipsi-color-text, #f9fafb);
+			}
+		}
+	}
+}

@@ -1,0 +1,29 @@
+.eipsi-consent-block-editor {
+	border: 2px dashed #d1d5db;
+	border-radius: 8px;
+	padding: 1.5rem;
+	background: #f9fafb;
+	margin-bottom: 1rem;
+
+	.eipsi-consent-preview {
+		.eipsi-consent-text-editor {
+			margin-bottom: 1rem;
+			padding: 0.5rem;
+			background: white;
+			border: 1px solid #e5e7eb;
+			border-radius: 4px;
+			min-height: 100px;
+		}
+
+		.eipsi-consent-checkbox-preview {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			font-weight: 500;
+
+			.required-asterisk {
+				color: #d92d20;
+			}
+		}
+	}
+}
