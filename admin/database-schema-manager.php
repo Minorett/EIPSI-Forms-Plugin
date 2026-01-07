@@ -123,7 +123,6 @@ class EIPSI_Database_Schema_Manager {
                 end_timestamp_ms bigint(20) DEFAULT NULL,
                 ip_address varchar(45) DEFAULT NULL,
                 metadata LONGTEXT DEFAULT NULL,
-                quality_flag enum('HIGH','NORMAL','LOW') DEFAULT 'NORMAL',
                 status enum('pending','submitted','error') DEFAULT 'submitted',
                 form_responses longtext DEFAULT NULL,
                 PRIMARY KEY (id),
@@ -160,8 +159,7 @@ class EIPSI_Database_Schema_Manager {
             'start_timestamp_ms' => "ALTER TABLE `{$table_name}` ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
             'end_timestamp_ms' => "ALTER TABLE `{$table_name}` ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms",
             'metadata' => "ALTER TABLE `{$table_name}` ADD COLUMN metadata LONGTEXT DEFAULT NULL AFTER ip_address",
-            'quality_flag' => "ALTER TABLE `{$table_name}` ADD COLUMN quality_flag enum('HIGH','NORMAL','LOW') DEFAULT 'NORMAL' AFTER metadata",
-            'status' => "ALTER TABLE `{$table_name}` ADD COLUMN status enum('pending','submitted','error') DEFAULT 'submitted' AFTER quality_flag",
+            'status' => "ALTER TABLE `{$table_name}` ADD COLUMN status enum('pending','submitted','error') DEFAULT 'submitted' AFTER metadata",
         );
         
         foreach ( $required_columns as $column => $alter_sql ) {
@@ -297,8 +295,7 @@ class EIPSI_Database_Schema_Manager {
             'start_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
             'end_timestamp_ms' => "ALTER TABLE {$table_name} ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms",
             'metadata' => "ALTER TABLE {$table_name} ADD COLUMN metadata LONGTEXT DEFAULT NULL AFTER ip_address",
-            'quality_flag' => "ALTER TABLE {$table_name} ADD COLUMN quality_flag enum('HIGH','NORMAL','LOW') DEFAULT 'NORMAL' AFTER metadata",
-            'status' => "ALTER TABLE {$table_name} ADD COLUMN status enum('pending','submitted','error') DEFAULT 'submitted' AFTER quality_flag",
+            'status' => "ALTER TABLE {$table_name} ADD COLUMN status enum('pending','submitted','error') DEFAULT 'submitted' AFTER metadata",
         );
         
         foreach ( $required_columns as $column => $alter_sql ) {
@@ -490,13 +487,12 @@ class EIPSI_Database_Schema_Manager {
             'participant_id' => "varchar(20) DEFAULT NULL AFTER form_id",
             'session_id' => "varchar(255) DEFAULT NULL AFTER participant_id",
             'form_name' => "varchar(255) NOT NULL AFTER session_id",
-            'form_responses' => "longtext DEFAULT NULL AFTER quality_flag",
+            'form_responses' => "longtext DEFAULT NULL",
             'metadata' => "LONGTEXT DEFAULT NULL AFTER ip_address",
             'browser' => "varchar(100) DEFAULT NULL AFTER device",
             'os' => "varchar(100) DEFAULT NULL AFTER browser",
             'screen_width' => "int(11) DEFAULT NULL AFTER os",
-            'duration_seconds' => "decimal(8,3) DEFAULT NULL AFTER duration",
-            'quality_flag' => "enum('HIGH','NORMAL','LOW') DEFAULT 'NORMAL' AFTER metadata",
+            'duration_seconds' => "decimal(8,3) DEFAULT NULL AFTER duration"
         );
         
         $columns_added = array();

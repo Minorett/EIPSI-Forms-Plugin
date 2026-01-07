@@ -15,11 +15,8 @@ function get_privacy_defaults() {
         'participant_id' => true,
         'session_id' => true,
         'timestamps_basic' => true,
-        'quality_flag' => true,
 
         // RECOMENDADOS - ON por default
-        'therapeutic_engagement' => true,
-        'avoidance_patterns' => true,
         'device_type' => true,
 
         // AUDITORÍA CLÍNICA - ON por default (pero opcional)
@@ -57,10 +54,7 @@ function get_global_privacy_defaults() {
             'browser' => false,
             'os' => false,
             'screen_width' => false,
-            'therapeutic_engagement' => true,
-            'avoidance_patterns' => true,
-            'device_type' => true,
-            'quality_flag' => true
+            'device_type' => true
         );
     }
 
@@ -78,14 +72,11 @@ function save_global_privacy_defaults($config) {
     // Sanitizar configuración - SOLO toggles permitidos
     $sanitized = array();
     $allowed_toggles = array(
-        'therapeutic_engagement',
-        'avoidance_patterns',
         'device_type',
         'browser',
         'os',
         'screen_width',
-        'ip_address',
-        'quality_flag'
+        'ip_address'
     );
 
     foreach ($config as $key => $value) {
@@ -135,14 +126,11 @@ function save_privacy_config($form_id, $config) {
     // Sanitizar configuración - SOLO toggles permitidos
     $sanitized = array();
     $allowed_toggles = array(
-        'therapeutic_engagement',
-        'avoidance_patterns',
         'device_type',
         'browser',
         'os',
         'screen_width',
-        'ip_address',
-        'quality_flag'
+        'ip_address'
     );
 
     foreach ($config as $key => $value) {

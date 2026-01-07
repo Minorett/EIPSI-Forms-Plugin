@@ -43,10 +43,10 @@ EIPSI Forms convierte WordPress en una herramienta clínica para recolección de
 
 ### Identificación y trazabilidad sin inventar datos
 - **Participant ID** y **Session ID** automáticos (anonimizados, persistidos durante la sesión).
-- **Quality Flag** en cada envío para detectar completaciones dudosas.
 - **Fingerprint clínico liviano opcional:** captura de browser, OS y resolución solo si lo activás en la pestaña Privacy & Metadata; pensado para tablets compartidas.
 - Timestamps precisos (inicio/fin, duración en milisegundos) y eventos clave (`view`, `start`, `page_change`, `submit`, `abandon`, `branch_jump`).
 - Dashboard con privacidad por defecto: IP opcional, datos de navegador/OS/pantalla desactivados hasta que el equipo clínico lo habilite explícitamente.
+- **Validación clínica:** usamos el tiempo (objetivo, medible) y la completación de campos en lugar de indicadores algorítmicos subjetivos o "quality flags" automáticos que generan ruido.
 
 ### Panel “Results & Experience”
 - Tres pestañas consolidadas:
@@ -58,7 +58,7 @@ EIPSI Forms convierte WordPress en una herramienta clínica para recolección de
 ### Base de datos y exportaciones
 - Tablas clínicas (`wp_vas_form_results` y `wp_vas_form_events`) con índices preparados para auditoría.
 - Sincronización/auto-reparación del esquema cada 24 h (Hotfix 1.2.2) para garantizar **Zero Data Loss** incluso si WordPress se actualiza.
-- Exportación inmediata a **Excel (XLSX)** y **CSV UTF-8** con todas las respuestas, metadatos e indicadores de calidad.
+- Exportación inmediata a **Excel (XLSX)** y **CSV UTF-8** con todas las respuestas y metadatos (el investigador es la única fuente de verdad para validar la calidad).
 
 ## Novedades clínicas post tickets 1–7
 - **Submissions & Finalización v1:** página de agradecimiento integrada en la misma URL, con botón “Comenzar de nuevo” y distinción entre finalización global y por formulario.

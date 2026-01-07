@@ -60,27 +60,9 @@ function render_privacy_dashboard($form_id = null) {
                     <h3>🎯 Comportamiento Clínico</h3>
                     
                     <label>
-                        <input type="checkbox" name="therapeutic_engagement" <?php checked($global_config['therapeutic_engagement']); ?>>
-                        <strong>Engagement Terapéutico</strong>
-                        <span class="eipsi-tooltip">(Tiempo por campo, cambios, navegación)</span>
-                    </label>
-                    
-                    <label>
-                        <input type="checkbox" name="avoidance_patterns" <?php checked($global_config['avoidance_patterns']); ?>>
-                        <strong>Patrones de Evitación</strong>
-                        <span class="eipsi-tooltip">(Saltos, retrocesos, omisiones)</span>
-                    </label>
-                    
-                    <label>
                         <input type="checkbox" name="device_type" <?php checked($global_config['device_type']); ?>>
                         <strong>Tipo de Dispositivo</strong>
                         <span class="eipsi-tooltip">(mobile/desktop/tablet)</span>
-                    </label>
-                    
-                    <label>
-                        <input type="checkbox" name="quality_flag" <?php checked($global_config['quality_flag']); ?>>
-                        <strong>Quality Flag</strong>
-                        <span class="eipsi-tooltip">(Control automático: HIGH/NORMAL/LOW)</span>
                     </label>
                 </div>
                 
@@ -137,27 +119,9 @@ function render_privacy_dashboard($form_id = null) {
                 <h3>🎯 Comportamiento Clínico</h3>
 
                 <label>
-                    <input type="checkbox" name="therapeutic_engagement" <?php checked($privacy_config['therapeutic_engagement'] ?? true); ?>>
-                    <strong>Engagement Terapéutico</strong>
-                    <span class="eipsi-tooltip">(Tiempo por campo, cambios, navegación)</span>
-                </label>
-
-                <label>
-                    <input type="checkbox" name="avoidance_patterns" <?php checked($privacy_config['avoidance_patterns'] ?? true); ?>>
-                    <strong>Patrones de Evitación</strong>
-                    <span class="eipsi-tooltip">(Saltos, retrocesos, omisiones)</span>
-                </label>
-
-                <label>
                     <input type="checkbox" name="device_type" <?php checked($privacy_config['device_type'] ?? true); ?>>
                     <strong>Tipo de Dispositivo</strong>
                     <span class="eipsi-tooltip">(mobile/desktop/tablet)</span>
-                </label>
-
-                <label>
-                    <input type="checkbox" name="quality_flag" <?php checked($privacy_config['quality_flag'] ?? true); ?>>
-                    <strong>Quality Flag</strong>
-                    <span class="eipsi-tooltip">(Control automático: HIGH/NORMAL/LOW)</span>
                 </label>
             </div>
             
@@ -176,7 +140,7 @@ function render_privacy_dashboard($form_id = null) {
             <p><strong>ℹ️ Información de Privacidad:</strong></p>
             <ul>
                 <li>✅ <strong>Captura Básica:</strong> IP Address - Por defecto ON para auditoría clínica (GDPR/HIPAA compliant)</li>
-                <li>🎯 <strong>Comportamiento Clínico:</strong> Engagement Terapéutico, Patrones de Evitación, Tipo de Dispositivo, Quality Flag - Por defecto ON</li>
+                <li>🎯 <strong>Comportamiento Clínico:</strong> Tipo de Dispositivo - Por defecto ON</li>
                 <li>🖥️ <strong>Fingerprint del Dispositivo:</strong> Navegador, Sistema Operativo, Tamaño de Pantalla - Por defecto OFF (opcional para debugging)</li>
                 <li>🔄 <strong>Override por Formulario:</strong> Cada formulario puede tener su propia configuración independientemente de la global</li>
                 <li>📊 <strong>Todos los datos:</strong> Incluidos en exportación Excel/CSV según configuración de privacidad</li>
