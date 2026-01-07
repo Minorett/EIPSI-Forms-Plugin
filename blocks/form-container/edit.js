@@ -198,7 +198,7 @@ export default function Edit( { attributes, setAttributes } ) {
 							setAttributes( { captureInactivityTime: value } )
 						}
 						help={ __(
-							'Detecta períodos donde el usuario no interactúa con el formulario (30 segundos sin actividad). Útil para estimar tiempo real vs tiempo total. ⚠️ Usa con cautela - no es 100% fiable.',
+							'Detecta períodos donde el usuario no interactúa con el formulario (30 segundos sin actividad). Útil para estimar tiempo real vs tiempo total. ⚠️ Usa con cautela - no es completamente fiable.',
 							'vas-dinamico-forms'
 						) }
 					/>

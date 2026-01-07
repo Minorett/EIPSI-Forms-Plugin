@@ -1,38 +1,38 @@
 {
-    "$schema": "https://schemas.wp.org/trunk/block.json",
-    "apiVersion": 3,
-    "name": "vas-dinamico/form-block",
-    "version": "1.0.0",
-    "title": "Formulario EIPSI",
-    "category": "eipsi-forms",
-    "icon": "feedback",
-    "description": "Inserta un formulario de la librería EIPSI.",
-    "keywords": [ "form", "formulario", "eipsi", "template", "plantilla" ],
-    "textdomain": "vas-dinamico-forms",
-    "editorScript": "file:../../build/index.js",
-    "editorStyle": "file:../../build/index.css",
-    "style": "file:../../build/style-index.css",
-    "supports": {
-        "html": false,
-        "align": true,
-        "spacing": {
-            "margin": true,
-            "padding": true
-        }
-    },
-    "attributes": {
-        "templateId": {
-            "type": "number",
-            "default": 0
-        },
-        "className": {
-            "type": "string",
-            "default": ""
-        }
-    },
-    "example": {
-        "attributes": {
-            "templateId": 0
-        }
-    }
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "vas-dinamico/form-block",
+	"version": "1.0.0",
+	"title": "Formulario EIPSI",
+	"category": "eipsi-forms",
+	"icon": "feedback",
+	"description": "Inserta un formulario de la librería EIPSI.",
+	"keywords": [ "form", "formulario", "eipsi", "template", "plantilla" ],
+	"textdomain": "vas-dinamico-forms",
+	"editorScript": "file:../../build/index.js",
+	"editorStyle": "file:../../build/index.css",
+	"style": "file:../../build/style-index.css",
+	"supports": {
+		"html": false,
+		"align": true,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"templateId": {
+			"type": "number",
+			"default": 0
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"example": {
+		"attributes": {
+			"templateId": 0
+		}
+	}
 }

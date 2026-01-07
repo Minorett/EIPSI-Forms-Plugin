@@ -5,6 +5,7 @@ module.exports = {
 			// Test files - allow console and relax JSDoc requirements
 			files: [
 				'test-*.js',
+				'scripts/test-*.js',
 				'*-validation.js',
 				'*-audit.js',
 				'*.test.js',
