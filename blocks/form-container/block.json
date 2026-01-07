@@ -50,6 +50,12 @@
             "type": "boolean",
             "default": true
         },
+
+        "studyStatus": {
+            "type": "string",
+            "default": "open",
+            "enum": [ "open", "closed" ]
+        },
         
         "useCustomCompletion": {
             "type": "boolean",

@@ -1,4 +1,5 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
+import { __ } from '@wordpress/i18n';
 import {
 	migrateToStyleConfig,
 	serializeToCSSVariables,
@@ -14,6 +15,7 @@ export default function Save( { attributes } ) {
 		presetName,
 		allowBackwardsNav,
 		showProgressBar,
+		studyStatus,
 		useCustomCompletion,
 		completionTitle,
 		completionMessage,
@@ -26,6 +28,8 @@ export default function Save( { attributes } ) {
 
 	const showProgressBarEnabled =
 		typeof showProgressBar === 'boolean' ? showProgressBar : true;
+
+	const normalizedStudyStatus = studyStatus === 'closed' ? 'closed' : 'open';
 
 	const customCompletionEnabled =
 		typeof useCustomCompletion === 'boolean' ? useCustomCompletion : false;
@@ -52,6 +56,7 @@ export default function Save( { attributes } ) {
 		className: 'vas-dinamico-form eipsi-form ' + ( className || '' ),
 		style: cssVars,
 		'data-preset': presetName || 'Clinical Blue',
+		'data-study-status': normalizedStudyStatus,
 		...completionAttributes,
 	} );
 
@@ -61,6 +66,15 @@ export default function Save( { attributes } ) {
 
 	return (
 		<div { ...blockProps }>
+			{ normalizedStudyStatus === 'closed' && (
+				<div className="eipsi-study-closed-notice" role="alert">
+					{ __(
+						'Este estudio está cerrado y no acepta más respuestas. Contacta al investigador si tienes dudas.',
+						'vas-dinamico-forms'
+					) }
+				</div>
+			) }
+
 			{ /* HEADER SIMPLIFICADO - DARK MODE AUTOMÁTICO */ }
 			{ description && (
 				<header className="eipsi-header">

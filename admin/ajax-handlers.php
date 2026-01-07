@@ -52,6 +52,44 @@ function get_form_initials($form_name) {
     return !empty($initials) ? $initials : 'UNK'; // Fallback
 }
 
+/**
+ * Study status resolver (ethics guard)
+ * Finds template by _eipsi_form_name (formId slug) and returns open|closed.
+ *
+ * @param string $form_name
+ * @return string
+ */
+function eipsi_get_study_status_for_form_name($form_name) {
+    $form_name = sanitize_text_field($form_name);
+
+    if (empty($form_name)) {
+        return 'open';
+    }
+
+    $templates = get_posts(array(
+        'post_type' => 'eipsi_form_template',
+        'post_status' => 'publish',
+        'posts_per_page' => 1,
+        'fields' => 'ids',
+        'meta_query' => array(
+            array(
+                'key' => '_eipsi_form_name',
+                'value' => $form_name,
+                'compare' => '=',
+            )
+        ),
+    ));
+
+    if (empty($templates)) {
+        return 'open';
+    }
+
+    $template_id = (int) $templates[0];
+    $status = get_post_meta($template_id, '_eipsi_study_status', true);
+
+    return ($status === 'closed') ? 'closed' : 'open';
+}
+
 function generateStableFingerprint($user_data) {
     $components = array(
         'email' => strtolower(trim($user_data['email'] ?? '')),
@@ -296,6 +334,13 @@ function vas_dinamico_submit_form_handler() {
     global $wpdb;
     
     $form_name = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : 'default';
+
+    // Ética clínica: si el estudio está cerrado, no aceptamos nuevos envíos
+    if (eipsi_get_study_status_for_form_name($form_name) === 'closed') {
+        wp_send_json_error(array(
+            'message' => __('Este estudio está cerrado y no acepta más respuestas. Contacta al investigador si tienes dudas.', 'vas-dinamico-forms')
+        ), 403);
+    }
     
     $device = isset($_POST['device']) ? sanitize_text_field($_POST['device']) : '';
     

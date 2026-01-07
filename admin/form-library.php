@@ -83,6 +83,7 @@ function eipsi_form_library_columns($columns) {
     $new_columns = array(
         'cb'                => $columns['cb'],
         'title'             => __('Form Name', 'vas-dinamico-forms'),
+        'study_status'      => __('Estado', 'vas-dinamico-forms'),
         'shortcode'         => __('Shortcode', 'vas-dinamico-forms'),
         'last_response'     => __('Last Response', 'vas-dinamico-forms'),
         'total_responses'   => __('Total Responses', 'vas-dinamico-forms'),
@@ -124,6 +125,21 @@ function eipsi_column_exists_in_table($table_name, $column_name) {
  */
 function eipsi_form_library_column_content($column, $post_id) {
     switch ($column) {
+        case 'study_status':
+            $status = get_post_meta($post_id, '_eipsi_study_status', true);
+            $status = ($status === 'closed') ? 'closed' : 'open';
+
+            $label = ($status === 'closed')
+                ? __('🔴 Cerrado', 'vas-dinamico-forms')
+                : __('🟢 Abierto', 'vas-dinamico-forms');
+
+            printf(
+                '<span class="eipsi-study-status-badge eipsi-study-status-%1$s">%2$s</span>',
+                esc_attr($status),
+                esc_html($label)
+            );
+            break;
+
         case 'shortcode':
             $shortcode = '[eipsi_form id="' . $post_id . '"]';
             echo '<code class="eipsi-shortcode-display">' . esc_html($shortcode) . '</code>';
@@ -247,6 +263,34 @@ function eipsi_form_library_admin_styles() {
         
         .eipsi-copy-shortcode .dashicons {
             font-size: 16px;
+        }
+
+        .eipsi-study-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.2;
+            border: 1px solid transparent;
+        }
+
+        .eipsi-study-status-open {
+            background: rgba(0, 163, 42, 0.12);
+            color: #0f5132;
+            border-color: rgba(0, 163, 42, 0.25);
+        }
+
+        .eipsi-study-status-closed {
+            background: rgba(220, 38, 38, 0.10);
+            color: #842029;
+            border-color: rgba(220, 38, 38, 0.25);
+        }
+
+        .column-study_status {
+            width: 120px;
         }
         
         .column-shortcode {
@@ -391,19 +435,33 @@ function eipsi_extract_form_name_on_save($post_id, $post, $update) {
     // Parse blocks to find form-container
     $blocks = parse_blocks($post->post_content);
     $form_name = '';
+    $study_status = 'open';
+    $has_container = false;
     
     foreach ($blocks as $block) {
         if ($block['blockName'] === 'vas-dinamico/form-container') {
+            $has_container = true;
             $form_name = isset($block['attrs']['formId']) ? $block['attrs']['formId'] : '';
+            $study_status = isset($block['attrs']['studyStatus']) ? $block['attrs']['studyStatus'] : 'open';
             break;
         }
     }
+
+    // Normalize status (safety)
+    $study_status = ($study_status === 'closed') ? 'closed' : 'open';
     
     // Save form_name as post meta for easy querying
     if ($form_name) {
         update_post_meta($post_id, '_eipsi_form_name', sanitize_text_field($form_name));
     } else {
         delete_post_meta($post_id, '_eipsi_form_name');
+    }
+
+    // Persist study status for admin + ethical guard
+    if ($has_container) {
+        update_post_meta($post_id, '_eipsi_study_status', $study_status);
+    } else {
+        delete_post_meta($post_id, '_eipsi_study_status');
     }
 }
 add_action('save_post', 'eipsi_extract_form_name_on_save', 10, 3);
