@@ -324,8 +324,19 @@ function vas_dinamico_submit_form_handler() {
     $frontend_participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
     $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
     
+    // Capturar metadata del frontend incluyendo page_transitions
+    $frontend_metadata = isset($_POST['metadata']) ? wp_unslash($_POST['metadata']) : '';
+    $metadata_array = null;
+    
+    if (!empty($frontend_metadata)) {
+        $metadata_decoded = json_decode($frontend_metadata, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $metadata_array = $metadata_decoded;
+        }
+    }
+    
     $form_responses = array();
-    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action', 'participant_id', 'session_id');
+    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action', 'participant_id', 'session_id', 'metadata');
     
     $user_data = array(
         'email' => '',
@@ -385,11 +396,28 @@ function vas_dinamico_submit_form_handler() {
     $ip_address = ($privacy_config['ip_address'] ?? true) ? $ip_address_raw : null;
     
     // Construir metadatos según configuración de privacidad
-    $metadata = array(
-        'form_id' => $stable_form_id,
-        'participant_id' => $participant_id,
-        'session_id' => $session_id
-    );
+    // Primero, si tenemos metadata del frontend, lo usamos como base
+    $metadata = array();
+    
+    // Si tenemos metadata del frontend (incluyendo page_transitions), lo preservamos
+    if ($metadata_array && is_array($metadata_array)) {
+        // Mantener los datos del frontend (page_transitions, form_start_time, device_type, etc.)
+        $metadata = $metadata_array;
+    } else {
+        // Fallback a la estructura original si no hay metadata del frontend
+        $metadata = array();
+    }
+    
+    // Asegurar que siempre tengamos los campos base
+    if (!isset($metadata['form_id'])) {
+        $metadata['form_id'] = $stable_form_id;
+    }
+    if (!isset($metadata['participant_id'])) {
+        $metadata['participant_id'] = $participant_id;
+    }
+    if (!isset($metadata['session_id'])) {
+        $metadata['session_id'] = $session_id;
+    }
     
     // TIMESTAMPS (SIEMPRE)
     $metadata['timestamps'] = array(
