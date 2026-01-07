@@ -830,22 +830,175 @@ function eipsi_ajax_get_response_details() {
     $html .= '<p><strong>⚡ Velocidad respuesta:</strong> ' . vas_get_response_speed($response->duration, $response->form_name) . '</p>';
     
     $html .= '</div>';
-    
-    // =============================================================================
-    // METADATOS TÉCNICOS (SIEMPRE VISIBLES)
-    // =============================================================================
-    $html .= '<div style="margin-bottom: 20px;">';
-    $html .= '<h4>📊 Metadatos Técnicos</h4>';
-    
-    // SOLO CAMBIA ESTA LÍNEA:
-    $timezone = get_option('timezone_string') ?: 'UTC';
-    $timezone_offset = get_option('gmt_offset');
-    if ($timezone_offset && empty($timezone)) {
-        $timezone_display = 'UTC' . ($timezone_offset > 0 ? '+' : '') . $timezone_offset;
-    } else {
-        $timezone_display = $timezone;
-    }
-    $html .= '<p><strong>📅 Fecha y hora:</strong> ' . esc_html($response->created_at) . ' <em style="color: #666; font-size: 0.9em;">(' . esc_html($timezone_display) . ')</em></p>';
+
+        // =============================================================================
+        // ANÁLISIS DE TIEMPOS POR PÁGINA
+        // =============================================================================
+        $html .= '<div style="margin-bottom: 20px;">';
+        $html .= '<button type="button" id="toggle-timing-analysis" class="button" style="background: #135e96; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">';
+        $html .= '⏱️ Mostrar Análisis de Tiempos';
+        $html .= '</button>';
+        $html .= '</div>';
+
+        $html .= '<div id="timing-analysis-section" style="display: none; margin: 15px 0; padding: 15px; background: #f0f8ff; border-radius: 5px; border-left: 4px solid #135e96;">';
+
+        // Parse metadata para obtener timing data
+        $timing_metadata = null;
+        if (!empty($response->metadata)) {
+            $metadata_obj = json_decode($response->metadata, true);
+            if (isset($metadata_obj['page_timings'])) {
+                $timing_metadata = $metadata_obj['page_timings'];
+            }
+        }
+
+        if ($timing_metadata) {
+            // PAGE TIMINGS
+            $html .= '<h4>⏱️ Tiempos por Página</h4>';
+
+            if (isset($timing_metadata['total_duration'])) {
+                $total_seconds = $timing_metadata['total_duration'];
+                $minutes = floor($total_seconds / 60);
+                $seconds = round($total_seconds % 60);
+
+                if ($minutes > 0) {
+                    $html .= '<p><strong>⏰ Tiempo total:</strong> ' . sprintf('%d min %d sec', $minutes, $seconds) . '</p>';
+                } else {
+                    $html .= '<p><strong>⏰ Tiempo total:</strong> ' . sprintf('%d sec', $seconds) . '</p>';
+                }
+
+                // Response quality flag
+                if (isset($metadata_obj['response_quality_flag']) && $metadata_obj['response_quality_flag'] === 'too_fast') {
+                    $html .= '<p style="color: #dc2626; font-weight: bold; background: #fff3cd; padding: 8px; border-radius: 4px;">⚠️ Esta respuesta parece demasiado rápida (' . number_format($total_seconds, 1) . ' segundos). Posible bot o respuesta desatenta.</p>';
+                }
+            }
+
+            // Page breakdown
+            $html .= '<div style="margin-top: 15px; max-height: 200px; overflow-y: auto;">';
+            $html .= '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
+            $html .= '<thead><tr style="background: #e9ecef;">';
+            $html .= '<th style="padding: 8px; text-align: left; border-bottom: 2px solid #dee2e6;">Página</th>';
+            $html .= '<th style="padding: 8px; text-align: right; border-bottom: 2px solid #dee2e6;">Duración</th>';
+            $html .= '<th style="padding: 8px; text-align: left; border-bottom: 2px solid #dee2e6;">Timestamp</th>';
+            $html .= '</tr></thead>';
+            $html .= '<tbody>';
+
+            $page_number = 0;
+            foreach ($timing_metadata as $key => $page_data) {
+                if ($key === 'total_duration') continue;
+
+                $page_number++;
+                $duration = isset($page_data['duration']) ? floatval($page_data['duration']) : 0;
+                $timestamp = isset($page_data['timestamp']) ? $page_data['timestamp'] : '';
+
+                // Format timestamp
+                $formatted_time = '';
+                if (!empty($timestamp)) {
+                    try {
+                        $dt = new DateTime($timestamp);
+                        $formatted_time = $dt->format('H:i:s');
+                    } catch (Exception $e) {
+                        $formatted_time = '';
+                    }
+                }
+
+                // Create simple bar visualization
+                $max_duration = 60; // Assume 60 seconds as max for visualization
+                $bar_width = min(100, ($duration / $max_duration) * 100);
+                $bar_color = $duration < 10 ? '#dc2626' : ($duration < 30 ? '#f59e0b' : '#10b981');
+
+                $html .= '<tr>';
+                $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef;"><strong>Página ' . $page_number . '</strong></td>';
+                $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: right;">' . number_format($duration, 1) . ' s</td>';
+                $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef;">' . esc_html($formatted_time) . '</td>';
+                $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef; width: 100px;">';
+                $html .= '<div style="width: 100px; height: 16px; background: #e9ecef; border-radius: 2px; overflow: hidden;">';
+                $html .= '<div style="width: ' . $bar_width . '%; height: 100%; background: ' . $bar_color . ';"></div>';
+                $html .= '</div></td>';
+                $html .= '</tr>';
+            }
+
+            $html .= '</tbody></table>';
+            $html .= '</div>';
+
+            // FIELD TIMINGS (si están disponibles)
+            if (isset($metadata_obj['field_timings']) && !empty($metadata_obj['field_timings'])) {
+                $html .= '<div style="margin-top: 20px; max-height: 250px; overflow-y: auto;">';
+                $html .= '<h4>🎯 Tiempos por Campo</h4>';
+                $html .= '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
+                $html .= '<thead><tr style="background: #e9ecef;">';
+                $html .= '<th style="padding: 8px; text-align: left; border-bottom: 2px solid #dee2e6;">Campo</th>';
+                $html .= '<th style="padding: 8px; text-align: right; border-bottom: 2px solid #dee2e6;">Tiempo (s)</th>';
+                $html .= '<th style="padding: 8px; text-align: center; border-bottom: 2px solid #dee2e6;">Interacciones</th>';
+                $html .= '<th style="padding: 8px; text-align: center; border-bottom: 2px solid #dee2e6;">Foco</th>';
+                $html .= '</tr></thead>';
+                $html .= '<tbody>';
+
+                $field_count = 0;
+                foreach ($metadata_obj['field_timings'] as $field_name => $field_data) {
+                    $field_count++;
+                    $time_focused = isset($field_data['time_focused']) ? floatval($field_data['time_focused']) : 0;
+                    $interactions = isset($field_data['interaction_count']) ? intval($field_data['interaction_count']) : 0;
+                    $focus_count = isset($field_data['focus_count']) ? intval($field_data['focus_count']) : 0;
+
+                    $row_color = $field_count % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                    $html .= '<tr style="background: ' . $row_color . ';">';
+                    $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef;"><code>' . esc_html($field_name) . '</code></td>';
+                    $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: right;">' . number_format($time_focused, 1) . '</td>';
+                    $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: center;">' . $interactions . '</td>';
+                    $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: center;">' . $focus_count . '</td>';
+                    $html .= '</tr>';
+                }
+
+                $html .= '</tbody></table>';
+                $html .= '</div>';
+            }
+
+            // ACTIVITY METRICS (si están disponibles)
+            if (isset($metadata_obj['activity_metrics'])) {
+                $activity = $metadata_obj['activity_metrics'];
+                $active_time = isset($activity['active_time']) ? floatval($activity['active_time']) : 0;
+                $inactive_time = isset($activity['inactive_time']) ? floatval($activity['inactive_time']) : 0;
+                $activity_ratio = isset($activity['activity_ratio']) ? floatval($activity['activity_ratio']) : 0;
+
+                $html .= '<div style="margin-top: 20px;">';
+                $html .= '<h4>💤 Métricas de Actividad</h4>';
+
+                $minutes_active = floor($active_time / 60);
+                $seconds_active = round($active_time % 60);
+                $minutes_inactive = floor($inactive_time / 60);
+                $seconds_inactive = round($inactive_time % 60);
+
+                $html .= '<p><strong>⏱️ Tiempo activo:</strong> ' . sprintf('%d min %d sec', $minutes_active, $seconds_active) . '</p>';
+                $html .= '<p><strong>💤 Tiempo inactivo:</strong> ' . sprintf('%d min %d sec', $minutes_inactive, $seconds_inactive) . '</p>';
+                $html .= '<p><strong>📊 Ratio de actividad:</strong> ' . number_format($activity_ratio * 100, 1) . '%</p>';
+
+                // Activity bar visualization
+                $html .= '<div style="margin-top: 10px; width: 100%; height: 24px; background: #e9ecef; border-radius: 4px; overflow: hidden;">';
+                $html .= '<div style="width: ' . ($activity_ratio * 100) . '%; height: 100%; background: #10b981;"></div>';
+                $html .= '</div>';
+                $html .= '</div>';
+            }
+        } else {
+            $html .= '<p><em style="color: #666;">No hay datos de tiempos disponibles para esta respuesta.</em></p>';
+        }
+
+        $html .= '</div>';
+
+        // =============================================================================
+        // METADATOS TÉCNICOS (SIEMPRE VISIBLES)
+        // =============================================================================
+        $html .= '<div style="margin-bottom: 20px;">';
+        $html .= '<h4>📊 Metadatos Técnicos</h4>';
+
+        // SOLO CAMBIA ESTA LÍNEA:
+        $timezone = get_option('timezone_string') ?: 'UTC';
+        $timezone_offset = get_option('gmt_offset');
+        if ($timezone_offset && empty($timezone)) {
+            $timezone_display = 'UTC' . ($timezone_offset > 0 ? '+' : '') . $timezone_offset;
+        } else {
+            $timezone_display = $timezone;
+        }
+        $html .= '<p><strong>📅 Fecha y hora:</strong> ' . esc_html($response->created_at) . ' <em style="color: #666; font-size: 0.9em;">(' . esc_html($timezone_display) . ')</em></p>';
     
     // Display timestamps if available
     if (!empty($response->start_timestamp_ms) || !empty($response->end_timestamp_ms)) {

@@ -1,10 +1,24 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 
 export default function Save( { attributes } ) {
-	const { formId, submitButtonLabel, description, className } = attributes;
+	const {
+		formId,
+		submitButtonLabel,
+		description,
+		className,
+		// Timing settings
+		capturePageTiming,
+		captureFieldTiming,
+		captureInactivityTime,
+	} = attributes;
 
 	const blockProps = useBlockProps.save( {
 		className: 'vas-dinamico-form eipsi-form ' + ( className || '' ),
+		'data-capture-page-timing': capturePageTiming ? 'true' : 'false',
+		'data-capture-field-timing': captureFieldTiming ? 'true' : 'false',
+		'data-capture-inactivity-time': captureInactivityTime
+			? 'true'
+			: 'false',
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps.save( {

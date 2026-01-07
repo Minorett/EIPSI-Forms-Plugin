@@ -179,7 +179,7 @@ $colspan = $show_form_column ? 8 : 7;
                 <th style="width: 12%;"><?php _e('Participant ID', 'vas-dinamico-forms'); ?></th>
                 <th style="width: 12%;"><?php _e('Date', 'vas-dinamico-forms'); ?></th>
                 <th style="width: 10%;"><?php _e('Time', 'vas-dinamico-forms'); ?></th>
-                <th style="width: 10%;"><?php _e('Duration (s)', 'vas-dinamico-forms'); ?></th>
+                <th style="width: 10%;">⏱️ <?php _e('Total Time', 'vas-dinamico-forms'); ?></th>
                 <th style="width: 10%;"><?php _e('Device', 'vas-dinamico-forms'); ?></th>
                 <th style="width: 12%;"><?php _e('Browser', 'vas-dinamico-forms'); ?></th>
                 <th style="width: 14%;"><?php _e('Actions', 'vas-dinamico-forms'); ?></th>
@@ -206,16 +206,37 @@ $colspan = $show_form_column ? 8 : 7;
                         $offset_string = sprintf('%+03d:%02d', floor($gmt_offset), abs($gmt_offset * 60) % 60);
                         $date_obj->setTimezone(new DateTimeZone($offset_string));
                     }
-                    
+
                     $date_formatted = $date_obj->format('Y-m-d');
                     $time_formatted = $date_obj->format('H:i:s');
-                    
-                    // Use duration_seconds for precision, fall back to duration if not available
-                    $duration_display = !empty($row->duration_seconds) 
-                        ? number_format($row->duration_seconds, 3) 
-                        : number_format($row->duration, 0);
-                    
-                    // Ensure form_id and participant_id have fallbacks
+
+                    // Parse metadata to get page_timings.total_duration
+                    $total_time_display = !empty($row->duration_seconds)
+                        ? number_format($row->duration_seconds, 1) . ' s'
+                        : (number_format($row->duration, 0) . ' s');
+
+                        // Si hay metadata con page_timings, usar total_duration
+                        if (!empty($row->metadata)) {
+                        $metadata = json_decode($row->metadata, true);
+                        if (isset($metadata['page_timings']['total_duration'])) {
+                            $total_seconds = $metadata['page_timings']['total_duration'];
+                            $minutes = floor($total_seconds / 60);
+                            $seconds = round($total_seconds % 60);
+
+                            if ($minutes > 0) {
+                                $total_time_display = sprintf('%d min %d sec', $minutes, $seconds);
+                            } else {
+                                $total_time_display = sprintf('%d sec', $seconds);
+                            }
+
+                            // Check for response_quality_flag
+                            if (isset($metadata['response_quality_flag']) && $metadata['response_quality_flag'] === 'too_fast') {
+                                $total_time_display .= ' ⚠️';
+                            }
+                        }
+                        }
+
+                        // Ensure form_id and participant_id have fallbacks
                     $form_id_display = !empty($row->form_id) ? $row->form_id : 'N/A';
                     $participant_id_display = !empty($row->participant_id) ? $row->participant_id : 'N/A';
                 ?>
@@ -226,7 +247,7 @@ $colspan = $show_form_column ? 8 : 7;
                         <td><?php echo esc_html($participant_id_display); ?></td>
                         <td><?php echo esc_html($date_formatted); ?></td>
                         <td><?php echo esc_html($time_formatted); ?></td>
-                        <td><?php echo esc_html($duration_display); ?></td>
+                        <td><?php echo esc_html($total_time_display); ?></td>
                         <td><?php echo esc_html($row->device); ?></td>
                         <td><?php echo esc_html($row->browser); ?></td>
                         <td>
@@ -316,6 +337,19 @@ jQuery(document).ready(function($) {
                             section.slideDown('fast');
                             $(this).html('🖥️ <?php _e('Hide Device Fingerprint', 'vas-dinamico-forms'); ?>');
                             $(this).css('background', '#495057');
+                        }
+                    });
+
+                    $('#toggle-timing-analysis').on('click', function() {
+                        var section = $('#timing-analysis-section');
+                        if (section.is(':visible')) {
+                            section.slideUp('fast');
+                            $(this).html('⏱️ <?php _e('Show Timing Analysis', 'vas-dinamico-forms'); ?>');
+                            $(this).css('background', '#135e96');
+                        } else {
+                            section.slideDown('fast');
+                            $(this).html('⏱️ <?php _e('Hide Timing Analysis', 'vas-dinamico-forms'); ?>');
+                            $(this).css('background', '#2271b1');
                         }
                     });
                     
