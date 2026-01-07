@@ -51,14 +51,14 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 
 			// Extract pages and their fields
 			const pages = container.innerBlocks.filter(
-				( block ) => block.name === 'vas-dinamico/form-page'
+				( block ) => block.name === 'eipsi/form-page'
 			);
 
 			const pagesData = pages.map( ( page, pageIndex ) => {
 				const pageNumber = pageIndex + 1;
 				const pageTitle =
 					page.attributes.title ||
-					`${ __( 'Página', 'vas-dinamico-forms' ) } ${ pageNumber }`;
+					`${ __( 'Página', 'eipsi-forms' ) } ${ pageNumber }`;
 
 				// Find all fields with conditional logic in this page
 				const fieldsWithLogic = [];
@@ -85,7 +85,7 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 										attributes.fieldName ||
 										__(
 											'Campo sin nombre',
-											'vas-dinamico-forms'
+											'eipsi-forms'
 										),
 									logic,
 									clientId: block.clientId,
@@ -136,7 +136,7 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 				const fieldName =
 					cond.fieldLabel ||
 					cond.fieldId ||
-					__( 'Campo', 'vas-dinamico-forms' );
+					__( 'Campo', 'eipsi-forms' );
 
 				// Condición numérica (VAS, Likert)
 				if (
@@ -159,8 +159,8 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 					const operator = cond.logicalOperator || 'AND';
 					const operatorLabel =
 						operator === 'OR'
-							? __( 'O', 'vas-dinamico-forms' )
-							: __( 'Y', 'vas-dinamico-forms' );
+							? __( 'O', 'eipsi-forms' )
+							: __( 'Y', 'eipsi-forms' );
 					parts.push( ` ${ operatorLabel } ` );
 				}
 
@@ -180,21 +180,21 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 			return `= "${ rule.matchValue }"`;
 		}
 
-		return __( 'Condición no definida', 'vas-dinamico-forms' );
+		return __( 'Condición no definida', 'eipsi-forms' );
 	};
 
 	const formatActionText = ( rule ) => {
 		switch ( rule.action ) {
 			case 'nextPage':
-				return __( 'Siguiente página', 'vas-dinamico-forms' );
+				return __( 'Siguiente página', 'eipsi-forms' );
 			case 'submit':
-				return __( 'Finalizar formulario', 'vas-dinamico-forms' );
+				return __( 'Finalizar formulario', 'eipsi-forms' );
 			case 'goToPage':
-				return `${ __( 'Ir a página', 'vas-dinamico-forms' ) } ${
+				return `${ __( 'Ir a página', 'eipsi-forms' ) } ${
 					rule.targetPage
 				}`;
 			default:
-				return __( 'Acción desconocida', 'vas-dinamico-forms' );
+				return __( 'Acción desconocida', 'eipsi-forms' );
 		}
 	};
 
@@ -214,20 +214,20 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 
 		if ( hasOr && hasAnd ) {
 			return {
-				label: __( 'AND/OR combinados', 'vas-dinamico-forms' ),
+				label: __( 'AND/OR combinados', 'eipsi-forms' ),
 				type: 'mixed',
 			};
 		}
 
 		if ( hasOr ) {
 			return {
-				label: __( 'O', 'vas-dinamico-forms' ),
+				label: __( 'O', 'eipsi-forms' ),
 				type: 'or',
 			};
 		}
 
 		return {
-			label: __( 'Y', 'vas-dinamico-forms' ),
+			label: __( 'Y', 'eipsi-forms' ),
 			type: 'and',
 		};
 	};
@@ -238,7 +238,7 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 
 	return (
 		<Modal
-			title={ __( 'Mapa de lógica condicional', 'vas-dinamico-forms' ) }
+			title={ __( 'Mapa de lógica condicional', 'eipsi-forms' ) }
 			onRequestClose={ onClose }
 			className="conditional-logic-map-modal"
 			style={ { maxWidth: '800px', width: '90vw' } }
@@ -249,7 +249,7 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 						<p>
 							{ __(
 								'No hay reglas de lógica condicional configuradas en este formulario.',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 						</p>
 					</div>
@@ -282,7 +282,7 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 															<strong>
 																{ __(
 																	'SI',
-																	'vas-dinamico-forms'
+																	'eipsi-forms'
 																) }
 															</strong>{ ' ' }
 															{ formatConditionText(
@@ -319,7 +319,7 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 													<strong>
 														{ __(
 															'Para otros valores',
-															'vas-dinamico-forms'
+															'eipsi-forms'
 														) }
 													</strong>
 												</span>{ ' ' }
@@ -345,7 +345,7 @@ const ConditionalLogicMap = ( { isOpen, onClose, containerClientId } ) => {
 			</div>
 			<div className="conditional-logic-map-footer">
 				<Button isPrimary onClick={ onClose }>
-					{ __( 'Cerrar', 'vas-dinamico-forms' ) }
+					{ __( 'Cerrar', 'eipsi-forms' ) }
 				</Button>
 			</div>
 		</Modal>

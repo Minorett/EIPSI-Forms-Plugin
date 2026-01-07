@@ -53,14 +53,14 @@ const Edit = ( { attributes, setAttributes } ) => {
 			{
 				label: __(
 					'— Seleccioná un formulario —',
-					'vas-dinamico-forms'
+					'eipsi-forms'
 				),
 				value: '',
 			},
 			...formTemplates.map( ( template ) => ( {
 				label:
 					decodeEntities( template.title.rendered ) ||
-					__( '(Sin título)', 'vas-dinamico-forms' ),
+					__( '(Sin título)', 'eipsi-forms' ),
 				value: String( template.id ),
 			} ) ),
 		],
@@ -73,7 +73,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 				<PanelBody
 					title={ __(
 						'Configuración del formulario',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 					initialOpen={ true }
 				>
@@ -83,7 +83,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 							<p style={ { marginTop: '10px', color: '#666' } }>
 								{ __(
 									'Cargando formularios…',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</p>
 						</div>
@@ -105,7 +105,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 							>
 								{ __(
 									'No hay formularios creados aún.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</p>
 							<p
@@ -120,7 +120,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 								>
 									{ __(
 										'+ Crear tu primer formulario',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									) }
 								</a>
 							</p>
@@ -130,7 +130,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 						<SelectControl
 							label={ __(
 								'Formulario a mostrar',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 							value={ templateId ? String( templateId ) : '' }
 							options={ formOptions }
@@ -143,7 +143,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 							}
 							help={ __(
 								'Elegí un formulario de la librería para mostrarlo en esta página.',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 						/>
 					) }
@@ -152,19 +152,19 @@ const Edit = ( { attributes, setAttributes } ) => {
 
 			{ templateId ? (
 				<ServerSideRender
-					block="vas-dinamico/form-block"
+					block="eipsi/form-block"
 					attributes={ attributes }
 				/>
 			) : (
-				<div className="vas-dinamico-form-placeholder">
+				<div className="eipsi-form-placeholder">
 					<div className="components-placeholder">
 						<div className="components-placeholder__label">
-							{ __( 'Formulario EIPSI', 'vas-dinamico-forms' ) }
+							{ __( 'Formulario EIPSI', 'eipsi-forms' ) }
 						</div>
 						<div className="components-placeholder__instructions">
 							{ __(
 								'Seleccioná un formulario de la librería en la configuración del bloque →',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 						</div>
 					</div>
@@ -174,7 +174,7 @@ const Edit = ( { attributes, setAttributes } ) => {
 	);
 };
 
-registerBlockType( 'vas-dinamico/form-block', {
+registerBlockType( 'eipsi/form-block', {
 	edit: Edit,
 	save: () => {
 		return null;

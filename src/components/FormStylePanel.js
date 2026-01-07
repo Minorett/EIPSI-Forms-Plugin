@@ -65,7 +65,7 @@ const FormStylePanel = ( {
 			window.confirm(
 				__(
 					'Reset all customizations to default clinical theme?',
-					'vas-dinamico-forms'
+					'eipsi-forms'
 				)
 			)
 		) {
@@ -158,13 +158,13 @@ const FormStylePanel = ( {
 		<>
 			{ /* PRESETS PANEL */ }
 			<PanelBody
-				title={ __( '🎨 Theme Presets', 'vas-dinamico-forms' ) }
+				title={ __( '🎨 Theme Presets', 'eipsi-forms' ) }
 				initialOpen={ true }
 			>
 				<p className="eipsi-panel-description">
 					{ __(
 						'Apply professionally designed themes optimized for clinical research.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				</p>
 
@@ -231,32 +231,32 @@ const FormStylePanel = ( {
 					onClick={ resetToDefaults }
 					style={ { marginTop: '1rem', width: '100%' } }
 				>
-					{ __( 'Reset to Default', 'vas-dinamico-forms' ) }
+					{ __( 'Reset to Default', 'eipsi-forms' ) }
 				</Button>
 			</PanelBody>
 
 			{ /* COLORS PANEL */ }
 			<PanelBody
-				title={ __( '🎨 Colors', 'vas-dinamico-forms' ) }
+				title={ __( '🎨 Colors', 'eipsi-forms' ) }
 				initialOpen={ false }
 			>
 				<p className="eipsi-panel-description">
 					{ __(
 						'Customize form colors. Maintain 4.5:1 contrast ratio for accessibility.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				</p>
 
 				{ /* Brand Colors */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Brand Colors', 'vas-dinamico-forms' ) }
+					{ __( 'Brand Colors', 'eipsi-forms' ) }
 				</h4>
 
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Primary', 'vas-dinamico-forms' ) }
+								{ __( 'Primary', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -279,7 +279,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Primary Hover', 'vas-dinamico-forms' ) }
+								{ __( 'Primary Hover', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -302,7 +302,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Secondary', 'vas-dinamico-forms' ) }
+								{ __( 'Secondary', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -323,14 +323,14 @@ const FormStylePanel = ( {
 
 				{ /* Background & Text */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Background & Text', 'vas-dinamico-forms' ) }
+					{ __( 'Background & Text', 'eipsi-forms' ) }
 				</h4>
 
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Background', 'vas-dinamico-forms' ) }
+								{ __( 'Background', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -353,7 +353,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Text', 'vas-dinamico-forms' ) }
+								{ __( 'Text', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -373,7 +373,7 @@ const FormStylePanel = ( {
 				{ ! textBgRating.passes && (
 					<Notice status="warning" isDismissible={ false }>
 						<strong>
-							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
+							{ __( 'Contrast Warning:', 'eipsi-forms' ) }
 						</strong>{ ' ' }
 						{ textBgRating.message }
 					</Notice>
@@ -383,7 +383,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Text Muted', 'vas-dinamico-forms' ) }
+								{ __( 'Text Muted', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -405,11 +405,11 @@ const FormStylePanel = ( {
 				{ ! textMutedSubtleRating.passes && (
 					<Notice status="warning" isDismissible={ false }>
 						<strong>
-							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
+							{ __( 'Contrast Warning:', 'eipsi-forms' ) }
 						</strong>{ ' ' }
 						{ __(
 							'Text Muted on Background Subtle:',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						{ textMutedSubtleRating.message }
 					</Notice>
@@ -417,7 +417,7 @@ const FormStylePanel = ( {
 
 				{ /* Input Colors */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Input Fields', 'vas-dinamico-forms' ) }
+					{ __( 'Input Fields', 'eipsi-forms' ) }
 				</h4>
 
 				<div className="eipsi-color-control">
@@ -426,7 +426,7 @@ const FormStylePanel = ( {
 							<label>
 								{ __(
 									'Input Background',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</label>
 						</FlexItem>
@@ -450,7 +450,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Input Text', 'vas-dinamico-forms' ) }
+								{ __( 'Input Text', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -472,7 +472,7 @@ const FormStylePanel = ( {
 				{ ! inputRating.passes && (
 					<Notice status="warning" isDismissible={ false }>
 						<strong>
-							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
+							{ __( 'Contrast Warning:', 'eipsi-forms' ) }
 						</strong>{ ' ' }
 						{ inputRating.message }
 					</Notice>
@@ -482,7 +482,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Input Border', 'vas-dinamico-forms' ) }
+								{ __( 'Input Border', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -507,7 +507,7 @@ const FormStylePanel = ( {
 							<label>
 								{ __(
 									'Input Border (Focus)',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</label>
 						</FlexItem>
@@ -529,7 +529,7 @@ const FormStylePanel = ( {
 
 				{ /* Button Colors */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Buttons', 'vas-dinamico-forms' ) }
+					{ __( 'Buttons', 'eipsi-forms' ) }
 				</h4>
 
 				<div className="eipsi-color-control">
@@ -538,7 +538,7 @@ const FormStylePanel = ( {
 							<label>
 								{ __(
 									'Button Background',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</label>
 						</FlexItem>
@@ -562,7 +562,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Button Text', 'vas-dinamico-forms' ) }
+								{ __( 'Button Text', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -584,7 +584,7 @@ const FormStylePanel = ( {
 				{ ! buttonRating.passes && (
 					<Notice status="warning" isDismissible={ false }>
 						<strong>
-							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
+							{ __( 'Contrast Warning:', 'eipsi-forms' ) }
 						</strong>{ ' ' }
 						{ buttonRating.message }
 					</Notice>
@@ -594,7 +594,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Button Hover', 'vas-dinamico-forms' ) }
+								{ __( 'Button Hover', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -616,11 +616,11 @@ const FormStylePanel = ( {
 				{ ! buttonHoverRating.passes && (
 					<Notice status="warning" isDismissible={ false }>
 						<strong>
-							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
+							{ __( 'Contrast Warning:', 'eipsi-forms' ) }
 						</strong>{ ' ' }
 						{ __(
 							'Button Text on Hover Background:',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						{ buttonHoverRating.message }
 					</Notice>
@@ -628,14 +628,14 @@ const FormStylePanel = ( {
 
 				{ /* Semantic Colors */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Status & Feedback', 'vas-dinamico-forms' ) }
+					{ __( 'Status & Feedback', 'eipsi-forms' ) }
 				</h4>
 
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Error', 'vas-dinamico-forms' ) }
+								{ __( 'Error', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -657,11 +657,11 @@ const FormStylePanel = ( {
 				{ ! errorBgRating.passes && (
 					<Notice status="warning" isDismissible={ false }>
 						<strong>
-							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
+							{ __( 'Contrast Warning:', 'eipsi-forms' ) }
 						</strong>{ ' ' }
 						{ __(
 							'Error messages must be readable.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						{ errorBgRating.message }
 					</Notice>
@@ -671,7 +671,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Success', 'vas-dinamico-forms' ) }
+								{ __( 'Success', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -693,11 +693,11 @@ const FormStylePanel = ( {
 				{ ! successBgRating.passes && (
 					<Notice status="warning" isDismissible={ false }>
 						<strong>
-							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
+							{ __( 'Contrast Warning:', 'eipsi-forms' ) }
 						</strong>{ ' ' }
 						{ __(
 							'Success messages must be readable.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						{ successBgRating.message }
 					</Notice>
@@ -707,7 +707,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Warning', 'vas-dinamico-forms' ) }
+								{ __( 'Warning', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -729,11 +729,11 @@ const FormStylePanel = ( {
 				{ ! warningBgRating.passes && (
 					<Notice status="warning" isDismissible={ false }>
 						<strong>
-							{ __( 'Contrast Warning:', 'vas-dinamico-forms' ) }
+							{ __( 'Contrast Warning:', 'eipsi-forms' ) }
 						</strong>{ ' ' }
 						{ __(
 							'Warning messages must be readable.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						{ warningBgRating.message }
 					</Notice>
@@ -741,14 +741,14 @@ const FormStylePanel = ( {
 
 				{ /* Border Colors */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Borders', 'vas-dinamico-forms' ) }
+					{ __( 'Borders', 'eipsi-forms' ) }
 				</h4>
 
 				<div className="eipsi-color-control">
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Border', 'vas-dinamico-forms' ) }
+								{ __( 'Border', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -771,7 +771,7 @@ const FormStylePanel = ( {
 					<Flex align="flex-start" justify="space-between">
 						<FlexItem>
 							<label>
-								{ __( 'Border Dark', 'vas-dinamico-forms' ) }
+								{ __( 'Border Dark', 'eipsi-forms' ) }
 							</label>
 						</FlexItem>
 						<FlexItem>
@@ -793,23 +793,23 @@ const FormStylePanel = ( {
 
 			{ /* TYPOGRAPHY PANEL */ }
 			<PanelBody
-				title={ __( '✍️ Typography', 'vas-dinamico-forms' ) }
+				title={ __( '✍️ Typography', 'eipsi-forms' ) }
 				initialOpen={ false }
 			>
 				<p className="eipsi-panel-description">
 					{ __(
 						'Configure font families and sizes for optimal readability.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				</p>
 
 				{ /* Font Families */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Font Families', 'vas-dinamico-forms' ) }
+					{ __( 'Font Families', 'eipsi-forms' ) }
 				</h4>
 
 				<SelectControl
-					label={ __( 'Heading Font', 'vas-dinamico-forms' ) }
+					label={ __( 'Heading Font', 'eipsi-forms' ) }
 					value={ config.typography.fontFamilyHeading }
 					options={ fontFamilyOptions }
 					onChange={ ( value ) =>
@@ -818,7 +818,7 @@ const FormStylePanel = ( {
 				/>
 
 				<SelectControl
-					label={ __( 'Body Font', 'vas-dinamico-forms' ) }
+					label={ __( 'Body Font', 'eipsi-forms' ) }
 					value={ config.typography.fontFamilyBody }
 					options={ fontFamilyOptions }
 					onChange={ ( value ) =>
@@ -828,23 +828,23 @@ const FormStylePanel = ( {
 
 				{ /* Font Sizes */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Font Sizes', 'vas-dinamico-forms' ) }
+					{ __( 'Font Sizes', 'eipsi-forms' ) }
 				</h4>
 
 				<TextControl
-					label={ __( 'Base Size', 'vas-dinamico-forms' ) }
+					label={ __( 'Base Size', 'eipsi-forms' ) }
 					value={ config.typography.fontSizeBase }
 					onChange={ ( value ) =>
 						updateConfig( 'typography', 'fontSizeBase', value )
 					}
 					help={ __(
 						'Recommended: 16px minimum for accessibility',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<TextControl
-					label={ __( 'Heading 1 Size', 'vas-dinamico-forms' ) }
+					label={ __( 'Heading 1 Size', 'eipsi-forms' ) }
 					value={ config.typography.fontSizeH1 }
 					onChange={ ( value ) =>
 						updateConfig( 'typography', 'fontSizeH1', value )
@@ -852,7 +852,7 @@ const FormStylePanel = ( {
 				/>
 
 				<TextControl
-					label={ __( 'Heading 2 Size', 'vas-dinamico-forms' ) }
+					label={ __( 'Heading 2 Size', 'eipsi-forms' ) }
 					value={ config.typography.fontSizeH2 }
 					onChange={ ( value ) =>
 						updateConfig( 'typography', 'fontSizeH2', value )
@@ -860,7 +860,7 @@ const FormStylePanel = ( {
 				/>
 
 				<TextControl
-					label={ __( 'Heading 3 Size', 'vas-dinamico-forms' ) }
+					label={ __( 'Heading 3 Size', 'eipsi-forms' ) }
 					value={ config.typography.fontSizeH3 }
 					onChange={ ( value ) =>
 						updateConfig( 'typography', 'fontSizeH3', value )
@@ -868,7 +868,7 @@ const FormStylePanel = ( {
 				/>
 
 				<TextControl
-					label={ __( 'Small Text Size', 'vas-dinamico-forms' ) }
+					label={ __( 'Small Text Size', 'eipsi-forms' ) }
 					value={ config.typography.fontSizeSmall }
 					onChange={ ( value ) =>
 						updateConfig( 'typography', 'fontSizeSmall', value )
@@ -877,11 +877,11 @@ const FormStylePanel = ( {
 
 				{ /* Font Weights */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Font Weights', 'vas-dinamico-forms' ) }
+					{ __( 'Font Weights', 'eipsi-forms' ) }
 				</h4>
 
 				<RangeControl
-					label={ __( 'Normal Weight', 'vas-dinamico-forms' ) }
+					label={ __( 'Normal Weight', 'eipsi-forms' ) }
 					value={ parseInt( config.typography.fontWeightNormal ) }
 					onChange={ ( value ) =>
 						updateConfig(
@@ -896,7 +896,7 @@ const FormStylePanel = ( {
 				/>
 
 				<RangeControl
-					label={ __( 'Medium Weight', 'vas-dinamico-forms' ) }
+					label={ __( 'Medium Weight', 'eipsi-forms' ) }
 					value={ parseInt( config.typography.fontWeightMedium ) }
 					onChange={ ( value ) =>
 						updateConfig(
@@ -911,7 +911,7 @@ const FormStylePanel = ( {
 				/>
 
 				<RangeControl
-					label={ __( 'Bold Weight', 'vas-dinamico-forms' ) }
+					label={ __( 'Bold Weight', 'eipsi-forms' ) }
 					value={ parseInt( config.typography.fontWeightBold ) }
 					onChange={ ( value ) =>
 						updateConfig(
@@ -927,23 +927,23 @@ const FormStylePanel = ( {
 
 				{ /* Line Heights */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Line Heights', 'vas-dinamico-forms' ) }
+					{ __( 'Line Heights', 'eipsi-forms' ) }
 				</h4>
 
 				<TextControl
-					label={ __( 'Base Line Height', 'vas-dinamico-forms' ) }
+					label={ __( 'Base Line Height', 'eipsi-forms' ) }
 					value={ config.typography.lineHeightBase }
 					onChange={ ( value ) =>
 						updateConfig( 'typography', 'lineHeightBase', value )
 					}
 					help={ __(
 						'Recommended: 1.6–1.8 for comfortable reading',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<TextControl
-					label={ __( 'Heading Line Height', 'vas-dinamico-forms' ) }
+					label={ __( 'Heading Line Height', 'eipsi-forms' ) }
 					value={ config.typography.lineHeightHeading }
 					onChange={ ( value ) =>
 						updateConfig( 'typography', 'lineHeightHeading', value )
@@ -953,18 +953,18 @@ const FormStylePanel = ( {
 
 			{ /* SPACING & LAYOUT PANEL */ }
 			<PanelBody
-				title={ __( '📐 Spacing & Layout', 'vas-dinamico-forms' ) }
+				title={ __( '📐 Spacing & Layout', 'eipsi-forms' ) }
 				initialOpen={ false }
 			>
 				<p className="eipsi-panel-description">
 					{ __(
 						'Control spacing for participant comfort and visual hierarchy.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				</p>
 
 				<RangeControl
-					label={ __( 'Container Padding', 'vas-dinamico-forms' ) }
+					label={ __( 'Container Padding', 'eipsi-forms' ) }
 					value={ parseFloat( config.spacing.containerPadding ) }
 					onChange={ ( value ) =>
 						updateConfig(
@@ -978,12 +978,12 @@ const FormStylePanel = ( {
 					step={ 0.25 }
 					help={ __(
 						'Breathing room around form content',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<RangeControl
-					label={ __( 'Field Gap', 'vas-dinamico-forms' ) }
+					label={ __( 'Field Gap', 'eipsi-forms' ) }
 					value={ parseFloat( config.spacing.fieldGap ) }
 					onChange={ ( value ) =>
 						updateConfig( 'spacing', 'fieldGap', `${ value }rem` )
@@ -993,12 +993,12 @@ const FormStylePanel = ( {
 					step={ 0.25 }
 					help={ __(
 						'Vertical spacing between form fields',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<RangeControl
-					label={ __( 'Section Gap', 'vas-dinamico-forms' ) }
+					label={ __( 'Section Gap', 'eipsi-forms' ) }
 					value={ parseFloat( config.spacing.sectionGap ) }
 					onChange={ ( value ) =>
 						updateConfig( 'spacing', 'sectionGap', `${ value }rem` )
@@ -1008,16 +1008,16 @@ const FormStylePanel = ( {
 					step={ 0.25 }
 					help={ __(
 						'Spacing between major form sections',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<h4 className="eipsi-section-title">
-					{ __( 'Spacing Scale', 'vas-dinamico-forms' ) }
+					{ __( 'Spacing Scale', 'eipsi-forms' ) }
 				</h4>
 
 				<RangeControl
-					label={ __( 'Extra Small', 'vas-dinamico-forms' ) }
+					label={ __( 'Extra Small', 'eipsi-forms' ) }
 					value={ parseFloat( config.spacing.xs ) }
 					onChange={ ( value ) =>
 						updateConfig( 'spacing', 'xs', `${ value }rem` )
@@ -1028,7 +1028,7 @@ const FormStylePanel = ( {
 				/>
 
 				<RangeControl
-					label={ __( 'Small', 'vas-dinamico-forms' ) }
+					label={ __( 'Small', 'eipsi-forms' ) }
 					value={ parseFloat( config.spacing.sm ) }
 					onChange={ ( value ) =>
 						updateConfig( 'spacing', 'sm', `${ value }rem` )
@@ -1039,7 +1039,7 @@ const FormStylePanel = ( {
 				/>
 
 				<RangeControl
-					label={ __( 'Medium', 'vas-dinamico-forms' ) }
+					label={ __( 'Medium', 'eipsi-forms' ) }
 					value={ parseFloat( config.spacing.md ) }
 					onChange={ ( value ) =>
 						updateConfig( 'spacing', 'md', `${ value }rem` )
@@ -1050,7 +1050,7 @@ const FormStylePanel = ( {
 				/>
 
 				<RangeControl
-					label={ __( 'Large', 'vas-dinamico-forms' ) }
+					label={ __( 'Large', 'eipsi-forms' ) }
 					value={ parseFloat( config.spacing.lg ) }
 					onChange={ ( value ) =>
 						updateConfig( 'spacing', 'lg', `${ value }rem` )
@@ -1061,7 +1061,7 @@ const FormStylePanel = ( {
 				/>
 
 				<RangeControl
-					label={ __( 'Extra Large', 'vas-dinamico-forms' ) }
+					label={ __( 'Extra Large', 'eipsi-forms' ) }
 					value={ parseFloat( config.spacing.xl ) }
 					onChange={ ( value ) =>
 						updateConfig( 'spacing', 'xl', `${ value }rem` )
@@ -1074,23 +1074,23 @@ const FormStylePanel = ( {
 
 			{ /* BORDERS & RADIUS PANEL */ }
 			<PanelBody
-				title={ __( '🔲 Borders & Radius', 'vas-dinamico-forms' ) }
+				title={ __( '🔲 Borders & Radius', 'eipsi-forms' ) }
 				initialOpen={ false }
 			>
 				<p className="eipsi-panel-description">
 					{ __(
 						'Configure border styles and corner radius for clinical aesthetics.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				</p>
 
 				{ /* Border Radius */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Border Radius', 'vas-dinamico-forms' ) }
+					{ __( 'Border Radius', 'eipsi-forms' ) }
 				</h4>
 
 				<RangeControl
-					label={ __( 'Small Radius', 'vas-dinamico-forms' ) }
+					label={ __( 'Small Radius', 'eipsi-forms' ) }
 					value={ parseInt( config.borders.radiusSm ) }
 					onChange={ ( value ) =>
 						updateConfig( 'borders', 'radiusSm', `${ value }px` )
@@ -1100,12 +1100,12 @@ const FormStylePanel = ( {
 					step={ 1 }
 					help={ __(
 						'Used for small elements',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<RangeControl
-					label={ __( 'Medium Radius', 'vas-dinamico-forms' ) }
+					label={ __( 'Medium Radius', 'eipsi-forms' ) }
 					value={ parseInt( config.borders.radiusMd ) }
 					onChange={ ( value ) =>
 						updateConfig( 'borders', 'radiusMd', `${ value }px` )
@@ -1115,12 +1115,12 @@ const FormStylePanel = ( {
 					step={ 1 }
 					help={ __(
 						'Used for inputs and buttons',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<RangeControl
-					label={ __( 'Large Radius', 'vas-dinamico-forms' ) }
+					label={ __( 'Large Radius', 'eipsi-forms' ) }
 					value={ parseInt( config.borders.radiusLg ) }
 					onChange={ ( value ) =>
 						updateConfig( 'borders', 'radiusLg', `${ value }px` )
@@ -1130,17 +1130,17 @@ const FormStylePanel = ( {
 					step={ 1 }
 					help={ __(
 						'Used for containers and sections',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				{ /* Border Width & Style */ }
 				<h4 className="eipsi-section-title">
-					{ __( 'Border Width & Style', 'vas-dinamico-forms' ) }
+					{ __( 'Border Width & Style', 'eipsi-forms' ) }
 				</h4>
 
 				<RangeControl
-					label={ __( 'Border Width', 'vas-dinamico-forms' ) }
+					label={ __( 'Border Width', 'eipsi-forms' ) }
 					value={ parseInt( config.borders.width ) }
 					onChange={ ( value ) =>
 						updateConfig( 'borders', 'width', `${ value }px` )
@@ -1151,7 +1151,7 @@ const FormStylePanel = ( {
 				/>
 
 				<RangeControl
-					label={ __( 'Focus Border Width', 'vas-dinamico-forms' ) }
+					label={ __( 'Focus Border Width', 'eipsi-forms' ) }
 					value={ parseInt( config.borders.widthFocus ) }
 					onChange={ ( value ) =>
 						updateConfig( 'borders', 'widthFocus', `${ value }px` )
@@ -1161,12 +1161,12 @@ const FormStylePanel = ( {
 					step={ 1 }
 					help={ __(
 						'Thicker border for focused elements',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<SelectControl
-					label={ __( 'Border Style', 'vas-dinamico-forms' ) }
+					label={ __( 'Border Style', 'eipsi-forms' ) }
 					value={ config.borders.style }
 					options={ borderStyleOptions }
 					onChange={ ( value ) =>
@@ -1177,73 +1177,73 @@ const FormStylePanel = ( {
 
 			{ /* SHADOWS & EFFECTS PANEL */ }
 			<PanelBody
-				title={ __( '✨ Shadows & Effects', 'vas-dinamico-forms' ) }
+				title={ __( '✨ Shadows & Effects', 'eipsi-forms' ) }
 				initialOpen={ false }
 			>
 				<p className="eipsi-panel-description">
 					{ __(
 						'Add depth and visual feedback with shadows.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				</p>
 
 				<TextControl
-					label={ __( 'Small Shadow', 'vas-dinamico-forms' ) }
+					label={ __( 'Small Shadow', 'eipsi-forms' ) }
 					value={ config.shadows.sm }
 					onChange={ ( value ) =>
 						updateConfig( 'shadows', 'sm', value )
 					}
 					help={ __(
 						'Subtle elevation for small elements',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<TextControl
-					label={ __( 'Medium Shadow', 'vas-dinamico-forms' ) }
+					label={ __( 'Medium Shadow', 'eipsi-forms' ) }
 					value={ config.shadows.md }
 					onChange={ ( value ) =>
 						updateConfig( 'shadows', 'md', value )
 					}
-					help={ __( 'Standard card depth', 'vas-dinamico-forms' ) }
+					help={ __( 'Standard card depth', 'eipsi-forms' ) }
 				/>
 
 				<TextControl
-					label={ __( 'Large Shadow', 'vas-dinamico-forms' ) }
+					label={ __( 'Large Shadow', 'eipsi-forms' ) }
 					value={ config.shadows.lg }
 					onChange={ ( value ) =>
 						updateConfig( 'shadows', 'lg', value )
 					}
-					help={ __( 'Prominent elevation', 'vas-dinamico-forms' ) }
+					help={ __( 'Prominent elevation', 'eipsi-forms' ) }
 				/>
 
 				<TextControl
-					label={ __( 'Focus Shadow', 'vas-dinamico-forms' ) }
+					label={ __( 'Focus Shadow', 'eipsi-forms' ) }
 					value={ config.shadows.focus }
 					onChange={ ( value ) =>
 						updateConfig( 'shadows', 'focus', value )
 					}
 					help={ __(
 						'Ring effect for focused elements',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 			</PanelBody>
 
 			{ /* HOVER & INTERACTION PANEL */ }
 			<PanelBody
-				title={ __( '⚡ Hover & Interaction', 'vas-dinamico-forms' ) }
+				title={ __( '⚡ Hover & Interaction', 'eipsi-forms' ) }
 				initialOpen={ false }
 			>
 				<p className="eipsi-panel-description">
 					{ __(
 						'Configure animation and interaction feedback.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				</p>
 
 				<TextControl
-					label={ __( 'Transition Duration', 'vas-dinamico-forms' ) }
+					label={ __( 'Transition Duration', 'eipsi-forms' ) }
 					value={ config.interactivity.transitionDuration }
 					onChange={ ( value ) =>
 						updateConfig(
@@ -1252,11 +1252,11 @@ const FormStylePanel = ( {
 							value
 						)
 					}
-					help={ __( 'E.g., 0.2s or 200ms', 'vas-dinamico-forms' ) }
+					help={ __( 'E.g., 0.2s or 200ms', 'eipsi-forms' ) }
 				/>
 
 				<SelectControl
-					label={ __( 'Transition Timing', 'vas-dinamico-forms' ) }
+					label={ __( 'Transition Timing', 'eipsi-forms' ) }
 					value={ config.interactivity.transitionTiming }
 					options={ [
 						{ label: 'Linear', value: 'linear' },
@@ -1275,19 +1275,19 @@ const FormStylePanel = ( {
 				/>
 
 				<TextControl
-					label={ __( 'Hover Scale', 'vas-dinamico-forms' ) }
+					label={ __( 'Hover Scale', 'eipsi-forms' ) }
 					value={ config.interactivity.hoverScale }
 					onChange={ ( value ) =>
 						updateConfig( 'interactivity', 'hoverScale', value )
 					}
 					help={ __(
 						'E.g., 1.02 for slight growth on hover',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<RangeControl
-					label={ __( 'Focus Outline Width', 'vas-dinamico-forms' ) }
+					label={ __( 'Focus Outline Width', 'eipsi-forms' ) }
 					value={ parseInt( config.interactivity.focusOutlineWidth ) }
 					onChange={ ( value ) =>
 						updateConfig(
@@ -1301,12 +1301,12 @@ const FormStylePanel = ( {
 					step={ 1 }
 					help={ __(
 						'Recommended: 2–3px for accessibility',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				/>
 
 				<RangeControl
-					label={ __( 'Focus Outline Offset', 'vas-dinamico-forms' ) }
+					label={ __( 'Focus Outline Offset', 'eipsi-forms' ) }
 					value={ parseInt(
 						config.interactivity.focusOutlineOffset
 					) }

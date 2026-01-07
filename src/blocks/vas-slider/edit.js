@@ -105,7 +105,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const displayLabel =
 		label && label.trim() !== ''
 			? label
-			: __( 'VAS Slider', 'vas-dinamico-forms' );
+			: __( 'VAS Slider', 'eipsi-forms' );
 	const inputId = getFieldId( normalizedFieldName );
 
 	const safeStep = step && step > 0 ? step : 1;
@@ -239,24 +239,24 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 	const minControlHelp = __(
 		'Debe ser menor que el máximo. Si lo igualás o superás, ajustamos el rango automáticamente.',
-		'vas-dinamico-forms'
+		'eipsi-forms'
 	);
 	const maxControlHelp = __(
 		'Debe ser mayor que el mínimo. Si lo igualás o bajás demasiado, movemos el mínimo para mantener el slider usable.',
-		'vas-dinamico-forms'
+		'eipsi-forms'
 	);
 
 	return (
 		<>
 			<InspectorControls>
 				<PanelBody
-					title={ __( 'Field Settings', 'vas-dinamico-forms' ) }
+					title={ __( 'Field Settings', 'eipsi-forms' ) }
 					initialOpen={ true }
 				>
 					<TextControl
 						label={ __(
 							'Field Name / Slug',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						value={ fieldName || '' }
 						onChange={ ( value ) =>
@@ -264,44 +264,44 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						}
 						help={ __(
 							'Used as the input name attribute (e.g., pain_level)',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<TextControl
-						label={ __( 'Label', 'vas-dinamico-forms' ) }
+						label={ __( 'Label', 'eipsi-forms' ) }
 						value={ label || '' }
 						onChange={ ( value ) =>
 							setAttributes( { label: value } )
 						}
 					/>
 					<ToggleControl
-						label={ __( 'Required field', 'vas-dinamico-forms' ) }
+						label={ __( 'Required field', 'eipsi-forms' ) }
 						checked={ !! required }
 						onChange={ ( value ) =>
 							setAttributes( { required: !! value } )
 						}
 					/>
 					<TextareaControl
-						label={ __( 'Helper text', 'vas-dinamico-forms' ) }
+						label={ __( 'Helper text', 'eipsi-forms' ) }
 						value={ helperText || '' }
 						onChange={ ( value ) =>
 							setAttributes( { helperText: value } )
 						}
 						help={ __(
 							'Displayed below the field to provide additional guidance.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 				</PanelBody>
 
 				<PanelBody
-					title={ __( 'VAS Slider Options', 'vas-dinamico-forms' ) }
+					title={ __( 'VAS Slider Options', 'eipsi-forms' ) }
 					initialOpen={ true }
 				>
 					<TextareaControl
 						label={ __(
 							'Labels (separated by semicolon)',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						value={ labels || '' }
 						onChange={ ( value ) =>
@@ -314,30 +314,30 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								<strong>
 									{ __(
 										'Ingresá los labels separados por punto y coma (;)',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									) }
 								</strong>
 								<br />
 								{ __(
 									'Ejemplo: Nada; Poco; Bastante; Mucho; Extremadamente intenso',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 								<br />
 								<br />
 								{ __(
 									'¿Querés que un label ocupe dos líneas? Presioná Shift+Enter dentro del label para dividir.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 								<br />
 								{ __(
 									'Los saltos de línea se respetan exactamente como los escribas.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</>
 						}
 					/>
 					<NumberControl
-						label={ __( 'Minimum Value', 'vas-dinamico-forms' ) }
+						label={ __( 'Minimum Value', 'eipsi-forms' ) }
 						value={ minValue }
 						onChange={ handleMinValueChange }
 						min={ -1000 }
@@ -346,7 +346,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						help={ minControlHelp }
 					/>
 					<NumberControl
-						label={ __( 'Maximum Value', 'vas-dinamico-forms' ) }
+						label={ __( 'Maximum Value', 'eipsi-forms' ) }
 						value={ maxValue }
 						onChange={ handleMaxValueChange }
 						min={ -1000 }
@@ -355,7 +355,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						help={ maxControlHelp }
 					/>
 					<RangeControl
-						label={ __( 'Step', 'vas-dinamico-forms' ) }
+						label={ __( 'Step', 'eipsi-forms' ) }
 						value={ step && step > 0 ? step : 1 }
 						onChange={ handleStepChange }
 						min={ 0.1 }
@@ -363,11 +363,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						step={ 0.1 }
 						help={ __(
 							'Increment for each slider movement',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<RangeControl
-						label={ __( 'Initial Value', 'vas-dinamico-forms' ) }
+						label={ __( 'Initial Value', 'eipsi-forms' ) }
 						value={
 							typeof initialValue === 'number'
 								? initialValue
@@ -382,13 +382,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						step={ safeStep }
 						help={ __(
 							'Default slider position',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 				</PanelBody>
 
 				<PanelBody
-					title={ __( 'Appearance', 'vas-dinamico-forms' ) }
+					title={ __( 'Appearance', 'eipsi-forms' ) }
 					initialOpen={ true }
 				>
 					<div className="eipsi-panel-section">
@@ -399,23 +399,23 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								marginBottom: '12px',
 							} }
 						>
-							{ __( 'Label Appearance', 'vas-dinamico-forms' ) }
+							{ __( 'Label Appearance', 'eipsi-forms' ) }
 						</h3>
 
 						<ToggleControl
-							label={ __( 'Bold labels', 'vas-dinamico-forms' ) }
+							label={ __( 'Bold labels', 'eipsi-forms' ) }
 							checked={ boldLabels !== false }
 							onChange={ ( value ) =>
 								setAttributes( { boldLabels: !! value } )
 							}
 							help={ __(
 								'Make label text bold',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 						/>
 
 						<UnitControl
-							label={ __( 'Label size', 'vas-dinamico-forms' ) }
+							label={ __( 'Label size', 'eipsi-forms' ) }
 							value={ `${ labelFontSize || 16 }px` }
 							onChange={ ( value ) => {
 								const numValue = parseInt( value, 10 ) || 16;
@@ -433,7 +433,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						<RangeControl
 							label={ __(
 								'Label Alignment',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 							value={ alignmentInternalToDisplay(
 								labelAlignment
@@ -450,7 +450,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							step={ 1 }
 							help={ __(
 								'Expand (higher) or compress (lower) label spacing. 0–100 range.',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 						/>
 					</div>
@@ -470,13 +470,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								marginBottom: '12px',
 							} }
 						>
-							{ __( 'Values', 'vas-dinamico-forms' ) }
+							{ __( 'Values', 'eipsi-forms' ) }
 						</h3>
 
 						<ToggleControl
 							label={ __(
 								'Show selected value',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 							checked={ shouldShowValue }
 							onChange={ ( value ) =>
@@ -484,7 +484,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							}
 							help={ __(
 								'Show the number selected by the user',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 						/>
 
@@ -493,21 +493,21 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								<SelectControl
 									label={ __(
 										'Value Position',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									) }
 									value={ valuePosition || 'above' }
 									options={ [
 										{
 											label: __(
 												'Above slider',
-												'vas-dinamico-forms'
+												'eipsi-forms'
 											),
 											value: 'above',
 										},
 										{
 											label: __(
 												'Below slider',
-												'vas-dinamico-forms'
+												'eipsi-forms'
 											),
 											value: 'below',
 										},
@@ -522,7 +522,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								<UnitControl
 									label={ __(
 										'Value font size',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									) }
 									value={ `${ valueFontSize || 36 }px` }
 									onChange={ ( value ) => {
@@ -550,7 +550,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				</PanelBody>
 
 				<PanelBody
-					title={ __( 'Conditional Logic', 'vas-dinamico-forms' ) }
+					title={ __( 'Conditional Logic', 'eipsi-forms' ) }
 					initialOpen={ false }
 				>
 					<ConditionalLogicControl

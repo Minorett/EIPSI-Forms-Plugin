@@ -27,7 +27,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	} );
 
 	const displayLabel =
-		label || __( 'Campo descripción', 'vas-dinamico-forms' );
+		label || __( 'Campo descripción', 'eipsi-forms' );
 
 	return (
 		<>

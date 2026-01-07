@@ -72,7 +72,7 @@ if ($external_db->is_enabled()) {
     <!-- Selector de formulario para override (solo si hay formularios con respuestas) -->
     <?php if (!empty($form_ids)): ?>
         <form method="get" style="display: flex; align-items: center; gap: 12px;">
-            <input type="hidden" name="page" value="vas-dinamico-results">
+            <input type="hidden" name="page" value="eipsi-results">
             <input type="hidden" name="tab" value="privacy">
             <label for="privacy_form_id" style="font-weight: 600;">
                 Formulario específico:

@@ -20,18 +20,18 @@ if (!defined('ABSPATH')) {
  */
 function eipsi_register_form_template_cpt() {
     $labels = array(
-        'name'                  => __('Form Templates', 'vas-dinamico-forms'),
-        'singular_name'         => __('Form Template', 'vas-dinamico-forms'),
-        'menu_name'             => __('Form Library', 'vas-dinamico-forms'),
-        'add_new'               => __('Add New', 'vas-dinamico-forms'),
-        'add_new_item'          => __('Add New Form Template', 'vas-dinamico-forms'),
-        'edit_item'             => __('Edit Form Template', 'vas-dinamico-forms'),
-        'new_item'              => __('New Form Template', 'vas-dinamico-forms'),
-        'view_item'             => __('View Form Template', 'vas-dinamico-forms'),
-        'search_items'          => __('Search Form Templates', 'vas-dinamico-forms'),
-        'not_found'             => __('No form templates found', 'vas-dinamico-forms'),
-        'not_found_in_trash'    => __('No form templates found in trash', 'vas-dinamico-forms'),
-        'all_items'             => __('All Forms', 'vas-dinamico-forms'),
+        'name'                  => __('Form Templates', 'eipsi-forms'),
+        'singular_name'         => __('Form Template', 'eipsi-forms'),
+        'menu_name'             => __('Form Library', 'eipsi-forms'),
+        'add_new'               => __('Add New', 'eipsi-forms'),
+        'add_new_item'          => __('Add New Form Template', 'eipsi-forms'),
+        'edit_item'             => __('Edit Form Template', 'eipsi-forms'),
+        'new_item'              => __('New Form Template', 'eipsi-forms'),
+        'view_item'             => __('View Form Template', 'eipsi-forms'),
+        'search_items'          => __('Search Form Templates', 'eipsi-forms'),
+        'not_found'             => __('No form templates found', 'eipsi-forms'),
+        'not_found_in_trash'    => __('No form templates found in trash', 'eipsi-forms'),
+        'all_items'             => __('All Forms', 'eipsi-forms'),
     );
 
     $args = array(
@@ -67,9 +67,9 @@ add_action('init', 'eipsi_register_form_template_cpt');
  */
 function eipsi_add_form_library_menu() {
     add_submenu_page(
-        'vas-dinamico-results',
-        __('Form Library', 'vas-dinamico-forms'),
-        __('Form Library', 'vas-dinamico-forms'),
+        'eipsi-results',
+        __('Form Library', 'eipsi-forms'),
+        __('Form Library', 'eipsi-forms'),
         'manage_options',
         'edit.php?post_type=eipsi_form_template'
     );
@@ -82,12 +82,12 @@ add_action('admin_menu', 'eipsi_add_form_library_menu', 11);
 function eipsi_form_library_columns($columns) {
     $new_columns = array(
         'cb'                => $columns['cb'],
-        'title'             => __('Form Name', 'vas-dinamico-forms'),
-        'study_status'      => __('Estado', 'vas-dinamico-forms'),
-        'shortcode'         => __('Shortcode', 'vas-dinamico-forms'),
-        'last_response'     => __('Last Response', 'vas-dinamico-forms'),
-        'total_responses'   => __('Total Responses', 'vas-dinamico-forms'),
-        'date'              => __('Created', 'vas-dinamico-forms'),
+        'title'             => __('Form Name', 'eipsi-forms'),
+        'study_status'      => __('Estado', 'eipsi-forms'),
+        'shortcode'         => __('Shortcode', 'eipsi-forms'),
+        'last_response'     => __('Last Response', 'eipsi-forms'),
+        'total_responses'   => __('Total Responses', 'eipsi-forms'),
+        'date'              => __('Created', 'eipsi-forms'),
     );
     
     return $new_columns;
@@ -130,8 +130,8 @@ function eipsi_form_library_column_content($column, $post_id) {
             $status = ($status === 'closed') ? 'closed' : 'open';
 
             $label = ($status === 'closed')
-                ? __('🔴 Cerrado', 'vas-dinamico-forms')
-                : __('🟢 Abierto', 'vas-dinamico-forms');
+                ? __('🔴 Cerrado', 'eipsi-forms')
+                : __('🟢 Abierto', 'eipsi-forms');
 
             printf(
                 '<span class="eipsi-study-status-badge eipsi-study-status-%1$s">%2$s</span>',
@@ -178,9 +178,9 @@ function eipsi_form_library_column_content($column, $post_id) {
             
             if ($last_response) {
                 $time_diff = human_time_diff(strtotime($last_response), current_time('timestamp'));
-                echo '<span title="' . esc_attr($last_response) . '">' . sprintf(__('%s ago', 'vas-dinamico-forms'), $time_diff) . '</span>';
+                echo '<span title="' . esc_attr($last_response) . '">' . sprintf(__('%s ago', 'eipsi-forms'), $time_diff) . '</span>';
             } else {
-                echo '<span style="color: #999;">' . __('Never', 'vas-dinamico-forms') . '</span>';
+                echo '<span style="color: #999;">' . __('Never', 'eipsi-forms') . '</span>';
             }
             break;
             
@@ -406,7 +406,7 @@ function eipsi_form_library_admin_notice() {
         ?>
         <div class="notice notice-info" style="margin-top: 20px;">
             <p>
-                <strong><?php _e('¿Cómo usar la librería de formularios?', 'vas-dinamico-forms'); ?></strong><br>
+                <strong><?php _e('¿Cómo usar la librería de formularios?', 'eipsi-forms'); ?></strong><br>
                 1. Hacé clic en <strong>"Añadir nuevo"</strong> para crear un formulario reutilizable.<br>
                 2. Usá el bloque <strong>"EIPSI Form Container"</strong> para armar tu formulario con páginas y campos.<br>
                 3. Una vez guardado, copiá el <strong>shortcode</strong> o usá el bloque <strong>"Formulario EIPSI"</strong> para insertarlo en cualquier página.
@@ -439,7 +439,7 @@ function eipsi_extract_form_name_on_save($post_id, $post, $update) {
     $has_container = false;
     
     foreach ($blocks as $block) {
-        if ($block['blockName'] === 'vas-dinamico/form-container') {
+        if ($block['blockName'] === 'eipsi/form-container') {
             $has_container = true;
             $form_name = isset($block['attrs']['formId']) ? $block['attrs']['formId'] : '';
             $study_status = isset($block['attrs']['studyStatus']) ? $block['attrs']['studyStatus'] : 'open';
@@ -488,18 +488,18 @@ function eipsi_limit_blocks_by_context($allowed_block_types, $editor_context) {
     $post_content = isset($post->post_content) ? $post->post_content : '';
     
     $form_building_blocks = array(
-        'vas-dinamico/form-container',
-        'vas-dinamico/pagina',
-        'vas-dinamico/campo-texto',
-        'vas-dinamico/campo-textarea',
-        'vas-dinamico/campo-descripcion',
-        'vas-dinamico/campo-select',
-        'vas-dinamico/campo-radio',
-        'vas-dinamico/campo-multiple',
-        'vas-dinamico/campo-likert',
-        'vas-dinamico/vas-slider',
+        'eipsi/form-container',
+        'eipsi/pagina',
+        'eipsi/campo-texto',
+        'eipsi/campo-textarea',
+        'eipsi/campo-descripcion',
+        'eipsi/campo-select',
+        'eipsi/campo-radio',
+        'eipsi/campo-multiple',
+        'eipsi/campo-likert',
+        'eipsi/vas-slider',
     );
-    $form_embed_block = 'vas-dinamico/form-block';
+    $form_embed_block = 'eipsi/form-block';
     
     if ($allowed_block_types === true || !is_array($allowed_block_types)) {
         $registered_blocks = \WP_Block_Type_Registry::get_instance()->get_all_registered();

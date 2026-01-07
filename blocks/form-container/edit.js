@@ -35,15 +35,15 @@ export default function Edit( { attributes, setAttributes } ) {
 	} );
 
 	const ALLOWED_BLOCKS = [
-		'vas-dinamico/form-page',
-		'vas-dinamico/campo-texto',
-		'vas-dinamico/campo-textarea',
-		'vas-dinamico/campo-descripcion',
-		'vas-dinamico/campo-select',
-		'vas-dinamico/campo-radio',
-		'vas-dinamico/campo-multiple',
-		'vas-dinamico/campo-likert',
-		'vas-dinamico/vas-slider',
+		'eipsi/form-page',
+		'eipsi/campo-texto',
+		'eipsi/campo-textarea',
+		'eipsi/campo-descripcion',
+		'eipsi/campo-select',
+		'eipsi/campo-radio',
+		'eipsi/campo-multiple',
+		'eipsi/campo-likert',
+		'eipsi/vas-slider',
 	];
 
 	const innerBlocksProps = useInnerBlocksProps(
@@ -61,24 +61,24 @@ export default function Edit( { attributes, setAttributes } ) {
 		<>
 			<InspectorControls>
 				<PanelBody
-					title={ __( 'Form Settings', 'vas-dinamico-forms' ) }
+					title={ __( 'Form Settings', 'eipsi-forms' ) }
 					initialOpen={ true }
 				>
 					<TextControl
-						label={ __( 'Form ID/Slug', 'vas-dinamico-forms' ) }
+						label={ __( 'Form ID/Slug', 'eipsi-forms' ) }
 						value={ formId }
 						onChange={ ( value ) =>
 							setAttributes( { formId: value } )
 						}
 						help={ __(
 							'Enter a unique identifier for the form (e.g., contact-form)',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<TextControl
 						label={ __(
 							'Submit Button Label',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						value={ submitButtonLabel }
 						onChange={ ( value ) =>
@@ -88,7 +88,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					<TextareaControl
 						label={ __(
 							'Description (Optional)',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						value={ description }
 						onChange={ ( value ) =>
@@ -96,18 +96,18 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 						help={ __(
 							'Optional description text shown above the form',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 				</PanelBody>
 				{ /* NUEVO: Panel de personalización - Sin TabPanel */ }
 				<PanelBody
-					title={ __( 'Style Customization', 'vas-dinamico-forms' ) }
+					title={ __( 'Style Customization', 'eipsi-forms' ) }
 					initialOpen={ false }
 				>
 					<div style={ { marginBottom: '1em' } }>
 						<label htmlFor="background-color">
-							{ __( 'Background Color', 'vas-dinamico-forms' ) }
+							{ __( 'Background Color', 'eipsi-forms' ) }
 						</label>
 						<ColorPalette
 							id="background-color"
@@ -124,7 +124,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					</div>
 					<div style={ { marginBottom: '1em' } }>
 						<label htmlFor="text-color">
-							{ __( 'Text Color', 'vas-dinamico-forms' ) }
+							{ __( 'Text Color', 'eipsi-forms' ) }
 						</label>
 						<ColorPalette
 							id="text-color"
@@ -135,7 +135,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						/>
 					</div>
 					<RangeControl
-						label={ __( 'Padding', 'vas-dinamico-forms' ) }
+						label={ __( 'Padding', 'eipsi-forms' ) }
 						value={ padding }
 						onChange={ ( value ) =>
 							setAttributes( { padding: value } )
@@ -145,7 +145,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						step={ 4 }
 					/>
 					<RangeControl
-						label={ __( 'Border Radius', 'vas-dinamico-forms' ) }
+						label={ __( 'Border Radius', 'eipsi-forms' ) }
 						value={ borderRadius }
 						onChange={ ( value ) =>
 							setAttributes( { borderRadius: value } )
@@ -157,13 +157,13 @@ export default function Edit( { attributes, setAttributes } ) {
 				</PanelBody>
 
 				<PanelBody
-					title={ __( 'Analytics & Timing', 'vas-dinamico-forms' ) }
+					title={ __( 'Analytics & Timing', 'eipsi-forms' ) }
 					initialOpen={ false }
 				>
 					<ToggleControl
 						label={ __(
 							'Capturar tiempo por página',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						checked={ capturePageTiming }
 						onChange={ ( value ) =>
@@ -171,13 +171,13 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 						help={ __(
 							'Registra cuánto tiempo pasa el participante en cada página. Útil para detectar patrones de fatiga, evasión o procesamiento cognitivo.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<ToggleControl
 						label={ __(
 							'Capturar tiempo por campo individual',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						checked={ captureFieldTiming }
 						onChange={ ( value ) =>
@@ -185,13 +185,13 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 						help={ __(
 							'Registra el tiempo que el participante enfoca cada campo individual. Útil para estudios de psicología experimental. ⚠️ Experimental',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<ToggleControl
 						label={ __(
 							'Registrar tiempo de inactividad',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						checked={ captureInactivityTime }
 						onChange={ ( value ) =>
@@ -199,7 +199,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 						help={ __(
 							'Detecta períodos donde el usuario no interactúa con el formulario (30 segundos sin actividad). Útil para estimar tiempo real vs tiempo total. ⚠️ Usa con cautela - no es completamente fiable.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 				</PanelBody>
@@ -213,13 +213,13 @@ export default function Edit( { attributes, setAttributes } ) {
 								<div className="components-placeholder__label">
 									{ __(
 										'EIPSI Form Container',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									) }
 								</div>
 								<div className="components-placeholder__instructions">
 									{ __(
 										'Please enter a Form ID in the block settings to get started.',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									) }
 								</div>
 							</div>
@@ -252,7 +252,7 @@ export default function Edit( { attributes, setAttributes } ) {
 									disabled
 								>
 									{ submitButtonLabel ||
-										__( 'Submit', 'vas-dinamico-forms' ) }
+										__( 'Submit', 'eipsi-forms' ) }
 								</button>
 							</div>
 						</div>

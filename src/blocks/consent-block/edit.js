@@ -17,24 +17,24 @@ export default function Edit( { attributes, setAttributes } ) {
 		<>
 			<InspectorControls>
 				<PanelBody
-					title={ __( 'Consent Settings', 'vas-dinamico-forms' ) }
+					title={ __( 'Consent Settings', 'eipsi-forms' ) }
 				>
 					<TextControl
-						label={ __( 'Checkbox Label', 'vas-dinamico-forms' ) }
+						label={ __( 'Checkbox Label', 'eipsi-forms' ) }
 						value={ consentLabel }
 						onChange={ ( value ) =>
 							setAttributes( { consentLabel: value } )
 						}
 					/>
 					<ToggleControl
-						label={ __( 'Is Required', 'vas-dinamico-forms' ) }
+						label={ __( 'Is Required', 'eipsi-forms' ) }
 						checked={ isRequired }
 						onChange={ ( value ) =>
 							setAttributes( { isRequired: value } )
 						}
 					/>
 					<ToggleControl
-						label={ __( 'Show Timestamp', 'vas-dinamico-forms' ) }
+						label={ __( 'Show Timestamp', 'eipsi-forms' ) }
 						checked={ showTimestamp }
 						onChange={ ( value ) =>
 							setAttributes( { showTimestamp: value } )
@@ -55,7 +55,7 @@ export default function Edit( { attributes, setAttributes } ) {
 							}
 							placeholder={ __(
 								'Escribe aquí el texto del consentimiento…',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 						/>
 					</div>

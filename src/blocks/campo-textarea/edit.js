@@ -48,7 +48,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	} );
 
 	const inputId = getFieldId( normalizedFieldName );
-	const displayLabel = label || __( 'Campo textarea', 'vas-dinamico-forms' );
+	const displayLabel = label || __( 'Campo textarea', 'eipsi-forms' );
 	const rowsValue = Number( rows ) || 4;
 
 	return (
@@ -59,11 +59,11 @@ export default function Edit( { attributes, setAttributes } ) {
 					setAttributes={ setAttributes }
 				/>
 				<PanelBody
-					title={ __( 'Textarea Options', 'vas-dinamico-forms' ) }
+					title={ __( 'Textarea Options', 'eipsi-forms' ) }
 					initialOpen={ false }
 				>
 					<RangeControl
-						label={ __( 'Rows', 'vas-dinamico-forms' ) }
+						label={ __( 'Rows', 'eipsi-forms' ) }
 						value={ rowsValue }
 						onChange={ ( value ) =>
 							setAttributes( { rows: Number( value ) || 4 } )

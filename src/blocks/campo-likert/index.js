@@ -5,7 +5,7 @@ import Save from './save';
 import './editor.scss';
 import './style.scss';
 
-registerBlockType( 'vas-dinamico/campo-likert', {
+registerBlockType( 'eipsi/campo-likert', {
 	edit: Edit,
 	save: Save,
 } );

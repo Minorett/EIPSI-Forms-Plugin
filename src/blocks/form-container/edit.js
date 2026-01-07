@@ -113,16 +113,16 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} );
 
 	const ALLOWED_BLOCKS = [
-		'vas-dinamico/form-page',
-		'vas-dinamico/consent-block',
-		'vas-dinamico/campo-texto',
-		'vas-dinamico/campo-textarea',
-		'vas-dinamico/campo-descripcion',
-		'vas-dinamico/campo-select',
-		'vas-dinamico/campo-radio',
-		'vas-dinamico/campo-multiple',
-		'vas-dinamico/campo-likert',
-		'vas-dinamico/vas-slider',
+		'eipsi/form-page',
+		'eipsi/consent-block',
+		'eipsi/campo-texto',
+		'eipsi/campo-textarea',
+		'eipsi/campo-descripcion',
+		'eipsi/campo-select',
+		'eipsi/campo-radio',
+		'eipsi/campo-multiple',
+		'eipsi/campo-likert',
+		'eipsi/vas-slider',
 	];
 
 	const innerBlocksProps = useInnerBlocksProps(
@@ -162,7 +162,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		{
 			label:
 				strings.selectPlaceholder ||
-				__( 'Elegí una plantilla', 'vas-dinamico-forms' ),
+				__( 'Elegí una plantilla', 'eipsi-forms' ),
 			value: '',
 		},
 		...templates.map( ( t ) => ( {
@@ -188,7 +188,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				strings.confirmReplace ||
 					__(
 						'Esto reemplazará el contenido actual del formulario. ¿Continuar?',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					)
 			);
 
@@ -208,7 +208,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				status: 'error',
 				message: __(
 					'No pudimos cargar la plantilla seleccionada.',
-					'vas-dinamico-forms'
+					'eipsi-forms'
 				),
 			} );
 			return;
@@ -221,7 +221,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			if (
 				! parsedBlocks ||
 				parsedBlocks.length === 0 ||
-				parsedBlocks[ 0 ].name !== 'vas-dinamico/form-container'
+				parsedBlocks[ 0 ].name !== 'eipsi/form-container'
 			) {
 				throw new Error( 'Invalid template structure' );
 			}
@@ -270,7 +270,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					strings.success ||
 					__(
 						'Plantilla aplicada correctamente.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					),
 			} );
 		} catch ( error ) {
@@ -280,7 +280,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				status: 'error',
 				message: __(
 					'No pudimos aplicar la plantilla. Intentá nuevamente.',
-					'vas-dinamico-forms'
+					'eipsi-forms'
 				),
 			} );
 		} finally {
@@ -292,7 +292,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		<>
 			<InspectorControls>
 				<PanelBody
-					title={ __( 'Plantillas EIPSI', 'vas-dinamico-forms' ) }
+					title={ __( 'Plantillas EIPSI', 'eipsi-forms' ) }
 					initialOpen={ false }
 				>
 					{ templateNotice && (
@@ -311,7 +311,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							{ strings.empty ||
 								__(
 									'Próximamente agregaremos más demos pensados para tu consultorio.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 						</Notice>
 					) }
@@ -327,7 +327,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							>
 								{ __(
 									'Estas plantillas son demos genéricos con bloques EIPSI reales. No son escalas clínicas oficiales.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							</p>
 
@@ -336,7 +336,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									strings.selectLabel ||
 									__(
 										'Plantillas EIPSI (demo)',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									)
 								}
 								value={ selectedTemplate }
@@ -375,7 +375,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									{ strings.apply ||
 										__(
 											'Aplicar plantilla',
-											'vas-dinamico-forms'
+											'eipsi-forms'
 										) }
 								</Button>
 							) }
@@ -384,24 +384,24 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				</PanelBody>
 
 				<PanelBody
-					title={ __( 'Form Settings', 'vas-dinamico-forms' ) }
+					title={ __( 'Form Settings', 'eipsi-forms' ) }
 					initialOpen={ true }
 				>
 					<TextControl
-						label={ __( 'Form ID/Slug', 'vas-dinamico-forms' ) }
+						label={ __( 'Form ID/Slug', 'eipsi-forms' ) }
 						value={ formId }
 						onChange={ ( value ) =>
 							setAttributes( { formId: value } )
 						}
 						help={ __(
 							'Enter a unique identifier for the form (e.g., contact-form)',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<TextControl
 						label={ __(
 							'Submit Button Label',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						value={ submitButtonLabel }
 						onChange={ ( value ) =>
@@ -411,7 +411,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					<TextareaControl
 						label={ __(
 							'Description (Optional)',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						value={ description }
 						onChange={ ( value ) =>
@@ -419,7 +419,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						}
 						help={ __(
 							'Optional description text shown above the form',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 
@@ -431,18 +431,18 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						{ isStudyClosed
 							? __(
 									'🔴 Cerrado: este estudio no acepta nuevas respuestas.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 							  )
 							: __(
 									'🟢 Abierto: este estudio acepta respuestas normalmente.',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 							  ) }
 					</Notice>
 
 					<ToggleControl
 						label={ __(
 							'Estado del estudio',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						checked={ isStudyClosed }
 						onChange={ ( value ) =>
@@ -454,24 +454,24 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							isStudyClosed
 								? __(
 										'Para volver a recolectar datos, cambialo a Abierto.',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 								  )
 								: __(
 										'Si lo cerrás, el formulario se oculta y muestra un aviso en el frontend.',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 								  )
 						}
 					/>
 				</PanelBody>
 
 				<PanelBody
-					title={ __( 'Navigation Settings', 'vas-dinamico-forms' ) }
+					title={ __( 'Navigation Settings', 'eipsi-forms' ) }
 					initialOpen={ false }
 				>
 					<ToggleControl
 						label={ __(
 							'Mostrar botón "Anterior"',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						checked={ allowBackwardsNavEnabled }
 						onChange={ ( value ) =>
@@ -479,13 +479,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						}
 						help={ __(
 							'Permite al paciente volver a la página anterior. Si está desactivado, el botón "Anterior" no aparecerá nunca.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<ToggleControl
 						label={ __(
 							'Mostrar barra de progreso',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						checked={ showProgressBarEnabled }
 						onChange={ ( value ) =>
@@ -493,19 +493,19 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						}
 						help={ __(
 							'Muestra "Página X de Y" en la parte inferior del formulario. Útil en formularios con múltiples páginas.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 				</PanelBody>
 
 				<PanelBody
-					title={ __( 'Completion Page', 'vas-dinamico-forms' ) }
+					title={ __( 'Completion Page', 'eipsi-forms' ) }
 					initialOpen={ false }
 				>
 					<ToggleControl
 						label={ __(
 							'Personalizar página de finalización',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						checked={ customCompletionEnabled }
 						onChange={ ( value ) =>
@@ -513,7 +513,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						}
 						help={ __(
 							'Si está desactivado, se usará la configuración global de Finalización (Results & Experience → Finalización). Si está activado, podrás personalizar el mensaje de finalización solo para este formulario.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 
@@ -530,7 +530,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						>
 							{ __(
 								'Este formulario usará el mensaje global configurado en Results & Experience → Finalización.',
-								'vas-dinamico-forms'
+								'eipsi-forms'
 							) }
 						</p>
 					) }
@@ -540,7 +540,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							<TextControl
 								label={ __(
 									'Título de finalización',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 								value={ completionTitle }
 								onChange={ ( value ) =>
@@ -548,13 +548,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								}
 								help={ __(
 									'Título que se muestra al completar el formulario',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							/>
 							<TextareaControl
 								label={ __(
 									'Mensaje de finalización',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 								value={ completionMessage }
 								onChange={ ( value ) =>
@@ -564,14 +564,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								}
 								help={ __(
 									'Mensaje que se muestra al completar el formulario',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 								rows={ 4 }
 							/>
 							<TextControl
 								label={ __(
 									'Texto del botón',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 								value={ completionButtonLabel }
 								onChange={ ( value ) =>
@@ -581,7 +581,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								}
 								help={ __(
 									'Por ejemplo: "Comenzar de nuevo" o "Volver a empezar"',
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								) }
 							/>
 							<MediaUploadCheck>
@@ -594,7 +594,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									>
 										{ __(
 											'Logo o imagen (opcional)',
-											'vas-dinamico-forms'
+											'eipsi-forms'
 										) }
 									</p>
 									{ completionLogoUrl && (
@@ -603,7 +603,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 												src={ completionLogoUrl }
 												alt={ __(
 													'Logo del consultorio',
-													'vas-dinamico-forms'
+													'eipsi-forms'
 												) }
 												style={ {
 													maxWidth: '200px',
@@ -631,11 +631,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 													{ completionLogoUrl
 														? __(
 																'Cambiar imagen',
-																'vas-dinamico-forms'
+																'eipsi-forms'
 														  )
 														: __(
 																'Seleccionar imagen',
-																'vas-dinamico-forms'
+																'eipsi-forms'
 														  ) }
 												</Button>
 												{ completionLogoUrl && (
@@ -655,7 +655,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 													>
 														{ __(
 															'Quitar',
-															'vas-dinamico-forms'
+															'eipsi-forms'
 														) }
 													</Button>
 												) }
@@ -671,7 +671,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									>
 										{ __(
 											'Se mostrará en la parte superior de la página de finalización',
-											'vas-dinamico-forms'
+											'eipsi-forms'
 										) }
 									</p>
 								</div>
@@ -683,7 +683,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				<PanelBody
 					title={ __(
 						'Mapa de lógica condicional',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 					initialOpen={ false }
 				>
@@ -696,7 +696,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					>
 						{ __(
 							'Visualizá todas las reglas del formulario agrupadas por página. Solo lectura para revisar y explicar flujos clínicos.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					</p>
 					<Button
@@ -705,7 +705,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					>
 						{ __(
 							'Ver mapa de condiciones',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					</Button>
 				</PanelBody>
@@ -713,7 +713,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				<PanelBody
 					title={ __(
 						'Apariencia del formulario',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 					initialOpen={ false }
 				>
@@ -744,13 +744,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								<div className="components-placeholder__label">
 									{ __(
 										'EIPSI Form Container',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									) }
 								</div>
 								<div className="components-placeholder__instructions">
 									{ __(
 										'Please enter a Form ID in the block settings to get started.',
-										'vas-dinamico-forms'
+										'eipsi-forms'
 									) }
 								</div>
 							</div>
@@ -784,11 +784,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									{ isStudyClosed
 										? `🔴 ${ __(
 												'Cerrado',
-												'vas-dinamico-forms'
+												'eipsi-forms'
 										  ) }`
 										: `🟢 ${ __(
 												'Abierto',
-												'vas-dinamico-forms'
+												'eipsi-forms'
 										  ) }` }
 								</div>
 								{ description && (
@@ -805,7 +805,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									disabled
 								>
 									{ submitButtonLabel ||
-										__( 'Submit', 'vas-dinamico-forms' ) }
+										__( 'Submit', 'eipsi-forms' ) }
 								</button>
 							</div>
 						</div>

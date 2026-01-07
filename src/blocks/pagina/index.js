@@ -5,7 +5,7 @@ import Save from './save';
 import './editor.scss';
 import './style.scss';
 
-registerBlockType( 'vas-dinamico/form-page', {
+registerBlockType( 'eipsi/form-page', {
 	edit: Edit,
 	save: Save,
 } );

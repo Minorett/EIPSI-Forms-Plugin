@@ -90,7 +90,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const displayLabel =
 		label && label.trim() !== ''
 			? label
-			: __( 'Escala Likert', 'vas-dinamico-forms' );
+			: __( 'Escala Likert', 'eipsi-forms' );
 
 	const labelArray = labels ? parseOptions( labels ) : [];
 
@@ -117,13 +117,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		<>
 			<InspectorControls>
 				<PanelBody
-					title={ __( 'Field Settings', 'vas-dinamico-forms' ) }
+					title={ __( 'Field Settings', 'eipsi-forms' ) }
 					initialOpen={ true }
 				>
 					<TextControl
 						label={ __(
 							'Field Name / Slug',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						value={ fieldName || '' }
 						onChange={ ( value ) =>
@@ -131,42 +131,42 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						}
 						help={ __(
 							'Used as the input name attribute (e.g., satisfaction)',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<TextControl
-						label={ __( 'Label', 'vas-dinamico-forms' ) }
+						label={ __( 'Label', 'eipsi-forms' ) }
 						value={ label || '' }
 						onChange={ ( value ) =>
 							setAttributes( { label: value } )
 						}
 					/>
 					<ToggleControl
-						label={ __( 'Required field', 'vas-dinamico-forms' ) }
+						label={ __( 'Required field', 'eipsi-forms' ) }
 						checked={ !! required }
 						onChange={ ( value ) =>
 							setAttributes( { required: !! value } )
 						}
 					/>
 					<TextareaControl
-						label={ __( 'Helper text', 'vas-dinamico-forms' ) }
+						label={ __( 'Helper text', 'eipsi-forms' ) }
 						value={ helperText || '' }
 						onChange={ ( value ) =>
 							setAttributes( { helperText: value } )
 						}
 						help={ __(
 							'Displayed below the field to provide additional guidance.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 				</PanelBody>
 
 				<PanelBody
-					title={ __( 'Likert Scale Options', 'vas-dinamico-forms' ) }
+					title={ __( 'Likert Scale Options', 'eipsi-forms' ) }
 					initialOpen={ true }
 				>
 					<RangeControl
-						label={ __( 'Minimum Value', 'vas-dinamico-forms' ) }
+						label={ __( 'Minimum Value', 'eipsi-forms' ) }
 						value={ minValue }
 						onChange={ ( value ) => {
 							if ( value < maxValue ) {
@@ -177,11 +177,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						max={ 10 }
 						help={ __(
 							'The lowest value in the scale',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<RangeControl
-						label={ __( 'Maximum Value', 'vas-dinamico-forms' ) }
+						label={ __( 'Maximum Value', 'eipsi-forms' ) }
 						value={ maxValue }
 						onChange={ ( value ) => {
 							if ( value > minValue ) {
@@ -192,13 +192,13 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						max={ 10 }
 						help={ __(
 							'The highest value in the scale',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 					/>
 					<TextareaControl
 						label={ __(
 							'Labels (separated by semicolon)',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						value={ labels || '' }
 						onChange={ ( value ) =>
@@ -208,7 +208,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						}
 						help={ __(
 							'Etiquetas opcionales para cada punto de la escala (deben coincidir con la cantidad de puntos). Separá con punto y coma (;). Formatos anteriores (líneas o comas) siguen funcionando.',
-							'vas-dinamico-forms'
+							'eipsi-forms'
 						) }
 						placeholder={ 'Nada; Poco; Moderado; Bastante; Mucho' }
 					/>
@@ -218,7 +218,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								// translators: %1$d: number of labels, %2$d: number of scale points
 								__(
 									"You have %1$d labels but %2$d scale points. Labels will be ignored if count doesn't match.",
-									'vas-dinamico-forms'
+									'eipsi-forms'
 								)
 									.replace( '%1$d', labelArray.length )
 									.replace( '%2$d', scale.length )

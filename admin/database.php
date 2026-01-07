@@ -153,7 +153,7 @@ class EIPSI_External_Database {
             return array(
                 'success' => false,
                 'message' => sprintf(
-                    __('Connection failed: %s', 'vas-dinamico-forms'),
+                    __('Connection failed: %s', 'eipsi-forms'),
                     $mysqli->connect_error
                 ),
                 'error_code' => $mysqli->connect_errno
@@ -168,7 +168,7 @@ class EIPSI_External_Database {
             return array(
                 'success' => false,
                 'message' => sprintf(
-                    __('Schema validation failed: %s', 'vas-dinamico-forms'),
+                    __('Schema validation failed: %s', 'eipsi-forms'),
                     $schema_result['error']
                 ),
                 'error_code' => 'SCHEMA_ERROR'
@@ -183,7 +183,7 @@ class EIPSI_External_Database {
             return array(
                 'success' => false,
                 'message' => sprintf(
-                    __('La base de datos externa no tiene columnas críticas requeridas para EIPSI Forms: %s', 'vas-dinamico-forms'),
+                    __('La base de datos externa no tiene columnas críticas requeridas para EIPSI Forms: %s', 'eipsi-forms'),
                     implode(', ', $column_validation['missing'])
                 ),
                 'error_code' => 'SCHEMA_MISSING_COLUMNS'
@@ -197,7 +197,7 @@ class EIPSI_External_Database {
         
         return array(
             'success' => true,
-            'message' => __('Connection successful! Schema validated.', 'vas-dinamico-forms'),
+            'message' => __('Connection successful! Schema validated.', 'eipsi-forms'),
             'db_name' => $db_name,
             'record_count' => $record_count,
             'table_exists' => true
@@ -779,7 +779,7 @@ class EIPSI_External_Database {
         if (!$credentials) {
             return array(
                 'success' => false,
-                'message' => __('No external database configured', 'vas-dinamico-forms'),
+                'message' => __('No external database configured', 'eipsi-forms'),
                 'using_wordpress_db' => true,
                 'results_table' => array('exists' => false),
                 'events_table' => array('exists' => false)
@@ -798,7 +798,7 @@ class EIPSI_External_Database {
             return array(
                 'success' => false,
                 'message' => sprintf(
-                    __('Connection failed: %s', 'vas-dinamico-forms'),
+                    __('Connection failed: %s', 'eipsi-forms'),
                     $mysqli->connect_error
                 ),
                 'error_code' => $mysqli->connect_errno,
@@ -896,11 +896,11 @@ class EIPSI_External_Database {
         
         $message = '';
         if (!$all_tables_exist) {
-            $message = __('⚠️ One or more database tables are missing', 'vas-dinamico-forms');
+            $message = __('⚠️ One or more database tables are missing', 'eipsi-forms');
         } elseif (!$all_columns_ok) {
-            $message = __('⚠️ Database tables exist but some columns are missing', 'vas-dinamico-forms');
+            $message = __('⚠️ Database tables exist but some columns are missing', 'eipsi-forms');
         } else {
-            $message = __('✓ All database tables exist and are properly configured', 'vas-dinamico-forms');
+            $message = __('✓ All database tables exist and are properly configured', 'eipsi-forms');
         }
         
         return array(
@@ -990,7 +990,7 @@ class EIPSI_External_Database {
                     return array(
                         'success' => false,
                         'message' => sprintf(
-                            __('Failed to delete table %s: %s', 'vas-dinamico-forms'),
+                            __('Failed to delete table %s: %s', 'eipsi-forms'),
                             $table_name,
                             $wpdb->last_error
                         ),
@@ -1009,7 +1009,7 @@ class EIPSI_External_Database {
         if (!$credentials) {
             return array(
                 'success' => true,
-                'message' => __('All clinical data has been successfully deleted from the WordPress database.', 'vas-dinamico-forms'),
+                'message' => __('All clinical data has been successfully deleted from the WordPress database.', 'eipsi-forms'),
                 'database' => 'wordpress'
             );
         }
@@ -1019,7 +1019,7 @@ class EIPSI_External_Database {
         if (!$mysqli) {
             return array(
                 'success' => false,
-                'message' => __('Failed to connect to external database', 'vas-dinamico-forms'),
+                'message' => __('Failed to connect to external database', 'eipsi-forms'),
                 'error_code' => 'CONNECTION_FAILED'
             );
         }
@@ -1036,7 +1036,7 @@ class EIPSI_External_Database {
                 return array(
                     'success' => false,
                     'message' => sprintf(
-                        __('Failed to delete table %s: %s', 'vas-dinamico-forms'),
+                        __('Failed to delete table %s: %s', 'eipsi-forms'),
                         $table_name,
                         $error
                     ),
@@ -1053,7 +1053,7 @@ class EIPSI_External_Database {
         
         return array(
             'success' => true,
-            'message' => __('All clinical data has been deleted from both WordPress and the external database.', 'vas-dinamico-forms'),
+            'message' => __('All clinical data has been deleted from both WordPress and the external database.', 'eipsi-forms'),
             'database' => 'wordpress_and_external'
         );
     }

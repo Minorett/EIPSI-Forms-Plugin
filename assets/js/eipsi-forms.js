@@ -809,7 +809,7 @@
 
 		fields.forEach( ( field ) => {
 			// Solo trackear campos que están dentro de un formulario EIPSI
-			if ( ! field.closest( '.eipsi-form, .vas-dinamico-form' ) ) {
+			if ( ! field.closest( '.eipsi-form, .eipsi-form' ) ) {
 				return;
 			}
 
@@ -1066,7 +1066,7 @@
 
 		initForms() {
 			const forms = document.querySelectorAll(
-				'.vas-dinamico-form form, .eipsi-form form'
+				'.eipsi-form form, .eipsi-form form'
 			);
 
 			forms.forEach( ( form ) => {
@@ -1093,7 +1093,7 @@
 			initFormMetadata( formId );
 
 			// Inicializar sistema de captura de tiempo
-			const container = form.closest( '.vas-dinamico-form, .eipsi-form' );
+			const container = form.closest( '.eipsi-form, .eipsi-form' );
 			if ( container ) {
 				const timingSettings = {
 					capturePageTiming:
@@ -1150,7 +1150,7 @@
 				return 'open';
 			}
 
-			const container = form.closest( '.vas-dinamico-form, .eipsi-form' );
+			const container = form.closest( '.eipsi-form, .eipsi-form' );
 			const rawStatus =
 				( container && container.dataset.studyStatus ) ||
 				form.dataset.studyStatus ||
@@ -1164,7 +1164,7 @@
 				return false;
 			}
 
-			const container = form.closest( '.vas-dinamico-form, .eipsi-form' );
+			const container = form.closest( '.eipsi-form, .eipsi-form' );
 			const strings = this.config.strings || {};
 			const message =
 				strings.studyClosedMessage ||
@@ -2420,7 +2420,7 @@
 
 			if ( this.config.settings?.enableAutoScroll ) {
 				const formContainer = form.closest(
-					'.vas-dinamico-form, .eipsi-form'
+					'.eipsi-form, .eipsi-form'
 				);
 				if ( formContainer ) {
 					this.scrollToElement( formContainer );
@@ -2969,7 +2969,7 @@
 
 		setFormLoading( form, isLoading ) {
 			const formContainer = form.closest(
-				'.vas-dinamico-form, .eipsi-form'
+				'.eipsi-form, .eipsi-form'
 			);
 			if ( formContainer ) {
 				if ( isLoading ) {
@@ -3056,7 +3056,7 @@
 			}
 
 			const formContainer = form.closest(
-				'.vas-dinamico-form, .eipsi-form'
+				'.eipsi-form, .eipsi-form'
 			);
 			if ( formContainer ) {
 				formContainer.insertBefore( messageElement, form );
@@ -3121,7 +3121,7 @@
 
 		clearMessages( form ) {
 			const formContainer = form.closest(
-				'.vas-dinamico-form, .eipsi-form'
+				'.eipsi-form, .eipsi-form'
 			);
 			if ( formContainer ) {
 				const messages =
@@ -3439,7 +3439,7 @@
 			} else {
 				// Try to get completion config from Form Container data attributes
 				const formContainer = form.closest(
-					'.eipsi-form, .vas-dinamico-form'
+					'.eipsi-form, .eipsi-form'
 				);
 				const completionConfig =
 					this.getCompletionConfigFromContainer( formContainer );

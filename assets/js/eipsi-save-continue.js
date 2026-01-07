@@ -709,7 +709,7 @@
 
 	document.addEventListener( 'DOMContentLoaded', () => {
 		const forms = document.querySelectorAll(
-			'.vas-dinamico-form form, .eipsi-form form'
+			'.eipsi-form form, .eipsi-form form'
 		);
 
 		forms.forEach( ( form ) => {

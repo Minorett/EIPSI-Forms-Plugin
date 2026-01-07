@@ -55,7 +55,7 @@ function eipsi_render_form_notice($message, $type = 'info') {
         esc_attr($palette[0]),
         esc_attr($palette[2]),
         esc_attr($palette[1]),
-        esc_html__('EIPSI Forms', 'vas-dinamico-forms'),
+        esc_html__('EIPSI Forms', 'eipsi-forms'),
         wp_kses_post($message)
     );
 }
@@ -91,13 +91,13 @@ function eipsi_resolve_template_id_from_attributes($attributes) {
  */
 function eipsi_get_form_template($template_id) {
     if (!$template_id) {
-        return new WP_Error('eipsi_missing_form', __('Por favor, seleccioná un formulario válido.', 'vas-dinamico-forms'));
+        return new WP_Error('eipsi_missing_form', __('Por favor, seleccioná un formulario válido.', 'eipsi-forms'));
     }
 
     $template = get_post($template_id);
 
     if (!$template || $template->post_type !== 'eipsi_form_template' || $template->post_status === 'trash') {
-        return new WP_Error('eipsi_form_not_found', __('El formulario seleccionado no existe o fue eliminado.', 'vas-dinamico-forms'));
+        return new WP_Error('eipsi_form_not_found', __('El formulario seleccionado no existe o fue eliminado.', 'eipsi-forms'));
     }
 
     return $template;
@@ -118,7 +118,7 @@ function eipsi_render_form_template_markup($template_id, $context = 'block') {
     }
 
     // Ensure frontend assets are loaded
-    vas_dinamico_enqueue_frontend_assets();
+    eipsi_forms_enqueue_frontend_assets();
 
     // Render Gutenberg blocks contained in the template
     $content = do_blocks($template->post_content);
@@ -143,7 +143,7 @@ function eipsi_render_form_block($attributes) {
 
     if (!$template_id) {
         return eipsi_render_form_notice(
-            __('Este bloque todavía no tiene un formulario asignado. Editalo en el editor para elegir uno de la librería.', 'vas-dinamico-forms'),
+            __('Este bloque todavía no tiene un formulario asignado. Editalo en el editor para elegir uno de la librería.', 'eipsi-forms'),
             'warning'
         );
     }
@@ -160,7 +160,7 @@ function eipsi_render_form_block($attributes) {
 function eipsi_render_form_shortcode_markup($template_id) {
     if (!$template_id) {
         return eipsi_render_form_notice(
-            __('Recordá pasar el atributo id: [eipsi_form id="123"].', 'vas-dinamico-forms'),
+            __('Recordá pasar el atributo id: [eipsi_form id="123"].', 'eipsi-forms'),
             'warning'
         );
     }

@@ -31,7 +31,7 @@ function eipsi_export_form_as_json($template_id, $mode = 'full') {
     $template = get_post($template_id);
     
     if (!$template || $template->post_type !== 'eipsi_form_template') {
-        return new WP_Error('invalid_form', __('El formulario no existe o no es válido.', 'vas-dinamico-forms'));
+        return new WP_Error('invalid_form', __('El formulario no existe o no es válido.', 'eipsi-forms'));
     }
     
     // Parse blocks from post_content
@@ -42,7 +42,7 @@ function eipsi_export_form_as_json($template_id, $mode = 'full') {
     $form_container_attrs = array();
     
     foreach ($blocks as $block) {
-        if ($block['blockName'] === 'vas-dinamico/form-container') {
+        if ($block['blockName'] === 'eipsi/form-container') {
             $form_name = isset($block['attrs']['formId']) ? $block['attrs']['formId'] : '';
             $form_container_attrs = $block['attrs'];
             break;
@@ -123,7 +123,7 @@ function eipsi_simplify_blocks_for_export($blocks) {
 function eipsi_import_form_from_json($json_data) {
     // Validate schema version
     if (!isset($json_data['schemaVersion'])) {
-        return new WP_Error('invalid_schema', __('El archivo JSON no tiene un esquema válido.', 'vas-dinamico-forms'));
+        return new WP_Error('invalid_schema', __('El archivo JSON no tiene un esquema válido.', 'eipsi-forms'));
     }
     
     $schema_version = $json_data['schemaVersion'];
@@ -133,7 +133,7 @@ function eipsi_import_form_from_json($json_data) {
         return new WP_Error(
             'unsupported_schema',
             sprintf(
-                __('Este JSON usa una versión de esquema más nueva (%s). Actualizá el plugin EIPSI Forms.', 'vas-dinamico-forms'),
+                __('Este JSON usa una versión de esquema más nueva (%s). Actualizá el plugin EIPSI Forms.', 'eipsi-forms'),
                 $schema_version
             )
         );
@@ -141,14 +141,14 @@ function eipsi_import_form_from_json($json_data) {
     
     // Validate required fields
     if (!isset($json_data['form']) || !isset($json_data['form']['title'])) {
-        return new WP_Error('invalid_structure', __('El archivo JSON no tiene la estructura requerida (falta form.title).', 'vas-dinamico-forms'));
+        return new WP_Error('invalid_structure', __('El archivo JSON no tiene la estructura requerida (falta form.title).', 'eipsi-forms'));
     }
     
     $form_data = $json_data['form'];
     
     // Validate that blocks exist
     if (!isset($form_data['blocks']) || !is_array($form_data['blocks'])) {
-        return new WP_Error('invalid_structure', __('El archivo JSON no tiene bloques válidos (falta form.blocks).', 'vas-dinamico-forms'));
+        return new WP_Error('invalid_structure', __('El archivo JSON no tiene bloques válidos (falta form.blocks).', 'eipsi-forms'));
     }
     
     // Prepare post data
@@ -248,11 +248,11 @@ function eipsi_duplicate_form($template_id) {
     $original = get_post($template_id);
     
     if (!$original || $original->post_type !== 'eipsi_form_template') {
-        return new WP_Error('invalid_form', __('El formulario no existe o no es válido.', 'vas-dinamico-forms'));
+        return new WP_Error('invalid_form', __('El formulario no existe o no es válido.', 'eipsi-forms'));
     }
     
     // Create duplicate post
-    $new_title = sprintf(__('Copia de %s', 'vas-dinamico-forms'), $original->post_title);
+    $new_title = sprintf(__('Copia de %s', 'eipsi-forms'), $original->post_title);
     
     $new_post_id = wp_insert_post(array(
         'post_title' => $new_title,
@@ -290,14 +290,14 @@ function eipsi_ajax_export_form() {
     check_ajax_referer('eipsi_form_tools_nonce', 'nonce');
     
     if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => __('No tenés permisos para exportar formularios.', 'vas-dinamico-forms')));
+        wp_send_json_error(array('message' => __('No tenés permisos para exportar formularios.', 'eipsi-forms')));
     }
     
     $template_id = isset($_POST['template_id']) ? absint($_POST['template_id']) : 0;
     $mode = isset($_POST['mode']) ? sanitize_text_field($_POST['mode']) : 'full';
     
     if (!$template_id) {
-        wp_send_json_error(array('message' => __('ID de formulario inválido.', 'vas-dinamico-forms')));
+        wp_send_json_error(array('message' => __('ID de formulario inválido.', 'eipsi-forms')));
     }
     
     // Validate mode
@@ -331,11 +331,11 @@ function eipsi_ajax_import_form() {
     check_ajax_referer('eipsi_form_tools_nonce', 'nonce');
     
     if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => __('No tenés permisos para importar formularios.', 'vas-dinamico-forms')));
+        wp_send_json_error(array('message' => __('No tenés permisos para importar formularios.', 'eipsi-forms')));
     }
     
     if (!isset($_POST['json_data'])) {
-        wp_send_json_error(array('message' => __('No se recibió el archivo JSON.', 'vas-dinamico-forms')));
+        wp_send_json_error(array('message' => __('No se recibió el archivo JSON.', 'eipsi-forms')));
     }
     
     $json_string = wp_unslash($_POST['json_data']);
@@ -344,7 +344,7 @@ function eipsi_ajax_import_form() {
     if (json_last_error() !== JSON_ERROR_NONE) {
         wp_send_json_error(array(
             'message' => sprintf(
-                __('Error al leer el JSON: %s', 'vas-dinamico-forms'),
+                __('Error al leer el JSON: %s', 'eipsi-forms'),
                 json_last_error_msg()
             ),
         ));
@@ -360,7 +360,7 @@ function eipsi_ajax_import_form() {
     
     wp_send_json_success(array(
         'message' => sprintf(
-            __('✅ Formulario "%s" importado correctamente.', 'vas-dinamico-forms'),
+            __('✅ Formulario "%s" importado correctamente.', 'eipsi-forms'),
             $template->post_title
         ),
         'template_id' => $new_template_id,
@@ -376,13 +376,13 @@ function eipsi_ajax_duplicate_form() {
     check_ajax_referer('eipsi_form_tools_nonce', 'nonce');
     
     if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => __('No tenés permisos para duplicar formularios.', 'vas-dinamico-forms')));
+        wp_send_json_error(array('message' => __('No tenés permisos para duplicar formularios.', 'eipsi-forms')));
     }
     
     $template_id = isset($_POST['template_id']) ? absint($_POST['template_id']) : 0;
     
     if (!$template_id) {
-        wp_send_json_error(array('message' => __('ID de formulario inválido.', 'vas-dinamico-forms')));
+        wp_send_json_error(array('message' => __('ID de formulario inválido.', 'eipsi-forms')));
     }
     
     $new_template_id = eipsi_duplicate_form($template_id);
@@ -395,7 +395,7 @@ function eipsi_ajax_duplicate_form() {
     
     wp_send_json_success(array(
         'message' => sprintf(
-            __('✅ Formulario duplicado: "%s"', 'vas-dinamico-forms'),
+            __('✅ Formulario duplicado: "%s"', 'eipsi-forms'),
             $template->post_title
         ),
         'template_id' => $new_template_id,
@@ -417,7 +417,7 @@ function eipsi_form_library_row_actions($actions, $post) {
         '<a href="#" class="eipsi-export-form" data-template-id="%d" data-template-name="%s">%s</a>',
         $post->ID,
         esc_attr($post->post_title),
-        __('Exportar JSON', 'vas-dinamico-forms')
+        __('Exportar JSON', 'eipsi-forms')
     );
     
     // Add Duplicate action
@@ -425,7 +425,7 @@ function eipsi_form_library_row_actions($actions, $post) {
         '<a href="#" class="eipsi-duplicate-form" data-template-id="%d" data-template-name="%s">%s</a>',
         $post->ID,
         esc_attr($post->post_title),
-        __('Duplicar', 'vas-dinamico-forms')
+        __('Duplicar', 'eipsi-forms')
     );
     
     return $actions;
@@ -446,7 +446,7 @@ function eipsi_form_library_import_button() {
     jQuery(document).ready(function($) {
         // Add Import button next to "Add New"
         $('.page-title-action').first().after(
-            '<a href="#" class="page-title-action eipsi-import-form-btn" style="margin-left: 8px;">⬆ <?php echo esc_js(__('Importar formulario', 'vas-dinamico-forms')); ?></a>'
+            '<a href="#" class="page-title-action eipsi-import-form-btn" style="margin-left: 8px;">⬆ <?php echo esc_js(__('Importar formulario', 'eipsi-forms')); ?></a>'
         );
     });
     </script>
@@ -473,39 +473,39 @@ function eipsi_form_library_tools_scripts() {
     );
 
     // Ensure custom blocks (and their save() implementations) are available to serialize lite JSON
-    wp_enqueue_script('vas-dinamico-blocks-editor');
+    wp_enqueue_script('eipsi-blocks-editor');
     
     wp_localize_script('eipsi-form-library-tools', 'eipsiFormTools', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_form_tools_nonce'),
         'clinicalTemplatesNonce' => wp_create_nonce('eipsi_clinical_templates_nonce'),
         'strings' => array(
-            'exportSuccess' => __('Formulario exportado correctamente', 'vas-dinamico-forms'),
-            'exportError' => __('Error al exportar el formulario', 'vas-dinamico-forms'),
-            'exportModalTitle' => __('Exportar formulario', 'vas-dinamico-forms'),
-            'exportModalSubtitle' => __('Seleccioná el tipo de JSON que necesitás:', 'vas-dinamico-forms'),
-            'exportLiteTitle' => __('✨ Formato simplificado (recomendado)', 'vas-dinamico-forms'),
-            'exportLiteDescription' => __('JSON limpio, editable a mano. Ideal para demos clínicas y control de versiones.', 'vas-dinamico-forms'),
-            'exportFullTitle' => __('Formato completo', 'vas-dinamico-forms'),
-            'exportFullDescription' => __('Incluye HTML Gutenberg, innerHTML y metadatos internos. Útil para backups exactos.', 'vas-dinamico-forms'),
-            'exportModeConfirm' => __('Exportar JSON', 'vas-dinamico-forms'),
-            'exportModeCancel' => __('Cancelar', 'vas-dinamico-forms'),
-            'duplicateConfirm' => __('¿Duplicar este formulario?', 'vas-dinamico-forms'),
-            'duplicateSuccess' => __('Formulario duplicado correctamente', 'vas-dinamico-forms'),
-            'duplicateError' => __('Error al duplicar el formulario', 'vas-dinamico-forms'),
-            'importTitle' => __('Importar formulario desde JSON', 'vas-dinamico-forms'),
-            'importInstructions' => __('Seleccioná un archivo .json exportado desde EIPSI Forms:', 'vas-dinamico-forms'),
-            'importButton' => __('Importar', 'vas-dinamico-forms'),
-            'importCancel' => __('Cancelar', 'vas-dinamico-forms'),
-            'importSuccess' => __('Formulario importado correctamente', 'vas-dinamico-forms'),
-            'importError' => __('Error al importar el formulario', 'vas-dinamico-forms'),
-            'invalidFile' => __('Por favor, seleccioná un archivo JSON válido.', 'vas-dinamico-forms'),
-            'importParseError' => __('El archivo JSON está incompleto o corrupto.', 'vas-dinamico-forms'),
-            'importLiteError' => __('No pudimos convertir el JSON simplificado. Revisá que todos los bloques tengan "blockName" y "attrs".', 'vas-dinamico-forms'),
-            'importLiteEngineError' => __('WordPress todavía no cargó el motor de bloques. Recargá la página e intentá nuevamente.', 'vas-dinamico-forms'),
-            'clinicalTemplateConfirm' => __('¿Crear un formulario nuevo basado en %s? Vas a poder editarlo antes de usarlo con pacientes.', 'vas-dinamico-forms'),
-            'clinicalTemplateCreating' => __('Creando...', 'vas-dinamico-forms'),
-            'clinicalTemplateError' => __('No pudimos crear la plantilla. Reintentá en unos segundos.', 'vas-dinamico-forms'),
+            'exportSuccess' => __('Formulario exportado correctamente', 'eipsi-forms'),
+            'exportError' => __('Error al exportar el formulario', 'eipsi-forms'),
+            'exportModalTitle' => __('Exportar formulario', 'eipsi-forms'),
+            'exportModalSubtitle' => __('Seleccioná el tipo de JSON que necesitás:', 'eipsi-forms'),
+            'exportLiteTitle' => __('✨ Formato simplificado (recomendado)', 'eipsi-forms'),
+            'exportLiteDescription' => __('JSON limpio, editable a mano. Ideal para demos clínicas y control de versiones.', 'eipsi-forms'),
+            'exportFullTitle' => __('Formato completo', 'eipsi-forms'),
+            'exportFullDescription' => __('Incluye HTML Gutenberg, innerHTML y metadatos internos. Útil para backups exactos.', 'eipsi-forms'),
+            'exportModeConfirm' => __('Exportar JSON', 'eipsi-forms'),
+            'exportModeCancel' => __('Cancelar', 'eipsi-forms'),
+            'duplicateConfirm' => __('¿Duplicar este formulario?', 'eipsi-forms'),
+            'duplicateSuccess' => __('Formulario duplicado correctamente', 'eipsi-forms'),
+            'duplicateError' => __('Error al duplicar el formulario', 'eipsi-forms'),
+            'importTitle' => __('Importar formulario desde JSON', 'eipsi-forms'),
+            'importInstructions' => __('Seleccioná un archivo .json exportado desde EIPSI Forms:', 'eipsi-forms'),
+            'importButton' => __('Importar', 'eipsi-forms'),
+            'importCancel' => __('Cancelar', 'eipsi-forms'),
+            'importSuccess' => __('Formulario importado correctamente', 'eipsi-forms'),
+            'importError' => __('Error al importar el formulario', 'eipsi-forms'),
+            'invalidFile' => __('Por favor, seleccioná un archivo JSON válido.', 'eipsi-forms'),
+            'importParseError' => __('El archivo JSON está incompleto o corrupto.', 'eipsi-forms'),
+            'importLiteError' => __('No pudimos convertir el JSON simplificado. Revisá que todos los bloques tengan "blockName" y "attrs".', 'eipsi-forms'),
+            'importLiteEngineError' => __('WordPress todavía no cargó el motor de bloques. Recargá la página e intentá nuevamente.', 'eipsi-forms'),
+            'clinicalTemplateConfirm' => __('¿Crear un formulario nuevo basado en %s? Vas a poder editarlo antes de usarlo con pacientes.', 'eipsi-forms'),
+            'clinicalTemplateCreating' => __('Creando...', 'eipsi-forms'),
+            'clinicalTemplateError' => __('No pudimos crear la plantilla. Reintentá en unos segundos.', 'eipsi-forms'),
         ),
     ));
 }

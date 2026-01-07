@@ -5,7 +5,7 @@ import Save from './save';
 import './editor.scss';
 import './style.scss';
 
-registerBlockType( 'vas-dinamico/campo-textarea', {
+registerBlockType( 'eipsi/campo-textarea', {
 	edit: Edit,
 	save: Save,
 } );

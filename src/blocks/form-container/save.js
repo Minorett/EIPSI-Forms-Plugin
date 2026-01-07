@@ -53,7 +53,7 @@ export default function Save( { attributes } ) {
 		: {};
 
 	const blockProps = useBlockProps.save( {
-		className: 'vas-dinamico-form eipsi-form ' + ( className || '' ),
+		className: 'eipsi-form eipsi-form ' + ( className || '' ),
 		style: cssVars,
 		'data-preset': presetName || 'Clinical Blue',
 		'data-study-status': normalizedStudyStatus,
@@ -70,7 +70,7 @@ export default function Save( { attributes } ) {
 				<div className="eipsi-study-closed-notice" role="alert">
 					{ __(
 						'Este estudio está cerrado y no acepta más respuestas. Contacta al investigador si tienes dudas.',
-						'vas-dinamico-forms'
+						'eipsi-forms'
 					) }
 				</div>
 			) }
