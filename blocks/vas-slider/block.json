@@ -1,148 +1,148 @@
 {
-    "$schema": "https://schemas.wp.org/trunk/block.json",
-    "apiVersion": 3,
-    "name": "vas-dinamico/vas-slider",
-    "version": "1.0.0",
-    "title": "EIPSI VAS Slider",
-    "category": "eipsi-forms",
-    "icon": "chart-line",
-    "description": "Campo de escala analógica visual (VAS) con slider para formularios EIPSI.",
-    "keywords": [
-        "form",
-        "field",
-        "vas",
-        "slider",
-        "scale",
-        "analog",
-        "eipsi"
-    ],
-    "textdomain": "vas-dinamico-forms",
-    "parent": [ "vas-dinamico/form-container", "vas-dinamico/form-page" ],
-    "editorScript": "file:../../build/index.js",
-    "editorStyle": "file:../../build/index.css",
-    "style": "file:../../build/style-index.css",
-    "supports": {
-        "html": false,
-        "spacing": {
-            "margin": true,
-            "padding": true
-        }
-    },
-    "attributes": {
-        "fieldName": {
-            "type": "string",
-            "default": ""
-        },
-        "label": {
-            "type": "string",
-            "default": ""
-        },
-        "required": {
-            "type": "boolean",
-            "default": false
-        },
-        "helperText": {
-            "type": "string",
-            "default": ""
-        },
-        "labels": {
-            "type": "string",
-            "default": ""
-        },
-        "minValue": {
-            "type": "number",
-            "default": 0
-        },
-        "maxValue": {
-            "type": "number",
-            "default": 100
-        },
-        "step": {
-            "type": "number",
-            "default": 1
-        },
-        "initialValue": {
-            "type": "number",
-            "default": 50
-        },
-        "showValue": {
-            "type": "boolean",
-            "default": true
-        },
-        "labelAlignmentPercent": {
-            "type": "number",
-            "default": 40
-        },
-        "enableManualLabelLineBreaks": {
-            "type": "boolean",
-            "default": false
-        },
-        "labelSpacing": {
-            "type": "number",
-            "default": 100
-        },
-        "labelFontSize": {
-            "type": "number",
-            "default": 16
-        },
-        "valueFontSize": {
-            "type": "number",
-            "default": 36
-        },
-        "showLabelContainers": {
-            "type": "boolean",
-            "default": false
-        },
-        "showValueContainer": {
-            "type": "boolean",
-            "default": false
-        },
-        "boldLabels": {
-            "type": "boolean",
-            "default": true
-        },
-        "showCurrentValue": {
-            "type": "boolean",
-            "default": true
-        },
-        "valuePosition": {
-            "type": "string",
-            "default": "above",
-            "enum": ["above", "below"]
-        },
-        "labelBgColor": {
-            "type": "string",
-            "default": ""
-        },
-        "labelBorderColor": {
-            "type": "string",
-            "default": ""
-        },
-        "labelTextColor": {
-            "type": "string",
-            "default": ""
-        },
-        "className": {
-            "type": "string",
-            "default": ""
-        },
-        "conditionalLogic": {
-            "type": "object",
-            "default": null
-        }
-    },
-    "example": {
-        "attributes": {
-            "fieldName": "pain_level",
-            "label": "Nivel de dolor",
-            "required": true,
-            "labels": "0,10",
-            "minValue": 0,
-            "maxValue": 10,
-            "step": 1,
-            "initialValue": 5,
-            "showValue": true,
-            "helperText": "Desliza el control para indicar tu nivel de dolor"
-        }
-    }
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "vas-dinamico/vas-slider",
+	"version": "1.0.0",
+	"title": "EIPSI VAS Slider",
+	"category": "eipsi-forms",
+	"icon": "chart-line",
+	"description": "Campo de escala analógica visual (VAS) con slider para formularios EIPSI.",
+	"keywords": [
+		"form",
+		"field",
+		"vas",
+		"slider",
+		"scale",
+		"analog",
+		"eipsi"
+	],
+	"textdomain": "vas-dinamico-forms",
+	"parent": [ "vas-dinamico/form-container", "vas-dinamico/form-page" ],
+	"editorScript": "file:../../build/index.js",
+	"editorStyle": "file:../../build/index.css",
+	"style": "file:../../build/style-index.css",
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"fieldName": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"required": {
+			"type": "boolean",
+			"default": false
+		},
+		"helperText": {
+			"type": "string",
+			"default": ""
+		},
+		"labels": {
+			"type": "string",
+			"default": ""
+		},
+		"minValue": {
+			"type": "number",
+			"default": 0
+		},
+		"maxValue": {
+			"type": "number",
+			"default": 100
+		},
+		"step": {
+			"type": "number",
+			"default": 1
+		},
+		"initialValue": {
+			"type": "number",
+			"default": 50
+		},
+		"showValue": {
+			"type": "boolean",
+			"default": true
+		},
+		"labelAlignmentPercent": {
+			"type": "number",
+			"default": 40
+		},
+		"enableManualLabelLineBreaks": {
+			"type": "boolean",
+			"default": false
+		},
+		"labelSpacing": {
+			"type": "number",
+			"default": 100
+		},
+		"labelFontSize": {
+			"type": "number",
+			"default": 16
+		},
+		"valueFontSize": {
+			"type": "number",
+			"default": 36
+		},
+		"showLabelContainers": {
+			"type": "boolean",
+			"default": false
+		},
+		"showValueContainer": {
+			"type": "boolean",
+			"default": false
+		},
+		"boldLabels": {
+			"type": "boolean",
+			"default": true
+		},
+		"showCurrentValue": {
+			"type": "boolean",
+			"default": true
+		},
+		"valuePosition": {
+			"type": "string",
+			"default": "above",
+			"enum": [ "above", "below" ]
+		},
+		"labelBgColor": {
+			"type": "string",
+			"default": ""
+		},
+		"labelBorderColor": {
+			"type": "string",
+			"default": ""
+		},
+		"labelTextColor": {
+			"type": "string",
+			"default": ""
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		},
+		"conditionalLogic": {
+			"type": "object",
+			"default": null
+		}
+	},
+	"example": {
+		"attributes": {
+			"fieldName": "pain_level",
+			"label": "Nivel de dolor",
+			"required": true,
+			"labels": "0,10",
+			"minValue": 0,
+			"maxValue": 10,
+			"step": 1,
+			"initialValue": 5,
+			"showValue": true,
+			"helperText": "Desliza el control para indicar tu nivel de dolor"
+		}
+	}
 }

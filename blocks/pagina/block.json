@@ -1,47 +1,47 @@
 {
-    "$schema": "https://schemas.wp.org/trunk/block.json",
-    "apiVersion": 3,
-    "name": "vas-dinamico/form-page",
-    "version": "1.0.0",
-    "title": "EIPSI Página",
-    "category": "eipsi-forms",
-    "icon": "media-document",
-    "description": "A page container for grouping form fields with optional title in paginated forms.",
-    "keywords": [ "form", "page", "pagina", "step", "eipsi" ],
-    "parent": [ "vas-dinamico/form-container" ],
-    "textdomain": "vas-dinamico-forms",
-    "editorScript": "file:../../build/index.js",
-    "editorStyle": "file:../../build/index.css",
-    "style": "file:../../build/style-index.css",
-    "supports": {
-        "html": false,
-        "reusable": false
-    },
-    "attributes": {
-        "title": {
-            "type": "string",
-            "default": ""
-        },
-        "pageIndex": {
-            "type": "number",
-            "default": 1
-        },
-        "className": {
-            "type": "string",
-            "default": ""
-        },
-        "pageType": {
-            "type": "string",
-            "default": "standard"
-        },
-        "enableRestartButton": {
-            "type": "boolean",
-            "default": true
-        },
-        "restartButtonLabel": {
-            "type": "string",
-            "default": "Comenzar de nuevo"
-        }
-    },
-    "usesContext": [ "vas-dinamico/formId" ]
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "vas-dinamico/form-page",
+	"version": "1.0.0",
+	"title": "EIPSI Página",
+	"category": "eipsi-forms",
+	"icon": "media-document",
+	"description": "A page container for grouping form fields with optional title in paginated forms.",
+	"keywords": [ "form", "page", "pagina", "step", "eipsi" ],
+	"parent": [ "vas-dinamico/form-container" ],
+	"textdomain": "vas-dinamico-forms",
+	"editorScript": "file:../../build/index.js",
+	"editorStyle": "file:../../build/index.css",
+	"style": "file:../../build/style-index.css",
+	"supports": {
+		"html": false,
+		"reusable": false
+	},
+	"attributes": {
+		"title": {
+			"type": "string",
+			"default": ""
+		},
+		"pageIndex": {
+			"type": "number",
+			"default": 1
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		},
+		"pageType": {
+			"type": "string",
+			"default": "standard"
+		},
+		"enableRestartButton": {
+			"type": "boolean",
+			"default": true
+		},
+		"restartButtonLabel": {
+			"type": "string",
+			"default": "Comenzar de nuevo"
+		}
+	},
+	"usesContext": [ "vas-dinamico/formId" ]
 }
