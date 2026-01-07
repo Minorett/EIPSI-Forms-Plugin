@@ -42,6 +42,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		presetName,
 		allowBackwardsNav,
 		showProgressBar,
+		studyStatus,
 		useCustomCompletion,
 		completionTitle,
 		completionMessage,
@@ -55,6 +56,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 	const showProgressBarEnabled =
 		typeof showProgressBar === 'boolean' ? showProgressBar : true;
+
+	const normalizedStudyStatus = studyStatus === 'closed' ? 'closed' : 'open';
+	const isStudyClosed = normalizedStudyStatus === 'closed';
 
 	const customCompletionEnabled =
 		typeof useCustomCompletion === 'boolean' ? useCustomCompletion : false;
@@ -232,6 +236,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				'presetName',
 				'allowBackwardsNav',
 				'showProgressBar',
+				'studyStatus',
 				'useCustomCompletion',
 				'completionTitle',
 				'completionMessage',
@@ -415,6 +420,46 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							'Optional description text shown above the form',
 							'vas-dinamico-forms'
 						) }
+					/>
+
+					<Notice
+						status={ isStudyClosed ? 'warning' : 'success' }
+						isDismissible={ false }
+						style={ { marginTop: '12px' } }
+					>
+						{ isStudyClosed
+							? __(
+									'🔴 Cerrado: este estudio no acepta nuevas respuestas.',
+									'vas-dinamico-forms'
+							  )
+							: __(
+									'🟢 Abierto: este estudio acepta respuestas normalmente.',
+									'vas-dinamico-forms'
+							  ) }
+					</Notice>
+
+					<ToggleControl
+						label={ __(
+							'Estado del estudio',
+							'vas-dinamico-forms'
+						) }
+						checked={ isStudyClosed }
+						onChange={ ( value ) =>
+							setAttributes( {
+								studyStatus: value ? 'closed' : 'open',
+							} )
+						}
+						help={
+							isStudyClosed
+								? __(
+										'Para volver a recolectar datos, cambialo a Abierto.',
+										'vas-dinamico-forms'
+								  )
+								: __(
+										'Si lo cerrás, el formulario se oculta y muestra un aviso en el frontend.',
+										'vas-dinamico-forms'
+								  )
+						}
 					/>
 				</PanelBody>
 
@@ -723,6 +768,28 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 										)
 										.join( ' ' ) }
 								</h3>
+
+								<div
+									className="eipsi-study-status-indicator"
+									style={ {
+										marginTop: '6px',
+										fontSize: '12px',
+										fontWeight: 600,
+										color: isStudyClosed
+											? 'var(--eipsi-color-error, #d32f2f)'
+											: 'var(--eipsi-color-success, #198754)',
+									} }
+								>
+									{ isStudyClosed
+										? `🔴 ${ __(
+												'Cerrado',
+												'vas-dinamico-forms'
+										  ) }`
+										: `🟢 ${ __(
+												'Abierto',
+												'vas-dinamico-forms'
+										  ) }` }
+								</div>
 								{ description && (
 									<p className="form-description">
 										{ description }

@@ -550,6 +550,7 @@ function vas_dinamico_enqueue_frontend_assets() {
             'submit' => 'Enviar',
             'error' => 'Ocurrió un error. Por favor, inténtelo de nuevo.',
             'success' => '¡Formulario enviado correctamente!',
+            'studyClosedMessage' => __('Este estudio está cerrado y no acepta más respuestas. Contacta al investigador si tienes dudas.', 'vas-dinamico-forms'),
         ),
         'settings' => array(
             'debug' => apply_filters('vas_dinamico_debug_mode', defined('WP_DEBUG') && WP_DEBUG),

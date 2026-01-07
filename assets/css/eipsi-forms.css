@@ -55,6 +55,12 @@
     --eipsi-color-success-note: rgba(255, 255, 255, 0.85);
     --eipsi-color-success-shadow: rgba(0, 0, 0, 0.1);
     --eipsi-color-warning: #ffc107;
+
+    /* Alerts (used for study closed, info banners, etc.) */
+    --eipsi-color-alert-bg: var(--eipsi-color-background-subtle);
+    --eipsi-color-alert-text: var(--eipsi-color-text);
+    --eipsi-color-alert-border: var(--eipsi-color-border);
+
     --eipsi-color-border: #e2e8f0;
     --eipsi-color-border-dark: #cbd5e0;
     
@@ -1862,6 +1868,29 @@ select[aria-invalid="true"]:focus {
     font-size: var(--eipsi-font-size-base, 16px);
     line-height: 1.5;
     animation: slideIn 0.4s ease-out;
+}
+
+/* ============================================================================
+   18.1 STUDY STATUS (OPEN/CLOSED)
+   ============================================================================ */
+
+.eipsi-study-closed-notice {
+    margin: 0 0 var(--eipsi-spacing-lg, 2rem) 0;
+    padding: 1.25rem 1.5rem;
+    background: var(--eipsi-color-alert-bg, #f8f9fa);
+    color: var(--eipsi-color-alert-text, #2c3e50);
+    border: 2px solid var(--eipsi-color-alert-border, #e2e8f0);
+    border-left: 6px solid var(--eipsi-color-primary, #005a87);
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-size: var(--eipsi-font-size-base, 16px);
+    line-height: 1.55;
+}
+
+/* Hard guard (no-JS safety): if closed, hide the entire form element */
+.vas-dinamico-form[data-study-status="closed"] .eipsi-form-element,
+.eipsi-form[data-study-status="closed"] .eipsi-form-element {
+    display: none !important;
 }
 
 @keyframes slideIn {

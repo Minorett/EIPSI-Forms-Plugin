@@ -640,6 +640,11 @@
             );
 
             forms.forEach( ( form ) => {
+                // Guard clínico: si el estudio está cerrado, no inicializamos ni dejamos enviar
+                if ( this.applyStudyStatusGuard( form ) ) {
+                    return;
+                }
+
                 this.initForm( form );
             } );
         },
@@ -689,6 +694,60 @@
 
             const hiddenField = form.querySelector( 'input[name="form_id"]' );
             return hiddenField ? hiddenField.value : '';
+        },
+
+        getStudyStatus( form ) {
+            if ( ! form ) {
+                return 'open';
+            }
+
+            const container = form.closest( '.vas-dinamico-form, .eipsi-form' );
+            const rawStatus =
+                ( container && container.dataset.studyStatus ) ||
+                form.dataset.studyStatus ||
+                '';
+
+            return rawStatus === 'closed' ? 'closed' : 'open';
+        },
+
+        applyStudyStatusGuard( form ) {
+            if ( this.getStudyStatus( form ) !== 'closed' ) {
+                return false;
+            }
+
+            const container = form.closest( '.vas-dinamico-form, .eipsi-form' );
+            const strings = this.config.strings || {};
+            const message =
+                strings.studyClosedMessage ||
+                'Este estudio está cerrado y no acepta más respuestas. Contacta al investigador si tienes dudas.';
+
+            if ( container ) {
+                container.classList.add( 'eipsi-study-is-closed' );
+                container.dataset.studyStatus = 'closed';
+
+                // Ensure notice exists (for backwards compatibility)
+                let notice = container.querySelector( '.eipsi-study-closed-notice' );
+
+                if ( ! notice ) {
+                    notice = document.createElement( 'div' );
+                    notice.className = 'eipsi-study-closed-notice';
+                    notice.setAttribute( 'role', 'alert' );
+                    notice.textContent = message;
+
+                    container.insertBefore( notice, container.firstChild );
+                }
+            }
+
+            // Hide and disable the form
+            form.style.display = 'none';
+            form.setAttribute( 'aria-hidden', 'true' );
+            form.querySelectorAll( 'input, select, textarea, button' ).forEach(
+                ( el ) => {
+                    el.disabled = true;
+                }
+            );
+
+            return true;
         },
 
         getTrackingFormId( form ) {
@@ -2125,6 +2184,11 @@
         handleSubmit( e, form ) {
             e.preventDefault();
 
+            // Ética clínica: si el estudio está cerrado, no validamos ni enviamos nada
+            if ( this.applyStudyStatusGuard( form ) ) {
+                return;
+            }
+
             this.getCurrentPage( form );
 
             if ( ! this.validateForm( form ) ) {
@@ -2141,6 +2205,10 @@
         },
 
         submitForm( form ) {
+            if ( this.applyStudyStatusGuard( form ) ) {
+                return;
+            }
+
             const submitButton = form.querySelector( 'button[type="submit"]' );
             const prevButton = form.querySelector( '.eipsi-prev-button' );
             const nextButton = form.querySelector( '.eipsi-next-button' );
@@ -2234,10 +2302,18 @@
                             this.showIntegratedThankYouPage( form );
                         }, 1500 );
                     } else {
+                        const strings = this.config.strings || {};
+                        const serverMessage =
+                            data && data.data && data.data.message
+                                ? data.data.message
+                                : '';
+
                         this.showMessage(
                             form,
                             'error',
-                            'Ocurrió un error. Por favor, inténtelo de nuevo.'
+                            serverMessage ||
+                                strings.error ||
+                                'Ocurrió un error. Por favor, inténtelo de nuevo.'
                         );
                     }
                 } )
