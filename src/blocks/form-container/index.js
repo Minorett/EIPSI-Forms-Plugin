@@ -64,6 +64,20 @@ registerBlockType( 'eipsi/form-container', {
 			type: 'string',
 			default: '',
 		},
+		// === Atributos de Aleatorización (Fase 1) ===
+		useRandomization: {
+			type: 'boolean',
+			default: false,
+		},
+		randomConfig: {
+			type: 'object',
+			default: {
+				forms: [], // Array de post IDs
+				probabilities: {}, // { formId: percentage }
+				method: 'seeded', // 'simple' | 'seeded'
+				manualAssigns: [], // [{ email, formId, timestamp }]
+			},
+		},
 	},
 	edit: Edit,
 	save: Save,
