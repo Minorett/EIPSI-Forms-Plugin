@@ -221,7 +221,7 @@ $colspan = $show_form_column ? 8 : 7;
                         if (isset($metadata['page_timings']['total_duration'])) {
                             $total_seconds = $metadata['page_timings']['total_duration'];
                             $minutes = floor($total_seconds / 60);
-                            $seconds = round($total_seconds % 60);
+                            $seconds = intval(round($total_seconds % 60));
 
                             if ($minutes > 0) {
                                 $total_time_display = sprintf('%d min %d sec', $minutes, $seconds);
