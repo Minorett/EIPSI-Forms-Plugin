@@ -22,7 +22,7 @@ class EIPSI_Partial_Responses {
         
         $sql = "CREATE TABLE IF NOT EXISTS $table_name (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-            form_id varchar(15) NOT NULL,
+            form_id varchar(64) NOT NULL,
             participant_id varchar(255) NOT NULL,
             session_id varchar(255) NOT NULL,
             page_index int(11) DEFAULT 1,
