@@ -158,6 +158,12 @@ add_action('wp_ajax_eipsi_random_assign', 'eipsi_random_assign_handler');
 add_action('wp_ajax_nopriv_eipsi_random_assign', 'eipsi_random_assign_handler');
 add_action('wp_ajax_eipsi_get_forms_list', 'eipsi_get_forms_list_handler');
 
+// === Handlers de Aleatorización Fase 2 (Longitudinal + Reminders) ===
+add_action('wp_ajax_eipsi_validate_reminder_token', 'eipsi_validate_reminder_token_handler');
+add_action('wp_ajax_nopriv_eipsi_validate_reminder_token', 'eipsi_validate_reminder_token_handler');
+add_action('wp_ajax_eipsi_send_reminder_manual', 'eipsi_send_reminder_manual_handler');
+add_action('wp_ajax_eipsi_unsubscribe_reminders', 'eipsi_unsubscribe_reminders_handler');
+
 /**
  * Handler para obtener lista de formularios disponibles (CPT eipsi_form)
  * 
@@ -367,6 +373,229 @@ function eipsi_weighted_random($forms, $probabilities) {
 function eipsi_get_assignment($main_form_id, $email) {
     $meta_key = '_eipsi_assign_' . md5(strtolower($email));
     return get_post_meta($main_form_id, $meta_key, true);
+}
+
+/**
+ * Valida un token de recordatorio (Fase 2 - Longitudinal)
+ * 
+ * @since 1.3.0
+ */
+function eipsi_validate_reminder_token_handler() {
+    // Permitir validación sin nonce para links de email (nopriv)
+    // Validaremos el token mismo como seguridad
+    
+    $token = isset($_POST['token']) ? sanitize_text_field($_POST['token']) : '';
+    
+    if (empty($token)) {
+        wp_send_json_error(array('message' => __('Token inválido.', 'eipsi-forms')));
+    }
+    
+    global $wpdb;
+    
+    // Buscar token en postmeta de todos los formularios
+    $meta_table = $wpdb->postmeta;
+    $results = $wpdb->get_results($wpdb->prepare(
+        "SELECT post_id, meta_value 
+        FROM {$meta_table} 
+        WHERE meta_key LIKE %s 
+        AND meta_value LIKE %s 
+        LIMIT 10",
+        $wpdb->esc_like('_eipsi_reminder_token_') . '%',
+        '%' . $wpdb->esc_like($token) . '%'
+    ));
+    
+    if (empty($results)) {
+        wp_send_json_error(array('message' => __('Token no encontrado o expirado.', 'eipsi-forms')));
+    }
+    
+    // Validar cada match (puede haber colisiones parciales)
+    foreach ($results as $row) {
+        $data = maybe_unserialize($row->meta_value);
+        
+        if (!is_array($data) || !isset($data['token'])) {
+            continue;
+        }
+        
+        // Match exacto del token
+        if ($data['token'] !== $token) {
+            continue;
+        }
+        
+        // Verificar expiración
+        if (isset($data['expires'])) {
+            $expires = strtotime($data['expires']);
+            $now = current_time('timestamp');
+            
+            if ($now > $expires) {
+                wp_send_json_error(array('message' => __('Este link ha expirado. Solicita uno nuevo.', 'eipsi-forms')));
+            }
+        }
+        
+        // Token válido - retornar datos
+        wp_send_json_success(array(
+            'valid' => true,
+            'email' => $data['email'] ?? '',
+            'form_id' => intval($data['form_id'] ?? 0),
+            'take' => intval($data['take'] ?? 1),
+            'seed' => $data['seed'] ?? '',
+        ));
+    }
+    
+    wp_send_json_error(array('message' => __('Token inválido.', 'eipsi-forms')));
+}
+
+/**
+ * Envía un recordatorio manual desde el panel de Submissions
+ * 
+ * @since 1.3.0
+ */
+function eipsi_send_reminder_manual_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('edit_posts')) {
+        wp_send_json_error(array('message' => __('Sin permisos.', 'eipsi-forms')));
+    }
+    
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+    $form_id = isset($_POST['form_id']) ? intval($_POST['form_id']) : 0;
+    $take_num = isset($_POST['take']) ? intval($_POST['take']) : 1;
+    $frequency = isset($_POST['frequency']) ? sanitize_text_field($_POST['frequency']) : 'now';
+    
+    if (empty($email) || !is_email($email) || !$form_id) {
+        wp_send_json_error(array('message' => __('Datos inválidos.', 'eipsi-forms')));
+    }
+    
+    // Verificar que existe una toma pendiente para este email
+    $take_meta_key = "_eipsi_toma_{$take_num}_assign";
+    $take_data = get_post_meta($form_id, $take_meta_key, true);
+    
+    if (empty($take_data) || !is_array($take_data)) {
+        wp_send_json_error(array('message' => __('No se encontró toma pendiente para este participante.', 'eipsi-forms')));
+    }
+    
+    // Generar token
+    $token = wp_generate_uuid4();
+    $assigned_form_id = $take_data['form_id'] ?? $form_id;
+    $seed = $take_data['seed'] ?? '';
+    
+    // Guardar token
+    $token_data = array(
+        'token' => $token,
+        'email' => $email,
+        'form_id' => $assigned_form_id,
+        'take' => $take_num,
+        'seed' => $seed,
+        'created' => current_time('mysql'),
+        'expires' => gmdate('Y-m-d H:i:s', strtotime('+48 hours')),
+        'manual' => true,
+    );
+    
+    update_post_meta($form_id, '_eipsi_reminder_token_' . md5($email . $take_num), $token_data);
+    
+    // Construir link de recordatorio
+    $reminder_link = add_query_arg(array(
+        'eipsi_token' => $token,
+        'form_id' => $assigned_form_id,
+        'take' => $take_num,
+    ), home_url('/formulario/'));
+    
+    if ($frequency === 'now') {
+        // Enviar inmediatamente
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+        $form_name = get_the_title($form_id);
+        $subject = sprintf(__('Recordatorio: Tu Toma %d está lista - %s', 'eipsi-forms'), $take_num, $form_name);
+        
+        // Construir link de unsubscribe
+        $unsubscribe_link = add_query_arg(array(
+            'eipsi_unsubscribe' => '1',
+            'email' => urlencode($email),
+            'form_id' => $form_id,
+            'token' => $token,
+        ), home_url('/'));
+        
+        // Cargar template
+        ob_start();
+        include EIPSI_FORMS_PLUGIN_DIR . 'includes/emails/reminder-take.php';
+        $email_body = ob_get_clean();
+        
+        $sent = wp_mail($email, $subject, $email_body, $headers);
+        
+        if ($sent) {
+            wp_send_json_success(array('message' => __('Recordatorio enviado exitosamente.', 'eipsi-forms')));
+        } else {
+            wp_send_json_error(array('message' => __('Error al enviar el email.', 'eipsi-forms')));
+        }
+    } elseif ($frequency === 'tomorrow') {
+        // Programar para mañana 10 AM
+        $tomorrow = strtotime('tomorrow 10:00 AM');
+        wp_schedule_single_event($tomorrow, 'eipsi_send_manual_reminder', array($email, $reminder_link));
+        
+        wp_send_json_success(array('message' => __('Recordatorio programado para mañana.', 'eipsi-forms')));
+    } elseif ($frequency === 'weekly') {
+        // Programar para 1 semana desde ahora
+        $next_week = strtotime('+1 week');
+        wp_schedule_single_event($next_week, 'eipsi_send_manual_reminder', array($email, $reminder_link));
+        
+        wp_send_json_success(array('message' => __('Recordatorio programado para la próxima semana.', 'eipsi-forms')));
+    }
+    
+    wp_send_json_error(array('message' => __('Frecuencia inválida.', 'eipsi-forms')));
+}
+
+/**
+ * Desuscribirse de recordatorios (unsubscribe)
+ * 
+ * @since 1.3.0
+ */
+function eipsi_unsubscribe_reminders_handler() {
+    // No requiere nonce (viene de link de email)
+    
+    $email = isset($_GET['email']) ? sanitize_email($_GET['email']) : '';
+    $form_id = isset($_GET['form_id']) ? intval($_GET['form_id']) : 0;
+    $token = isset($_GET['token']) ? sanitize_text_field($_GET['token']) : '';
+    
+    if (empty($email) || !is_email($email) || !$form_id || empty($token)) {
+        wp_die(__('Solicitud inválida.', 'eipsi-forms'));
+    }
+    
+    // Validar que el token existe (seguridad básica)
+    global $wpdb;
+    $meta_table = $wpdb->postmeta;
+    $token_exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) 
+        FROM {$meta_table} 
+        WHERE post_id = %d 
+        AND meta_key LIKE %s 
+        AND meta_value LIKE %s",
+        $form_id,
+        $wpdb->esc_like('_eipsi_reminder_token_') . '%',
+        '%' . $wpdb->esc_like($token) . '%'
+    ));
+    
+    if (!$token_exists) {
+        wp_die(__('Token inválido.', 'eipsi-forms'));
+    }
+    
+    // Guardar flag de unsubscribe
+    update_post_meta($form_id, '_eipsi_unsubscribed_' . md5($email), array(
+        'timestamp' => current_time('mysql'),
+        'reason' => 'user_request',
+    ));
+    
+    // Mostrar mensaje de confirmación
+    wp_die(
+        sprintf(
+            '<div style="max-width: 600px; margin: 50px auto; padding: 30px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+                <h2 style="color: #00a32a; margin-bottom: 20px;">✓ %s</h2>
+                <p style="font-size: 16px; color: #666; margin-bottom: 30px;">%s</p>
+                <p style="font-size: 14px; color: #999;">%s</p>
+            </div>',
+            esc_html__('Desuscrito exitosamente', 'eipsi-forms'),
+            esc_html__('Ya no recibirás más recordatorios de este estudio.', 'eipsi-forms'),
+            esc_html__('Si necesitas volver a participar, contacta al equipo de investigación.', 'eipsi-forms')
+        ),
+        __('Desuscrito', 'eipsi-forms')
+    );
 }
 
 /**

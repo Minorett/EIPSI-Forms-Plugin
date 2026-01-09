@@ -85,7 +85,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		if ( useRandomization && availableForms.length === 0 ) {
 			loadAvailableForms();
 		}
-	}, [ useRandomization ] );
+	}, [ useRandomization, availableForms.length ] );
 
 	const loadAvailableForms = async () => {
 		setLoadingForms( true );

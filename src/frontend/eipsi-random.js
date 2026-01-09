@@ -18,6 +18,20 @@
 	 * Inicializa la aleatorización si se detecta el query param
 	 */
 	async function initRandomization() {
+		// === Fase 2: Detectar token de recordatorio ===
+		const urlParams = new URLSearchParams( window.location.search );
+		const token = urlParams.get( 'eipsi_token' );
+
+		if ( token ) {
+			// Validar token con el servidor
+			const tokenValid = await validateReminderToken( token );
+			if ( tokenValid ) {
+				// Token válido, la función ya guardó los datos en sessionStorage
+				return;
+			}
+			// Token inválido, continuar con flujo normal
+		}
+
 		// Verificar que ya no tenemos una asignación guardada
 		const existingFormId = sessionStorage.getItem( 'eipsi_assigned_form' );
 		const existingSeed = sessionStorage.getItem( 'eipsi_seed' );
@@ -177,6 +191,77 @@
 	function isAlreadyAssigned() {
 		const urlParams = new URLSearchParams( window.location.search );
 		return urlParams.get( 'eipsi_assigned' ) === '1';
+	}
+
+	/**
+	 * Valida un token de recordatorio con el servidor (Fase 2)
+	 *
+	 * @param {string} token - Token recibido en la URL
+	 * @return {Promise<boolean>} True si el token es válido
+	 */
+	async function validateReminderToken( token ) {
+		try {
+			const response = await fetch( window.ajaxurl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: new URLSearchParams( {
+					action: 'eipsi_validate_reminder_token',
+					token,
+				} ),
+			} );
+
+			const data = await response.json();
+
+			if ( data.success && data.data && data.data.valid ) {
+				const { email, form_id: formId, take, seed } = data.data;
+
+				// Guardar datos en sessionStorage
+				sessionStorage.setItem(
+					'eipsi_assigned_form',
+					String( formId )
+				);
+				sessionStorage.setItem( 'eipsi_seed', seed || '' );
+				sessionStorage.setItem( 'eipsi_email', email || '' );
+				sessionStorage.setItem( 'eipsi_take', String( take ) );
+				sessionStorage.setItem(
+					'eipsi_random_type',
+					'token_auto_login'
+				);
+
+				// eslint-disable-next-line no-console
+				console.log( '[EIPSI Random] Token validated successfully' );
+
+				// Si el formulario actual no coincide, redirigir
+				const currentFormId = getCurrentFormId();
+				if ( String( formId ) !== String( currentFormId ) ) {
+					redirectToForm( formId, seed );
+				}
+
+				return true;
+			}
+
+			// Token inválido o expirado
+			// eslint-disable-next-line no-console
+			console.warn(
+				'[EIPSI Random] Token invalid:',
+				data.data ? data.data.message : 'Unknown error'
+			);
+
+			// Mostrar mensaje al usuario (solo en consola para evitar alert bloqueante)
+			// Los errores se muestran mejor en UI personalizada
+			if ( data.data && data.data.message ) {
+				// eslint-disable-next-line no-console
+				console.error( '[EIPSI Random]', data.data.message );
+			}
+
+			return false;
+		} catch ( error ) {
+			// eslint-disable-next-line no-console
+			console.error( '[EIPSI Random] Token validation error:', error );
+			return false;
+		}
 	}
 
 	// Inicializar cuando el DOM esté listo
