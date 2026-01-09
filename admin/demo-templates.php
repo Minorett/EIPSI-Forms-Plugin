@@ -6,7 +6,7 @@
  * These are NOT clinical scales - they're demonstration templates that show
  * how to use conditional logic, multi-page forms, and various field types.
  *
- * @package VAS_Dinamico_Forms
+ * @package EIPSI_Forms
  * @since 1.3.0
  */
 

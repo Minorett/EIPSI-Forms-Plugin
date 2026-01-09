@@ -7,7 +7,7 @@
  * - Importar formularios desde JSON
  * - Duplicar formularios con 1 click
  * 
- * @package VAS_Dinamico_Forms
+ * @package EIPSI_Forms
  * @since 1.3.0
  */
 
@@ -55,7 +55,7 @@ function eipsi_export_form_as_json($template_id, $mode = 'full') {
         'meta' => array(
             'exportedAt' => current_time('c'),
             'exportedBy' => wp_get_current_user()->display_name,
-            'pluginVersion' => VAS_DINAMICO_VERSION,
+            'pluginVersion' => EIPSI_FORMS_VERSION,
             'formTitle' => $template->post_title,
             'formName' => $form_name,
         ),
@@ -466,9 +466,9 @@ function eipsi_form_library_tools_scripts() {
     
     wp_enqueue_script(
         'eipsi-form-library-tools',
-        VAS_DINAMICO_PLUGIN_URL . 'assets/js/form-library-tools.js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/form-library-tools.js',
         array('jquery', 'wp-blocks'),
-        VAS_DINAMICO_VERSION,
+        EIPSI_FORMS_VERSION,
         true
     );
 

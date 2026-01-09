@@ -3,7 +3,7 @@
  * Uses CSS variables for instant WYSIWYG preset preview
  */
 
-.wp-block-vas-dinamico-vas-slider {
+.wp-block-eipsi-vas-slider {
     padding: var(--eipsi-spacing-sm, 1em);
     border: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-primary, #005a87);
     border-radius: var(--eipsi-border-radius-sm, 8px);
@@ -231,7 +231,7 @@
 
 // Responsive para editor
 @media (max-width: 768px) {
-    .wp-block-vas-dinamico-vas-slider {
+    .wp-block-eipsi-vas-slider {
         .vas-slider-container {
             padding: 1.25em;
 

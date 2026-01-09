@@ -4,7 +4,7 @@
  * 
  * Official shortcode to insert form templates anywhere
  * 
- * @package VAS_Dinamico_Forms
+ * @package EIPSI_Forms
  * @since 1.3.0
  */
 

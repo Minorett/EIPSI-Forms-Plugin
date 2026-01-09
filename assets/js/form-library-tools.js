@@ -6,7 +6,7 @@
  * - Importar formularios desde JSON
  * - Duplicar formularios con 1 click
  *
- * @package VAS_Dinamico_Forms
+ * @package EIPSI_Forms
  * @since 1.3.0
  */
 

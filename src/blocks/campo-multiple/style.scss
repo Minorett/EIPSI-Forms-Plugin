@@ -1,6 +1,6 @@
 @use '../shared/choice-field' as choice;
 
-.wp-block-vas-dinamico-campo-multiple {
+.wp-block-eipsi-campo-multiple {
     .checkbox-list {
         @include choice.choice-field-base("checkbox", "square");
 

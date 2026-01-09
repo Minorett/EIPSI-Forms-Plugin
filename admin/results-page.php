@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-function vas_display_form_responses() {
+function eipsi_display_form_responses() {
     // Verify capability
     if (!current_user_can('manage_options')) {
         wp_die(__('Unauthorized', 'eipsi-forms'));

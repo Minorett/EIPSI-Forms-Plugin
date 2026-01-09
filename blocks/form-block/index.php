@@ -5,7 +5,7 @@
  * This block allows users to select and display form templates
  * created in the Form Library.
  * 
- * @package VAS_Dinamico_Forms
+ * @package EIPSI_Forms
  */
 
 if (!defined('ABSPATH')) {

@@ -2787,7 +2787,7 @@
 			const participantId = getUniversalParticipantId();
 			const sessionId = getSessionId( formId );
 
-			formData.append( 'action', 'vas_dinamico_submit_form' );
+			formData.append( 'action', 'eipsi_forms_submit_form' );
 			formData.append( 'nonce', this.config.nonce );
 			formData.append( 'form_end_time', Date.now() );
 			formData.append( 'participant_id', participantId );

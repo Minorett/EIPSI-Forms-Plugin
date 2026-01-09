@@ -6,7 +6,7 @@
  * This provides the backend infrastructure for the completion message feature.
  * The admin UI to manage these settings will be added in Phase 16.
  * 
- * @package VAS_Dinamico_Forms
+ * @package EIPSI_Forms
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -40,7 +40,7 @@ export default function Save( { attributes } ) {
 				<input
 					type="hidden"
 					name="form_action"
-					value="vas_dinamico_submit_form"
+					value="eipsi_forms_submit_form"
 				/>
 				<input type="hidden" name="eipsi_nonce" value="" />
 				<input

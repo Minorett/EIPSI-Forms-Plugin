@@ -59,7 +59,7 @@ function export_normalizeName($name) {
     return strtoupper(trim($name));
 }
 
-function vas_export_to_excel() {
+function eipsi_export_to_excel() {
     if (!current_user_can('manage_options')) {
         wp_die(__('You do not have sufficient permissions to perform this action.', 'eipsi-forms'));
     }
@@ -225,7 +225,7 @@ function vas_export_to_excel() {
     exit;
 }
 
-function vas_export_to_csv() {
+function eipsi_export_to_csv() {
     if (!current_user_can('manage_options')) {
         wp_die(__('You do not have sufficient permissions to perform this action.', 'eipsi-forms'));
     }
@@ -396,9 +396,9 @@ function vas_export_to_csv() {
 add_action('admin_init', function() {
     if (isset($_GET['page']) && $_GET['page'] === 'eipsi-results') {
         if (isset($_GET['action']) && $_GET['action'] === 'export_excel') {
-            vas_export_to_excel();
+            eipsi_export_to_excel();
         } elseif (isset($_GET['action']) && $_GET['action'] === 'export_csv') {
-            vas_export_to_csv();
+            eipsi_export_to_csv();
         }
     }
 });

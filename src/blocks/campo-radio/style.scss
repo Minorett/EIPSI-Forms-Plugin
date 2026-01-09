@@ -1,6 +1,6 @@
 @use '../shared/choice-field' as choice;
 
-.wp-block-vas-dinamico-campo-radio {
+.wp-block-eipsi-campo-radio {
     .radio-list {
         @include choice.choice-field-base("radio", "circle");
 
