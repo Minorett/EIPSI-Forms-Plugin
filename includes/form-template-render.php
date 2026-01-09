@@ -2,7 +2,7 @@
 /**
  * Shared rendering helpers for form templates
  *
- * @package VAS_Dinamico_Forms
+ * @package EIPSI_Forms
  * @since 1.3.0
  */
 

@@ -9,7 +9,7 @@ function eipsi_forms_menu() {
         __('EIPSI Forms', 'eipsi-forms'),
         'manage_options',
         'eipsi-results',
-        'vas_display_form_responses',
+        'eipsi_display_form_responses',
         plugin_dir_url(__FILE__) . '../assets/eipsi-icon-menu.svg',
         25
     );
@@ -21,7 +21,7 @@ function eipsi_forms_menu() {
         __('Results & Experience', 'eipsi-forms'),
         'manage_options',
         'eipsi-results',
-        'vas_display_form_responses'
+        'eipsi_display_form_responses'
     );
     
     // Add submenu for Configuration

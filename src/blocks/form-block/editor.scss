@@ -3,8 +3,8 @@
  * Uses CSS variables for instant WYSIWYG preset preview
  */
 
-.wp-block-vas-dinamico-form-block {
-    .vas-dinamico-form-placeholder {
+.wp-block-eipsi-form-block {
+    .eipsi-form-placeholder {
         min-height: 200px;
         display: flex;
         align-items: center;
@@ -57,7 +57,7 @@
     }
     
     &:hover {
-        .vas-dinamico-form-placeholder {
+        .eipsi-form-placeholder {
             border-color: var(--eipsi-color-primary-hover, #003d5b);
             background: var(--eipsi-color-secondary, #e3f2fd);
             box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));

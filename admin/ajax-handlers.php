@@ -558,7 +558,7 @@ function eipsi_forms_submit_form_handler() {
 // FUNCIONES AUXILIARES PARA INVESTIGACIÓN EN PSICOTERAPIA - EIPSI
 // =============================================================================
 
-function vas_get_research_context($device, $duration) {
+function eipsi_get_research_context($device, $duration) {
     if ($device === 'mobile') {
         return '📱 Posible contexto informal';
     } else {
@@ -566,7 +566,7 @@ function vas_get_research_context($device, $duration) {
     }
 }
 
-function vas_get_time_context($datetime) {
+function eipsi_get_time_context($datetime) {
     $hour = date('H', strtotime($datetime));
     
     if ($hour >= 6 && $hour < 12) return '🌅 Mañana';
@@ -575,7 +575,7 @@ function vas_get_time_context($datetime) {
     return '🌙 Madrugada';
 }
 
-function vas_get_platform_type($device, $screen_width) {
+function eipsi_get_platform_type($device, $screen_width) {
     if ($device === 'mobile') {
         if ($screen_width < 400) return '📱 Teléfono pequeño';
         if ($screen_width < 768) return '📱 Teléfono estándar';

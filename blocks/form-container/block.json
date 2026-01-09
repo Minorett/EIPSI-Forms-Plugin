@@ -1,14 +1,14 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "vas-dinamico/form-container",
+	"name": "eipsi/form-container",
 	"version": "1.0.0",
 	"title": "EIPSI Form Container",
 	"category": "eipsi-forms",
 	"icon": "layout",
 	"description": "Contenedor para diseñar formularios con páginas, campos y lógica condicional. Solo usarlo dentro de la Form Library.",
 	"keywords": [ "form", "eipsi", "container", "builder", "constructor" ],
-	"textdomain": "vas-dinamico-forms",
+	"textdomain": "eipsi-forms",
 	"editorScript": "file:../../build/index.js",
 	"editorStyle": "file:../../build/index.css",
 	"style": "file:../../build/style-index.css",
@@ -138,7 +138,7 @@
 		}
 	},
 	"providesContext": {
-		"vas-dinamico/formId": "formId"
+		"eipsi/formId": "formId"
 	},
 	"example": {
 		"attributes": {

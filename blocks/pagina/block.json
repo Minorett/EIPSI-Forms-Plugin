@@ -1,15 +1,15 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "vas-dinamico/form-page",
+	"name": "eipsi/form-page",
 	"version": "1.0.0",
 	"title": "EIPSI Página",
 	"category": "eipsi-forms",
 	"icon": "media-document",
 	"description": "A page container for grouping form fields with optional title in paginated forms.",
 	"keywords": [ "form", "page", "pagina", "step", "eipsi" ],
-	"parent": [ "vas-dinamico/form-container" ],
-	"textdomain": "vas-dinamico-forms",
+	"parent": [ "eipsi/form-container" ],
+	"textdomain": "eipsi-forms",
 	"editorScript": "file:../../build/index.js",
 	"editorStyle": "file:../../build/index.css",
 	"style": "file:../../build/style-index.css",
@@ -43,5 +43,5 @@
 			"default": "Comenzar de nuevo"
 		}
 	},
-	"usesContext": [ "vas-dinamico/formId" ]
+	"usesContext": [ "eipsi/formId" ]
 }

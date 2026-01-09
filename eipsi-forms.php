@@ -27,6 +27,7 @@ define('EIPSI_FORMS_VERSION', '1.2.2');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
+define('EIPSI_FORMS_SLUG', 'eipsi-forms');
 
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/menu.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/results-page.php';
@@ -247,7 +248,7 @@ function eipsi_forms_enqueue_admin_assets($hook) {
         true
     );
 
-    wp_localize_script('eipsi-admin-script', 'vasdinamico', array(
+    wp_localize_script('eipsi-admin-script', 'eipsiAdminConfig', array(
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_forms_nonce'),
         'adminNonce' => wp_create_nonce('eipsi_admin_nonce')
@@ -302,7 +303,7 @@ function eipsi_forms_enqueue_admin_assets($hook) {
             true
         );
 
-        // Make ajaxurl available (jQuery already has it via vasdinamico object)
+        // Make ajaxurl available (jQuery already has it via eipsiAdminConfig object)
         // No additional localization needed
     }
 }
@@ -578,9 +579,8 @@ function eipsi_forms_enqueue_frontend_assets() {
 }
 
 // Register admin post handlers
-add_action('admin_post_eipsi_forms_delete_result', 'eipsi_forms_delete_result');
-add_action('admin_post_eipsi_forms_edit_result', 'eipsi_forms_edit_result');
-add_action('admin_post_eipsi_forms_export_excel', 'vas_export_responses');
+add_action('admin_post_eipsi_forms_export_excel', 'eipsi_export_to_excel');
+// Deletion and editing of results are handled via admin_init in admin/handlers.php and admin/results-page.php
 
 // Puedes comentar o eliminar esto:
 // function eipsi_forms_load_textdomain() {

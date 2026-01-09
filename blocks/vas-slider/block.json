@@ -1,7 +1,7 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "vas-dinamico/vas-slider",
+	"name": "eipsi/vas-slider",
 	"version": "1.0.0",
 	"title": "EIPSI VAS Slider",
 	"category": "eipsi-forms",
@@ -16,8 +16,8 @@
 		"analog",
 		"eipsi"
 	],
-	"textdomain": "vas-dinamico-forms",
-	"parent": [ "vas-dinamico/form-container", "vas-dinamico/form-page" ],
+	"textdomain": "eipsi-forms",
+	"parent": [ "eipsi/form-container", "eipsi/form-page" ],
 	"editorScript": "file:../../build/index.js",
 	"editorStyle": "file:../../build/index.css",
 	"style": "file:../../build/style-index.css",

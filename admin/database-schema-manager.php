@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
  * EIPSI Forms Database Schema Manager
  * Handles automatic table creation and schema synchronization for external databases
  * 
- * @package VAS_Dinamico_Forms
+ * @package EIPSI_Forms
  * @since 1.2.1
  */
 class EIPSI_Database_Schema_Manager {
