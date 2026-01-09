@@ -38,6 +38,8 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/partial-responses.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/configuration.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-handlers.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/study-close-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/completion-message-backend.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/form-library.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/form-library-tools.php';
@@ -49,6 +51,17 @@ function eipsi_forms_activate() {
     global $wpdb;
     
     $charset_collate = $wpdb->get_charset_collate();
+    
+    // === Cron Reminders Scheduling (Fase 2) ===
+    // Schedule daily reminders
+    if (!wp_next_scheduled('eipsi_send_take_reminders_daily')) {
+        wp_schedule_event(time(), 'daily', 'eipsi_send_take_reminders_daily');
+    }
+    
+    // Schedule weekly reminders
+    if (!wp_next_scheduled('eipsi_send_take_reminders_weekly')) {
+        wp_schedule_event(time(), 'weekly', 'eipsi_send_take_reminders_weekly');
+    }
     
     // Create form results table
     $table_name = $wpdb->prefix . 'vas_form_results';
@@ -119,6 +132,39 @@ function eipsi_forms_activate() {
 }
 
 register_activation_hook(__FILE__, 'eipsi_forms_activate');
+register_deactivation_hook(__FILE__, 'eipsi_forms_deactivate');
+
+/**
+ * Add weekly schedule interval for WP-Cron
+ * 
+ * @param array $schedules
+ * @return array
+ */
+add_filter('cron_schedules', function($schedules) {
+    if (!isset($schedules['weekly'])) {
+        $schedules['weekly'] = array(
+            'interval' => WEEK_IN_SECONDS,
+            'display' => __('Once Weekly', 'eipsi-forms'),
+        );
+    }
+    return $schedules;
+});
+
+/**
+ * Cleanup scheduled cron events on deactivation
+ */
+function eipsi_forms_deactivate() {
+    wp_clear_scheduled_hook('eipsi_send_take_reminders_daily');
+    wp_clear_scheduled_hook('eipsi_send_take_reminders_weekly');
+}
+
+// Handle unsubscribe link from emails (Fase 2)
+add_action('wp_loaded', 'eipsi_handle_unsubscribe_request');
+function eipsi_handle_unsubscribe_request() {
+    if (isset($_GET['eipsi_unsubscribe']) && $_GET['eipsi_unsubscribe'] === '1') {
+        eipsi_unsubscribe_reminders_handler();
+    }
+}
 
 function eipsi_forms_upgrade_database() {
     global $wpdb;
