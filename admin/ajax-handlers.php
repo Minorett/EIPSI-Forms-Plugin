@@ -676,7 +676,7 @@ function eipsi_ajax_get_response_details() {
             if (isset($timing_metadata['total_duration'])) {
                 $total_seconds = $timing_metadata['total_duration'];
                 $minutes = floor($total_seconds / 60);
-                $seconds = round($total_seconds % 60);
+                $seconds = intval(round($total_seconds % 60));
 
                 if ($minutes > 0) {
                     $html .= '<p><strong>⏰ Tiempo total:</strong> ' . sprintf('%d min %d sec', $minutes, $seconds) . '</p>';
@@ -685,8 +685,16 @@ function eipsi_ajax_get_response_details() {
                 }
                 }
 
+                // Leyenda de colores
+            $html .= '<div style="margin-top: 15px; padding: 10px; background: #ffffff; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">';
+            $html .= '<strong style="color: #495057;">📊 Leyenda de barras:</strong> ';
+            $html .= '<span style="display: inline-block; width: 12px; height: 12px; background: #dc2626; border-radius: 2px; margin: 0 5px;"></span> <10 seg (rápido) | ';
+            $html .= '<span style="display: inline-block; width: 12px; height: 12px; background: #f59e0b; border-radius: 2px; margin: 0 5px;"></span> 10-30 seg (normal) | ';
+            $html .= '<span style="display: inline-block; width: 12px; height: 12px; background: #10b981; border-radius: 2px; margin: 0 5px;"></span> >30 seg (pausado)';
+            $html .= '</div>';
+
                 // Page breakdown
-            $html .= '<div style="margin-top: 15px; max-height: 200px; overflow-y: auto;">';
+            $html .= '<div style="margin-top: 10px; max-height: 200px; overflow-y: auto;">';
             $html .= '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
             $html .= '<thead><tr style="background: #e9ecef;">';
             $html .= '<th style="padding: 8px; text-align: left; border-bottom: 2px solid #dee2e6;">Página</th>';
@@ -777,9 +785,9 @@ function eipsi_ajax_get_response_details() {
                 $html .= '<h4>💤 Métricas de Actividad</h4>';
 
                 $minutes_active = floor($active_time / 60);
-                $seconds_active = round($active_time % 60);
+                $seconds_active = intval(round($active_time % 60));
                 $minutes_inactive = floor($inactive_time / 60);
-                $seconds_inactive = round($inactive_time % 60);
+                $seconds_inactive = intval(round($inactive_time % 60));
 
                 $html .= '<p><strong>⏱️ Tiempo activo:</strong> ' . sprintf('%d min %d sec', $minutes_active, $seconds_active) . '</p>';
                 $html .= '<p><strong>💤 Tiempo inactivo:</strong> ' . sprintf('%d min %d sec', $minutes_inactive, $seconds_inactive) . '</p>';
