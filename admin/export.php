@@ -3,13 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Verificar y definir la constante si no existe
-if (!defined('VAS_DINAMICO_PLUGIN_DIR')) {
-    define('VAS_DINAMICO_PLUGIN_DIR', plugin_dir_path(__FILE__));
-}
-
 // Incluir la librería
-require_once VAS_DINAMICO_PLUGIN_DIR . 'lib/SimpleXLSXGen.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/lib/SimpleXLSXGen.php';
 
 // Usar el namespace
 use Shuchkin\SimpleXLSXGen;
@@ -113,7 +108,7 @@ function vas_export_to_excel() {
     }
     
     // Get privacy config for first form (assuming same config per form_name)
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/privacy-config.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/privacy-config.php';
     $first_form_id = !empty($results[0]->form_id) ? $results[0]->form_id : export_generate_stable_form_id($results[0]->form_name);
     $privacy_config = get_privacy_config($first_form_id);
     
@@ -279,7 +274,7 @@ function vas_export_to_csv() {
     }
     
     // Get privacy config for first form (assuming same config per form_name)
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/privacy-config.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/privacy-config.php';
     $first_form_id = !empty($results[0]->form_id) ? $results[0]->form_id : export_generate_stable_form_id($results[0]->form_name);
     $privacy_config = get_privacy_config($first_form_id);
     

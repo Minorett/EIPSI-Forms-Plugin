@@ -428,7 +428,7 @@ function eipsi_forms_submit_form_handler() {
     );
     
     // Check if external database is configured
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
     
     $external_db_enabled = $db_helper->is_enabled();
@@ -604,7 +604,7 @@ function eipsi_ajax_get_response_details() {
     $table_name = $wpdb->prefix . 'vas_form_results';
     
     // INTENTO 1: Buscar en BD Externa si está habilitada
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $external_db = new EIPSI_External_Database();
     $response = null;
 
@@ -987,7 +987,7 @@ function eipsi_track_event_handler() {
     );
     
     // Check if external database is configured
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
     $external_db_enabled = $db_helper->is_enabled();
     $used_fallback = false;
@@ -1057,7 +1057,7 @@ function eipsi_test_db_connection_handler() {
         ));
     }
     
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
     
     $host = isset($_POST['host']) ? sanitize_text_field($_POST['host']) : '';
@@ -1089,7 +1089,7 @@ function eipsi_save_db_config_handler() {
         ));
     }
     
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
     
     $host = isset($_POST['host']) ? sanitize_text_field($_POST['host']) : '';
@@ -1125,7 +1125,7 @@ function eipsi_save_db_config_handler() {
     
     if ($success) {
         // Trigger schema verification and synchronization
-        require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
         $schema_result = EIPSI_Database_Schema_Manager::on_credentials_changed();
         
         $status = $db_helper->get_status();
@@ -1169,7 +1169,7 @@ function eipsi_disable_external_db_handler() {
         ));
     }
     
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
     
     $db_helper->disable();
@@ -1188,7 +1188,7 @@ function eipsi_get_db_status_handler() {
         ));
     }
     
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
     
     $status = $db_helper->get_status();
@@ -1197,7 +1197,7 @@ function eipsi_get_db_status_handler() {
 }
 
 function eipsi_check_external_db_handler() {
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
     
     wp_send_json_success(array(
@@ -1214,8 +1214,8 @@ function eipsi_verify_schema_handler() {
         ));
     }
     
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
     
     $db_helper = new EIPSI_External_Database();
     
@@ -1258,7 +1258,7 @@ function eipsi_check_table_status_handler() {
         ));
     }
 
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
 
     $result = $db_helper->check_table_status();
@@ -1279,7 +1279,7 @@ function eipsi_delete_all_data_handler() {
         ), 403);
     }
 
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
 
     $result = $db_helper->delete_all_data();
@@ -1317,7 +1317,7 @@ function eipsi_save_completion_message_handler() {
         'show_animation'   => isset($_POST['show_animation']),
     );
     
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/completion-message-backend.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/completion-message-backend.php';
     
     if (EIPSI_Completion_Message::save_config($config)) {
         wp_send_json_success(array(
@@ -1334,7 +1334,7 @@ add_action('wp_ajax_eipsi_save_completion_message', 'eipsi_save_completion_messa
  * AJAX Handler: Get completion message configuration for frontend
  */
 function eipsi_get_completion_config_handler() {
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/completion-message-backend.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/completion-message-backend.php';
     
     $config = EIPSI_Completion_Message::get_config();
     

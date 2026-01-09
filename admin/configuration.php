@@ -13,7 +13,7 @@ function eipsi_display_configuration_page() {
         wp_die(__('You do not have sufficient permissions to access this page.', 'eipsi-forms'));
     }
     
-    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
     
     // Get current credentials for display (without password)
@@ -266,7 +266,7 @@ function eipsi_display_configuration_page() {
                         <?php echo esc_html__('Database Schema Status', 'eipsi-forms'); ?>
                     </h3>
                     <?php
-                    require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
+                    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
                     $schema_status = EIPSI_Database_Schema_Manager::get_verification_status();
                     ?>
                     <div class="eipsi-schema-details">
