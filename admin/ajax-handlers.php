@@ -153,6 +153,222 @@ add_action('wp_ajax_eipsi_load_partial_response', 'eipsi_load_partial_response_h
 add_action('wp_ajax_nopriv_eipsi_discard_partial_response', 'eipsi_discard_partial_response_handler');
 add_action('wp_ajax_eipsi_discard_partial_response', 'eipsi_discard_partial_response_handler');
 
+// === Handlers de Aleatorización (Fase 1) ===
+add_action('wp_ajax_eipsi_random_assign', 'eipsi_random_assign_handler');
+add_action('wp_ajax_nopriv_eipsi_random_assign', 'eipsi_random_assign_handler');
+add_action('wp_ajax_eipsi_get_forms_list', 'eipsi_get_forms_list_handler');
+
+/**
+ * Handler para obtener lista de formularios disponibles (CPT eipsi_form)
+ * 
+ * @since 1.3.0
+ */
+function eipsi_get_forms_list_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('edit_posts')) {
+        wp_send_json_error(array('message' => 'Sin permisos'));
+    }
+    
+    $forms = get_posts(array(
+        'post_type' => 'eipsi_form',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+    ));
+    
+    $result = array();
+    foreach ($forms as $form_id) {
+        $result[] = array(
+            'id' => $form_id,
+            'name' => get_the_title($form_id),
+            'slug' => get_post_field('post_name', $form_id),
+        );
+    }
+    
+    wp_send_json_success($result);
+}
+
+/**
+ * Handler principal de aleatorización - Fisher-Yates weighted
+ * 
+ * @since 1.3.0
+ */
+function eipsi_random_assign_handler() {
+    // Validar nonce
+    check_ajax_referer('eipsi_random_nonce', 'nonce');
+    
+    // Sanitizar input
+    $main_form_id = isset($_POST['form_id']) ? intval($_POST['form_id']) : 0;
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+    $is_manual = isset($_POST['is_manual']) && $_POST['is_manual'] === 'true';
+    
+    // Validar permisos (cualquier editor puede configurar random)
+    if (!current_user_can('edit_posts')) {
+        wp_send_json_error(array('message' => __('Sin permisos para realizar esta acción.', 'eipsi-forms')));
+    }
+    
+    // Validar que el formulario principal existe
+    if (!$main_form_id || get_post_type($main_form_id) !== 'eipsi_form') {
+        wp_send_json_error(array('message' => __('Formulario principal inválido.', 'eipsi-forms')));
+    }
+    
+    // Validar email
+    if (empty($email) || !is_email($email)) {
+        wp_send_json_error(array('message' => __('Email inválido.', 'eipsi-forms')));
+    }
+    
+    // Si es asignación manual directa (desde el panel de admin)
+    if ($is_manual && isset($_POST['assigned_form_id'])) {
+        $assigned_form_id = intval($_POST['assigned_form_id']);
+        
+        // Validar que el formulario asignado existe
+        if (!$assigned_form_id || get_post_type($assigned_form_id) !== 'eipsi_form') {
+            wp_send_json_error(array('message' => __('Formulario asignado inválido.', 'eipsi-forms')));
+        }
+        
+        $seed = wp_generate_uuid4();
+        $type = 'manual';
+        
+        // Guardar asignación
+        eipsi_save_assignment($main_form_id, $email, $assigned_form_id, $seed, $type);
+        
+        wp_send_json_success(array(
+            'form_id' => $assigned_form_id,
+            'seed' => $seed,
+            'type' => $type,
+        ));
+    }
+    
+    // Leer configuración de aleatorización
+    $config = get_post_meta($main_form_id, '_eipsi_random_config', true);
+    
+    if (empty($config) || !isset($config['forms']) || count($config['forms']) < 2) {
+        wp_send_json_error(array('message' => __('Aleatorización no configurada o incompleta (mínimo 2 formularios requeridos).', 'eipsi-forms')));
+    }
+    
+    // Verificar override manual (el email coincide con una asignación manual)
+    $manual_assigns = $config['manualAssigns'] ?? array();
+    foreach ($manual_assigns as $assign) {
+        if (strtolower($assign['email']) === strtolower($email)) {
+            // Manual override encontrado - retornar esa asignación
+            $seed = wp_generate_uuid4();
+            $type = 'manual_override';
+            
+            wp_send_json_success(array(
+                'form_id' => intval($assign['formId']),
+                'seed' => $seed,
+                'type' => $type,
+            ));
+        }
+    }
+    
+    // Fisher-Yates weighted shuffle
+    $forms = $config['forms'];
+    $probabilities = $config['probabilities'];
+    $method = $config['method'] ?? 'seeded';
+    
+    // Generar seed para reproducibilidad
+    $seed = ($method === 'seeded') ? wp_generate_uuid4() : null;
+    if ($seed) {
+        // Usar crc32 del UUID para seed reproducible en mt_rand
+        mt_srand(crc32($seed));
+    }
+    
+    $assigned_form_id = eipsi_weighted_random($forms, $probabilities);
+    $type = 'random';
+    
+    // Guardar asignación en postmeta temporal
+    eipsi_save_assignment($main_form_id, $email, $assigned_form_id, $seed, $type);
+    
+    wp_send_json_success(array(
+        'form_id' => intval($assigned_form_id),
+        'seed' => $seed,
+        'type' => $type,
+    ));
+}
+
+/**
+ * Guarda la asignación de formulario en postmeta temporal
+ * 
+ * @param int $main_form_id Formulario principal (el que tiene la config de random)
+ * @param string $email Email del participante
+ * @param int $assigned_form_id Formulario asignado
+ * @param string|null $seed Seed para reproducibilidad
+ * @param string $type Tipo de asignación: 'random' | 'manual' | 'manual_override'
+ * @since 1.3.0
+ */
+function eipsi_save_assignment($main_form_id, $email, $assigned_form_id, $seed, $type) {
+    $meta_key = '_eipsi_assign_' . md5(strtolower($email));
+    
+    $assignment = array(
+        'form_id' => intval($assigned_form_id),
+        'seed' => $seed,
+        'type' => $type,
+        'timestamp' => current_time('mysql'),
+        'main_form_id' => intval($main_form_id),
+    );
+    
+    update_post_meta($main_form_id, $meta_key, $assignment);
+}
+
+/**
+ * Fisher-Yates weighted shuffle para selección según probabilidades
+ * Implementa selección ponderada con distribución uniforme
+ * 
+ * @param array $forms Array de post IDs
+ * @param array $probabilities { formId: percentage }
+ * @return int Post ID seleccionado
+ * @since 1.3.0
+ */
+function eipsi_weighted_random($forms, $probabilities) {
+    // Crear array ponderado para selección
+    // Cada formulario aparece N veces según su peso (simplificado)
+    $weighted = array();
+    $total_weight = 0;
+    
+    foreach ($forms as $form_id) {
+        $weight = isset($probabilities[$form_id]) ? intval($probabilities[$form_id]) : 1;
+        // Usar el porcentaje directamente como peso (0-100)
+        // Para distribuciones más precisas con pesos pequeños, usaríamos multiplicador
+        for ($i = 0; $i < $weight; $i++) {
+            $weighted[] = $form_id;
+        }
+        $total_weight += $weight;
+    }
+    
+    // Si no hay pesos válidos, retornar primero
+    if (empty($weighted)) {
+        return intval($forms[0]);
+    }
+    
+    // Fisher-Yates shuffle del array ponderado
+    $n = count($weighted);
+    for ($i = $n - 1; $i > 0; $i--) {
+        $j = mt_rand(0, $i);
+        $temp = $weighted[$i];
+        $weighted[$i] = $weighted[$j];
+        $weighted[$j] = $temp;
+    }
+    
+    // Seleccionar primer elemento después del shuffle
+    // Esto da distribución proporcional a los pesos originales
+    return intval($weighted[0]);
+}
+
+/**
+ * Obtiene la asignación de un participante
+ * 
+ * @param int $main_form_id Formulario principal
+ * @param string $email Email del participante
+ * @return array|null Datos de asignación o null si no existe
+ * @since 1.3.0
+ */
+function eipsi_get_assignment($main_form_id, $email) {
+    $meta_key = '_eipsi_assign_' . md5(strtolower($email));
+    return get_post_meta($main_form_id, $meta_key, true);
+}
+
 /**
  * NOTE: Quality Flags y Patrones de Evitación fueron removidos en v1.0
  * RAZÓN CLÍNICA: 

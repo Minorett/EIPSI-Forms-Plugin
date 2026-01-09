@@ -129,6 +129,11 @@ function eipsi_export_to_excel() {
     // ONLY include metadata columns if privacy config allows
     $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)');
     
+    // === Columnas de Aleatorización (Fase 1) ===
+    $headers[] = 'Assignment Form';
+    $headers[] = 'Seed';
+    $headers[] = 'Type (Random/Manual)';
+    
     if ($privacy_config['ip_address']) {
         $headers[] = 'IP Address';
     }
@@ -185,6 +190,20 @@ function eipsi_export_to_excel() {
             $end_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->end_timestamp_ms / 1000));
         }
         
+        // === Obtener datos de aleatorización ===
+        $assignment_form = '-';
+        $assignment_seed = '-';
+        $assignment_type = '-';
+        
+        // Buscar asignación en el formulario principal (si existe)
+        // El participant_id puede contener el email hasheado
+        $main_form_id = $form_id; // Usar el form_id actual como referencia
+        
+        // Intentar obtener la asignación del postmeta del formulario
+        // Nota: Esto requiere conocer el formulario principal con la config de random
+        // Por ahora dejamos campos vacíos si no hay referencia
+        // En una implementación completa, guardaríamos la referencia al formulario principal
+        
         $row_data = array(
             $form_id,
             $participant_id,
@@ -193,7 +212,11 @@ function eipsi_export_to_excel() {
             $time,
             $duration,
             $start_time_utc,
-            $end_time_utc
+            $end_time_utc,
+            // === Datos de aleatorización ===
+            $assignment_form,
+            $assignment_seed,
+            $assignment_type,
         );
         
         // Add metadata fields only if privacy config allows
@@ -300,6 +323,11 @@ function eipsi_export_to_csv() {
     // ONLY include metadata columns if privacy config allows
     $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)');
     
+    // === Columnas de Aleatorización (Fase 1) ===
+    $headers[] = 'Assignment Form';
+    $headers[] = 'Seed';
+    $headers[] = 'Type (Random/Manual)';
+    
     if ($privacy_config['ip_address']) {
         $headers[] = 'IP Address';
     }
@@ -356,6 +384,11 @@ function eipsi_export_to_csv() {
             $end_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->end_timestamp_ms / 1000));
         }
         
+        // === Obtener datos de aleatorización ===
+        $assignment_form = '-';
+        $assignment_seed = '-';
+        $assignment_type = '-';
+        
         $row_data = array(
             $form_id,
             $participant_id,
@@ -364,7 +397,11 @@ function eipsi_export_to_csv() {
             $time,
             $duration,
             $start_time_utc,
-            $end_time_utc
+            $end_time_utc,
+            // === Datos de aleatorización ===
+            $assignment_form,
+            $assignment_seed,
+            $assignment_type,
         );
         
         // Add metadata fields only if privacy config allows

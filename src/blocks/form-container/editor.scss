@@ -141,3 +141,91 @@
         }
     }
 }
+
+/* === Panel de Aleatorización (Fase 1) === */
+.eipsi-randomization-panel {
+    background: #f8f9fb;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+
+    .eipsi-forms-list {
+        margin-top: 16px;
+    }
+
+    .eipsi-form-row {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 12px;
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+
+            &::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #005a87;
+                cursor: pointer;
+                transition: background 0.2s;
+
+                &:hover {
+                    background: #003d5b;
+                }
+            }
+
+            &::-moz-range-thumb {
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #005a87;
+                cursor: pointer;
+                border: none;
+            }
+        }
+    }
+
+    .eipsi-manual-assigns-table {
+        background: #fff;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-top: 12px;
+
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 8px 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+    }
+
+    .eipsi-random-preview {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px;
+        margin-top: 16px;
+        font-size: 12px;
+        line-height: 1.6;
+
+        strong {
+            color: #1e293b;
+        }
+    }
+}

@@ -15,6 +15,7 @@ import {
 	Button,
 	SelectControl,
 	Notice,
+	BaseControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useEffect, useState } from '@wordpress/element';
@@ -49,6 +50,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		completionLogoId,
 		completionLogoUrl,
 		completionButtonLabel,
+		// Aleatorización
+		useRandomization,
+		randomConfig,
 	} = attributes;
 
 	const allowBackwardsNavEnabled =
@@ -68,6 +72,205 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const [ applyingTemplate, setApplyingTemplate ] = useState( false );
 
 	const { replaceInnerBlocks } = useDispatch( blockEditorStore );
+
+	// === Estado para Aleatorización ===
+	const [ availableForms, setAvailableForms ] = useState( [] );
+	const [ loadingForms, setLoadingForms ] = useState( false );
+	const [ linkCopied, setLinkCopied ] = useState( false );
+	const [ manualEmail, setManualEmail ] = useState( '' );
+	const [ manualFormId, setManualFormId ] = useState( '' );
+
+	// Cargar formularios disponibles del CPT eipsi_form
+	useEffect( () => {
+		if ( useRandomization && availableForms.length === 0 ) {
+			loadAvailableForms();
+		}
+	}, [ useRandomization ] );
+
+	const loadAvailableForms = async () => {
+		setLoadingForms( true );
+		try {
+			const response = await fetch(
+				window.ajaxurl +
+					'?action=eipsi_get_forms_list&nonce=' +
+					window.eipsiAdminNonce
+			);
+			const data = await response.json();
+			if ( data.success ) {
+				setAvailableForms( data.data || [] );
+			}
+		} catch ( error ) {
+			// eslint-disable-next-line no-console
+			console.error( 'Error cargando formularios:', error );
+		}
+		setLoadingForms( false );
+	};
+
+	// === Funciones de Aleatorización ===
+
+	// Actualizar configuración de aleatorización
+	const updateRandomConfig = ( key, value ) => {
+		const newConfig = {
+			...randomConfig,
+			[ key ]: value,
+		};
+		setAttributes( { randomConfig: newConfig } );
+	};
+
+	// Añadir formulario a la lista
+	const addFormToRandom = ( formIdToAdd ) => {
+		if (
+			! formIdToAdd ||
+			randomConfig.forms.includes( parseInt( formIdToAdd ) )
+		) {
+			return;
+		}
+		const newForms = [ ...randomConfig.forms, parseInt( formIdToAdd ) ];
+		const newProbs = { ...randomConfig.probabilities };
+
+		// Asignar probabilidad inicial equitativa
+		const initialProb = Math.floor( 100 / newForms.length );
+		newForms.forEach( ( id, index ) => {
+			newProbs[ id ] =
+				index === newForms.length - 1
+					? 100 - initialProb * ( newForms.length - 1 )
+					: initialProb;
+		} );
+
+		setAttributes( {
+			randomConfig: {
+				...randomConfig,
+				forms: newForms,
+				probabilities: newProbs,
+			},
+		} );
+	};
+
+	// Eliminar formulario de la lista
+	const removeFormFromRandom = ( formIdToRemove ) => {
+		const newForms = randomConfig.forms.filter(
+			( id ) => id !== formIdToRemove
+		);
+		const newProbs = { ...randomConfig.probabilities };
+		delete newProbs[ formIdToRemove ];
+
+		// Redistribuir probabilidades
+		if ( newForms.length > 0 ) {
+			const initialProb = Math.floor( 100 / newForms.length );
+			newForms.forEach( ( id, index ) => {
+				newProbs[ id ] =
+					index === newForms.length - 1
+						? 100 - initialProb * ( newForms.length - 1 )
+						: initialProb;
+			} );
+		}
+
+		setAttributes( {
+			randomConfig: {
+				...randomConfig,
+				forms: newForms,
+				probabilities: newProbs,
+			},
+		} );
+	};
+
+	// Actualizar probabilidad de un formulario
+	const updateProbability = ( formIdToUpdate, newValue ) => {
+		const value = parseInt( newValue );
+		const newProbs = { ...randomConfig.probabilities };
+		newProbs[ formIdToUpdate ] = value;
+
+		// Ajustar otros formularios para mantener suma = 100
+		const otherForms = randomConfig.forms.filter(
+			( id ) => id !== formIdToUpdate
+		);
+		if ( otherForms.length > 0 ) {
+			const remaining = 100 - value;
+			const otherSum = otherForms.reduce(
+				( sum, id ) => sum + ( newProbs[ id ] || 0 ),
+				0
+			);
+
+			if ( otherSum > 0 ) {
+				const adjustment = remaining / otherForms.length;
+				otherForms.forEach( ( id, index ) => {
+					newProbs[ id ] =
+						index === otherForms.length - 1
+							? remaining - adjustment * ( otherForms.length - 1 )
+							: adjustment;
+				} );
+			} else {
+				// Repartir equitativamente
+				const each = remaining / otherForms.length;
+				otherForms.forEach( ( id, index ) => {
+					newProbs[ id ] =
+						index === otherForms.length - 1
+							? remaining - each * ( otherForms.length - 1 )
+							: each;
+				} );
+			}
+		}
+
+		setAttributes( {
+			randomConfig: {
+				...randomConfig,
+				probabilities: newProbs,
+			},
+		} );
+	};
+
+	// Añadir asignación manual
+	const addManualAssign = () => {
+		if ( ! manualEmail || ! manualFormId ) {
+			return;
+		}
+		const newAssigns = [
+			...randomConfig.manualAssigns,
+			{
+				email: manualEmail.toLowerCase().trim(),
+				formId: parseInt( manualFormId ),
+				timestamp: new Date().toISOString(),
+			},
+		];
+		updateRandomConfig( 'manualAssigns', newAssigns );
+		setManualEmail( '' );
+		setManualFormId( '' );
+	};
+
+	// Eliminar asignación manual
+	const removeManualAssign = ( index ) => {
+		const newAssigns = randomConfig.manualAssigns.filter(
+			( _, i ) => i !== index
+		);
+		updateRandomConfig( 'manualAssigns', newAssigns );
+	};
+
+	// Generar link con random
+	const generateRandomLink = () => {
+		const currentUrl = window.location.href.split( '?' )[ 0 ];
+		const link = currentUrl + '?eipsi_random=true';
+		// eslint-disable-next-line no-undef
+		navigator.clipboard.writeText( link ).then( () => {
+			setLinkCopied( true );
+			setTimeout( () => setLinkCopied( false ), 2000 );
+		} );
+	};
+
+	// Obtener nombre de formulario por ID
+	const getFormName = ( id ) => {
+		const form = availableForms.find( ( f ) => f.id === parseInt( id ) );
+		return form ? form.name : `Formulario ${ id }`;
+	};
+
+	// Calcular total de probabilidades
+	const totalProbability = Object.values(
+		randomConfig.probabilities || {}
+	).reduce( ( sum, val ) => sum + ( parseInt( val ) || 0 ), 0 );
+
+	// Formularios no seleccionados para dropdown
+	const availableForSelect = availableForms.filter(
+		( f ) => ! randomConfig.forms.includes( f.id )
+	);
 
 	// Migration: Convert legacy attributes to styleConfig on mount
 	useEffect( () => {
@@ -701,6 +904,468 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							setAttributes( { presetName: name } )
 						}
 					/>
+				</PanelBody>
+
+				{ /* === Panel de Aleatorización (Fase 1) === */ }
+				<PanelBody
+					title={ __( '🎲 Aleatorización', 'eipsi-forms' ) }
+					initialOpen={ false }
+				>
+					<ToggleControl
+						label={ __(
+							'Activar aleatorización de asignación',
+							'eipsi-forms'
+						) }
+						checked={ !! useRandomization }
+						onChange={ ( value ) =>
+							setAttributes( { useRandomization: !! value } )
+						}
+						help={ __(
+							'Asigna formularios aleatoriamente a los participantes según las probabilidades configuradas.',
+							'eipsi-forms'
+						) }
+					/>
+
+					{ useRandomization && (
+						<div className="eipsi-randomization-panel">
+							{ /* Selector de formularios */ }
+							<BaseControl
+								id="eipsi-random-forms-select"
+								label={ __(
+									'Formularios para aleatorizar',
+									'eipsi-forms'
+								) }
+							>
+								<div
+									style={ {
+										display: 'flex',
+										gap: '8px',
+										marginBottom: '12px',
+									} }
+								>
+									<SelectControl
+										value=""
+										options={ [
+											{
+												label: __(
+													'Seleccionar formulario…',
+													'eipsi-forms'
+												),
+												value: '',
+											},
+											...availableForSelect.map(
+												( f ) => ( {
+													label: f.name,
+													value: String( f.id ),
+												} )
+											),
+										] }
+										onChange={ ( val ) => {
+											if ( val ) {
+												addFormToRandom( val );
+											}
+										} }
+										disabled={
+											availableForSelect.length === 0
+										}
+									/>
+									<Button
+										variant="secondary"
+										onClick={ loadAvailableForms }
+										isBusy={ loadingForms }
+									>
+										🔄
+									</Button>
+								</div>
+
+								{ randomConfig.forms.length < 2 && (
+									<Notice
+										status="warning"
+										isDismissible={ false }
+										style={ { marginBottom: '12px' } }
+									>
+										{ __(
+											'Añadí al menos 2 formularios para activar la aleatorización.',
+											'eipsi-forms'
+										) }
+									</Notice>
+								) }
+
+								{ /* Lista de formularios seleccionados con sliders */ }
+								{ randomConfig.forms.length > 0 && (
+									<div className="eipsi-forms-list">
+										{ randomConfig.forms.map(
+											( selectedFormId ) => (
+												<div
+													key={ selectedFormId }
+													className="eipsi-form-row"
+													style={ {
+														marginBottom: '16px',
+														padding: '12px',
+														background: '#fff',
+														borderRadius: '6px',
+														border: '1px solid #e2e8f0',
+													} }
+												>
+													<div
+														style={ {
+															display: 'flex',
+															justifyContent:
+																'space-between',
+															alignItems:
+																'center',
+															marginBottom: '8px',
+														} }
+													>
+														<strong>
+															{ getFormName(
+																selectedFormId
+															) }
+														</strong>
+														<Button
+															variant="tertiary"
+															isDestructive
+															onClick={ () =>
+																removeFormFromRandom(
+																	selectedFormId
+																)
+															}
+															icon="no-alt"
+														/>
+													</div>
+													<div
+														style={ {
+															display: 'flex',
+															alignItems:
+																'center',
+															gap: '12px',
+														} }
+													>
+														<input
+															type="range"
+															min="0"
+															max="100"
+															value={
+																randomConfig
+																	.probabilities[
+																	selectedFormId
+																] || 0
+															}
+															onChange={ ( e ) =>
+																updateProbability(
+																	selectedFormId,
+																	e.target
+																		.value
+																)
+															}
+															style={ {
+																flex: 1,
+															} }
+														/>
+														<span
+															style={ {
+																minWidth:
+																	'50px',
+																textAlign:
+																	'right',
+																fontWeight: 600,
+																color:
+																	totalProbability !==
+																	100
+																		? '#d32f2f'
+																		: '#198754',
+															} }
+														>
+															{ randomConfig
+																.probabilities[
+																selectedFormId
+															] || 0 }
+															%
+														</span>
+													</div>
+												</div>
+											)
+										) }
+
+										{ /* Total de probabilidades */ }
+										<div
+											style={ {
+												textAlign: 'center',
+												padding: '8px',
+												background:
+													totalProbability === 100
+														? '#dcfce7'
+														: '#fef3c7',
+												borderRadius: '6px',
+												fontWeight: 600,
+												color:
+													totalProbability === 100
+														? '#166534'
+														: '#92400e',
+											} }
+										>
+											{ __( 'Total:', 'eipsi-forms' ) }{ ' ' }
+											{ totalProbability }%
+										</div>
+									</div>
+								) }
+							</BaseControl>
+
+							{ /* Método de aleatorización */ }
+							<SelectControl
+								label={ __(
+									'Método de aleatorización',
+									'eipsi-forms'
+								) }
+								value={ randomConfig.method || 'seeded' }
+								options={ [
+									{
+										label: __(
+											'Simple (uniforme)',
+											'eipsi-forms'
+										),
+										value: 'simple',
+									},
+									{
+										label: __(
+											'Con seed reproducible',
+											'eipsi-forms'
+										),
+										value: 'seeded',
+									},
+								] }
+								onChange={ ( value ) =>
+									updateRandomConfig( 'method', value )
+								}
+								help={ __(
+									'Simple: random puro. Seed: asigna UUID único para replicar en análisis.',
+									'eipsi-forms'
+								) }
+							/>
+
+							{ /* Asignaciones manuales */ }
+							<BaseControl
+								id="eipsi-random-manual-assigns"
+								label={ __(
+									'Asignaciones manuales (override ético)',
+									'eipsi-forms'
+								) }
+								help={ __(
+									'Estas asignaciones tienen prioridad sobre la aleatorización automática.',
+									'eipsi-forms'
+								) }
+							>
+								<div
+									style={ {
+										display: 'grid',
+										gap: '8px',
+										marginBottom: '12px',
+									} }
+								>
+									<TextControl
+										placeholder={ __(
+											'Email del participante',
+											'eipsi-forms'
+										) }
+										value={ manualEmail }
+										onChange={ setManualEmail }
+										type="email"
+									/>
+									<div
+										style={ {
+											display: 'flex',
+											gap: '8px',
+										} }
+									>
+										<SelectControl
+											value={ manualFormId }
+											options={ [
+												{
+													label: __(
+														'Seleccionar formulario…',
+														'eipsi-forms'
+													),
+													value: '',
+												},
+												...availableForms.map(
+													( f ) => ( {
+														label: f.name,
+														value: String( f.id ),
+													} )
+												),
+											] }
+											onChange={ setManualFormId }
+											style={ { flex: 1 } }
+										/>
+										<Button
+											variant="primary"
+											onClick={ addManualAssign }
+											disabled={
+												! manualEmail || ! manualFormId
+											}
+										>
+											{ __( 'Añadir', 'eipsi-forms' ) }
+										</Button>
+									</div>
+								</div>
+
+								{ /* Tabla de asignaciones manuales */ }
+								{ randomConfig.manualAssigns.length > 0 && (
+									<table
+										className="eipsi-manual-assigns-table"
+										style={ {
+											width: '100%',
+											borderCollapse: 'collapse',
+											fontSize: '13px',
+										} }
+									>
+										<thead>
+											<tr>
+												<th
+													style={ {
+														padding: '8px',
+														background: '#f1f5f9',
+														textAlign: 'left',
+													} }
+												>
+													{ __(
+														'Email',
+														'eipsi-forms'
+													) }
+												</th>
+												<th
+													style={ {
+														padding: '8px',
+														background: '#f1f5f9',
+														textAlign: 'left',
+													} }
+												>
+													{ __(
+														'Formulario',
+														'eipsi-forms'
+													) }
+												</th>
+												<th
+													style={ {
+														padding: '8px',
+														background: '#f1f5f9',
+														width: '40px',
+													} }
+												>
+													{  }
+												</th>
+											</tr>
+										</thead>
+										<tbody>
+											{ randomConfig.manualAssigns.map(
+												( assign, index ) => (
+													<tr key={ index }>
+														<td
+															style={ {
+																padding: '8px',
+															} }
+														>
+															{ assign.email }
+														</td>
+														<td
+															style={ {
+																padding: '8px',
+															} }
+														>
+															{ getFormName(
+																assign.formId
+															) }
+														</td>
+														<td
+															style={ {
+																padding: '8px',
+															} }
+														>
+															<Button
+																variant="tertiary"
+																isDestructive
+																onClick={ () =>
+																	removeManualAssign(
+																		index
+																	)
+																}
+																icon="no-alt"
+															/>
+														</td>
+													</tr>
+												)
+											) }
+										</tbody>
+									</table>
+								) }
+							</BaseControl>
+
+							{ /* Botón generar link */ }
+							<Button
+								variant="secondary"
+								onClick={ generateRandomLink }
+								style={ { width: '100%', marginTop: '16px' } }
+							>
+								{ linkCopied
+									? '✓ ' + __( 'Link copiado', 'eipsi-forms' )
+									: '🔗 ' +
+									  __(
+											'Generar link con random',
+											'eipsi-forms'
+									  ) }
+							</Button>
+
+							{ /* Vista previa de configuración */ }
+							{ randomConfig.forms.length >= 2 && (
+								<div
+									className="eipsi-random-preview"
+									style={ {
+										marginTop: '16px',
+										padding: '12px',
+										background: '#f8f9fb',
+										borderRadius: '6px',
+										fontSize: '12px',
+									} }
+								>
+									<strong>
+										{ __( 'Vista previa:', 'eipsi-forms' ) }
+									</strong>
+									<br />
+									{ __(
+										'Aleatorización activa:',
+										'eipsi-forms'
+									) }{ ' ' }
+									{ randomConfig.forms
+										.map(
+											( id ) =>
+												`${ getFormName( id ) } (${
+													randomConfig.probabilities[
+														id
+													] || 0
+												}%)`
+										)
+										.join( ' | ' ) }
+									<br />
+									{ __( 'Método:', 'eipsi-forms' ) }{ ' ' }
+									{ randomConfig.method === 'seeded'
+										? __(
+												'Con seed reproducible',
+												'eipsi-forms'
+										  )
+										: __(
+												'Simple (uniforme)',
+												'eipsi-forms'
+										  ) }
+									<br />
+									{ __(
+										'Overrides manuales:',
+										'eipsi-forms'
+									) }{ ' ' }
+									{ randomConfig.manualAssigns.length }
+								</div>
+							) }
+						</div>
+					) }
 				</PanelBody>
 			</InspectorControls>
 
