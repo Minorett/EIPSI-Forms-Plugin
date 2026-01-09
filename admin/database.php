@@ -705,7 +705,7 @@ class EIPSI_External_Database {
         }
         
         // Ensure schema is ready
-        require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database-schema-manager.php';
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
         $schema_result = EIPSI_Database_Schema_Manager::verify_and_sync_schema($mysqli);
         
         if (!$schema_result['success']) {

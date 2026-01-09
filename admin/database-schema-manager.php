@@ -365,7 +365,7 @@ class EIPSI_Database_Schema_Manager {
         delete_option( 'eipsi_schema_last_verified' );
         
         // Try to get connection and verify schema
-        require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
         $db_helper = new EIPSI_External_Database();
         $mysqli = $db_helper->get_connection();
         
@@ -399,7 +399,7 @@ class EIPSI_Database_Schema_Manager {
             self::repair_local_schema();
             
             // Then check if external DB is enabled
-            require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
             $db_helper = new EIPSI_External_Database();
             
             if ( $db_helper->is_enabled() ) {
@@ -580,7 +580,7 @@ class EIPSI_Database_Schema_Manager {
      * Hook: Fallback verification on insert error
      */
     public static function fallback_verification() {
-        require_once VAS_DINAMICO_PLUGIN_DIR . 'admin/database.php';
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
         $db_helper = new EIPSI_External_Database();
         
         if ( $db_helper->is_enabled() ) {
