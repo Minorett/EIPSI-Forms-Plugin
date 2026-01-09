@@ -380,6 +380,22 @@
 		async discardPartial() {
 			await this.clearFromIDB();
 			await this.discardFromServer();
+
+			// Limpiar almacenamiento local/sesión
+			try {
+				const sessionKey = `eipsi_session_${
+					this.formId || 'default'
+				}`;
+				window.sessionStorage.removeItem( sessionKey );
+
+				const storageKey = `eipsi_form_responses_${
+					this.formId || 'default'
+				}`;
+				window.localStorage.removeItem( storageKey );
+			} catch ( error ) {
+				// Ignore
+			}
+
 			this.hasResponses = false;
 			this.completed = false;
 		}
@@ -685,7 +701,24 @@
 		handleFormCompleted() {
 			this.completed = true;
 			this.clearFromIDB();
+			this.discardFromServer();
 			this.removeBeforeUnload();
+
+			// Limpiar almacenamiento local/sesión
+			try {
+				const sessionKey = `eipsi_session_${
+					this.formId || 'default'
+				}`;
+				window.sessionStorage.removeItem( sessionKey );
+
+				// Limpiar cualquier respaldo en localStorage si existiera (por compatibilidad)
+				const storageKey = `eipsi_form_responses_${
+					this.formId || 'default'
+				}`;
+				window.localStorage.removeItem( storageKey );
+			} catch ( error ) {
+				// Ignore storage errors
+			}
 
 			if ( this.autosaveTimer ) {
 				clearInterval( this.autosaveTimer );

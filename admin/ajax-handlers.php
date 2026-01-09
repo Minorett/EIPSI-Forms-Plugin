@@ -441,7 +441,7 @@ function eipsi_forms_submit_form_handler() {
         
         if ($result['success']) {
             // External DB insert succeeded
-            EIPSI_Partial_Responses::mark_completed($stable_form_id, $participant_id, $session_id);
+            EIPSI_Partial_Responses::mark_completed($form_name, $participant_id, $session_id);
             wp_send_json_success(array(
                 'message' => __('Form submitted successfully!', 'eipsi-forms'),
                 'external_db' => true,
@@ -498,8 +498,8 @@ function eipsi_forms_submit_form_handler() {
                     // Success after repair!
                     error_log('[EIPSI Forms] Auto-repaired schema and recovered data insertion');
                     $insert_id = $wpdb->insert_id;
-                    EIPSI_Partial_Responses::mark_completed($stable_form_id, $participant_id, $session_id);
-                    
+                    EIPSI_Partial_Responses::mark_completed($form_name, $participant_id, $session_id);
+
                     wp_send_json_success(array(
                         'message' => __('Form submitted successfully!', 'eipsi-forms'),
                         'external_db' => false,
@@ -531,7 +531,7 @@ function eipsi_forms_submit_form_handler() {
         $insert_id = $wpdb->insert_id;
         
         // Mark partial response as completed
-        EIPSI_Partial_Responses::mark_completed($stable_form_id, $participant_id, $session_id);
+        EIPSI_Partial_Responses::mark_completed($form_name, $participant_id, $session_id);
         
         if ($used_fallback) {
             // Fallback succeeded - inform user with warning
