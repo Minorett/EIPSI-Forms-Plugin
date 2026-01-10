@@ -166,7 +166,8 @@ add_action('wp_ajax_eipsi_unsubscribe_reminders', 'eipsi_unsubscribe_reminders_h
 
 /**
  * AJAX Handler: Get list of available form templates from library
- * Returns: array of {id, title, status}
+ * Returns: array of {id, name, status}
+ * Frontend expects: data.data = [{id, name, status}]
  * 
  * @since 1.3.0
  */
@@ -191,26 +192,23 @@ function eipsi_get_forms_list_handler() {
     $templates = get_posts($args);
     
     if (empty($templates)) {
-        wp_send_json_success(array(
-            'success' => true,
-            'data' => array()
-        ));
+        // Retornar array vacío (sin doble anidado)
+        wp_send_json_success(array());
         return;
     }
     
     // Transformar a formato esperado por el frontend
+    // Frontend espera campo "name" (no "title")
     $templates_list = array_map(function($template) {
         return array(
             'id' => intval($template->ID),
-            'title' => esc_html($template->post_title),
+            'name' => esc_html($template->post_title),  // ✅ Cambio: title → name
             'status' => $template->post_status,
         );
     }, $templates);
     
-    wp_send_json_success(array(
-        'success' => true,
-        'data' => $templates_list
-    ));
+    // Retornar lista directamente (sin doble anidado success/data)
+    wp_send_json_success($templates_list);
 }
 
 /**

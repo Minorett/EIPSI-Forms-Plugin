@@ -1022,18 +1022,33 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									</Button>
 								</div>
 
-								{ randomConfig.forms.length < 2 && (
-									<Notice
-										status="warning"
-										isDismissible={ false }
-										style={ { marginBottom: '12px' } }
-									>
-										{ __(
-											'Añadí al menos 2 formularios para activar la aleatorización.',
-											'eipsi-forms'
-										) }
-									</Notice>
-								) }
+								{ availableForms.length === 0 &&
+									! loadingForms && (
+										<Notice
+											status="info"
+											isDismissible={ false }
+											style={ { marginBottom: '12px' } }
+										>
+											{ __(
+												'No hay formularios disponibles en la Form Library. Creá al menos 2 formularios para usar la aleatorización.',
+												'eipsi-forms'
+											) }
+										</Notice>
+									) }
+
+								{ randomConfig.forms.length < 2 &&
+									availableForms.length > 0 && (
+										<Notice
+											status="warning"
+											isDismissible={ false }
+											style={ { marginBottom: '12px' } }
+										>
+											{ __(
+												'Añadí al menos 2 formularios para activar la aleatorización.',
+												'eipsi-forms'
+											) }
+										</Notice>
+									) }
 
 								{ /* Lista de formularios seleccionados con sliders */ }
 								{ randomConfig.forms.length > 0 && (
