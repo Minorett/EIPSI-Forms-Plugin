@@ -1,76 +1,90 @@
 {
-	"$schema": "https://schemas.wp.org/trunk/block.json",
-	"apiVersion": 3,
-	"name": "eipsi/campo-likert",
-	"version": "1.0.0",
-	"title": "EIPSI Campo Likert",
-	"category": "eipsi-forms",
-	"icon": "star-half",
-	"description": "Campo de escala Likert para formularios EIPSI.",
-	"keywords": [ "form", "field", "likert", "scale", "rating", "eipsi" ],
-	"textdomain": "eipsi-forms",
-	"parent": [ "eipsi/form-container", "eipsi/form-page" ],
-	"editorScript": "file:../../build/index.js",
-	"editorStyle": "file:../../build/index.css",
-	"style": "file:../../build/style-index.css",
-	"supports": {
-		"html": false,
-		"spacing": {
-			"margin": true,
-			"padding": true
-		}
-	},
-	"attributes": {
-		"fieldKey": {
-			"type": "string",
-			"default": ""
-		},
-		"fieldName": {
-			"type": "string",
-			"default": ""
-		},
-		"label": {
-			"type": "string",
-			"default": ""
-		},
-		"required": {
-			"type": "boolean",
-			"default": false
-		},
-		"helperText": {
-			"type": "string",
-			"default": ""
-		},
-		"minValue": {
-			"type": "number",
-			"default": 1
-		},
-		"maxValue": {
-			"type": "number",
-			"default": 5
-		},
-		"labels": {
-			"type": "string",
-			"default": ""
-		},
-		"conditionalLogic": {
-			"type": "object",
-			"default": null
-		},
-		"className": {
-			"type": "string",
-			"default": ""
-		}
-	},
-	"example": {
-		"attributes": {
-			"fieldName": "satisfaction",
-			"label": "¿Qué tan satisfecho estás con el servicio?",
-			"required": true,
-			"minValue": 1,
-			"maxValue": 5,
-			"labels": "Muy insatisfecho, Insatisfecho, Neutral, Satisfecho, Muy satisfecho",
-			"helperText": "Selecciona una opción del 1 al 5"
-		}
-	}
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "eipsi/campo-likert",
+    "version": "1.0.0",
+    "title": "EIPSI Campo Likert",
+    "category": "eipsi-forms",
+    "icon": "star-half",
+    "description": "Campo de escala Likert para formularios EIPSI.",
+    "keywords": [ "form", "field", "likert", "scale", "rating", "eipsi" ],
+    "textdomain": "eipsi-forms",
+    "parent": [ "eipsi/form-container", "eipsi/form-page" ],
+    "editorScript": "file:../../build/index.js",
+    "editorStyle": "file:../../build/index.css",
+    "style": "file:../../build/style-index.css",
+    "supports": {
+        "html": false,
+        "spacing": {
+            "margin": true,
+            "padding": true
+        }
+    },
+    "attributes": {
+        "fieldKey": {
+            "type": "string",
+            "default": ""
+        },
+        "fieldName": {
+            "type": "string",
+            "default": ""
+        },
+        "label": {
+            "type": "string",
+            "default": ""
+        },
+        "required": {
+            "type": "boolean",
+            "default": false
+        },
+        "helperText": {
+            "type": "string",
+            "default": ""
+        },
+        "minValue": {
+            "type": "number",
+            "default": 1
+        },
+        "maxValue": {
+            "type": "number",
+            "default": 5
+        },
+        "labels": {
+            "type": "string",
+            "default": ""
+        },
+        "conditionalLogic": {
+            "type": "object",
+            "default": null
+        },
+        "className": {
+            "type": "string",
+            "default": ""
+        },
+        "scaleVariation": {
+            "type": "string",
+            "enum": [
+                "custom",
+                "likert5-agreement",
+                "likert5-satisfaction",
+                "likert5-frequency",
+                "likert7-agreement",
+                "likert7-satisfaction",
+                "likert4-agreement",
+                "likert9-scale"
+            ],
+            "default": "custom"
+        }
+    },
+    "example": {
+        "attributes": {
+            "fieldName": "satisfaction",
+            "label": "¿Qué tan satisfecho estás con el servicio?",
+            "required": true,
+            "minValue": 1,
+            "maxValue": 5,
+            "labels": "Muy insatisfecho, Insatisfecho, Neutral, Satisfecho, Muy satisfecho",
+            "helperText": "Selecciona una opción del 1 al 5"
+        }
+    }
 }

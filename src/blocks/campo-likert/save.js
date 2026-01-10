@@ -42,6 +42,7 @@ export default function Save( { attributes } ) {
 		maxValue,
 		labels,
 		conditionalLogic,
+		scaleVariation = 'custom',
 	} = attributes;
 
 	const effectiveFieldName =
@@ -54,6 +55,7 @@ export default function Save( { attributes } ) {
 		'data-field-type': 'likert',
 		'data-min': minValue,
 		'data-max': maxValue,
+		'data-scale-variation': scaleVariation,
 	};
 
 	if (

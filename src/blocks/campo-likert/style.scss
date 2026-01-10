@@ -129,3 +129,164 @@
         }
     }
 }
+
+// Estilos específicos para escalas con muchos puntos (7+ puntos)
+.eipsi-likert-field[data-scale-variation="likert7-agreement"],
+.eipsi-likert-field[data-scale-variation="likert7-satisfaction"],
+.eipsi-likert-field[data-scale-variation="likert9-scale"] {
+    .likert-list {
+        gap: 0.5em;
+        
+        @media (min-width: 768px) {
+            flex-wrap: wrap;
+            gap: 0.4em;
+        }
+    }
+    
+    .likert-item {
+        padding: 0.7em 0.5em;
+        min-height: 40px;
+        
+        @media (min-width: 768px) {
+            flex: 0 0 calc(33.333% - 0.3em);
+            max-width: calc(33.333% - 0.3em);
+            padding: 0.8em 0.3em;
+        }
+        
+        @media (min-width: 1024px) {
+            flex: 0 0 calc(25% - 0.3em);
+            max-width: calc(25% - 0.3em);
+        }
+    }
+    
+    .likert-label-text {
+        font-size: 0.85em;
+        line-height: 1.2;
+        
+        @media (max-width: 767px) {
+            font-size: 0.8em;
+        }
+    }
+}
+
+// Estilos específicos para escala de 9 puntos (máxima compactación)
+.eipsi-likert-field[data-scale-variation="likert9-scale"] {
+    .likert-list {
+        gap: 0.4em;
+        
+        @media (min-width: 768px) {
+            flex-wrap: wrap;
+            gap: 0.3em;
+        }
+    }
+    
+    .likert-item {
+        padding: 0.6em 0.4em;
+        min-height: 38px;
+        
+        @media (min-width: 768px) {
+            flex: 0 0 calc(25% - 0.25em);
+            max-width: calc(25% - 0.25em);
+            padding: 0.7em 0.25em;
+        }
+        
+        @media (min-width: 1200px) {
+            flex: 0 0 calc(20% - 0.25em);
+            max-width: calc(20% - 0.25em);
+        }
+    }
+    
+    .likert-label-text {
+        font-size: 0.8em;
+        line-height: 1.1;
+        
+        @media (max-width: 767px) {
+            font-size: 0.75em;
+        }
+    }
+}
+
+// Estilos para colores específicos por tipo de escala
+.eipsi-likert-field[data-scale-variation*="agreement"] {
+    .likert-scale {
+        border-left: 4px solid #3b82f6;
+    }
+    
+    .likert-item:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+    
+    .likert-item:has(input[type="radio"]:checked) {
+        background: rgba(59, 130, 246, 0.05);
+        border-color: #3b82f6;
+    }
+}
+
+.eipsi-likert-field[data-scale-variation*="satisfaction"] {
+    .likert-scale {
+        border-left: 4px solid #10b981;
+    }
+    
+    .likert-item:hover {
+        border-color: #10b981;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    }
+    
+    .likert-item:has(input[type="radio"]:checked) {
+        background: rgba(16, 185, 129, 0.05);
+        border-color: #10b981;
+    }
+}
+
+.eipsi-likert-field[data-scale-variation="likert5-frequency"] {
+    .likert-scale {
+        border-left: 4px solid #f59e0b;
+    }
+    
+    .likert-item:hover {
+        border-color: #f59e0b;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+    }
+    
+    .likert-item:has(input[type="radio"]:checked) {
+        background: rgba(245, 158, 11, 0.05);
+        border-color: #f59e0b;
+    }
+}
+
+.eipsi-likert-field[data-scale-variation="likert9-scale"] {
+    .likert-scale {
+        border-left: 4px solid #8b5cf6;
+    }
+    
+    .likert-item:hover {
+        border-color: #8b5cf6;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+    }
+    
+    .likert-item:has(input[type="radio"]:checked) {
+        background: rgba(139, 92, 246, 0.05);
+        border-color: #8b5cf6;
+    }
+}
+
+// Responsive optimizations para móvil
+@media (max-width: 480px) {
+    .eipsi-likert-field[data-scale-variation="likert9-scale"] {
+        .likert-scale {
+            padding: 1em;
+        }
+        
+        .likert-list {
+            grid-template-columns: repeat(3, 1fr);
+            display: grid;
+            gap: 0.5em;
+        }
+        
+        .likert-item {
+            flex: none;
+            max-width: none;
+        }
+    }
+}
