@@ -1,182 +1,105 @@
 {
   "schemaVersion": "1.0.0",
   "meta": {
-    "exportedAt": "2026-01-08T23:22:27-03:00",
+    "exportedAt": "2025-01-10T08:00:00-03:00",
     "exportedBy": "EIPSI Forms Clinical Team",
     "pluginVersion": "1.2.2",
-    "formTitle": "Evaluación Clínica Profesional del Síndrome de Burnout",
-    "formName": "burnout_clinic_assessment_v2"
+    "formTitle": "Evaluación Integral del Síndrome de Burnout",
+    "formName": "burnout_clinic_assessment_v2",
+    "description": "Template validado contra block.json v1.2.2 - Incluye PHQ-9, GAD-7 y MBI-HSS con escalas correctas"
   },
   "form": {
-    "title": "Evaluación Clínica Profesional del Síndrome de Burnout",
+    "title": "Evaluación Integral del Síndrome de Burnout",
     "formId": "burnout_clinic_assessment_v2",
     "blocks": [
       {
         "blockName": "eipsi/form-container",
         "attrs": {
           "formId": "burnout_clinic_assessment_v2",
-          "preset": "clinical-premium-blue",
+          "presetName": "Clinical Blue",
+          "showProgressBar": true,
+          "allowBackwardsNav": true,
+          "useCustomCompletion": true,
+          "completionTitle": "¡Evaluación Completada Exitosamente!",
+          "completionMessage": "Sus respuestas han sido registradas exitosamente para el estudio clínico del síndrome de burnout. Muchas gracias por su valiosa participación en esta investigación. Si usted ha proporcionado información de contacto, un resumen de sus resultados le será enviado de manera confidencial.",
+          "completionButtonLabel": "Volver al portal",
+          "completionLogoUrl": "",
+          "primaryColor": "#1a4d6d",
+          "backgroundColor": "#f9fafb",
+          "textColor": "#1f2937",
+          "borderRadius": 12,
+          "padding": 40,
+          "inputBgColor": "#ffffff",
+          "inputTextColor": "#1f2937",
+          "buttonBgColor": "#1a4d6d",
+          "buttonTextColor": "#ffffff",
+          "capturePageTiming": true,
+          "captureFieldTiming": false,
+          "captureInactivityTime": false,
           "styleConfig": {
             "colors": {
               "primary": "#1a4d6d",
-              "primaryHover": "#2c5a7d",
+              "primaryHover": "#0f3348",
+              "primaryLight": "#e8f4f8",
               "secondary": "#d4a574",
-              "background": "#ffffff",
-              "backgroundSubtle": "#f8f9fa",
-              "text": "#2c3e50",
-              "textMuted": "#64748b",
-              "inputBg": "#ffffff",
-              "inputText": "#2c3e50",
-              "inputBorder": "#d1d5db",
-              "inputBorderFocus": "#1a4d6d",
-              "inputErrorBg": "#fff5f5",
-              "inputIcon": "#1a4d6d",
-              "buttonBg": "#1a4d6d",
-              "buttonText": "#ffffff",
-              "buttonHoverBg": "#2c5a7d",
+              "tertiary": "#7c4a3d",
+              "background": "#f9fafb",
+              "text": "#1f2937",
+              "textMuted": "#6b7280",
               "error": "#dc2626",
-              "success": "#059669",
+              "success": "#16a34a",
               "warning": "#d97706",
               "border": "#d1d5db",
-              "borderDark": "#9ca3af"
+              "inputBg": "#ffffff",
+              "inputText": "#1f2937",
+              "inputBorder": "#d1d5db",
+              "buttonBg": "#1a4d6d",
+              "buttonText": "#ffffff"
             },
             "typography": {
-              "fontFamilyHeading": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
-              "fontFamilyBody": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+              "fontFamilyHeading": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+              "fontFamilyBody": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
               "fontSizeBase": "16px",
               "fontSizeH1": "2.25rem",
               "fontSizeH2": "1.875rem",
-              "fontSizeH3": "1.5rem",
-              "fontSizeSmall": "0.875rem",
-              "fontWeightNormal": "400",
-              "fontWeightMedium": "500",
-              "fontWeightBold": "600",
-              "lineHeightBase": "1.6",
-              "lineHeightHeading": "1.3"
+              "lineHeightBase": "1.6"
             },
             "spacing": {
-              "xs": "0.5rem",
-              "sm": "1rem",
-              "md": "1.75rem",
-              "lg": "3rem",
-              "xl": "3.5rem",
               "containerPadding": "3rem",
               "fieldGap": "1.75rem",
               "sectionGap": "2.5rem"
             },
             "borders": {
-              "radiusSm": "8px",
               "radiusMd": "12px",
-              "radiusLg": "16px",
-              "width": "1px",
-              "widthFocus": "2px",
-              "style": "solid"
-            },
-            "shadows": {
-              "sm": "0 1px 3px rgba(26, 77, 109, 0.08)",
-              "md": "0 4px 12px rgba(26, 77, 109, 0.1)",
-              "lg": "0 8px 25px rgba(26, 77, 109, 0.15)",
-              "focus": "0 0 0 3px rgba(26, 77, 109, 0.1)",
-              "error": "0 0 0 3px rgba(220, 38, 38, 0.15)"
-            },
-            "interactivity": {
-              "transitionDuration": "0.25s",
-              "transitionTiming": "cubic-bezier(0.4, 0, 0.2, 1)",
-              "hoverScale": "1.01",
-              "focusOutlineWidth": "2px",
-              "focusOutlineOffset": "2px"
+              "width": "1px"
             }
-          },
-          "useRandomization": true,
-          "randomConfig": {
-            "assignmentMethod": "stratified",
-            "groups": [
-              {
-                "id": "basic",
-                "name": "Evaluación Básica",
-                "probability": 40,
-                "form_id": "burnout_basic_assessment"
-              },
-              {
-                "id": "extended",
-                "name": "Evaluación Extendida",
-                "probability": 35,
-                "form_id": "burnout_extended_assessment"
-              },
-              {
-                "id": "deep",
-                "name": "Evaluación Profunda",
-                "probability": 25,
-                "form_id": "burnout_deep_assessment"
-              }
-            ]
-          },
-          "useSaveResume": true,
-          "autoSaveInterval": 30,
-          "sessionTimeout": 120,
-          "useCustomCompletion": true,
-          "completionTitle": "¡Evaluación Completada Exitosamente!",
-          "completionMessage": "Sus respuestas han sido registradas exitosamente para el estudio clínico del síndrome de burnout. Muchas gracias por su valiosa participación en esta investigación. Si usted ha proporcionado información de contacto, un resumen de sus resultados le será enviado de manera confidencial.",
-          "completionButtonLabel": "Volver al portal",
-          "completionLogo": "/wp-content/uploads/eipsi-forms/hospital-logo.png",
-          "primaryColor": "#1a4d6d",
-          "secondaryColor": "#7c4a3d"
+          }
         },
         "innerBlocks": [
           {
             "blockName": "eipsi/form-page",
             "attrs": {
-              "title": "Consentimiento Informado Profesional",
-              "subtitle": "Evaluación del Síndrome de Burnout en Profesionales Sanitarios",
-              "pageIndex": 1
+              "title": "Consentimiento Informado",
+              "pageIndex": 1,
+              "pageType": "standard",
+              "enableRestartButton": true
             },
             "innerBlocks": [
               {
+                "blockName": "eipsi/campo-descripcion",
+                "attrs": {
+                  "label": "Información sobre el estudio",
+                  "helperText": "Por favor, lea cuidadosamente la siguiente información antes de continuar. Este cuestionario forma parte de un estudio clínico sobre el síndrome de burnout en profesionales sanitarios."
+                }
+              },
+              {
                 "blockName": "eipsi/consent-block",
                 "attrs": {
-                  "consentText": "OBJETIVO DEL ESTUDIO\n\nEsta evaluación tiene como objetivo estudiar la prevalencia y factores asociados al síndrome de burnout en profesionales sanitarios de instituciones públicas y privadas. Su participación contribuirá al desarrollo de estrategias de prevención y manejo del estrés laboral en el ámbito de la salud.\n\nPROCEDIMIENTO\n\nLa evaluación consiste en un cuestionario autoadministrado que incluye escalas validadas internacionalmente (PHQ-9, GAD-7, MBI-HSS). El tiempo estimado de completitud es de 15-20 minutos. Su participación es completamente voluntaria.\n\nCONFIDENCIALIDAD Y PROTECCIÓN DE DATOS\n\nSus respuestas serán tratadas de forma estrictamente confidencial y anónima, cumpliendo con la normativa vigente de protección de datos (Ley 25.326 y GDPR). Los datos se almacenarán de forma codificada y solo el equipo de investigación tendrá acceso a ellos. No se solicitarán datos identificatorios personales.\n\nDERECHOS Y BENEFICIOS\n\nUsted tiene derecho a:\n• Retirar su consentimiento en cualquier momento sin consecuencias\n• Solicitar acceso, rectificación o eliminación de sus datos\n• Recibir un resumen de los resultados generales del estudio\n• Hacer consultas sobre el estudio en cualquier momento\n\nNo existe beneficio directo por participar, pero su contribución es valiosa para el avance del conocimiento científico.\n\nRIESGOS MÍNIMOS\n\nLos riesgos asociados a su participación son mínimos. Algunas preguntas pueden generar reflexión personal sobre situaciones laborales o emocionales. Si se siente incómodo/a, puede omitir preguntas o retirarse del estudio.\n\nCONTACTO\n\nPara consultas, dudas o solicitudes relacionadas con el estudio:\n• Email: investigacion.burnout@hospital.org\n• Teléfono: +54-11-xxxx-xxxx\n• Horario de atención: Lunes a Viernes 9:00-17:00 hs\n\nCOMITÉ DE ÉTICA\n\nEste estudio ha sido aprobado por el Comité de Ética en Investigación de [Nombre de la Institución]. Protocolo: #2025-BURN-001"
-                },
-                "innerBlocks": []
-              },
-              {
-                "blockName": "eipsi/campo-checkbox",
-                "attrs": {
-                  "fieldName": "consentimiento_principal",
-                  "label": "He leído, comprendido y acepto participar voluntariamente en este estudio de investigación",
-                  "required": true,
-                  "helperText": "Marque esta casilla solo si acepta participar en el estudio"
-                },
-                "innerBlocks": []
-              },
-              {
-                "blockName": "eipsi/campo-checkbox",
-                "attrs": {
-                  "fieldName": "consentimiento_datos",
-                  "label": "Acepto el tratamiento de mis datos conforme a la normativa de protección de datos vigente",
-                  "required": true,
-                  "helperText": "Obligatorio para el tratamiento de sus respuestas"
-                },
-                "innerBlocks": []
-              },
-              {
-                "blockName": "eipsi/campo-checkbox",
-                "attrs": {
-                  "fieldName": "resumen_resultados",
-                  "label": "Deseo recibir un resumen confidencial de mis resultados de evaluación",
-                  "required": false,
-                  "helperText": "Opcional - Recibirá un resumen personalizado por email"
-                },
-                "innerBlocks": []
-              },
-              {
-                "blockName": "eipsi/campo-checkbox",
-                "attrs": {
-                  "fieldName": "futuras_investigaciones",
-                  "label": "Autorizo el uso de mis datos de forma anónima en futuras investigaciones relacionadas",
-                  "required": false,
-                  "helperText": "Opcional - Sus datos serían anonimizados y utilizados solo para fines científicos"
-                },
-                "innerBlocks": []
+                  "consentText": "**OBJETIVO DEL ESTUDIO**\n\nEsta evaluación tiene como objetivo estudiar la prevalencia y factores asociados al síndrome de burnout en profesionales sanitarios de instituciones públicas y privadas. Su participación contribuirá al desarrollo de estrategias de prevención y manejo del estrés laboral en el ámbito de la salud.\n\n**PROCEDIMIENTO**\n\nLa evaluación consiste en un cuestionario autoadministrado que incluye escalas validadas internacionalmente (PHQ-9, GAD-7, MBI-HSS). El tiempo estimado de completitud es de 15-20 minutos. Su participación es completamente voluntaria.\n\n**CONFIDENCIALIDAD Y PROTECCIÓN DE DATOS**\n\nSus respuestas serán tratadas de forma estrictamente confidencial y anónima, cumpliendo con la normativa vigente de protección de datos (Ley 25.326 y GDPR). Los datos se almacenarán de forma codificada y solo el equipo de investigación tendrá acceso a ellos. No se solicitarán datos identificatorios personales.\n\n**DERECHOS Y BENEFICIOS**\n\nUsted tiene derecho a:\n• Retirar su consentimiento en cualquier momento sin consecuencias\n• Solicitar acceso, rectificación o eliminación de sus datos\n• Recibir un resumen de los resultados generales del estudio\n• Hacer consultas sobre el estudio en cualquier momento\n\nNo existe beneficio directo por participar, pero su contribución es valiosa para el avance del conocimiento científico.\n\n**RIESGOS MÍNIMOS**\n\nLos riesgos asociados a su participación son mínimos. Algunas preguntas pueden generar reflexión personal sobre situaciones laborales o emocionales. Si se siente incómodo/a, puede omitir preguntas o retirarse del estudio.\n\n**CONTACTO**\n\nPara consultas, dudas o solicitudes relacionadas con el estudio:\n• Email: investigacion.burnout@hospital.org\n• Teléfono: +54-11-xxxx-xxxx\n• Horario de atención: Lunes a Viernes 9:00-17:00 hs\n\n**COMITÉ DE ÉTICA**\n\nEste estudio ha sido aprobado por el Comité de Ética en Investigación de [Nombre de la Institución]. Protocolo: #2025-BURN-001",
+                  "consentLabel": "He leído, comprendido y acepto participar voluntariamente en este estudio de investigación. Acepto el tratamiento de mis datos conforme a la normativa de protección de datos vigente.",
+                  "isRequired": true,
+                  "showTimestamp": true
+                }
               }
             ]
           },
@@ -184,20 +107,27 @@
             "blockName": "eipsi/form-page",
             "attrs": {
               "title": "Datos Demográficos y Profesionales",
-              "subtitle": "Información para caracterización de la muestra",
-              "pageIndex": 2
+              "pageIndex": 2,
+              "pageType": "standard"
             },
             "innerBlocks": [
               {
+                "blockName": "eipsi/campo-descripcion",
+                "attrs": {
+                  "label": "Información general",
+                  "helperText": "Esta información nos permitirá caracterizar la muestra de estudio y realizar análisis estadísticos relevantes."
+                }
+              },
+              {
                 "blockName": "eipsi/campo-radio",
                 "attrs": {
+                  "fieldKey": "profesion_sanitaria",
                   "fieldName": "profesion_sanitaria",
                   "label": "Profesión sanitaria",
                   "required": true,
                   "options": "Medicina;Enfermería;Psicología;Trabajo Social;Fisioterapia;Farmacia;Técnico en Radiología;Laboratorio Clínico;Terapia Ocupacional;Nutrición;Odontología",
                   "helperText": "Seleccione su profesión principal"
-                },
-                "innerBlocks": []
+                }
               },
               {
                 "blockName": "eipsi/campo-select",
@@ -205,10 +135,10 @@
                   "fieldName": "anos_experiencia",
                   "label": "Años de experiencia profesional",
                   "required": true,
+                  "placeholder": "Seleccione un rango",
                   "options": "0-2 años;3-5 años;6-10 años;11-15 años;16-20 años;Más de 20 años",
                   "helperText": "Años desde la obtención del título profesional"
-                },
-                "innerBlocks": []
+                }
               },
               {
                 "blockName": "eipsi/campo-select",
@@ -216,10 +146,10 @@
                   "fieldName": "tipo_institucion",
                   "label": "Tipo de institución",
                   "required": true,
+                  "placeholder": "Seleccione una opción",
                   "options": "Hospital Público;Hospital Privado;Centro de Salud;Consultorio Privado;Clínica;Sanatorio;Hospital de Día;Instituto de Alta Complejidad",
                   "helperText": "Tipo de institución donde realiza principalmente su actividad"
-                },
-                "innerBlocks": []
+                }
               },
               {
                 "blockName": "eipsi/campo-select",
@@ -227,21 +157,21 @@
                   "fieldName": "horas_semanales",
                   "label": "Horas de trabajo semanal promedio",
                   "required": true,
+                  "placeholder": "Seleccione un rango",
                   "options": "Menos de 30 horas;30-40 horas;41-50 horas;51-60 horas;Más de 60 horas",
                   "helperText": "Incluye guardias, atención de emergencias y actividades laborales relacionadas"
-                },
-                "innerBlocks": []
+                }
               },
               {
                 "blockName": "eipsi/campo-radio",
                 "attrs": {
+                  "fieldKey": "situacion_laboral",
                   "fieldName": "situacion_laboral",
                   "label": "Situación laboral actual",
                   "required": true,
-                  "options": "Empleado/a planta permanente;Empleado/a contrato temporal;Freelance/Consultor/a;Jefe de Servicio;Empleado/a por guardias;Jubilado/a activo/a",
+                  "options": "Empleado/a planta permanente;Empleado/a contrato temporal;Freelance/Consultor/a;Jefe de Servicio;Empleado/a por guardias",
                   "helperText": "Seleccione la modalidad que mejor describe su situación"
-                },
-                "innerBlocks": []
+                }
               },
               {
                 "blockName": "eipsi/campo-texto",
@@ -251,22 +181,19 @@
                   "required": true,
                   "placeholder": "Ej: 35",
                   "fieldType": "number",
-                  "minValue": 18,
-                  "maxValue": 100,
                   "helperText": "Edad en años cumplidos"
-                },
-                "innerBlocks": []
+                }
               },
               {
                 "blockName": "eipsi/campo-radio",
                 "attrs": {
+                  "fieldKey": "genero",
                   "fieldName": "genero",
                   "label": "Género (opcional)",
                   "required": false,
                   "options": "Femenino;Masculino;No binario;Prefiero no decir",
                   "helperText": "Esta información es opcional pero útil para análisis estadísticos"
-                },
-                "innerBlocks": []
+                }
               }
             ]
           },
@@ -274,8 +201,8 @@
             "blockName": "eipsi/form-page",
             "attrs": {
               "title": "PHQ-9: Escala de Depresión",
-              "subtitle": "Patient Health Questionnaire-9 (Últimas 2 semanas)",
-              "pageIndex": 3
+              "pageIndex": 3,
+              "pageType": "standard"
             },
             "innerBlocks": [
               {
@@ -283,107 +210,124 @@
                 "attrs": {
                   "label": "Instrucciones para PHQ-9",
                   "helperText": "Durante las últimas dos semanas, ¿con qué frecuencia ha tenido molestias debido a cualquiera de los siguientes problemas? Seleccione la respuesta que mejor represente su experiencia."
-                },
-                "innerBlocks": []
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "phq9_1",
                   "fieldName": "phq9_1",
                   "label": "1. Poco interés o placer en hacer cosas",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "phq9_2",
                   "fieldName": "phq9_2",
                   "label": "2. Se ha sentido decaído/a, deprimido/a o sin esperanzas",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "phq9_3",
                   "fieldName": "phq9_3",
                   "label": "3. Dificultad para quedarse o mantenerse dormido/a, o dormir demasiado",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "phq9_4",
                   "fieldName": "phq9_4",
                   "label": "4. Se ha sentido cansado/a o con poca energía",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "phq9_5",
                   "fieldName": "phq9_5",
                   "label": "5. Poco apetito o comer en exceso",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "phq9_6",
                   "fieldName": "phq9_6",
                   "label": "6. Se ha sentido mal consigo mismo/a, o que es un fracaso o ha quedado mal con usted mismo/a o con su familia",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "phq9_7",
                   "fieldName": "phq9_7",
                   "label": "7. Dificultad para concentrarse en cosas, tales como leer el periódico o ver la televisión",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "phq9_8",
                   "fieldName": "phq9_8",
                   "label": "8. ¿Se mueve o habla tan lentamente que otras personas podrían haberlo notado? O lo contrario - muy inquieto/a o agitado/a que ha estado moviéndose mucho más de lo normal",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "phq9_9",
                   "fieldName": "phq9_9",
                   "label": "9. Pensamientos de que estaría mejor muerto/a, o de lastimarse de alguna manera",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "⚠️ Importante: Si marcó cualquier opción diferente a \"Nada\", consulte con un profesional de salud mental"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "⚠️ Importante: Si marcó cualquier opción diferente a 'Para nada', consulte con un profesional de salud mental"
+                }
               }
             ]
           },
@@ -391,8 +335,8 @@
             "blockName": "eipsi/form-page",
             "attrs": {
               "title": "GAD-7: Escala de Ansiedad",
-              "subtitle": "Generalized Anxiety Disorder-7 (Últimas 2 semanas)",
-              "pageIndex": 4
+              "pageIndex": 4,
+              "pageType": "standard"
             },
             "innerBlocks": [
               {
@@ -400,85 +344,98 @@
                 "attrs": {
                   "label": "Instrucciones para GAD-7",
                   "helperText": "Durante las últimas dos semanas, ¿con qué frecuencia ha experimentado molestias debido a cualquiera de los siguientes problemas? Seleccione la respuesta que mejor represente su experiencia."
-                },
-                "innerBlocks": []
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "gad7_1",
                   "fieldName": "gad7_1",
                   "label": "1. Sensación de nerviosismo, ansiedad o tensión",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "gad7_2",
                   "fieldName": "gad7_2",
                   "label": "2. No poder parar o controlar la preocupación",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "gad7_3",
                   "fieldName": "gad7_3",
                   "label": "3. Preocuparse demasiado por diferentes cosas",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "gad7_4",
                   "fieldName": "gad7_4",
                   "label": "4. Dificultad para relajarse",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "gad7_5",
                   "fieldName": "gad7_5",
                   "label": "5. Estar tan inquieto/a que resulta difícil permanecer sentado/a",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "gad7_6",
                   "fieldName": "gad7_6",
                   "label": "6. Enojarse o irritarse fácilmente",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
+                  "fieldKey": "gad7_7",
                   "fieldName": "gad7_7",
                   "label": "7. Sentir miedo como si algo terrible fuera a suceder",
                   "required": true,
-                  "labels": "Nada;Varios días;Más de la mitad de los días;Casi todos los días",
-                  "helperText": "Escala: 0 (Nada) - 3 (Casi todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 3,
+                  "labels": "Para nada;Varios días;Más de la mitad de los días;Casi todos los días",
+                  "helperText": "Escala: 0 (Para nada) - 3 (Casi todos los días)"
+                }
               }
             ]
           },
@@ -486,8 +443,8 @@
             "blockName": "eipsi/form-page",
             "attrs": {
               "title": "MBI-HSS: Escala de Burnout",
-              "subtitle": "Maslach Burnout Inventory - Human Services Survey",
-              "pageIndex": 5
+              "pageIndex": 5,
+              "pageType": "standard"
             },
             "innerBlocks": [
               {
@@ -495,119 +452,138 @@
                 "attrs": {
                   "label": "Instrucciones para MBI-HSS",
                   "helperText": "Las siguientes preguntas se refieren a sus sentimientos sobre su trabajo. Indique con qué frecuencia experimenta cada uno de los sentimientos que se mencionan. Recuerde que no hay respuestas correctas o incorrectas."
-                },
-                "innerBlocks": []
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
-                  "fieldName": "mbi_agotamiento_emocional_1",
+                  "fieldKey": "mbi_agotamiento_1",
+                  "fieldName": "mbi_agotamiento_1",
                   "label": "Me siento emocionalmente agotado/a por mi trabajo",
                   "required": true,
-                  "labels": "Nunca;Algunas veces al año;Algunas veces al mes;Algunas veces por semana;Todos los días",
-                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 6,
+                  "labels": "Nunca;Pocas veces al año;Una vez al mes;Pocas veces al mes;Una vez a la semana;Pocas veces a la semana;Diariamente",
+                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Diariamente)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
-                  "fieldName": "mbi_agotamiento_emocional_2",
+                  "fieldKey": "mbi_agotamiento_2",
+                  "fieldName": "mbi_agotamiento_2",
                   "label": "Me siento agotado/a al final de la jornada de trabajo",
                   "required": true,
-                  "labels": "Nunca;Algunas veces al año;Algunas veces al mes;Algunas veces por semana;Todos los días",
-                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 6,
+                  "labels": "Nunca;Pocas veces al año;Una vez al mes;Pocas veces al mes;Una vez a la semana;Pocas veces a la semana;Diariamente",
+                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Diariamente)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
-                  "fieldName": "mbi_agotamiento_emocional_3",
+                  "fieldKey": "mbi_agotamiento_3",
+                  "fieldName": "mbi_agotamiento_3",
                   "label": "Me siento fatigado/a cuando me levanto por la mañana y tengo que ir a trabajar",
                   "required": true,
-                  "labels": "Nunca;Algunas veces al año;Algunas veces al mes;Algunas veces por semana;Todos los días",
-                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 6,
+                  "labels": "Nunca;Pocas veces al año;Una vez al mes;Pocas veces al mes;Una vez a la semana;Pocas veces a la semana;Diariamente",
+                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Diariamente)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
                 "attrs": {
-                  "fieldName": "mbi_agotamiento_emocional_4",
+                  "fieldKey": "mbi_agotamiento_4",
+                  "fieldName": "mbi_agotamiento_4",
                   "label": "Trabajar todo el día es realmente una tensión para mí",
                   "required": true,
-                  "labels": "Nunca;Algunas veces al año;Algunas veces al mes;Algunas veces por semana;Todos los días",
-                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Todos los días)"
-                },
-                "innerBlocks": []
+                  "minValue": 0,
+                  "maxValue": 6,
+                  "labels": "Nunca;Pocas veces al año;Una vez al mes;Pocas veces al mes;Una vez a la semana;Pocas veces a la semana;Diariamente",
+                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Diariamente)"
+                }
               },
               {
                 "blockName": "eipsi/campo-likert",
-                  "attrs": {
-                    "fieldName": "mbi_despersonalizacion_1",
-                    "label": "Me siento frustrado/a con mi trabajo",
-                    "required": true,
-                    "labels": "Nunca;Algunas veces al año;Algunas veces al mes;Algunas veces por semana;Todos los días",
-                    "helperText": "Frecuencia: 0 (Nunca) - 6 (Todos los días)"
-                  },
-                  "innerBlocks": []
-                },
-                {
-                  "blockName": "eipsi/campo-likert",
-                  "attrs": {
-                    "fieldName": "mbi_despersonalizacion_2",
-                    "label": "Siento que estoy tratando a algunos de mis pacientes como si fueran objetos impersonales",
-                    "required": true,
-                    "labels": "Nunca;Algunas veces al año;Algunas veces al mes;Algunas veces por semana;Todos los días",
-                    "helperText": "Frecuencia: 0 (Nunca) - 6 (Todos los días)"
-                  },
-                  "innerBlocks": []
-                },
-                {
-                  "blockName": "eipsi/campo-likert",
-                  "attrs": {
-                    "fieldName": "mbi_despersonalizacion_3",
-                    "label": "Me he vuelto más insensible con la gente desde que trabajo aquí",
-                    "required": true,
-                    "labels": "Nunca;Algunas veces al año;Algunas veces al mes;Algunas veces por semana;Todos los días",
-                    "helperText": "Frecuencia: 0 (Nunca) - 6 (Todos los días)"
-                  },
-                  "innerBlocks": []
-                },
-                {
-                  "blockName": "eipsi/campo-likert",
-                  "attrs": {
-                    "fieldName": "mbi_logros_1",
-                    "label": "Tengo la sensación de que con mi trabajo estoy aportando algo valioso a la sociedad",
-                    "required": true,
-                    "labels": "Nunca;Algunas veces al año;Algunas veces al mes;Algunas veces por semana;Todos los días",
-                    "helperText": "Frecuencia: 0 (Nunca) - 6 (Todos los días)"
-                  },
-                  "innerBlocks": []
-                },
-                {
-                  "blockName": "eipsi/campo-likert",
-                  "attrs": {
-                    "fieldName": "mbi_logros_2",
-                    "label": "Me siento eficaz al trabajar con mis pacientes",
-                    "required": true,
-                    "labels": "Nunca;Algunas veces al año;Algunas veces al mes;Algunas veces por semana;Todos los días",
-                    "helperText": "Frecuencia: 0 (Nunca) - 6 (Todos los días)"
-                  },
-                  "innerBlocks": []
-                },
-                {
-                  "blockName": "eipsi/campo-likert",
-                  "attrs": {
-                    "fieldName": "mbi_logros_3",
-                    "label": "Creo que tengo una actitud positiva hacia mi trabajo y hacia mis pacientes",
-                    "required": true,
-                    "labels": "Nunca;Algunas veces al año;Algunas veces al mes;Algunas veces por semana;Todos los días",
-                    "helperText": "Frecuencia: 0 (Nunca) - 6 (Todos los días)"
-                  },
-                  "innerBlocks": []
+                "attrs": {
+                  "fieldKey": "mbi_despersonalizacion_1",
+                  "fieldName": "mbi_despersonalizacion_1",
+                  "label": "Me siento frustrado/a con mi trabajo",
+                  "required": true,
+                  "minValue": 0,
+                  "maxValue": 6,
+                  "labels": "Nunca;Pocas veces al año;Una vez al mes;Pocas veces al mes;Una vez a la semana;Pocas veces a la semana;Diariamente",
+                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Diariamente)"
                 }
+              },
+              {
+                "blockName": "eipsi/campo-likert",
+                "attrs": {
+                  "fieldKey": "mbi_despersonalizacion_2",
+                  "fieldName": "mbi_despersonalizacion_2",
+                  "label": "Siento que estoy tratando a algunos de mis pacientes como si fueran objetos impersonales",
+                  "required": true,
+                  "minValue": 0,
+                  "maxValue": 6,
+                  "labels": "Nunca;Pocas veces al año;Una vez al mes;Pocas veces al mes;Una vez a la semana;Pocas veces a la semana;Diariamente",
+                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Diariamente)"
+                }
+              },
+              {
+                "blockName": "eipsi/campo-likert",
+                "attrs": {
+                  "fieldKey": "mbi_despersonalizacion_3",
+                  "fieldName": "mbi_despersonalizacion_3",
+                  "label": "Me he vuelto más insensible con la gente desde que trabajo aquí",
+                  "required": true,
+                  "minValue": 0,
+                  "maxValue": 6,
+                  "labels": "Nunca;Pocas veces al año;Una vez al mes;Pocas veces al mes;Una vez a la semana;Pocas veces a la semana;Diariamente",
+                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Diariamente)"
+                }
+              },
+              {
+                "blockName": "eipsi/campo-likert",
+                "attrs": {
+                  "fieldKey": "mbi_logros_1",
+                  "fieldName": "mbi_logros_1",
+                  "label": "Tengo la sensación de que con mi trabajo estoy aportando algo valioso a la sociedad",
+                  "required": true,
+                  "minValue": 0,
+                  "maxValue": 6,
+                  "labels": "Nunca;Pocas veces al año;Una vez al mes;Pocas veces al mes;Una vez a la semana;Pocas veces a la semana;Diariamente",
+                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Diariamente)"
+                }
+              },
+              {
+                "blockName": "eipsi/campo-likert",
+                "attrs": {
+                  "fieldKey": "mbi_logros_2",
+                  "fieldName": "mbi_logros_2",
+                  "label": "Me siento eficaz al trabajar con mis pacientes",
+                  "required": true,
+                  "minValue": 0,
+                  "maxValue": 6,
+                  "labels": "Nunca;Pocas veces al año;Una vez al mes;Pocas veces al mes;Una vez a la semana;Pocas veces a la semana;Diariamente",
+                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Diariamente)"
+                }
+              },
+              {
+                "blockName": "eipsi/campo-likert",
+                "attrs": {
+                  "fieldKey": "mbi_logros_3",
+                  "fieldName": "mbi_logros_3",
+                  "label": "Creo que tengo una actitud positiva hacia mi trabajo y hacia mis pacientes",
+                  "required": true,
+                  "minValue": 0,
+                  "maxValue": 6,
+                  "labels": "Nunca;Pocas veces al año;Una vez al mes;Pocas veces al mes;Una vez a la semana;Pocas veces a la semana;Diariamente",
+                  "helperText": "Frecuencia: 0 (Nunca) - 6 (Diariamente)"
+                }
+              }
             ]
           }
         ]
@@ -619,8 +595,9 @@
     "_eipsi_form_version": "2.0",
     "_eipsi_template_category": "clinical-assessment",
     "_eipsi_scales_included": ["PHQ-9", "GAD-7", "MBI-HSS"],
-    "_eipsi_randomization_enabled": true,
     "_eipsi_consent_required": true,
-    "_eipsi_save_resume_enabled": true
+    "_eipsi_validated_against_block_json": "1.2.2",
+    "_eipsi_total_pages": 5,
+    "_eipsi_estimated_time_minutes": "15-20"
   }
 }

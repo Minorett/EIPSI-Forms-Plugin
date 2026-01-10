@@ -26,7 +26,7 @@ EIPSI Forms convierte WordPress en una herramienta clínica para recolección de
 ### Plantillas demo EIPSI (estado actual)
 - Plantillas prearmadas como **“Ingreso ansiedad breve (demo)”**, **“Seguimiento emocional (demo)”** o **“Satisfacción de sesión (demo)”** listas para cargar desde el dropdown del **EIPSI Form Container**.
 - Cada plantilla demo son bloques EIPSI reales con navegación multipágina, condicionales y estilos ya configurados para que puedas partir de algo clínico.
-- **Template Profesional de Burnout:** Evaluación clínica completa del síndrome de burnout en profesionales sanitarios que incluye PHQ-9, GAD-7 y MBI-HSS con consentimiento informado profesional, randomización estratificada y Save & Resume habilitado.
+- **Template Profesional de Burnout (v2.0 - Validado):** Evaluación clínica completa del síndrome de burnout en profesionales sanitarios que incluye PHQ-9, GAD-7 y MBI-HSS con consentimiento informado profesional. Validado 100% contra block.json v1.2.2 (todos los atributos son compatibles, sin errores de importación).
 - No son escalas oficiales ni incluyen scoring automático; son ejemplos listos para personalizar mientras terminamos de liberar los botones “crear PHQ-9 / GAD-7 / PCL-5 / AUDIT / DASS-21”.
 
 ### Lógica condicional avanzada (AND/OR v1.1)
