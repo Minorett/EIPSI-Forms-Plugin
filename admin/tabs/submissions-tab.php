@@ -219,9 +219,9 @@ $colspan = $show_form_column ? 8 : 7;
                         if (!empty($row->metadata)) {
                         $metadata = json_decode($row->metadata, true);
                         if (isset($metadata['page_timings']['total_duration'])) {
-                            $total_seconds = $metadata['page_timings']['total_duration'];
-                            $minutes = floor($total_seconds / 60);
-                            $seconds = intval(round($total_seconds % 60));
+                            $total_seconds = (float) $metadata['page_timings']['total_duration'];
+                            $minutes = (int) floor($total_seconds / 60);
+                            $seconds = (int) round($total_seconds - ($minutes * 60));
 
                             if ($minutes > 0) {
                                 $total_time_display = sprintf('%d min %d sec', $minutes, $seconds);
