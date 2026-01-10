@@ -4,7 +4,6 @@ import {
 	TextareaControl,
 	ToggleControl,
 } from '@wordpress/components';
-import { RichText } from '@wordpress/block-editor';
 import { __ } from '@wordpress/i18n';
 
 /**
@@ -51,61 +50,20 @@ const ConsentSettings = ( { attributes, setAttributes } ) => {
 				) }
 			/>
 
-			<div
-				className="eipsi-sidebar-control"
-				style={ { marginBottom: '16px' } }
-			>
-				<div
-					className="eipsi-control-title required"
-					style={ {
-						fontWeight: 600,
-						marginBottom: '8px',
-						color: '#374151',
-						fontSize: '13px',
-					} }
-				>
-					{ __( 'Contenido', 'eipsi-forms' ) }
-				</div>
-				<RichText
-					tagName="div"
-					multiline="p"
-					value={ contenido }
-					onChange={ ( value ) =>
-						setAttributes( { contenido: value } )
-					}
-					placeholder={ __(
-						'Escriba el texto completo del consentimiento informado. Incluya: voluntariedad, anonimato, fines clínicos, derechos del participante.',
-						'eipsi-forms'
-					) }
-					aria-label={ __(
-						'Contenido del consentimiento',
-						'eipsi-forms'
-					) }
-					className="eipsi-richtext-field"
-					style={ {
-						minHeight: '120px',
-						border: '1px solid #d1d5db',
-						borderRadius: '4px',
-						padding: '0.75rem',
-						background: 'white',
-					} }
-				/>
-				<small
-					className="eipsi-control-help"
-					style={ {
-						display: 'block',
-						marginTop: '0.5rem',
-						color: '#6b7280',
-						fontSize: '12px',
-						lineHeight: '1.4',
-					} }
-				>
-					{ __(
-						'Personaliza para cumplir ANMAT/APA. Este es el texto principal que verá el paciente.',
-						'eipsi-forms'
-					) }
-				</small>
-			</div>
+			<TextareaControl
+				label={ __( 'Contenido', 'eipsi-forms' ) }
+				value={ contenido || '' }
+				onChange={ ( value ) => setAttributes( { contenido: value } ) }
+				rows={ 6 }
+				placeholder={ __(
+					'Escriba el texto completo del consentimiento informado. Incluya: voluntariedad, anonimato, fines clínicos, derechos del participante.',
+					'eipsi-forms'
+				) }
+				help={ __(
+					'Personaliza para cumplir ANMAT/APA. Este es el texto principal que verá el paciente. Puedes usar saltos de línea.',
+					'eipsi-forms'
+				) }
+			/>
 
 			<TextControl
 				label={ __( 'Texto complementario (opcional)', 'eipsi-forms' ) }
