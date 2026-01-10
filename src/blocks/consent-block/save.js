@@ -1,5 +1,28 @@
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 
+function getPlainTextFromHtml( html ) {
+	return ( html || '' )
+		.replace( /<[^>]*>/g, '' )
+		.replace( /&nbsp;/g, ' ' )
+		.trim();
+}
+
+const renderConsentBody = ( text ) => {
+	if ( ! text || text.trim() === '' ) {
+		return null;
+	}
+
+	const lines = text.split( '\n' );
+
+	return (
+		<div className="consent-body">
+			{ lines.map( ( line, index ) => (
+				<p key={ `${ line }-${ index }` }>{ line }</p>
+			) ) }
+		</div>
+	);
+};
+
 export default function Save( { attributes } ) {
 	const {
 		titulo,
@@ -10,6 +33,12 @@ export default function Save( { attributes } ) {
 		isRequired,
 	} = attributes;
 
+	const hasValidContenido = getPlainTextFromHtml( contenido ).length > 0;
+
+	if ( ! hasValidContenido ) {
+		return null;
+	}
+
 	const blockProps = useBlockProps.save( {
 		className:
 			'wp-block-eipsi-consent-block eipsi-consent-block form-group',
@@ -19,28 +48,22 @@ export default function Save( { attributes } ) {
 
 	return (
 		<div { ...blockProps }>
-			{ /* Título si existe */ }
 			{ titulo && (
-				<h3 className="eipsi-consent-titulo">
+				<h3 className="consent-title">
 					<RichText.Content value={ titulo } />
 				</h3>
 			) }
 
-			{ /* Contenido principal */ }
-			<div className="eipsi-consent-contenido">
-				<RichText.Content value={ contenido } />
-			</div>
+			{ renderConsentBody( contenido ) }
 
-			{ /* Texto complementario si existe */ }
 			{ textoComplementario && (
-				<div className="eipsi-consent-complementario">
+				<p className="consent-note">
 					<RichText.Content value={ textoComplementario } />
-				</div>
+				</p>
 			) }
 
-			{ /* Checkbox si toggle ON */ }
 			{ mostrarCheckbox && (
-				<div className="eipsi-consent-control">
+				<div className="consent-control">
 					<div className="eipsi-checkbox-wrapper">
 						<input
 							type="checkbox"

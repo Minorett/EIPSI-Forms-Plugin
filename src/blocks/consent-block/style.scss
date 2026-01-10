@@ -1,115 +1,152 @@
+/**
+ * EIPSI Consent Block Frontend Styles
+ * Clinical professional appearance matching description block pattern
+ */
+
 .eipsi-consent-block {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: var(--eipsi-color-bg-subtle, #f9fafb);
-    border: 1px solid var(--eipsi-color-border, #e5e7eb);
-    border-radius: var(--eipsi-border-radius-md, 8px);
+	padding: 1.5em;
+	background: var(--eipsi-color-background-subtle, #f8f9fa);
+	border-radius: 8px;
+	border-left: 4px solid var(--eipsi-color-primary, #005a87);
+	margin: 1.5em 0;
 
-    .eipsi-consent-text {
-        margin-bottom: 1.25rem;
-        font-family: var(--eipsi-font-family-body, inherit);
-        font-size: var(--eipsi-font-size-base, 16px);
-        line-height: 1.6;
-        color: var(--eipsi-color-text, #111827);
+	.consent-title {
+		margin: 0 0 1em 0;
+		font-size: 1.2em;
+		font-weight: 700;
+		color: var(--eipsi-color-text, #2c3e50);
+	}
 
-        p {
-            margin-bottom: 0.75rem;
-            &:last-child {
-                margin-bottom: 0;
-            }
-        }
-    }
+	.consent-body {
+		color: var(--eipsi-color-text, #2c3e50);
+		line-height: 1.6;
 
-    .eipsi-consent-control {
-        .eipsi-checkbox-wrapper {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            cursor: pointer;
+		p {
+			margin: 0.5em 0;
 
-            input[type="checkbox"] {
-                appearance: none;
-                -webkit-appearance: none;
-                width: 20px;
-                height: 20px;
-                border: 2px solid var(--eipsi-color-checkbox-border, #d1d5db);
-                border-radius: 4px;
-                background-color: var(--eipsi-color-bg, #ffffff);
-                cursor: pointer;
-                position: relative;
-                margin-top: 2px;
-                flex-shrink: 0;
-                transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
-                display: flex;
-                align-items: center;
-                justify-content: center;
+		&:first-child {
+				margin-top: 0;
+			}
 
-                &:checked {
-                    background-color: var(--eipsi-color-button-bg, #2563eb);
-                    border-color: var(--eipsi-color-button-bg, #2563eb);
+		&:last-child {
+				margin-bottom: 0;
+			}
+		}
+	}
 
-                    &::after {
-                        content: '';
-                        position: absolute;
-                        left: 7px;
-                        top: 5px;
-                        width: 5px;
-                        height: 10px;
-                        border: solid white;
-                        border-width: 0 2px 2px 0;
-                        transform: rotate(45deg);
-                    }
-                }
+	.consent-note {
+		margin-top: 1em;
+		padding-top: 0.75em;
+		border-top: 1px solid var(--eipsi-color-border, #e2e8f0);
+		font-size: 0.9em;
+		color: var(--eipsi-color-text-muted, #64748b);
+		font-family: var(--eipsi-font-family-body, inherit);
+		font-style: italic;
+		line-height: var(--eipsi-line-height-base, 1.6);
+	}
 
-                &:focus-visible {
-                    outline: 2px solid var(--eipsi-color-button-bg, #2563eb);
-                    outline-offset: 2px;
-                }
-            }
+	.eipsi-consent-control {
+		margin-top: 1.5em;
+		padding-top: 1.5em;
+		border-top: 1px solid var(--eipsi-color-border, #e2e8f0);
 
-            label {
-                font-family: var(--eipsi-font-family-body, inherit);
-                font-size: var(--eipsi-font-size-base, 16px);
-                font-weight: 500;
-                color: var(--eipsi-color-text, #111827);
-                cursor: pointer;
-                user-select: none;
-                line-height: 1.4;
+		.eipsi-checkbox-wrapper {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.75rem;
+			cursor: pointer;
 
-                .eipsi-required-mark {
-                    color: #d92d20;
-                    margin-left: 4px;
-                }
-            }
-        }
-    }
+			input[type="checkbox"] {
+				appearance: none;
+				-webkit-appearance: none;
+				width: 20px;
+				height: 20px;
+				border: 2px solid var(--eipsi-color-checkbox-border, #d1d5db);
+				border-radius: 4px;
+				background-color: var(--eipsi-color-bg, #ffffff);
+				cursor: pointer;
+				position: relative;
+				margin-top: 2px;
+				flex-shrink: 0;
+				transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+
+			&:checked {
+					background-color: var(--eipsi-color-button-bg, #2563eb);
+					border-color: var(--eipsi-color-button-bg, #2563eb);
+
+					&::after {
+						content: '';
+						position: absolute;
+						left: 7px;
+						top: 5px;
+						width: 5px;
+						height: 10px;
+						border: solid white;
+						border-width: 0 2px 2px 0;
+						transform: rotate(45deg);
+					}
+				}
+
+			&:focus-visible {
+					outline: 2px solid var(--eipsi-color-button-bg, #2563eb);
+					outline-offset: 2px;
+				}
+			}
+
+			label {
+				font-family: var(--eipsi-font-family-body, inherit);
+				font-size: var(--eipsi-font-size-base, 16px);
+				font-weight: 500;
+				color: var(--eipsi-color-text, #111827);
+				cursor: pointer;
+				user-select: none;
+				line-height: 1.4;
+
+				.eipsi-required-mark {
+					color: #d92d20;
+					margin-left: 4px;
+				}
+			}
+		}
+	}
 }
 
 /* Dark mode compatibility - Updated to work with form container selectors */
 .vas-dinamico-form[data-theme="dark"] .eipsi-consent-block,
 .eipsi-form[data-theme="dark"] .eipsi-consent-block {
-    background: var(--eipsi-color-bg-subtle, #1f2937);
-    border-color: var(--eipsi-color-border, #374151);
+	background: var(--eipsi-color-background-subtle, #1f2937);
+	border-color: var(--eipsi-color-border, #374151);
 
-    .eipsi-consent-text {
-        color: var(--eipsi-color-text, #f9fafb);
-    }
+	.consent-title {
+		color: var(--eipsi-color-text, #f9fafb);
+	}
 
-    .eipsi-consent-control {
-        .eipsi-checkbox-wrapper {
-            input[type="checkbox"] {
-                border-color: var(--eipsi-color-checkbox-border, #4b5563);
-                background-color: var(--eipsi-color-bg, #111827);
+	.consent-body {
+		color: var(--eipsi-color-text, #e5e7eb);
+	}
 
-                &:checked {
-                    background-color: var(--eipsi-color-button-bg, #2563eb);
-                    border-color: var(--eipsi-color-button-bg, #2563eb);
-                }
-            }
+	.consent-note {
+		color: #9ca3af;
+	}
 
-            label {
-                color: var(--eipsi-color-text, #f9fafb);
-            }
-        }
-    }
+	.eipsi-consent-control {
+		.eipsi-checkbox-wrapper {
+			input[type="checkbox"] {
+				border-color: var(--eipsi-color-checkbox-border, #4b5563);
+				background-color: var(--eipsi-color-bg, #111827);
+
+			&:checked {
+					background-color: var(--eipsi-color-button-bg, #2563eb);
+					border-color: var(--eipsi-color-button-bg, #2563eb);
+				}
+			}
+
+			label {
+				color: var(--eipsi-color-text, #f9fafb);
+			}
+		}
+	}
 }
