@@ -165,34 +165,52 @@ add_action('wp_ajax_eipsi_send_reminder_manual', 'eipsi_send_reminder_manual_han
 add_action('wp_ajax_eipsi_unsubscribe_reminders', 'eipsi_unsubscribe_reminders_handler');
 
 /**
- * Handler para obtener lista de formularios disponibles (CPT eipsi_form)
+ * AJAX Handler: Get list of available form templates from library
+ * Returns: array of {id, title, status}
  * 
  * @since 1.3.0
  */
 function eipsi_get_forms_list_handler() {
-    check_ajax_referer('eipsi_admin_nonce', 'nonce');
-    
-    if (!current_user_can('edit_posts')) {
-        wp_send_json_error(array('message' => 'Sin permisos'));
+    // Verificar nonce
+    if ( !isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'eipsi_admin_nonce') ) {
+        wp_send_json_error(array(
+            'message' => __('Invalid security token', 'eipsi-forms')
+        ), 403);
+        return;
     }
     
-    $forms = get_posts(array(
-        'post_type' => 'eipsi_form',
+    // Obtener templates publicados de la Form Library (eipsi_form_template)
+    $args = array(
+        'post_type' => 'eipsi_form_template',  // ✅ CORRECTO - Form Library
         'post_status' => 'publish',
         'posts_per_page' => -1,
-        'fields' => 'ids',
-    ));
+        'orderby' => 'title',
+        'order' => 'ASC',
+    );
     
-    $result = array();
-    foreach ($forms as $form_id) {
-        $result[] = array(
-            'id' => $form_id,
-            'name' => get_the_title($form_id),
-            'slug' => get_post_field('post_name', $form_id),
-        );
+    $templates = get_posts($args);
+    
+    if (empty($templates)) {
+        wp_send_json_success(array(
+            'success' => true,
+            'data' => array()
+        ));
+        return;
     }
     
-    wp_send_json_success($result);
+    // Transformar a formato esperado por el frontend
+    $templates_list = array_map(function($template) {
+        return array(
+            'id' => intval($template->ID),
+            'title' => esc_html($template->post_title),
+            'status' => $template->post_status,
+        );
+    }, $templates);
+    
+    wp_send_json_success(array(
+        'success' => true,
+        'data' => $templates_list
+    ));
 }
 
 /**
