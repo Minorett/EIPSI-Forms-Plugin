@@ -9,6 +9,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 ## [Unreleased] – Próxima versión clínica
 
 ### Added
+- **Template Profesional de Burnout v2.0 (Validado):** Evaluación clínica completa del síndrome de burnout en profesionales sanitarios que incluye PHQ-9, GAD-7 y MBI-HSS con consentimiento informado profesional. Validado 100% contra block.json v1.2.2 (todos los atributos son compatibles, sin errores de importación). Incluye 5 páginas: Consentimiento, Datos Demográficos, PHQ-9 (9 ítems, escala 0-3), GAD-7 (7 ítems, escala 0-3), MBI-HSS (10 ítems, escala 0-6). Tiempo estimado: 15-20 minutos.
 - **Plantillas demo EIPSI:** plantillas genéricas como "Ingreso ansiedad breve (demo)", "Seguimiento emocional (demo)" y "Satisfacción de sesión (demo)" listas para cargar desde el dropdown del EIPSI Form Container.
 - **Submissions v1:** tabla paginada integrada en el panel "Results & Experience" con filtros por formulario, exportación directa a Excel/CSV y detalle completo de cada sesión (respuestas + eventos + metadatos).
 - **Finalización integrada v1:** mensaje de agradecimiento configurable en la misma URL donde empezó el formulario, con botón "Comenzar de nuevo" para reutilizar tablet en sala.

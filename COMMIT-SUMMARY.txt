@@ -1,0 +1,179 @@
+# Template de Burnout v2.0 - Validado y Corregido
+
+## Fecha: 2025-01-10
+## Estado: ✅ COMPLETADO Y VALIDADO
+
+---
+
+## Resumen de Cambios
+
+### ✅ Archivos Modificados
+
+1. **templates/template-burnout-clinical-assessment.json** (REEMPLAZADO)
+   - Corregido completamente con atributos validados contra block.json v1.2.2
+   - Removidos todos los atributos inválidos (useRandomization, randomConfig, etc.)
+   - Agregados minValue/maxValue en todos los campo-likert
+   - Agregados fieldKey únicos en todos los campos radio/likert
+   - Corregido MBI-HSS de 5 a 7 opciones (escala 0-6)
+   - 603 líneas, JSON válido
+
+2. **templates/VALIDATION-BURNOUT-TEMPLATE.md** (CREADO)
+   - Documentación técnica completa de validación
+   - Lista de problemas identificados y correcciones
+   - Criterios de aceptación cumplidos
+   - 9.9 KB
+
+3. **templates/README-TEMPLATES.md** (CREADO)
+   - Guía de uso de templates
+   - Documentación del template de Burnout v2.0
+   - Instrucciones de personalización
+   - Puntos de corte de escalas clínicas
+   - 7.4 KB
+
+4. **README.md** (ACTUALIZADO)
+   - Línea 29: Actualizada mención del template
+   - Especifica "v2.0 - Validado contra block.json v1.2.2"
+
+5. **CHANGELOG.md** (ACTUALIZADO)
+   - Línea 12: Agregada entrada del template v2.0
+   - Incluye detalles de 5 páginas y 3 escalas
+
+6. **TEMPLATE-BURNOUT-V2-SUMMARY.md** (CREADO)
+   - Resumen ejecutivo completo
+   - Problemas identificados y corregidos
+   - Métricas del template
+   - Instrucciones de uso
+   - 7.7 KB
+
+---
+
+## Validaciones Realizadas
+
+✅ JSON válido (python3 -m json.tool)
+✅ 100% compatible con block.json v1.2.2
+✅ npm run build: exitoso (286 KiB)
+✅ npm run lint:js: 0 errores, 0 warnings
+✅ 5 páginas implementadas
+✅ 26 ítems de escalas (9 PHQ + 7 GAD + 10 MBI)
+✅ 0 atributos inválidos
+✅ Todos los fieldKey únicos
+✅ Todas las escalas con minValue/maxValue correctos
+
+---
+
+## Atributos Corregidos
+
+### Removidos (NO existen en v1.2.2):
+- form-container: preset, useRandomization, randomConfig, useSaveResume, 
+  autoSaveInterval, sessionTimeout, completionLogo, secondaryColor
+- form-page: subtitle
+- consent-block: consentTitle, additionalCheckboxes
+- campo-texto: minValue, maxValue
+- campo-checkbox (bloque NO existe)
+
+### Agregados:
+- campo-likert: minValue, maxValue, fieldKey
+- campo-radio: fieldKey
+- form-container: presetName (corregido de "preset")
+- form-container: completionLogoUrl (corregido de "completionLogo")
+
+### Corregidos:
+- MBI-HSS: 5 opciones → 7 opciones (escala 0-6 correcta)
+- PHQ-9: Agregados minValue: 0, maxValue: 3
+- GAD-7: Agregados minValue: 0, maxValue: 3
+
+---
+
+## Estructura del Template
+
+Página 1: Consentimiento Informado
+  - campo-descripcion (1)
+  - consent-block (1)
+
+Página 2: Datos Demográficos y Profesionales
+  - campo-descripcion (1)
+  - campo-radio (3): profesión, situación laboral, género
+  - campo-select (3): experiencia, institución, horas
+  - campo-texto (1): edad
+
+Página 3: PHQ-9 - Escala de Depresión
+  - campo-descripcion (1)
+  - campo-likert (9): escala 0-3, 4 labels
+
+Página 4: GAD-7 - Escala de Ansiedad
+  - campo-descripcion (1)
+  - campo-likert (7): escala 0-3, 4 labels
+
+Página 5: MBI-HSS - Escala de Burnout
+  - campo-descripcion (1)
+  - campo-likert (10): escala 0-6, 7 labels
+
+---
+
+## Métricas
+
+- Páginas: 5
+- Campos totales: 39
+- Escalas clínicas: 3 (PHQ-9, GAD-7, MBI-HSS)
+- Ítems de escalas: 26
+- Tiempo estimado: 15-20 minutos
+- Tamaño: 29 KB
+- Líneas: 603
+
+---
+
+## Estado Final
+
+✅ Template validado 100%
+✅ JSON válido
+✅ block.json compatible
+✅ Build exitoso
+✅ Lint 0/0
+✅ Documentación completa
+✅ Listo para producción
+
+---
+
+## Commit Message Sugerido
+
+```
+feat: Template de Burnout v2.0 validado contra block.json v1.2.2
+
+- Corregido template-burnout-clinical-assessment.json
+- Removidos atributos no soportados (useRandomization, randomConfig, etc.)
+- Agregados minValue/maxValue en campo-likert
+- Agregados fieldKey únicos en campos radio/likert
+- Corregido MBI-HSS de 5 a 7 opciones (escala 0-6)
+- Creada documentación completa de validación
+- Actualizado README.md y CHANGELOG.md
+
+Escalas incluidas:
+- PHQ-9: 9 ítems, escala 0-3
+- GAD-7: 7 ítems, escala 0-3
+- MBI-HSS: 10 ítems, escala 0-6
+
+Validaciones:
+- JSON válido
+- 100% compatible con block.json v1.2.2
+- npm run build: exitoso
+- npm run lint:js: 0/0
+- 5 páginas, 26 ítems de escalas
+
+BREAKING CHANGE: None (backward compatible)
+```
+
+---
+
+## Archivos para Commit
+
+- templates/template-burnout-clinical-assessment.json
+- templates/VALIDATION-BURNOUT-TEMPLATE.md
+- templates/README-TEMPLATES.md
+- README.md
+- CHANGELOG.md
+- TEMPLATE-BURNOUT-V2-SUMMARY.md
+
+---
+
+Completado por: EIPSI Forms Clinical Team
+Fecha: 2025-01-10
