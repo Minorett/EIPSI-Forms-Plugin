@@ -1,39 +1,69 @@
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 
 export default function Save( { attributes } ) {
-	const { consentText, consentLabel, isRequired } = attributes;
+	const {
+		titulo,
+		contenido,
+		textoComplementario,
+		mostrarCheckbox,
+		etiquetaCheckbox,
+		isRequired,
+	} = attributes;
 
 	const blockProps = useBlockProps.save( {
-		className: 'eipsi-consent-block form-group',
+		className:
+			'wp-block-eipsi-consent-block eipsi-consent-block form-group',
 		'data-consent-block': 'true',
-		'data-required': isRequired ? 'true' : 'false',
+		'data-required': mostrarCheckbox && isRequired ? 'true' : 'false',
 	} );
 
 	return (
 		<div { ...blockProps }>
-			<div className="eipsi-consent-text">
-				<RichText.Content value={ consentText } />
+			{ /* Título si existe */ }
+			{ titulo && (
+				<h3 className="eipsi-consent-titulo">
+					<RichText.Content value={ titulo } />
+				</h3>
+			) }
+
+			{ /* Contenido principal */ }
+			<div className="eipsi-consent-contenido">
+				<RichText.Content value={ contenido } />
 			</div>
-			<div className="eipsi-consent-control">
-				<div className="eipsi-checkbox-wrapper">
-					<input
-						type="checkbox"
-						id="eipsi-consent-checkbox"
-						name="eipsi_consent_accepted"
-						className="eipsi-consent-checkbox"
-						required={ isRequired }
-						data-required={ isRequired ? 'true' : 'false' }
-						data-testid="input-eipsi_consent_accepted"
-					/>
-					<label htmlFor="eipsi-consent-checkbox">
-						{ consentLabel }
-						{ isRequired && (
-							<span className="eipsi-required-mark">*</span>
-						) }
-					</label>
+
+			{ /* Texto complementario si existe */ }
+			{ textoComplementario && (
+				<div className="eipsi-consent-complementario">
+					<RichText.Content value={ textoComplementario } />
 				</div>
-				<div className="form-error" style={ { display: 'none' } }></div>
-			</div>
+			) }
+
+			{ /* Checkbox si toggle ON */ }
+			{ mostrarCheckbox && (
+				<div className="eipsi-consent-control">
+					<div className="eipsi-checkbox-wrapper">
+						<input
+							type="checkbox"
+							id="eipsi-consent-checkbox"
+							name="eipsi_consent_accepted"
+							className="eipsi-consent-checkbox"
+							required={ isRequired }
+							data-required={ isRequired ? 'true' : 'false' }
+							data-testid="input-eipsi_consent_accepted"
+						/>
+						<label htmlFor="eipsi-consent-checkbox">
+							{ etiquetaCheckbox }
+							{ isRequired && (
+								<span className="eipsi-required-mark">*</span>
+							) }
+						</label>
+					</div>
+					<div
+						className="form-error"
+						style={ { display: 'none' } }
+					></div>
+				</div>
+			) }
 		</div>
 	);
 }

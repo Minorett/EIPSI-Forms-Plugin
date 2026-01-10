@@ -1,127 +1,121 @@
-// REFACTORED CONSENT BLOCK EDITOR
-// Arquitectura: Sidebar editable + Canvas preview en vivo
+// EIPSI CONSENT BLOCK EDITOR - ARQUITECTURA ESTÁNDAR
+// Sigue patrón de bloques informativos: Título + Contenido + Complementario + Checkbox opcional
 
-.eipsi-consent-block-editor-refactored {
+.eipsi-consent-block-editor {
     border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 0;
     background: #ffffff;
+    border-radius: 8px;
+    padding: 0;
     margin-bottom: 1rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
-    // CANVAS: Preview en vivo
+    // CANVAS: Vista previa en vivo
     .eipsi-consent-preview-container {
-        padding: 2rem;
-        min-height: 400px;
-        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
-        border-radius: 10px;
-        position: relative;
-
-        &.mobile-mode {
-            max-width: 375px;
-            margin: 0 auto;
-            border: 3px solid #3b82f6;
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
-        }
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-radius: 6px;
+        min-height: 250px;
     }
 
     .eipsi-preview-title {
-        margin: 0 0 1.5rem 0;
-        padding: 0.75rem 1rem;
-        font-size: 13px;
-        font-weight: 700;
-        color: #6366f1;
+        margin: 0 0 1rem 0;
+        color: #374151;
+        font-size: 14px;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        background: #f0f0ff;
-        border-left: 4px solid #6366f1;
-        border-radius: 4px;
+        letter-spacing: 0.5px;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e5e7eb;
     }
 
     .eipsi-consent-preview-content {
         background: white;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 1.75rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 1.25rem;
     }
 
-    .eipsi-consent-text-preview {
-        margin-bottom: 1.75rem;
-        padding-bottom: 1.75rem;
-        border-bottom: 2px solid #f3f4f6;
-        line-height: 1.7;
-        color: #374151;
-        font-size: 15px;
+    // Estructura informativa EIPSI
+    .eipsi-consent-titulo {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #1f2937;
+        margin: 0 0 1rem 0;
+        line-height: 1.4;
+    }
+
+    .eipsi-consent-contenido {
+        margin: 1rem 0;
+        line-height: 1.6;
+        color: #1f2937;
 
         p {
-            margin: 0 0 0.75rem 0;
-            
-            &:last-child {
-                margin-bottom: 0;
-            }
-        }
-
-        .eipsi-preview-placeholder {
-            color: #9ca3af;
-            font-style: italic;
-            text-align: center;
-            padding: 2rem 1rem;
+            margin: 0.5rem 0;
         }
     }
 
-    .eipsi-consent-checkbox-preview {
+    .eipsi-consent-complementario {
+        margin: 1rem 0 0 0;
+        padding: 0.75rem;
+        background: #f0f9ff;
+        border-left: 3px solid #0ea5e9;
+        font-size: 0.9rem;
+        color: #0c4a6e;
+
+        p {
+            margin: 0.25rem 0;
+        }
+    }
+
+    .eipsi-consent-checkbox-wrapper {
         display: flex;
         align-items: flex-start;
-        gap: 0.875rem;
-        padding: 1rem;
-        background: #f9fafb;
-        border-radius: 6px;
-        border: 1px solid #e5e7eb;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
 
         input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin: 2px 0 0 0;
-            cursor: pointer;
-            flex-shrink: 0;
+            margin-top: 2px;
+            width: 18px;
+            height: 18px;
         }
 
         label {
             display: flex;
             align-items: center;
             font-weight: 500;
-            color: #1f2937;
-            font-size: 15px;
-            line-height: 1.6;
+            color: #374151;
+            font-size: 14px;
+            line-height: 1.5;
             cursor: pointer;
         }
 
         .required-asterisk {
             color: #dc2626;
             font-weight: bold;
-            font-size: 18px;
+            margin-left: 0.25rem;
         }
     }
 
-    .eipsi-mobile-indicator {
-        margin-top: 1.5rem;
+    // Placeholder cuando contenido está vacío
+    .eipsi-preview-placeholder {
+        color: #9ca3af;
+        font-style: italic;
         text-align: center;
-        font-size: 13px;
-        font-weight: 600;
-        color: #3b82f6;
-        padding: 0.75rem;
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 6px;
+        padding: 2rem 1rem;
+        margin: 0;
+        border: 2px dashed #d1d5db;
+        border-radius: 4px;
+        background: #f9fafb;
     }
 }
 
-// SIDEBAR: Controles editables
+// SIDEBAR: Controles estándar EIPSI
 .components-panel__body.is-opened {
     .eipsi-sidebar-control {
-        margin-bottom: 1.75rem;
-        padding-bottom: 1.75rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
         border-bottom: 1px solid #f3f4f6;
 
         &:last-child {
@@ -130,60 +124,41 @@
             padding-bottom: 0;
         }
 
-        .eipsi-sidebar-label {
+        // Control titles (replaces labels for RichText)
+        .eipsi-control-title {
             display: block;
             font-weight: 600;
             margin-bottom: 0.5rem;
-            color: #1f2937;
+            color: #374151;
             font-size: 13px;
-        }
 
-        .eipsi-sidebar-tooltip {
-            background: #f0f9ff;
-            border: 1px solid #bae6fd;
-            border-radius: 6px;
-            padding: 0.625rem 0.875rem;
-            margin-bottom: 0.875rem;
-
-            small {
-                color: #0369a1;
-                font-size: 12px;
-                font-weight: 500;
-                line-height: 1.5;
-                display: block;
+            &.required::after {
+                content: ' *';
+                color: #dc2626;
             }
         }
 
-        // RichText GRANDE para consentText en sidebar
-        .eipsi-sidebar-richtext {
-            border: 2px solid #d1d5db;
-            border-radius: 6px;
-            padding: 0.875rem;
+        // RichTextControl styling
+        .block-editor-rich-text__editor {
+            min-height: 180px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 0.75rem;
             background: white;
-            transition: all 0.2s ease;
 
             &:focus-within {
                 border-color: #3b82f6;
                 box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
             }
 
-            .eipsi-sidebar-richtext__field {
-                min-height: 320px !important;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            .block-editor-rich-text__editable {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 font-size: 13px;
                 line-height: 1.6;
-
-                p {
-                    margin: 0.5rem 0;
-                }
 
                 &:focus {
                     outline: none;
                 }
-            }
-
-            .block-editor-rich-text__editable {
-                min-height: 320px;
             }
 
             &[data-is-placeholder-visible="true"] {
@@ -194,31 +169,17 @@
             }
         }
 
-        // Warning de validación
-        .eipsi-validation-warning {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #dc2626;
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            margin-top: 0.75rem;
-            font-size: 12px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        // TextareaControl para consentLabel
+        // TextareaControl styling
         textarea {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 13px;
             line-height: 1.5;
             padding: 0.75rem;
-            border: 2px solid #d1d5db;
-            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
             resize: vertical;
-            transition: all 0.2s ease;
+            background: white;
 
             &:focus {
                 border-color: #3b82f6;
@@ -246,30 +207,65 @@
                 line-height: 1.5;
             }
         }
+
+        // Help text
+        .eipsi-control-help {
+            display: block;
+            margin-top: 0.5rem;
+            color: #6b7280;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        // Warning de validación
+        .eipsi-validation-warning {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            margin-top: 0.75rem;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
     }
 }
 
-// Responsive: Mobile preview en viewport pequeño
+// Responsive design
 @media (max-width: 768px) {
-    .eipsi-consent-preview-container.mobile-mode {
-        max-width: 100%;
+    .eipsi-consent-block-editor {
+        .eipsi-consent-preview-container {
+            padding: 1rem;
+        }
+
+        .eipsi-consent-preview-content {
+            padding: 1rem;
+        }
+
+        .eipsi-consent-checkbox-wrapper {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
     }
 }
 
-// Dark mode support (si está habilitado en el sistema)
+// Dark mode support
 @media (prefers-color-scheme: dark) {
-    .eipsi-consent-block-editor-refactored {
+    .eipsi-consent-block-editor {
         background: #1f2937;
         border-color: #374151;
 
         .eipsi-consent-preview-container {
-            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+            background: #111827;
         }
 
         .eipsi-preview-title {
-            background: #1e293b;
-            color: #818cf8;
-            border-left-color: #818cf8;
+            color: #d1d5db;
+            border-bottom-color: #374151;
         }
 
         .eipsi-consent-preview-content {
@@ -277,21 +273,63 @@
             border-color: #374151;
         }
 
-        .eipsi-consent-text-preview {
-            color: #d1d5db;
-            border-bottom-color: #374151;
-
-            .eipsi-preview-placeholder {
-                color: #6b7280;
-            }
+        .eipsi-consent-titulo {
+            color: #f3f4f6;
         }
 
-        .eipsi-consent-checkbox-preview {
-            background: #1f2937;
-            border-color: #374151;
+        .eipsi-consent-contenido {
+            color: #e5e7eb;
+        }
+
+        .eipsi-consent-complementario {
+            background: #1e3a8a;
+            border-left-color: #3b82f6;
+            color: #bfdbfe;
+        }
+
+        .eipsi-consent-checkbox-wrapper {
+            border-top-color: #374151;
 
             label {
                 color: #e5e7eb;
+            }
+        }
+
+        .eipsi-preview-placeholder {
+            color: #6b7280;
+            border-color: #374151;
+            background: #1f2937;
+        }
+    }
+
+    .components-panel__body.is-opened {
+        .eipsi-sidebar-control {
+            .block-editor-rich-text__editor {
+                background: #1f2937;
+                border-color: #374151;
+                color: #e5e7eb;
+
+                &:focus-within {
+                    border-color: #60a5fa;
+                    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+                }
+            }
+
+            textarea {
+                background: #1f2937;
+                border-color: #374151;
+                color: #e5e7eb;
+
+                &:focus {
+                    border-color: #60a5fa;
+                    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+                }
+            }
+
+            .eipsi-validation-warning {
+                background: #7f1d1d;
+                border-color: #991b1b;
+                color: #fecaca;
             }
         }
     }
