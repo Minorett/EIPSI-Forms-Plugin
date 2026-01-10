@@ -1,45 +1,53 @@
 {
-	"$schema": "https://schemas.wp.org/trunk/block.json",
-	"apiVersion": 3,
-	"name": "eipsi/consent-block",
-	"version": "1.0.0",
-	"title": "Consentimiento Informado",
-	"category": "eipsi-forms",
-	"icon": "shield",
-	"description": "Bloque de consentimiento informado obligatorio para investigaciones clínicas.",
-	"keywords": [ "consent", "ethics", "eipsi", "legal" ],
-	"textdomain": "eipsi-forms",
-	"parent": [ "eipsi/form-container", "eipsi/form-page" ],
-	"editorScript": "file:../../build/index.js",
-	"editorStyle": "file:../../build/index.css",
-	"style": "file:../../build/style-index.css",
-	"supports": {
-		"html": false,
-		"spacing": {
-			"margin": true,
-			"padding": true
-		}
-	},
-	"attributes": {
-		"consentText": {
-			"type": "string",
-			"default": "Acepto participar en este estudio y he leído la información anterior."
-		},
-		"consentLabel": {
-			"type": "string",
-			"default": "He leído y acepto los términos del consentimiento informado"
-		},
-		"isRequired": {
-			"type": "boolean",
-			"default": true
-		},
-		"showTimestamp": {
-			"type": "boolean",
-			"default": true
-		},
-		"className": {
-			"type": "string",
-			"default": ""
-		}
-	}
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "eipsi/consent-block",
+    "version": "1.0.0",
+    "title": "Consentimiento Informado",
+    "category": "eipsi-forms",
+    "icon": "shield",
+    "description": "Bloque de consentimiento informado obligatorio para investigaciones clínicas.",
+    "keywords": [ "consent", "ethics", "eipsi", "legal" ],
+    "textdomain": "eipsi-forms",
+    "parent": [ "eipsi/form-container", "eipsi/form-page" ],
+    "editorScript": "file:../../build/index.js",
+    "editorStyle": "file:../../build/index.css",
+    "style": "file:../../build/style-index.css",
+    "supports": {
+        "html": false,
+        "spacing": {
+            "margin": true,
+            "padding": true
+        }
+    },
+    "attributes": {
+        "titulo": {
+            "type": "string",
+            "default": ""
+        },
+        "contenido": {
+            "type": "string",
+            "default": ""
+        },
+        "textoComplementario": {
+            "type": "string",
+            "default": ""
+        },
+        "mostrarCheckbox": {
+            "type": "boolean",
+            "default": true
+        },
+        "etiquetaCheckbox": {
+            "type": "string",
+            "default": "He leído y acepto participar voluntariamente en este estudio."
+        },
+        "isRequired": {
+            "type": "boolean",
+            "default": true
+        },
+        "showTimestamp": {
+            "type": "boolean",
+            "default": true
+        }
+    }
 }
