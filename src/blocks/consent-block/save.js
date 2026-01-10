@@ -23,6 +23,7 @@ export default function Save( { attributes } ) {
 						className="eipsi-consent-checkbox"
 						required={ isRequired }
 						data-required={ isRequired ? 'true' : 'false' }
+						data-testid="input-eipsi_consent_accepted"
 					/>
 					<label htmlFor="eipsi-consent-checkbox">
 						{ consentLabel }
@@ -31,7 +32,7 @@ export default function Save( { attributes } ) {
 						) }
 					</label>
 				</div>
-				<div className="form-error"></div>
+				<div className="form-error" style={ { display: 'none' } }></div>
 			</div>
 		</div>
 	);

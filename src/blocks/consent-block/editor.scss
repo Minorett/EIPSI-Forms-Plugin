@@ -1,148 +1,297 @@
-.eipsi-consent-block-editor {
-    border: 2px dashed #d1d5db;
-    border-radius: 8px;
-    padding: 1.5rem;
-    background: #f9fafb;
+// REFACTORED CONSENT BLOCK EDITOR
+// Arquitectura: Sidebar editable + Canvas preview en vivo
+
+.eipsi-consent-block-editor-refactored {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 0;
+    background: #ffffff;
     margin-bottom: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 
-    .eipsi-consent-editor-content {
-        margin-bottom: 2rem;
+    // CANVAS: Preview en vivo
+    .eipsi-consent-preview-container {
+        padding: 2rem;
+        min-height: 400px;
+        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+        border-radius: 10px;
+        position: relative;
 
-        .eipsi-consent-editor-title {
-            margin: 0 0 1.5rem 0;
-            padding: 0;
-            font-size: 1.125rem;
-            font-weight: 600;
+        &.mobile-mode {
+            max-width: 375px;
+            margin: 0 auto;
+            border: 3px solid #3b82f6;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+        }
+    }
+
+    .eipsi-preview-title {
+        margin: 0 0 1.5rem 0;
+        padding: 0.75rem 1rem;
+        font-size: 13px;
+        font-weight: 700;
+        color: #6366f1;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        background: #f0f0ff;
+        border-left: 4px solid #6366f1;
+        border-radius: 4px;
+    }
+
+    .eipsi-consent-preview-content {
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .eipsi-consent-text-preview {
+        margin-bottom: 1.75rem;
+        padding-bottom: 1.75rem;
+        border-bottom: 2px solid #f3f4f6;
+        line-height: 1.7;
+        color: #374151;
+        font-size: 15px;
+
+        p {
+            margin: 0 0 0.75rem 0;
+            
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+
+        .eipsi-preview-placeholder {
+            color: #9ca3af;
+            font-style: italic;
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+    }
+
+    .eipsi-consent-checkbox-preview {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.875rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin: 2px 0 0 0;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
             color: #1f2937;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 0.5rem;
+            font-size: 15px;
+            line-height: 1.6;
+            cursor: pointer;
         }
 
-        .eipsi-consent-field-label {
+        .required-asterisk {
+            color: #dc2626;
+            font-weight: bold;
+            font-size: 18px;
+        }
+    }
+
+    .eipsi-mobile-indicator {
+        margin-top: 1.5rem;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 600;
+        color: #3b82f6;
+        padding: 0.75rem;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+    }
+}
+
+// SIDEBAR: Controles editables
+.components-panel__body.is-opened {
+    .eipsi-sidebar-control {
+        margin-bottom: 1.75rem;
+        padding-bottom: 1.75rem;
+        border-bottom: 1px solid #f3f4f6;
+
+        &:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .eipsi-sidebar-label {
             display: block;
-            margin-bottom: 0.5rem;
             font-weight: 600;
-            color: #374151;
-            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+            font-size: 13px;
         }
 
-        .eipsi-consent-tooltip {
+        .eipsi-sidebar-tooltip {
             background: #f0f9ff;
             border: 1px solid #bae6fd;
-            border-radius: 4px;
-            padding: 0.5rem;
-            margin-bottom: 0.75rem;
-            
+            border-radius: 6px;
+            padding: 0.625rem 0.875rem;
+            margin-bottom: 0.875rem;
+
             small {
                 color: #0369a1;
-                font-size: 0.75rem;
+                font-size: 12px;
                 font-weight: 500;
-                line-height: 1.4;
+                line-height: 1.5;
                 display: block;
             }
         }
 
-        .eipsi-consent-text-editor {
-            margin-bottom: 2rem;
-            padding: 1rem;
-            background: white;
-            border: 2px solid #e5e7eb;
+        // RichText GRANDE para consentText en sidebar
+        .eipsi-sidebar-richtext {
+            border: 2px solid #d1d5db;
             border-radius: 6px;
-            min-height: 200px;
+            padding: 0.875rem;
+            background: white;
+            transition: all 0.2s ease;
 
-            .block-editor-rich-text__editable {
-                min-height: 180px;
-            }
-        }
-
-        .eipsi-consent-label-editor {
-            margin-bottom: 1.5rem;
-
-            .components-base-control {
-                margin-bottom: 0;
+            &:focus-within {
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
             }
 
-            textarea {
-                min-height: 100px;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-                font-size: 14px;
-                line-height: 1.5;
-            }
-        }
+            .eipsi-sidebar-richtext__field {
+                min-height: 320px !important;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                font-size: 13px;
+                line-height: 1.6;
 
-        .eipsi-consent-validation-error {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #dc2626;
-            padding: 0.75rem;
-            border-radius: 4px;
-            margin-top: 0.75rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-    }
-
-    .eipsi-consent-preview {
-        border-top: 2px solid #e5e7eb;
-        padding-top: 1.5rem;
-
-        .eipsi-consent-preview-header {
-            margin-bottom: 1rem;
-
-            .eipsi-consent-preview-toggle {
-                background: #f3f4f6;
-                border: 1px solid #d1d5db;
-                border-radius: 4px;
-                padding: 0.5rem 0.75rem;
-                font-size: 0.875rem;
-                font-weight: 500;
-                color: #374151;
-                cursor: pointer;
-                transition: all 0.2s ease;
-
-                &:hover {
-                    background: #e5e7eb;
-                    border-color: #9ca3af;
+                p {
+                    margin: 0.5rem 0;
                 }
 
                 &:focus {
-                    outline: 2px solid #3b82f6;
-                    outline-offset: 1px;
+                    outline: none;
+                }
+            }
+
+            .block-editor-rich-text__editable {
+                min-height: 320px;
+            }
+
+            &[data-is-placeholder-visible="true"] {
+                .block-editor-rich-text__editable {
+                    color: #9ca3af;
+                    font-style: italic;
                 }
             }
         }
 
-        .eipsi-consent-preview-content {
-            background: #f9fafb;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 1.25rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        // Warning de validación
+        .eipsi-validation-warning {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin-top: 0.75rem;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-            .eipsi-consent-text-preview {
-                margin-bottom: 1rem;
-                padding-bottom: 1rem;
-                border-bottom: 1px solid #e5e7eb;
-                color: #374151;
-                line-height: 1.6;
+        // TextareaControl para consentLabel
+        textarea {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 0.75rem;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            resize: vertical;
+            transition: all 0.2s ease;
+
+            &:focus {
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                outline: none;
+            }
+        }
+
+        // ToggleControl styling
+        .components-toggle-control {
+            .components-base-control__field {
+                margin-bottom: 0;
             }
 
-            .eipsi-consent-checkbox-preview {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                font-weight: 500;
-                color: #1f2937;
+            .components-toggle-control__label {
+                font-weight: 600;
+                color: #374151;
+                font-size: 13px;
+            }
 
-                input[type="checkbox"] {
-                    width: 18px;
-                    height: 18px;
-                    margin: 0;
-                }
+            .components-base-control__help {
+                margin-top: 0.5rem;
+                color: #6b7280;
+                font-size: 12px;
+                line-height: 1.5;
+            }
+        }
+    }
+}
 
-                .required-asterisk {
-                    color: #d92d20;
-                }
+// Responsive: Mobile preview en viewport pequeño
+@media (max-width: 768px) {
+    .eipsi-consent-preview-container.mobile-mode {
+        max-width: 100%;
+    }
+}
+
+// Dark mode support (si está habilitado en el sistema)
+@media (prefers-color-scheme: dark) {
+    .eipsi-consent-block-editor-refactored {
+        background: #1f2937;
+        border-color: #374151;
+
+        .eipsi-consent-preview-container {
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+        }
+
+        .eipsi-preview-title {
+            background: #1e293b;
+            color: #818cf8;
+            border-left-color: #818cf8;
+        }
+
+        .eipsi-consent-preview-content {
+            background: #111827;
+            border-color: #374151;
+        }
+
+        .eipsi-consent-text-preview {
+            color: #d1d5db;
+            border-bottom-color: #374151;
+
+            .eipsi-preview-placeholder {
+                color: #6b7280;
+            }
+        }
+
+        .eipsi-consent-checkbox-preview {
+            background: #1f2937;
+            border-color: #374151;
+
+            label {
+                color: #e5e7eb;
             }
         }
     }

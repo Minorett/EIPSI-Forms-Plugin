@@ -14,5 +14,8 @@ build/
 node_modules/
 assets/
 
+# Webpack config
+webpack.config.js
+
 # WordPress core
 /wordpress/
