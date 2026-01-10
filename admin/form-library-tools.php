@@ -641,6 +641,7 @@ function eipsi_form_library_tools_scripts() {
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_form_tools_nonce'),
         'clinicalTemplatesNonce' => wp_create_nonce('eipsi_clinical_templates_nonce'),
+        'templatesUrl' => EIPSI_FORMS_PLUGIN_URL . 'templates/',
         'strings' => array(
             'exportSuccess' => __('Formulario exportado correctamente', 'eipsi-forms'),
             'exportError' => __('Error al exportar el formulario', 'eipsi-forms'),
@@ -657,6 +658,7 @@ function eipsi_form_library_tools_scripts() {
             'duplicateError' => __('Error al duplicar el formulario', 'eipsi-forms'),
             'importTitle' => __('Importar formulario desde JSON', 'eipsi-forms'),
             'importInstructions' => __('Seleccioná un archivo .json exportado desde EIPSI Forms:', 'eipsi-forms'),
+            'importTutorial' => __('Ver tutorial de creación', 'eipsi-forms'),
             'importButton' => __('Importar', 'eipsi-forms'),
             'importCancel' => __('Cancelar', 'eipsi-forms'),
             'importSuccess' => __('Formulario importado correctamente', 'eipsi-forms'),

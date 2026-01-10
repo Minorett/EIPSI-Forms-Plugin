@@ -412,6 +412,9 @@
                             <div class="eipsi-import-error" style="display: none;"></div>
                         </div>
                         <div class="eipsi-import-modal-footer">
+                            <a href="${ eipsiFormTools.templatesUrl }README.md" target="_blank" class="button button-link" style="margin-right: auto; color: #005a87; text-decoration: none;">
+                                📖 ${ eipsiFormTools.strings.importTutorial }
+                            </a>
                             <button type="button" class="button button-secondary eipsi-import-cancel">
                                 ${ eipsiFormTools.strings.importCancel }
                             </button>
