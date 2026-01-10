@@ -377,6 +377,18 @@ function eipsi_forms_register_blocks() {
         true
     );
 
+    // Pass admin nonce to block editor for AJAX calls (e.g., eipsi_get_forms_list)
+    wp_localize_script('eipsi-blocks-editor', 'eipsiEditorData', array(
+        'ajaxurl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('eipsi_admin_nonce'),
+    ));
+    
+    // Backward compatibility: also expose as window.eipsiAdminNonce
+    wp_add_inline_script('eipsi-blocks-editor', 
+        'window.eipsiAdminNonce = eipsiEditorData?.nonce || "";', 
+        'after'
+    );
+
     wp_register_style(
         'eipsi-blocks-editor',
         EIPSI_FORMS_PLUGIN_URL . 'build/index.css',
@@ -616,6 +628,20 @@ function eipsi_forms_enqueue_frontend_assets() {
         EIPSI_FORMS_VERSION,
         true
     );
+
+    // Enqueue Randomization script (Fase 1 & 2)
+    wp_enqueue_script(
+        'eipsi-random-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-random.js',
+        array('eipsi-forms-js'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+
+    wp_localize_script('eipsi-random-js', 'eipsiRandomData', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('eipsi_random_nonce'),
+    ));
 
     // Dark mode is now CSS-only via @media (prefers-color-scheme: dark)
     // No JavaScript needed - the theme-toggle.js file is deprecated as of v4.0.0

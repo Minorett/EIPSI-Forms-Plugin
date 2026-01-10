@@ -48,7 +48,9 @@
 		}
 
 		// Obtener formulario principal
-		const mainForm = document.querySelector( '.vas-dinamico-form' );
+		const mainForm = document.querySelector(
+			'.vas-form, .vas-dinamico-form'
+		);
 		if ( ! mainForm ) {
 			return;
 		}
@@ -109,7 +111,7 @@
 	 * @return {string} El ID del formulario actual
 	 */
 	function getCurrentFormId() {
-		const form = document.querySelector( '.vas-dinamico-form' );
+		const form = document.querySelector( '.vas-form, .vas-dinamico-form' );
 		if ( form && form.dataset.formId ) {
 			return form.dataset.formId;
 		}
