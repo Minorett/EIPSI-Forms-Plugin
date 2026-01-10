@@ -34,6 +34,14 @@ const COMPLETION_DEFAULTS = {
 	buttonLabel: 'Comenzar de nuevo',
 };
 
+const RANDOMIZATION_DEFAULT_CONFIG = {
+	enabled: false,
+	method: 'seeded',
+	forms: [],
+	probabilities: {},
+	manualAssigns: [],
+};
+
 export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
 		formId,
@@ -52,8 +60,31 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		completionButtonLabel,
 		// Aleatorización
 		useRandomization,
-		randomConfig,
+		randomConfig: randomConfigAttr,
 	} = attributes;
+
+	// Blindaje: si por cualquier motivo randomConfig llega undefined/null (bloques viejos, etc.),
+	// evitamos que el editor explote.
+	const randomConfig =
+		randomConfigAttr && typeof randomConfigAttr === 'object'
+			? {
+					...RANDOMIZATION_DEFAULT_CONFIG,
+					...randomConfigAttr,
+					forms: Array.isArray( randomConfigAttr.forms )
+						? randomConfigAttr.forms
+						: [],
+					probabilities:
+						randomConfigAttr.probabilities &&
+						typeof randomConfigAttr.probabilities === 'object'
+							? randomConfigAttr.probabilities
+							: {},
+					manualAssigns: Array.isArray(
+						randomConfigAttr.manualAssigns
+					)
+						? randomConfigAttr.manualAssigns
+						: [],
+			  }
+			: { ...RANDOMIZATION_DEFAULT_CONFIG };
 
 	const allowBackwardsNavEnabled =
 		typeof allowBackwardsNav === 'boolean' ? allowBackwardsNav : true;
@@ -90,14 +121,27 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const loadAvailableForms = async () => {
 		setLoadingForms( true );
 		try {
+			const ajaxUrl =
+				window?.eipsiEditorData?.ajaxurl || '/wp-admin/admin-ajax.php';
+			const nonce =
+				window?.eipsiEditorData?.nonce || window?.eipsiAdminNonce || '';
+
 			const response = await fetch(
-				window.ajaxurl +
+				ajaxUrl +
 					'?action=eipsi_get_forms_list&nonce=' +
-					window.eipsiAdminNonce
+					encodeURIComponent( nonce ),
+				{ credentials: 'same-origin' }
 			);
+
+			if ( ! response.ok ) {
+				throw new Error( `HTTP ${ response.status }` );
+			}
+
 			const data = await response.json();
-			if ( data.success ) {
-				setAvailableForms( data.data || [] );
+			if ( data?.success ) {
+				setAvailableForms(
+					Array.isArray( data.data ) ? data.data : []
+				);
 			}
 		} catch ( error ) {
 			// eslint-disable-next-line no-console
