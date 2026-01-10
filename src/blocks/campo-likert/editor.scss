@@ -14,7 +14,7 @@
     transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
     
     &::before {
-        content: "EIPSI Likert Scale";
+        content: "LIKERT";
         position: absolute;
         top: -10px;
         left: 12px;
@@ -26,6 +26,59 @@
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+    }
+
+    // Estilos específicos por tipo de preset
+    &.using-preset {
+        &::before {
+            background: #3b82f6;
+        }
+    }
+    
+    &.custom-mode {
+        &::before {
+            background: #6b7280;
+        }
+    }
+
+    // Colores de fondo por tipo de escala
+    &[data-scale-variation="likert5-agreement"],
+    &[data-scale-variation="likert7-agreement"],
+    &[data-scale-variation="likert4-agreement"] {
+        background: linear-gradient(135deg, #dbeafe 0%, #f8fafc 100%);
+        border-color: #3b82f6;
+        
+        &::before {
+            background: #3b82f6;
+        }
+    }
+    
+    &[data-scale-variation="likert5-satisfaction"],
+    &[data-scale-variation="likert7-satisfaction"] {
+        background: linear-gradient(135deg, #dcfce7 0%, #f8fafc 100%);
+        border-color: #10b981;
+        
+        &::before {
+            background: #10b981;
+        }
+    }
+    
+    &[data-scale-variation="likert5-frequency"] {
+        background: linear-gradient(135deg, #fef3c7 0%, #f8fafc 100%);
+        border-color: #f59e0b;
+        
+        &::before {
+            background: #f59e0b;
+        }
+    }
+    
+    &[data-scale-variation="likert9-scale"] {
+        background: linear-gradient(135deg, #ede9fe 0%, #f8fafc 100%);
+        border-color: #8b5cf6;
+        
+        &::before {
+            background: #8b5cf6;
+        }
     }
 
     .likert-preview {
@@ -61,6 +114,31 @@
                 }
             }
         }
+        
+        // Estilos para escalas grandes (7+ puntos)
+        .likert-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            
+            .likert-item {
+                min-width: 80px;
+                flex: 1;
+                text-align: center;
+                
+                // Para escalas de 9 puntos, hacer más compactas
+                [data-scale-variation="likert9-scale"] & {
+                    min-width: 60px;
+                    max-width: 80px;
+                    
+                    .likert-label-text {
+                        font-size: 11px;
+                        line-height: 1.2;
+                    }
+                }
+            }
+        }
     }
     
     .field-helper {
@@ -85,8 +163,37 @@
     }
     
     &:hover {
-        border-color: var(--eipsi-color-primary-hover, #003d5b);
-        background: var(--eipsi-color-secondary, #e3f2fd);
         box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
+        
+        // Hover effects específicos por tipo
+        &[data-scale-variation*="agreement"] {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        &[data-scale-variation*="satisfaction"] {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        &[data-scale-variation="likert5-frequency"] {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+        
+        &[data-scale-variation="likert9-scale"] {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+    }
+}
+
+// Estilos para el selector de presets en el sidebar
+.preset-description {
+    transition: all 0.2s ease;
+    
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 }

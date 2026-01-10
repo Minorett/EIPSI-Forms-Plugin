@@ -1,16 +1,22 @@
 import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
-import { useEffect } from '@wordpress/element';
+import { useEffect, useState } from '@wordpress/element';
 import {
 	PanelBody,
 	TextControl,
 	TextareaControl,
 	ToggleControl,
 	RangeControl,
+	SelectControl,
 	Notice,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
 import { parseOptions, normalizeLineEndings } from '../../utils/optionParser';
+import {
+	getPresetByKey,
+	applyPreset,
+	validateLabels,
+} from '../../components/LikertPresets';
 
 const renderHelperText = ( text ) => {
 	if ( ! text || text.trim() === '' ) {
@@ -53,7 +59,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		maxValue,
 		labels,
 		conditionalLogic,
+		scaleVariation = 'custom',
 	} = attributes;
+
+	// State for preset management
+	const [ selectedPreset, setSelectedPreset ] = useState( scaleVariation );
+	const [ isUsingPreset, setIsUsingPreset ] = useState(
+		scaleVariation !== 'custom'
+	);
 
 	// Generate fieldKey from clientId if not set
 	useEffect( () => {
@@ -65,6 +78,40 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			setAttributes( { fieldKey: generatedKey } );
 		}
 	}, [ fieldKey, clientId, setAttributes ] );
+
+	// Handle preset selection
+	const handlePresetChange = ( newPresetKey ) => {
+		setSelectedPreset( newPresetKey );
+		const isCustom = newPresetKey === 'custom';
+		setIsUsingPreset( ! isCustom );
+
+		// Update scaleVariation attribute
+		setAttributes( { scaleVariation: newPresetKey } );
+
+		// If not custom, apply the preset
+		if ( ! isCustom ) {
+			const preset = getPresetByKey( newPresetKey );
+			if ( preset ) {
+				const presetAttributes = applyPreset( preset );
+				setAttributes( presetAttributes );
+			}
+		}
+	};
+
+	// Handle custom mode toggle
+	const handleCustomModeToggle = ( useCustom ) => {
+		setIsUsingPreset( ! useCustom );
+		if ( useCustom ) {
+			setAttributes( { scaleVariation: 'custom' } );
+		} else if ( selectedPreset !== 'custom' ) {
+			// Reapply current preset
+			const preset = getPresetByKey( selectedPreset );
+			if ( preset ) {
+				const presetAttributes = applyPreset( preset );
+				setAttributes( presetAttributes );
+			}
+		}
+	};
 
 	const effectiveFieldName =
 		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
@@ -78,12 +125,15 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			  conditionalLogic.rules.length > 0 );
 
 	const blockProps = useBlockProps( {
-		className: 'form-group eipsi-field eipsi-likert-field',
+		className: `form-group eipsi-field eipsi-likert-field ${
+			isUsingPreset ? 'using-preset' : 'custom-mode'
+		}`,
 		'data-field-name': effectiveFieldName,
 		'data-required': required ? 'true' : 'false',
 		'data-field-type': 'likert',
 		'data-min': minValue,
 		'data-max': maxValue,
+		'data-scale-variation': scaleVariation,
 		'data-conditional-logic': hasConditionalLogic ? 'true' : undefined,
 	} );
 
@@ -99,8 +149,8 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		scale.push( i );
 	}
 
-	const hasLabelMismatch =
-		labelArray.length > 0 && labelArray.length !== scale.length;
+	// Validate labels with preset context
+	const validationResult = validateLabels( labels, minValue, maxValue );
 
 	const likertOptions = scale.map( ( value, index ) => {
 		const baseValue = value.toString();
@@ -112,6 +162,39 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			value: baseValue,
 		};
 	} );
+
+	// Get current preset info
+	const currentPreset = getPresetByKey( scaleVariation );
+
+	// Preset options for SelectControl
+	const presetOptions = [
+		{ label: '🔧 Personalizado', value: 'custom' },
+		{
+			label: '🤝 Escala de Acuerdo (5 puntos)',
+			value: 'likert5-agreement',
+		},
+		{
+			label: '😊 Escala de Satisfacción (5 puntos)',
+			value: 'likert5-satisfaction',
+		},
+		{
+			label: '📊 Escala de Frecuencia (5 puntos)',
+			value: 'likert5-frequency',
+		},
+		{
+			label: '🤝 Escala de Acuerdo (7 puntos)',
+			value: 'likert7-agreement',
+		},
+		{
+			label: '😊 Escala de Satisfacción (7 puntos)',
+			value: 'likert7-satisfaction',
+		},
+		{
+			label: '⚖️ Escala de Acuerdo (4 puntos)',
+			value: 'likert4-agreement',
+		},
+		{ label: '🎯 Escala de 9 puntos', value: 'likert9-scale' },
+	];
 
 	return (
 		<>
@@ -159,11 +242,117 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				</PanelBody>
 
 				<PanelBody
-					title={ __( 'Likert Scale Options', 'eipsi-forms' ) }
+					title={ __(
+						'📊 Variación de Escala Likert',
+						'eipsi-forms'
+					) }
 					initialOpen={ true }
 				>
+					<SelectControl
+						label={ __(
+							'Seleccionar Escala Predefinida',
+							'eipsi-forms'
+						) }
+						value={ selectedPreset }
+						options={ presetOptions }
+						onChange={ handlePresetChange }
+						help={ __(
+							'Las escalas predefinidas configuran automáticamente min/max/etiquetas. Selecciona "Personalizado" para configuración manual.',
+							'eipsi-forms'
+						) }
+					/>
+
+					{ currentPreset &&
+						currentPreset.name !== 'Personalizado' && (
+							<div
+								className="preset-description"
+								style={ {
+									padding: '12px',
+									backgroundColor: `${ currentPreset.color }15`,
+									borderLeft: `4px solid ${ currentPreset.color }`,
+									borderRadius: '4px',
+									margin: '12px 0',
+								} }
+							>
+								<div
+									style={ {
+										display: 'flex',
+										alignItems: 'center',
+										marginBottom: '8px',
+									} }
+								>
+									<span
+										style={ {
+											fontSize: '18px',
+											marginRight: '8px',
+										} }
+									>
+										{ currentPreset.icon }
+									</span>
+									<strong>{ currentPreset.name }</strong>
+								</div>
+								<p
+									style={ {
+										margin: '0',
+										fontSize: '13px',
+										color: '#555',
+										lineHeight: '1.4',
+									} }
+								>
+									{ currentPreset.description }
+								</p>
+								<div
+									style={ {
+										marginTop: '8px',
+										fontSize: '12px',
+										color: '#666',
+										display: 'flex',
+										justifyContent: 'space-between',
+									} }
+								>
+									<span>
+										📏{ ' ' }
+										{ currentPreset.maxValue -
+											currentPreset.minValue +
+											1 }{ ' ' }
+										puntos
+									</span>
+									<span
+										style={ {
+											padding: '2px 6px',
+											backgroundColor:
+												currentPreset.color,
+											color: 'white',
+											borderRadius: '3px',
+											fontSize: '10px',
+										} }
+									>
+										{ currentPreset.type.toUpperCase() }
+									</span>
+								</div>
+							</div>
+						) }
+
+					<ToggleControl
+						label={ __(
+							'Usar valores personalizados',
+							'eipsi-forms'
+						) }
+						checked={ ! isUsingPreset }
+						onChange={ handleCustomModeToggle }
+						help={ __(
+							'Desactiva para usar la escala predefinida. Actívalo para configurar manualmente min/max/etiquetas.',
+							'eipsi-forms'
+						) }
+					/>
+				</PanelBody>
+
+				<PanelBody
+					title={ __( '⚙️ Configuración de Escala', 'eipsi-forms' ) }
+					initialOpen={ ! isUsingPreset }
+				>
 					<RangeControl
-						label={ __( 'Minimum Value', 'eipsi-forms' ) }
+						label={ __( 'Valor Mínimo', 'eipsi-forms' ) }
 						value={ minValue }
 						onChange={ ( value ) => {
 							if ( value < maxValue ) {
@@ -172,13 +361,14 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						} }
 						min={ 0 }
 						max={ 10 }
+						disabled={ isUsingPreset }
 						help={ __(
-							'The lowest value in the scale',
+							'El valor más bajo de la escala',
 							'eipsi-forms'
 						) }
 					/>
 					<RangeControl
-						label={ __( 'Maximum Value', 'eipsi-forms' ) }
+						label={ __( 'Valor Máximo', 'eipsi-forms' ) }
 						value={ maxValue }
 						onChange={ ( value ) => {
 							if ( value > minValue ) {
@@ -186,15 +376,16 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							}
 						} }
 						min={ 1 }
-						max={ 10 }
+						max={ 15 }
+						disabled={ isUsingPreset }
 						help={ __(
-							'The highest value in the scale',
+							'El valor más alto de la escala',
 							'eipsi-forms'
 						) }
 					/>
 					<TextareaControl
 						label={ __(
-							'Labels (separated by semicolon)',
+							'Etiquetas (separadas por punto y coma)',
 							'eipsi-forms'
 						) }
 						value={ labels || '' }
@@ -203,23 +394,27 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								labels: normalizeLineEndings( value ),
 							} )
 						}
+						disabled={ isUsingPreset }
 						help={ __(
 							'Etiquetas opcionales para cada punto de la escala (deben coincidir con la cantidad de puntos). Separá con punto y coma (;). Formatos anteriores (líneas o comas) siguen funcionando.',
 							'eipsi-forms'
 						) }
 						placeholder={ 'Nada; Poco; Moderado; Bastante; Mucho' }
 					/>
-					{ hasLabelMismatch && (
+
+					{ validationResult && ! validationResult.isValid && (
 						<Notice status="warning" isDismissible={ false }>
-							{
-								// translators: %1$d: number of labels, %2$d: number of scale points
-								__(
-									"You have %1$d labels but %2$d scale points. Labels will be ignored if count doesn't match.",
-									'eipsi-forms'
-								)
-									.replace( '%1$d', labelArray.length )
-									.replace( '%2$d', scale.length )
-							}
+							{ validationResult.message }
+						</Notice>
+					) }
+
+					{ isUsingPreset && (
+						<Notice status="info" isDismissible={ false }>
+							<strong>Modo Predefinido Activo:</strong> La
+							configuración de la escala está bloqueada porque
+							estás usando &quot;{ currentPreset?.name }&quot;.
+							Desactiva &quot;Usar valores personalizados&quot;
+							para editar manualmente.
 						</Notice>
 					) }
 				</PanelBody>
