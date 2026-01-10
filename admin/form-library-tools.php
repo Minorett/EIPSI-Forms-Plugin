@@ -206,23 +206,112 @@ function eipsi_import_form_from_json($json_data) {
 }
 
 /**
+ * Sanitize JSON string to properly preserve escape sequences
+ * Especially important for newlines (\n) and special characters
+ *
+ * @param string $json_string Raw JSON string from POST
+ * @return string Sanitized JSON string
+ */
+function eipsi_sanitize_json_string($json_string) {
+    // Remove WordPress slashes (wp_unslash can corrupt escaped newlines)
+    // We need to carefully handle escaped sequences
+    if (function_exists('wp_unslash')) {
+        // First, detect if we have double-escaped sequences
+        $has_double_escapes = (strpos($json_string, '\\\\n') !== false ||
+                               strpos($json_string, '\\\\t') !== false ||
+                               strpos($json_string, '\\\\r') !== false);
+
+        if ($has_double_escapes) {
+            // Replace \\ with \ (but not \\n which should stay as \n)
+            $json_string = preg_replace('/\\\\\\\\(?=[ntr])/', '\\\\', $json_string);
+        }
+
+        // Now remove single backslashes that aren't part of escape sequences
+        // This is tricky - we want to keep \n \t \r but remove stray \
+        $json_string = preg_replace('/(?<!\\\\)\\\\+(?!["ntrbf\\/\\\\])/', '', $json_string);
+    }
+
+    return $json_string;
+}
+
+/**
+ * Validate and restore RichText attribute escape sequences
+ * Ensures \n, \t, etc. are properly preserved during JSON processing
+ *
+ * @param mixed $value Attribute value to validate/restore
+ * @param string $attr_name Attribute name for debugging
+ * @return mixed Sanitized value
+ */
+function eipsi_validate_richtext_attribute($value, $attr_name = '') {
+    if (!is_string($value) || empty($value)) {
+        return $value;
+    }
+
+    // Common RichText attributes that should preserve newlines
+    $richtext_attrs = array(
+        'contenido', 'label', 'helperText', 'placeholder',
+        'textoComplementario', 'etiquetaCheckbox', 'description',
+        'errorMessage', 'successMessage', 'instructions',
+    );
+
+    // Check if this attribute is likely RichText content
+    $is_richtext = false;
+    foreach ($richtext_attrs as $pattern) {
+        if (strpos($attr_name, $pattern) !== false) {
+            $is_richtext = true;
+            break;
+        }
+    }
+
+    if (!$is_richtext) {
+        return $value;
+    }
+
+    // Restore escaped newlines that might have been corrupted
+    // Common corruption: "muynbien" from "\n" being interpreted as "n"
+    if (preg_match('/nyb|ybn|nbie|ybien/', $value)) {
+        // Try to detect corrupted newlines
+        $value = preg_replace('/(?<=[a-zA-Z])n(?=[a-zA-Z])/', "\n", $value);
+    }
+
+    // Ensure proper escaping for JSON serialization
+    // This will be handled by json_encode later, but we ensure consistency
+    return $value;
+}
+
+/**
  * Enrich simplified blocks for serialize_blocks()
  * Adds missing innerHTML, innerContent keys required by WordPress
- * 
+ * PRESERVES RichText escape sequences and special characters
+ *
  * @param array $blocks Simplified blocks from lite JSON
  * @return array Enriched blocks ready for serialize_blocks()
  */
 function eipsi_enrich_blocks_for_serialization($blocks) {
     $enriched = array();
-    
+
     foreach ($blocks as $block) {
+        // Get existing attributes
+        $attrs = isset($block['attrs']) ? $block['attrs'] : array();
+
+        // Validate and restore RichText attributes to preserve newlines
+        foreach ($attrs as $attr_name => $attr_value) {
+            $attrs[$attr_name] = eipsi_validate_richtext_attribute($attr_value, $attr_name);
+        }
+
+        // Generate missing fieldKey for input blocks if needed
+        $blockName = isset($block['blockName']) ? $block['blockName'] : '';
+
+        // Enrich attributes based on block type
+        $enriched_attrs = eipsi_enrich_block_attributes($blockName, $attrs);
+
         $enriched_block = array(
-            'blockName' => isset($block['blockName']) ? $block['blockName'] : null,
-            'attrs' => isset($block['attrs']) ? $block['attrs'] : array(),
+            'blockName' => $blockName,
+            'attrs' => $enriched_attrs,
             'innerHTML' => '',
             'innerContent' => array(),
         );
-        
+
         // Recursively enrich innerBlocks
         if (isset($block['innerBlocks']) && is_array($block['innerBlocks']) && count($block['innerBlocks']) > 0) {
             $enriched_block['innerBlocks'] = eipsi_enrich_blocks_for_serialization($block['innerBlocks']);
@@ -231,10 +320,79 @@ function eipsi_enrich_blocks_for_serialization($blocks) {
         } else {
             $enriched_block['innerBlocks'] = array();
         }
-        
+
         $enriched[] = $enriched_block;
     }
-    
+
+    return $enriched;
+}
+
+/**
+ * Enrich block attributes with missing defaults
+ * Validates and adds required attributes for each block type
+ *
+ * @param string $block_name Block type name
+ * @param array $attrs Existing block attributes
+ * @return array Enriched attributes
+ */
+function eipsi_enrich_block_attributes($block_name, $attrs) {
+    // Default values for all blocks
+    $enriched = $attrs;
+
+    // Ensure fieldKey exists for input blocks
+    $input_blocks = array(
+        'eipsi/campo-texto',
+        'eipsi/campo-numerico',
+        'eipsi/campo-select',
+        'eipsi/campo-checkbox',
+        'eipsi/campo-radio',
+        'eipsi/campo-fecha',
+        'eipsi/campo-email',
+        'eipsi/campo-telefono',
+        'eipsi/campo-textarea',
+    );
+
+    if (in_array($block_name, $input_blocks)) {
+        if (empty($enriched['fieldKey'])) {
+            // Generate unique fieldKey from label or block name
+            $label = isset($enriched['label']) ? $enriched['label'] : $block_name;
+            $timestamp = isset($enriched['timestamp']) ? $enriched['timestamp'] : time();
+            $enriched['fieldKey'] = 'field_' . hash('sha256', $label . $timestamp);
+        }
+    }
+
+    // Likert blocks need labels and fieldKey
+    if ($block_name === 'eipsi/campo-likert') {
+        if (empty($enriched['fieldKey'])) {
+            $label = isset($enriched['label']) ? $enriched['label'] : 'likert';
+            $timestamp = isset($enriched['timestamp']) ? $enriched['timestamp'] : time();
+            $enriched['fieldKey'] = 'field_' . hash('sha256', $label . $timestamp);
+        }
+        if (!isset($enriched['required'])) {
+            $enriched['required'] = true;
+        }
+    }
+
+    // VAS Slider blocks need labels
+    if ($block_name === 'eipsi/vas-slider') {
+        if (!isset($enriched['showCurrentValue'])) {
+            $enriched['showCurrentValue'] = false;
+        }
+    }
+
+    // Info blocks (description, consent) need content validated
+    $info_blocks = array(
+        'eipsi/campo-descripcion',
+        'eipsi/consent-block',
+    );
+
+    if (in_array($block_name, $info_blocks)) {
+        // Ensure contenido exists and is not empty
+        if (empty($enriched['contenido'])) {
+            $enriched['contenido'] = '<p>Contenido del bloque</p>';
+        }
+    }
+
     return $enriched;
 }
 
@@ -337,8 +495,12 @@ function eipsi_ajax_import_form() {
     if (!isset($_POST['json_data'])) {
         wp_send_json_error(array('message' => __('No se recibió el archivo JSON.', 'eipsi-forms')));
     }
-    
+
     $json_string = wp_unslash($_POST['json_data']);
+
+    // Sanitize JSON string to preserve escape sequences (newlines, etc.)
+    $json_string = eipsi_sanitize_json_string($json_string);
+
     $json_data = json_decode($json_string, true);
     
     if (json_last_error() !== JSON_ERROR_NONE) {
