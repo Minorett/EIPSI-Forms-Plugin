@@ -2037,4 +2037,208 @@ function eipsi_get_site_logo_handler() {
         'logo_url' => $logo_url
     ));
 }
+
+// =============================================================================
+// RANDOMIZATION SYSTEM HANDLERS
+// =============================================================================
+
+/**
+ * AJAX Handler: Get Randomization Configuration
+ * Returns the randomization config for a study form
+ */
+function eipsi_get_randomization_config() {
+    // Verify nonce
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce')) {
+        wp_send_json_error('Security check failed');
+    }
+
+    // Verify form_id
+    if (!isset($_POST['form_id'])) {
+        wp_send_json_error('Missing form_id parameter');
+    }
+
+    $form_id = intval($_POST['form_id']);
+    
+    // Get randomization config from postmeta
+    $random_config = get_post_meta($form_id, '_eipsi_random_config', true);
+    
+    if (!$random_config || !is_array($random_config)) {
+        wp_send_json_error('No randomization configuration found');
+    }
+
+    // Verify randomization is enabled
+    if (empty($random_config['enabled'])) {
+        wp_send_json_error('Randomization is not enabled for this form');
+    }
+
+    // Verify there are forms to randomize between
+    if (empty($random_config['forms']) || count($random_config['forms']) < 2) {
+        wp_send_json_error('Insufficient forms configured for randomization');
+    }
+
+    // Return sanitized config
+    wp_send_json_success(array(
+        'enabled' => true,
+        'forms' => array_map(function($form) {
+            return array(
+                'id' => intval($form['id']),
+                'title' => sanitize_text_field($form['title'] ?? '')
+            );
+        }, $random_config['forms']),
+        'method' => sanitize_text_field($random_config['method'] ?? 'simple'),
+        'seed_base' => sanitize_text_field($random_config['seed_base'] ?? null)
+    ));
+}
+add_action('wp_ajax_eipsi_get_randomization_config', 'eipsi_get_randomization_config');
+add_action('wp_ajax_nopriv_eipsi_get_randomization_config', 'eipsi_get_randomization_config');
+
+/**
+ * AJAX Handler: Check Manual Assignment
+ * Checks if a participant has a manual assignment override
+ */
+function eipsi_check_manual_assignment() {
+    // Verify nonce
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce')) {
+        wp_send_json_error('Security check failed');
+    }
+
+    // Verify required parameters
+    if (!isset($_POST['form_id'], $_POST['participant_id'])) {
+        wp_send_json_error('Missing required parameters');
+    }
+
+    $form_id = intval($_POST['form_id']);
+    $participant_id = sanitize_text_field($_POST['participant_id']);
+    
+    // Get manual assignments
+    $manual_assignments = get_post_meta($form_id, '_eipsi_manual_assignments', true);
+    
+    if (is_array($manual_assignments) && isset($manual_assignments[$participant_id])) {
+        $assignment = $manual_assignments[$participant_id];
+        
+        // Verify the assigned form still exists and is valid
+        $assigned_form = get_post($assignment['form_id']);
+        if ($assigned_form && $assigned_form->post_type === 'eipsi_form_template') {
+            wp_send_json_success(intval($assignment['form_id']));
+        }
+    }
+    
+    // No manual assignment found
+    wp_send_json_success(null);
+}
+add_action('wp_ajax_eipsi_check_manual_assignment', 'eipsi_check_manual_assignment');
+add_action('wp_ajax_nopriv_eipsi_check_manual_assignment', 'eipsi_check_manual_assignment');
+
+/**
+ * AJAX Handler: Persist Assignment
+ * Saves a randomization assignment to the database
+ */
+function eipsi_persist_assignment() {
+    // Verify nonce
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce')) {
+        wp_send_json_error('Security check failed');
+    }
+
+    // Verify required parameters
+    if (!isset($_POST['form_id'], $_POST['assigned_form_id'], $_POST['participant_id'])) {
+        wp_send_json_error('Missing required parameters');
+    }
+
+    $form_id = intval($_POST['form_id']);
+    $assigned_form_id = intval($_POST['assigned_form_id']);
+    $participant_id = sanitize_text_field($_POST['participant_id']);
+    $seed = sanitize_text_field($_POST['seed'] ?? '');
+    $is_manual = !empty($_POST['is_manual']) && $_POST['is_manual'] === '1';
+
+    // Verify both forms exist
+    $study_form = get_post($form_id);
+    $assigned_form = get_post($assigned_form_id);
+    
+    if (!$study_form || !$assigned_form || 
+        $study_form->post_type !== 'eipsi_form_template' || 
+        $assigned_form->post_type !== 'eipsi_form_template') {
+        wp_send_json_error('Invalid form IDs');
+    }
+
+    // Get existing assignments
+    $assignments = get_post_meta($form_id, '_eipsi_assignments', true);
+    if (!is_array($assignments)) {
+        $assignments = array();
+    }
+
+    // Store assignment
+    $assignments[$participant_id] = array(
+        'assigned_form_id' => $assigned_form_id,
+        'seed' => $seed,
+        'timestamp' => current_time('mysql'),
+        'is_manual' => $is_manual,
+        'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
+    );
+
+    // Save to database
+    $result = update_post_meta($form_id, '_eipsi_assignments', $assignments);
+
+    if ($result === false) {
+        wp_send_json_error('Failed to persist assignment');
+    }
+
+    wp_send_json_success('Assignment persisted successfully');
+}
+add_action('wp_ajax_eipsi_persist_assignment', 'eipsi_persist_assignment');
+add_action('wp_ajax_nopriv_eipsi_persist_assignment', 'eipsi_persist_assignment');
+
+/**
+ * AJAX Handler: Load Form
+ * Loads a form template for rendering
+ */
+function eipsi_load_form() {
+    // Verify nonce
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce')) {
+        wp_send_json_error('Security check failed');
+    }
+
+    // Verify form_id
+    if (!isset($_POST['form_id'])) {
+        wp_send_json_error('Missing form_id parameter');
+    }
+
+    $form_id = intval($_POST['form_id']);
+    
+    // Get form template
+    $template = get_post($form_id);
+    if (!$template || $template->post_type !== 'eipsi_form_template') {
+        wp_send_json_error('Form template not found');
+    }
+
+    // Use existing render function
+    if (function_exists('eipsi_render_form_block')) {
+        $attributes = array(
+            'formId' => $form_id,
+            'showTitle' => true
+        );
+        
+        // Capture output
+        ob_start();
+        echo eipsi_render_form_block($attributes);
+        $html = ob_get_clean();
+        
+        wp_send_json_success($html);
+    }
+
+    // Fallback: render basic form
+    $blocks = parse_blocks($template->post_content);
+    $html = '';
+    
+    foreach ($blocks as $block) {
+        $html .= render_block($block);
+    }
+    
+    wp_send_json_success($html);
+}
+add_action('wp_ajax_eipsi_load_form', 'eipsi_load_form');
+add_action('wp_ajax_nopriv_eipsi_load_form', 'eipsi_load_form');
+
+// =============================================================================
+// END RANDOMIZATION SYSTEM HANDLERS
+// =============================================================================
 ?>
