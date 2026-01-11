@@ -21,6 +21,9 @@ export default function Save( { attributes } ) {
 		completionMessage,
 		completionLogoUrl,
 		completionButtonLabel,
+		// Timing settings
+		capturePageTiming,
+		captureFieldTiming,
 	} = attributes;
 
 	const allowBackwardsNavEnabled =
@@ -90,6 +93,12 @@ export default function Save( { attributes } ) {
 				}
 				data-show-progress-bar={
 					showProgressBarEnabled ? 'true' : 'false'
+				}
+				data-capture-page-timing={
+					capturePageTiming ? 'true' : 'false'
+				}
+				data-capture-field-timing={
+					captureFieldTiming ? 'true' : 'false'
 				}
 			>
 				<input type="hidden" name="form_id" value={ formId } />

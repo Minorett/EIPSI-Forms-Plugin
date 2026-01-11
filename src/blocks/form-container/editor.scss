@@ -229,3 +229,103 @@
         }
     }
 }
+
+.timing-analysis-panel {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-left: 4px solid #005a87;
+  border-radius: 4px;
+}
+
+.timing-summary {
+  margin-bottom: 1rem;
+  
+  h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: #005a87;
+  }
+  
+  .timing-total {
+    margin: 0;
+    font-weight: 500;
+    color: #333;
+  }
+}
+
+.timing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  
+  thead {
+    background: #e8eef5;
+    
+    th {
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: #005a87;
+      border-bottom: 2px solid #005a87;
+    }
+  }
+  
+  tbody {
+    tr {
+      border-bottom: 1px solid #ddd;
+      
+      &:hover {
+        background: #f5f7fb;
+      }
+      
+      td {
+        padding: 0.75rem;
+        color: #333;
+      }
+    }
+  }
+}
+
+// Dark mode support for editor
+@media (prefers-color-scheme: dark) {
+  .timing-analysis-panel {
+    background: #1e1e1e;
+    border-left-color: #42a5f5;
+  }
+  
+  .timing-summary {
+    h4 {
+      color: #42a5f5;
+    }
+    
+    .timing-total {
+      color: #e0e0e0;
+    }
+  }
+  
+  .timing-table {
+    thead {
+      background: #2a2a2a;
+      
+      th {
+        color: #42a5f5;
+        border-bottom-color: #42a5f5;
+      }
+    }
+    
+    tbody {
+      tr {
+        border-bottom-color: #333;
+        
+        &:hover {
+          background: #262626;
+        }
+        
+        td {
+          color: #e0e0e0;
+        }
+      }
+    }
+  }
+}

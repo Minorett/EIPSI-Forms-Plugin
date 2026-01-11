@@ -78,6 +78,19 @@ registerBlockType( 'eipsi/form-container', {
 				manualAssigns: [], // [{ email, formId, timestamp }]
 			},
 		},
+		// === Atributos de Analytics & Timing ===
+		capturePageTiming: {
+			type: 'boolean',
+			default: true,
+		},
+		captureFieldTiming: {
+			type: 'boolean',
+			default: false,
+		},
+		showTimingAnalysis: {
+			type: 'boolean',
+			default: false,
+		},
 	},
 	edit: Edit,
 	save: Save,
