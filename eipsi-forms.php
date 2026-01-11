@@ -46,6 +46,7 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/form-library-tools.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/demo-templates.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/form-template-render.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/shortcodes.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'assets/js/eipsi-randomization-shortcode.php';
 
 function eipsi_forms_activate() {
     global $wpdb;

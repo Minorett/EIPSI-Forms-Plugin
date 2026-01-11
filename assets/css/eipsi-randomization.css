@@ -1,0 +1,173 @@
+/**
+ * EIPSI Forms Randomization Styles
+ * Professional styling for public randomization interface
+ */
+
+.eipsi-randomization-wrapper {
+    --eipsi-blue: #2196F3;
+    --eipsi-blue-light: #e3f2fd;
+    --eipsi-blue-dark: #0d47a1;
+    --eipsi-error: #d63638;
+    --eipsi-error-bg: #fef7f1;
+    --eipsi-success: #00a32a;
+    --eipsi-text: #1e1e1e;
+    --eipsi-text-light: #666;
+    --eipsi-border: #ccc;
+    --eipsi-border-light: #f0f0f1;
+    --eipsi-shadow: rgba(0, 0, 0, 0.1);
+    
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0;
+}
+
+/* Notice/Disclaimer */
+.randomization-notice {
+    background: var(--eipsi-blue-light);
+    border-left: 4px solid var(--eipsi-blue);
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px var(--eipsi-shadow);
+}
+
+.randomization-notice-text {
+    margin: 0;
+    color: var(--eipsi-blue-dark);
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Loading State */
+.randomization-loading {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: #ffffff;
+    border-radius: 4px;
+    border: 1px solid var(--eipsi-border-light);
+    margin-bottom: 1.5rem;
+}
+
+.randomization-loading p {
+    margin: 1rem 0 0 0;
+    color: var(--eipsi-text-light);
+    font-size: 0.95rem;
+}
+
+/* Spinner Animation */
+.randomization-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--eipsi-border-light);
+    border-top: 3px solid var(--eipsi-blue);
+    border-radius: 50%;
+    animation: eipsi-spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes eipsi-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error State */
+.randomization-error {
+    margin-bottom: 1.5rem;
+}
+
+/* Form Container */
+.randomized-form-container {
+    min-height: 200px;
+}
+
+.randomized-form-container .eipsi-form {
+    margin: 0;
+}
+
+/* Participant Input */
+.randomization-participant-input {
+    background: #f9f9f9;
+    border: 1px solid var(--eipsi-border-light);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.eipsi-participant-input {
+    width: 100%;
+    max-width: 300px;
+    padding: 0.5rem;
+    border: 1px solid var(--eipsi-border);
+    border-radius: 3px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease;
+}
+
+.eipsi-participant-input:focus {
+    outline: none;
+    border-color: var(--eipsi-blue);
+    box-shadow: 0 0 0 1px var(--eipsi-blue);
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .eipsi-randomization-wrapper {
+        --eipsi-blue-light: #1e3a5f;
+        --eipsi-blue-dark: #bbdefb;
+        --eipsi-error-bg: #3d1f1f;
+        --eipsi-text: #e0e0e0;
+        --eipsi-text-light: #aaa;
+        --eipsi-border: #555;
+        --eipsi-border-light: #2a2a2a;
+        --eipsi-shadow: rgba(255, 255, 255, 0.1);
+    }
+
+    .randomization-loading {
+        background: #1e1e1e;
+        border-color: var(--eipsi-border-light);
+    }
+
+    .randomization-participant-input {
+        background: #2a2a2a;
+        border-color: var(--eipsi-border-light);
+    }
+
+    .eipsi-participant-input {
+        background: #1e1e1e;
+        color: var(--eipsi-text);
+        border-color: var(--eipsi-border);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .eipsi-randomization-wrapper {
+        padding: 0 0.5rem;
+    }
+
+    .randomization-notice {
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .randomization-loading {
+        padding: 2rem 1rem;
+    }
+
+    .randomization-participant-input {
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .randomization-notice-text {
+        font-size: 0.875rem;
+    }
+
+    .randomization-spinner {
+        width: 32px;
+        height: 32px;
+        border-width: 2px;
+    }
+}
