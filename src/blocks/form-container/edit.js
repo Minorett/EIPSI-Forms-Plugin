@@ -303,7 +303,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	// Obtener nombre de formulario por ID
 	const getFormName = ( id ) => {
 		const form = availableForms.find( ( f ) => f.id === parseInt( id ) );
-		return form ? form.name : `Formulario ${ id }`;
+		return form ? form.name || form.label : `Formulario ${ id }`;
 	};
 
 	// Calcular total de probabilidades
@@ -999,7 +999,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 											},
 											...availableForSelect.map(
 												( f ) => ( {
-													label: f.name,
+													label: f.name || f.label,
 													value: String( f.id ),
 												} )
 											),
