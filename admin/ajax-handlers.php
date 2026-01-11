@@ -775,7 +775,7 @@ function eipsi_forms_submit_form_handler() {
     }
     
     $form_responses = array();
-    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action', 'participant_id', 'session_id', 'metadata');
+    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action', 'participant_id', 'session_id', 'metadata', 'end_timestamp_ms');
     
     $user_data = array(
         'email' => '',
@@ -802,13 +802,25 @@ function eipsi_forms_submit_form_handler() {
     
     if (!empty($start_time)) {
         $start_timestamp_ms = intval($start_time);
-        
-        if (!empty($end_time)) {
+
+        // === FIJO: Usar end_timestamp_ms del frontend si existe ===
+        // Esto evita el error de ~0.6s por delay de red
+        $frontend_end_timestamp_ms = isset($_POST['end_timestamp_ms']) ? intval($_POST['end_timestamp_ms']) : null;
+
+        if (!empty($frontend_end_timestamp_ms)) {
+            // Usar timestamp del frontend (preciso, sin delay de red)
+            $end_timestamp_ms = $frontend_end_timestamp_ms;
+            $duration_ms = max(0, $end_timestamp_ms - $start_timestamp_ms);
+            $duration = intval($duration_ms / 1000);
+            $duration_seconds = round($duration_ms / 1000, 3);
+        } elseif (!empty($end_time)) {
+            // Fallback: usar form_end_time si no hay end_timestamp_ms separado
             $end_timestamp_ms = intval($end_time);
             $duration_ms = max(0, $end_timestamp_ms - $start_timestamp_ms);
             $duration = intval($duration_ms / 1000);
             $duration_seconds = round($duration_ms / 1000, 3);
         } else {
+            // Último fallback: recapturar en backend (legacy)
             $current_timestamp_ms = round(microtime(true) * 1000);
             $end_timestamp_ms = $current_timestamp_ms;
             $duration_ms = max(0, $end_timestamp_ms - $start_timestamp_ms);
@@ -816,9 +828,9 @@ function eipsi_forms_submit_form_handler() {
             $duration_seconds = round($duration_ms / 1000, 3);
         }
     }
-    
+
     $stable_form_id = generate_stable_form_id($form_name);
-    
+
     // Usar Participant ID universal del frontend si está disponible, sino fallback al viejo sistema
     $participant_id = !empty($frontend_participant_id) ? $frontend_participant_id : generateStableFingerprint($user_data);
     

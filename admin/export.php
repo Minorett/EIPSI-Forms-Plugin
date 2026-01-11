@@ -111,7 +111,7 @@ function eipsi_export_to_excel() {
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/privacy-config.php';
     $first_form_id = !empty($results[0]->form_id) ? $results[0]->form_id : export_generate_stable_form_id($results[0]->form_name);
     $privacy_config = get_privacy_config($first_form_id);
-    
+
     // Obtener todas las preguntas únicas para crear columnas (excluir campos internos)
     $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id', 'eipsi_consent_accepted');
     $all_questions = [];
@@ -123,7 +123,47 @@ function eipsi_export_to_excel() {
             }
         }
     }
-    
+
+    // === DETECTAR TIEMPOS POR PÁGINA Y CAMPO (Excel) ===
+    $page_timing_keys = [];
+    $field_timing_keys = [];
+    $has_page_timings = false;
+    $has_field_timings = false;
+
+    foreach ($results as $row) {
+        $metadata = !empty($row->metadata) ? json_decode($row->metadata, true) : [];
+
+        // Detectar page_timings
+        if (isset($metadata['page_timings']) && is_array($metadata['page_timings'])) {
+            $has_page_timings = true;
+            foreach ($metadata['page_timings'] as $key => $val) {
+                // Excluir total_duration, solo procesar page_0, page_1, etc.
+                if ($key !== 'total_duration' && strpos($key, 'page_') === 0) {
+                    if (!in_array($key, $page_timing_keys)) {
+                        $page_timing_keys[] = $key;
+                    }
+                }
+            }
+        }
+
+        // Detectar field_timings
+        if (isset($metadata['field_timings']) && is_array($metadata['field_timings'])) {
+            $has_field_timings = true;
+            foreach ($metadata['field_timings'] as $field_name => $field_data) {
+                if (!in_array($field_name, $field_timing_keys)) {
+                    $field_timing_keys[] = $field_name;
+                }
+            }
+        }
+    }
+
+    // Ordenar page_timing_keys numéricamente (page_0, page_1, page_2, ...)
+    usort($page_timing_keys, function($a, $b) {
+        $num_a = intval(str_replace('page_', '', $a));
+        $num_b = intval(str_replace('page_', '', $b));
+        return $num_a <=> $num_b;
+    });
+
     // Detectar si hay aleatorización real en los resultados
     $has_randomization = false;
     foreach ($results as $row) {
@@ -133,7 +173,7 @@ function eipsi_export_to_excel() {
             break;
         }
     }
-    
+
     $data = array();
     // Encabezados: nuevo formato con IDs + metadatos + timestamps + preguntas dinámicas
     // ONLY include metadata columns if privacy config allows
@@ -158,7 +198,26 @@ function eipsi_export_to_excel() {
     if ($privacy_config['os']) {
         $headers[] = 'OS';
     }
-    
+
+    // === Columnas de Page Timings ===
+    foreach ($page_timing_keys as $page_key) {
+        $page_num = intval(str_replace('page_', '', $page_key));
+        $headers[] = "Page {$page_num} - Duration(s)";
+        $headers[] = "Page {$page_num} - Timestamp";
+    }
+
+    // === Columnas de Field Timings ===
+    foreach ($field_timing_keys as $field_name) {
+        $headers[] = "{$field_name} - Time(s)";
+        $headers[] = "{$field_name} - Interactions";
+        $headers[] = "{$field_name} - Focus Count";
+    }
+
+    // === Columna Total Duration ===
+    if ($has_page_timings || $has_field_timings) {
+        $headers[] = 'Total Duration(s)';
+    }
+
     $headers = array_merge($headers, $all_questions);
     $data[] = $headers;
     
@@ -239,15 +298,51 @@ function eipsi_export_to_excel() {
         if ($privacy_config['os']) {
             $row_data[] = $row->os;
         }
-        
+
+        // === Agregar datos de Page Timings ===
+        $metadata = !empty($row->metadata) ? json_decode($row->metadata, true) : [];
+        foreach ($page_timing_keys as $page_key) {
+            $page_data = $metadata['page_timings'][$page_key] ?? null;
+            if ($page_data) {
+                // Duration: usar rawDuration si existe, sino extraer de duration
+                $duration = isset($page_data['rawDuration']) ? $page_data['rawDuration'] : (isset($page_data['duration']) ? floatval($page_data['duration']) : '');
+                $row_data[] = $duration;
+                // Timestamp
+                $row_data[] = $page_data['timestamp'] ?? '';
+            } else {
+                $row_data[] = '';
+                $row_data[] = '';
+            }
+        }
+
+        // === Agregar datos de Field Timings ===
+        foreach ($field_timing_keys as $field_name) {
+            $field_data = $metadata['field_timings'][$field_name] ?? null;
+            if ($field_data) {
+                $row_data[] = $field_data['time_focused'] ?? '';
+                $row_data[] = $field_data['interaction_count'] ?? '';
+                $row_data[] = $field_data['focus_count'] ?? '';
+            } else {
+                $row_data[] = '';
+                $row_data[] = '';
+                $row_data[] = '';
+            }
+        }
+
+        // === Agregar Total Duration ===
+        if ($has_page_timings || $has_field_timings) {
+            $total_duration = $metadata['page_timings']['total_duration'] ?? '';
+            $row_data[] = $total_duration;
+        }
+
         // Agregar respuestas en el orden de las preguntas (excluir campos internos)
         foreach ($all_questions as $question) {
             $row_data[] = isset($form_data[$question]) ? (is_array($form_data[$question]) ? json_encode($form_data[$question]) : $form_data[$question]) : '';
         }
-        
+
         $data[] = $row_data;
     }
-    
+
     $xlsx = SimpleXLSXGen::fromArray($data);
     $form_suffix = isset($_GET['form_name']) ? '-' . sanitize_title($_GET['form_name']) : '';
     $filename = 'form-responses' . $form_suffix . '-' . date('Y-m-d-H-i-s') . '.xlsx';
@@ -319,7 +414,47 @@ function eipsi_export_to_csv() {
             }
         }
     }
-    
+
+    // === DETECTAR TIEMPOS POR PÁGINA Y CAMPO (CSV) ===
+    $page_timing_keys = [];
+    $field_timing_keys = [];
+    $has_page_timings = false;
+    $has_field_timings = false;
+
+    foreach ($results as $row) {
+        $metadata = !empty($row->metadata) ? json_decode($row->metadata, true) : [];
+
+        // Detectar page_timings
+        if (isset($metadata['page_timings']) && is_array($metadata['page_timings'])) {
+            $has_page_timings = true;
+            foreach ($metadata['page_timings'] as $key => $val) {
+                // Excluir total_duration, solo procesar page_0, page_1, etc.
+                if ($key !== 'total_duration' && strpos($key, 'page_') === 0) {
+                    if (!in_array($key, $page_timing_keys)) {
+                        $page_timing_keys[] = $key;
+                    }
+                }
+            }
+        }
+
+        // Detectar field_timings
+        if (isset($metadata['field_timings']) && is_array($metadata['field_timings'])) {
+            $has_field_timings = true;
+            foreach ($metadata['field_timings'] as $field_name => $field_data) {
+                if (!in_array($field_name, $field_timing_keys)) {
+                    $field_timing_keys[] = $field_name;
+                }
+            }
+        }
+    }
+
+    // Ordenar page_timing_keys numéricamente (page_0, page_1, page_2, ...)
+    usort($page_timing_keys, function($a, $b) {
+        $num_a = intval(str_replace('page_', '', $a));
+        $num_b = intval(str_replace('page_', '', $b));
+        return $num_a <=> $num_b;
+    });
+
     // Detectar si hay aleatorización real en los resultados
     $has_randomization = false;
     foreach ($results as $row) {
@@ -359,7 +494,26 @@ function eipsi_export_to_csv() {
     if ($privacy_config['os']) {
         $headers[] = 'OS';
     }
-    
+
+    // === Columnas de Page Timings ===
+    foreach ($page_timing_keys as $page_key) {
+        $page_num = intval(str_replace('page_', '', $page_key));
+        $headers[] = "Page {$page_num} - Duration(s)";
+        $headers[] = "Page {$page_num} - Timestamp";
+    }
+
+    // === Columnas de Field Timings ===
+    foreach ($field_timing_keys as $field_name) {
+        $headers[] = "{$field_name} - Time(s)";
+        $headers[] = "{$field_name} - Interactions";
+        $headers[] = "{$field_name} - Focus Count";
+    }
+
+    // === Columna Total Duration ===
+    if ($has_page_timings || $has_field_timings) {
+        $headers[] = 'Total Duration(s)';
+    }
+
     $headers = array_merge($headers, $all_questions);
     fputcsv($output, $headers);
     
@@ -440,15 +594,51 @@ function eipsi_export_to_csv() {
         if ($privacy_config['os']) {
             $row_data[] = $row->os;
         }
-        
+
+        // === Agregar datos de Page Timings ===
+        $metadata = !empty($row->metadata) ? json_decode($row->metadata, true) : [];
+        foreach ($page_timing_keys as $page_key) {
+            $page_data = $metadata['page_timings'][$page_key] ?? null;
+            if ($page_data) {
+                // Duration: usar rawDuration si existe, sino extraer de duration
+                $duration = isset($page_data['rawDuration']) ? $page_data['rawDuration'] : (isset($page_data['duration']) ? floatval($page_data['duration']) : '');
+                $row_data[] = $duration;
+                // Timestamp
+                $row_data[] = $page_data['timestamp'] ?? '';
+            } else {
+                $row_data[] = '';
+                $row_data[] = '';
+            }
+        }
+
+        // === Agregar datos de Field Timings ===
+        foreach ($field_timing_keys as $field_name) {
+            $field_data = $metadata['field_timings'][$field_name] ?? null;
+            if ($field_data) {
+                $row_data[] = $field_data['time_focused'] ?? '';
+                $row_data[] = $field_data['interaction_count'] ?? '';
+                $row_data[] = $field_data['focus_count'] ?? '';
+            } else {
+                $row_data[] = '';
+                $row_data[] = '';
+                $row_data[] = '';
+            }
+        }
+
+        // === Agregar Total Duration ===
+        if ($has_page_timings || $has_field_timings) {
+            $total_duration = $metadata['page_timings']['total_duration'] ?? '';
+            $row_data[] = $total_duration;
+        }
+
         // Agregar respuestas en el orden de las preguntas (excluir campos internos)
         foreach ($all_questions as $question) {
             $row_data[] = isset($form_data[$question]) ? (is_array($form_data[$question]) ? json_encode($form_data[$question]) : $form_data[$question]) : '';
         }
-        
+
         fputcsv($output, $row_data);
     }
-    
+
     fclose($output);
     exit;
 }

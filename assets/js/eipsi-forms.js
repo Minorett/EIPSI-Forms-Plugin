@@ -2861,7 +2861,9 @@
 
             formData.append( 'action', 'eipsi_forms_submit_form' );
             formData.append( 'nonce', this.config.nonce );
-            formData.append( 'form_end_time', Date.now() );
+            const end_timestamp_ms = Date.now();
+            formData.append( 'form_end_time', end_timestamp_ms );
+            formData.append( 'end_timestamp_ms', end_timestamp_ms );
             formData.append( 'participant_id', participantId );
             formData.append( 'session_id', sessionId );
 
