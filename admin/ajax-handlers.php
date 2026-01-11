@@ -716,6 +716,15 @@ function eipsi_save_global_privacy_config_handler() {
 function eipsi_forms_submit_form_handler() {
     check_ajax_referer('eipsi_forms_nonce', 'nonce');
     
+    // 1️⃣ VALIDACIÓN DE CONSENTIMIENTO OBLIGATORIA - PRIMER CHECK
+    if (!isset($_POST['eipsi_consent_accepted']) || $_POST['eipsi_consent_accepted'] !== 'on') {
+        wp_send_json_error([
+            'message' => 'Debes aceptar los términos de consentimiento',
+            'error_code' => 'consent_required'
+        ], 403);
+        return; // ⛔ NO CONTINUAR BAJO NINGUNA CIRCUNSTANCIA
+    }
+    
     global $wpdb;
     
     $form_name = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : 'default';
@@ -894,6 +903,18 @@ function eipsi_forms_submit_form_handler() {
         $metadata['consent_timestamp'] = current_time('Y-m-d\TH:i:s\Z');
         $metadata['consent_ip'] = ($privacy_config['ip_address'] ?? true) ? $ip_address_raw : 'anonymized';
         $metadata['consent_user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+    }
+    
+    // RANDOMIZATION INFO - Guardar datos si existen
+    $random_assignment = array(
+        'form_id' => isset($_POST['assignment_form_id']) ? sanitize_text_field($_POST['assignment_form_id']) : '-',
+        'seed' => isset($_POST['assignment_seed']) ? sanitize_text_field($_POST['assignment_seed']) : '-',
+        'type' => isset($_POST['assignment_type']) ? sanitize_text_field($_POST['assignment_type']) : '-'
+    );
+    
+    // Solo guardar en metadata si hay datos reales (no placeholder)
+    if ($random_assignment['form_id'] !== '-' || $random_assignment['seed'] !== '-' || $random_assignment['type'] !== '-') {
+        $metadata['random_assignment'] = $random_assignment;
     }
     
     // Prepare data for insertion

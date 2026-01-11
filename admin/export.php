@@ -113,7 +113,7 @@ function eipsi_export_to_excel() {
     $privacy_config = get_privacy_config($first_form_id);
     
     // Obtener todas las preguntas únicas para crear columnas (excluir campos internos)
-    $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id');
+    $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id', 'eipsi_consent_accepted');
     $all_questions = [];
     foreach ($results as $row) {
         $form_data = $row->form_responses ? json_decode($row->form_responses, true) : [];
@@ -124,15 +124,27 @@ function eipsi_export_to_excel() {
         }
     }
     
+    // Detectar si hay aleatorización real en los resultados
+    $has_randomization = false;
+    foreach ($results as $row) {
+        $metadata = !empty($row->metadata) ? json_decode($row->metadata, true) : [];
+        if (!empty($metadata['random_assignment']['form_id']) && $metadata['random_assignment']['form_id'] !== '-') {
+            $has_randomization = true;
+            break;
+        }
+    }
+    
     $data = array();
     // Encabezados: nuevo formato con IDs + metadatos + timestamps + preguntas dinámicas
     // ONLY include metadata columns if privacy config allows
     $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)');
     
-    // === Columnas de Aleatorización (Fase 1) ===
-    $headers[] = 'Assignment Form';
-    $headers[] = 'Seed';
-    $headers[] = 'Type (Random/Manual)';
+    // === Columnas de Aleatorización (Fase 1) - Solo si hay datos reales ===
+    if ($has_randomization) {
+        $headers[] = 'Assignment Form';
+        $headers[] = 'Seed';
+        $headers[] = 'Type (Random/Manual)';
+    }
     
     if ($privacy_config['ip_address']) {
         $headers[] = 'IP Address';
@@ -190,20 +202,7 @@ function eipsi_export_to_excel() {
             $end_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->end_timestamp_ms / 1000));
         }
         
-        // === Obtener datos de aleatorización ===
-        $assignment_form = '-';
-        $assignment_seed = '-';
-        $assignment_type = '-';
-        
-        // Buscar asignación en el formulario principal (si existe)
-        // El participant_id puede contener el email hasheado
-        $main_form_id = $form_id; // Usar el form_id actual como referencia
-        
-        // Intentar obtener la asignación del postmeta del formulario
-        // Nota: Esto requiere conocer el formulario principal con la config de random
-        // Por ahora dejamos campos vacíos si no hay referencia
-        // En una implementación completa, guardaríamos la referencia al formulario principal
-        
+        // === Obtener datos de aleatorización (solo si hay randomización real) ===
         $row_data = array(
             $form_id,
             $participant_id,
@@ -213,11 +212,19 @@ function eipsi_export_to_excel() {
             $duration,
             $start_time_utc,
             $end_time_utc,
-            // === Datos de aleatorización ===
-            $assignment_form,
-            $assignment_seed,
-            $assignment_type,
         );
+        
+        // Solo agregar datos de aleatorización si hay randomización real
+        if ($has_randomization) {
+            $metadata = !empty($row->metadata) ? json_decode($row->metadata, true) : [];
+            $assignment_form = $metadata['random_assignment']['form_id'] ?? '-';
+            $assignment_seed = $metadata['random_assignment']['seed'] ?? '-';
+            $assignment_type = $metadata['random_assignment']['type'] ?? '-';
+            
+            $row_data[] = $assignment_form;
+            $row_data[] = $assignment_seed;
+            $row_data[] = $assignment_type;
+        }
         
         // Add metadata fields only if privacy config allows
         if ($privacy_config['ip_address']) {
@@ -302,7 +309,7 @@ function eipsi_export_to_csv() {
     $privacy_config = get_privacy_config($first_form_id);
     
     // Obtener todas las preguntas únicas para crear columnas (excluir campos internos)
-    $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id');
+    $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id', 'eipsi_consent_accepted');
     $all_questions = [];
     foreach ($results as $row) {
         $form_data = $row->form_responses ? json_decode($row->form_responses, true) : [];
@@ -310,6 +317,16 @@ function eipsi_export_to_csv() {
             if (!in_array($question, $all_questions) && !in_array($question, $internal_fields)) {
                 $all_questions[] = $question;
             }
+        }
+    }
+    
+    // Detectar si hay aleatorización real en los resultados
+    $has_randomization = false;
+    foreach ($results as $row) {
+        $metadata = !empty($row->metadata) ? json_decode($row->metadata, true) : [];
+        if (!empty($metadata['random_assignment']['form_id']) && $metadata['random_assignment']['form_id'] !== '-') {
+            $has_randomization = true;
+            break;
         }
     }
     
@@ -323,10 +340,12 @@ function eipsi_export_to_csv() {
     // ONLY include metadata columns if privacy config allows
     $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)');
     
-    // === Columnas de Aleatorización (Fase 1) ===
-    $headers[] = 'Assignment Form';
-    $headers[] = 'Seed';
-    $headers[] = 'Type (Random/Manual)';
+    // === Columnas de Aleatorización (Fase 1) - Solo si hay datos reales ===
+    if ($has_randomization) {
+        $headers[] = 'Assignment Form';
+        $headers[] = 'Seed';
+        $headers[] = 'Type (Random/Manual)';
+    }
     
     if ($privacy_config['ip_address']) {
         $headers[] = 'IP Address';
@@ -384,11 +403,7 @@ function eipsi_export_to_csv() {
             $end_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->end_timestamp_ms / 1000));
         }
         
-        // === Obtener datos de aleatorización ===
-        $assignment_form = '-';
-        $assignment_seed = '-';
-        $assignment_type = '-';
-        
+        // === Obtener datos de aleatorización (solo si hay randomización real) ===
         $row_data = array(
             $form_id,
             $participant_id,
@@ -398,11 +413,19 @@ function eipsi_export_to_csv() {
             $duration,
             $start_time_utc,
             $end_time_utc,
-            // === Datos de aleatorización ===
-            $assignment_form,
-            $assignment_seed,
-            $assignment_type,
         );
+        
+        // Solo agregar datos de aleatorización si hay randomización real
+        if ($has_randomization) {
+            $metadata = !empty($row->metadata) ? json_decode($row->metadata, true) : [];
+            $assignment_form = $metadata['random_assignment']['form_id'] ?? '-';
+            $assignment_seed = $metadata['random_assignment']['seed'] ?? '-';
+            $assignment_type = $metadata['random_assignment']['type'] ?? '-';
+            
+            $row_data[] = $assignment_form;
+            $row_data[] = $assignment_seed;
+            $row_data[] = $assignment_type;
+        }
         
         // Add metadata fields only if privacy config allows
         if ($privacy_config['ip_address']) {
