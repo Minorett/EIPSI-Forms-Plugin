@@ -33,6 +33,38 @@
     }
 
     /**
+     * Valida que el consentimiento esté aceptado
+     * @returns {boolean} true si está validado, false si no
+     */
+    function validateConsentAccepted() {
+        const consentCheckbox = document.querySelector('input[name="eipsi_consent_accepted"]');
+        if (!consentCheckbox) return true; // Si no hay bloque de consent, pasar
+        
+        if (!consentCheckbox.checked) {
+            // Crear mensaje de error clínico
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'eipsi-consent-error';
+            errorMsg.textContent = '⛔ Debes aceptar los términos de consentimiento';
+            errorMsg.style.cssText = 'background:#fee; color:#c33; padding:12px; margin:12px 0; border-left:4px solid #c33;';
+            
+            // Remover error previo si existe
+            const existingError = consentCheckbox.closest('.eipsi-consent-block').querySelector('.eipsi-consent-error');
+            if (existingError) existingError.remove();
+            
+            consentCheckbox.closest('.eipsi-consent-block').appendChild(errorMsg);
+            consentCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            return false;
+        }
+        
+        // Limpiar mensaje de error si existe
+        const existingError = consentCheckbox.closest('.eipsi-consent-block').querySelector('.eipsi-consent-error');
+        if (existingError) existingError.remove();
+        
+        return true;
+    }
+
+    /**
      * Obtiene o genera Session ID único para esta sesión de formulario
      * Persiste durante toda la sesión (sessionStorage) para Save & Continue
      * @param {string} formId - ID del formulario
