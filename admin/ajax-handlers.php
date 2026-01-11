@@ -165,50 +165,80 @@ add_action('wp_ajax_eipsi_send_reminder_manual', 'eipsi_send_reminder_manual_han
 add_action('wp_ajax_eipsi_unsubscribe_reminders', 'eipsi_unsubscribe_reminders_handler');
 
 /**
- * AJAX Handler: Get list of available form templates from library
- * Returns: array of {id, name, status}
- * Frontend expects: data.data = [{id, name, status}]
- * 
+ * AJAX Handler: Get list of available forms for randomization dropdown
+ *
+ * - CPT can vary depending on installation/migrations.
+ *   Prefer eipsi_form (Form Library actual), but also support eipsi_form_template
+ *   to avoid breaking older sites.
+ * - Includes publish + private.
+ *
+ * Returns: array of {id, name, label, status, postType}
+ * Frontend expects: data.data = [{id, name, ...}]
+ *
  * @since 1.3.0
  */
 function eipsi_get_forms_list_handler() {
-    // Verificar nonce
-    if ( !isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'eipsi_admin_nonce') ) {
+    // Verificar nonce (aceptar GET o POST para robustez)
+    $nonce = '';
+    if (isset($_GET['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+    } elseif (isset($_POST['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+    }
+
+    if (empty($nonce) || !wp_verify_nonce($nonce, 'eipsi_admin_nonce')) {
         wp_send_json_error(array(
             'message' => __('Invalid security token', 'eipsi-forms')
         ), 403);
         return;
     }
-    
-    // Obtener templates publicados de la Form Library (eipsi_form_template)
+
+    // Determinar CPT disponible.
+    // Preferimos eipsi_form (instalaciones nuevas / librería real), y si no existe,
+    // caemos a eipsi_form_template (compatibilidad instalaciones viejas).
+    $post_type = null;
+
+    if (post_type_exists('eipsi_form')) {
+        $post_type = 'eipsi_form';
+    } elseif (post_type_exists('eipsi_form_template')) {
+        $post_type = 'eipsi_form_template';
+    }
+
+    if (!$post_type) {
+        wp_send_json_success(array());
+        return;
+    }
+
     $args = array(
-        'post_type' => 'eipsi_form_template',  // ✅ CORRECTO - Form Library
-        'post_status' => 'publish',
+        'post_type' => $post_type,
+        'post_status' => array('publish', 'private'),
         'posts_per_page' => -1,
         'orderby' => 'title',
         'order' => 'ASC',
     );
-    
-    $templates = get_posts($args);
-    
-    if (empty($templates)) {
-        // Retornar array vacío (sin doble anidado)
+
+    $forms = get_posts($args);
+
+    if (empty($forms)) {
         wp_send_json_success(array());
         return;
     }
-    
-    // Transformar a formato esperado por el frontend
-    // Frontend espera campo "name" (no "title")
-    $templates_list = array_map(function($template) {
+
+    $forms_list = array_map(function($form) {
+        $title = $form->post_title ? $form->post_title : __('(Sin título)', 'eipsi-forms');
+
         return array(
-            'id' => intval($template->ID),
-            'name' => esc_html($template->post_title),  // ✅ Cambio: title → name
-            'status' => $template->post_status,
+            'id' => intval($form->ID),
+            // Compat: el editor actualmente usa .name
+            'name' => esc_html($title),
+            // Compat: si algún frontend usa .label
+            'label' => esc_html($title),
+            'status' => $form->post_status,
+            'postType' => $form->post_type,
         );
-    }, $templates);
-    
-    // Retornar lista directamente (sin doble anidado success/data)
-    wp_send_json_success($templates_list);
+    }, $forms);
+
+    wp_send_json_success($forms_list);
 }
 
 /**
