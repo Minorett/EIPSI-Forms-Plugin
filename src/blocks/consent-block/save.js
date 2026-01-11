@@ -1,4 +1,5 @@
 import { useBlockProps, RichText } from '@wordpress/block-editor';
+import { parseConsentMarkdown } from '../../../assets/js/consent-markdown-parser';
 
 function getPlainTextFromHtml( html ) {
 	return ( html || '' )
@@ -16,9 +17,16 @@ const renderConsentBody = ( text ) => {
 
 	return (
 		<div className="consent-body">
-			{ lines.map( ( line, index ) => (
-				<p key={ `${ line }-${ index }` }>{ line }</p>
-			) ) }
+			{ lines.map( ( line, index ) => {
+				// Parsear markdown en cada línea para frontend
+				const parsedLine = parseConsentMarkdown( line );
+				return (
+					<p
+						key={ `${ line }-${ index }` }
+						dangerouslySetInnerHTML={ { __html: parsedLine } }
+					/>
+				);
+			} ) }
 		</div>
 	);
 };
