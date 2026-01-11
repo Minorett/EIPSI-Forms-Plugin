@@ -1176,14 +1176,6 @@ function eipsi_ajax_get_response_details() {
                 }
                 }
 
-                // Leyenda de colores
-            $html .= '<div style="margin-top: 15px; padding: 10px; background: #ffffff; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">';
-            $html .= '<strong style="color: #495057;">📊 Leyenda de barras:</strong> ';
-            $html .= '<span style="display: inline-block; width: 12px; height: 12px; background: #dc2626; border-radius: 2px; margin: 0 5px;"></span> <10 seg (rápido) | ';
-            $html .= '<span style="display: inline-block; width: 12px; height: 12px; background: #f59e0b; border-radius: 2px; margin: 0 5px;"></span> 10-30 seg (normal) | ';
-            $html .= '<span style="display: inline-block; width: 12px; height: 12px; background: #10b981; border-radius: 2px; margin: 0 5px;"></span> >30 seg (pausado)';
-            $html .= '</div>';
-
                 // Page breakdown
             $html .= '<div style="margin-top: 10px; max-height: 200px; overflow-y: auto;">';
             $html .= '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
@@ -1213,19 +1205,10 @@ function eipsi_ajax_get_response_details() {
                     }
                 }
 
-                // Create simple bar visualization
-                $max_duration = 60; // Assume 60 seconds as max for visualization
-                $bar_width = min(100, ($duration / $max_duration) * 100);
-                $bar_color = $duration < 10 ? '#dc2626' : ($duration < 30 ? '#f59e0b' : '#10b981');
-
                 $html .= '<tr>';
-                $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef;"><strong>Página ' . $page_number . '</strong></td>';
-                $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef; text-align: right;">' . number_format($duration, 1) . ' s</td>';
-                $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef;">' . esc_html($formatted_time) . '</td>';
-                $html .= '<td style="padding: 8px; border-bottom: 1px solid #e9ecef; width: 100px;">';
-                $html .= '<div style="width: 100px; height: 16px; background: #e9ecef; border-radius: 2px; overflow: hidden;">';
-                $html .= '<div style="width: ' . $bar_width . '%; height: 100%; background: ' . $bar_color . ';"></div>';
-                $html .= '</div></td>';
+                $html .= '<td style="padding: 12px 8px; border-bottom: 1px solid #eee;"><strong>Página ' . $page_number . '</strong></td>';
+                $html .= '<td style="padding: 12px 8px; border-bottom: 1px solid #eee;">' . number_format($duration, 1) . ' s</td>';
+                $html .= '<td style="padding: 12px 8px; border-bottom: 1px solid #eee;">' . esc_html($formatted_time) . '</td>';
                 $html .= '</tr>';
             }
 

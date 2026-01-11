@@ -27,6 +27,7 @@ import {
 } from '../../utils/styleTokens';
 import FormStylePanel from '../../components/FormStylePanel';
 import ConditionalLogicMap from '../../components/ConditionalLogicMap';
+import TimingTable from '../../components/TimingTable';
 
 const COMPLETION_DEFAULTS = {
 	title: '¡Gracias por completar el cuestionario!',
@@ -61,6 +62,10 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		// Aleatorización
 		useRandomization,
 		randomConfig: randomConfigAttr,
+		// Analytics & Timing
+		capturePageTiming,
+		captureFieldTiming,
+		showTimingAnalysis,
 	} = attributes;
 
 	// Blindaje: si por cualquier motivo randomConfig llega undefined/null (bloques viejos, etc.),
@@ -950,6 +955,44 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					/>
 				</PanelBody>
 
+				<PanelBody
+					title={ __( 'Analytics & Timing', 'eipsi-forms' ) }
+					initialOpen={ false }
+				>
+					<ToggleControl
+						label={ __(
+							'Capturar tiempos por página',
+							'eipsi-forms'
+						) }
+						checked={ capturePageTiming }
+						onChange={ ( value ) =>
+							setAttributes( { capturePageTiming: value } )
+						}
+					/>
+					<ToggleControl
+						label={ __(
+							'Capturar tiempos por campo',
+							'eipsi-forms'
+						) }
+						checked={ captureFieldTiming }
+						onChange={ ( value ) =>
+							setAttributes( { captureFieldTiming: value } )
+						}
+					/>
+					<hr />
+					<ToggleControl
+						label={ __( '⏱️ Hide Timing Analysis', 'eipsi-forms' ) }
+						checked={ ! showTimingAnalysis }
+						onChange={ ( value ) =>
+							setAttributes( { showTimingAnalysis: ! value } )
+						}
+						help={ __(
+							'Muestra u oculta la tabla de análisis de tiempos en esta vista previa.',
+							'eipsi-forms'
+						) }
+					/>
+				</PanelBody>
+
 				{ /* === Panel de Aleatorización (Fase 1) === */ }
 				<PanelBody
 					title={ __( '🎲 Aleatorización', 'eipsi-forms' ) }
@@ -1511,6 +1554,23 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						</div>
 					) }
 				</div>
+
+				<TimingTable
+					showTimingAnalysis={ showTimingAnalysis }
+					totalTime="12.5"
+					pages={ [
+						{
+							name: 'Página 1',
+							duration: '5.2 s',
+							timestamp: '14:20:05',
+						},
+						{
+							name: 'Página 2',
+							duration: '7.3 s',
+							timestamp: '14:20:12',
+						},
+					] }
+				/>
 			</div>
 		</>
 	);

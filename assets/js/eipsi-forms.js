@@ -920,9 +920,20 @@
             ( Date.now() - window.eipsiTimers.pageStartTime ) / 1000; // Convertir a segundos
 
         // Guardar timer
-        window.eipsiTimers.pageTimers[ window.eipsiTimers.currentPageIndex ] = {
-            duration: parseFloat( duration.toFixed( 1 ) ),
-            timestamp: new Date().toISOString(),
+        const now = new Date();
+        const formattedTime =
+            now.getHours().toString().padStart( 2, '0' ) +
+            ':' +
+            now.getMinutes().toString().padStart( 2, '0' ) +
+            ':' +
+            now.getSeconds().toString().padStart( 2, '0' );
+
+        window.eipsiTimers.pageTimers[
+            window.eipsiTimers.currentPageIndex
+        ] = {
+            duration: duration.toFixed( 1 ) + ' s',
+            timestamp: formattedTime,
+            rawDuration: parseFloat( duration.toFixed( 1 ) ),
         };
 
         if ( window.eipsiFormsConfig?.settings?.debug && window.console?.log ) {
@@ -942,7 +953,8 @@
     function calculateTotalDuration() {
         let total = 0;
         for ( const pageIndex in window.eipsiTimers.pageTimers ) {
-            total += window.eipsiTimers.pageTimers[ pageIndex ].duration;
+            const timer = window.eipsiTimers.pageTimers[ pageIndex ];
+            total += timer.rawDuration || parseFloat( timer.duration ) || 0;
         }
         return parseFloat( total.toFixed( 1 ) );
     }
