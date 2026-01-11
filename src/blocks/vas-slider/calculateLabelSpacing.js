@@ -12,6 +12,12 @@
 
 export const VAS_LABEL_FIRST_LEFT_PERCENT = 3;
 export const VAS_LABEL_LAST_LEFT_PERCENT = 90;
+
+// Ajuste visual: con 2 labels, el primero necesita un pelín más de margen
+// para alinear mejor con el inicio real del track del slider.
+// Ticket: "Ajustar Posicionamiento de Labels en VAS de 2 Opciones"
+export const VAS_TWO_LABEL_FIRST_LEFT_PERCENT = 7;
+
 export const VAS_ALIGNMENT_INTERNAL_MAX = 80;
 
 export function sanitizeAlignmentInternal( value, fallback = 40 ) {
@@ -110,11 +116,12 @@ export function calculateLabelLeftPercent(
 		return 50;
 	}
 	if ( totalLabels === 2 ) {
-		// 2 labels: distribuir según alignment
-		const ratio = alignmentDisplay / 100;
-		const minMargin = 10 + ( 1 - ratio ) * 15; // 10% a 25%
-		const leftPercents = [ minMargin, 100 - minMargin ];
-		return leftPercents[ index ];
+		// 2 labels: caso clínico ultra común (Nada / Mucho).
+		// Ajustamos SOLO el primer label para mejorar la alineación visual con el
+		// inicio real del track del slider.
+		return index === 0
+			? VAS_TWO_LABEL_FIRST_LEFT_PERCENT
+			: VAS_LABEL_LAST_LEFT_PERCENT;
 	}
 
 	// Para 3-5 labels: usar mapeo + interpolación
