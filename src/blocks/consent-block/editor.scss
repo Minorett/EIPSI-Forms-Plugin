@@ -5,103 +5,107 @@
  */
 
 .wp-block-eipsi-consent-block {
-	.form-group.eipsi-field {
-		&.eipsi-consent-field {
-			padding: var(--eipsi-spacing-sm, 1.5em);
-			border: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-primary, #005a87);
-			border-radius: var(--eipsi-border-radius-sm, 8px);
-			background: var(--eipsi-color-background-subtle, #f8f9fa);
-			box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
-			position: relative;
-			transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
-			margin: 1.5em 0;
+	// Soporta ambas estructuras posibles del editor:
+	// 1) cuando el wrapper del bloque tiene también las clases del campo
+	// 2) cuando existe un .form-group interno dentro del wrapper
+	&.form-group.eipsi-field.eipsi-consent-field,
+	.form-group.eipsi-field.eipsi-consent-field {
+		padding: var(--eipsi-spacing-sm, 1.5em);
+		border: var(--eipsi-border-width-focus, 2px) solid
+			var(--eipsi-color-primary, #005a87);
+		border-radius: var(--eipsi-border-radius-sm, 8px);
+		background: var(--eipsi-color-background-subtle, #f8f9fa);
+		box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+		position: relative;
+		transition: all var(--eipsi-transition-duration, 0.2s)
+			var(--eipsi-transition-timing, ease);
+		margin: 1.5em 0;
 
-			&::before {
-				content: "CONSENT";
-				position: absolute;
-				top: -10px;
-				left: 12px;
-				background: var(--eipsi-color-primary, #005a87);
-				color: var(--eipsi-color-button-text, #ffffff);
-				padding: 2px 8px;
-				border-radius: 3px;
-				font-size: 10px;
-				font-weight: 600;
-				text-transform: uppercase;
-				letter-spacing: 0.5px;
-			}
+		&::before {
+			content: "CONSENT";
+			position: absolute;
+			top: -10px;
+			left: 12px;
+			background: var(--eipsi-color-primary, #005a87);
+			color: var(--eipsi-color-button-text, #ffffff);
+			padding: 2px 8px;
+			border-radius: 3px;
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
 
-			.consent-title {
-				margin: 0 0 1em 0;
-				font-size: 1.2em;
-				font-weight: 700;
-				color: var(--eipsi-color-text, #2c3e50);
-			}
+		.consent-title {
+			margin: 0 0 1em 0;
+			font-size: 1.2em;
+			font-weight: 700;
+			color: var(--eipsi-color-text, #2c3e50);
+		}
 
-			.consent-body {
-				color: var(--eipsi-color-text, #2c3e50);
-				line-height: 1.6;
+		.eipsi-consent-body {
+			color: var(--eipsi-color-text, #2c3e50);
+			line-height: 1.6;
 
-				p {
-					margin: 0.5em 0;
+			p {
+				margin: 0.5em 0;
 
-					&:first-child {
-						margin-top: 0;
-					}
+				&:first-child {
+					margin-top: 0;
+				}
 
-					&:last-child {
-						margin-bottom: 0;
-					}
+				&:last-child {
+					margin-bottom: 0;
 				}
 			}
+		}
 
-			.eipsi-preview-placeholder {
-				color: #9ca3af;
-				font-style: italic;
-				text-align: center;
-				padding: 2rem 1rem;
-				margin: 0;
-				border: 2px dashed #d1d5db;
-				border-radius: 4px;
-				background: #f9fafb;
+		.eipsi-preview-placeholder {
+			color: #9ca3af;
+			font-style: italic;
+			text-align: center;
+			padding: 2rem 1rem;
+			margin: 0;
+			border: 2px dashed #d1d5db;
+			border-radius: 4px;
+			background: #f9fafb;
+		}
+
+		.consent-note {
+			margin-top: 1em;
+			padding-top: 0.75em;
+			border-top: 1px solid var(--eipsi-color-border, #e2e8f0);
+			font-size: 0.9em;
+			color: var(--eipsi-color-text-muted, #64748b);
+			font-family: var(--eipsi-font-family-body, inherit);
+			font-style: italic;
+			line-height: var(--eipsi-line-height-base, 1.6);
+		}
+
+		.eipsi-consent-checkbox-wrapper {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.75rem;
+			margin-top: 1.5rem;
+			padding-top: 1rem;
+			border-top: 1px solid var(--eipsi-color-border, #e2e8f0);
+
+			input[type="checkbox"] {
+				margin-top: 2px;
+				width: 18px;
+				height: 18px;
+				cursor: not-allowed;
 			}
 
-			.consent-note {
-				margin-top: 1em;
-				padding-top: 0.75em;
-				border-top: 1px solid var(--eipsi-color-border, #e2e8f0);
-				font-size: 0.9em;
-				color: var(--eipsi-color-text-muted, #64748b);
-				font-family: var(--eipsi-font-family-body, inherit);
-				font-style: italic;
-				line-height: var(--eipsi-line-height-base, 1.6);
-			}
-
-			.consent-checkbox-wrapper {
+			label {
 				display: flex;
-				align-items: flex-start;
-				gap: 0.75rem;
-				margin-top: 1.5rem;
-				padding-top: 1rem;
-				border-top: 1px solid var(--eipsi-color-border, #e2e8f0);
+				align-items: center;
+				font-weight: 500;
+				color: var(--eipsi-color-text, #374151);
+				font-size: 14px;
+				line-height: 1.5;
 
-				input[type="checkbox"] {
-					margin-top: 2px;
-					width: 18px;
-					height: 18px;
-					cursor: not-allowed;
-				}
-
-				label {
-					display: flex;
-					align-items: center;
-					font-weight: 500;
-					color: #374151;
-					font-size: 14px;
-					line-height: 1.5;
-				}
-
-				.required-asterisk {
+				.eipsi-required-mark {
 					color: #dc2626;
 					font-weight: bold;
 					margin-left: 0.25rem;
@@ -111,6 +115,7 @@
 	}
 
 	&:hover {
+		&.form-group.eipsi-field.eipsi-consent-field,
 		.form-group.eipsi-field.eipsi-consent-field {
 			border-color: var(--eipsi-color-primary-hover, #003d5b);
 			background: var(--eipsi-color-secondary, #e3f2fd);
@@ -135,7 +140,8 @@
 			}
 
 			.block-editor-rich-text__editable {
-				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+				sans-serif;
 				font-size: 13px;
 				line-height: 1.6;
 
@@ -162,36 +168,40 @@
 	}
 }
 
-// Dark mode support
+// Dark mode support (editor) - no depende de variables del Form Container
+// porque el editor de WP no tiene el wrapper .eipsi-form/.vas-dinamico-form.
 @media (prefers-color-scheme: dark) {
 	.wp-block-eipsi-consent-block {
+		&.form-group.eipsi-field.eipsi-consent-field,
 		.form-group.eipsi-field.eipsi-consent-field {
 			background: #1f2937;
-			border-color: #3b82f6;
+			border-color: var(--eipsi-color-primary, #3b82f6);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
 
 			&::before {
-				background: #3b82f6;
+				background: var(--eipsi-color-primary, #3b82f6);
 			}
 
 			.consent-title {
 				color: #f3f4f6;
 			}
 
-			.consent-body {
+			.eipsi-consent-body {
 				color: #e5e7eb;
 			}
 
 			.eipsi-preview-placeholder {
-				color: #6b7280;
+				color: #9ca3af;
 				border-color: #374151;
-				background: #1f2937;
+				background: #111827;
 			}
 
 			.consent-note {
 				color: #9ca3af;
+				border-top-color: #374151;
 			}
 
-			.consent-checkbox-wrapper {
+			.eipsi-consent-checkbox-wrapper {
 				border-top-color: #374151;
 
 				label {
@@ -201,8 +211,9 @@
 		}
 
 		&:hover {
+			&.form-group.eipsi-field.eipsi-consent-field,
 			.form-group.eipsi-field.eipsi-consent-field {
-				border-color: #60a5fa;
+				border-color: var(--eipsi-color-primary-hover, #60a5fa);
 				background: #1e3a8a;
 			}
 		}
@@ -211,12 +222,12 @@
 	.components-panel__body.is-opened {
 		.eipsi-sidebar-control {
 			.eipsi-richtext-field {
-				background: #1f2937;
+				background: #111827;
 				border-color: #374151;
 				color: #e5e7eb;
 
 				&:focus-within {
-					border-color: #60a5fa;
+					border-color: var(--eipsi-color-primary, #60a5fa);
 					box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
 				}
 			}
