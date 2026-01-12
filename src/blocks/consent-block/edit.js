@@ -108,8 +108,8 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		'data-required': mostrarCheckbox && isRequired ? 'true' : 'false',
 	} );
 
-	const displayLabel =
-		titulo || __( 'Consentimiento Informado', 'eipsi-forms' );
+	// Título opcional - solo se muestra si existe (sin fallback)
+	const displayLabel = titulo;
 
 	return (
 		<>
