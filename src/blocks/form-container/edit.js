@@ -297,7 +297,23 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	// Generar link con random - mejorada para shortcode público
 	const generateRandomLink = async () => {
 		// Verificar que hay configuración de aleatorización
-		if ( ! randomConfig.enabled || randomConfig.forms.length < 2 ) {
+		// IMPORTANTE: Leer directamente de attributes para evitar desincronización con la UI
+		const currentRandomConfig =
+			attributes.randomConfig &&
+			typeof attributes.randomConfig === 'object'
+				? {
+						...RANDOMIZATION_DEFAULT_CONFIG,
+						...attributes.randomConfig,
+						forms: Array.isArray( attributes.randomConfig.forms )
+							? attributes.randomConfig.forms
+							: [],
+				  }
+				: { ...RANDOMIZATION_DEFAULT_CONFIG };
+
+		if (
+			! currentRandomConfig.enabled ||
+			currentRandomConfig.forms.length < 2
+		) {
 			// eslint-disable-next-line no-alert
 			window.alert(
 				__(
