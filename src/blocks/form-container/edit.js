@@ -173,14 +173,30 @@ export default function Edit( {
 
 	// Añadir formulario a la lista
 	const addFormToRandom = ( formIdToAdd ) => {
+		// IMPORTANTE: Leer directamente de attributes para evitar desincronización
+		const currentRandomConfig =
+			attributes.randomConfig &&
+			typeof attributes.randomConfig === 'object'
+				? {
+						...RANDOMIZATION_DEFAULT_CONFIG,
+						...attributes.randomConfig,
+						forms: Array.isArray( attributes.randomConfig.forms )
+							? attributes.randomConfig.forms
+							: [],
+				  }
+				: { ...RANDOMIZATION_DEFAULT_CONFIG };
+
 		if (
 			! formIdToAdd ||
-			randomConfig.forms.includes( parseInt( formIdToAdd ) )
+			currentRandomConfig.forms.includes( parseInt( formIdToAdd ) )
 		) {
 			return;
 		}
-		const newForms = [ ...randomConfig.forms, parseInt( formIdToAdd ) ];
-		const newProbs = { ...randomConfig.probabilities };
+		const newForms = [
+			...currentRandomConfig.forms,
+			parseInt( formIdToAdd ),
+		];
+		const newProbs = { ...currentRandomConfig.probabilities };
 
 		// Asignar probabilidad inicial equitativa
 		const initialProb = Math.floor( 100 / newForms.length );
@@ -193,7 +209,7 @@ export default function Edit( {
 
 		setAttributes( {
 			randomConfig: {
-				...randomConfig,
+				...currentRandomConfig,
 				forms: newForms,
 				probabilities: newProbs,
 			},
@@ -202,10 +218,23 @@ export default function Edit( {
 
 	// Eliminar formulario de la lista
 	const removeFormFromRandom = ( formIdToRemove ) => {
-		const newForms = randomConfig.forms.filter(
+		// IMPORTANTE: Leer directamente de attributes para evitar desincronización
+		const currentRandomConfig =
+			attributes.randomConfig &&
+			typeof attributes.randomConfig === 'object'
+				? {
+						...RANDOMIZATION_DEFAULT_CONFIG,
+						...attributes.randomConfig,
+						forms: Array.isArray( attributes.randomConfig.forms )
+							? attributes.randomConfig.forms
+							: [],
+				  }
+				: { ...RANDOMIZATION_DEFAULT_CONFIG };
+
+		const newForms = currentRandomConfig.forms.filter(
 			( id ) => id !== formIdToRemove
 		);
-		const newProbs = { ...randomConfig.probabilities };
+		const newProbs = { ...currentRandomConfig.probabilities };
 		delete newProbs[ formIdToRemove ];
 
 		// Redistribuir probabilidades
@@ -221,7 +250,7 @@ export default function Edit( {
 
 		setAttributes( {
 			randomConfig: {
-				...randomConfig,
+				...currentRandomConfig,
 				forms: newForms,
 				probabilities: newProbs,
 			},
@@ -230,12 +259,31 @@ export default function Edit( {
 
 	// Actualizar probabilidad de un formulario
 	const updateProbability = ( formIdToUpdate, newValue ) => {
+		// IMPORTANTE: Leer directamente de attributes para evitar desincronización
+		const currentRandomConfig =
+			attributes.randomConfig &&
+			typeof attributes.randomConfig === 'object'
+				? {
+						...RANDOMIZATION_DEFAULT_CONFIG,
+						...attributes.randomConfig,
+						forms: Array.isArray( attributes.randomConfig.forms )
+							? attributes.randomConfig.forms
+							: [],
+						probabilities:
+							attributes.randomConfig.probabilities &&
+							typeof attributes.randomConfig.probabilities ===
+								'object'
+								? attributes.randomConfig.probabilities
+								: {},
+				  }
+				: { ...RANDOMIZATION_DEFAULT_CONFIG };
+
 		const value = parseInt( newValue );
-		const newProbs = { ...randomConfig.probabilities };
+		const newProbs = { ...currentRandomConfig.probabilities };
 		newProbs[ formIdToUpdate ] = value;
 
 		// Ajustar otros formularios para mantener suma = 100
-		const otherForms = randomConfig.forms.filter(
+		const otherForms = currentRandomConfig.forms.filter(
 			( id ) => id !== formIdToUpdate
 		);
 		if ( otherForms.length > 0 ) {
@@ -267,7 +315,7 @@ export default function Edit( {
 
 		setAttributes( {
 			randomConfig: {
-				...randomConfig,
+				...currentRandomConfig,
 				probabilities: newProbs,
 			},
 		} );
@@ -409,12 +457,12 @@ export default function Edit( {
 		return form ? form.name || form.label : `Formulario ${ id }`;
 	};
 
-	// Calcular total de probabilidades
+	// Calcular total de probabilidades usando la variable derivada sincronizada
 	const totalProbability = Object.values(
 		randomConfig.probabilities || {}
 	).reduce( ( sum, val ) => sum + ( parseInt( val ) || 0 ), 0 );
 
-	// Formularios no seleccionados para dropdown
+	// Formularios no seleccionados para dropdown usando la variable derivada sincronizada
 	const availableForSelect = availableForms.filter(
 		( f ) => ! randomConfig.forms.includes( f.id )
 	);
