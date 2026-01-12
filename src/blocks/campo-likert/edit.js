@@ -432,7 +432,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									{ maxValue }
 								</div>
 								<Button
-									variant="secondary"
+									variant={
+										reversed ? 'primary' : 'secondary'
+									}
 									icon="shuffle"
 									onClick={ () =>
 										setAttributes( {
@@ -444,8 +446,37 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 										'eipsi-forms'
 									) }
 									disabled={ isUsingPreset }
+									style={ {
+										transform: reversed
+											? 'scaleX(-1)'
+											: 'none',
+										transition: 'transform 0.2s ease',
+									} }
 								/>
 							</div>
+							{ reversed && (
+								<div
+									style={ {
+										marginTop: '8px',
+										padding: '8px 12px',
+										backgroundColor: '#e6f4ff',
+										border: '1px solid #b3d7ff',
+										borderRadius: '4px',
+										fontSize: '12px',
+										color: '#0052cc',
+										display: 'flex',
+										alignItems: 'center',
+										gap: '6px',
+									} }
+								>
+									<span>🔄</span>
+									<span>
+										Escala invertida: mostrando de{ ' ' }
+										<strong>{ maxValue }</strong> a{ ' ' }
+										<strong>{ minValue }</strong>
+									</span>
+								</div>
+							) }
 						</BaseControl>
 					) : (
 						<Notice status="info" isDismissible={ false }>
@@ -495,8 +526,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					</label>
 				) }
 				<div
-					className="likert-scale likert-preview"
+					className={ `likert-scale likert-preview${
+						reversed ? ' reversed' : ''
+					}` }
 					data-scale={ `${ minValue }-${ maxValue }` }
+					data-reversed={ reversed ? 'true' : 'false' }
 				>
 					<ul className="likert-list">
 						{ scale.map( ( value, index ) => {
