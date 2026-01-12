@@ -112,7 +112,8 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
     // === Estado para Aleatorización ===
     const [ availableForms, setAvailableForms ] = useState( [] );
     const [ loadingForms, setLoadingForms ] = useState( false );
-    const [ linkCopied, setLinkCopied ] = useState( false );
+    const [ publicLinkCopied, setPublicLinkCopied ] = useState( false );
+    const [ shortcodeCopied, setShortcodeCopied ] = useState( false );
     const [ manualEmail, setManualEmail ] = useState( '' );
     const [ manualFormId, setManualFormId ] = useState( '' );
 
@@ -297,64 +298,88 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
     // Generar link con random - mejorada para shortcode público
     const generateRandomLink = async () => {
         // Verificar que hay configuración de aleatorización
-        if (!randomConfig.enabled || randomConfig.forms.length < 2) {
+        if ( ! randomConfig.enabled || randomConfig.forms.length < 2 ) {
             // eslint-disable-next-line no-alert
-            window.alert(__('Necesitás configurar al menos 2 formularios para generar el link de aleatorización.', 'eipsi-forms'));
+            window.alert(
+                __(
+                    'Necesitás configurar al menos 2 formularios para generar el link de aleatorización.',
+                    'eipsi-forms'
+                )
+            );
             return;
         }
 
         try {
-            const ajaxUrl = window?.eipsiEditorData?.ajaxurl || '/wp-admin/admin-ajax.php';
-            const nonce = window?.eipsiEditorData?.nonce || window?.eipsiAdminNonce || '';
+            const ajaxUrl =
+                window?.eipsiEditorData?.ajaxurl || '/wp-admin/admin-ajax.php';
+            const nonce =
+                window?.eipsiEditorData?.nonce || window?.eipsiAdminNonce || '';
 
             // Obtener páginas disponibles con el shortcode
             const response = await fetch(
-                `${ajaxUrl}?action=eipsi_get_randomization_pages&nonce=${encodeURIComponent(nonce)}`,
+                `${ ajaxUrl }?action=eipsi_get_randomization_pages&nonce=${ encodeURIComponent(
+                    nonce
+                ) }`,
                 { credentials: 'same-origin' }
             );
 
             const data = await response.json();
-            
-            if (data.success && data.data.length > 0) {
+
+            if ( data.success && data.data.length > 0 ) {
                 // Usar la primera página disponible con el shortcode
-                const selectedPage = data.data[0];
-                const link = `${selectedPage.link}?eipsi_random=true&study_id=${formId}`;
-                
+                const selectedPage = data.data[ 0 ];
+                const link = `${ selectedPage.link }?eipsi_random=true&study_id=${ formId }`;
+
                 // eslint-disable-next-line no-undef
-                navigator.clipboard.writeText(link).then(() => {
-                    setLinkCopied(true);
-                    setTimeout(() => setLinkCopied(false), 2000);
-                });
+                navigator.clipboard.writeText( link ).then( () => {
+                    setLinkCopied( true );
+                    setTimeout( () => setLinkCopied( false ), 2000 );
+                } );
 
                 // eslint-disable-next-line no-alert
-                window.alert(`${__('Link generado:', 'eipsi-forms')}\n${link}`);
+                window.alert(
+                    `${ __( 'Link generado:', 'eipsi-forms' ) }\n${ link }`
+                );
             } else {
                 // Fallback: generar link con URL actual
-                const currentUrl = window.location.href.split('?')[0];
-                const fallbackLink = `${currentUrl}?eipsi_random=true&study_id=${formId}`;
-                
+                const currentUrl = window.location.href.split( '?' )[ 0 ];
+                const fallbackLink = `${ currentUrl }?eipsi_random=true&study_id=${ formId }`;
+
                 // eslint-disable-next-line no-undef
-                navigator.clipboard.writeText(fallbackLink).then(() => {
-                    setLinkCopied(true);
-                    setTimeout(() => setLinkCopied(false), 2000);
-                });
+                navigator.clipboard.writeText( fallbackLink ).then( () => {
+                    setLinkCopied( true );
+                    setTimeout( () => setLinkCopied( false ), 2000 );
+                } );
 
                 // eslint-disable-next-line no-alert
-                window.alert(`${__('Link generado (página actual):', 'eipsi-forms')}\n${fallbackLink}\n\n${__('⚠️ Recomendación: creá una página con el shortcode [eipsi_randomized_form] para un mejor funcionamiento.', 'eipsi-forms')}`);
+                window.alert(
+                    `${ __(
+                        'Link generado (página actual):',
+                        'eipsi-forms'
+                    ) }\n${ fallbackLink }\n\n${ __(
+                        '⚠️ Recomendación: creá una página con el shortcode [eipsi_randomized_form] para un mejor funcionamiento.',
+                        'eipsi-forms'
+                    ) }`
+                );
             }
-        } catch (error) {
+        } catch ( error ) {
             // Fallback en caso de error
-            const currentUrl = window.location.href.split('?')[0];
-            const fallbackLink = `${currentUrl}?eipsi_random=true&study_id=${formId}`;
-            
+            const currentUrl = window.location.href.split( '?' )[ 0 ];
+            const fallbackLink = `${ currentUrl }?eipsi_random=true&study_id=${ formId }`;
+
             // eslint-disable-next-line no-undef
-            navigator.clipboard.writeText(fallbackLink).then(() => {
-                setLinkCopied(true);
-                setTimeout(() => setLinkCopied(false), 2000);
-            });
+            navigator.clipboard.writeText( fallbackLink ).then( () => {
+                setLinkCopied( true );
+                setTimeout( () => setLinkCopied( false ), 2000 );
+            } );
 
             // eslint-disable-next-line no-alert
-            window.alert(`${__('Link generado (fallback):', 'eipsi-forms')}\n${fallbackLink}`);
+            window.alert(
+                `${ __(
+                    'Link generado (fallback):',
+                    'eipsi-forms'
+                ) }\n${ fallbackLink }`
+            );
         }
     };
 
@@ -362,6 +387,54 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
     const getFormName = ( id ) => {
         const form = availableForms.find( ( f ) => f.id === parseInt( id ) );
         return form ? form.name || form.label : `Formulario ${ id }`;
+    };
+
+    // === Funciones Helpers para Links Públicos ===
+
+    /**
+     * Genera el link público para acceso aleatorizado
+     */
+    const generatePublicLink = () => {
+        if ( ! formId ) {
+            return '';
+        }
+
+        // Obtener la URL base del sitio
+        const baseUrl =
+            window?.eipsiEditorData?.siteUrl || window.location.origin;
+
+        // Usar la página especial de aleatorización
+        return `${ baseUrl }/estudio-aleatorio/?form_id=${ formId }`;
+    };
+
+    /**
+     * Genera el shortcode para copiar
+     */
+    const generateShortcode = () => {
+        if ( ! formId ) {
+            return '';
+        }
+        return `[eipsi_randomized_form study_id="${ formId }"]`;
+    };
+
+    /**
+     * Copia texto al portapapeles con feedback visual
+     * @param text
+     * @param type
+     */
+    const copyToClipboard = ( text, type ) => {
+        navigator.clipboard.writeText( text ).then( () => {
+            if ( type === 'publicLink' ) {
+                setPublicLinkCopied( true );
+                setTimeout( () => setPublicLinkCopied( false ), 2000 );
+            } else if ( type === 'shortcode' ) {
+                setShortcodeCopied( true );
+                setTimeout( () => setShortcodeCopied( false ), 2000 );
+            } else {
+                setLinkCopied( true );
+                setTimeout( () => setLinkCopied( false ), 2000 );
+            }
+        } );
     };
 
     // Calcular total de probabilidades
@@ -1455,20 +1528,134 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
                                 ) }
                             </BaseControl>
 
-                            { /* Botón generar link */ }
-                            <Button
-                                variant="secondary"
-                                onClick={ generateRandomLink }
-                                style={ { width: '100%', marginTop: '16px' } }
-                            >
-                                { linkCopied
-                                    ? '✓ ' + __( 'Link copiado', 'eipsi-forms' )
-                                    : '🔗 ' +
-                                      __(
-                                            'Generar link con random',
+                            { /* Inputs para Link Público y Shortcode */ }
+                            <div style={ { marginTop: '16px' } }>
+                                { /* Link Público */ }
+                                <BaseControl
+                                    label={ __(
+                                        '🔗 Link Público:',
+                                        'eipsi-forms'
+                                    ) }
+                                    help={ __(
+                                        'Comparte este link con los participantes. Al entrar, se les asigna aleatoriamente un formulario (50/50).',
+                                        'eipsi-forms'
+                                    ) }
+                                >
+                                    <div
+                                        style={ {
+                                            display: 'flex',
+                                            gap: '8px',
+                                        } }
+                                    >
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={ generatePublicLink() }
+                                            style={ {
+                                                flex: 1,
+                                                padding: '8px',
+                                                border: '1px solid #ccc',
+                                                borderRadius: '4px',
+                                                fontFamily: 'monospace',
+                                                fontSize: '12px',
+                                            } }
+                                        />
+                                        <Button
+                                            variant="secondary"
+                                            onClick={ () =>
+                                                copyToClipboard(
+                                                    generatePublicLink(),
+                                                    'publicLink'
+                                                )
+                                            }
+                                            style={ { flexShrink: 0 } }
+                                        >
+                                            { publicLinkCopied
+                                                ? '✅ Copiado'
+                                                : '📋 Copiar' }
+                                        </Button>
+                                    </div>
+                                </BaseControl>
+
+                                { /* Shortcode */ }
+                                <BaseControl
+                                    label={ __(
+                                        '📝 Shortcode:',
+                                        'eipsi-forms'
+                                    ) }
+                                    style={ { marginTop: '16px' } }
+                                    help={ __(
+                                        'Pega este shortcode en cualquier página para cargar el formulario aleatorizado.',
+                                        'eipsi-forms'
+                                    ) }
+                                >
+                                    <div
+                                        style={ {
+                                            display: 'flex',
+                                            gap: '8px',
+                                        } }
+                                    >
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={ generateShortcode() }
+                                            style={ {
+                                                flex: 1,
+                                                padding: '8px',
+                                                border: '1px solid #ccc',
+                                                borderRadius: '4px',
+                                                fontFamily: 'monospace',
+                                                fontSize: '12px',
+                                            } }
+                                        />
+                                        <Button
+                                            variant="secondary"
+                                            onClick={ () =>
+                                                copyToClipboard(
+                                                    generateShortcode(),
+                                                    'shortcode'
+                                                )
+                                            }
+                                            style={ { flexShrink: 0 } }
+                                        >
+                                            { shortcodeCopied
+                                                ? '✅ Copiado'
+                                                : '📋 Copiar' }
+                                        </Button>
+                                    </div>
+                                </BaseControl>
+
+                                { /* Información adicional */ }
+                                <div
+                                    style={ {
+                                        marginTop: '16px',
+                                        padding: '12px',
+                                        backgroundColor: '#e7f3ff',
+                                        borderRadius: '4px',
+                                        borderLeft: '4px solid #0073aa',
+                                    } }
+                                >
+                                    <p
+                                        style={ {
+                                            fontSize: '12px',
+                                            color: '#0056b3',
+                                            margin: 0,
+                                        } }
+                                    >
+                                        ℹ️{ ' ' }
+                                        <strong>
+                                            { __(
+                                                'Cómo funciona:',
+                                                'eipsi-forms'
+                                            ) }
+                                        </strong>{ ' ' }
+                                        { __(
+                                            'Cada participante recibe un formulario asignado aleatoriamente. Si vuelve a entrar con el mismo email o participant_id, recibe el mismo formulario que la primera vez.',
                                             'eipsi-forms'
-                                      ) }
-                            </Button>
+                                        ) }
+                                    </p>
+                                </div>
+                            </div>
 
                             { /* Vista previa de configuración */ }
                             { randomConfig.forms.length >= 2 && (

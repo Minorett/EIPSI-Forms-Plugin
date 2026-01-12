@@ -53,10 +53,43 @@ add_action('init', function() {
     if (function_exists('eipsi_randomized_form_shortcode')) {
         add_shortcode('eipsi_randomized_form', 'eipsi_randomized_form_shortcode');
     }
+    if (function_exists('eipsi_randomized_form_page_shortcode')) {
+        add_shortcode('eipsi_randomized_form_page', 'eipsi_randomized_form_page_shortcode');
+    }
 });
+
+/**
+ * Crear página especial para acceso aleatorizado
+ */
+function eipsi_create_randomization_page() {
+    // Buscar si ya existe
+    $page = get_page_by_path('estudio-aleatorio');
+    
+    if (!$page) {
+        // Crear página si no existe
+        $page_id = wp_insert_post(array(
+            'post_title' => __('Estudio Aleatorizado', 'eipsi-forms'),
+            'post_name' => 'estudio-aleatorio',
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'post_content' => '[eipsi_randomized_form_page]'
+        ));
+        
+        if ($page_id && !is_wp_error($page_id)) {
+            update_option('eipsi_randomization_page_id', $page_id);
+            error_log('[EIPSI Forms] Página de aleatorización creada: /estudio-aleatorio/');
+        }
+    }
+}
+
+// Ejecutar en activación del plugin
+add_action('eipsi_forms_activation', 'eipsi_create_randomization_page');
 
 function eipsi_forms_activate() {
     global $wpdb;
+    
+    // Crear página de aleatorización
+    eipsi_create_randomization_page();
     
     $charset_collate = $wpdb->get_charset_collate();
     
@@ -389,6 +422,7 @@ function eipsi_forms_register_blocks() {
     wp_localize_script('eipsi-blocks-editor', 'eipsiEditorData', array(
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_admin_nonce'),
+        'siteUrl' => home_url(),
     ));
     
     // Backward compatibility: also expose as window.eipsiAdminNonce
