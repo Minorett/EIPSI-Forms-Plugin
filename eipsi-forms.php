@@ -48,7 +48,10 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/form-template-render.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/shortcodes.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'assets/js/eipsi-randomization-shortcode.php';
 
-// Registrar el shortcode de aleatorización pública
+// Nuevo handler de aleatorización (standalone block)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-shortcode-handler.php';
+
+// Registrar el shortcode de aleatorización pública (legacy)
 add_action('init', function() {
     if (function_exists('eipsi_randomized_form_shortcode')) {
         add_shortcode('eipsi_randomized_form', 'eipsi_randomized_form_shortcode');

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "eipsi/randomization",
+  "version": "1.0.0",
+  "title": "🎲 Aleatorización de Formularios",
+  "category": "eipsi-forms",
+  "icon": "randomize",
+  "description": "Asigna formularios aleatoriamente a participantes con configuración flexible y generación automática de shortcode/link",
+  "keywords": [ "random", "assignment", "forms", "clinical", "aleatorización", "estudio" ],
+  "textdomain": "eipsi-forms",
+  "editorScript": "file:../../build/index.js",
+  "editorStyle": "file:../../build/index.css",
+  "style": "file:../../build/style-index.css",
+  "supports": {
+    "html": false,
+    "align": [ "wide", "full" ],
+    "spacing": {
+      "margin": true,
+      "padding": true
+    },
+    "reusable": false
+  },
+  "attributes": {
+    "randomizationId": {
+      "type": "string",
+      "default": ""
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "formularios": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object"
+      }
+    },
+    "method": {
+      "type": "string",
+      "enum": [ "seeded", "pure-random" ],
+      "default": "seeded"
+    },
+    "manualAssignments": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object"
+      }
+    },
+    "showPreview": {
+      "type": "boolean",
+      "default": true
+    },
+    "showInstructions": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "example": {
+    "attributes": {
+      "enabled": true,
+      "formularios": [
+        {
+          "id": "form_1",
+          "postId": 123,
+          "nombre": "PHQ-9 Standard",
+          "porcentaje": 50
+        },
+        {
+          "id": "form_2",
+          "postId": 456,
+          "nombre": "PHQ-9 Modificado",
+          "porcentaje": 50
+        }
+      ]
+    }
+  }
+}

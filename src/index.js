@@ -10,6 +10,7 @@ import './blocks/campo-radio';
 import './blocks/campo-multiple';
 import './blocks/campo-likert';
 import './blocks/vas-slider';
+import './blocks/randomization-block';
 
 // Frontend functionality
 import './frontend/eipsi-save-continue';
