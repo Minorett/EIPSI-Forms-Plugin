@@ -157,6 +157,7 @@ add_action('wp_ajax_eipsi_discard_partial_response', 'eipsi_discard_partial_resp
 add_action('wp_ajax_eipsi_random_assign', 'eipsi_random_assign_handler');
 add_action('wp_ajax_nopriv_eipsi_random_assign', 'eipsi_random_assign_handler');
 add_action('wp_ajax_eipsi_get_forms_list', 'eipsi_get_forms_list_handler');
+add_action('wp_ajax_eipsi_get_demo_templates', 'eipsi_get_demo_templates_handler');
 
 // === Handlers de Aleatorización Fase 2 (Longitudinal + Reminders) ===
 add_action('wp_ajax_eipsi_validate_reminder_token', 'eipsi_validate_reminder_token_handler');
@@ -239,6 +240,54 @@ function eipsi_get_forms_list_handler() {
     }, $forms);
 
     wp_send_json_success($forms_list);
+}
+
+/**
+ * AJAX Handler: Get demo templates list
+ *
+ * Returns templates from eipsi_get_demo_templates() in demo-templates.php
+ * Returns: array of {id, name, description, icon}
+ * Frontend expects: data.data = [{id, name, description, icon}, ...]
+ *
+ * @since 1.3.0
+ */
+function eipsi_get_demo_templates_handler() {
+    // Verificar nonce (aceptar GET o POST para robustez)
+    $nonce = '';
+    if (isset($_GET['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+    } elseif (isset($_POST['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+    }
+
+    if (empty($nonce) || !wp_verify_nonce($nonce, 'eipsi_admin_nonce')) {
+        wp_send_json_error(array(
+            'message' => __('Invalid security token', 'eipsi-forms')
+        ), 403);
+        return;
+    }
+
+    // Cargar la función de templates demo
+    require_once plugin_dir_path(__FILE__) . 'demo-templates.php';
+    
+    // Obtener templates disponibles
+    $templates = eipsi_get_demo_templates();
+    
+    if (empty($templates)) {
+        wp_send_json_success(array());
+        return;
+    }
+
+    $templates_list = array_map(function($template) {
+        return array(
+            'id' => sanitize_text_field($template['id']),
+            'name' => esc_html($template['name']),
+            'description' => esc_html($template['description']),
+            'icon' => esc_html($template['icon']),
+        );
+    }, $templates);
+
+    wp_send_json_success($templates_list);
 }
 
 /**

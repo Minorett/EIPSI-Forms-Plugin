@@ -18,6 +18,11 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
   - Query param `?eipsi_rand=xyz` para acceso directo
   - Compatible con multisite y GDPR
   - Depreca la configuración de aleatorización embebida en Form Container (mantenida por backwards compatibility)
+- **Templates en páginas regulares (v1.3.0):** Selector de plantillas EIPSI ahora funciona tanto en CPT `eipsi_form` como en páginas regulares de WordPress. Implementado:
+  - Handler AJAX `eipsi_get_demo_templates` que carga templates independientemente del tipo de post
+  - Función `loadAvailableTemplates()` en Form Container que reemplaza el sistema basado en `window.EIPSIDemoTemplates`
+  - Loading states y error handling robusto para mejor UX
+  - Compatibilidad total con páginas, posts y CPTs
 - **Template Profesional de Burnout v2.0 (Validado):** Evaluación clínica completa del síndrome de burnout en profesionales sanitarios que incluye PHQ-9, GAD-7 y MBI-HSS con consentimiento informado profesional. Validado 100% contra block.json v1.2.2 (todos los atributos son compatibles, sin errores de importación). Incluye 5 páginas: Consentimiento, Datos Demográficos, PHQ-9 (9 ítems, escala 0-3), GAD-7 (7 ítems, escala 0-3), MBI-HSS (10 ítems, escala 0-6). Tiempo estimado: 15-20 minutos.
 - **Plantillas demo EIPSI:** plantillas genéricas como "Ingreso ansiedad breve (demo)", "Seguimiento emocional (demo)" y "Satisfacción de sesión (demo)" listas para cargar desde el dropdown del EIPSI Form Container.
 - **Submissions v1:** tabla paginada integrada en el panel "Results & Experience" con filtros por formulario, exportación directa a Excel/CSV y detalle completo de cada sesión (respuestas + eventos + metadatos).
