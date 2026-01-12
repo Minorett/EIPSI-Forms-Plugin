@@ -253,6 +253,7 @@ function eipsi_random_assign_handler() {
     // Sanitizar input
     $main_form_id = isset($_POST['form_id']) ? intval($_POST['form_id']) : 0;
     $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+    $participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
     $is_manual = isset($_POST['is_manual']) && $_POST['is_manual'] === 'true';
     
     // Validar permisos (cualquier editor puede configurar random)
@@ -265,10 +266,16 @@ function eipsi_random_assign_handler() {
         wp_send_json_error(array('message' => __('Formulario principal inválido.', 'eipsi-forms')));
     }
     
-    // Validar email
-    if (empty($email) || !is_email($email)) {
+    // Identificador: priorizar email, si no participant_id
+    if (!empty($email) && !is_email($email)) {
         wp_send_json_error(array('message' => __('Email inválido.', 'eipsi-forms')));
     }
+    
+    if (empty($email) && empty($participant_id)) {
+        wp_send_json_error(array('message' => __('Se requiere email o participant_id.', 'eipsi-forms')));
+    }
+    
+    $identifier = !empty($email) ? $email : $participant_id;
     
     // Si es asignación manual directa (desde el panel de admin)
     if ($is_manual && isset($_POST['assigned_form_id'])) {
@@ -283,12 +290,25 @@ function eipsi_random_assign_handler() {
         $type = 'manual';
         
         // Guardar asignación
-        eipsi_save_assignment($main_form_id, $email, $assigned_form_id, $seed, $type);
+        eipsi_save_assignment($main_form_id, $identifier, $assigned_form_id, $seed, $type);
         
         wp_send_json_success(array(
             'form_id' => $assigned_form_id,
             'seed' => $seed,
             'type' => $type,
+        ));
+    }
+    
+    // BUSCAR ASIGNACIÓN PREVIA (persistencia)
+    $existing_assignment = eipsi_get_assignment($main_form_id, $identifier);
+    
+    if ($existing_assignment) {
+        // El participante YA tiene asignado un formulario → devolver el mismo
+        wp_send_json_success(array(
+            'form_id' => intval($existing_assignment['form_id']),
+            'seed' => $existing_assignment['seed'],
+            'type' => 'persistent',
+            'message' => __('Usando asignación anterior', 'eipsi-forms')
         ));
     }
     
@@ -299,23 +319,29 @@ function eipsi_random_assign_handler() {
         wp_send_json_error(array('message' => __('Aleatorización no configurada o incompleta (mínimo 2 formularios requeridos).', 'eipsi-forms')));
     }
     
-    // Verificar override manual (el email coincide con una asignación manual)
-    $manual_assigns = $config['manualAssigns'] ?? array();
-    foreach ($manual_assigns as $assign) {
-        if (strtolower($assign['email']) === strtolower($email)) {
-            // Manual override encontrado - retornar esa asignación
-            $seed = wp_generate_uuid4();
-            $type = 'manual_override';
-            
-            wp_send_json_success(array(
-                'form_id' => intval($assign['formId']),
-                'seed' => $seed,
-                'type' => $type,
-            ));
+    // Verificar override manual (el identifier coincide con una asignación manual)
+    // Si el participante usó email, verificar si hay override manual
+    if (!empty($email)) {
+        $manual_assigns = $config['manualAssigns'] ?? array();
+        foreach ($manual_assigns as $assign) {
+            if (strtolower($assign['email']) === strtolower($email)) {
+                // Manual override encontrado - retornar esa asignación
+                $seed = wp_generate_uuid4();
+                $type = 'manual_override';
+                
+                // Guardar la asignación para futuras visitas
+                eipsi_save_assignment($main_form_id, $identifier, intval($assign['formId']), $seed, $type);
+                
+                wp_send_json_success(array(
+                    'form_id' => intval($assign['formId']),
+                    'seed' => $seed,
+                    'type' => $type,
+                ));
+            }
         }
     }
     
-    // Fisher-Yates weighted shuffle
+    // Fisher-Yates weighted shuffle - NUEVA ASIGNACIÓN
     $forms = $config['forms'];
     $probabilities = $config['probabilities'];
     $method = $config['method'] ?? 'seeded';
@@ -330,8 +356,8 @@ function eipsi_random_assign_handler() {
     $assigned_form_id = eipsi_weighted_random($forms, $probabilities);
     $type = 'random';
     
-    // Guardar asignación en postmeta temporal
-    eipsi_save_assignment($main_form_id, $email, $assigned_form_id, $seed, $type);
+    // Guardar asignación en postmeta para futuras visitas
+    eipsi_save_assignment($main_form_id, $identifier, $assigned_form_id, $seed, $type);
     
     wp_send_json_success(array(
         'form_id' => intval($assigned_form_id),

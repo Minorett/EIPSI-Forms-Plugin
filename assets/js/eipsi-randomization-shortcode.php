@@ -15,16 +15,23 @@ if (!defined('ABSPATH')) {
 
 function eipsi_randomized_form_shortcode($atts) {
     $atts = shortcode_atts([
-        'study_id'  => '',  // ID del formulario base (puede venir del param ?study_id)
+        'study_id'  => '',  // ID del formulario base
+        'form_id'   => '',  // Sinónimo de study_id (más intuitivo)
         'show_meta' => 'true'  // Mostrar instrucciones/disclaimer
     ], $atts);
 
-    $study_id = $atts['study_id'] ?: ($_GET['study_id'] ?? false);
+    // Soporte para study_id o form_id (prioridad a study_id por compatibilidad)
+    $study_id = $atts['study_id'] ?: ($atts['form_id'] ?: false);
+    
+    // También soportar desde URL params (tanto ?study_id=X como ?form_id=X)
+    if (!$study_id) {
+        $study_id = $_GET['study_id'] ?? ($_GET['form_id'] ?? false);
+    }
     
     if (!$study_id) {
         return '<div style="background: #ffebee; border-left: 4px solid #f44336; padding: 1rem; margin: 1rem 0; border-radius: 4px;">
             <p style="margin: 0; color: #c62828; font-weight: 500;">
-                ⚠️ Error: No study_id proporcionado. Use: [eipsi_randomized_form study_id="123"]
+                ⚠️ Error: No study_id/form_id proporcionado. Use: [eipsi_randomized_form study_id="123"] o [eipsi_randomized_form form_id="123"]
             </p>
         </div>';
     }
@@ -101,3 +108,28 @@ function eipsi_randomized_form_shortcode($atts) {
 }
 
 add_shortcode('eipsi_randomized_form', 'eipsi_randomized_form_shortcode');
+
+/**
+ * Shortcode para página de acceso aleatorio
+ * Uso: [eipsi_randomized_form_page]
+ * 
+ * Este shortcode detecta ?form_id=X o ?study_id=X y renderiza el shortcode principal
+ */
+function eipsi_randomized_form_page_shortcode($atts) {
+    // Detectar desde URL params (soporta study_id y form_id)
+    $form_id = $_GET['form_id'] ?? ($_GET['study_id'] ?? false);
+    
+    if (!$form_id) {
+        return '<div style="background: #ffebee; border-left: 4px solid #f44336; padding: 1rem; margin: 1rem 0; border-radius: 4px;">
+            <p style="margin: 0; color: #c62828; font-weight: 500;">
+                ⚠️ Error: No se especificó un formulario. Usa: <code>?form_id=123</code> en la URL.
+            </p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                Ejemplo: <code>' . home_url('/estudio-aleatorio/') . '?form_id=123</code>
+            </p>
+        </div>';
+    }
+    
+    // Renderizar el shortcode principal con el form_id detectado
+    return do_shortcode('[eipsi_randomized_form study_id="' . esc_attr($form_id) . '" show_meta="true"]');
+}
