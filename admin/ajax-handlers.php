@@ -2237,9 +2237,9 @@ function eipsi_load_form() {
 
     $form_id = intval($_POST['form_id']);
     
-    // Get form template
+    // Get form template - support both post types
     $template = get_post($form_id);
-    if (!$template || $template->post_type !== 'eipsi_form_template') {
+    if (!$template || !in_array($template->post_type, ['eipsi_form', 'eipsi_form_template'])) {
         wp_send_json_error('Form template not found');
     }
 
@@ -2271,7 +2271,289 @@ function eipsi_load_form() {
 add_action('wp_ajax_eipsi_load_form', 'eipsi_load_form');
 add_action('wp_ajax_nopriv_eipsi_load_form', 'eipsi_load_form');
 
+// === Handlers de Aleatorización Pública (Fase 3) ===
+add_action('wp_ajax_eipsi_get_randomization_config', 'eipsi_get_randomization_config');
+add_action('wp_ajax_nopriv_eipsi_get_randomization_config', 'eipsi_get_randomization_config');
+add_action('wp_ajax_eipsi_check_manual_assignment', 'eipsi_check_manual_assignment');
+add_action('wp_ajax_nopriv_eipsi_check_manual_assignment', 'eipsi_check_manual_assignment');
+add_action('wp_ajax_eipsi_persist_assignment', 'eipsi_persist_assignment');
+add_action('wp_ajax_nopriv_eipsi_persist_assignment', 'eipsi_persist_assignment');
+add_action('wp_ajax_eipsi_get_randomization_pages', 'eipsi_get_randomization_pages_handler');
+add_action('wp_ajax_nopriv_eipsi_get_randomization_pages', 'eipsi_get_randomization_pages_handler');
+
+/**
+ * AJAX Handler: Obtener configuración de aleatorización
+ * 
+ * @since 1.3.0
+ */
+function eipsi_get_randomization_config() {
+    // Verificar nonce
+    $nonce = '';
+    if (isset($_POST['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+    } elseif (isset($_GET['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+    }
+
+    if (empty($nonce) || !wp_verify_nonce($nonce, 'eipsi_admin_nonce')) {
+        wp_send_json_error(array(
+            'message' => __('Token de seguridad inválido', 'eipsi-forms')
+        ), 403);
+        return;
+    }
+
+    $form_id = isset($_POST['form_id']) ? intval($_POST['form_id']) : 0;
+    if (!$form_id) {
+        wp_send_json_error('Form ID requerido');
+        return;
+    }
+
+    // Verificar que el formulario existe
+    $form_post = get_post($form_id);
+    if (!$form_post || get_post_type($form_post) !== 'eipsi_form') {
+        wp_send_json_error('Formulario no encontrado');
+        return;
+    }
+
+    // Obtener config de postmeta
+    $random_config = get_post_meta($form_id, '_eipsi_random_config', true);
+    
+    if (!$random_config || !is_array($random_config)) {
+        wp_send_json_error('No se encontró configuración de aleatorización');
+        return;
+    }
+
+    // Preparar respuesta con formularios válidos
+    $forms_list = array();
+    if (!empty($random_config['forms'])) {
+        foreach ($random_config['forms'] as $form_id) {
+            $form_post = get_post($form_id);
+            if ($form_post && get_post_type($form_post) === 'eipsi_form') {
+                $forms_list[] = array(
+                    'id' => intval($form_id),
+                    'title' => $form_post->post_title ?: 'Formulario sin título'
+                );
+            }
+        }
+    }
+
+    wp_send_json_success(array(
+        'enabled' => !empty($random_config['enabled']),
+        'forms' => $forms_list,
+        'method' => $random_config['method'] ?? 'simple',
+        'seed_base' => $random_config['seed_base'] ?? null,
+        'has_manual_assignments' => !empty($random_config['manualAssigns'])
+    ));
+}
+
+/**
+ * AJAX Handler: Verificar asignación manual para participante
+ * 
+ * @since 1.3.0
+ */
+function eipsi_check_manual_assignment() {
+    // Verificar nonce
+    $nonce = '';
+    if (isset($_POST['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+    } elseif (isset($_GET['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+    }
+
+    if (empty($nonce) || !wp_verify_nonce($nonce, 'eipsi_admin_nonce')) {
+        wp_send_json_error(array(
+            'message' => __('Token de seguridad inválido', 'eipsi-forms')
+        ), 403);
+        return;
+    }
+
+    $form_id = isset($_POST['form_id']) ? intval($_POST['form_id']) : 0;
+    $participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
+    
+    if (!$form_id || empty($participant_id)) {
+        wp_send_json_error('Parámetros faltantes');
+        return;
+    }
+
+    // Obtener asignaciones manuales desde config
+    $random_config = get_post_meta($form_id, '_eipsi_random_config', true);
+    $manual_assignments = $random_config['manualAssigns'] ?? array();
+
+    // Buscar coincidencia por participant_id (puede ser email o ID)
+    foreach ($manual_assignments as $assignment) {
+        if (strtolower($assignment['participant_id'] ?? '') === strtolower($participant_id)) {
+            wp_send_json_success(array(
+                'assigned_form_id' => intval($assignment['formId']),
+                'seed' => $assignment['seed'] ?? '',
+                'is_manual' => true,
+                'timestamp' => $assignment['timestamp'] ?? current_time('mysql')
+            ));
+            return;
+        }
+    }
+
+    // Verificar también en metadata de asignaciones persistidas
+    $persisted_assignments = get_post_meta($form_id, '_eipsi_assignments', true) ?: array();
+    if (isset($persisted_assignments[$participant_id])) {
+        $assignment = $persisted_assignments[$participant_id];
+        wp_send_json_success(array(
+            'assigned_form_id' => intval($assignment['assigned_form_id']),
+            'seed' => $assignment['seed'] ?? '',
+            'is_manual' => !empty($assignment['is_manual']),
+            'timestamp' => $assignment['timestamp'] ?? current_time('mysql')
+        ));
+        return;
+    }
+
+    // No hay override manual
+    wp_send_json_success(null);
+}
+
+/**
+ * AJAX Handler: Persistir asignación en metadata
+ * 
+ * @since 1.3.0
+ */
+function eipsi_persist_assignment() {
+    // Verificar nonce
+    $nonce = '';
+    if (isset($_POST['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+    } elseif (isset($_GET['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+    }
+
+    if (empty($nonce) || !wp_verify_nonce($nonce, 'eipsi_admin_nonce')) {
+        wp_send_json_error(array(
+            'message' => __('Token de seguridad inválido', 'eipsi-forms')
+        ), 403);
+        return;
+    }
+
+    $form_id = isset($_POST['form_id']) ? intval($_POST['form_id']) : 0;
+    $assigned_form_id = isset($_POST['assigned_form_id']) ? intval($_POST['assigned_form_id']) : 0;
+    $participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
+    $seed = isset($_POST['seed']) ? sanitize_text_field($_POST['seed']) : '';
+    $is_manual = isset($_POST['is_manual']) && $_POST['is_manual'] === '1';
+
+    if (!$form_id || !$assigned_form_id || empty($participant_id)) {
+        wp_send_json_error('Parámetros faltantes');
+        return;
+    }
+
+    // Verificar que los formularios existen
+    if (!get_post($form_id) || get_post_type($form_id) !== 'eipsi_form') {
+        wp_send_json_error('Formulario principal inválido');
+        return;
+    }
+
+    if (!get_post($assigned_form_id) || get_post_type($assigned_form_id) !== 'eipsi_form') {
+        wp_send_json_error('Formulario asignado inválido');
+        return;
+    }
+
+    // Obtener asignaciones existentes
+    $assignments = get_post_meta($form_id, '_eipsi_assignments', true);
+    if (!is_array($assignments)) {
+        $assignments = array();
+    }
+
+    // Actualizar o crear asignación
+    $assignments[$participant_id] = array(
+        'assigned_form_id' => $assigned_form_id,
+        'seed' => $seed,
+        'timestamp' => current_time('mysql'),
+        'is_manual' => $is_manual,
+        'study_id' => $form_id
+    );
+
+    // Guardar en metadata
+    $result = update_post_meta($form_id, '_eipsi_assignments', $assignments);
+
+    if ($result !== false) {
+        wp_send_json_success(array(
+            'message' => 'Asignación persistida correctamente',
+            'participant_id' => $participant_id,
+            'assigned_form_id' => $assigned_form_id
+        ));
+    } else {
+        wp_send_json_error('Error al persistir asignación');
+    }
+}
+
 // =============================================================================
 // END RANDOMIZATION SYSTEM HANDLERS
 // =============================================================================
+
+/**
+ * AJAX Handler: Obtener páginas que contienen el shortcode de aleatorización
+ * 
+ * @since 1.3.0
+ */
+function eipsi_get_randomization_pages_handler() {
+    // Verificar nonce
+    $nonce = '';
+    if (isset($_POST['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_POST['nonce']));
+    } elseif (isset($_GET['nonce'])) {
+        $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+    }
+
+    if (empty($nonce) || !wp_verify_nonce($nonce, 'eipsi_admin_nonce')) {
+        wp_send_json_error(array(
+            'message' => __('Token de seguridad inválido', 'eipsi-forms')
+        ), 403);
+        return;
+    }
+
+    // Buscar páginas que contengan el shortcode [eipsi_randomized_form]
+    $pages = get_posts(array(
+        'post_type' => 'page',
+        'post_status' => array('publish', 'private'),
+        'posts_per_page' => -1,
+        'meta_query' => array(
+            array(
+                'key' => '_wp_page_template',
+                'value' => 'default',
+                'compare' => '!='
+            )
+        )
+    ));
+
+    $matching_pages = array();
+
+    foreach ($pages as $page) {
+        // Verificar si el contenido de la página contiene el shortcode
+        if (has_shortcode($page->post_content, 'eipsi_randomized_form')) {
+            $matching_pages[] = array(
+                'id' => intval($page->ID),
+                'title' => $page->post_title ?: 'Página sin título',
+                'link' => get_permalink($page->ID)
+            );
+        }
+    }
+
+    // Si no hay páginas con shortcode, incluir páginas públicas generales como fallback
+    if (empty($matching_pages)) {
+        $public_pages = get_posts(array(
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'posts_per_page' => 5,
+            'orderby' => 'title',
+            'order' => 'ASC'
+        ));
+
+        foreach ($public_pages as $page) {
+            $matching_pages[] = array(
+                'id' => intval($page->ID),
+                'title' => $page->post_title ?: 'Página sin título',
+                'link' => get_permalink($page->ID),
+                'note' => 'Nota: Esta página no contiene el shortcode [eipsi_randomized_form]'
+            );
+        }
+    }
+
+    wp_send_json_success($matching_pages);
+}
+
 ?>

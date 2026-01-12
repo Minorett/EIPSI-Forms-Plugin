@@ -1,49 +1,52 @@
 <?php
 /**
- * EIPSI Forms Randomization Shortcode
+ * EIPSI Randomization Shortcode
  * 
- * Public shortcode for randomized form assignment
- * Usage: [eipsi_randomized_form study_id="123" show_meta="true"]
+ * Shortcode: [eipsi_randomized_form]
  * 
- * @package EIPSI_Forms
- * @since 1.2.3
+ * Uso:
+ * [eipsi_randomized_form study_id="2394" show_meta="true"]
+ * [eipsi_randomized_form study_id="2394" show_meta="false"] (sin instrucciones)
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Shortcode: [eipsi_randomized_form]
- * 
- * Displays a form with random assignment based on study configuration
- * 
- * @param array $atts Shortcode attributes
- * @return string Rendered HTML
- */
 function eipsi_randomized_form_shortcode($atts) {
-    $atts = shortcode_atts(array(
-        'study_id'  => '',
-        'show_meta' => 'true'
-    ), $atts, 'eipsi_randomized_form');
+    $atts = shortcode_atts([
+        'study_id'  => '',  // ID del formulario base (puede venir del param ?study_id)
+        'show_meta' => 'true'  // Mostrar instrucciones/disclaimer
+    ], $atts);
 
-    // Get study_id from attribute or URL parameter
     $study_id = $atts['study_id'] ?: ($_GET['study_id'] ?? false);
     
     if (!$study_id) {
-        return '<p style="color: #d63638; padding: 1rem; background: #fef7f1; border-left: 4px solid #d63638;">' . 
-               __('Error: No study_id provided for randomization', 'eipsi-forms') . '</p>';
+        return '<div style="background: #ffebee; border-left: 4px solid #f44336; padding: 1rem; margin: 1rem 0; border-radius: 4px;">
+            <p style="margin: 0; color: #c62828; font-weight: 500;">
+                ⚠️ Error: No study_id proporcionado. Use: [eipsi_randomized_form study_id="123"]
+            </p>
+        </div>';
     }
 
-    // Get participant_id from URL if provided (for longitudinal studies)
-    $participant_id = $_GET['participant_id'] ?? null;
-    
-    // Check if randomization is enabled for this study
+    // Verificar que el formulario existe
+    if (!get_post($study_id) || get_post_type($study_id) !== 'eipsi_form') {
+        return '<div style="background: #ffebee; border-left: 4px solid #f44336; padding: 1rem; margin: 1rem 0; border-radius: 4px;">
+            <p style="margin: 0; color: #c62828; font-weight: 500;">
+                ⚠️ Error: Formulario con ID ' . esc_html($study_id) . ' no encontrado.
+            </p>
+        </div>';
+    }
+
+    // Verificar que tiene configuración de randomización
     $random_config = get_post_meta($study_id, '_eipsi_random_config', true);
-    
-    if (empty($random_config['enabled'])) {
-        // If not enabled, load the base form normally
-        return eipsi_render_form_shortcode_markup($study_id);
+    if (!$random_config || empty($random_config['enabled']) || empty($random_config['forms'])) {
+        return '<div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 1rem; margin: 1rem 0; border-radius: 4px;">
+            <p style="margin: 0; color: #ef6c00; font-weight: 500;">
+                ℹ️ Este formulario no tiene configuración de aleatorización activa.
+                <br>Contactá al administrador para configurarlo.
+            </p>
+        </div>';
     }
 
     ob_start();
@@ -51,77 +54,44 @@ function eipsi_randomized_form_shortcode($atts) {
     <div id="eipsi-randomization-container" 
          class="eipsi-randomization-wrapper" 
          data-study-id="<?php echo esc_attr($study_id); ?>"
-         data-participant-id="<?php echo esc_attr($participant_id ?: ''); ?>"
-         data-show-meta="<?php echo esc_attr($atts['show_meta']); ?>">
+         data-random="<?php echo isset($_GET['eipsi_random']) && $_GET['eipsi_random'] === 'true' ? 'true' : 'false'; ?>">
         
+        <!-- Disclaimer/Instrucciones (opcional) -->
         <?php if ($atts['show_meta'] === 'true'): ?>
-        <div class="randomization-notice">
-            <p class="randomization-notice-text">
-                ℹ️ <?php _e('Este estudio utiliza aleatorización: cada participante recibe un formulario asignado aleatoriamente.', 'eipsi-forms'); ?>
+        <div class="randomization-notice" style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px;">
+            <p style="margin: 0; color: #0d47a1; font-weight: 500;">
+                ℹ️ Este estudio utiliza aleatorización: cada participante recibe un formulario asignado aleatoriamente.
+            </p>
+            <p style="margin: 0.5rem 0 0 0; color: #1565c0; font-size: 0.9rem;">
+                Su asignación es persistente para este estudio. En futuras tomas recibirá el mismo formulario.
             </p>
         </div>
         <?php endif; ?>
 
-        <?php if (!$participant_id && isset($_GET['eipsi_random']) && $_GET['eipsi_random'] === 'true'): ?>
-        <div class="randomization-participant-input" style="margin-bottom: 1.5rem; padding: 1rem; background: #f9f9f9; border-radius: 4px;">
-            <label for="eipsi-participant-id" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
-                <?php _e('Código de participante (opcional):', 'eipsi-forms'); ?>
-            </label>
-            <input type="text" 
-                   id="eipsi-participant-id" 
-                   class="eipsi-participant-input"
-                   placeholder="<?php esc_attr_e('Ingresá tu código si ya participaste', 'eipsi-forms'); ?>"
-                   style="width: 100%; max-width: 300px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 3px;">
-            <p style="margin: 0.5rem 0 0; font-size: 0.875rem; color: #666;">
-                <?php _e('Si ya participaste, ingresá tu código para recibir el mismo formulario', 'eipsi-forms'); ?>
-            </p>
-        </div>
-        <?php endif; ?>
-
-        <div id="randomization-loading" class="randomization-loading">
-            <div class="randomization-spinner"></div>
-            <p><?php _e('Asignando formulario...', 'eipsi-forms'); ?></p>
+        <!-- Spinner mientras carga -->
+        <div id="randomization-loading" style="text-align: center; padding: 2rem; display: none;">
+            <div style="display: inline-block; width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid #2196F3; border-radius: 50%; animation: eipsi-spin 1s linear infinite;"></div>
+            <p style="margin-top: 1rem; color: #666;">Asignando formulario...</p>
+            <style>
+                @keyframes eipsi-spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
         </div>
 
-        <div id="randomized-form-container" class="randomized-form-container"></div>
-
-        <div id="randomization-error" class="randomization-error" style="display: none;"></div>
+        <!-- Contenedor donde se renderiza el formulario -->
+        <div id="randomized-form-container"></div>
 
     </div>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const container = document.getElementById('eipsi-randomization-container');
-        if (!container) return;
-        
-        const studyId = container.dataset.studyId;
-        const participantId = container.dataset.participantId || getParticipantIdFromInput();
-        const isRandomized = window.location.search.includes('eipsi_random=true');
-        
-        // Load the randomized form
-        if (typeof eipsiRandomizeForm === 'function') {
-            eipsiRandomizeForm(studyId, isRandomized, participantId);
-        } else {
-            console.error('EIPSI Randomization: eipsiRandomizeForm function not found');
-            document.getElementById('randomization-loading').style.display = 'none';
-            document.getElementById('randomization-error').innerHTML = 
-                '<p style="color: #d63638;"><?php _e('Error: No se pudo cargar el sistema de aleatorización', 'eipsi-forms'); ?></p>';
-            document.getElementById('randomization-error').style.display = 'block';
-        }
-    });
-
-    function getParticipantIdFromInput() {
-        const input = document.getElementById('eipsi-participant-id');
-        return input ? input.value.trim() : null;
-    }
-
-    // Update participant ID if user enters it
-    document.addEventListener('input', function(e) {
-        if (e.target.id === 'eipsi-participant-id') {
-            const container = document.getElementById('eipsi-randomization-container');
-            if (container) {
-                container.dataset.participantId = e.target.value.trim();
-            }
+        if (container) {
+            const studyId = container.dataset.studyId;
+            const isRandomized = container.dataset.random;
+            eipsiRandomizeForm(studyId, isRandomized);
         }
     });
     </script>
@@ -129,32 +99,5 @@ function eipsi_randomized_form_shortcode($atts) {
     <?php
     return ob_get_clean();
 }
-add_shortcode('eipsi_randomized_form', 'eipsi_randomized_form_shortcode');
 
-/**
- * Helper function to render form markup
- * Reuses the existing shortcode rendering logic
- */
-function eipsi_render_form_shortcode_markup($form_id) {
-    // Use the existing form render helper
-    if (function_exists('eipsi_render_form_block')) {
-        $attributes = array(
-            'formId' => $form_id,
-            'showTitle' => true
-        );
-        return eipsi_render_form_block($attributes);
-    }
-    
-    // Fallback: try to load form templates
-    $template = get_post($form_id);
-    if (!$template || $template->post_type !== 'eipsi_form_template') {
-        return '<p style="color: #d63638;">' . 
-               sprintf(__('Formulario con ID %s no encontrado', 'eipsi-forms'), $form_id) . '</p>';
-    }
-    
-    // This should use the same rendering logic as the form block
-    // For now, return a placeholder
-    return '<div class="eipsi-form-placeholder" data-form-id="' . esc_attr($form_id) . '">
-            <p>' . sprintf(__('Cargando formulario %s...', 'eipsi-forms'), esc_html($template->post_title)) . '</p>
-           </div>';
-}
+add_shortcode('eipsi_randomized_form', 'eipsi_randomized_form_shortcode');
