@@ -465,7 +465,8 @@ function eipsi_forms_register_blocks() {
         'campo-radio',
         'campo-multiple',
         'campo-likert',
-        'vas-slider'
+        'vas-slider',
+        'randomization-block'
     );
 
     foreach ($block_dirs as $block_dir) {
