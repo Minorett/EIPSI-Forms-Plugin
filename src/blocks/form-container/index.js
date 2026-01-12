@@ -85,7 +85,7 @@ registerBlockType( 'eipsi/form-container', {
 		},
 		captureFieldTiming: {
 			type: 'boolean',
-			default: false,
+			default: true,
 		},
 		showTimingAnalysis: {
 			type: 'boolean',
