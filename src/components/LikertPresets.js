@@ -74,19 +74,6 @@ export const LIKERT_PRESETS = {
 		color: '#3b82f6', // blue
 	},
 
-	// 9-point scale (maximum specificity)
-	'likert9-scale': {
-		name: 'Escala de 9 puntos',
-		minValue: 1,
-		maxValue: 9,
-		labels: '1; 2; 3; 4 (Desacuerdo); 5 (Neutral); 6; 7; 8; 9 (Acuerdo)',
-		description:
-			'Máxima especificidad - típicamente usada en investigación avanzada',
-		type: 'general',
-		icon: '🎯',
-		color: '#8b5cf6', // purple
-	},
-
 	// Custom option
 	custom: {
 		name: 'Personalizado',
@@ -177,10 +164,6 @@ export const getGroupedPresets = () => {
 		'4-puntos': {
 			name: 'Escala de 4 puntos (fuerza decisión)',
 			presets: [ LIKERT_PRESETS[ 'likert4-agreement' ] ],
-		},
-		'9-puntos': {
-			name: 'Escala de 9 puntos (máxima especificidad)',
-			presets: [ LIKERT_PRESETS[ 'likert9-scale' ] ],
 		},
 		custom: {
 			name: 'Opción personalizada',

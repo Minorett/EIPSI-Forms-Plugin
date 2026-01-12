@@ -5,7 +5,6 @@ import {
 	TextControl,
 	TextareaControl,
 	ToggleControl,
-	RangeControl,
 	SelectControl,
 	Notice,
 } from '@wordpress/components';
@@ -55,12 +54,26 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		label,
 		required,
 		helperText,
-		minValue,
-		maxValue,
+		minValue = 1, // Siempre 1
 		labels,
 		conditionalLogic,
 		scaleVariation = 'custom',
 	} = attributes;
+
+	// Calcular el máximo automáticamente basado en las etiquetas
+	const calculateMaxValue = ( labelsString ) => {
+		if ( ! labelsString || labelsString.trim() === '' ) {
+			return 5; // Default si no hay labels
+		}
+		const labelArray = labelsString
+			.split( ';' )
+			.map( ( labelText ) => labelText.trim() )
+			.filter( ( labelText ) => labelText !== '' );
+		return labelArray.length > 0 ? labelArray.length : 1;
+	};
+
+	// Calcular el máximo actual
+	const maxValue = calculateMaxValue( labels );
 
 	// State for preset management
 	const [ selectedPreset, setSelectedPreset ] = useState( scaleVariation );
@@ -193,7 +206,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			label: '⚖️ Escala de Acuerdo (4 puntos)',
 			value: 'likert4-agreement',
 		},
-		{ label: '🎯 Escala de 9 puntos', value: 'likert9-scale' },
 	];
 
 	return (
@@ -351,38 +363,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					title={ __( '⚙️ Configuración de Escala', 'eipsi-forms' ) }
 					initialOpen={ ! isUsingPreset }
 				>
-					<RangeControl
-						label={ __( 'Valor Mínimo', 'eipsi-forms' ) }
-						value={ minValue }
-						onChange={ ( value ) => {
-							if ( value < maxValue ) {
-								setAttributes( { minValue: value } );
-							}
-						} }
-						min={ 0 }
-						max={ 10 }
-						disabled={ isUsingPreset }
-						help={ __(
-							'El valor más bajo de la escala',
-							'eipsi-forms'
-						) }
-					/>
-					<RangeControl
-						label={ __( 'Valor Máximo', 'eipsi-forms' ) }
-						value={ maxValue }
-						onChange={ ( value ) => {
-							if ( value > minValue ) {
-								setAttributes( { maxValue: value } );
-							}
-						} }
-						min={ 1 }
-						max={ 15 }
-						disabled={ isUsingPreset }
-						help={ __(
-							'El valor más alto de la escala',
-							'eipsi-forms'
-						) }
-					/>
 					<TextareaControl
 						label={ __(
 							'Etiquetas (separadas por punto y coma)',
@@ -401,6 +381,16 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						) }
 						placeholder={ 'Nada; Poco; Moderado; Bastante; Mucho' }
 					/>
+
+					<div className="calculated-values">
+						<div className="calculated-min-value">
+							<strong>Valor Mínimo:</strong> 1 (fijo)
+						</div>
+						<div className="calculated-max-value">
+							<strong>Valor Máximo:</strong> { maxValue }{ ' ' }
+							(calculado automáticamente)
+						</div>
+					</div>
 
 					{ validationResult && ! validationResult.isValid && (
 						<Notice status="warning" isDismissible={ false }>

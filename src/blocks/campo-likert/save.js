@@ -38,12 +38,26 @@ export default function Save( { attributes } ) {
 		label,
 		required,
 		helperText,
-		minValue,
-		maxValue,
+		minValue = 1, // Siempre 1
 		labels,
 		conditionalLogic,
 		scaleVariation = 'custom',
 	} = attributes;
+
+	// Calcular el máximo automáticamente basado en las etiquetas
+	const calculateMaxValue = ( labelsString ) => {
+		if ( ! labelsString || labelsString.trim() === '' ) {
+			return 5; // Default si no hay labels
+		}
+		const labelArray = labelsString
+			.split( ';' )
+			.map( ( labelText ) => labelText.trim() )
+			.filter( ( labelText ) => labelText !== '' );
+		return labelArray.length > 0 ? labelArray.length : 1;
+	};
+
+	// Calcular el máximo actual
+	const maxValue = calculateMaxValue( labels );
 
 	const effectiveFieldName =
 		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
