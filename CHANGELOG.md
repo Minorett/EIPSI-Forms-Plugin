@@ -28,6 +28,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ### Fixed
 - **Bloque de Consentimiento en el Editor:** Ahora respeta los presets del Form Container (Clinical Blue, Minimal White, Warm Neutral, Serene Teal). El bloque hereda automáticamente las CSS variables del parent mediante `useSelect` para encontrar el `styleConfig` del Form Container. Antes, el consentimiento usaba estilos del tema por defecto y no respondía a cambios de preset.
+- **getParticipantIdFromStorage undefined en eipsi-random.js:** Corregido error de linting donde la función `getParticipantIdFromStorage()` estaba duplicada en el archivo. Se movió su definición al inicio del IIFE (antes de su uso) y se eliminó la definición duplicada, resolviendo el error `'getParticipantIdFromStorage' is not defined`.
 
 ### Changed
 - **VAS clínico v1.1:**
