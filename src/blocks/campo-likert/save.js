@@ -38,38 +38,43 @@ export default function Save( { attributes } ) {
 		label,
 		required,
 		helperText,
-		minValue = 1, // Siempre 1
+		minValue = 0,
+		reversed = false,
 		labels,
 		conditionalLogic,
 		scaleVariation = 'custom',
 	} = attributes;
 
-	// Calcular el máximo automáticamente basado en las etiquetas
-	const calculateMaxValue = ( labelsString ) => {
+	// Calcular el máximo basado en la fórmula: maxValue = minValue + (labelCount - 1)
+	const calculateMaxValue = ( labelsString, currentMinValue ) => {
 		if ( ! labelsString || labelsString.trim() === '' ) {
-			return 5; // Default si no hay labels
+			return currentMinValue; // Si no hay labels, max = min
 		}
 		const labelArray = labelsString
 			.split( ';' )
 			.map( ( labelText ) => labelText.trim() )
 			.filter( ( labelText ) => labelText !== '' );
-		return labelArray.length > 0 ? labelArray.length : 1;
+		const labelCount = labelArray.length > 0 ? labelArray.length : 1;
+		return currentMinValue + ( labelCount - 1 );
 	};
 
 	// Calcular el máximo actual
-	const maxValue = calculateMaxValue( labels );
+	const maxValue = calculateMaxValue( labels, minValue );
 
 	const effectiveFieldName =
 		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
 
 	const blockPropsData = {
-		className: 'form-group eipsi-field eipsi-likert-field',
+		className: `form-group eipsi-field eipsi-likert-field${
+			reversed ? ' reversed' : ''
+		}`,
 		'data-field-name': effectiveFieldName,
 		'data-required': required ? 'true' : 'false',
 		'data-field-type': 'likert',
 		'data-min': minValue,
 		'data-max': maxValue,
 		'data-scale-variation': scaleVariation,
+		'data-reversed': reversed ? 'true' : 'false',
 	};
 
 	if (

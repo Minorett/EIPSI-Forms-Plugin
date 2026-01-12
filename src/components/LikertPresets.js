@@ -5,7 +5,7 @@
 
 /**
  * Definiciones de presets para escalas Likert
- * Incluye 5-point (más común), 7-point (mayor especificidad), 4-point (fuerza decisión) y 9-point (máxima especificidad)
+ * Incluye 5-point (más común), 7-point (mayor especificidad), 4-point (fuerza decisión)
  */
 export const LIKERT_PRESETS = {
 	// 5-point scales (most common - includes neutral point)
@@ -117,7 +117,7 @@ export const applyPreset = ( preset ) => {
  * Valida si las etiquetas coinciden con el número de puntos de la escala
  * @param {string} labels   - Etiquetas separadas por punto y coma
  * @param {number} minValue - Valor mínimo de la escala
- * @param {number} maxValue - Valor máximo de la escala
+ * @param {number} maxValue - Valor máximo de la escala (calculado dinámicamente)
  * @return {Object} - Resultado de validación
  */
 export const validateLabels = ( labels, minValue, maxValue ) => {

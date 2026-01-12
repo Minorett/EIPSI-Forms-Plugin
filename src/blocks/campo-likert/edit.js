@@ -6,6 +6,8 @@ import {
 	TextareaControl,
 	ToggleControl,
 	SelectControl,
+	BaseControl,
+	Button,
 	Notice,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
@@ -54,26 +56,28 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		label,
 		required,
 		helperText,
-		minValue = 1, // Siempre 1
+		minValue = 0,
+		reversed = false,
 		labels,
 		conditionalLogic,
 		scaleVariation = 'custom',
 	} = attributes;
 
-	// Calcular el máximo automáticamente basado en las etiquetas
-	const calculateMaxValue = ( labelsString ) => {
+	// Calcular el máximo basado en la fórmula: maxValue = minValue + (labelCount - 1)
+	const calculateMaxValue = ( labelsString, currentMinValue ) => {
 		if ( ! labelsString || labelsString.trim() === '' ) {
-			return 5; // Default si no hay labels
+			return currentMinValue; // Si no hay labels, max = min
 		}
 		const labelArray = labelsString
 			.split( ';' )
 			.map( ( labelText ) => labelText.trim() )
 			.filter( ( labelText ) => labelText !== '' );
-		return labelArray.length > 0 ? labelArray.length : 1;
+		const labelCount = labelArray.length > 0 ? labelArray.length : 1;
+		return currentMinValue + ( labelCount - 1 );
 	};
 
 	// Calcular el máximo actual
-	const maxValue = calculateMaxValue( labels );
+	const maxValue = calculateMaxValue( labels, minValue );
 
 	// State for preset management
 	const [ selectedPreset, setSelectedPreset ] = useState( scaleVariation );
@@ -382,15 +386,75 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						placeholder={ 'Nada; Poco; Moderado; Bastante; Mucho' }
 					/>
 
-					<div className="calculated-values">
-						<div className="calculated-min-value">
-							<strong>Valor Mínimo:</strong> 1 (fijo)
-						</div>
-						<div className="calculated-max-value">
-							<strong>Valor Máximo:</strong> { maxValue }{ ' ' }
-							(calculado automáticamente)
-						</div>
-					</div>
+					{ labels && labels.trim() !== '' ? (
+						<BaseControl
+							id="eipsi-scale-config"
+							label={ __(
+								'⚙️ Configuración de Escala',
+								'eipsi-forms'
+							) }
+							help={ __(
+								'El valor máximo se calcula automáticamente',
+								'eipsi-forms'
+							) }
+						>
+							<div
+								style={ {
+									display: 'flex',
+									gap: '8px',
+									alignItems: 'center',
+									flexWrap: 'wrap',
+								} }
+							>
+								<TextControl
+									type="number"
+									label={ __( 'Desde', 'eipsi-forms' ) }
+									value={ minValue }
+									onChange={ ( val ) =>
+										setAttributes( {
+											minValue: parseInt( val ) || 0,
+										} )
+									}
+									style={ { width: '80px' } }
+									disabled={ isUsingPreset }
+								/>
+								<span style={ { fontWeight: 'bold' } }>a</span>
+								<div
+									style={ {
+										padding: '8px 12px',
+										background: '#f5f5f5',
+										borderRadius: '4px',
+										fontWeight: '600',
+										minWidth: '40px',
+										textAlign: 'center',
+									} }
+								>
+									{ maxValue }
+								</div>
+								<Button
+									variant="secondary"
+									icon="shuffle"
+									onClick={ () =>
+										setAttributes( {
+											reversed: ! reversed,
+										} )
+									}
+									title={ __(
+										'Invertir orden (de mayor a menor)',
+										'eipsi-forms'
+									) }
+									disabled={ isUsingPreset }
+								/>
+							</div>
+						</BaseControl>
+					) : (
+						<Notice status="info" isDismissible={ false }>
+							{ __(
+								'Agregá etiquetas para calcular automáticamente el rango.',
+								'eipsi-forms'
+							) }
+						</Notice>
+					) }
 
 					{ validationResult && ! validationResult.isValid && (
 						<Notice status="warning" isDismissible={ false }>
