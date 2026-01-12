@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.2.2
+ * Version: 1.3.0
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics
- * Stable tag: 1.2.2
+ * Stable tag: 1.3.0
  * 
  * @package EIPSI_Forms
  */
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('EIPSI_FORMS_VERSION', '1.2.2');
+define('EIPSI_FORMS_VERSION', '1.3.0');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -47,6 +47,13 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/demo-templates.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/form-template-render.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/shortcodes.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'assets/js/eipsi-randomization-shortcode.php';
+
+// Registrar el shortcode de aleatorización pública
+add_action('init', function() {
+    if (function_exists('eipsi_randomized_form_shortcode')) {
+        add_shortcode('eipsi_randomized_form', 'eipsi_randomized_form_shortcode');
+    }
+});
 
 function eipsi_forms_activate() {
     global $wpdb;
@@ -643,6 +650,23 @@ function eipsi_forms_enqueue_frontend_assets() {
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_random_nonce'),
     ));
+
+    // Enqueue Randomization Public System styles (Fase 3)
+    wp_enqueue_style(
+        'eipsi-randomization-css',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-randomization.css',
+        array('eipsi-save-continue-css'),
+        EIPSI_FORMS_VERSION
+    );
+
+    // Enqueue Randomization Public System script (Fase 3)
+    wp_enqueue_script(
+        'eipsi-randomization-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-randomization.js',
+        array('eipsi-forms-js'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
 
     // Dark mode is now CSS-only via @media (prefers-color-scheme: dark)
     // No JavaScript needed - the theme-toggle.js file is deprecated as of v4.0.0
