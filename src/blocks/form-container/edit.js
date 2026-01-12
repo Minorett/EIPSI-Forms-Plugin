@@ -296,8 +296,32 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 	// Generar link con random
 	const generateRandomLink = () => {
-		const currentUrl = window.location.href.split( '?' )[ 0 ];
-		const link = currentUrl + '?eipsi_random=true';
+		let formUrl;
+
+		// Intentar obtener la URL del frontend del post que se está editando
+		const permalink = window?.eipsiEditorData?.permalink;
+		const currentPostId = window?.eipsiEditorData?.postId;
+
+		if ( permalink ) {
+			// Usar el permalink si está disponible
+			formUrl = permalink;
+		} else if ( currentPostId ) {
+			// Construir URL base del post si tenemos el ID
+			const baseUrl = window.location.origin;
+			formUrl = `${ baseUrl }/?p=${ currentPostId }`;
+		} else {
+			// Fallback: usar la URL actual pero eliminar los query params del admin
+			const currentUrl = window.location.href;
+			// Eliminar query params típicos de admin
+			formUrl = currentUrl
+				.split( '?' )[ 0 ]
+				.replace( '/wp-admin/post.php', '' )
+				.replace( '/wp-admin', '' );
+			// Asegurar que no termine con barra
+			formUrl = formUrl.replace( /\/$/, '' );
+		}
+
+		const link = formUrl + '?eipsi_random=true';
 		// eslint-disable-next-line no-undef
 		navigator.clipboard.writeText( link ).then( () => {
 			setLinkCopied( true );
@@ -968,6 +992,10 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						onChange={ ( value ) =>
 							setAttributes( { capturePageTiming: value } )
 						}
+						help={ __(
+							'Registra duración en cada página del formulario.',
+							'eipsi-forms'
+						) }
 					/>
 					<ToggleControl
 						label={ __(
@@ -978,16 +1006,23 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						onChange={ ( value ) =>
 							setAttributes( { captureFieldTiming: value } )
 						}
+						help={ __(
+							'Registra tiempo enfocado en cada campo individual.',
+							'eipsi-forms'
+						) }
 					/>
 					<hr />
 					<ToggleControl
-						label={ __( '⏱️ Hide Timing Analysis', 'eipsi-forms' ) }
-						checked={ ! showTimingAnalysis }
+						label={ __(
+							'⏱️ Mostrar Análisis de Tiempos',
+							'eipsi-forms'
+						) }
+						checked={ showTimingAnalysis }
 						onChange={ ( value ) =>
-							setAttributes( { showTimingAnalysis: ! value } )
+							setAttributes( { showTimingAnalysis: value } )
 						}
 						help={ __(
-							'Muestra u oculta la tabla de análisis de tiempos en esta vista previa.',
+							'Muestra u oculta la tabla de análisis de tiempos en el dashboard de respuestas.',
 							'eipsi-forms'
 						) }
 					/>
