@@ -363,10 +363,7 @@ export default function Edit( {
 				  }
 				: { ...RANDOMIZATION_DEFAULT_CONFIG };
 
-		if (
-			! currentRandomConfig.enabled ||
-			currentRandomConfig.forms.length < 2
-		) {
+		if ( ! useRandomization || currentRandomConfig.forms.length < 2 ) {
 			// eslint-disable-next-line no-alert
 			window.alert(
 				__(
