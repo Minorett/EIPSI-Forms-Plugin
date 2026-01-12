@@ -2174,11 +2174,74 @@ function eipsi_get_randomization_config() {
 }
 
 /**
- * AJAX Handler: Verificar asignación manual para participante
- * 
+ * Verificar asignación manual.
+ *
+ * Este nombre se usa en dos contextos:
+ * 1) Modo helper (llamada interna desde PHP): si se pasa $config (attrs del bloque)
+ *    y $participant_identifier, devuelve (int|null) el formId asignado manualmente.
+ * 2) Modo AJAX (legacy): si se llama sin parámetros (WordPress AJAX action), responde
+ *    JSON leyendo la config desde post_meta.
+ *
  * @since 1.3.0
+ *
+ * @param array|null  $config Config de bloque/legacy.
+ * @param string|null $participant_identifier Identificador (email o ip_xxx).
+ * @return int|null|void
  */
-function eipsi_check_manual_assignment() {
+function eipsi_check_manual_assignment($config = null, $participant_identifier = null) {
+    // === Helper mode: usado por el shortcode público [eipsi_randomization] ===
+    if (is_array($config) && !empty($participant_identifier)) {
+        $manual_assignments = array();
+
+        // Nuevo bloque standalone: manualAssignments
+        if (isset($config['manualAssignments']) && is_array($config['manualAssignments'])) {
+            $manual_assignments = $config['manualAssignments'];
+        } elseif (isset($config['manualAssigns']) && is_array($config['manualAssigns'])) {
+            // Backwards compat / naming legacy
+            $manual_assignments = $config['manualAssigns'];
+        }
+
+        if (empty($manual_assignments)) {
+            return null;
+        }
+
+        // Limpiar identificador (remover "ip_" prefix si existe)
+        $clean_identifier = str_replace('ip_', '', strtolower(trim((string) $participant_identifier)));
+
+        foreach ($manual_assignments as $assignment) {
+            $assignment_identifier = '';
+
+            // Standalone block: { email, formId, ... }
+            if (isset($assignment['email'])) {
+                $assignment_identifier = $assignment['email'];
+            } elseif (isset($assignment['participant_id'])) {
+                $assignment_identifier = $assignment['participant_id'];
+            } elseif (isset($assignment['participantId'])) {
+                $assignment_identifier = $assignment['participantId'];
+            }
+
+            $assignment_identifier = strtolower(trim((string) $assignment_identifier));
+
+            if ($assignment_identifier === $clean_identifier) {
+                $form_id = null;
+
+                if (isset($assignment['formId'])) {
+                    $form_id = $assignment['formId'];
+                } elseif (isset($assignment['assigned_form_id'])) {
+                    $form_id = $assignment['assigned_form_id'];
+                } elseif (isset($assignment['form_id'])) {
+                    $form_id = $assignment['form_id'];
+                }
+
+                return $form_id !== null ? intval($form_id) : null;
+            }
+        }
+
+        return null;
+    }
+
+    // === AJAX mode (legacy) ===
+
     // Verificar nonce
     $nonce = '';
     if (isset($_POST['nonce'])) {
@@ -2196,7 +2259,7 @@ function eipsi_check_manual_assignment() {
 
     $form_id = isset($_POST['form_id']) ? intval($_POST['form_id']) : 0;
     $participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
-    
+
     if (!$form_id || empty($participant_id)) {
         wp_send_json_error('Parámetros faltantes');
         return;
