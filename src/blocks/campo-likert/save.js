@@ -111,8 +111,9 @@ export default function Save( { attributes } ) {
 				</label>
 			) }
 			<div
-				className="likert-scale"
+				className={ `likert-scale${ reversed ? ' reversed' : '' }` }
 				data-scale={ `${ minValue }-${ maxValue }` }
+				data-reversed={ reversed ? 'true' : 'false' }
 			>
 				<ul className="likert-list">
 					{ scale.map( ( value, index ) => {
