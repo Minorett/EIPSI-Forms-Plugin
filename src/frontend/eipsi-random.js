@@ -15,6 +15,50 @@
 	}
 
 	/**
+	 * Obtiene un participant_id desde URL o storage.
+	 *
+	 * @return {string|null} participant_id o null si no hay.
+	 */
+	function getParticipantIdFromStorage() {
+		// 1) URL param (prioritario)
+		try {
+			const urlParams = new URLSearchParams( window.location.search );
+			const fromUrl = urlParams.get( 'participant_id' );
+			if ( fromUrl ) {
+				return fromUrl;
+			}
+		} catch ( e ) {
+			// Ignore URL parsing errors
+		}
+
+		// 2) sessionStorage
+		try {
+			const fromSession = sessionStorage.getItem(
+				'eipsi_participant_id'
+			);
+			if ( fromSession ) {
+				return fromSession;
+			}
+		} catch ( e ) {
+			// Ignore storage errors
+		}
+
+		// 3) localStorage
+		try {
+			const fromLocal = window.localStorage.getItem(
+				'eipsi_participant_id'
+			);
+			if ( fromLocal ) {
+				return fromLocal;
+			}
+		} catch ( e ) {
+			// Ignore storage errors
+		}
+
+		return null;
+	}
+
+	/**
 	 * Inicializa la aleatorización si se detecta el query param
 	 */
 	async function initRandomization() {
@@ -139,50 +183,6 @@
 	function getFormIdFromUrl() {
 		const urlParams = new URLSearchParams( window.location.search );
 		return urlParams.get( 'form_id' ) || '';
-	}
-
-	/**
-	 * Obtiene un participant_id desde URL o storage.
-	 *
-	 * @return {string|null} participant_id o null si no hay.
-	 */
-	function getParticipantIdFromStorage() {
-		// 1) URL param (prioritario)
-		try {
-			const urlParams = new URLSearchParams( window.location.search );
-			const fromUrl = urlParams.get( 'participant_id' );
-			if ( fromUrl ) {
-				return fromUrl;
-			}
-		} catch ( e ) {
-			// Ignore URL parsing errors
-		}
-
-		// 2) sessionStorage
-		try {
-			const fromSession = sessionStorage.getItem(
-				'eipsi_participant_id'
-			);
-			if ( fromSession ) {
-				return fromSession;
-			}
-		} catch ( e ) {
-			// Ignore storage errors
-		}
-
-		// 3) localStorage
-		try {
-			const fromLocal = window.localStorage.getItem(
-				'eipsi_participant_id'
-			);
-			if ( fromLocal ) {
-				return fromLocal;
-			}
-		} catch ( e ) {
-			// Ignore storage errors
-		}
-
-		return null;
 	}
 
 	/**
