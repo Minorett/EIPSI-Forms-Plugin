@@ -26,6 +26,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 - **Fingerprint clínico liviano:** captura opcional de browser, OS y resolución de pantalla controlada desde la pestaña "Privacy & Metadata"; pensado para tablets compartidas en clínica o investigación.
 - **Separador seguro `;` para opciones:** migración interna de comma-separated a semicolon-separated, evitando errores cuando las respuestas contienen comas, comillas o descripciones largas.
 
+### Fixed
+- **Bloque de Consentimiento en el Editor:** Ahora respeta los presets del Form Container (Clinical Blue, Minimal White, Warm Neutral, Serene Teal). El bloque hereda automáticamente las CSS variables del parent mediante `useSelect` para encontrar el `styleConfig` del Form Container. Antes, el consentimiento usaba estilos del tema por defecto y no respondía a cambios de preset.
+
 ### Changed
 - **VAS clínico v1.1:**
   - Alineación unificada entre editor y frontend: si configurás "left" en Gutenberg, aparece igual en la página real.
