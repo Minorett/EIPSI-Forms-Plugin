@@ -226,32 +226,6 @@ function eipsi_get_client_ip() {
 }
 
 /**
- * Verificar si hay asignación manual para este participante
- * 
- * @param array  $config Configuración de aleatorización
- * @param string $participant_identifier Identificador del participante
- * @return int|null Post ID del formulario asignado manualmente, o null
- */
-function eipsi_check_manual_assignment( $config, $participant_identifier ) {
-	if ( empty( $config['manualAssignments'] ) || ! is_array( $config['manualAssignments'] ) ) {
-		return null;
-	}
-
-	// Limpiar identificador (remover "ip_" prefix si existe)
-	$clean_identifier = str_replace( 'ip_', '', strtolower( $participant_identifier ) );
-
-	foreach ( $config['manualAssignments'] as $assignment ) {
-		$assigned_email = strtolower( trim( $assignment['email'] ) );
-
-		if ( $assigned_email === $clean_identifier ) {
-			return intval( $assignment['formId'] );
-		}
-	}
-
-	return null;
-}
-
-/**
  * Calcular asignación aleatoria basada en probabilidades
  * 
  * @param array  $config Configuración de aleatorización
