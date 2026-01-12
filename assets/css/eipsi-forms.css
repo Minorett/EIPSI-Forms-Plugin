@@ -198,6 +198,110 @@
 }
 
 /* ============================================================================
+   CONSENT BLOCK - INHERITS PRESET VARIABLES
+   ============================================================================ */
+
+.vas-dinamico-form .wp-block-eipsi-consent-block,
+.vas-dinamico-form .eipsi-consent-block,
+.eipsi-form .wp-block-eipsi-consent-block,
+.eipsi-form .eipsi-consent-block {
+    background: var(--eipsi-color-background, #ffffff);
+    color: var(--eipsi-color-text, #2c3e50);
+}
+
+.vas-dinamico-form .consent-title,
+.eipsi-form .consent-title {
+    color: var(--eipsi-color-text, #2c3e50);
+    font-family: var(--eipsi-font-family-heading, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-size: var(--eipsi-font-size-h3, 1.5rem);
+    font-weight: var(--eipsi-font-weight-bold, 700);
+    line-height: var(--eipsi-line-height-heading, 1.3);
+    margin: 0 0 var(--eipsi-spacing-md, 1.5rem) 0;
+}
+
+.vas-dinamico-form .eipsi-consent-body,
+.eipsi-form .eipsi-consent-body {
+    color: var(--eipsi-color-text, #2c3e50);
+    font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-size: var(--eipsi-font-size-base, 16px);
+    line-height: var(--eipsi-line-height-base, 1.6);
+    margin-bottom: var(--eipsi-spacing-md, 1.5rem);
+}
+
+.vas-dinamico-form .eipsi-consent-body p,
+.eipsi-form .eipsi-consent-body p {
+    margin: 0 0 var(--eipsi-spacing-sm, 1rem) 0;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.vas-dinamico-form .eipsi-consent-body p:last-child,
+.eipsi-form .eipsi-consent-body p:last-child {
+    margin-bottom: 0;
+}
+
+.vas-dinamico-form .consent-note,
+.eipsi-form .consent-note {
+    color: var(--eipsi-color-text-muted, #64748b);
+    font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-size: var(--eipsi-font-size-small, 0.875rem);
+    line-height: var(--eipsi-line-height-base, 1.6);
+    margin: var(--eipsi-spacing-md, 1.5rem) 0;
+}
+
+.vas-dinamico-form .eipsi-consent-checkbox-wrapper,
+.eipsi-form .eipsi-consent-checkbox-wrapper {
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border: var(--eipsi-border-width, 1px) var(--eipsi-border-style, solid) var(--eipsi-color-border, #e2e8f0);
+    border-radius: var(--eipsi-border-radius-md, 12px);
+    padding: var(--eipsi-spacing-md, 1.5rem);
+    margin-top: var(--eipsi-spacing-md, 1.5rem);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--eipsi-spacing-sm, 1rem);
+}
+
+.vas-dinamico-form .eipsi-consent-checkbox-wrapper input[type="checkbox"],
+.eipsi-form .eipsi-consent-checkbox-wrapper input[type="checkbox"] {
+    accent-color: var(--eipsi-color-primary, #005a87);
+    margin-top: 2px;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.vas-dinamico-form .eipsi-consent-checkbox-wrapper label,
+.eipsi-form .eipsi-consent-checkbox-wrapper label {
+    color: var(--eipsi-color-text, #2c3e50);
+    font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    font-size: var(--eipsi-font-size-base, 16px);
+    line-height: var(--eipsi-line-height-base, 1.6);
+    margin: 0;
+    cursor: pointer;
+}
+
+.vas-dinamico-form .eipsi-consent-checkbox-wrapper .eipsi-required-mark,
+.eipsi-form .eipsi-consent-checkbox-wrapper .eipsi-required-mark {
+    color: var(--eipsi-color-error, #d32f2f);
+    margin-left: 2px;
+}
+
+.vas-dinamico-form .consent-control,
+.eipsi-form .consent-control {
+    margin-top: var(--eipsi-spacing-md, 1.5rem);
+}
+
+.vas-dinamico-form .consent-control .form-error,
+.eipsi-form .consent-control .form-error {
+    color: var(--eipsi-color-error, #d32f2f);
+    font-size: var(--eipsi-font-size-small, 0.875rem);
+    margin-top: var(--eipsi-spacing-xs, 0.5rem);
+}
+
+/* ============================================================================
    3. TYPOGRAPHY SYSTEM
    ============================================================================ */
 

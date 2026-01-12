@@ -16,7 +16,7 @@ const renderConsentBody = ( text ) => {
 	const lines = text.split( '\n' );
 
 	return (
-		<div className="consent-body">
+		<div className="eipsi-consent-body">
 			{ lines.map( ( line, index ) => {
 				// Parsear markdown en cada línea para frontend
 				const parsedLine = parseConsentMarkdown( line );
@@ -72,7 +72,7 @@ export default function Save( { attributes } ) {
 
 			{ mostrarCheckbox && (
 				<div className="consent-control">
-					<div className="eipsi-checkbox-wrapper">
+					<div className="eipsi-consent-checkbox-wrapper">
 						<input
 							type="checkbox"
 							id="eipsi-consent-checkbox"

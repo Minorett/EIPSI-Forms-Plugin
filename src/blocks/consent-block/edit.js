@@ -22,7 +22,7 @@ const renderConsentBody = ( text ) => {
 	const lines = text.split( '\n' );
 
 	return (
-		<div className="consent-body">
+		<div className="eipsi-consent-body">
 			{ lines.map( ( line, index ) => {
 				// Parsear markdown en cada línea
 				const parsedLine = parseConsentMarkdown( line );
@@ -105,7 +105,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				) }
 
 				{ mostrarCheckbox && (
-					<div className="consent-checkbox-wrapper">
+					<div className="eipsi-consent-checkbox-wrapper">
 						<input
 							type="checkbox"
 							id="consent-preview-checkbox"
@@ -115,7 +115,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						<label htmlFor="consent-preview-checkbox">
 							{ etiquetaCheckbox }
 							{ isRequired && (
-								<span className="required-asterisk">*</span>
+								<span className="eipsi-required-mark">*</span>
 							) }
 						</label>
 					</div>
