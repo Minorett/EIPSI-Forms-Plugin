@@ -409,7 +409,7 @@ function eipsi_form_library_admin_notice() {
                 <strong><?php _e('¿Cómo usar la librería de formularios?', 'eipsi-forms'); ?></strong><br>
                 1. Hacé clic en <strong>"Añadir nuevo"</strong> para crear un formulario reutilizable.<br>
                 2. Usá el bloque <strong>"EIPSI Form Container"</strong> para armar tu formulario con páginas y campos.<br>
-                3. Una vez guardado, copiá el <strong>shortcode</strong> o usá el bloque <strong>"Formulario EIPSI"</strong> para insertarlo en cualquier página.
+                3. Una vez guardado, copiá el <strong>shortcode</strong> para insertarlo en cualquier página.
             </p>
         </div>
         <?php
@@ -468,12 +468,10 @@ add_action('save_post', 'eipsi_extract_form_name_on_save', 10, 3);
 
 /**
  * Limit which blocks can be inserted based on post type context
- * 
+ *
  * This ensures that:
  * - Form Container + campos solo aparecen en la Form Library (CPT eipsi_form_template)
- * - El bloque de inserción (Formulario EIPSI) no se ofrece dentro del editor interno
- * - Sitios con bloques antiguos no se rompen: si ya existen, se mantienen permitidos
- * 
+ *
  * @param array|bool $allowed_block_types Array of allowed block types, or true to allow all.
  * @param object     $editor_context The current editor context.
  * @return array|bool Modified array of allowed block types.
@@ -482,44 +480,19 @@ function eipsi_limit_blocks_by_context($allowed_block_types, $editor_context) {
     if (!isset($editor_context->post)) {
         return $allowed_block_types;
     }
-    
+
     $post = $editor_context->post;
     $post_type = $post->post_type;
-    $post_content = isset($post->post_content) ? $post->post_content : '';
-    
-    $form_building_blocks = array(
-        'eipsi/form-container',
-        'eipsi/pagina',
-        'eipsi/campo-texto',
-        'eipsi/campo-textarea',
-        'eipsi/campo-descripcion',
-        'eipsi/campo-select',
-        'eipsi/campo-radio',
-        'eipsi/campo-multiple',
-        'eipsi/campo-likert',
-        'eipsi/vas-slider',
-    );
-    $form_embed_block = 'eipsi/form-block';
-    
+
     if ($allowed_block_types === true || !is_array($allowed_block_types)) {
         $registered_blocks = \WP_Block_Type_Registry::get_instance()->get_all_registered();
         $allowed_block_types = array_keys($registered_blocks);
     }
-    
-    // Dentro de la Form Library (CPT) ocultamos el bloque público (embed)
-    if ($post_type === 'eipsi_form_template') {
-        // Solo quitamos el bloque embed si no existe ya en el contenido (compatibilidad)
-        if (!has_block($form_embed_block, $post_content)) {
-            $allowed_block_types = array_diff($allowed_block_types, array($form_embed_block));
-        }
-        
-        return array_values($allowed_block_types);
-    }
-    
-    // Fuera de la Form Library: PERMITIR SIEMPRE todos los bloques de construcción + embed
+
+    // Fuera de la Form Library: PERMITIR SIEMPRE todos los bloques de construcción
     // Los psicólogos pueden crear formularios desde cero en cualquier página
     // No ocultamos nada para eliminar fricción y "zero excusas"
-    
+
     return array_values($allowed_block_types);
 }
 add_filter('allowed_block_types_all', 'eipsi_limit_blocks_by_context', 10, 2);

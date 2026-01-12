@@ -1,4 +1,3 @@
-import './blocks/form-block';
 import './blocks/form-container';
 import './blocks/pagina';
 import './blocks/consent-block';

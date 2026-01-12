@@ -455,9 +455,8 @@ function eipsi_forms_register_blocks() {
 
     // REGISTRAR BLOQUES DESDE block.json (en /blocks/)
     $block_dirs = array(
-        'form-block',
         'form-container',
-        'pagina', 
+        'pagina',
         'consent-block',
         'campo-texto',
         'campo-textarea',
@@ -471,18 +470,12 @@ function eipsi_forms_register_blocks() {
 
     foreach ($block_dirs as $block_dir) {
         $block_path = EIPSI_FORMS_PLUGIN_DIR . 'blocks/' . $block_dir;
-        
+
         if (!file_exists($block_path . '/block.json')) {
             continue;
         }
 
-        $args = array();
-
-        if ('form-block' === $block_dir) {
-            $args['render_callback'] = 'eipsi_render_form_block';
-        }
-
-        register_block_type($block_path, $args);
+        register_block_type($block_path);
     }
 }
 
@@ -508,7 +501,6 @@ add_filter('block_categories_all', 'eipsi_forms_block_categories', 10, 2);
 function eipsi_forms_enqueue_block_assets($content) {
     $blocks = array(
         'eipsi/form-container',
-        'eipsi/form-block',
         'eipsi/consent-block',
         'eipsi/campo-texto',
         'eipsi/campo-textarea',
