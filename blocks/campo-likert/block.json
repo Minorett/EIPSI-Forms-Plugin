@@ -43,7 +43,11 @@
         },
         "minValue": {
             "type": "number",
-            "default": 1
+            "default": 0
+        },
+        "reversed": {
+            "type": "boolean",
+            "default": false
         },
         "maxValue": {
             "type": "number",
@@ -70,8 +74,7 @@
                 "likert5-frequency",
                 "likert7-agreement",
                 "likert7-satisfaction",
-                "likert4-agreement",
-                "likert9-scale"
+                "likert4-agreement"
             ],
             "default": "custom"
         }
