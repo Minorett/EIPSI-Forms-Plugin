@@ -61,29 +61,6 @@ function eipsi_render_form_notice($message, $type = 'info') {
 }
 
 /**
- * Resolve template ID from block attributes (backward compatibility)
- *
- * @param array $attributes Block attributes
- * @return int Template ID
- */
-function eipsi_resolve_template_id_from_attributes($attributes) {
-    $template_id = isset($attributes['templateId']) ? absint($attributes['templateId']) : 0;
-
-    // Backward compatibility: legacy formId attribute maps to saved meta
-    if (!$template_id && !empty($attributes['formId'])) {
-        global $wpdb;
-        $meta_table = $wpdb->postmeta;
-        $template_id = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT post_id FROM {$meta_table} WHERE meta_key = %s AND meta_value = %s LIMIT 1",
-            '_eipsi_form_name',
-            $attributes['formId']
-        ));
-    }
-
-    return $template_id;
-}
-
-/**
  * Fetch a form template post
  *
  * @param int $template_id
@@ -130,25 +107,6 @@ function eipsi_render_form_template_markup($template_id, $context = 'block') {
     ));
 
     return sprintf('<div %s>%s</div>', $wrapper_attributes, $content);
-}
-
-/**
- * Render callback used by the Gutenberg block
- *
- * @param array $attributes Block attributes
- * @return string
- */
-function eipsi_render_form_block($attributes) {
-    $template_id = eipsi_resolve_template_id_from_attributes($attributes);
-
-    if (!$template_id) {
-        return eipsi_render_form_notice(
-            __('Este bloque todavía no tiene un formulario asignado. Editalo en el editor para elegir uno de la librería.', 'eipsi-forms'),
-            'warning'
-        );
-    }
-
-    return eipsi_render_form_template_markup($template_id, 'block');
 }
 
 /**

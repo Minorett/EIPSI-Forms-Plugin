@@ -141,9 +141,8 @@ function eipsi_shortcode_indicator_column_content($column, $post_id) {
     if ($column === 'eipsi_forms') {
         $content = get_post_field('post_content', $post_id);
         $has_shortcode = has_shortcode($content, 'eipsi_form');
-        $has_block = has_block('eipsi/form-block', $content) || 
-                     has_block('eipsi/form-container', $content);
-        
+        $has_block = has_block('eipsi/form-container', $content);
+
         if ($has_shortcode || $has_block) {
             echo '<span class="dashicons dashicons-yes-alt" style="color: #00a32a;" title="' . esc_attr__('Contiene formularios EIPSI', 'eipsi-forms') . '"></span>';
         } else {
