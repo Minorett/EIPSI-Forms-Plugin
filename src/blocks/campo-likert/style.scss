@@ -225,15 +225,44 @@
         .likert-scale {
             padding: 1em;
         }
-        
+
         .likert-list {
             flex-direction: column;
             gap: 0.75em;
         }
-        
+
         .likert-item {
             flex: none;
             max-width: none;
         }
+    }
+}
+
+// Estilos para escala invertida
+.eipsi-likert-field .likert-scale.reversed {
+    .likert-list {
+        flex-direction: row-reverse;
+
+        @media (max-width: 767px) {
+            flex-direction: column-reverse;
+        }
+    }
+
+    .likert-item {
+        // Visual indication that the scale is reversed
+        background: var(--eipsi-color-background-subtle, #f8f9fa);
+
+        &:hover {
+            background: var(--eipsi-color-background, #ffffff);
+        }
+    }
+
+    // Optional: add a visual indicator for the reversed state
+    &::before {
+        content: '↔️';
+        display: inline-block;
+        margin-right: 0.5em;
+        font-size: 0.9em;
+        opacity: 0.7;
     }
 }
