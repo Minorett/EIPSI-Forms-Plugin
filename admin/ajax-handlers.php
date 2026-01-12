@@ -2102,56 +2102,6 @@ function eipsi_get_site_logo_handler() {
 // =============================================================================
 
 /**
- * AJAX Handler: Get Randomization Configuration
- * Returns the randomization config for a study form
- */
-function eipsi_get_randomization_config() {
-    // Verify nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce')) {
-        wp_send_json_error('Security check failed');
-    }
-
-    // Verify form_id
-    if (!isset($_POST['form_id'])) {
-        wp_send_json_error('Missing form_id parameter');
-    }
-
-    $form_id = intval($_POST['form_id']);
-    
-    // Get randomization config from postmeta
-    $random_config = get_post_meta($form_id, '_eipsi_random_config', true);
-    
-    if (!$random_config || !is_array($random_config)) {
-        wp_send_json_error('No randomization configuration found');
-    }
-
-    // Verify randomization is enabled
-    if (empty($random_config['enabled'])) {
-        wp_send_json_error('Randomization is not enabled for this form');
-    }
-
-    // Verify there are forms to randomize between
-    if (empty($random_config['forms']) || count($random_config['forms']) < 2) {
-        wp_send_json_error('Insufficient forms configured for randomization');
-    }
-
-    // Return sanitized config
-    wp_send_json_success(array(
-        'enabled' => true,
-        'forms' => array_map(function($form) {
-            return array(
-                'id' => intval($form['id']),
-                'title' => sanitize_text_field($form['title'] ?? '')
-            );
-        }, $random_config['forms']),
-        'method' => sanitize_text_field($random_config['method'] ?? 'simple'),
-        'seed_base' => sanitize_text_field($random_config['seed_base'] ?? null)
-    ));
-}
-add_action('wp_ajax_eipsi_get_randomization_config', 'eipsi_get_randomization_config');
-add_action('wp_ajax_nopriv_eipsi_get_randomization_config', 'eipsi_get_randomization_config');
-
-/**
  * AJAX Handler: Check Manual Assignment
  * Checks if a participant has a manual assignment override
  */

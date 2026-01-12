@@ -6,312 +6,312 @@
  */
 
 ( function () {
-    'use strict';
+	'use strict';
 
-    /* global sessionStorage */
+	/* global sessionStorage */
 
-    if ( typeof window === 'undefined' ) {
-        return;
-    }
+	if ( typeof window === 'undefined' ) {
+		return;
+	}
 
-    /**
-     * Inicializa la aleatorización si se detecta el query param
-     */
-    async function initRandomization() {
-        // === Fase 2: Detectar token de recordatorio ===
-        const urlParams = new URLSearchParams( window.location.search );
-        const token = urlParams.get( 'eipsi_token' );
+	/**
+	 * Inicializa la aleatorización si se detecta el query param
+	 */
+	async function initRandomization() {
+		// === Fase 2: Detectar token de recordatorio ===
+		const urlParams = new URLSearchParams( window.location.search );
+		const token = urlParams.get( 'eipsi_token' );
 
-        if ( token ) {
-            // Validar token con el servidor
-            const tokenValid = await validateReminderToken( token );
-            if ( tokenValid ) {
-                // Token válido, la función ya guardó los datos en sessionStorage
-                return;
-            }
-            // Token inválido, continuar con flujo normal
-        }
+		if ( token ) {
+			// Validar token con el servidor
+			const tokenValid = await validateReminderToken( token );
+			if ( tokenValid ) {
+				// Token válido, la función ya guardó los datos en sessionStorage
+				return;
+			}
+			// Token inválido, continuar con flujo normal
+		}
 
-        // Verificar que ya no tenemos una asignación guardada
-        const existingFormId = sessionStorage.getItem( 'eipsi_assigned_form' );
-        const existingSeed = sessionStorage.getItem( 'eipsi_seed' );
+		// Verificar que ya no tenemos una asignación guardada
+		const existingFormId = sessionStorage.getItem( 'eipsi_assigned_form' );
+		const existingSeed = sessionStorage.getItem( 'eipsi_seed' );
 
-        if ( existingFormId && existingSeed ) {
-            // Ya tenemos asignación, verificar si necesitamos redirigir
-            const currentFormId = getCurrentFormId();
-            if ( String( existingFormId ) !== String( currentFormId ) ) {
-                // Redirigir al formulario asignado
-                redirectToForm( existingFormId, existingSeed );
-                return;
-            }
-            return; // Ya estamos en el formulario correcto
-        }
+		if ( existingFormId && existingSeed ) {
+			// Ya tenemos asignación, verificar si necesitamos redirigir
+			const currentFormId = getCurrentFormId();
+			if ( String( existingFormId ) !== String( currentFormId ) ) {
+				// Redirigir al formulario asignado
+				redirectToForm( existingFormId, existingSeed );
+				return;
+			}
+			return; // Ya estamos en el formulario correcto
+		}
 
-        // Obtener formulario principal
-        const mainForm = document.querySelector(
-            '.vas-form, .vas-dinamico-form'
-        );
-        if ( ! mainForm ) {
-            return;
-        }
+		// Obtener formulario principal
+		const mainForm = document.querySelector(
+			'.vas-form, .vas-dinamico-form'
+		);
+		if ( ! mainForm ) {
+			return;
+		}
 
-        const mainFormId = mainForm.dataset.formId || getFormIdFromUrl();
-        if ( ! mainFormId ) {
-            return;
-        }
+		const mainFormId = mainForm.dataset.formId || getFormIdFromUrl();
+		if ( ! mainFormId ) {
+			return;
+		}
 
-        // Obtener identificadores del participante
-        const email = await getParticipantEmail();
-        const participantId = getParticipantIdFromStorage();
-        
-        // Necesitamos al menos uno: email o participant_id
-        if ( ! email && ! participantId ) {
-            return;
-        }
+		// Obtener identificadores del participante
+		const email = await getParticipantEmail();
+		const participantId = getParticipantIdFromStorage();
 
-        // Llamar al handler AJAX
-        try {
-            const params = {
-                action: 'eipsi_random_assign',
-                form_id: mainFormId,
-                nonce: window.eipsiNonce || window.eipsiRandomNonce || '',
-            };
-            
-            // Enviar email si existe, si no participant_id
-            if ( email ) {
-                params.email = email;
-            } else if ( participantId ) {
-                params.participant_id = participantId;
-            }
-            
-            const response = await fetch( window.ajaxurl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams( params ),
-            } );
+		// Necesitamos al menos uno: email o participant_id
+		if ( ! email && ! participantId ) {
+			return;
+		}
 
-            const data = await response.json();
+		// Llamar al handler AJAX
+		try {
+			const params = {
+				action: 'eipsi_random_assign',
+				form_id: mainFormId,
+				nonce: window.eipsiNonce || window.eipsiRandomNonce || '',
+			};
 
-            if ( data.success && data.data ) {
-                const { formId, seed, type } = data.data;
+			// Enviar email si existe, si no participant_id
+			if ( email ) {
+				params.email = email;
+			} else if ( participantId ) {
+				params.participant_id = participantId;
+			}
 
-                // Guardar en sessionStorage
-                sessionStorage.setItem(
-                    'eipsi_assigned_form',
-                    String( formId )
-                );
-                sessionStorage.setItem( 'eipsi_seed', seed || '' );
-                sessionStorage.setItem( 'eipsi_random_type', type || 'random' );
+			const response = await fetch( window.ajaxurl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: new URLSearchParams( params ),
+			} );
 
-                // Si el formulario asignado es diferente, redirigir
-                if ( String( formId ) !== String( mainFormId ) ) {
-                    redirectToForm( formId, seed );
-                }
-            }
-        } catch ( error ) {
-            // eslint-disable-next-line no-console
-            console.error( '[EIPSI Random] Error:', error );
-        }
-    }
+			const data = await response.json();
 
-    /**
-     * Obtiene el ID del formulario actual
-     *
-     * @return {string} El ID del formulario actual
-     */
-    function getCurrentFormId() {
-        const form = document.querySelector( '.vas-form, .vas-dinamico-form' );
-        if ( form && form.dataset.formId ) {
-            return form.dataset.formId;
-        }
+			if ( data.success && data.data ) {
+				const { formId, seed, type } = data.data;
 
-        // Intentar obtener de la URL
-        return getFormIdFromUrl();
-    }
+				// Guardar en sessionStorage
+				sessionStorage.setItem(
+					'eipsi_assigned_form',
+					String( formId )
+				);
+				sessionStorage.setItem( 'eipsi_seed', seed || '' );
+				sessionStorage.setItem( 'eipsi_random_type', type || 'random' );
 
-    /**
-     * Extrae el form_id de la URL
-     *
-     * @return {string} El ID del formulario desde la URL
-     */
-    function getFormIdFromUrl() {
-        const urlParams = new URLSearchParams( window.location.search );
-        return urlParams.get( 'form_id' ) || '';
-    }
+				// Si el formulario asignado es diferente, redirigir
+				if ( String( formId ) !== String( mainFormId ) ) {
+					redirectToForm( formId, seed );
+				}
+			}
+		} catch ( error ) {
+			// eslint-disable-next-line no-console
+			console.error( '[EIPSI Random] Error:', error );
+		}
+	}
 
-    /**
-     * Obtiene el email del participante
-     *
-     * @return {Promise<string|null>} El email del participante o null
-     */
-    async function getParticipantEmail() {
-        // Si ya tenemos email en window, usar ese
-        if ( window.eipsiParticipantEmail ) {
-            return window.eipsiParticipantEmail;
-        }
+	/**
+	 * Obtiene el ID del formulario actual
+	 *
+	 * @return {string} El ID del formulario actual
+	 */
+	function getCurrentFormId() {
+		const form = document.querySelector( '.vas-form, .vas-dinamico-form' );
+		if ( form && form.dataset.formId ) {
+			return form.dataset.formId;
+		}
 
-        // Verificar en localStorage
-        try {
-            const savedEmail = window.localStorage.getItem(
-                'eipsi_participant_email'
-            );
-            if ( savedEmail ) {
-                return savedEmail;
-            }
-        } catch ( e ) {
-            // Ignore storage errors
-        }
+		// Intentar obtener de la URL
+		return getFormIdFromUrl();
+	}
 
-        // Verificar si hay un campo de email en el formulario
-        const emailField = document.querySelector( 'input[type="email"]' );
-        if ( emailField && emailField.value ) {
-            return emailField.value;
-        }
+	/**
+	 * Extrae el form_id de la URL
+	 *
+	 * @return {string} El ID del formulario desde la URL
+	 */
+	function getFormIdFromUrl() {
+		const urlParams = new URLSearchParams( window.location.search );
+		return urlParams.get( 'form_id' ) || '';
+	}
 
-        // No mostrar prompt en contexto de frontend sin usuario
-        // El participante debe estar logueado o proporcionar email de otra forma
-        return null;
-    }
+	/**
+	 * Obtiene el email del participante
+	 *
+	 * @return {Promise<string|null>} El email del participante o null
+	 */
+	async function getParticipantEmail() {
+		// Si ya tenemos email en window, usar ese
+		if ( window.eipsiParticipantEmail ) {
+			return window.eipsiParticipantEmail;
+		}
 
-    /**
-     * Redirige al formulario asignado
-     *
-     * @param {number|string} formId - ID del formulario asignado
-     * @param {string}        seed   - Seed de la asignación
-     */
-    function redirectToForm( formId, seed ) {
-        const baseUrl = window.location.href.split( '?' )[ 0 ];
-        const params = new URLSearchParams();
+		// Verificar en localStorage
+		try {
+			const savedEmail = window.localStorage.getItem(
+				'eipsi_participant_email'
+			);
+			if ( savedEmail ) {
+				return savedEmail;
+			}
+		} catch ( e ) {
+			// Ignore storage errors
+		}
 
-        if ( formId ) {
-            params.set( 'form_id', String( formId ) );
-        }
-        if ( seed ) {
-            params.set( 'eipsi_seed', seed );
-        }
-        params.set( 'eipsi_assigned', '1' );
+		// Verificar si hay un campo de email en el formulario
+		const emailField = document.querySelector( 'input[type="email"]' );
+		if ( emailField && emailField.value ) {
+			return emailField.value;
+		}
 
-        window.location.href = baseUrl + '?' + params.toString();
-    }
+		// No mostrar prompt en contexto de frontend sin usuario
+		// El participante debe estar logueado o proporcionar email de otra forma
+		return null;
+	}
 
-    /**
-     * Detecta si la aleatorización ya fue completada
-     *
-     * @return {boolean} True si ya fue asignado
-     */
-    function isAlreadyAssigned() {
-        const urlParams = new URLSearchParams( window.location.search );
-        return urlParams.get( 'eipsi_assigned' ) === '1';
-    }
+	/**
+	 * Redirige al formulario asignado
+	 *
+	 * @param {number|string} formId - ID del formulario asignado
+	 * @param {string}        seed   - Seed de la asignación
+	 */
+	function redirectToForm( formId, seed ) {
+		const baseUrl = window.location.href.split( '?' )[ 0 ];
+		const params = new URLSearchParams();
 
-    /**
-     * Valida un token de recordatorio con el servidor (Fase 2)
-     *
-     * @param {string} token - Token recibido en la URL
-     * @return {Promise<boolean>} True si el token es válido
-     */
-    async function validateReminderToken( token ) {
-        try {
-            const response = await fetch( window.ajaxurl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams( {
-                    action: 'eipsi_validate_reminder_token',
-                    token,
-                } ),
-            } );
+		if ( formId ) {
+			params.set( 'form_id', String( formId ) );
+		}
+		if ( seed ) {
+			params.set( 'eipsi_seed', seed );
+		}
+		params.set( 'eipsi_assigned', '1' );
 
-            const data = await response.json();
+		window.location.href = baseUrl + '?' + params.toString();
+	}
 
-            if ( data.success && data.data && data.data.valid ) {
-                const { email, form_id: formId, take, seed } = data.data;
+	/**
+	 * Detecta si la aleatorización ya fue completada
+	 *
+	 * @return {boolean} True si ya fue asignado
+	 */
+	function isAlreadyAssigned() {
+		const urlParams = new URLSearchParams( window.location.search );
+		return urlParams.get( 'eipsi_assigned' ) === '1';
+	}
 
-                // Guardar datos en sessionStorage
-                sessionStorage.setItem(
-                    'eipsi_assigned_form',
-                    String( formId )
-                );
-                sessionStorage.setItem( 'eipsi_seed', seed || '' );
-                sessionStorage.setItem( 'eipsi_email', email || '' );
-                sessionStorage.setItem( 'eipsi_take', String( take ) );
-                sessionStorage.setItem(
-                    'eipsi_random_type',
-                    'token_auto_login'
-                );
+	/**
+	 * Valida un token de recordatorio con el servidor (Fase 2)
+	 *
+	 * @param {string} token - Token recibido en la URL
+	 * @return {Promise<boolean>} True si el token es válido
+	 */
+	async function validateReminderToken( token ) {
+		try {
+			const response = await fetch( window.ajaxurl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: new URLSearchParams( {
+					action: 'eipsi_validate_reminder_token',
+					token,
+				} ),
+			} );
 
-                // eslint-disable-next-line no-console
-                console.log( '[EIPSI Random] Token validated successfully' );
+			const data = await response.json();
 
-                // Si el formulario actual no coincide, redirigir
-                const currentFormId = getCurrentFormId();
-                if ( String( formId ) !== String( currentFormId ) ) {
-                    redirectToForm( formId, seed );
-                }
+			if ( data.success && data.data && data.data.valid ) {
+				const { email, form_id: formId, take, seed } = data.data;
 
-                return true;
-            }
+				// Guardar datos en sessionStorage
+				sessionStorage.setItem(
+					'eipsi_assigned_form',
+					String( formId )
+				);
+				sessionStorage.setItem( 'eipsi_seed', seed || '' );
+				sessionStorage.setItem( 'eipsi_email', email || '' );
+				sessionStorage.setItem( 'eipsi_take', String( take ) );
+				sessionStorage.setItem(
+					'eipsi_random_type',
+					'token_auto_login'
+				);
 
-            // Token inválido o expirado
-            // eslint-disable-next-line no-console
-            console.warn(
-                '[EIPSI Random] Token invalid:',
-                data.data ? data.data.message : 'Unknown error'
-            );
+				// eslint-disable-next-line no-console
+				console.log( '[EIPSI Random] Token validated successfully' );
 
-            // Mostrar mensaje al usuario (solo en consola para evitar alert bloqueante)
-            // Los errores se muestran mejor en UI personalizada
-            if ( data.data && data.data.message ) {
-                // eslint-disable-next-line no-console
-                console.error( '[EIPSI Random]', data.data.message );
-            }
+				// Si el formulario actual no coincide, redirigir
+				const currentFormId = getCurrentFormId();
+				if ( String( formId ) !== String( currentFormId ) ) {
+					redirectToForm( formId, seed );
+				}
 
-            return false;
-        } catch ( error ) {
-            // eslint-disable-next-line no-console
-            console.error( '[EIPSI Random] Token validation error:', error );
-            return false;
-        }
-    }
+				return true;
+			}
 
-    // Inicializar cuando el DOM esté listo
-    if ( document.readyState === 'loading' ) {
-        document.addEventListener( 'DOMContentLoaded', function () {
-            // Solo ejecutar si hay query param o flag de asignación
-            const urlParams = new URLSearchParams( window.location.search );
-            if ( urlParams.has( 'eipsi_random' ) || isAlreadyAssigned() ) {
-                initRandomization();
-            }
-        } );
-    } else {
-        // DOM ya cargado
-        const urlParams = new URLSearchParams( window.location.search );
-        if ( urlParams.has( 'eipsi_random' ) || isAlreadyAssigned() ) {
-            initRandomization();
-        }
-    }
+			// Token inválido o expirado
+			// eslint-disable-next-line no-console
+			console.warn(
+				'[EIPSI Random] Token invalid:',
+				data.data ? data.data.message : 'Unknown error'
+			);
 
-    // Exportar funciones para uso externo
-    window.EIPSIRandomization = {
-        init: initRandomization,
-        /**
-         * Obtiene la asignación actual del participante.
-         * @return {{formId: string|null, seed: string|null, type: string|null}} Un objeto con los datos de asignación actual.
-         */
-        getAssignment() {
-            return {
-                formId: sessionStorage.getItem( 'eipsi_assigned_form' ),
-                seed: sessionStorage.getItem( 'eipsi_seed' ),
-                type: sessionStorage.getItem( 'eipsi_random_type' ),
-            };
-        },
-        clearAssignment() {
-            sessionStorage.removeItem( 'eipsi_assigned_form' );
-            sessionStorage.removeItem( 'eipsi_seed' );
-            sessionStorage.removeItem( 'eipsi_random_type' );
-        },
-    };
+			// Mostrar mensaje al usuario (solo en consola para evitar alert bloqueante)
+			// Los errores se muestran mejor en UI personalizada
+			if ( data.data && data.data.message ) {
+				// eslint-disable-next-line no-console
+				console.error( '[EIPSI Random]', data.data.message );
+			}
+
+			return false;
+		} catch ( error ) {
+			// eslint-disable-next-line no-console
+			console.error( '[EIPSI Random] Token validation error:', error );
+			return false;
+		}
+	}
+
+	// Inicializar cuando el DOM esté listo
+	if ( document.readyState === 'loading' ) {
+		document.addEventListener( 'DOMContentLoaded', function () {
+			// Solo ejecutar si hay query param o flag de asignación
+			const urlParams = new URLSearchParams( window.location.search );
+			if ( urlParams.has( 'eipsi_random' ) || isAlreadyAssigned() ) {
+				initRandomization();
+			}
+		} );
+	} else {
+		// DOM ya cargado
+		const urlParams = new URLSearchParams( window.location.search );
+		if ( urlParams.has( 'eipsi_random' ) || isAlreadyAssigned() ) {
+			initRandomization();
+		}
+	}
+
+	// Exportar funciones para uso externo
+	window.EIPSIRandomization = {
+		init: initRandomization,
+		/**
+		 * Obtiene la asignación actual del participante.
+		 * @return {{formId: string|null, seed: string|null, type: string|null}} Un objeto con los datos de asignación actual.
+		 */
+		getAssignment() {
+			return {
+				formId: sessionStorage.getItem( 'eipsi_assigned_form' ),
+				seed: sessionStorage.getItem( 'eipsi_seed' ),
+				type: sessionStorage.getItem( 'eipsi_random_type' ),
+			};
+		},
+		clearAssignment() {
+			sessionStorage.removeItem( 'eipsi_assigned_form' );
+			sessionStorage.removeItem( 'eipsi_seed' );
+			sessionStorage.removeItem( 'eipsi_random_type' );
+		},
+	};
 } )();
