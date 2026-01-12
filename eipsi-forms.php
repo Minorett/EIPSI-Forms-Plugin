@@ -386,9 +386,15 @@ function eipsi_forms_register_blocks() {
     );
 
     // Pass admin nonce to block editor for AJAX calls (e.g., eipsi_get_forms_list)
+    // Also pass permalink and postId for randomization link generation
+    $current_post_id = isset($post) ? $post->ID : (isset($_GET['post']) ? intval($_GET['post']) : 0);
+    $permalink = $current_post_id ? get_permalink($current_post_id) : '';
+
     wp_localize_script('eipsi-blocks-editor', 'eipsiEditorData', array(
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_admin_nonce'),
+        'permalink' => $permalink,
+        'postId' => $current_post_id,
     ));
     
     // Backward compatibility: also expose as window.eipsiAdminNonce

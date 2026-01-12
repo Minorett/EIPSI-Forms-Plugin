@@ -80,67 +80,6 @@ export default function Edit( { attributes, setAttributes } ) {
 					<h3 className="consent-title">{ displayLabel }</h3>
 				) }
 
-				{ /* Cheat Sheet de Markdown */ }
-				<div
-					style={ {
-						marginBottom: '15px',
-						padding: '12px',
-						backgroundColor: '#e7f3ff',
-						border: '1px solid #b3d9ff',
-						borderRadius: '4px',
-						fontSize: '13px',
-						lineHeight: '1.8',
-						color: '#0056b3',
-					} }
-				>
-					<strong>💡 Formato de Texto:</strong>
-					<br />
-					Escribe{ ' ' }
-					<code
-						style={ {
-							backgroundColor: '#fff',
-							padding: '2px 4px',
-							borderRadius: '2px',
-							color: '#333',
-							fontFamily: 'monospace',
-						} }
-					>
-						*tu texto*
-					</code>{ ' ' }
-					para <strong>negrita</strong>
-					<br />
-					Escribe{ ' ' }
-					<code
-						style={ {
-							backgroundColor: '#fff',
-							padding: '2px 4px',
-							borderRadius: '2px',
-							color: '#333',
-							fontFamily: 'monospace',
-						} }
-					>
-						_tu texto_
-					</code>{ ' ' }
-					para <em>itálica</em>
-					<br />
-					Escribe{ ' ' }
-					<code
-						style={ {
-							backgroundColor: '#fff',
-							padding: '2px 4px',
-							borderRadius: '2px',
-							color: '#333',
-							fontFamily: 'monospace',
-						} }
-					>
-						*_tu texto_*
-					</code>{ ' ' }
-					para{ ' ' }
-					<strong>
-						<em>negrita e itálica</em>
-					</strong>
-				</div>
-
 				{ /* Validación visual */ }
 				{ validationError && (
 					<div
