@@ -43,7 +43,12 @@ const RANDOMIZATION_DEFAULT_CONFIG = {
 	manualAssigns: [],
 };
 
-export default function Edit( { attributes, setAttributes, clientId } ) {
+export default function Edit( {
+	attributes,
+	setAttributes,
+	clientId,
+	className,
+} ) {
 	const {
 		formId,
 		submitButtonLabel,
@@ -437,8 +442,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const cssVars = serializeToCSSVariables( currentConfig );
 
 	const blockProps = useBlockProps( {
-		className: 'eipsi-form-container-editor',
+		className: 'eipsi-form eipsi-form ' + ( className || '' ),
 		style: cssVars,
+		'data-preset': presetName || 'Clinical Blue',
 	} );
 
 	const ALLOWED_BLOCKS = [
@@ -456,7 +462,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 	const innerBlocksProps = useInnerBlocksProps(
 		{
-			className: 'eipsi-form-inner-blocks',
+			className: 'eipsi-form eipsi-form-content',
 		},
 		{
 			allowedBlocks: ALLOWED_BLOCKS,
