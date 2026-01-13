@@ -42,13 +42,13 @@ function eipsi_register_form_template_cpt() {
         'show_in_rest'        => true, // Enable Gutenberg
         'capability_type'     => 'post',
         'capabilities'        => array(
-            'edit_post'          => 'manage_options',
-            'edit_posts'         => 'manage_options',
-            'edit_others_posts'  => 'manage_options',
-            'publish_posts'      => 'manage_options',
-            'read_post'          => 'manage_options',
-            'read_private_posts' => 'manage_options',
-            'delete_post'        => 'manage_options',
+            'edit_post'          => 'edit_posts',         // Clínicos pueden crear/editar formularios propios
+            'edit_posts'         => 'edit_posts',         // Clínicos pueden ver lista de formularios
+            'edit_others_posts'  => 'manage_options',      // Solo admin puede editar de otros (seguridad)
+            'publish_posts'      => 'manage_options',      // Solo admin puede publicar (seguridad ética)
+            'read_post'          => 'read',               // Cualquiera con acceso puede ver formularios
+            'read_private_posts' => 'manage_options',      // Solo admin puede ver privados
+            'delete_post'        => 'manage_options',      // Solo admin puede borrar (seguridad ética)
         ),
         'hierarchical'        => false,
         'supports'            => array('title', 'editor', 'custom-fields'),

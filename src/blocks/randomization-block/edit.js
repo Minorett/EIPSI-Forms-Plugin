@@ -26,7 +26,7 @@ import {
 	Flex,
 	FlexItem,
 } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { useState, useEffect } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 
@@ -52,10 +52,19 @@ export default function Edit( { attributes, setAttributes } ) {
 	// Cargar formularios disponibles del CPT eipsi_form_template
 	useEffect( () => {
 		setIsLoading( true );
+		// eslint-disable-next-line no-console
+		console.log(
+			'[EIPSI Randomization] Cargando formularios desde REST API...'
+		);
 		apiFetch( {
 			path: '/wp/v2/eipsi_form_template?per_page=100&status=publish',
 		} )
 			.then( ( posts ) => {
+				// eslint-disable-next-line no-console
+				console.log(
+					`[EIPSI Randomization] ${ posts.length } formularios cargados`,
+					posts
+				);
 				const options = posts.map( ( post ) => ( {
 					id: String( post.id ),
 					label: post.title.rendered || `Formulario #${ post.id }`,
@@ -65,9 +74,16 @@ export default function Edit( { attributes, setAttributes } ) {
 			.catch( ( error ) => {
 				// eslint-disable-next-line no-console
 				console.error(
-					'[EIPSI Randomization] Error loading forms:',
+					'[EIPSI Randomization] Error cargando formularios:',
 					error
 				);
+				// Si es un error de permisos, mostrar mensaje más claro
+				if ( error.code === 'rest_forbidden' ) {
+					// eslint-disable-next-line no-console
+					console.warn(
+						'[EIPSI Randomization] Permiso denegado. Verificar permisos del usuario o contactar al administrador.'
+					);
+				}
 			} )
 			.finally( () => {
 				setIsLoading( false );
@@ -459,6 +475,31 @@ export default function Edit( { attributes, setAttributes } ) {
 									{ __(
 										'Cargando formularios…',
 										'eipsi-forms'
+									) }
+								</Notice>
+							) }
+
+							{ ! isLoading && availableForms.length === 0 && (
+								<Notice
+									status="warning"
+									isDismissible={ false }
+								>
+									{ __(
+										'No se encontraron formularios. Creá formularios en Form Library para poder usarlos aquí.',
+										'eipsi-forms'
+									) }
+								</Notice>
+							) }
+
+							{ ! isLoading && availableForms.length > 0 && (
+								<Notice status="info" isDismissible={ false }>
+									{ sprintf(
+										/* translators: %d: number of available forms */
+										__(
+											'%d formulario(s) disponible(s) para aleatorizar.',
+											'eipsi-forms'
+										),
+										availableForms.length
 									) }
 								</Notice>
 							) }
