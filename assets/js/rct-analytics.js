@@ -251,6 +251,9 @@
                     <button type="button" class="rct-button rct-button-primary rct-view-details" data-randomization-id="${escapeHtml(rct.randomization_id)}">
                         👁️ Ver Detalles
                     </button>
+                    <button type="button" class="rct-button rct-button-download" onclick="downloadAssignmentsCSV('${escapeHtml(rct.randomization_id)}')">
+                        📥 Descargar CSV
+                    </button>
                     <button type="button" class="rct-button" data-copy-id="${escapeHtml(rct.randomization_id)}">
                         📋 Copiar ID
                     </button>
@@ -421,11 +424,53 @@
     }
 
     /**
-     * Mostrar lista de usuarios (funcionalidad básica)
+     * Descargar CSV de asignaciones
      */
-    window.showRCTUsers = function(randomizationId) {
-        showMessage('Funcionalidad de lista de usuarios en desarrollo', 'info');
-    };
+    function downloadAssignmentsCSV(randomizationId, formId = null) {
+        const nonce = eipsiAdmin?.nonce || RCT_ANALYTICS_CONFIG.nonce;
+        
+        if (!nonce) {
+            showError('Error de seguridad: nonce faltante');
+            return;
+        }
+
+        // Crear formulario temporal para POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = RCT_ANALYTICS_CONFIG.ajaxUrl;
+        form.style.display = 'none';
+
+        const fields = {
+            'action': 'eipsi_download_assignments_csv',
+            'randomization_id': randomizationId,
+            'nonce': nonce
+        };
+
+        if (formId) {
+            fields['form_id'] = formId;
+        }
+
+        Object.keys(fields).forEach(key => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = fields[key];
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+        
+        // Limpiar después de descarga
+        setTimeout(() => {
+            document.body.removeChild(form);
+        }, 100);
+
+        showSuccess('Descargando CSV...');
+    }
+
+    // Exponer función globalmente para uso desde HTML onclick
+    window.downloadAssignmentsCSV = downloadAssignmentsCSV;
 
     /**
      * Auto-refresh
