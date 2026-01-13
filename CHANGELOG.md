@@ -8,8 +8,61 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ## [Unreleased] – Próxima versión clínica
 
+### Planning
+- Integrated completion page (misma URL forever)
+- Save & Continue Later + 30s autosave + IndexedDB drafts
+- Conditional field visibility dentro de la misma página
+- Clinical templates (PHQ-9, GAD-7, etc.) con automatic scoring
+
+---
+
+## [1.3.1] – 2025-01-19 (RCT System: Fingerprinting + Persistencia Completa)
+
 ### Added
-- **🎲 Bloque de Aleatorización Independiente (v1.3.0):** Nuevo bloque Gutenberg para configurar aleatorización de formularios sin depender del Form Container. Features:
+- **🎲 Sistema RCT Completo con Fingerprinting Robusto:** Implementación end-to-end de aleatorización con persistencia perfecta para Randomized Controlled Trials (RCTs). Features:
+  - **Fingerprinting en cliente (JS):** Canvas + WebGL + Screen + Timezone + Language + Platform + User Agent + Hardware concurrency + Device memory + Plugins → Hash SHA-256 de 32 caracteres. Generación automática en `assets/js/eipsi-fingerprint.js` con guardado en sessionStorage.
+  - **Base de datos dual:** 
+    - Tabla `wp_eipsi_randomization_configs` para almacenar configuraciones de estudios RCT (formularios, probabilidades, método, asignaciones manuales).
+    - Tabla `wp_eipsi_randomization_assignments` para trackear asignaciones usuario→formulario con `UNIQUE KEY (randomization_id, user_fingerprint)`.
+  - **Persistencia perfecta:** Usuario que presiona F5 (refrescar) **siempre ve el mismo formulario asignado**. La asignación persiste indefinidamente (3 meses+) porque el fingerprint es reproducible.
+  - **Shortcode funcional:** `[eipsi_randomization id="rand_abc123"]` ejecuta flujo completo:
+    1. Obtiene fingerprint del usuario
+    2. Busca asignación previa en DB
+    3. Si existe: devuelve mismo formulario + incrementa `access_count`
+    4. Si no existe: calcula asignación aleatoria + guarda en DB + renderiza formulario
+  - **Método seeded reproducible:** Usa `crc32(fingerprint + randomization_id)` como seed para `mt_rand()`, garantizando que mismo usuario siempre obtiene misma asignación (incluso si se borra la DB).
+  - **Método pure-random:** Usa `random_int()` para aleatorización completamente impredecible.
+  - **Asignaciones manuales (override ético):** Permite asignar manualmente un email específico a un formulario, sobrescribiendo aleatorización.
+  - **Tracking completo:** `assigned_at`, `last_access`, `access_count` para cada usuario.
+  - **REST API para guardar configuraciones:** Endpoint `/wp/v2/eipsi_randomization_config` (POST) con guardado automático desde el bloque (debounced 2s).
+  - **Logging detallado:** Error logs en PHP y console logs en JS para debugging completo.
+  - **Documentación completa:** `docs/RCT-SYSTEM.md` con arquitectura, flujos, ejemplos de código, casos de uso y criterios de aceptación.
+
+### Changed
+- **Bloque de Aleatorización v2.0 (v1.3.0 → v1.3.1):**
+  - Título mejorado: **🎲 Configuración** en bold (fontSize: 1.25rem, fontWeight: bold) para máxima claridad.
+  - Guardado automático en DB cuando cambia configuración (debounced 2s) mediante REST API.
+  - Mejor integración con sistema de fingerprinting.
+- **Shortcode Handler refactorizado (v1.3.1):**
+  - Prioriza búsqueda de configuración en DB (vía `eipsi_get_randomization_config_from_db()`) antes de buscar en blocks (backwards compatibility).
+  - Usa fingerprinting en lugar de IP débil como identificador principal.
+  - Separa claramente funciones: `eipsi_get_existing_assignment()`, `eipsi_create_assignment()`, `eipsi_update_assignment_access()`.
+  - Logs informativos en cada paso del flujo.
+- **Frontend assets enqueuing (v1.3.1):**
+  - `eipsi-fingerprint.js` se enqueue automáticamente en todas las páginas para garantizar disponibilidad del fingerprint.
+  - Se ejecuta antes de `eipsi-tracking.js` y `eipsi-forms.js`.
+
+### Fixed
+- **Persistencia de asignaciones:** Antes, usuarios podían ver diferentes formularios al refrescar (F5) porque el sistema usaba solo IP (que puede cambiar con VPN/proxy). Ahora, con fingerprinting robusto, la asignación es **100% persistente** independientemente de refreshes, cierre de navegador o paso del tiempo.
+- **Asignaciones duplicadas:** La constraint `UNIQUE KEY (randomization_id, user_fingerprint)` en DB previene asignaciones duplicadas para el mismo usuario.
+- **Fallback robusto:** Si fingerprinting JS falla (navegadores antiguos, JavaScript deshabilitado), el sistema genera fingerprint en servidor basado en User Agent + IP + Accept-Language + Accept-Encoding.
+
+---
+
+## [1.3.0] – 2025-01-18 (Bloque de Aleatorización Independiente)
+
+### Added
+- **🎲 Bloque de Aleatorización Independiente:** Nuevo bloque Gutenberg para configurar aleatorización de formularios sin depender del Form Container. Features:
   - Configuración visual simple con porcentajes automáticos (siempre suman 100%)
   - Asignaciones manuales (override ético) para participantes específicos
   - Generación automática de shortcode `[eipsi_randomization id="xyz"]` y link directo

@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.3.0
+ * Version: 1.3.1
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -13,8 +13,8 @@
  * Requires PHP: 7.4
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics
- * Stable tag: 1.3.0
+ * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization
+ * Stable tag: 1.3.1
  * 
  * @package EIPSI_Forms
  */
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('EIPSI_FORMS_VERSION', '1.3.0');
+define('EIPSI_FORMS_VERSION', '1.3.1');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -48,7 +48,8 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/form-template-render.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/shortcodes.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'assets/js/eipsi-randomization-shortcode.php';
 
-// Nuevo handler de aleatorización (standalone block)
+// Sistema RCT completo (v1.3.1)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-db-setup.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-shortcode-handler.php';
 
 // Registrar el shortcode de aleatorización pública (legacy)
@@ -618,6 +619,15 @@ function eipsi_forms_enqueue_frontend_assets() {
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-save-continue.css',
         array('eipsi-theme-toggle-css'),
         EIPSI_FORMS_VERSION
+    );
+
+    // Fingerprinting script para aleatorización RCT (v1.3.1)
+    wp_enqueue_script(
+        'eipsi-fingerprint-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-fingerprint.js',
+        array(),
+        EIPSI_FORMS_VERSION,
+        true
     );
 
     wp_enqueue_script(

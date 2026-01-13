@@ -74,6 +74,54 @@ export default function Edit( { attributes, setAttributes } ) {
 			} );
 	}, [] );
 
+	// Guardar configuración en DB cuando cambia (debounced)
+	useEffect( () => {
+		if ( ! enabled || ! randomizationId || formularios.length < 2 ) {
+			return;
+		}
+
+		// Debounce: esperar 2 segundos antes de guardar
+		const timeoutId = setTimeout( () => {
+			const configData = {
+				randomizationId,
+				formularios,
+				method,
+				manualAssignments,
+				showInstructions,
+			};
+
+			// Guardar en DB via AJAX
+			apiFetch( {
+				path: '/wp/v2/eipsi_randomization_config',
+				method: 'POST',
+				data: configData,
+			} )
+				.then( () => {
+					// eslint-disable-next-line no-console
+					console.log(
+						'[EIPSI RCT] Configuración guardada en DB:',
+						randomizationId
+					);
+				} )
+				.catch( ( error ) => {
+					// eslint-disable-next-line no-console
+					console.error(
+						'[EIPSI RCT] Error guardando configuración:',
+						error
+					);
+				} );
+		}, 2000 );
+
+		return () => clearTimeout( timeoutId );
+	}, [
+		enabled,
+		randomizationId,
+		formularios,
+		method,
+		manualAssignments,
+		showInstructions,
+	] );
+
 	// Generar ID único al activar
 	const handleToggleEnabled = ( newValue ) => {
 		if ( newValue && ! randomizationId ) {
@@ -350,7 +398,9 @@ export default function Edit( { attributes, setAttributes } ) {
 
 			<Card>
 				<CardHeader>
-					<h2>🎲 Configuración de Aleatorización</h2>
+					<h2 style={ { fontWeight: 'bold', fontSize: '1.25rem' } }>
+						🎲 Configuración
+					</h2>
 				</CardHeader>
 				<CardBody>
 					{ ! enabled ? (
