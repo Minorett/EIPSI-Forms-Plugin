@@ -109,6 +109,48 @@ EIPSI Forms convierte WordPress en una herramienta clínica para recolección de
 - Scripts de verificación (`scripts/verify-build.*`) automatizan instalación, build y chequeo de artefactos antes de cada entrega clínica.
 - Auto-reparación de esquema activada por defecto (capa al activar, capa en carga diaria, capa en cada `submit` fallido).
 
+## Code Quality - Duplicate Function Detection
+
+EIPSI Forms incluye un sistema automático de detección de funciones duplicadas para mantener la calidad del código.
+
+### Uso
+
+```bash
+npm run lint:duplicates
+```
+
+### Características
+
+- Detecta funciones duplicadas en PHP y JavaScript
+- Muestra ubicación exacta (archivo y línea)
+- Se ejecuta en < 2 segundos
+- Integración con el flujo de trabajo
+
+### Ejemplo de Output
+
+```
+✓ Verificación de funciones duplicadas completada
+  PHP: 127 funciones encontradas
+  JavaScript: 89 funciones encontradas
+  ✅ Sin duplicados detectados
+```
+
+O si hay duplicados:
+
+```
+✗ Funciones duplicadas detectadas:
+
+  📍 eipsi_check_manual_assignment (PHP)
+     - admin/ajax-handlers.php:45
+     - admin/randomization-shortcode-handler.php:120
+
+  📍 eipsi_get_randomizations (PHP)
+     - admin/rct-analytics-api.php:10
+     - includes/randomization-api.php:22
+
+Ejecuta: npm run lint:duplicates para más detalles
+```
+
 ## Alcances y límites actuales
 
 Para evitar falsas expectativas:
