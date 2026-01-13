@@ -69,9 +69,9 @@ function eipsi_randomization_shortcode( $atts ) {
         );
     }
 
-    if ( count( $config['formularios'] ) < 2 ) {
+    if ( count( $config['formularios'] ) < 1 ) {
         return eipsi_randomization_error_notice(
-            __( 'ℹ️ La aleatorización requiere al menos 2 formularios configurados.', 'eipsi-forms' )
+            __( 'ℹ️ La aleatorización requiere al menos 1 formulario configurado.', 'eipsi-forms' )
         );
     }
 

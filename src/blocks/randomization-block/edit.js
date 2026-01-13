@@ -76,7 +76,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	// Guardar configuración en DB cuando cambia (debounced)
 	useEffect( () => {
-		if ( ! enabled || ! randomizationId || formularios.length < 2 ) {
+		if ( ! enabled || ! randomizationId || formularios.length < 1 ) {
 			return;
 		}
 
@@ -266,11 +266,11 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	// Copiar shortcode al portapapeles
 	const handleCopyShortcode = () => {
-		if ( formularios.length < 2 ) {
+		if ( formularios.length < 1 ) {
 			// eslint-disable-next-line no-alert
 			alert(
 				__(
-					'Necesitás al menos 2 formularios configurados',
+					'Necesitás al menos 1 formulario configurado',
 					'eipsi-forms'
 				)
 			);
@@ -286,11 +286,11 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	// Copiar link al portapapeles
 	const handleCopyLink = () => {
-		if ( formularios.length < 2 ) {
+		if ( formularios.length < 1 ) {
 			// eslint-disable-next-line no-alert
 			alert(
 				__(
-					'Necesitás al menos 2 formularios configurados',
+					'Necesitás al menos 1 formulario configurado',
 					'eipsi-forms'
 				)
 			);
@@ -535,13 +535,13 @@ export default function Edit( { attributes, setAttributes } ) {
 								</div>
 							) }
 
-							{ formularios.length < 2 && (
+							{ formularios.length < 1 && (
 								<Notice
 									status="warning"
 									isDismissible={ false }
 								>
 									{ __(
-										'Necesitás al menos 2 formularios para generar shortcode/link',
+										'Necesitás al menos 1 formulario para generar shortcode/link',
 										'eipsi-forms'
 									) }
 								</Notice>
@@ -678,7 +678,7 @@ export default function Edit( { attributes, setAttributes } ) {
 							) }
 
 							{ /* Generación de Shortcode/Link */ }
-							{ formularios.length >= 2 && (
+							{ formularios.length >= 1 && (
 								<>
 									<hr
 										style={ {
