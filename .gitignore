@@ -7,9 +7,12 @@ node_modules/
 npm-debug.log
 yarn-error.log
 
-# Build artifacts
+# Build artifacts (webpack/npm build - NUNCA COMMITEAR)
 build/
 dist/
+*.asset.php
+*.deps.php
+webpack-manifest.json
 
 # IDE files
 .idea/
