@@ -440,36 +440,6 @@ function eipsi_update_assignment_access( $assignment_id ) {
 }
 
 /**
- * Crear tabla de tracking de asignaciones
- */
-function eipsi_create_randomization_assignments_table() {
-    global $wpdb;
-
-    $table_name      = $wpdb->prefix . 'eipsi_randomization_assignments';
-    $charset_collate = $wpdb->get_charset_collate();
-
-    $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
-        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        randomization_id VARCHAR(255) NOT NULL,
-        participant_identifier VARCHAR(255) NOT NULL,
-        assigned_form_id BIGINT(20) UNSIGNED NOT NULL,
-        assigned_at DATETIME NOT NULL,
-        last_access DATETIME NOT NULL,
-        access_count INT(11) DEFAULT 1,
-        PRIMARY KEY  (id),
-        KEY randomization_id (randomization_id),
-        KEY participant_identifier (participant_identifier),
-        KEY assigned_form_id (assigned_form_id)
-    ) {$charset_collate};";
-
-    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-    dbDelta( $sql );
-}
-
-// Crear tabla en activación del plugin
-add_action( 'eipsi_forms_activation', 'eipsi_create_randomization_assignments_table' );
-
-/**
  * Generar notice de error
  * 
  * @param string $message Mensaje de error
