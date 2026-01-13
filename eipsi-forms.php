@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.3.1
+ * Version: 1.3.2
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('EIPSI_FORMS_VERSION', '1.3.1');
+define('EIPSI_FORMS_VERSION', '1.3.2');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -51,6 +51,50 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'assets/js/eipsi-randomization-shortcode.p
 // Sistema RCT completo (v1.3.1)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-db-setup.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-shortcode-handler.php';
+
+// RCT Analytics Dashboard (v1.3.2)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/rct-analytics-page.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/rct-analytics-api.php';
+
+/**
+ * Enqueue RCT Analytics assets en admin
+ */
+add_action('admin_enqueue_scripts', 'eipsi_enqueue_rct_analytics_assets');
+function eipsi_enqueue_rct_analytics_assets($hook) {
+    // Solo cargar en la página de Results & Experience
+    if ($hook === 'eipsi_page_eipsi-results') {
+        // Enqueue CSS
+        wp_enqueue_style(
+            'eipsi-rct-analytics-css',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/css/rct-analytics.css',
+            array(),
+            EIPSI_FORMS_VERSION
+        );
+
+        // Enqueue JS
+        wp_enqueue_script(
+            'eipsi-rct-analytics-js',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/js/rct-analytics.js',
+            array('jquery'),
+            EIPSI_FORMS_VERSION,
+            true
+        );
+
+        // Localizar script con datos necesarios
+        wp_localize_script('eipsi-rct-analytics-js', 'eipsiRCTAnalytics', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('eipsi_rct_analytics_nonce'),
+            'adminUrl' => admin_url(),
+            'strings' => array(
+                'loading' => __('Cargando datos...', 'eipsi-forms'),
+                'error' => __('Error al cargar datos', 'eipsi-forms'),
+                'success' => __('Actualizado correctamente', 'eipsi-forms'),
+                'confirmDelete' => __('¿Estás seguro de que quieres eliminar esta aleatorización?', 'eipsi-forms'),
+                'copied' => __('ID copiado al portapapeles', 'eipsi-forms')
+            )
+        ));
+    }
+}
 
 // Registrar el shortcode de aleatorización pública (legacy)
 add_action('init', function() {

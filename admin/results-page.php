@@ -19,7 +19,7 @@ function eipsi_display_form_responses() {
 
     // Determine active tab from URL param
     $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'submissions';
-    $allowed_tabs = array('submissions', 'completion', 'privacy');
+    $allowed_tabs = array('submissions', 'completion', 'privacy', 'rct-analytics');
 
     if (!in_array($active_tab, $allowed_tabs)) {
         $active_tab = 'submissions';
@@ -49,6 +49,11 @@ function eipsi_display_form_responses() {
                data-tab="privacy">
                 🔒 <?php esc_html_e('Privacy & Metadata', 'eipsi-forms'); ?>
             </a>
+            <a href="?page=eipsi-results&tab=rct-analytics" 
+               class="nav-tab <?php echo esc_attr(($active_tab === 'rct-analytics') ? 'nav-tab-active' : ''); ?>"
+               data-tab="rct-analytics">
+                🎲 <?php esc_html_e('RCT Analytics', 'eipsi-forms'); ?>
+            </a>
         </h2>
         
         <!-- Message container for AJAX feedback -->
@@ -72,6 +77,21 @@ function eipsi_display_form_responses() {
         <?php if ($active_tab === 'privacy'): ?>
             <div class="tab-content" data-tab="privacy">
                 <?php include dirname(__FILE__) . '/tabs/privacy-metadata-tab.php'; ?>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Tab 4: RCT Analytics -->
+        <?php if ($active_tab === 'rct-analytics'): ?>
+            <div class="tab-content" data-tab="rct-analytics">
+                <?php 
+                // Incluir la página del RCT Analytics
+                if (file_exists(dirname(__FILE__) . '/rct-analytics-page.php')) {
+                    require_once dirname(__FILE__) . '/rct-analytics-page.php';
+                    eipsi_display_rct_analytics();
+                } else {
+                    echo '<p>Error: RCT Analytics no disponible</p>';
+                }
+                ?>
             </div>
         <?php endif; ?>
         
