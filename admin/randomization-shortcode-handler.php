@@ -351,39 +351,6 @@ function eipsi_calculate_random_assignment( $config, $user_fingerprint ) {
 }
 
 /**
- * Verificar si existe asignación manual para este usuario
- * 
- * @param array  $config Configuración de aleatorización
- * @param string $user_fingerprint Fingerprint del usuario
- * @return int|null Post ID del formulario asignado manualmente o null
- */
-function eipsi_check_manual_assignment( $config, $user_fingerprint ) {
-    if ( empty( $config['manualAssignments'] ) ) {
-        return null;
-    }
-
-    // Si el fingerprint viene de un email, comparar con asignaciones manuales
-    if ( strpos( $user_fingerprint, 'email_' ) === 0 ) {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $email = isset( $_GET['email'] ) ? sanitize_email( wp_unslash( $_GET['email'] ) ) : '';
-
-        if ( ! $email ) {
-            return null;
-        }
-
-        foreach ( $config['manualAssignments'] as $assignment ) {
-            if ( isset( $assignment['email'] ) && 
-                 strtolower( $assignment['email'] ) === strtolower( $email ) ) {
-                error_log( "[EIPSI RCT] Asignación manual encontrada para: {$email} → Formulario: {$assignment['formId']}" );
-                return intval( $assignment['formId'] );
-            }
-        }
-    }
-
-    return null;
-}
-
-/**
  * Obtener asignación existente para un usuario
  * 
  * @param string $randomization_id ID de aleatorización
