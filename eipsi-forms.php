@@ -452,58 +452,37 @@ function eipsi_forms_register_blocks() {
         return;
     }
 
-    $asset_file = EIPSI_FORMS_PLUGIN_DIR . 'build/index.asset.php';
-    
-    if (!file_exists($asset_file)) {
-        return;
-    }
-
-    $asset_data = include $asset_file;
-
-    wp_register_script(
-        'eipsi-blocks-editor',
-        EIPSI_FORMS_PLUGIN_URL . 'build/index.js',
-        $asset_data['dependencies'],
-        $asset_data['version'],
-        true
-    );
-
     // Pass admin nonce to block editor for AJAX calls (e.g., eipsi_get_forms_list)
     // Also pass permalink and postId for randomization link generation
     $current_post_id = isset($post) ? $post->ID : (isset($_GET['post']) ? intval($_GET['post']) : 0);
     $permalink = $current_post_id ? get_permalink($current_post_id) : '';
 
-    wp_localize_script('eipsi-blocks-editor', 'eipsiEditorData', array(
+    // Register editor data script (for AJAX calls)
+    wp_register_script(
+        'eipsi-blocks-editor-data',
+        '',
+        array(),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+
+    wp_localize_script('eipsi-blocks-editor-data', 'eipsiEditorData', array(
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_admin_nonce'),
         'permalink' => $permalink,
         'postId' => $current_post_id,
     ));
-    
+
     // Backward compatibility: also expose as window.eipsiAdminNonce
-    wp_add_inline_script('eipsi-blocks-editor', 
-        'window.eipsiAdminNonce = eipsiEditorData?.nonce || "";', 
+    wp_add_inline_script('eipsi-blocks-editor-data',
+        'window.eipsiAdminNonce = eipsiEditorData?.nonce || "";',
         'after'
     );
 
-    wp_register_style(
-        'eipsi-blocks-editor',
-        EIPSI_FORMS_PLUGIN_URL . 'build/index.css',
-        array(),
-        $asset_data['version']
-    );
-
-    wp_register_style(
-        'eipsi-blocks-style',
-        EIPSI_FORMS_PLUGIN_URL . 'build/style-index.css',
-        array(),
-        $asset_data['version']
-    );
-
-    // REGISTRAR BLOQUES DESDE block.json (en /blocks/)
+    // REGISTRAR BLOQUES DESDE block.json COMPILADOS (en /build/blocks/)
     $block_dirs = array(
         'form-container',
-        'pagina',
+        'form-page',
         'consent-block',
         'campo-texto',
         'campo-textarea',
@@ -516,7 +495,7 @@ function eipsi_forms_register_blocks() {
     );
 
     foreach ($block_dirs as $block_dir) {
-        $block_path = EIPSI_FORMS_PLUGIN_DIR . 'blocks/' . $block_dir;
+        $block_path = EIPSI_FORMS_PLUGIN_DIR . 'build/blocks/' . $block_dir;
 
         if (!file_exists($block_path . '/block.json')) {
             continue;
@@ -526,7 +505,7 @@ function eipsi_forms_register_blocks() {
     }
 
     // Randomization block: con render_callback especial para procesar shortcode
-    $randomization_block_path = EIPSI_FORMS_PLUGIN_DIR . 'blocks/randomization-block';
+    $randomization_block_path = EIPSI_FORMS_PLUGIN_DIR . 'build/blocks/randomization-block';
     if (file_exists($randomization_block_path . '/block.json')) {
         register_block_type($randomization_block_path, array(
             'render_callback' => 'eipsi_render_randomization_block'

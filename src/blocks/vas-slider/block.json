@@ -1,0 +1,87 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "eipsi/vas-slider",
+  "title": "EIPSI VAS Slider",
+  "category": "eipsi-forms",
+  "icon": "leftright",
+  "description": "Visual Analog Scale (VAS) slider configurable para evaluaciones de dolor, mood, y otros constructos clínicos EIPSI.",
+  "keywords": ["form", "field", "vas", "slider", "analog", "pain", "scale", "eipsi"],
+  "textdomain": "eipsi-forms",
+  "parent": ["eipsi/form-container", "eipsi/form-page"],
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./editor.scss",
+  "style": "file:./style.scss",
+  "supports": {
+    "html": false,
+    "spacing": {
+      "margin": true,
+      "padding": true
+    }
+  },
+  "attributes": {
+    "fieldName": {
+      "type": "string",
+      "default": ""
+    },
+    "label": {
+      "type": "string",
+      "default": ""
+    },
+    "required": {
+      "type": "boolean",
+      "default": false
+    },
+    "helperText": {
+      "type": "string",
+      "default": ""
+    },
+    "minLabel": {
+      "type": "string",
+      "default": "Ningún dolor"
+    },
+    "maxLabel": {
+      "type": "string",
+      "default": "Máximo dolor"
+    },
+    "minValue": {
+      "type": "number",
+      "default": 0
+    },
+    "maxValue": {
+      "type": "number",
+      "default": 100
+    },
+    "step": {
+      "type": "number",
+      "default": 1
+    },
+    "defaultValue": {
+      "type": "number",
+      "default": 50
+    },
+    "showValue": {
+      "type": "boolean",
+      "default": true
+    },
+    "className": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "example": {
+    "attributes": {
+      "fieldName": "pain_level",
+      "label": "Nivel de Dolor",
+      "required": true,
+      "helperText": "Arrastrá el marcador para indicar tu nivel de dolor actual.",
+      "minLabel": "Ningún dolor",
+      "maxLabel": "Máximo dolor",
+      "minValue": 0,
+      "maxValue": 100,
+      "step": 1,
+      "defaultValue": 0,
+      "showValue": true
+    }
+  }
+}

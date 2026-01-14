@@ -2,9 +2,9 @@ import { registerBlockType } from '@wordpress/blocks';
 import './style.scss';
 import './editor.scss';
 import Edit from './edit';
-import save from './save';
+import metadata from './block.json';
 
-registerBlockType( 'eipsi/vas-slider', {
+registerBlockType( metadata, {
 	edit: Edit,
-	save,
+	save: () => null, // Bloque dinámico - save retorna null
 } );

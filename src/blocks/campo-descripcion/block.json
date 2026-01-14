@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "eipsi/campo-descripcion",
+  "title": "EIPSI Campo Descripción",
+  "category": "eipsi-forms",
+  "icon": "info",
+  "description": "Bloque de texto descriptivo para formularios EIPSI. Permite agregar instrucciones, secciones, o información adicional.",
+  "keywords": ["form", "description", "text", "information", "eipsi"],
+  "textdomain": "eipsi-forms",
+  "parent": ["eipsi/form-container", "eipsi/form-page"],
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./editor.scss",
+  "style": "file:./style.scss",
+  "supports": {
+    "html": true,
+    "spacing": {
+      "margin": true,
+      "padding": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "textAlign": true
+    },
+    "color": {
+      "text": true,
+      "background": true
+    }
+  },
+  "attributes": {
+    "content": {
+      "type": "string",
+      "default": ""
+    },
+    "className": {
+      "type": "string",
+      "default": ""
+    },
+    "level": {
+      "type": "string",
+      "default": "normal"
+    }
+  },
+  "example": {
+    "attributes": {
+      "content": "Por favor, respondé a las siguientes preguntas con honestidad. Tus respuestas son confidenciales y serán utilizadas únicamente para fines de investigación.",
+      "level": "normal"
+    }
+  }
+}

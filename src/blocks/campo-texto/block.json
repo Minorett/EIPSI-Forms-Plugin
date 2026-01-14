@@ -1,0 +1,62 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "eipsi/campo-texto",
+  "title": "EIPSI Campo Texto",
+  "category": "eipsi-forms",
+  "icon": "text",
+  "description": "Campo de texto configurable para formularios EIPSI.",
+  "keywords": ["form", "field", "text", "eipsi"],
+  "textdomain": "eipsi-forms",
+  "parent": ["eipsi/form-container", "eipsi/form-page"],
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./editor.scss",
+  "style": "file:./style.scss",
+  "supports": {
+    "html": false,
+    "spacing": {
+      "margin": true,
+      "padding": true
+    }
+  },
+  "attributes": {
+    "fieldName": {
+      "type": "string",
+      "default": ""
+    },
+    "label": {
+      "type": "string",
+      "default": ""
+    },
+    "required": {
+      "type": "boolean",
+      "default": false
+    },
+    "placeholder": {
+      "type": "string",
+      "default": ""
+    },
+    "helperText": {
+      "type": "string",
+      "default": ""
+    },
+    "fieldType": {
+      "type": "string",
+      "default": "text"
+    },
+    "className": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "example": {
+    "attributes": {
+      "fieldName": "email",
+      "label": "Correo electrónico",
+      "required": true,
+      "placeholder": "nombre@ejemplo.com",
+      "helperText": "Nunca compartiremos tu correo.",
+      "fieldType": "email"
+    }
+  }
+}

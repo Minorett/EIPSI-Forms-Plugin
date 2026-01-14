@@ -1,0 +1,120 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "eipsi/form-container",
+  "title": "EIPSI Formulario Clínico",
+  "category": "eipsi-forms",
+  "icon": "forms",
+  "description": "Contenedor principal para formularios clínicos EIPSI con diseño accesible, validación robusta y múltiples presets.",
+  "keywords": ["form", "clinical", "research", "psychology", "therapy", "eipsi"],
+  "textdomain": "eipsi-forms",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./editor.scss",
+  "style": "file:./style.scss",
+  "supports": {
+    "html": false,
+    "align": true,
+    "spacing": {
+      "margin": true,
+      "padding": true
+    },
+    "color": {
+      "background": true,
+      "text": true
+    }
+  },
+  "attributes": {
+    "formId": {
+      "type": "string",
+      "default": ""
+    },
+    "submitButtonLabel": {
+      "type": "string",
+      "default": "Enviar"
+    },
+    "description": {
+      "type": "string",
+      "default": ""
+    },
+    "styleConfig": {
+      "type": "object",
+      "default": {}
+    },
+    "presetName": {
+      "type": "string",
+      "default": "Clinical Blue"
+    },
+    "allowBackwardsNav": {
+      "type": "boolean",
+      "default": true
+    },
+    "showProgressBar": {
+      "type": "boolean",
+      "default": true
+    },
+    "studyStatus": {
+      "type": "string",
+      "default": "open"
+    },
+    "useCustomCompletion": {
+      "type": "boolean",
+      "default": false
+    },
+    "completionTitle": {
+      "type": "string",
+      "default": ""
+    },
+    "completionMessage": {
+      "type": "string",
+      "default": ""
+    },
+    "completionLogoId": {
+      "type": "number",
+      "default": 0
+    },
+    "completionLogoUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "completionButtonLabel": {
+      "type": "string",
+      "default": ""
+    },
+    "useRandomization": {
+      "type": "boolean",
+      "default": false
+    },
+    "randomConfig": {
+      "type": "object",
+      "default": {
+        "forms": [],
+        "probabilities": {},
+        "method": "seeded",
+        "manualAssigns": []
+      }
+    },
+    "capturePageTiming": {
+      "type": "boolean",
+      "default": true
+    },
+    "captureFieldTiming": {
+      "type": "boolean",
+      "default": true
+    },
+    "showTimingAnalysis": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "example": {
+    "attributes": {
+      "formId": "eipsi-form-001",
+      "submitButtonLabel": "Enviar Respuestas",
+      "description": "Por favor, completá este formulario con honesty.",
+      "presetName": "Clinical Blue",
+      "allowBackwardsNav": true,
+      "showProgressBar": true,
+      "studyStatus": "open"
+    }
+  }
+}

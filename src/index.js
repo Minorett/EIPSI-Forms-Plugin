@@ -1,5 +1,5 @@
 import './blocks/form-container';
-import './blocks/pagina';
+import './blocks/form-page';
 import './blocks/consent-block';
 import './blocks/campo-texto';
 import './blocks/campo-textarea';
