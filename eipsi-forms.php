@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.3.4
+ * Version: 1.3.5
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization
- * Stable tag: 1.3.4
+ * Stable tag: 1.3.5
  * 
  * @package EIPSI_Forms
  */
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('EIPSI_FORMS_VERSION', '1.3.4');
+define('EIPSI_FORMS_VERSION', '1.3.5');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -513,7 +513,6 @@ function eipsi_forms_register_blocks() {
         'campo-multiple',
         'campo-likert',
         'vas-slider',
-        'randomization-block'
     );
 
     foreach ($block_dirs as $block_dir) {
@@ -524,6 +523,14 @@ function eipsi_forms_register_blocks() {
         }
 
         register_block_type($block_path);
+    }
+
+    // Randomization block: con render_callback especial para procesar shortcode
+    $randomization_block_path = EIPSI_FORMS_PLUGIN_DIR . 'blocks/randomization-block';
+    if (file_exists($randomization_block_path . '/block.json')) {
+        register_block_type($randomization_block_path, array(
+            'render_callback' => 'eipsi_render_randomization_block'
+        ));
     }
 }
 
@@ -545,6 +552,30 @@ function eipsi_forms_block_categories($block_categories, $editor_context) {
 }
 add_filter('block_categories_all', 'eipsi_forms_block_categories', 10, 2);
 // === FIN DEL CÓDIGO NUEVO ===
+
+/**
+ * Render callback para bloque de aleatorización (KISS flow)
+ * 
+ * Procesa el shortcode guardado en el bloque y lo renderiza
+ * 
+ * @param array $attributes Atributos del bloque
+ * @return string HTML output
+ */
+function eipsi_render_randomization_block($attributes) {
+    $shortcode = isset($attributes['generatedShortcode']) ? $attributes['generatedShortcode'] : '';
+
+    if (empty($shortcode)) {
+        return '<div class="eipsi-randomization-notice">' .
+               '<p>' . esc_html__('Configurá el bloque de aleatorización para mostrar un formulario.', 'eipsi-forms') . '</p>' .
+               '</div>';
+    }
+
+    // Enqueue assets necesarios para aleatorización
+    eipsi_forms_enqueue_frontend_assets();
+
+    // Procesar el shortcode
+    return do_shortcode($shortcode);
+}
 
 function eipsi_forms_enqueue_block_assets($content) {
     $blocks = array(

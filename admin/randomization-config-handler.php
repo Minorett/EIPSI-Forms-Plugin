@@ -209,12 +209,13 @@ function eipsi_randomization_config_rest_handler( $request ) {
         ), 400 );
     }
 
-    // Validar que todos los formularios existan
+    // Validar que todos los formularios existan (backend validation)
     foreach ( $formularios as $formulario ) {
-        if ( ! isset( $formulario['exists'] ) || ! $formulario['exists'] ) {
+        $form_id = intval( $formulario['id'] ?? 0 );
+        if ( ! $form_id || ! get_post( $form_id ) ) {
             return new WP_REST_Response( array(
                 'success' => false,
-                'message' => 'Algunos formularios no existen. Verificá los IDs ingresados.'
+                'message' => sprintf( 'El formulario con ID %d no existe.', $form_id )
             ), 400 );
         }
     }
@@ -259,6 +260,120 @@ function eipsi_randomization_config_rest_handler( $request ) {
         'shortcode' => $shortcode,
         'message' => 'Configuración guardada exitosamente'
     ), 200 );
+}
+
+/**
+ * Registrar endpoint REST para detectar formularios (KISS flow)
+ * 
+ * @since 1.3.5
+ */
+function eipsi_register_randomization_detect_rest() {
+    register_rest_route( 'eipsi/v1', '/randomization-detect', array(
+        'methods' => 'POST',
+        'callback' => 'eipsi_randomization_detect_rest_handler',
+        'permission_callback' => function() {
+            return current_user_can( 'edit_posts' );
+        },
+        'args' => array(
+            'post_id' => array(
+                'required' => true,
+                'type' => 'integer',
+            ),
+            'shortcodes_input' => array(
+                'required' => true,
+                'type' => 'string',
+            ),
+        ),
+    ) );
+}
+add_action( 'rest_api_init', 'eipsi_register_randomization_detect_rest' );
+
+/**
+ * Handler para endpoint de detección de formularios
+ * 
+ * @param WP_REST_Request $request
+ * @return WP_REST_Response
+ */
+function eipsi_randomization_detect_rest_handler( $request ) {
+    $post_id = $request->get_param( 'post_id' );
+    $shortcodes_input = $request->get_param( 'shortcodes_input' );
+
+    if ( empty( $shortcodes_input ) ) {
+        return new WP_REST_Response( array(
+            'success' => false,
+            'message' => 'Ingresá al menos un shortcode.'
+        ), 400 );
+    }
+
+    // Parsear shortcodes
+    $formularios = eipsi_parse_shortcodes_input( $shortcodes_input );
+
+    if ( count( $formularios ) < 1 ) {
+        return new WP_REST_Response( array(
+            'success' => false,
+            'message' => 'No se detectaron shortcodes válidos. Formato: [eipsi_form id="XXXX"]'
+        ), 400 );
+    }
+
+    // Validar que los formularios existan
+    $formularios_validados = array();
+    foreach ( $formularios as $formulario ) {
+        $post = get_post( $formulario['id'] );
+
+        if ( ! $post || $post->post_status !== 'publish' ) {
+            return new WP_REST_Response( array(
+                'success' => false,
+                'message' => sprintf( 'El formulario con ID %d no existe o no está publicado.', $formulario['id'] )
+            ), 400 );
+        }
+
+        $formularios_validados[] = array(
+            'id' => $formulario['id'],
+            'name' => $post->post_title,
+            'shortcode' => $formulario['shortcode'],
+        );
+    }
+
+    return new WP_REST_Response( array(
+        'success' => true,
+        'formularios' => $formularios_validados,
+        'message' => sprintf( '%d formularios detectados exitosamente.', count( $formularios_validados ) )
+    ), 200 );
+}
+
+/**
+ * Parsear shortcodes desde input de texto
+ * 
+ * @param string $input Input de texto con shortcodes (uno por línea)
+ * @return array Array de formularios detectados
+ */
+function eipsi_parse_shortcodes_input( $input ) {
+    $formularios = array();
+    $lines = explode( "\n", $input );
+
+    foreach ( $lines as $line ) {
+        $line = trim( $line );
+        if ( empty( $line ) ) {
+            continue;
+        }
+
+        // Regex para [eipsi_form id="XXXX"] o [eipsi_form id='XXXX']
+        $matches = array();
+        if ( preg_match( '/\[eipsi_form\s+id=["\']?(\d+)["\']?\]/i', $line, $matches ) ) {
+            $form_id = intval( $matches[1] );
+            if ( $form_id > 0 ) {
+                // Evitar duplicados
+                if ( ! isset( $formularios[ $form_id ] ) ) {
+                    $formularios[ $form_id ] = array(
+                        'id' => $form_id,
+                        'shortcode' => $line,
+                    );
+                }
+            }
+        }
+    }
+
+    return array_values( $formularios );
 }
 
 /**

@@ -1,20 +1,19 @@
 /**
- * EIPSI Randomization Block
+ * EIPSI Randomization Block - KISS (Keep It Simple, Stupid)
  *
- * Bloque independiente para configurar aleatorización de formularios.
- * Genera automáticamente shortcode y link para uso público.
+ * Filosofía: Backend hace TODO el trabajo, el bloque es minimalista
+ * - Atributos simples: shortcodesInput, savedConfig, generatedShortcode
+ * - Bloque dinámico: render_callback procesa el shortcode
+ * - Sin estados complejos, sin validación en frontend
  *
- * @since 1.3.0
+ * @since 1.3.5
  */
 
 import { registerBlockType } from '@wordpress/blocks';
 import Edit from './edit';
-import Save from './save';
+import metadata from './block.json';
 
-import './editor.scss';
-import './style.scss';
-
-registerBlockType( 'eipsi/randomization', {
+registerBlockType( metadata, {
 	edit: Edit,
-	save: Save,
+	save: () => null, // Bloque dinámico - save retorna null
 } );
