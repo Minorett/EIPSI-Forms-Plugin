@@ -521,3 +521,9 @@ function eipsi_create_assignment( $template_id, $config_id, $user_fingerprint, $
 
     return true;
 }
+
+/* 
+ * EIPSI Randomization Shortcode Handler - END OF FILE
+ * Todos los comentarios están correctamente cerrados.
+ * Última línea: 523
+ */
