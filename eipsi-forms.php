@@ -659,13 +659,6 @@ function eipsi_forms_enqueue_frontend_assets() {
         EIPSI_FORMS_VERSION
     );
 
-    // Save & Continue UI styles
-    wp_enqueue_style(
-        'eipsi-save-continue-css',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-save-continue.css',
-        array('eipsi-theme-toggle-css'),
-        EIPSI_FORMS_VERSION
-    );
 
     // Fingerprinting script para aleatorización RCT (v1.3.1)
     wp_enqueue_script(
@@ -718,35 +711,11 @@ function eipsi_forms_enqueue_frontend_assets() {
             'smoothScroll' => apply_filters('eipsi_forms_smooth_scroll', true),
         ),
     ));
-    
-    // Enqueue Save & Continue script
-    wp_enqueue_script(
-        'eipsi-save-continue-js',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-save-continue.js',
-        array('eipsi-forms-js'),
-        EIPSI_FORMS_VERSION,
-        true
-    );
-
-    // Enqueue Randomization script (Fase 1 & 2)
-    wp_enqueue_script(
-        'eipsi-random-js',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-random.js',
-        array('eipsi-forms-js'),
-        EIPSI_FORMS_VERSION,
-        true
-    );
-
-    wp_localize_script('eipsi-random-js', 'eipsiRandomData', array(
-        'ajaxUrl' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('eipsi_random_nonce'),
-    ));
-
     // Enqueue Randomization Public System styles (Fase 3)
     wp_enqueue_style(
         'eipsi-randomization-css',
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-randomization.css',
-        array('eipsi-save-continue-css'),
+        array('eipsi-theme-toggle-css'),
         EIPSI_FORMS_VERSION
     );
 
