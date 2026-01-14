@@ -359,11 +359,6 @@ function eipsi_calculate_rct_assignment( $config, $user_fingerprint ) {
  */
 
 /**
- * Crear nueva asignación en DB
- * 
- * @param string $randomization_id ID de aleatorización
-
-/**
  * Actualizar timestamp y contador de accesos
  * 
  * @param int $assignment_id ID de la asignación
@@ -526,5 +521,3 @@ function eipsi_create_assignment( $template_id, $config_id, $user_fingerprint, $
 
     return true;
 }
-
-/**
