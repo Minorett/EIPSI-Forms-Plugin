@@ -160,19 +160,9 @@ function eipsi_form_library_column_content($column, $post_id) {
                 break;
             }
             
-            // Verify that submitted_at column exists before querying
-            if (!eipsi_column_exists_in_table($table_name, 'submitted_at')) {
-                echo '<span style="color: #999;">—</span>';
-                // Log the issue for diagnostic purposes
-                error_log(sprintf(
-                    'EIPSI Forms: Column submitted_at does not exist in table %s',
-                    $table_name
-                ));
-                break;
-            }
-            
+            // Use created_at instead of legacy submitted_at
             $last_response = $wpdb->get_var($wpdb->prepare(
-                "SELECT MAX(submitted_at) FROM {$table_name} WHERE form_name = %s",
+                "SELECT MAX(created_at) FROM {$table_name} WHERE form_name = %s",
                 $form_name
             ));
             
