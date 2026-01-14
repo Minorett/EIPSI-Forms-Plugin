@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/* eslint-disable no-console, no-unused-vars */
+
 const fs = require( 'fs' );
 const path = require( 'path' );
 
@@ -83,7 +85,7 @@ function cleanFunctions( content, functionsToRemove ) {
 }
 
 // Función para agregar imports necesarios
-function addImports( content, filename ) {
+function addImports( content ) {
 	let cleaned = content;
 
 	// Verificar si ya existe el import de utils
@@ -139,7 +141,7 @@ function main() {
 				console.log( `📄 Procesando: ${ filename }` );
 
 				// Agregar imports
-				content = addImports( content, filename );
+				content = addImports( content );
 
 				// Limpiar funciones duplicadas
 				content = cleanFunctions( content, functions );
