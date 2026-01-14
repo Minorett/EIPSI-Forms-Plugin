@@ -128,17 +128,17 @@ function main() {
 	let errors = 0;
 
 	Object.entries( duplicateFunctions ).forEach(
-		( [ filename, functions ] ) => {
-			const filepath = path.join( process.cwd(), filename );
+		( [ _filename, functions ] ) => {
+			const filepath = path.join( process.cwd(), _filename );
 
 			if ( ! fs.existsSync( filepath ) ) {
-				console.log( `⚠️  Archivo no encontrado: ${ filename }` );
+				console.log( `⚠️  Archivo no encontrado: ${ _filename }` );
 				return;
 			}
 
 			try {
 				let content = fs.readFileSync( filepath, 'utf8' );
-				console.log( `📄 Procesando: ${ filename }` );
+				console.log( `📄 Procesando: ${ _filename }` );
 
 				// Agregar imports
 				content = addImports( content );
@@ -150,11 +150,11 @@ function main() {
 				fs.writeFileSync( filepath, content, 'utf8' );
 				cleaned++;
 				console.log(
-					`✅ Limpiado: ${ filename } (${ functions.length } funciones eliminadas)`
+					`✅ Limpiado: ${ _filename } (${ functions.length } funciones eliminadas)`
 				);
 			} catch ( error ) {
 				console.log(
-					`❌ Error procesando ${ filename }:`,
+					`❌ Error procesando ${ _filename }:`,
 					error.message
 				);
 				errors++;
