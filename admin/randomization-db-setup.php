@@ -134,7 +134,7 @@ function eipsi_create_randomization_tables() {
  * @param array  $config Configuración completa
  * @return bool True si se guardó correctamente
  */
-function eipsi_save_randomization_config( $randomization_id, $config ) {
+function eipsi_save_randomization_config_to_db( $randomization_id, $config ) {
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'eipsi_randomization_configs';
@@ -388,7 +388,7 @@ function eipsi_rest_save_randomization_config( $request ) {
         'showInstructions'   => $show_instructions ?? false,
     );
 
-    $result = eipsi_save_randomization_config( $randomization_id, $config );
+    $result = eipsi_save_randomization_config_to_db( $randomization_id, $config );
 
     if ( $result ) {
         return new WP_REST_Response(

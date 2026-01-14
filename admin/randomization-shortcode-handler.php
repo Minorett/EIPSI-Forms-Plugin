@@ -99,7 +99,7 @@ function eipsi_randomization_shortcode( $atts ) {
 
         if ( ! $assigned_form_id ) {
             // Calcular asignación aleatoria
-            $assigned_form_id = eipsi_calculate_random_assignment( $config, $user_fingerprint );
+            $assigned_form_id = eipsi_calculate_rct_assignment( $config, $user_fingerprint );
         }
 
         // Guardar nueva asignación en DB
@@ -305,7 +305,7 @@ function eipsi_get_client_ip() {
  * @param string $user_fingerprint Fingerprint del usuario
  * @return int Post ID del formulario asignado
  */
-function eipsi_calculate_random_assignment( $config, $user_fingerprint ) {
+function eipsi_calculate_rct_assignment( $config, $user_fingerprint ) {
     $formularios = $config['formularios'];
     $method      = isset( $config['method'] ) ? $config['method'] : 'seeded';
 
@@ -362,36 +362,6 @@ function eipsi_calculate_random_assignment( $config, $user_fingerprint ) {
  * Crear nueva asignación en DB
  * 
  * @param string $randomization_id ID de aleatorización
- * @param string $user_fingerprint Fingerprint del usuario
- * @param int    $assigned_form_id Post ID del formulario asignado
- * @return bool True si se creó correctamente
- */
-function eipsi_create_assignment( $randomization_id, $user_fingerprint, $assigned_form_id ) {
-    global $wpdb;
-
-    $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
-
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-    $result = $wpdb->insert(
-        $table_name,
-        array(
-            'randomization_id'  => $randomization_id,
-            'user_fingerprint'  => $user_fingerprint,
-            'assigned_form_id'  => $assigned_form_id,
-            'assigned_at'       => current_time( 'mysql' ),
-            'last_access'       => current_time( 'mysql' ),
-            'access_count'      => 1,
-        ),
-        array( '%s', '%s', '%d', '%s', '%s', '%d' )
-    );
-
-    if ( $result === false ) {
-        error_log( "[EIPSI RCT] ERROR al crear asignación: {$wpdb->last_error}" );
-        return false;
-    }
-
-    return true;
-}
 
 /**
  * Actualizar timestamp y contador de accesos
@@ -558,13 +528,3 @@ function eipsi_create_assignment( $template_id, $config_id, $user_fingerprint, $
 }
 
 /**
- * Función legacy para obtener configuración de DB (mantiene compatibilidad)
- * 
- * @param string $randomization_id Randomization ID legacy
- * @return array|null
- */
-function eipsi_get_randomization_config_from_db( $randomization_id ) {
-    // Esta función es para compatibilidad legacy
-    // El nuevo flujo usa post meta
-    return null;
-}

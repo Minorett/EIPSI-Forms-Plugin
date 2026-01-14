@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param string $user_fingerprint Fingerprint del usuario
  * @return int Post ID del formulario asignado
  */
-function eipsi_calculate_random_assignment( $config, $user_fingerprint ) {
+function eipsi_calculate_frontend_assignment( $config, $user_fingerprint ) {
     $formularios = $config['formularios'];
     $metodo = $config['metodo'] ?? 'pure-random';
     $seed = $config['seed'] ?? '';
@@ -78,40 +78,6 @@ function eipsi_calculate_random_assignment( $config, $user_fingerprint ) {
  * @param string $user_fingerprint Fingerprint del usuario
  * @return int|null Post ID del formulario asignado o null
  */
-function eipsi_check_manual_assignment( $config, $user_fingerprint ) {
-    // Verificar si se permite override manual
-    if ( ! $config['permitirOverride'] ?? true ) {
-        return null;
-    }
-
-    // Verificar si hay un parámetro de URL para forzar un formulario
-    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-    if ( isset( $_GET['form_id'] ) ) {
-        $forced_form_id = intval( $_GET['form_id'] );
-        
-        // Verificar que el formulario está en la lista permitida
-        foreach ( $config['formularios'] as $form ) {
-            if ( $form['id'] == $forced_form_id ) {
-                error_log( "[EIPSI RCT] Override manual - formulario forzado: {$forced_form_id}" );
-                return $forced_form_id;
-            }
-        }
-    }
-
-    // Verificar si hay email en URL para asignación específica
-    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-    if ( isset( $_GET['email'] ) && is_email( $_GET['email'] ) ) {
-        $email = sanitize_email( wp_unslash( $_GET['email'] ) );
-        $email_hash = md5( $email );
-        
-        // Buscar en asignaciones manuales si existieran
-        // Por ahora, simple: usar el primer formulario para este email
-        error_log( "[EIPSI RCT] Email override - usando primer formulario para: {$email}" );
-        return $config['formularios'][0]['id'] ?? null;
-    }
-
-    return null;
-}
 
 /**
  * Registrar shortcode público para el nuevo flujo
