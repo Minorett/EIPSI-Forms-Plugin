@@ -1,29 +1,36 @@
 /**
- * Save para Bloque de Aleatorización
+ * Save para Bloque de Aleatorización - KISS (Keep It Simple, Stupid)
  *
- * En el frontend, renderiza el shortcode que será procesado por el backend.
- * El shortcode [eipsi_randomization] maneja toda la lógica de asignación.
+ * Filosofía: Bloque dinámico que guarda solo data attributes
+ * El backend renderiza el shortcode basado en config_id
  *
- * @since 1.3.0
+ * @since 1.3.5
  */
 
 import { useBlockProps } from '@wordpress/block-editor';
 
 export default function Save( { attributes } ) {
-	const { randomizationId, enabled } = attributes;
+	const { generatedShortcode } = attributes;
 
-	if ( ! enabled || ! randomizationId ) {
+	// Si no hay shortcode generado, no guardar nada
+	if ( ! generatedShortcode ) {
 		return null;
 	}
 
+	// Extraer config_id del shortcode
+	const configMatch = generatedShortcode.match( /config="([^"]+)"/ );
+	const configId = configMatch ? configMatch[ 1 ] : '';
+
 	const blockProps = useBlockProps.save( {
 		className: 'eipsi-randomization-wrapper',
-		'data-randomization-id': randomizationId,
+		'data-config-id': configId,
 	} );
 
+	// El bloque dinámico renderizará el shortcode
+	// Aquí solo guardamos el contenedor con data attributes
 	return (
-		<div { ...blockProps }>
-			{ `[eipsi_randomization id="${ randomizationId }"]` }
+		<div { ...blockProps } data-shortcode={ generatedShortcode }>
+			{ generatedShortcode }
 		</div>
 	);
 }
