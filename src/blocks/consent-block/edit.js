@@ -6,7 +6,7 @@ import ConsentSettings from '../../components/ConsentSettings';
 import {
 	parseConsentMarkdown,
 	validateConsentMarkdown,
-} from '../../../assets/js/consent-markdown-parser';
+} from '../utils/markdownParser';
 import {
 	serializeToCSSVariables,
 	DEFAULT_STYLE_CONFIG,

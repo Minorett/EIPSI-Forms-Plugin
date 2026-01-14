@@ -1,5 +1,5 @@
 import { useBlockProps, RichText } from '@wordpress/block-editor';
-import { parseConsentMarkdown } from '../../../assets/js/consent-markdown-parser';
+import { parseConsentMarkdown } from '../utils/markdownParser';
 
 function getPlainTextFromHtml( html ) {
 	return ( html || '' )
