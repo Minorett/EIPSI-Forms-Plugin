@@ -3,120 +3,150 @@
  * Funciones duplicadas entre edit.js y save.js para evitar dependencias circulares
  */
 
-const { 
-    createElement: el, 
-    createElement: h 
-} = wp.element;
+const { createElement: el } = wp.element;
 
 /**
  * Renderiza el cuerpo de descripción
+ * @param {Object} attributes - Los atributos del bloque
  */
-export const renderDescriptionBody = (attributes) => {
-    const { description, descriptionTextAlign = 'left' } = attributes;
-    
-    if (!description) return null;
-    
-    return (
-        el('div', {
-            className: 'eipsi-description-body',
-            style: { textAlign: descriptionTextAlign }
-        },
-        description.includes('\n') ? (
-            description.split('\n').map((line, index) => 
-                el('p', { key: index }, line)
-            )
-        ) : (
-            el('p', null, description)
-        ))
-    );
+export const renderDescriptionBody = ( attributes ) => {
+	const { description, descriptionTextAlign = 'left' } = attributes;
+
+	if ( ! description ) {
+		return null;
+	}
+
+	return el(
+		'div',
+		{
+			className: 'eipsi-description-body',
+			style: { textAlign: descriptionTextAlign },
+		},
+		description.includes( '\n' )
+			? description
+					.split( '\n' )
+					.map( ( line, index ) => el( 'p', { key: index }, line ) )
+			: el( 'p', null, description )
+	);
 };
 
 /**
  * Renderiza texto de ayuda
+ * @param {string} helperText      - El texto de ayuda a mostrar
+ * @param {string} helperTextAlign - Alineación del texto ('left', 'center', 'right')
  */
-export const renderHelperText = (helperText, helperTextAlign = 'left') => {
-    if (!helperText) return null;
-    
-    return el('div', {
-        className: 'eipsi-helper-text',
-        style: { 
-            textAlign: helperTextAlign,
-            marginTop: '8px',
-            fontSize: '14px',
-            color: '#666'
-        }
-    }, helperText);
+export const renderHelperText = ( helperText, helperTextAlign = 'left' ) => {
+	if ( ! helperText ) {
+		return null;
+	}
+
+	return el(
+		'div',
+		{
+			className: 'eipsi-helper-text',
+			style: {
+				textAlign: helperTextAlign,
+				marginTop: '8px',
+				fontSize: '14px',
+				color: '#666',
+			},
+		},
+		helperText
+	);
 };
 
 /**
  * Genera ID único para campos
+ * @param {string} fieldName - Nombre del campo
+ * @param {string} prefix    - Prefijo para el ID (por defecto 'eipsi-field')
  */
-export const getFieldId = (fieldName, prefix = 'eipsi-field') => {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 5);
-    return `${prefix}-${fieldName}-${timestamp}-${random}`;
+export const getFieldId = ( fieldName, prefix = 'eipsi-field' ) => {
+	const timestamp = Date.now();
+	const random = Math.random().toString( 36 ).substr( 2, 5 );
+	return `${ prefix }-${ fieldName }-${ timestamp }-${ random }`;
 };
 
 /**
  * Calcula valor máximo para escalas
+ * @param {Object} scale - Configuración de la escala (min, max, step)
  */
-export const calculateMaxValue = (scale) => {
-    if (!scale) return 100;
-    
-    const { min = 0, max = 100, step = 1 } = scale;
-    return Math.ceil((max - min) / step);
+export const calculateMaxValue = ( scale ) => {
+	if ( ! scale ) {
+		return 100;
+	}
+
+	const { min = 0, max = 100, step = 1 } = scale;
+	return Math.ceil( ( max - min ) / step );
 };
 
 /**
  * Renderiza el cuerpo del consentimiento
+ * @param {Object} attributes - Los atributos del bloque de consentimiento
  */
-export const renderConsentBody = (attributes) => {
-    const { 
-        consentTitle = '', 
-        consentText = '', 
-        titleTextAlign = 'left',
-        consentTextAlign = 'left',
-        backgroundColor = '#f8f9fa',
-        textColor = '#333'
-    } = attributes;
-    
-    return el('div', {
-        className: 'eipsi-consent-body',
-        style: { 
-            backgroundColor,
-            color: textColor,
-            padding: '20px',
-            borderRadius: '8px',
-            border: '1px solid #e0e0e0'
-        }
-    },
-    // Título
-    consentTitle && el('h3', {
-        key: 'title',
-        style: { 
-            textAlign: titleTextAlign,
-            marginBottom: '15px',
-            color: textColor,
-            fontSize: '18px',
-            fontWeight: 'bold'
-        }
-    }, consentTitle),
-    
-    // Texto
-    consentText && el('div', {
-        key: 'text',
-        className: 'eipsi-consent-text',
-        style: { 
-            textAlign: consentTextAlign,
-            lineHeight: '1.6',
-            fontSize: '14px'
-        }
-    },
-    consentText.includes('\n') ? (
-        consentText.split('\n').map((paragraph, index) => 
-            el('p', { key: index, style: { marginBottom: '10px' } }, paragraph)
-        )
-    ) : (
-        el('p', null, consentText)
-    )));
+export const renderConsentBody = ( attributes ) => {
+	const {
+		consentTitle = '',
+		consentText = '',
+		titleTextAlign = 'left',
+		consentTextAlign = 'left',
+		backgroundColor = '#f8f9fa',
+		textColor = '#333',
+	} = attributes;
+
+	return el(
+		'div',
+		{
+			className: 'eipsi-consent-body',
+			style: {
+				backgroundColor,
+				color: textColor,
+				padding: '20px',
+				borderRadius: '8px',
+				border: '1px solid #e0e0e0',
+			},
+		},
+		// Título
+		consentTitle &&
+			el(
+				'h3',
+				{
+					key: 'title',
+					style: {
+						textAlign: titleTextAlign,
+						marginBottom: '15px',
+						color: textColor,
+						fontSize: '18px',
+						fontWeight: 'bold',
+					},
+				},
+				consentTitle
+			),
+
+		// Texto
+		consentText &&
+			el(
+				'div',
+				{
+					key: 'text',
+					className: 'eipsi-consent-text',
+					style: {
+						textAlign: consentTextAlign,
+						lineHeight: '1.6',
+						fontSize: '14px',
+					},
+				},
+				consentText.includes( '\n' )
+					? consentText.split( '\n' ).map( ( paragraph, index ) =>
+							el(
+								'p',
+								{
+									key: index,
+									style: { marginBottom: '10px' },
+								},
+								paragraph
+							)
+					  )
+					: el( 'p', null, consentText )
+			)
+	);
 };
