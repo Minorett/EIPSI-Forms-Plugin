@@ -22,59 +22,74 @@
     "reusable": false
   },
   "attributes": {
-    "randomizationId": {
-      "type": "string",
-      "default": ""
-    },
     "enabled": {
       "type": "boolean",
       "default": false
     },
-    "formularios": {
+    "shortcodesInput": {
+      "type": "string",
+      "default": ""
+    },
+    "formulariosDetectados": {
       "type": "array",
       "default": [],
       "items": {
         "type": "object"
       }
     },
-    "method": {
+    "probabilidades": {
+      "type": "object",
+      "default": {}
+    },
+    "metodo": {
       "type": "string",
       "enum": [ "seeded", "pure-random" ],
-      "default": "seeded"
+      "default": "pure-random"
     },
-    "manualAssignments": {
-      "type": "array",
-      "default": [],
-      "items": {
-        "type": "object"
-      }
+    "seed": {
+      "type": "string",
+      "default": ""
     },
-    "showPreview": {
+    "permitirOverride": {
       "type": "boolean",
       "default": true
     },
-    "showInstructions": {
+    "registrarAsignaciones": {
       "type": "boolean",
       "default": true
+    },
+    "configId": {
+      "type": "string",
+      "default": ""
+    },
+    "generatedShortcode": {
+      "type": "string",
+      "default": ""
     }
   },
   "example": {
     "attributes": {
       "enabled": true,
-      "formularios": [
+      "shortcodesInput": "[eipsi_form id=\"123\"]\n[eipsi_form id=\"456\"]",
+      "formulariosDetectados": [
         {
-          "id": "form_1",
-          "postId": 123,
-          "nombre": "PHQ-9 Standard",
-          "porcentaje": 50
+          "id": "123",
+          "shortcode": "[eipsi_form id=\"123\"]",
+          "name": "PHQ-9 Standard",
+          "exists": true
         },
         {
-          "id": "form_2",
-          "postId": 456,
-          "nombre": "PHQ-9 Modificado",
-          "porcentaje": 50
+          "id": "456",
+          "shortcode": "[eipsi_form id=\"456\"]",
+          "name": "PHQ-9 Modificado",
+          "exists": true
         }
-      ]
+      ],
+      "probabilidades": {
+        "123": 50,
+        "456": 50
+      },
+      "metodo": "pure-random"
     }
   }
 }

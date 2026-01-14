@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Shortcode: [eipsi_randomization id="rand_xyz"]
+ * Shortcode: [eipsi_randomization template="2400" config="abc123xyz"]
  * 
  * @param array $atts Atributos del shortcode
  * @return string HTML output
@@ -30,32 +30,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 function eipsi_randomization_shortcode( $atts ) {
     $atts = shortcode_atts(
         array(
-            'id' => '', // Randomization ID del bloque
+            'template' => '', // Template ID del Form Library
+            'config' => '',   // Config ID único
         ),
         $atts,
         'eipsi_randomization'
     );
 
-    $randomization_id = sanitize_text_field( $atts['id'] );
+    $template_id = intval( $atts['template'] );
+    $config_id = sanitize_text_field( $atts['config'] );
 
-    if ( empty( $randomization_id ) ) {
+    if ( empty( $template_id ) || empty( $config_id ) ) {
         return eipsi_randomization_error_notice(
-            __( '⚠️ Error: No se especificó ID de aleatorización.', 'eipsi-forms' )
+            __( '⚠️ Error: Faltan parámetros requeridos (template y config).', 'eipsi-forms' )
         );
     }
 
-    // PASO 1: Obtener configuración desde DB (primero) o desde blocks (fallback)
-    $config = eipsi_get_randomization_config_from_db( $randomization_id );
+    // PASO 1: Obtener configuración desde post meta (nuevo flujo)
+    $config = eipsi_get_randomization_config_from_post_meta( $template_id, $config_id );
 
     if ( ! $config ) {
-        // Fallback: buscar en blocks (backwards compatibility)
-        $config_post = eipsi_get_randomization_config_post( $randomization_id );
+        // Fallback: buscar configuración legacy en blocks (backwards compatibility)
+        $config_post = eipsi_get_randomization_config_post( $template_id );
 
         if ( ! $config_post ) {
             return eipsi_randomization_error_notice(
                 sprintf(
-                    __( '⚠️ Error: No se encontró configuración para ID "%s".', 'eipsi-forms' ),
-                    esc_html( $randomization_id )
+                    __( '⚠️ Error: No se encontró configuración para template %d y config %s.', 'eipsi-forms' ),
+                    $template_id,
+                    esc_html( $config_id )
                 )
             );
         }
@@ -79,7 +82,7 @@ function eipsi_randomization_shortcode( $atts ) {
     $user_fingerprint = eipsi_get_user_fingerprint();
 
     // PASO 3: Buscar si ya existe una asignación previa para este usuario
-    $existing_assignment = eipsi_get_existing_assignment( $randomization_id, $user_fingerprint );
+    $existing_assignment = eipsi_get_existing_assignment( $template_id, $config_id, $user_fingerprint );
 
     if ( $existing_assignment ) {
         // YA FUE ASIGNADO - usar la asignación existente (persistencia)
@@ -100,7 +103,7 @@ function eipsi_randomization_shortcode( $atts ) {
         }
 
         // Guardar nueva asignación en DB
-        eipsi_create_assignment( $randomization_id, $user_fingerprint, $assigned_form_id );
+        eipsi_create_assignment( $template_id, $config_id, $user_fingerprint, $assigned_form_id );
 
         error_log( "[EIPSI RCT] Nuevo usuario: {$user_fingerprint} → Formulario: {$assigned_form_id}" );
     }
@@ -457,6 +460,8 @@ function eipsi_randomization_error_notice( $message ) {
 /**
  * Hook para manejar query param ?eipsi_rand=xyz
  * Permite acceso directo sin necesidad de shortcode
+ * 
+ * @since 1.3.4 - Actualizado para nuevo flujo
  */
 function eipsi_handle_randomization_query_param() {
     if ( ! isset( $_GET['eipsi_rand'] ) ) {
@@ -465,7 +470,25 @@ function eipsi_handle_randomization_query_param() {
 
     $randomization_id = sanitize_text_field( $_GET['eipsi_rand'] );
 
-    // Buscar página que contenga este shortcode o bloque
+    // Si el parámetro incluye template y config (nuevo formato)
+    if ( strpos( $randomization_id, '_' ) !== false ) {
+        // Formato: template_configID (ej: 2400_config_123456)
+        $parts = explode( '_', $randomization_id, 2 );
+        if ( count( $parts ) === 2 ) {
+            $template_id = intval( $parts[0] );
+            $config_id = $parts[1];
+            
+            $config = eipsi_get_randomization_config_from_post_meta( $template_id, $config_id );
+            if ( $config ) {
+                // Redirigir a la página con el shortcode correspondiente
+                $shortcode = sprintf( '[eipsi_randomization template="%d" config="%s"]', $template_id, $config_id );
+                wp_safe_redirect( add_query_arg( 'eipsi_rand_shortcode', base64_encode( $shortcode ), home_url() ) );
+                exit;
+            }
+        }
+    }
+
+    // Fallback: buscar página que contenga este shortcode o bloque (legacy)
     $config_post = eipsi_get_randomization_config_post( $randomization_id );
 
     if ( $config_post ) {
@@ -488,3 +511,83 @@ function eipsi_handle_randomization_query_param() {
 }
 
 add_action( 'template_redirect', 'eipsi_handle_randomization_query_param' );
+
+/**
+ * Función para obtener asignación existente (actualizada para nuevo flujo)
+ * 
+ * @param int $template_id Template ID
+ * @param string $config_id Config ID
+ * @param string $user_fingerprint Fingerprint del usuario
+ * @return array|null Array con datos de asignación o null
+ */
+function eipsi_get_existing_assignment( $template_id, $config_id, $user_fingerprint ) {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $assignment = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT * FROM {$table_name} 
+            WHERE template_id = %d 
+            AND config_id = %s 
+            AND user_fingerprint = %s
+            LIMIT 1",
+            $template_id,
+            $config_id,
+            $user_fingerprint
+        ),
+        ARRAY_A
+    );
+
+    return $assignment;
+}
+
+/**
+ * Función para crear nueva asignación (actualizada para nuevo flujo)
+ * 
+ * @param int $template_id Template ID
+ * @param string $config_id Config ID
+ * @param string $user_fingerprint Fingerprint del usuario
+ * @param int $assigned_form_id Post ID del formulario asignado
+ * @return bool True si se creó correctamente
+ */
+function eipsi_create_assignment( $template_id, $config_id, $user_fingerprint, $assigned_form_id ) {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+    $result = $wpdb->insert(
+        $table_name,
+        array(
+            'template_id' => $template_id,
+            'config_id' => $config_id,
+            'user_fingerprint' => $user_fingerprint,
+            'assigned_form_id' => $assigned_form_id,
+            'assigned_at' => current_time( 'mysql' ),
+            'last_access' => current_time( 'mysql' ),
+            'access_count' => 1,
+        ),
+        array( '%d', '%s', '%s', '%d', '%s', '%s', '%d' )
+    );
+
+    if ( $result === false ) {
+        error_log( "[EIPSI RCT] ERROR al crear asignación: {$wpdb->last_error}" );
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Función legacy para obtener configuración de DB (mantiene compatibilidad)
+ * 
+ * @param string $randomization_id Randomization ID legacy
+ * @return array|null
+ */
+function eipsi_get_randomization_config_from_db( $randomization_id ) {
+    // Esta función es para compatibilidad legacy
+    // El nuevo flujo usa post meta
+    return null;
+}

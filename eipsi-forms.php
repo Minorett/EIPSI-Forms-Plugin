@@ -51,6 +51,8 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'assets/js/eipsi-randomization-shortcode.p
 // Sistema RCT completo (v1.3.1)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-db-setup.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-shortcode-handler.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-config-handler.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/randomization-frontend.php';
 
 // RCT Analytics Dashboard (v1.3.2)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/rct-analytics-page.php';
