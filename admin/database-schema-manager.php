@@ -112,7 +112,6 @@ class EIPSI_Database_Schema_Manager {
                 interaction varchar(255) DEFAULT NULL,
                 form_name varchar(255) NOT NULL,
                 created_at datetime NOT NULL,
-                submitted_at datetime DEFAULT NULL,
                 device varchar(100) DEFAULT NULL,
                 browser varchar(100) DEFAULT NULL,
                 os varchar(100) DEFAULT NULL,
@@ -131,7 +130,6 @@ class EIPSI_Database_Schema_Manager {
                 KEY form_id (form_id),
                 KEY participant_id (participant_id),
                 KEY session_id (session_id),
-                KEY submitted_at (submitted_at),
                 KEY ip_address (ip_address),
                 KEY form_participant (form_id, participant_id)
             ) ENGINE=InnoDB DEFAULT CHARSET={$charset}";
@@ -155,7 +153,6 @@ class EIPSI_Database_Schema_Manager {
             'os' => "ALTER TABLE `{$table_name}` ADD COLUMN os varchar(100) DEFAULT NULL AFTER browser",
             'screen_width' => "ALTER TABLE `{$table_name}` ADD COLUMN screen_width int(11) DEFAULT NULL AFTER os",
             'duration_seconds' => "ALTER TABLE `{$table_name}` ADD COLUMN duration_seconds decimal(8,3) DEFAULT NULL AFTER duration",
-            'submitted_at' => "ALTER TABLE `{$table_name}` ADD COLUMN submitted_at datetime DEFAULT NULL AFTER created_at",
             'start_timestamp_ms' => "ALTER TABLE `{$table_name}` ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
             'end_timestamp_ms' => "ALTER TABLE `{$table_name}` ADD COLUMN end_timestamp_ms bigint(20) DEFAULT NULL AFTER start_timestamp_ms",
             'metadata' => "ALTER TABLE `{$table_name}` ADD COLUMN metadata LONGTEXT DEFAULT NULL AFTER ip_address",
