@@ -13,6 +13,10 @@ import { registerBlockType } from '@wordpress/blocks';
 import Edit from './edit';
 import metadata from './block.json';
 
+// Importar estilos para que webpack los compile
+import './editor.scss';
+import './style.scss';
+
 registerBlockType( metadata, {
 	edit: Edit,
 	save: () => null, // Bloque dinámico - save retorna null

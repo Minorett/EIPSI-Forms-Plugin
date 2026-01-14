@@ -1,6 +1,6 @@
 {
   "$schema": "https://schemas.wp.org/trunk/block.json",
-  "apiVersion": 2,
+  "apiVersion": 3,
   "name": "eipsi/randomization",
   "title": "Aleatorización de Formularios",
   "category": "eipsi-forms",
@@ -8,6 +8,7 @@
   "keywords": ["randomization", "aleatorización", "estudios clínicos"],
   "version": "1.3.5",
   "textdomain": "eipsi-forms",
+  "parent": ["eipsi/form-container"],
   "attributes": {
     "shortcodesInput": {
       "type": "string",
