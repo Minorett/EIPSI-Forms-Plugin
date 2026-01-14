@@ -1,21 +1,23 @@
 /**
- * Editor UI para Bloque de Aleatorización
+ * Editor UI para Bloque de Aleatorización - FLUJO MANUAL
  *
  * Features:
- * - Configurar formularios con porcentajes automáticos
- * - Asignaciones manuales (override ético)
- * - Generación automática de shortcode y link
- * - Vista previa en tiempo real
+ * - Input manual de shortcodes [eipsi_form id="XXXX"]
+ * - Validación y parsing de shortcodes en tiempo real
+ * - Configuración visual de probabilidades
+ * - Generación automática de shortcode único para el template
+ * - Guardado como post meta del template
  *
- * @since 1.3.0
+ * @since 1.3.4
  */
 
-/* global alert, navigator */
+/* global navigator */
 
 import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
 import {
 	PanelBody,
 	TextControl,
+	TextareaControl,
 	SelectControl,
 	Button,
 	ToggleControl,
@@ -23,301 +25,210 @@ import {
 	Card,
 	CardBody,
 	CardHeader,
-	Flex,
-	FlexItem,
+	Collapsible,
 } from '@wordpress/components';
-import { __, sprintf } from '@wordpress/i18n';
-import { useState, useEffect } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
+import { useState } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 
 export default function Edit( { attributes, setAttributes } ) {
 	const {
-		randomizationId,
 		enabled,
-		formularios,
-		method,
-		manualAssignments,
-		showPreview,
-		showInstructions,
+		shortcodesInput,
+		formulariosDetectados,
+		probabilidades,
+		metodo,
+		seed,
+		permitirOverride,
+		registrarAsignaciones,
+		generatedShortcode,
 	} = attributes;
 
-	const [ availableForms, setAvailableForms ] = useState( [] );
-	const [ selectedFormId, setSelectedFormId ] = useState( '' );
-	const [ emailInput, setEmailInput ] = useState( '' );
-	const [ formForEmail, setFormForEmail ] = useState( '' );
 	const [ isLoading, setIsLoading ] = useState( false );
 	const [ copiedShortcode, setCopiedShortcode ] = useState( false );
-	const [ copiedLink, setCopiedLink ] = useState( false );
+	const [ errorMessage, setErrorMessage ] = useState( '' );
+	const [ validatingFormIds, setValidatingFormIds ] = useState( new Set() );
 
-	// Cargar formularios disponibles del CPT eipsi_form_template
-	useEffect( () => {
-		setIsLoading( true );
-		// eslint-disable-next-line no-console
-		console.log(
-			'[EIPSI Randomization] Cargando formularios desde REST API...'
-		);
-		apiFetch( {
-			path: '/wp/v2/eipsi_form_template?per_page=100&status=publish',
-		} )
-			.then( ( posts ) => {
-				// eslint-disable-next-line no-console
-				console.log(
-					`[EIPSI Randomization] ${ posts.length } formularios cargados`,
-					posts
-				);
-				const options = posts.map( ( post ) => ( {
-					id: String( post.id ),
-					label: post.title.rendered || `Formulario #${ post.id }`,
-				} ) );
-				setAvailableForms( options );
-			} )
-			.catch( ( error ) => {
-				// eslint-disable-next-line no-console
-				console.error(
-					'[EIPSI Randomization] Error cargando formularios:',
-					error
-				);
-				// Si es un error de permisos, mostrar mensaje más claro
-				if ( error.code === 'rest_forbidden' ) {
-					// eslint-disable-next-line no-console
-					console.warn(
-						'[EIPSI Randomization] Permiso denegado. Verificar permisos del usuario o contactar al administrador.'
-					);
-				}
-			} )
-			.finally( () => {
-				setIsLoading( false );
+	// Parsear shortcodes del textarea
+	const parseShortcodes = ( input ) => {
+		const regex = /\[eipsi_form\s+id=["\']?(\d+)["\']?\]/g;
+		const formularios = [];
+		let match;
+
+		while ( ( match = regex.exec( input ) ) !== null ) {
+			formularios.push( {
+				id: match[ 1 ],
+				shortcode: match[ 0 ],
 			} );
-	}, [] );
-
-	// Guardar configuración en DB cuando cambia (debounced)
-	useEffect( () => {
-		if ( ! enabled || ! randomizationId || formularios.length < 1 ) {
-			return;
 		}
 
-		// Debounce: esperar 2 segundos antes de guardar
-		const timeoutId = setTimeout( () => {
-			const configData = {
-				randomizationId,
-				formularios,
-				method,
-				manualAssignments,
-				showInstructions,
-			};
+		return formularios;
+	};
 
-			// Guardar en DB via AJAX
-			apiFetch( {
-				path: '/wp/v2/eipsi_randomization_config',
-				method: 'POST',
-				data: configData,
-			} )
-				.then( () => {
-					// eslint-disable-next-line no-console
-					console.log(
-						'[EIPSI RCT] Configuración guardada en DB:',
-						randomizationId
-					);
-				} )
-				.catch( ( error ) => {
-					// eslint-disable-next-line no-console
-					console.error(
-						'[EIPSI RCT] Error guardando configuración:',
-						error
-					);
+	// Validar que existan los formularios
+	const validateFormularios = async ( formulariosData ) => {
+		setValidatingFormIds( new Set( formulariosData.map( f => f.id ) ) );
+		const validation = {};
+
+		for ( const formulario of formulariosData ) {
+			try {
+				const response = await apiFetch( {
+					path: `/wp/v2/eipsi_form_template/${ formulario.id }?status=publish`,
 				} );
-		}, 2000 );
 
-		return () => clearTimeout( timeoutId );
-	}, [
-		enabled,
-		randomizationId,
-		formularios,
-		method,
-		manualAssignments,
-		showInstructions,
-	] );
-
-	// Generar ID único al activar
-	const handleToggleEnabled = ( newValue ) => {
-		if ( newValue && ! randomizationId ) {
-			const id = `rand_${ Date.now() }_${ Math.random()
-				.toString( 36 )
-				.substr( 2, 9 ) }`;
-			setAttributes( { enabled: newValue, randomizationId: id } );
-		} else {
-			setAttributes( { enabled: newValue } );
-		}
-	};
-
-	// Agregar formulario con recalculo automático de porcentajes
-	const handleAddForm = () => {
-		if ( ! selectedFormId ) {
-			return;
+				if ( response ) {
+					validation[ formulario.id ] = {
+						exists: true,
+						name: response.title?.rendered || `Formulario #${ formulario.id }`,
+					};
+				} else {
+					validation[ formulario.id ] = { exists: false };
+				}
+			} catch ( error ) {
+				validation[ formulario.id ] = { exists: false };
+			}
 		}
 
-		const formData = availableForms.find(
-			( f ) => f.id === selectedFormId
-		);
-		if ( ! formData ) {
-			return;
-		}
+		setValidatingFormIds( new Set() );
 
-		// Verificar duplicados
-		const isDuplicate = formularios.some(
-			( f ) => f.postId === parseInt( selectedFormId )
-		);
-		if ( isDuplicate ) {
-			// eslint-disable-next-line no-alert
-			alert( __( 'Este formulario ya está en la lista', 'eipsi-forms' ) );
-			return;
-		}
-
-		const newForm = {
-			id: `form_${ Date.now() }`,
-			postId: parseInt( selectedFormId ),
-			nombre: formData.label,
-			porcentaje: 0, // Se calcula después
-		};
-
-		const updatedForms = [ ...formularios, newForm ];
-
-		// Recalcular porcentajes para que sumen 100
-		recalculatePercentages( updatedForms );
-
-		setSelectedFormId( '' );
-	};
-
-	// Remover formulario y recalcular porcentajes
-	const handleRemoveForm = ( id ) => {
-		const updatedForms = formularios.filter( ( f ) => f.id !== id );
-
-		if ( updatedForms.length > 0 ) {
-			recalculatePercentages( updatedForms );
-		} else {
-			setAttributes( { formularios: [] } );
-		}
-	};
-
-	// Recalcular porcentajes para que sumen exactamente 100
-	const recalculatePercentages = ( forms ) => {
-		if ( forms.length === 0 ) {
-			return;
-		}
-
-		const basePercentage = Math.floor( 100 / forms.length );
-		const remainder = 100 % forms.length;
-
-		const recalculated = forms.map( ( form, index ) => ( {
-			...form,
-			porcentaje: basePercentage + ( index < remainder ? 1 : 0 ),
+		// Actualizar formularios detectados
+		const formulariosConNombres = formulariosData.map( formulario => ( {
+			...formulario,
+			name: validation[ formulario.id ]?.name || `Formulario #${ formulario.id }`,
+			exists: validation[ formulario.id ]?.exists || false,
 		} ) );
 
-		setAttributes( { formularios: recalculated } );
+		setAttributes( { formulariosDetectados: formulariosConNombres } );
 	};
 
-	// Agregar asignación manual
-	const handleAddManualAssignment = () => {
-		if ( ! emailInput || ! formForEmail ) {
-			// eslint-disable-next-line no-alert
-			alert(
-				__(
-					'Completá el email y seleccioná un formulario',
-					'eipsi-forms'
-				)
-			);
-			return;
+	// Manejar cambios en el textarea de shortcodes
+	const handleShortcodesChange = ( value ) => {
+		setAttributes( { shortcodesInput: value } );
+
+		// Validar formato en tiempo real
+		if ( value.trim() ) {
+			const detectedForms = parseShortcodes( value );
+			if ( detectedForms.length > 0 ) {
+				validateFormularios( detectedForms );
+			} else {
+				setAttributes( { formulariosDetectados: [] } );
+			}
+		} else {
+			setAttributes( { formulariosDetectados: [] } );
 		}
+	};
 
-		const emailNormalized = emailInput.toLowerCase().trim();
-
-		// Validar formato de email
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if ( ! emailRegex.test( emailNormalized ) ) {
-			// eslint-disable-next-line no-alert
-			alert( __( 'Email inválido', 'eipsi-forms' ) );
-			return;
-		}
-
-		// Verificar duplicados
-		const isDuplicate = manualAssignments.some(
-			( a ) => a.email === emailNormalized
-		);
-		if ( isDuplicate ) {
-			// eslint-disable-next-line no-alert
-			alert(
-				__( 'Ya existe una asignación para este email', 'eipsi-forms' )
-			);
-			return;
-		}
-
-		const formData = availableForms.find( ( f ) => f.id === formForEmail );
-		if ( ! formData ) {
-			return;
-		}
-
-		const newAssignment = {
-			email: emailNormalized,
-			formId: formForEmail,
-			formName: formData.label,
-			timestamp: Date.now(),
+	// Manejar cambios en probabilidades
+	const handleProbabilidadChange = ( formId, newValue ) => {
+		const updatedProbabilidades = {
+			...probabilidades,
+			[ formId ]: Math.max( 0, Math.min( 100, parseInt( newValue ) || 0 ) ),
 		};
 
-		setAttributes( {
-			manualAssignments: [ ...manualAssignments, newAssignment ],
-		} );
-
-		setEmailInput( '' );
-		setFormForEmail( '' );
+		setAttributes( { probabilidades: updatedProbabilidades } );
 	};
 
-	// Remover asignación manual
-	const handleRemoveManualAssignment = ( email ) => {
-		setAttributes( {
-			manualAssignments: manualAssignments.filter(
-				( a ) => a.email !== email
-			),
+	// Distribuir probabilidades equitativamente
+	const handleDistribuirEquitativamente = () => {
+		if ( formulariosDetectados.length === 0 ) return;
+
+		const numForms = formulariosDetectados.length;
+		const basePercentage = Math.floor( 100 / numForms );
+		const remainder = 100 % numForms;
+
+		const updatedProbabilidades = {};
+		formulariosDetectados.forEach( ( form, index ) => {
+			updatedProbabilidades[ form.id ] = basePercentage + ( index < remainder ? 1 : 0 );
 		} );
+
+		setAttributes( { probabilidades: updatedProbabilidades } );
+	};
+
+	// Eliminar formulario
+	const handleRemoveForm = ( formId ) => {
+		const updatedForms = formulariosDetectados.filter( f => f.id !== formId );
+		const updatedProbabilidades = { ...probabilidades };
+		delete updatedProbabilidades[ formId ];
+
+		setAttributes( {
+			formulariosDetectados: updatedForms,
+			probabilidades: updatedProbabilidades,
+		} );
+
+		// Redistribuir si quedan formularios
+		if ( updatedForms.length > 0 ) {
+			handleDistribuirEquitativamente();
+		}
+	};
+
+	// Guardar configuración y generar shortcode
+	const handleGuardarConfiguracion = async () => {
+		setErrorMessage( '' );
+
+		// Validaciones
+		if ( formulariosDetectados.length < 1 ) {
+			setErrorMessage( 'Necesitás ingresar al menos 1 formulario.' );
+			return;
+		}
+
+		const totalProbabilidades = Object.values( probabilidades ).reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
+		if ( totalProbabilidades !== 100 ) {
+			setErrorMessage( `Las probabilidades deben sumar 100%. Total actual: ${ totalProbabilidades }%` );
+			return;
+		}
+
+		const formulariosValidos = formulariosDetectados.filter( f => f.exists );
+		if ( formulariosValidos.length !== formulariosDetectados.length ) {
+			setErrorMessage( 'Algunos formularios no existen. Verificá los IDs ingresados.' );
+			return;
+		}
+
+		setIsLoading( true );
+
+		try {
+			// Obtener el ID del post actual
+			const postId = wp.data.select( 'core/editor' ).getCurrentPostId();
+
+			const configData = {
+				post_id: postId,
+				shortcodes: formulariosDetectados.map( f => `[eipsi_form id="${ f.id }"]` ),
+				formularios: formulariosDetectados,
+				probabilidades,
+				metodo,
+				seed: seed || '',
+				permitirOverride,
+				registrarAsignaciones,
+			};
+
+			const response = await apiFetch( {
+				path: '/eipsi/v1/randomization-config',
+				method: 'POST',
+				data: configData,
+			} );
+
+			if ( response.success ) {
+				setAttributes( {
+					generatedShortcode: response.shortcode,
+				} );
+			} else {
+				setErrorMessage( 'Error guardando configuración. Intentalo nuevamente.' );
+			}
+		} catch ( error ) {
+			// eslint-disable-next-line no-console
+			console.error( 'Error guardando configuración:', error );
+			setErrorMessage( 'Error guardando configuración. Verificá la consola para más detalles.' );
+		} finally {
+			setIsLoading( false );
+		}
 	};
 
 	// Copiar shortcode al portapapeles
 	const handleCopyShortcode = () => {
-		if ( formularios.length < 1 ) {
-			// eslint-disable-next-line no-alert
-			alert(
-				__(
-					'Necesitás al menos 1 formulario configurado',
-					'eipsi-forms'
-				)
-			);
-			return;
-		}
+		if ( ! generatedShortcode ) return;
 
-		const shortcode = `[eipsi_randomization id="${ randomizationId }"]`;
-		navigator.clipboard.writeText( shortcode ).then( () => {
+		navigator.clipboard.writeText( generatedShortcode ).then( () => {
 			setCopiedShortcode( true );
 			setTimeout( () => setCopiedShortcode( false ), 2000 );
-		} );
-	};
-
-	// Copiar link al portapapeles
-	const handleCopyLink = () => {
-		if ( formularios.length < 1 ) {
-			// eslint-disable-next-line no-alert
-			alert(
-				__(
-					'Necesitás al menos 1 formulario configurado',
-					'eipsi-forms'
-				)
-			);
-			return;
-		}
-
-		const siteUrl = window.location.origin;
-		const link = `${ siteUrl }/?eipsi_rand=${ randomizationId }`;
-		navigator.clipboard.writeText( link ).then( () => {
-			setCopiedLink( true );
-			setTimeout( () => setCopiedLink( false ), 2000 );
 		} );
 	};
 
@@ -325,594 +236,290 @@ export default function Edit( { attributes, setAttributes } ) {
 		className: 'eipsi-randomization-block',
 	} );
 
-	const totalPercentage = formularios.reduce(
-		( sum, f ) => sum + ( f.porcentaje || 0 ),
-		0
-	);
+	const totalProbabilidades = Object.values( probabilidades ).reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
+	const isValidConfig = formulariosDetectados.length >= 1 && totalProbabilidades === 100;
 
 	return (
 		<div { ...blockProps }>
 			<InspectorControls>
 				<PanelBody
-					title={ __( '⚙️ Configuración', 'eipsi-forms' ) }
+					title={ __( '⚙️ Configuración General', 'eipsi-forms' ) }
 					initialOpen={ true }
 				>
 					<ToggleControl
 						label={ __( 'Activar Aleatorización', 'eipsi-forms' ) }
 						checked={ enabled }
-						onChange={ handleToggleEnabled }
+						onChange={ ( value ) => setAttributes( { enabled: value } ) }
 						help={ __(
-							'Cuando está activado, los participantes reciben formularios aleatorios',
+							'Activar el bloque de aleatorización de formularios',
 							'eipsi-forms'
 						) }
 					/>
-
-					{ enabled && (
-						<>
-							<SelectControl
-								label={ __(
-									'Método de Aleatorización',
-									'eipsi-forms'
-								) }
-								value={ method }
-								options={ [
-									{
-										label: __(
-											'Con seed reproducible',
-											'eipsi-forms'
-										),
-										value: 'seeded',
-									},
-									{
-										label: __(
-											'Random puro',
-											'eipsi-forms'
-										),
-										value: 'pure-random',
-									},
-								] }
-								onChange={ ( value ) =>
-									setAttributes( { method: value } )
-								}
-								help={ __(
-									'Con seed: misma asignación para mismo participante. Random puro: puede cambiar en cada acceso.',
-									'eipsi-forms'
-								) }
-							/>
-
-							<ToggleControl
-								label={ __(
-									'Mostrar Vista Previa',
-									'eipsi-forms'
-								) }
-								checked={ showPreview }
-								onChange={ ( value ) =>
-									setAttributes( { showPreview: value } )
-								}
-							/>
-
-							<ToggleControl
-								label={ __(
-									'Mostrar Instrucciones en Frontend',
-									'eipsi-forms'
-								) }
-								checked={ showInstructions }
-								onChange={ ( value ) =>
-									setAttributes( {
-										showInstructions: value,
-									} )
-								}
-								help={ __(
-									'Muestra un disclaimer sobre la aleatorización',
-									'eipsi-forms'
-								) }
-							/>
-						</>
-					) }
 				</PanelBody>
 			</InspectorControls>
 
-			<Card>
-				<CardHeader>
-					<h2 style={ { fontWeight: 'bold', fontSize: '1.25rem' } }>
-						🎲 Configuración
-					</h2>
-				</CardHeader>
-				<CardBody>
-					{ ! enabled ? (
+			{ ! enabled ? (
+				<Card>
+					<CardBody>
 						<Notice status="info" isDismissible={ false }>
 							{ __(
 								'La aleatorización está desactivada. Actívala en el panel lateral para empezar.',
 								'eipsi-forms'
 							) }
 						</Notice>
-					) : (
-						<>
-							{ /* Formularios para Aleatorizar */ }
-							<h3>
-								{ __(
-									'Formularios para Aleatorizar',
+					</CardBody>
+				</Card>
+			) : (
+				<Card>
+					<CardHeader>
+						<h2 style={ { fontWeight: 'bold', fontSize: '1.25rem' } }>
+							🎲 Aleatorización de Formularios
+						</h2>
+					</CardHeader>
+					<CardBody>
+						{ errorMessage && (
+							<Notice status="error" isDismissible={ false }>
+								{ errorMessage }
+							</Notice>
+						) }
+
+						{/* SECCIÓN 1: Input de Shortcodes */}
+						<div style={ { marginBottom: '2rem' } }>
+							<h3>{ __( 'Formularios a Aleatorizar', 'eipsi-forms' ) }</h3>
+							<TextareaControl
+								value={ shortcodesInput || '' }
+								onChange={ handleShortcodesChange }
+								placeholder={ __(
+									'Ingresá los shortcodes de los formularios que deseas aleatorizar.' +
+									' Un shortcode por línea. Ejemplo:' +
+									' [eipsi_form id="2424"]' +
+									' [eipsi_form id="2417"]',
 									'eipsi-forms'
 								) }
-							</h3>
-
-							<Flex gap={ 2 } style={ { marginBottom: '1rem' } }>
-								<FlexItem style={ { flex: 1 } }>
-									<SelectControl
-										value={ selectedFormId }
-										options={ [
-											{
-												label: __(
-													'Seleccionar formulario…',
-													'eipsi-forms'
-												),
-												value: '',
-											},
-											...availableForms.map( ( f ) => ( {
-												label: f.label,
-												value: f.id,
-											} ) ),
-										] }
-										onChange={ setSelectedFormId }
-										disabled={ isLoading }
-									/>
-								</FlexItem>
-								<FlexItem>
-									<Button
-										variant="primary"
-										onClick={ handleAddForm }
-										disabled={
-											! selectedFormId || isLoading
-										}
-									>
-										{ __( '➕ Añadir', 'eipsi-forms' ) }
-									</Button>
-								</FlexItem>
-							</Flex>
-
-							{ isLoading && (
-								<Notice status="info" isDismissible={ false }>
-									{ __(
-										'Cargando formularios…',
-										'eipsi-forms'
-									) }
-								</Notice>
-							) }
-
-							{ ! isLoading && availableForms.length === 0 && (
-								<Notice
-									status="warning"
-									isDismissible={ false }
-								>
-									{ __(
-										'No se encontraron formularios. Creá formularios en Form Library para poder usarlos aquí.',
-										'eipsi-forms'
-									) }
-								</Notice>
-							) }
-
-							{ ! isLoading && availableForms.length > 0 && (
-								<Notice status="info" isDismissible={ false }>
-									{ sprintf(
-										/* translators: %d: number of available forms */
-										__(
-											'%d formulario(s) disponible(s) para aleatorizar.',
-											'eipsi-forms'
-										),
-										availableForms.length
-									) }
-								</Notice>
-							) }
-
-							{ formularios.length > 0 && (
-								<div
-									style={ {
-										marginBottom: '1rem',
-										border: '1px solid #ddd',
-										borderRadius: '4px',
-										overflow: 'hidden',
-									} }
-								>
-									{ formularios.map( ( form ) => (
-										<div
-											key={ form.id }
-											style={ {
-												display: 'flex',
-												justifyContent: 'space-between',
-												alignItems: 'center',
-												padding: '0.75rem 1rem',
-												borderBottom:
-													'1px solid #f0f0f0',
-												background: '#fafafa',
-											} }
-										>
-											<div>
-												<strong>{ form.nombre }</strong>
-												<span
-													style={ {
-														marginLeft: '1rem',
-														color: '#666',
-														fontWeight: 'bold',
-													} }
-												>
-													{ form.porcentaje }%
-												</span>
-											</div>
-											<Button
-												isDestructive
-												isSmall
-												onClick={ () =>
-													handleRemoveForm( form.id )
-												}
-											>
-												✕
-											</Button>
-										</div>
-									) ) }
-								</div>
-							) }
-
-							{ formularios.length > 0 && (
-								<div
-									style={ {
-										marginTop: '0.5rem',
-										fontSize: '0.9rem',
-										fontWeight: 'bold',
-										padding: '0.5rem',
-										background:
-											totalPercentage === 100
-												? '#e8f5e9'
-												: '#ffebee',
-										color:
-											totalPercentage === 100
-												? '#2e7d32'
-												: '#c62828',
-										borderRadius: '4px',
-									} }
-								>
-									{ __( 'Total:', 'eipsi-forms' ) }{ ' ' }
-									{ totalPercentage }%{ ' ' }
-									{ totalPercentage === 100 ? '✓' : '⚠️' }
-								</div>
-							) }
-
-							{ formularios.length < 1 && (
-								<Notice
-									status="warning"
-									isDismissible={ false }
-								>
-									{ __(
-										'Necesitás al menos 1 formulario para generar shortcode/link',
-										'eipsi-forms'
-									) }
-								</Notice>
-							) }
-
-							{ /* Asignaciones Manuales */ }
-							<hr
-								style={ {
-									margin: '2rem 0',
-									border: 'none',
-									borderTop: '2px solid #e0e0e0',
-								} }
+								rows={ 6 }
+								style={ { width: '100%' } }
 							/>
+						</div>
 
-							<h3>
+						{/* SECCIÓN 2: Formularios Detectados */}
+						{ formulariosDetectados.length > 0 && (
+							<div style={ { marginBottom: '2rem' } }>
+								<h3>{ __( 'Formularios Detectados', 'eipsi-forms' ) }</h3>
+								{ formulariosDetectados.map( ( formulario ) => (
+									<div
+										key={ formulario.id }
+										style={ {
+											display: 'flex',
+											alignItems: 'center',
+											padding: '0.75rem',
+											marginBottom: '0.5rem',
+											border: '1px solid #ddd',
+											borderRadius: '4px',
+											backgroundColor: formulario.exists ? '#f0f8ff' : '#fff5f5',
+										} }
+									>
+										<div style={ { flex: 1 } }>
+											<div style={ { fontWeight: 'bold' } }>
+												{ formulario.name }
+											</div>
+											<div style={ { fontSize: '0.9rem', color: '#666' } }>
+												ID: { formulario.id } | { formulario.shortcode }
+											</div>
+										</div>
+										<div style={ { marginRight: '0.5rem' } }>
+											{ validatingFormIds.has( formulario.id ) ? (
+												<span>⏳ Validando...</span>
+											) : (
+												formulario.exists ? (
+													<span style={ { color: 'green' } }>✅ Existe</span>
+												) : (
+													<span style={ { color: 'red' } }>⚠️ No existe</span>
+												)
+											) }
+										</div>
+										<Button
+											variant="link"
+											onClick={ () => handleRemoveForm( formulario.id ) }
+											style={ { color: 'red' } }
+										>
+											✕
+										</Button>
+									</div>
+								) ) }
+							</div>
+						) }
+
+						{ formulariosDetectados.length === 0 && shortcodesInput.trim() && (
+							<Notice status="warning" isDismissible={ false }>
 								{ __(
-									'Asignaciones Manuales (Override Ético)',
+									'No se detectaron shortcodes válidos. Verificá el formato.',
 									'eipsi-forms'
 								) }
-							</h3>
-							<p
-								style={ {
-									fontSize: '0.9rem',
-									color: '#666',
-									marginBottom: '1rem',
-								} }
-							>
-								{ __(
-									'Asigná participantes específicos a formularios concretos. Útil para casos especiales o balanceo manual.',
-									'eipsi-forms'
-								) }
-							</p>
+							</Notice>
+						) }
 
-							<Flex gap={ 2 } style={ { marginBottom: '1rem' } }>
-								<FlexItem style={ { flex: 1 } }>
+						{/* SECCIÓN 3: Configurar Probabilidades */}
+						{ formulariosDetectados.length > 0 && (
+							<div style={ { marginBottom: '2rem' } }>
+								<h3>{ __( 'Configurar Probabilidades', 'eipsi-forms' ) }</h3>
+								{ formulariosDetectados.map( ( formulario ) => {
+									const porcentaje = probabilidades[ formulario.id ] || 0;
+									return (
+										<div key={ formulario.id } style={ { marginBottom: '1rem' } }>
+											<div style={ { display: 'flex', alignItems: 'center', marginBottom: '0.5rem' } }>
+												<strong style={ { flex: 1 } }>{ formulario.name }</strong>
+												<TextControl
+													type="number"
+													value={ porcentaje }
+													onChange={ ( value ) => handleProbabilidadChange( formulario.id, value ) }
+													min={ 0 }
+													max={ 100 }
+													style={ { width: '80px', marginLeft: '1rem' } }
+												/>
+												<span style={ { marginLeft: '0.5rem' } }>%</span>
+											</div>
+											<div style={ {
+												backgroundColor: '#f0f0f0',
+												height: '8px',
+												borderRadius: '4px',
+												overflow: 'hidden',
+											} }>
+												<div style={ {
+													backgroundColor: `hsl(${ formulario.id % 360 }, 70%, 50%)`,
+													height: '100%',
+													width: `${ porcentaje }%`,
+													transition: 'width 0.3s ease',
+												} } />
+											</div>
+										</div>
+									);
+								} ) }
+								<div style={ {
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: 'center',
+									marginTop: '1rem',
+									padding: '0.75rem',
+									backgroundColor: totalProbabilidades === 100 ? '#e8f5e8' : '#fff5f5',
+									borderRadius: '4px',
+								} }>
+									<strong>
+										Total: { totalProbabilidades }%
+										{ totalProbabilidades === 100 ? ' ✅' : ' ❌' }
+									</strong>
+									<Button
+										variant="secondary"
+										onClick={ handleDistribuirEquitativamente }
+									>
+										{ __( 'Distribuir Equitativamente', 'eipsi-forms' ) }
+									</Button>
+								</div>
+							</div>
+						) }
+
+						{/* SECCIÓN 4: Configuración Avanzada */}
+						<Collapsible defaultOpen={ false }>
+							<div style={ { marginBottom: '2rem' } }>
+								<h3>{ __( 'Configuración Avanzada', 'eipsi-forms' ) }</h3>
+								<SelectControl
+									label={ __( 'Método de Aleatorización', 'eipsi-forms' ) }
+									value={ metodo }
+									options={ [
+										{
+											label: __( 'Aleatorización Pura', 'eipsi-forms' ),
+											value: 'pure-random',
+										},
+										{
+											label: __( 'Seeded (Determinista)', 'eipsi-forms' ),
+											value: 'seeded',
+										},
+									] }
+									onChange={ ( value ) => setAttributes( { metodo: value } ) }
+									help={ __(
+										'Aleatorización pura: cada usuario tiene igual probabilidad. Seeded: reproducible con la misma seed.',
+										'eipsi-forms'
+									) }
+								/>
+
+								{ metodo === 'seeded' && (
 									<TextControl
-										type="email"
-										placeholder={ __(
-											'Email del participante',
+										label={ __( 'Seed Value', 'eipsi-forms' ) }
+										value={ seed }
+										onChange={ ( value ) => setAttributes( { seed: value } ) }
+										help={ __(
+											'Valor seed para reproducibilidad. Usar la misma seed siempre da la misma distribución.',
 											'eipsi-forms'
 										) }
-										value={ emailInput }
-										onChange={ setEmailInput }
 									/>
-								</FlexItem>
-								<FlexItem style={ { flex: 1 } }>
-									<SelectControl
-										value={ formForEmail }
-										options={ [
-											{
-												label: __(
-													'Seleccionar formulario…',
-													'eipsi-forms'
-												),
-												value: '',
-											},
-											...availableForms.map( ( f ) => ( {
-												label: f.label,
-												value: f.id,
-											} ) ),
-										] }
-										onChange={ setFormForEmail }
-									/>
-								</FlexItem>
-								<FlexItem>
-									<Button
-										variant="primary"
-										onClick={ handleAddManualAssignment }
-										disabled={
-											! emailInput || ! formForEmail
-										}
-									>
-										{ __( '➕ Añadir', 'eipsi-forms' ) }
-									</Button>
-								</FlexItem>
-							</Flex>
+								) }
 
-							{ manualAssignments.length > 0 && (
-								<div
-									style={ {
-										marginBottom: '1rem',
-										border: '1px solid #ffc107',
-										borderRadius: '4px',
-										overflow: 'hidden',
-									} }
-								>
-									{ manualAssignments.map( ( assignment ) => (
-										<div
-											key={ assignment.email }
-											style={ {
-												display: 'flex',
-												justifyContent: 'space-between',
-												alignItems: 'center',
-												padding: '0.75rem 1rem',
-												borderBottom:
-													'1px solid #fff8e1',
-												background: '#fffbf0',
-												borderLeft: '3px solid #ffc107',
-											} }
+								<ToggleControl
+									label={ __( 'Permitir Override Manual', 'eipsi-forms' ) }
+									checked={ permitirOverride }
+									onChange={ ( value ) => setAttributes( { permitirOverride: value } ) }
+									help={ __(
+										'Permitir forzar un formulario específico vía URL (?form_id=XXX)',
+										'eipsi-forms'
+									) }
+								/>
+
+								<ToggleControl
+									label={ __( 'Registrar Asignaciones', 'eipsi-forms' ) }
+									checked={ registrarAsignaciones }
+									onChange={ ( value ) => setAttributes( { registrarAsignaciones: value } ) }
+									help={ __(
+										'Guarda quién recibió qué formulario para análisis posterior',
+										'eipsi-forms'
+									) }
+								/>
+							</div>
+						</Collapsible>
+
+						{/* SECCIÓN 5: Guardar y Generar Shortcode */}
+						<div style={ { borderTop: '1px solid #ddd', paddingTop: '1rem' } }>
+							<Button
+								variant="primary"
+								onClick={ handleGuardarConfiguracion }
+								disabled={ ! isValidConfig || isLoading }
+								style={ { width: '100%', marginBottom: '1rem' } }
+							>
+								{ isLoading
+									? __( 'Guardando...', 'eipsi-forms' )
+									: __( '💾 Guardar Configuración de Aleatorización', 'eipsi-forms' )
+								}
+							</Button>
+
+							{ generatedShortcode && (
+								<div>
+									<h4>{ __( 'Shortcode Generado:', 'eipsi-forms' ) }</h4>
+									<div style={ { display: 'flex', gap: '0.5rem' } }>
+										<TextControl
+											value={ generatedShortcode }
+											readOnly
+											style={ { flex: 1 } }
+										/>
+										<Button
+											variant="secondary"
+											onClick={ handleCopyShortcode }
 										>
-											<div>
-												<code
-													style={ {
-														background: '#fff',
-														padding: '2px 6px',
-														borderRadius: '3px',
-													} }
-												>
-													{ assignment.email }
-												</code>
-												<span
-													style={ {
-														marginLeft: '1rem',
-														color: '#666',
-													} }
-												>
-													→ { assignment.formName }
-												</span>
-											</div>
-											<Button
-												isDestructive
-												isSmall
-												onClick={ () =>
-													handleRemoveManualAssignment(
-														assignment.email
-													)
-												}
-											>
-												✕
-											</Button>
-										</div>
-									) ) }
+											{ copiedShortcode
+												? __( '✅ Copiado', 'eipsi-forms' )
+												: __( '📋 Copiar', 'eipsi-forms' )
+											}
+										</Button>
+									</div>
+									<Notice status="success" isDismissible={ false }>
+										{ __(
+											'✅ Configuración guardada. Shortcode generado.',
+											'eipsi-forms'
+										) }
+									</Notice>
 								</div>
 							) }
-
-							{ /* Generación de Shortcode/Link */ }
-							{ formularios.length >= 1 && (
-								<>
-									<hr
-										style={ {
-											margin: '2rem 0',
-											border: 'none',
-											borderTop: '2px solid #e0e0e0',
-										} }
-									/>
-
-									<Card
-										style={ {
-											background: '#f0f7ff',
-											border: '2px solid #2196f3',
-										} }
-									>
-										<CardBody>
-											<h3
-												style={ {
-													marginTop: 0,
-													color: '#1565c0',
-												} }
-											>
-												{ __(
-													'📋 Generación Automática',
-													'eipsi-forms'
-												) }
-											</h3>
-
-											{ showPreview && (
-												<div
-													style={ {
-														padding: '1rem',
-														background: 'white',
-														border: '1px solid #ddd',
-														borderRadius: '4px',
-														marginBottom: '1rem',
-														fontSize: '0.9rem',
-													} }
-												>
-													<strong>
-														{ __(
-															'Vista Previa:',
-															'eipsi-forms'
-														) }
-													</strong>
-													<div>
-														<strong>
-															Aleatorización:
-														</strong>{ ' ' }
-														{ formularios
-															.map(
-																( f ) =>
-																	`${ f.nombre } (${ f.porcentaje }%)`
-															)
-															.join( ' | ' ) }
-													</div>
-													<div>
-														<strong>Método:</strong>{ ' ' }
-														{ method === 'seeded'
-															? 'Con seed reproducible'
-															: 'Random puro' }
-													</div>
-													<div>
-														<strong>
-															Asignaciones
-															manuales:
-														</strong>{ ' ' }
-														{
-															manualAssignments.length
-														}
-													</div>
-												</div>
-											) }
-
-											{ /* Shortcode */ }
-											<div
-												style={ {
-													marginBottom: '1.5rem',
-												} }
-											>
-												<h4
-													style={ {
-														marginBottom: '0.5rem',
-													} }
-												>
-													{ __(
-														'Shortcode (para insertar en posts/páginas)',
-														'eipsi-forms'
-													) }
-												</h4>
-												<code
-													style={ {
-														display: 'block',
-														padding: '0.75rem',
-														background: '#f5f5f5',
-														borderRadius: '4px',
-														marginBottom: '0.5rem',
-														wordBreak: 'break-all',
-														fontSize: '0.9rem',
-														border: '1px solid #ddd',
-													} }
-												>
-													[eipsi_randomization
-													id=&quot;{ randomizationId }
-													&quot;]
-												</code>
-												<Button
-													variant={
-														copiedShortcode
-															? 'primary'
-															: 'secondary'
-													}
-													onClick={
-														handleCopyShortcode
-													}
-													icon={
-														copiedShortcode
-															? 'yes-alt'
-															: 'clipboard'
-													}
-												>
-													{ copiedShortcode
-														? __(
-																'✓ Copiado!',
-																'eipsi-forms'
-														  )
-														: __(
-																'📋 Copiar Shortcode',
-																'eipsi-forms'
-														  ) }
-												</Button>
-											</div>
-
-											{ /* Link Directo */ }
-											<div>
-												<h4
-													style={ {
-														marginBottom: '0.5rem',
-													} }
-												>
-													{ __(
-														'Link Directo',
-														'eipsi-forms'
-													) }
-												</h4>
-												<code
-													style={ {
-														display: 'block',
-														padding: '0.75rem',
-														background: '#f5f5f5',
-														borderRadius: '4px',
-														marginBottom: '0.5rem',
-														wordBreak: 'break-all',
-														fontSize: '0.9rem',
-														border: '1px solid #ddd',
-													} }
-												>
-													{ window.location.origin }
-													/?eipsi_rand=
-													{ randomizationId }
-												</code>
-												<Button
-													variant={
-														copiedLink
-															? 'primary'
-															: 'secondary'
-													}
-													onClick={ handleCopyLink }
-													icon={
-														copiedLink
-															? 'yes-alt'
-															: 'admin-links'
-													}
-												>
-													{ copiedLink
-														? __(
-																'✓ Copiado!',
-																'eipsi-forms'
-														  )
-														: __(
-																'🔗 Copiar Link',
-																'eipsi-forms'
-														  ) }
-												</Button>
-											</div>
-										</CardBody>
-									</Card>
-								</>
-							) }
-						</>
-					) }
-				</CardBody>
-			</Card>
+						</div>
+					</CardBody>
+				</Card>
+			) }
 		</div>
 	);
 }
