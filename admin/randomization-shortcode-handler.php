@@ -354,32 +354,9 @@ function eipsi_calculate_random_assignment( $config, $user_fingerprint ) {
 }
 
 /**
- * Obtener asignación existente para un usuario
- * 
- * @param string $randomization_id ID de aleatorización
- * @param string $user_fingerprint Fingerprint del usuario
- * @return array|null Array con datos de asignación o null
+ * Función legacy removida - usar versión actualizada en línea 523
+ * Con el nuevo esquema: template_id + config_id
  */
-function eipsi_get_existing_assignment( $randomization_id, $user_fingerprint ) {
-    global $wpdb;
-
-    $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
-
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-    $assignment = $wpdb->get_row(
-        $wpdb->prepare(
-            "SELECT * FROM {$table_name} 
-            WHERE randomization_id = %s 
-            AND user_fingerprint = %s
-            LIMIT 1",
-            $randomization_id,
-            $user_fingerprint
-        ),
-        ARRAY_A
-    );
-
-    return $assignment;
-}
 
 /**
  * Crear nueva asignación en DB
