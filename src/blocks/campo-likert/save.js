@@ -62,7 +62,9 @@ export default function Save( { attributes } ) {
 	const maxValue = calculateMaxValue( labels, minValue );
 
 	const effectiveFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
+		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
+			? fieldName.trim()
+			: fieldKey;
 
 	const blockPropsData = {
 		className: `form-group eipsi-field eipsi-likert-field${

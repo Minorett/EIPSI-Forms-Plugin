@@ -46,7 +46,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} = attributes;
 
 	const normalizedFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
+		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
+			? fieldName.trim()
+			: undefined;
 
 	const hasConditionalLogic =
 		conditionalLogic &&
@@ -65,7 +67,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} );
 
 	const displayLabel =
-		label && label.trim() !== ''
+		label && typeof label === 'string' && label.trim() !== ''
 			? label
 			: __( 'Campo de selección múltiple', 'eipsi-forms' );
 	const optionsArray = parseOptions( options );

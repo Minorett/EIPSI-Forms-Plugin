@@ -43,7 +43,9 @@ export default function Save( { attributes } ) {
 	} = attributes;
 
 	const normalizedFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
+		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
+			? fieldName.trim()
+			: undefined;
 
 	const blockProps = useBlockProps.save( {
 		className: 'form-group eipsi-field eipsi-select-field',
@@ -75,11 +77,13 @@ export default function Save( { attributes } ) {
 				data-required={ required ? 'true' : 'false' }
 				data-field-type="select"
 			>
-				{ placeholder && placeholder.trim() !== '' && (
-					<option value="" disabled selected>
-						{ placeholder }
-					</option>
-				) }
+				{ placeholder &&
+					typeof placeholder === 'string' &&
+					placeholder.trim() !== '' && (
+						<option value="" disabled selected>
+							{ placeholder }
+						</option>
+					) }
 				{ optionsArray.map( ( option, index ) => (
 					<option key={ index } value={ option }>
 						{ option }

@@ -58,7 +58,9 @@ export default function Save( { attributes } ) {
 	} = attributes;
 
 	const normalizedFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
+		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
+			? fieldName.trim()
+			: undefined;
 
 	const blockPropsData = {
 		className: `form-group eipsi-field eipsi-vas-slider-field${

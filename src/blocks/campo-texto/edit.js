@@ -47,7 +47,9 @@ export default function Edit( { attributes, setAttributes } ) {
 		attributes;
 
 	const normalizedFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
+		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
+			? fieldName.trim()
+			: undefined;
 
 	const blockProps = useBlockProps( {
 		className: 'form-group eipsi-field eipsi-text-field',
@@ -58,7 +60,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	const inputId = getFieldId( normalizedFieldName );
 	const displayLabel =
-		label && label.trim() !== ''
+		label && typeof label === 'string' && label.trim() !== ''
 			? label
 			: __( 'Campo de texto', 'eipsi-forms' );
 
