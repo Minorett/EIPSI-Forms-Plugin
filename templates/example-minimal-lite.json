@@ -1,63 +1,63 @@
 {
-  "schemaVersion": "1.0.0",
-  "meta": {
-    "exportedAt": "2025-02-15T12:00:00Z",
-    "exportedBy": "EIPSI Forms Team",
-    "pluginVersion": "1.2.2"
-  },
-  "form": {
-    "title": "Formulario Mínimo (LITE)",
-    "formId": "minimo-lite-demo",
-    "blocks": [
-      {
-        "blockName": "eipsi/form-container",
-        "attrs": {
-          "formId": "minimo-lite-demo",
-          "styleConfig": {
-            "primaryColor": "#005a87",
-            "fontFamily": "Inter, sans-serif"
-          }
-        },
-        "innerBlocks": [
-          {
-            "blockName": "eipsi/form-page",
-            "attrs": {
-              "title": "Página Única",
-              "pageIndex": 0
-            },
-            "innerBlocks": [
-              {
-                "blockName": "eipsi/campo-descripcion",
-                "attrs": {
-                  "label": "Bienvenido al editor manual",
-                  "helperText": "Este formulario fue creado editando directamente el archivo JSON."
-                }
-              },
-              {
-                "blockName": "eipsi/campo-texto",
-                "attrs": {
-                  "fieldName": "nombre",
-                  "label": "Ingresá tu nombre",
-                  "placeholder": "Ej: Juan Pérez",
-                  "required": true
-                }
-              },
-              {
-                "blockName": "eipsi/campo-likert",
-                "attrs": {
-                  "fieldName": "satisfaccion",
-                  "label": "¿Qué tan fácil te parece este formato?",
-                  "labels": "Muy difícil;Difícil;Neutral;Fácil;Muy fácil",
-                  "required": true
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  "metadata": {
-    "_eipsi_form_name": "minimo-lite-demo"
-  }
+	"schemaVersion": "1.0.0",
+	"meta": {
+		"exportedAt": "2025-02-15T12:00:00Z",
+		"exportedBy": "EIPSI Forms Team",
+		"pluginVersion": "1.2.2"
+	},
+	"form": {
+		"title": "Formulario Mínimo (LITE)",
+		"formId": "minimo-lite-demo",
+		"blocks": [
+			{
+				"blockName": "eipsi/form-container",
+				"attrs": {
+					"formId": "minimo-lite-demo",
+					"styleConfig": {
+						"primaryColor": "#005a87",
+						"fontFamily": "Inter, sans-serif"
+					}
+				},
+				"innerBlocks": [
+					{
+						"blockName": "eipsi/form-page",
+						"attrs": {
+							"title": "Página Única",
+							"pageIndex": 0
+						},
+						"innerBlocks": [
+							{
+								"blockName": "eipsi/campo-descripcion",
+								"attrs": {
+									"label": "Bienvenido al editor manual",
+									"helperText": "Este formulario fue creado editando directamente el archivo JSON."
+								}
+							},
+							{
+								"blockName": "eipsi/campo-texto",
+								"attrs": {
+									"fieldName": "nombre",
+									"label": "Ingresá tu nombre",
+									"placeholder": "Ej: Juan Pérez",
+									"required": true
+								}
+							},
+							{
+								"blockName": "eipsi/campo-likert",
+								"attrs": {
+									"fieldName": "satisfaccion",
+									"label": "¿Qué tan fácil te parece este formato?",
+									"labels": "Muy difícil;Difícil;Neutral;Fácil;Muy fácil",
+									"required": true
+								}
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	"metadata": {
+		"_eipsi_form_name": "minimo-lite-demo"
+	}
 }
