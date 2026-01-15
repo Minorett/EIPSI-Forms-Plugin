@@ -28,7 +28,9 @@ function generateBlockEntries() {
         blockFolders.forEach(blockName => {
             const blockPath = `./src/blocks/${blockName}/index.js`;
             if (fs.existsSync(blockPath)) {
-                entries[`blocks/${blockName}`] = blockPath;
+                // IMPORTANT: use /index as entry name so default WP Scripts output
+                // generates build/blocks/<block>/index.js (matching block.json file:./index.js)
+                entries[`blocks/${blockName}/index`] = blockPath;
             }
         });
     }
