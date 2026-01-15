@@ -43,7 +43,9 @@ export default function Save( { attributes } ) {
 	} = attributes;
 
 	const effectiveFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
+		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
+			? fieldName.trim()
+			: fieldKey;
 
 	const normalizedFieldName = effectiveFieldName;
 

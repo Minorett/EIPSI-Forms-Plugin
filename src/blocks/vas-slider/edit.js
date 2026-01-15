@@ -90,7 +90,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} = attributes;
 
 	const normalizedFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
+		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
+			? fieldName.trim()
+			: undefined;
 
 	const blockProps = useBlockProps( {
 		className: `form-group eipsi-field eipsi-vas-slider-field${
@@ -103,7 +105,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} );
 
 	const displayLabel =
-		label && label.trim() !== ''
+		label && typeof label === 'string' && label.trim() !== ''
 			? label
 			: __( 'VAS Slider', 'eipsi-forms' );
 	const inputId = getFieldId( normalizedFieldName );

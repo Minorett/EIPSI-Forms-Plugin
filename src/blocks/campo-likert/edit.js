@@ -131,7 +131,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	};
 
 	const effectiveFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : fieldKey;
+		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
+			? fieldName.trim()
+			: fieldKey;
 
 	const hasConditionalLogic =
 		conditionalLogic &&
@@ -155,7 +157,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} );
 
 	const displayLabel =
-		label && label.trim() !== ''
+		label && typeof label === 'string' && label.trim() !== ''
 			? label
 			: __( 'Escala Likert', 'eipsi-forms' );
 

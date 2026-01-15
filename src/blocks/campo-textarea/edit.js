@@ -38,7 +38,9 @@ export default function Edit( { attributes, setAttributes } ) {
 		attributes;
 
 	const normalizedFieldName =
-		fieldName && fieldName.trim() !== '' ? fieldName.trim() : undefined;
+		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
+			? fieldName.trim()
+			: undefined;
 
 	const blockProps = useBlockProps( {
 		className: 'form-group eipsi-field eipsi-textarea-field',
