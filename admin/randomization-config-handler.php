@@ -212,10 +212,13 @@ function eipsi_randomization_config_rest_handler( $request ) {
     // Validar que todos los formularios existan (backend validation)
     foreach ( $formularios as $formulario ) {
         $form_id = intval( $formulario['id'] ?? 0 );
-        if ( ! $form_id || ! get_post( $form_id ) ) {
+        $post = get_post( $form_id );
+
+        // Validar tipo y estado (permite draft, private, pending, etc., pero no trash)
+        if ( ! $post || $post->post_type !== 'eipsi_form_template' || $post->post_status === 'trash' ) {
             return new WP_REST_Response( array(
                 'success' => false,
-                'message' => sprintf( 'El formulario con ID %d no existe.', $form_id )
+                'message' => sprintf( 'El formulario con ID %d no existe o fue eliminado.', $form_id )
             ), 400 );
         }
     }
@@ -290,7 +293,7 @@ add_action( 'rest_api_init', 'eipsi_register_randomization_detect_rest' );
 
 /**
  * Handler para endpoint de detección de formularios
- * 
+ *
  * @param WP_REST_Request $request
  * @return WP_REST_Response
  */
@@ -320,10 +323,22 @@ function eipsi_randomization_detect_rest_handler( $request ) {
     foreach ( $formularios as $formulario ) {
         $post = get_post( $formulario['id'] );
 
-        if ( ! $post || $post->post_status !== 'publish' ) {
+        // Debug logging (only when WP_DEBUG is enabled)
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            error_log( sprintf(
+                '[EIPSI RCT Debug] Validando form ID %d: type=%s, status=%s, exists=%s',
+                $formulario['id'],
+                $post ? $post->post_type : 'null',
+                $post ? $post->post_status : 'null',
+                $post ? 'true' : 'false'
+            ) );
+        }
+
+        // Validar tipo y estado (permite draft, private, pending, etc., pero no trash)
+        if ( ! $post || $post->post_type !== 'eipsi_form_template' || $post->post_status === 'trash' ) {
             return new WP_REST_Response( array(
                 'success' => false,
-                'message' => sprintf( 'El formulario con ID %d no existe o no está publicado.', $formulario['id'] )
+                'message' => sprintf( 'El formulario con ID %d no existe o fue eliminado.', $formulario['id'] )
             ), 400 );
         }
 
