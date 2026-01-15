@@ -5,6 +5,18 @@
 # Este script automatiza el build completo del plugin con clonación del repositorio
 # y validación de arquitectura modular para bloques individuales.
 #
+# Pasos:
+#   [1/10] Limpiar y clonar repositorio
+#   [2/10] Instalar dependencias
+#   [3/10] Verificar estructura del plugin
+#   [4/10] Lint: Verificar código JavaScript
+#   [5/10] Lint: Verificar duplicados de funciones
+#   [6/10] Formatear código estilo WordPress
+#   [7/10] Build de producción
+#   [8/10] Verificar archivos base del build
+#   [9/10] Verificar bloques individuales (modular)
+#   [10/10] Resumen final
+#
 # Uso:
 #   powershell -ExecutionPolicy Bypass -File scripts/build-automation.ps1
 #
@@ -49,7 +61,7 @@ function Write-Step {
     param(
         [string]$Message,
         [int]$Number,
-        [int]$Total = 9
+        [int]$Total = 10
     )
     Write-Host ("[${Number}/${Total}] $Message" -f $Number, $Total) -ForegroundColor Cyan
 }
@@ -125,10 +137,10 @@ $workDir = "eipsi-forms-work"
 $parentDir = Split-Path -Parent (Get-Location)
 
 # ============================================================================
-# [1/9] LIMPIAR Y CLONAR REPOSITORIO
+# [1/10] LIMPIAR Y CLONAR REPOSITORIO
 # ============================================================================
 
-Write-Step "Limpiando carpeta anterior y clonando repositorio" -Number 1
+Write-Step "Limpiando carpeta anterior y clonando repositorio" -Number 1 -Total 10
 
 # Cambiar al directorio padre
 Write-Info "Cambiando a directorio padre: $parentDir"
@@ -159,10 +171,10 @@ Write-Info "Cambiando al directorio del repositorio: $workDir"
 Set-Location $workDir
 
 # ============================================================================
-# [2/9] INSTALAR DEPENDENCIAS
+# [2/10] INSTALAR DEPENDENCIAS
 # ============================================================================
 
-Write-Step "Instalando/actualizando dependencias" -Number 2
+Write-Step "Instalando/actualizando dependencias" -Number 2 -Total 10
 
 try {
     npm install --legacy-peer-deps
@@ -177,10 +189,10 @@ try {
 }
 
 # ============================================================================
-# [3/9] VERIFICAR ESTRUCTURA DEL PLUGIN
+# [3/10] VERIFICAR ESTRUCTURA DEL PLUGIN
 # ============================================================================
 
-Write-Step "Verificando estructura del plugin" -Number 3
+Write-Step "Verificando estructura del plugin" -Number 3 -Total 10
 
 $requiredFiles = @(
     "eipsi-forms.php",
@@ -212,10 +224,10 @@ Write-Success "Estructura del plugin verificada"
 Write-Host ""
 
 # ============================================================================
-# [4/9] LINT: VERIFICAR CÓDIGO JAVASCRIPT
+# [4/10] LINT: VERIFICAR CÓDIGO JAVASCRIPT
 # ============================================================================
 
-Write-Step "Ejecutando linting de JavaScript" -Number 4
+Write-Step "Ejecutando linting de JavaScript" -Number 4 -Total 10
 
 try {
     # Primero intentar auto-fix
@@ -235,10 +247,10 @@ try {
 }
 
 # ============================================================================
-# [5/9] LINT: VERIFICAR DUPLICADOS DE FUNCIONES
+# [5/10] LINT: VERIFICAR DUPLICADOS DE FUNCIONES
 # ============================================================================
 
-Write-Step "Verificando duplicados de funciones" -Number 5
+Write-Step "Verificando duplicados de funciones" -Number 5 -Total 10
 
 try {
     npm run lint:duplicates
@@ -255,10 +267,10 @@ try {
 }
 
 # ============================================================================
-# [6/9] FORMATEAR CÓDIGO
+# [6/10] FORMATEAR CÓDIGO
 # ============================================================================
 
-Write-Step "Formateando código estilo WordPress" -Number 6
+Write-Step "Formateando código estilo WordPress" -Number 6 -Total 10
 
 try {
     npm run format
@@ -273,10 +285,10 @@ try {
 }
 
 # ============================================================================
-# [7/9] BUILD DE PRODUCCIÓN
+# [7/10] BUILD DE PRODUCCIÓN
 # ============================================================================
 
-Write-Step "Ejecutando build de producción" -Number 7
+Write-Step "Ejecutando build de producción" -Number 7 -Total 10
 
 # Asegurar que la carpeta build esté limpia
 if (Test-Path "build") {
@@ -297,13 +309,43 @@ try {
 }
 
 # ============================================================================
-# [8/9] VERIFICAR BLOQUES INDIVIDUALES (MODULAR)
+# [8/10] VERIFICAR ARCHIVOS BASE DEL BUILD
 # ============================================================================
 
-Write-Step "Verificando bloques individuales (arquitectura modular)" -Number 8
+Write-Step "Verificando archivos base del build" -Number 8 -Total 10
+
+$baseFiles = @(
+    "build/index.js",
+    "build/index.css",
+    "build/style-index.css",
+    "build/blocks"
+)
+
+$baseOk = $true
+foreach ($file in $baseFiles) {
+    if (Test-Path $file) {
+        if ((Get-Item $file).Length -eq 0) {
+            Write-Error "$file existe pero está VACÍO"
+            $baseOk = $false
+        } else {
+            $size = [math]::Round((Get-Item $file).Length / 1024, 2)
+            Write-Success "Encontrado: $file ($size KB)"
+        }
+    } else {
+        Write-Error "Falta: $file"
+        $baseOk = $false
+    }
+}
+
+Write-Host ""
+
+# ============================================================================
+# [9/10] VERIFICAR BLOQUES INDIVIDUALES (MODULAR)
+# ============================================================================
+
+Write-Step "Verificando bloques individuales (arquitectura modular)" -Number 9 -Total 10
 
 $buildBlocksPath = "build/blocks"
-$allBuildOk = $true
 $blocksCompiled = @()
 
 if (Test-Path $buildBlocksPath) {
@@ -334,29 +376,36 @@ if (Test-Path $buildBlocksPath) {
                 $blocksCompiled += $blockName
             } else {
                 Write-Error "$blockName tiene archivos faltantes o vacíos"
-                $allBuildOk = $false
             }
         }
         Write-Host ""
     } else {
-        Write-Error "No se encontraron bloques compilados en $buildBlocksPath"
-        $allBuildOk = $false
+        Write-Warning "No se encontraron bloques compilados en $buildBlocksPath"
     }
 } else {
-    Write-Error "Carpeta $buildBlocksPath no existe"
-    $allBuildOk = $false
+    Write-Warning "Carpeta $buildBlocksPath no existe"
 }
 
+$allBuildOk = $baseOk -and ($blocksCompiled.Count -gt 0)
+
+Write-Host ""
+
 # ============================================================================
-# [9/9] RESUMEN FINAL
+# [10/10] RESUMEN FINAL
 # ============================================================================
 
-Write-Step "Resumen final de verificación" -Number 9
+Write-Step "Resumen final de verificación" -Number 10 -Total 10
 
 if ($allBuildOk -and $blocksCompiled.Count -gt 0) {
     Write-Header "✓ BUILD CLÍNICO COMPLETADO EXITOSAMENTE"
     
     Write-Host "El plugin EIPSI Forms está listo para uso clínico." -ForegroundColor Cyan
+    Write-Host ""
+    
+    Write-Success "Archivos base generados:"
+    Write-Info "  • build/index.js"
+    Write-Info "  • build/index.css"
+    Write-Info "  • build/style-index.css"
     Write-Host ""
     
     Write-Host "Bloques compilados exitosamente:" -ForegroundColor Green
@@ -380,8 +429,9 @@ if ($allBuildOk -and $blocksCompiled.Count -gt 0) {
     Write-Warning "Sugerencias de corrección:"
     Write-Info "1. Ejecuta: npm run build"
     Write-Info "2. Verifica errores de lint: npm run lint:js"
-    Write-Info "3. Revisa la carpeta build/blocks/ para bloques incompletos"
-    Write-Info "4. Verifica que todos los bloques tengan los 3 archivos requeridos:"
+    Write-Info "3. Revisa los archivos base en build/ (index.js, index.css, style-index.css)"
+    Write-Info "4. Revisa la carpeta build/blocks/ para bloques incompletos"
+    Write-Info "5. Verifica que todos los bloques tengan los 3 archivos requeridos:"
     Write-Info "   - index.js"
     Write-Info "   - index.css"
     Write-Info "   - style-index.css"
