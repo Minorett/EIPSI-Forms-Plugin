@@ -479,37 +479,34 @@ function eipsi_forms_register_blocks() {
         'after'
     );
 
-    // REGISTRAR BLOQUES DESDE block.json COMPILADOS (en /build/blocks/)
-    $block_dirs = array(
-        'form-container',
-        'form-page',
-        'consent-block',
-        'campo-texto',
-        'campo-textarea',
-        'campo-descripcion',
-        'campo-select',
-        'campo-radio',
-        'campo-multiple',
-        'campo-likert',
-        'vas-slider',
-    );
-
-    foreach ($block_dirs as $block_dir) {
-        $block_path = EIPSI_FORMS_PLUGIN_DIR . 'build/blocks/' . $block_dir;
-
-        if (!file_exists($block_path . '/block.json')) {
+    // Registrar automáticamente todos los bloques desde build/blocks/
+    $blocks_dir = EIPSI_FORMS_PLUGIN_DIR . 'build/blocks';
+    
+    if (!is_dir($blocks_dir)) {
+        return;
+    }
+    
+    $block_folders = scandir($blocks_dir);
+    
+    foreach ($block_folders as $block_folder) {
+        // Skip . and ..
+        if ($block_folder === '.' || $block_folder === '..' || $block_folder === 'index') {
             continue;
         }
-
-        register_block_type($block_path);
-    }
-
-    // Randomization block: con render_callback especial para procesar shortcode
-    $randomization_block_path = EIPSI_FORMS_PLUGIN_DIR . 'build/blocks/randomization-block';
-    if (file_exists($randomization_block_path . '/block.json')) {
-        register_block_type($randomization_block_path, array(
-            'render_callback' => 'eipsi_render_randomization_block'
-        ));
+        
+        $block_json_path = $blocks_dir . '/' . $block_folder . '/block.json';
+        
+        // Registrar bloque si existe su block.json
+        if (file_exists($block_json_path)) {
+            // Special handling for randomization block with render_callback
+            if ($block_folder === 'randomization-block') {
+                register_block_type($block_json_path, array(
+                    'render_callback' => 'eipsi_render_randomization_block'
+                ));
+            } else {
+                register_block_type($block_json_path);
+            }
+        }
     }
 }
 
