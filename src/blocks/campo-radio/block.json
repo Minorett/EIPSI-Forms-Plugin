@@ -1,68 +1,68 @@
 {
-  "$schema": "https://schemas.wp.org/trunk/block.json",
-  "apiVersion": 3,
-  "name": "eipsi/campo-radio",
-  "title": "EIPSI Campo Radio",
-  "category": "eipsi-forms",
-  "icon": "marker",
-  "description": "Campo de selección única (radio buttons) configurable para formularios EIPSI.",
-  "keywords": ["form", "field", "radio", "single", "eipsi"],
-  "textdomain": "eipsi-forms",
-  "parent": ["eipsi/form-container", "eipsi/form-page"],
-  "editorScript": "file:./index.js",
-  "editorStyle": "file:./editor.scss",
-  "style": "file:./style.scss",
-  "supports": {
-    "html": false,
-    "spacing": {
-      "margin": true,
-      "padding": true
-    }
-  },
-  "attributes": {
-    "fieldName": {
-      "type": "string",
-      "default": ""
-    },
-    "label": {
-      "type": "string",
-      "default": ""
-    },
-    "required": {
-      "type": "boolean",
-      "default": false
-    },
-    "helperText": {
-      "type": "string",
-      "default": ""
-    },
-    "options": {
-      "type": "array",
-      "default": []
-    },
-    "layout": {
-      "type": "string",
-      "default": "vertical"
-    },
-    "className": {
-      "type": "string",
-      "default": ""
-    }
-  },
-  "example": {
-    "attributes": {
-      "fieldName": "satisfaction",
-      "label": "¿Qué tan satisfecho estás con el tratamiento?",
-      "required": true,
-      "helperText": "Seleccioná una opción.",
-      "options": [
-        {"label": "Muy satisfecho", "value": "very-satisfied"},
-        {"label": "Satisfecho", "value": "satisfied"},
-        {"label": "Neutral", "value": "neutral"},
-        {"label": "Insatisfecho", "value": "unsatisfied"},
-        {"label": "Muy insatisfecho", "value": "very-unsatisfied"}
-      ],
-      "layout": "vertical"
-    }
-  }
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "eipsi/campo-radio",
+	"title": "EIPSI Campo Radio",
+	"category": "eipsi-forms",
+	"icon": "marker",
+	"description": "Campo de selección única (radio buttons) configurable para formularios EIPSI.",
+	"keywords": [ "form", "field", "radio", "single", "eipsi" ],
+	"textdomain": "eipsi-forms",
+	"parent": [ "eipsi/form-container", "eipsi/form-page" ],
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./editor.scss",
+	"style": "file:./style.scss",
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"fieldName": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"required": {
+			"type": "boolean",
+			"default": false
+		},
+		"helperText": {
+			"type": "string",
+			"default": ""
+		},
+		"options": {
+			"type": "array",
+			"default": []
+		},
+		"layout": {
+			"type": "string",
+			"default": "vertical"
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"example": {
+		"attributes": {
+			"fieldName": "satisfaction",
+			"label": "¿Qué tan satisfecho estás con el tratamiento?",
+			"required": true,
+			"helperText": "Seleccioná una opción.",
+			"options": [
+				{ "label": "Muy satisfecho", "value": "very-satisfied" },
+				{ "label": "Satisfecho", "value": "satisfied" },
+				{ "label": "Neutral", "value": "neutral" },
+				{ "label": "Insatisfecho", "value": "unsatisfied" },
+				{ "label": "Muy insatisfecho", "value": "very-unsatisfied" }
+			],
+			"layout": "vertical"
+		}
+	}
 }

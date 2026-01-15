@@ -1,78 +1,78 @@
 {
-  "$schema": "https://schemas.wp.org/trunk/block.json",
-  "apiVersion": 3,
-  "name": "eipsi/campo-multiple",
-  "title": "EIPSI Campo Multiple",
-  "category": "eipsi-forms",
-  "icon": "list-view",
-  "description": "Campo de selección múltiple (checkboxes) configurable para formularios EIPSI.",
-  "keywords": ["form", "field", "checkbox", "multiple", "eipsi"],
-  "textdomain": "eipsi-forms",
-  "parent": ["eipsi/form-container", "eipsi/form-page"],
-  "editorScript": "file:./index.js",
-  "editorStyle": "file:./editor.scss",
-  "style": "file:./style.scss",
-  "supports": {
-    "html": false,
-    "spacing": {
-      "margin": true,
-      "padding": true
-    }
-  },
-  "attributes": {
-    "fieldName": {
-      "type": "string",
-      "default": ""
-    },
-    "label": {
-      "type": "string",
-      "default": ""
-    },
-    "required": {
-      "type": "boolean",
-      "default": false
-    },
-    "helperText": {
-      "type": "string",
-      "default": ""
-    },
-    "options": {
-      "type": "array",
-      "default": []
-    },
-    "minSelections": {
-      "type": "number",
-      "default": 1
-    },
-    "maxSelections": {
-      "type": "number",
-      "default": 0
-    },
-    "layout": {
-      "type": "string",
-      "default": "vertical"
-    },
-    "className": {
-      "type": "string",
-      "default": ""
-    }
-  },
-  "example": {
-    "attributes": {
-      "fieldName": "symptoms",
-      "label": "¿Qué síntomas experimentás?",
-      "required": true,
-      "helperText": "Seleccioná todos los que apliquen.",
-      "options": [
-        {"label": "Ansiedad", "value": "anxiety"},
-        {"label": "Depresión", "value": "depression"},
-        {"label": "Insomnio", "value": "insomnia"},
-        {"label": "Fatiga", "value": "fatigue"},
-        {"label": "Dolores físicos", "value": "pain"}
-      ],
-      "minSelections": 1,
-      "maxSelections": 5,
-      "layout": "vertical"
-    }
-  }
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "eipsi/campo-multiple",
+	"title": "EIPSI Campo Multiple",
+	"category": "eipsi-forms",
+	"icon": "list-view",
+	"description": "Campo de selección múltiple (checkboxes) configurable para formularios EIPSI.",
+	"keywords": [ "form", "field", "checkbox", "multiple", "eipsi" ],
+	"textdomain": "eipsi-forms",
+	"parent": [ "eipsi/form-container", "eipsi/form-page" ],
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./editor.scss",
+	"style": "file:./style.scss",
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"fieldName": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"required": {
+			"type": "boolean",
+			"default": false
+		},
+		"helperText": {
+			"type": "string",
+			"default": ""
+		},
+		"options": {
+			"type": "array",
+			"default": []
+		},
+		"minSelections": {
+			"type": "number",
+			"default": 1
+		},
+		"maxSelections": {
+			"type": "number",
+			"default": 0
+		},
+		"layout": {
+			"type": "string",
+			"default": "vertical"
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"example": {
+		"attributes": {
+			"fieldName": "symptoms",
+			"label": "¿Qué síntomas experimentás?",
+			"required": true,
+			"helperText": "Seleccioná todos los que apliquen.",
+			"options": [
+				{ "label": "Ansiedad", "value": "anxiety" },
+				{ "label": "Depresión", "value": "depression" },
+				{ "label": "Insomnio", "value": "insomnia" },
+				{ "label": "Fatiga", "value": "fatigue" },
+				{ "label": "Dolores físicos", "value": "pain" }
+			],
+			"minSelections": 1,
+			"maxSelections": 5,
+			"layout": "vertical"
+		}
+	}
 }

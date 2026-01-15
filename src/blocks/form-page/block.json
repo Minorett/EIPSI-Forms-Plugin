@@ -1,52 +1,52 @@
 {
-  "$schema": "https://schemas.wp.org/trunk/block.json",
-  "apiVersion": 3,
-  "name": "eipsi/form-page",
-  "title": "EIPSI Página de Formulario",
-  "category": "eipsi-forms",
-  "icon": "admin-page",
-  "description": "Página individual dentro de un formulario multipágina EIPSI. Permite organizar campos en secciones lógicas.",
-  "keywords": ["form", "page", "section", "multipage", "eipsi"],
-  "textdomain": "eipsi-forms",
-  "parent": ["eipsi/form-container"],
-  "editorScript": "file:./index.js",
-  "editorStyle": "file:./editor.scss",
-  "style": "file:./style.scss",
-  "supports": {
-    "html": false,
-    "spacing": {
-      "margin": true,
-      "padding": true
-    }
-  },
-  "attributes": {
-    "pageTitle": {
-      "type": "string",
-      "default": ""
-    },
-    "pageDescription": {
-      "type": "string",
-      "default": ""
-    },
-    "showPageNumber": {
-      "type": "boolean",
-      "default": true
-    },
-    "progressPercentage": {
-      "type": "number",
-      "default": 0
-    },
-    "className": {
-      "type": "string",
-      "default": ""
-    }
-  },
-  "example": {
-    "attributes": {
-      "pageTitle": "Información Personal",
-      "pageDescription": "Por favor, completá la siguiente información sobre tus datos personales.",
-      "showPageNumber": true,
-      "progressPercentage": 25
-    }
-  }
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "eipsi/form-page",
+	"title": "EIPSI Página de Formulario",
+	"category": "eipsi-forms",
+	"icon": "admin-page",
+	"description": "Página individual dentro de un formulario multipágina EIPSI. Permite organizar campos en secciones lógicas.",
+	"keywords": [ "form", "page", "section", "multipage", "eipsi" ],
+	"textdomain": "eipsi-forms",
+	"parent": [ "eipsi/form-container" ],
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./editor.scss",
+	"style": "file:./style.scss",
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"pageTitle": {
+			"type": "string",
+			"default": ""
+		},
+		"pageDescription": {
+			"type": "string",
+			"default": ""
+		},
+		"showPageNumber": {
+			"type": "boolean",
+			"default": true
+		},
+		"progressPercentage": {
+			"type": "number",
+			"default": 0
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"example": {
+		"attributes": {
+			"pageTitle": "Información Personal",
+			"pageDescription": "Por favor, completá la siguiente información sobre tus datos personales.",
+			"showPageNumber": true,
+			"progressPercentage": 25
+		}
+	}
 }

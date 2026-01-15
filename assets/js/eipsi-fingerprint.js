@@ -1,28 +1,28 @@
 /**
  * EIPSI Forms - Robust User Fingerprinting
- * 
+ *
  * Genera un fingerprint único del dispositivo/navegador para persistencia
  * de asignaciones en RCT sin depender de cookies o localStorage.
- * 
+ *
  * Features:
  * - Canvas fingerprinting (GPU/renderer)
  * - Screen + timezone + language
  * - User agent + platform
  * - WebGL fingerprinting
  * - Hash SHA-256
- * 
+ *
  * @package EIPSI_Forms
  * @since 1.3.1
  */
 
 /* global crypto, TextEncoder */
 
-( function() {
+( function () {
 	'use strict';
 
 	/**
 	 * Generar hash SHA-256 de un string
-	 * 
+	 *
 	 * @param {string} message - Texto a hashear
 	 * @return {Promise<string>} Hash hexadecimal
 	 */
@@ -30,14 +30,16 @@
 		const msgBuffer = new TextEncoder().encode( message );
 		const hashBuffer = await crypto.subtle.digest( 'SHA-256', msgBuffer );
 		const hashArray = Array.from( new Uint8Array( hashBuffer ) );
-		const hashHex = hashArray.map( b => b.toString( 16 ).padStart( 2, '0' ) ).join( '' );
+		const hashHex = hashArray
+			.map( ( b ) => b.toString( 16 ).padStart( 2, '0' ) )
+			.join( '' );
 		return hashHex;
 	}
 
 	/**
 	 * Canvas Fingerprinting
 	 * Genera hash único basado en cómo el navegador renderiza canvas
-	 * 
+	 *
 	 * @return {string} Canvas fingerprint
 	 */
 	function getCanvasFingerprint() {
@@ -46,7 +48,7 @@
 			canvas.width = 200;
 			canvas.height = 50;
 			const ctx = canvas.getContext( '2d' );
-			
+
 			if ( ! ctx ) {
 				return 'no-canvas';
 			}
@@ -80,26 +82,36 @@
 	/**
 	 * WebGL Fingerprinting
 	 * Información de la GPU/renderer del usuario
-	 * 
+	 *
 	 * @return {string} WebGL info
 	 */
 	function getWebGLFingerprint() {
 		try {
 			const canvas = document.createElement( 'canvas' );
-			const gl = canvas.getContext( 'webgl' ) || canvas.getContext( 'experimental-webgl' );
-			
+			const gl =
+				canvas.getContext( 'webgl' ) ||
+				canvas.getContext( 'experimental-webgl' );
+
 			if ( ! gl ) {
 				return 'no-webgl';
 			}
 
 			const debugInfo = gl.getExtension( 'WEBGL_debug_renderer_info' );
 			if ( debugInfo ) {
-				const vendor = gl.getParameter( debugInfo.UNMASKED_VENDOR_WEBGL );
-				const renderer = gl.getParameter( debugInfo.UNMASKED_RENDERER_WEBGL );
+				const vendor = gl.getParameter(
+					debugInfo.UNMASKED_VENDOR_WEBGL
+				);
+				const renderer = gl.getParameter(
+					debugInfo.UNMASKED_RENDERER_WEBGL
+				);
 				return vendor + '|' + renderer;
 			}
 
-			return gl.getParameter( gl.VENDOR ) + '|' + gl.getParameter( gl.RENDERER );
+			return (
+				gl.getParameter( gl.VENDOR ) +
+				'|' +
+				gl.getParameter( gl.RENDERER )
+			);
 		} catch ( e ) {
 			return 'webgl-error';
 		}
@@ -107,24 +119,28 @@
 
 	/**
 	 * Recolectar información del dispositivo/navegador
-	 * 
+	 *
 	 * @return {string} String combinado de características
 	 */
 	function collectDeviceInfo() {
 		const info = [];
 
 		// Screen resolution
-		info.push( 'screen:' + window.screen.width + 'x' + window.screen.height );
-		
+		info.push(
+			'screen:' + window.screen.width + 'x' + window.screen.height
+		);
+
 		// Color depth
 		info.push( 'depth:' + window.screen.colorDepth );
-		
+
 		// Pixel ratio
 		info.push( 'ratio:' + window.devicePixelRatio );
 
 		// Timezone
 		try {
-			info.push( 'tz:' + Intl.DateTimeFormat().resolvedOptions().timeZone );
+			info.push(
+				'tz:' + Intl.DateTimeFormat().resolvedOptions().timeZone
+			);
 		} catch ( e ) {
 			info.push( 'tz:unknown' );
 		}
@@ -182,7 +198,7 @@
 
 	/**
 	 * Generar fingerprint único del usuario
-	 * 
+	 *
 	 * @return {Promise<string>} Fingerprint hasheado
 	 */
 	async function generateFingerprint() {
@@ -193,7 +209,7 @@
 
 	/**
 	 * Obtener o generar fingerprint (con caché en sessionStorage)
-	 * 
+	 *
 	 * @return {Promise<string>} Fingerprint
 	 */
 	async function getFingerprint() {
@@ -229,17 +245,21 @@
 	 * Auto-generar fingerprint al cargar la página
 	 * y guardarlo en un input hidden si existe el formulario
 	 */
-	document.addEventListener( 'DOMContentLoaded', async function() {
+	document.addEventListener( 'DOMContentLoaded', async function () {
 		try {
 			const fingerprint = await getFingerprint();
 
 			// Buscar todos los formularios de EIPSI con aleatorización
-			const containers = document.querySelectorAll( '.eipsi-randomization-container' );
-			
-			containers.forEach( function( container ) {
+			const containers = document.querySelectorAll(
+				'.eipsi-randomization-container'
+			);
+
+			containers.forEach( function ( container ) {
 				// Crear input hidden con el fingerprint
-				let fingerprintInput = container.querySelector( 'input[name="eipsi_user_fingerprint"]' );
-				
+				let fingerprintInput = container.querySelector(
+					'input[name="eipsi_user_fingerprint"]'
+				);
+
 				if ( ! fingerprintInput ) {
 					fingerprintInput = document.createElement( 'input' );
 					fingerprintInput.type = 'hidden';
@@ -250,14 +270,20 @@
 				fingerprintInput.value = fingerprint;
 
 				// Agregar data-attribute para debugging
-				container.setAttribute( 'data-fingerprint', fingerprint.substring( 0, 16 ) + '...' );
+				container.setAttribute(
+					'data-fingerprint',
+					fingerprint.substring( 0, 16 ) + '...'
+				);
 			} );
 
 			// eslint-disable-next-line no-console
-			console.log( '[EIPSI Fingerprint] Generated:', fingerprint.substring( 0, 16 ) + '...' );
+			console.log(
+				'[EIPSI Fingerprint] Generated:',
+				fingerprint.substring( 0, 16 ) + '...'
+			);
 		} catch ( e ) {
 			// eslint-disable-next-line no-console
 			console.error( '[EIPSI Fingerprint] Error:', e );
 		}
 	} );
-}() );
+} )();

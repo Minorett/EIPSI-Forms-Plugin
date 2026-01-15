@@ -1,67 +1,67 @@
 {
-  "$schema": "https://schemas.wp.org/trunk/block.json",
-  "apiVersion": 3,
-  "name": "eipsi/campo-likert",
-  "title": "EIPSI Campo Likert",
-  "category": "eipsi-forms",
-  "icon": "star-half",
-  "description": "Escala Likert configurable para evaluaciones y encuestas clínicas EIPSI.",
-  "keywords": ["form", "field", "likert", "scale", "rating", "eipsi"],
-  "textdomain": "eipsi-forms",
-  "parent": ["eipsi/form-container", "eipsi/form-page"],
-  "editorScript": "file:./index.js",
-  "editorStyle": "file:./editor.scss",
-  "style": "file:./style.scss",
-  "supports": {
-    "html": false,
-    "spacing": {
-      "margin": true,
-      "padding": true
-    }
-  },
-  "attributes": {
-    "fieldName": {
-      "type": "string",
-      "default": ""
-    },
-    "label": {
-      "type": "string",
-      "default": ""
-    },
-    "required": {
-      "type": "boolean",
-      "default": false
-    },
-    "helperText": {
-      "type": "string",
-      "default": ""
-    },
-    "scale": {
-      "type": "number",
-      "default": 5
-    },
-    "minLabel": {
-      "type": "string",
-      "default": "Muy en desacuerdo"
-    },
-    "maxLabel": {
-      "type": "string",
-      "default": "Muy de acuerdo"
-    },
-    "className": {
-      "type": "string",
-      "default": ""
-    }
-  },
-  "example": {
-    "attributes": {
-      "fieldName": "wellness",
-      "label": "En general, ¿qué tan satisfecho estás con tu bienestar actual?",
-      "required": true,
-      "helperText": "1 = Muy insatisfecho, 5 = Muy satisfecho",
-      "scale": 5,
-      "minLabel": "Muy insatisfecho",
-      "maxLabel": "Muy satisfecho"
-    }
-  }
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "eipsi/campo-likert",
+	"title": "EIPSI Campo Likert",
+	"category": "eipsi-forms",
+	"icon": "star-half",
+	"description": "Escala Likert configurable para evaluaciones y encuestas clínicas EIPSI.",
+	"keywords": [ "form", "field", "likert", "scale", "rating", "eipsi" ],
+	"textdomain": "eipsi-forms",
+	"parent": [ "eipsi/form-container", "eipsi/form-page" ],
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./editor.scss",
+	"style": "file:./style.scss",
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"fieldName": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"required": {
+			"type": "boolean",
+			"default": false
+		},
+		"helperText": {
+			"type": "string",
+			"default": ""
+		},
+		"scale": {
+			"type": "number",
+			"default": 5
+		},
+		"minLabel": {
+			"type": "string",
+			"default": "Muy en desacuerdo"
+		},
+		"maxLabel": {
+			"type": "string",
+			"default": "Muy de acuerdo"
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"example": {
+		"attributes": {
+			"fieldName": "wellness",
+			"label": "En general, ¿qué tan satisfecho estás con tu bienestar actual?",
+			"required": true,
+			"helperText": "1 = Muy insatisfecho, 5 = Muy satisfecho",
+			"scale": 5,
+			"minLabel": "Muy insatisfecho",
+			"maxLabel": "Muy satisfecho"
+		}
+	}
 }

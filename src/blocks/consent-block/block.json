@@ -1,78 +1,78 @@
 {
-  "$schema": "https://schemas.wp.org/trunk/block.json",
-  "apiVersion": 3,
-  "name": "eipsi/consent-block",
-  "title": "EIPSI Consentimiento",
-  "category": "eipsi-forms",
-  "icon": "yes",
-  "description": "Bloque de consentimiento informado con checkbox obligatorio para formularios clínicos EIPSI.",
-  "keywords": ["form", "consent", "legal", "agreement", "eipsi"],
-  "textdomain": "eipsi-forms",
-  "parent": ["eipsi/form-container", "eipsi/form-page"],
-  "editorScript": "file:./index.js",
-  "editorStyle": "file:./editor.scss",
-  "style": "file:./style.scss",
-  "supports": {
-    "html": true,
-    "spacing": {
-      "margin": true,
-      "padding": true
-    }
-  },
-  "attributes": {
-    "fieldName": {
-      "type": "string",
-      "default": "consent"
-    },
-    "titulo": {
-      "type": "string",
-      "default": ""
-    },
-    "label": {
-      "type": "string",
-      "default": "Acepto los términos y condiciones"
-    },
-    "required": {
-      "type": "boolean",
-      "default": true
-    },
-    "contenido": {
-      "type": "string",
-      "default": "Acepto participar voluntariamente en este estudio de investigación. He sido informado sobre los objetivos, procedimientos, riesgos y beneficios. Entiendo que mi participación es completamente voluntaria y puedo retirarme en cualquier momento sin penalización. Mis datos serán tratados de forma anónima y confidencial según las normativas ANMAT y APA."
-    },
-    "textoComplementario": {
-      "type": "string",
-      "default": ""
-    },
-    "mostrarCheckbox": {
-      "type": "boolean",
-      "default": true
-    },
-    "etiquetaCheckbox": {
-      "type": "string",
-      "default": "He leído y acepto participar voluntariamente"
-    },
-    "isRequired": {
-      "type": "boolean",
-      "default": true
-    },
-    "showTimestamp": {
-      "type": "boolean",
-      "default": false
-    },
-    "className": {
-      "type": "string",
-      "default": ""
-    }
-  },
-  "example": {
-    "attributes": {
-      "fieldName": "study_consent",
-      "label": "Consentimiento Informado",
-      "required": true,
-      "consentText": "Declaro que he sido informado sobre el propósito, procedimientos y riesgos de este estudio. Entiendo que mi participación es voluntaria y puedo retirarme en cualquier momento sin consecuencias.",
-      "checkboxLabel": "Acepto participar en el estudio",
-      "helperText": "Debés aceptar para continuar."
-    }
-  }
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "eipsi/consent-block",
+	"title": "EIPSI Consentimiento",
+	"category": "eipsi-forms",
+	"icon": "yes",
+	"description": "Bloque de consentimiento informado con checkbox obligatorio para formularios clínicos EIPSI.",
+	"keywords": [ "form", "consent", "legal", "agreement", "eipsi" ],
+	"textdomain": "eipsi-forms",
+	"parent": [ "eipsi/form-container", "eipsi/form-page" ],
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./editor.scss",
+	"style": "file:./style.scss",
+	"supports": {
+		"html": true,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"attributes": {
+		"fieldName": {
+			"type": "string",
+			"default": "consent"
+		},
+		"titulo": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": "Acepto los términos y condiciones"
+		},
+		"required": {
+			"type": "boolean",
+			"default": true
+		},
+		"contenido": {
+			"type": "string",
+			"default": "Acepto participar voluntariamente en este estudio de investigación. He sido informado sobre los objetivos, procedimientos, riesgos y beneficios. Entiendo que mi participación es completamente voluntaria y puedo retirarme en cualquier momento sin penalización. Mis datos serán tratados de forma anónima y confidencial según las normativas ANMAT y APA."
+		},
+		"textoComplementario": {
+			"type": "string",
+			"default": ""
+		},
+		"mostrarCheckbox": {
+			"type": "boolean",
+			"default": true
+		},
+		"etiquetaCheckbox": {
+			"type": "string",
+			"default": "He leído y acepto participar voluntariamente"
+		},
+		"isRequired": {
+			"type": "boolean",
+			"default": true
+		},
+		"showTimestamp": {
+			"type": "boolean",
+			"default": false
+		},
+		"className": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"example": {
+		"attributes": {
+			"fieldName": "study_consent",
+			"label": "Consentimiento Informado",
+			"required": true,
+			"consentText": "Declaro que he sido informado sobre el propósito, procedimientos y riesgos de este estudio. Entiendo que mi participación es voluntaria y puedo retirarme en cualquier momento sin consecuencias.",
+			"checkboxLabel": "Acepto participar en el estudio",
+			"helperText": "Debés aceptar para continuar."
+		}
+	}
 }
