@@ -1,5 +1,4 @@
 import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
-import { __ } from '@wordpress/i18n';
 import { useState, useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import ConsentSettings from '../../components/ConsentSettings';
@@ -11,36 +10,7 @@ import {
 	serializeToCSSVariables,
 	DEFAULT_STYLE_CONFIG,
 } from '../../utils/styleTokens';
-
-const renderConsentBody = ( text ) => {
-	if ( ! text || text.trim() === '' ) {
-		return (
-			<p className="eipsi-preview-placeholder">
-				{ __(
-					'Escriba el contenido del consentimiento aquí…',
-					'eipsi-forms'
-				) }
-			</p>
-		);
-	}
-
-	const lines = text.split( '\n' );
-
-	return (
-		<div className="eipsi-consent-body">
-			{ lines.map( ( line, index ) => {
-				// Parsear markdown en cada línea
-				const parsedLine = parseConsentMarkdown( line );
-				return (
-					<p
-						key={ `${ line }-${ index }` }
-						dangerouslySetInnerHTML={ { __html: parsedLine } }
-					/>
-				);
-			} ) }
-		</div>
-	);
-};
+import { renderConsentBody } from '../../utils/field-helpers';
 
 export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
@@ -143,7 +113,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				) }
 
 				{ /* Preview dinámico con markdown parseado */ }
-				{ renderConsentBody( contenido ) }
+				{ renderConsentBody( contenido, parseConsentMarkdown, true ) }
 
 				{ textoComplementario && (
 					<p className="consent-note">{ textoComplementario }</p>

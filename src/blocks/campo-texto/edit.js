@@ -2,6 +2,7 @@ import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
 import { PanelBody, SelectControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import FieldSettings from '../../components/FieldSettings';
+import { renderHelperText, getFieldId } from '../../utils/field-helpers';
 
 const FIELD_TYPE_OPTIONS = [
 	{ label: __( 'Text', 'eipsi-forms' ), value: 'text' },
@@ -11,36 +12,6 @@ const FIELD_TYPE_OPTIONS = [
 	{ label: __( 'URL', 'eipsi-forms' ), value: 'url' },
 	{ label: __( 'Date', 'eipsi-forms' ), value: 'date' },
 ];
-
-const renderHelperText = ( text ) => {
-	if ( ! text || text.trim() === '' ) {
-		return null;
-	}
-
-	const lines = text.split( '\n' );
-
-	return (
-		<p className="field-helper">
-			{ lines.map( ( line, index ) => (
-				<span key={ index }>
-					{ line }
-					{ index < lines.length - 1 && <br /> }
-				</span>
-			) ) }
-		</p>
-	);
-};
-
-const getFieldId = ( fieldName ) => {
-	if ( ! fieldName || fieldName.trim() === '' ) {
-		return undefined;
-	}
-
-	const normalized = fieldName.trim().replace( /\s+/g, '-' );
-	const sanitized = normalized.replace( /[^a-zA-Z0-9_-]/g, '-' );
-
-	return `field-${ sanitized }`;
-};
 
 export default function Edit( { attributes, setAttributes } ) {
 	const { fieldName, label, required, placeholder, helperText, fieldType } =

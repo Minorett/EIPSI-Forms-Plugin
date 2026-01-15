@@ -18,36 +18,11 @@ import {
 	applyPreset,
 	validateLabels,
 } from '../../components/LikertPresets';
-
-const renderHelperText = ( text ) => {
-	if ( ! text || text.trim() === '' ) {
-		return null;
-	}
-
-	const lines = text.split( '\n' );
-
-	return (
-		<p className="field-helper">
-			{ lines.map( ( line, index ) => (
-				<span key={ index }>
-					{ line }
-					{ index < lines.length - 1 && <br /> }
-				</span>
-			) ) }
-		</p>
-	);
-};
-
-const getFieldId = ( fieldName ) => {
-	if ( ! fieldName || fieldName.trim() === '' ) {
-		return undefined;
-	}
-
-	const normalized = fieldName.trim().replace( /\s+/g, '-' );
-	const sanitized = normalized.replace( /[^a-zA-Z0-9_-]/g, '-' );
-
-	return `field-${ sanitized }`;
-};
+import {
+	renderHelperText,
+	getFieldId,
+	calculateMaxValue,
+} from '../../utils/field-helpers';
 
 export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
@@ -62,19 +37,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		conditionalLogic,
 		scaleVariation = 'custom',
 	} = attributes;
-
-	// Calcular el máximo basado en la fórmula: maxValue = minValue + (labelCount - 1)
-	const calculateMaxValue = ( labelsString, currentMinValue ) => {
-		if ( ! labelsString || labelsString.trim() === '' ) {
-			return currentMinValue; // Si no hay labels, max = min
-		}
-		const labelArray = labelsString
-			.split( ';' )
-			.map( ( labelText ) => labelText.trim() )
-			.filter( ( labelText ) => labelText !== '' );
-		const labelCount = labelArray.length > 0 ? labelArray.length : 1;
-		return currentMinValue + ( labelCount - 1 );
-	};
 
 	// Calcular el máximo actual
 	const maxValue = calculateMaxValue( labels, minValue );
