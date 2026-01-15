@@ -83,9 +83,9 @@ function Format-FileSize {
 function Exit-Script {
     param([int]$ExitCode = 0)
     
-    if ($NoExit) {
+    if (-not $NoExit) {
         Write-Host ""
-        Write-Host "Presiona Enter para continuar..." -ForegroundColor Gray
+        Write-Host "Presiona Enter para cerrar..." -ForegroundColor Gray
         $null = Read-Host
     }
     
