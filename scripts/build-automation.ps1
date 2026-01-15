@@ -2,8 +2,20 @@
 # EIPSI Forms - Script de Automatización de Build (PowerShell)
 # Compatibilidad: Arquitectura Modular de Bloques Gutenberg
 #
-# Este script automatiza el build completo del plugin con validación
-# de arquitectura modular para bloques individuales.
+# Este script automatiza el build completo del plugin con clonación del repositorio
+# y validación de arquitectura modular para bloques individuales.
+#
+# Pasos:
+#   [1/10] Limpiar y clonar repositorio
+#   [2/10] Instalar dependencias
+#   [3/10] Verificar estructura del plugin
+#   [4/10] Lint: Verificar código JavaScript
+#   [5/10] Lint: Verificar duplicados de funciones
+#   [6/10] Formatear código estilo WordPress
+#   [7/10] Build de producción
+#   [8/10] Verificar archivos base del build
+#   [9/10] Verificar bloques individuales (modular)
+#   [10/10] Resumen final
 #
 # Uso:
 #   powershell -ExecutionPolicy Bypass -File scripts/build-automation.ps1
@@ -12,6 +24,7 @@
 #   - Node.js >= 14.x
 #   - npm >= 7.x
 #   - PowerShell 5.1 o superior
+#   - Git (para clonación del repositorio)
 #
 # Parámetros opcionales:
 #   -NoExit    No cerrar la terminal al finalizar
@@ -48,7 +61,7 @@ function Write-Step {
     param(
         [string]$Message,
         [int]$Number,
-        [int]$Total = 9
+        [int]$Total = 10
     )
     Write-Host ("[${Number}/${Total}] $Message" -f $Number, $Total) -ForegroundColor Cyan
 }
@@ -71,13 +84,6 @@ function Write-Warning {
 function Write-Info {
     param([string]$Message)
     Write-Host "  $Message" -ForegroundColor Gray
-}
-
-function Format-FileSize {
-    param([long]$Bytes)
-    if ($Bytes -eq 0) { return "0 KB" }
-    $KB = [math]::Round($Bytes / 1KB, 1)
-    return "$KB KB"
 }
 
 function Exit-Script {
@@ -106,53 +112,69 @@ Clear-Host
 Write-Header "EIPSI Forms - Automatización de Build Clínico"
 
 # Verificar requisitos previos
+if (-not (Test-CommandExists "git")) {
+    Write-Error "git no está instalado o no está en el PATH"
+    Write-Info "Por favor instala Git para clonar el repositorio"
+    Exit-Script 1
+}
+
 if (-not (Test-CommandExists "npm")) {
     Write-Error "npm no está instalado o no está en el PATH"
     Write-Info "Por favor instala Node.js y npm"
     Exit-Script 1
 }
 
-# Obtener versión de npm
+# Obtener versiones
+$gitVersion = git --version
 $npmVersion = npm --version
+Write-Info "git version: $gitVersion"
 Write-Info "npm version: $npmVersion"
 Write-Host ""
 
+# Configuración del repositorio
+$repoUrl = "https://github.com/eipsi/eipsi-forms.git"
+$workDir = "eipsi-forms-work"
+$parentDir = Split-Path -Parent (Get-Location)
+
 # ============================================================================
-# [1/9] VERIFICAR ESTRUCTURA DEL PLUGIN
+# [1/10] LIMPIAR Y CLONAR REPOSITORIO
 # ============================================================================
 
-Write-Step "Verificando estructura del plugin" -Number 1
+Write-Step "Limpiando carpeta anterior y clonando repositorio" -Number 1 -Total 10
 
-$requiredPaths = @(
-    "package.json",
-    "src/blocks",
-    "src/index.js"
-)
+# Cambiar al directorio padre
+Write-Info "Cambiando a directorio padre: $parentDir"
+Set-Location $parentDir
 
-$structureOk = $true
-foreach ($path in $requiredPaths) {
-    if (Test-Path $path) {
-        Write-Info "Encontrado: $path"
-    } else {
-        Write-Error "Falta: $path"
-        $structureOk = $false
-    }
+# Limpiar carpeta de trabajo anterior si existe
+if (Test-Path $workDir) {
+    Write-Info "Eliminando carpeta de trabajo anterior: $workDir"
+    Remove-Item -Path $workDir -Recurse -Force -ErrorAction Stop
 }
 
-if (-not $structureOk) {
+# Clonar el repositorio
+Write-Info "Clonando repositorio desde: $repoUrl"
+try {
+    git clone $repoUrl $workDir
+    if ($LASTEXITCODE -ne 0) {
+        throw "git clone falló con código de salida $LASTEXITCODE"
+    }
+    Write-Success "Repositorio clonado exitosamente"
     Write-Host ""
-    Write-Error "Estructura del plugin incompleta"
+} catch {
+    Write-Error "Error al clonar el repositorio: $_"
     Exit-Script 1
 }
 
-Write-Success "Estructura del plugin verificada"
-Write-Host ""
+# Cambiar al directorio del repositorio
+Write-Info "Cambiando al directorio del repositorio: $workDir"
+Set-Location $workDir
 
 # ============================================================================
-# [2/9] ACTUALIZAR DEPENDENCIAS
+# [2/10] INSTALAR DEPENDENCIAS
 # ============================================================================
 
-Write-Step "Instalando/actualizando dependencias" -Number 2
+Write-Step "Instalando/actualizando dependencias" -Number 2 -Total 10
 
 try {
     npm install --legacy-peer-deps
@@ -167,10 +189,45 @@ try {
 }
 
 # ============================================================================
-# [3/9] LINT: VERIFICAR CÓDIGO JAVASCRIPT
+# [3/10] VERIFICAR ESTRUCTURA DEL PLUGIN
 # ============================================================================
 
-Write-Step "Ejecutando linting de JavaScript" -Number 3
+Write-Step "Verificando estructura del plugin" -Number 3 -Total 10
+
+$requiredFiles = @(
+    "eipsi-forms.php",
+    "package.json",
+    "webpack.config.js",
+    "src/blocks/",
+    "admin/",
+    "includes/",
+    "build/"
+)
+
+$structureOk = $true
+foreach ($file in $requiredFiles) {
+    if (Test-Path $file) {
+        Write-Info "Encontrado: $file"
+    } else {
+        Write-Error "Falta: $file"
+        $structureOk = $false
+    }
+}
+
+if (-not $structureOk) {
+    Write-Host ""
+    Write-Error "Estructura del plugin incompleta"
+    Exit-Script 1
+}
+
+Write-Success "Estructura del plugin verificada"
+Write-Host ""
+
+# ============================================================================
+# [4/10] LINT: VERIFICAR CÓDIGO JAVASCRIPT
+# ============================================================================
+
+Write-Step "Ejecutando linting de JavaScript" -Number 4 -Total 10
 
 try {
     # Primero intentar auto-fix
@@ -190,10 +247,10 @@ try {
 }
 
 # ============================================================================
-# [4/9] LINT: VERIFICAR DUPLICADOS DE FUNCIONES
+# [5/10] LINT: VERIFICAR DUPLICADOS DE FUNCIONES
 # ============================================================================
 
-Write-Step "Verificando duplicados de funciones" -Number 4
+Write-Step "Verificando duplicados de funciones" -Number 5 -Total 10
 
 try {
     npm run lint:duplicates
@@ -210,10 +267,10 @@ try {
 }
 
 # ============================================================================
-# [5/9] FORMATEAR CÓDIGO
+# [6/10] FORMATEAR CÓDIGO
 # ============================================================================
 
-Write-Step "Formateando código estilo WordPress" -Number 5
+Write-Step "Formateando código estilo WordPress" -Number 6 -Total 10
 
 try {
     npm run format
@@ -228,10 +285,10 @@ try {
 }
 
 # ============================================================================
-# [6/9] BUILD DE PRODUCCIÓN
+# [7/10] BUILD DE PRODUCCIÓN
 # ============================================================================
 
-Write-Step "Ejecutando build de producción" -Number 6
+Write-Step "Ejecutando build de producción" -Number 7 -Total 10
 
 # Asegurar que la carpeta build esté limpia
 if (Test-Path "build") {
@@ -252,10 +309,10 @@ try {
 }
 
 # ============================================================================
-# [7/9] VERIFICAR BUILD: ARCHIVOS BASE
+# [8/10] VERIFICAR ARCHIVOS BASE DEL BUILD
 # ============================================================================
 
-Write-Step "Verificando archivos base del build" -Number 7
+Write-Step "Verificando archivos base del build" -Number 8 -Total 10
 
 $baseFiles = @(
     "build/index.js",
@@ -267,124 +324,96 @@ $baseFiles = @(
 $baseOk = $true
 foreach ($file in $baseFiles) {
     if (Test-Path $file) {
-        $size = Format-FileSize ((Get-Item $file).Length)
-        Write-Success "Encontrado: $file ($size)"
+        if ((Get-Item $file).Length -eq 0) {
+            Write-Error "$file existe pero está VACÍO"
+            $baseOk = $false
+        } else {
+            $size = [math]::Round((Get-Item $file).Length / 1024, 2)
+            Write-Success "Encontrado: $file ($size KB)"
+        }
     } else {
         Write-Error "Falta: $file"
         $baseOk = $false
     }
 }
 
-if (-not $baseOk) {
-    Write-Host ""
-    Write-Error "Archivos base del build incompletos"
-    Exit-Script 1
-}
-
 Write-Host ""
 
 # ============================================================================
-# [8/9] VERIFICAR BUILD: BLOQUES INDIVIDUALES (MODULAR)
+# [9/10] VERIFICAR BLOQUES INDIVIDUALES (MODULAR)
 # ============================================================================
 
-Write-Step "Verificando bloques individuales (arquitectura modular)" -Number 8
+Write-Step "Verificando bloques individuales (arquitectura modular)" -Number 9 -Total 10
 
-# Obtener lista de bloques compilados
-$blocksDir = "build/blocks"
-if (-not (Test-Path $blocksDir)) {
-    Write-Error "No se encontró la carpeta de bloques compilados: $blocksDir"
-    Exit-Script 1
-}
+$buildBlocksPath = "build/blocks"
+$blocksCompiled = @()
 
-$blockDirs = Get-ChildItem -Path $blocksDir -Directory
-
-if ($blockDirs.Count -eq 0) {
-    Write-Error "No se encontraron bloques compilados en $blocksDir"
-    Exit-Script 1
-}
-
-Write-Info "Se encontraron $($blockDirs.Count) bloques compilados:"
-Write-Host ""
-
-$requiredBlockFiles = @("index.js", "index.css", "style-index.css")
-$successfulBlocks = @()
-$failedBlocks = @()
-
-foreach ($blockDir in $blockDirs) {
-    $blockName = $blockDir.Name
-    $blockPath = $blockDir.FullName
+if (Test-Path $buildBlocksPath) {
+    $blockDirs = Get-ChildItem -Path $buildBlocksPath -Directory -ErrorAction SilentlyContinue
     
-    Write-Host "  Bloque '$blockName':" -ForegroundColor Gray -NoNewline
-    
-    $blockOk = $true
-    $fileSizes = @()
-    
-    foreach ($requiredFile in $requiredBlockFiles) {
-        $filePath = Join-Path -Path $blockPath -ChildPath $requiredFile
+    if ($blockDirs.Count -gt 0) {
+        Write-Info "Se encontraron $($blockDirs.Count) bloques compilados:"
+        Write-Host ""
         
-        if (Test-Path $filePath) {
-            $file = Get-Item $filePath
-            if ($file.Length -eq 0) {
-                $blockOk = $false
+        foreach ($blockDir in $blockDirs) {
+            $blockName = $blockDir.Name
+            $blockPath = $blockDir.FullName
+            
+            $indexJs = Join-Path $blockPath "index.js"
+            $indexCss = Join-Path $blockPath "index.css"
+            $styleCss = Join-Path $blockPath "style-index.css"
+            
+            $blockOk = $true
+            if (!(Test-Path $indexJs) -or (Get-Item $indexJs).Length -eq 0) { $blockOk = $false }
+            if (!(Test-Path $indexCss) -or (Get-Item $indexCss).Length -eq 0) { $blockOk = $false }
+            if (!(Test-Path $styleCss) -or (Get-Item $styleCss).Length -eq 0) { $blockOk = $false }
+            
+            if ($blockOk) {
+                $jsSize = [math]::Round((Get-Item $indexJs).Length / 1024, 2)
+                $cssSize = [math]::Round((Get-Item $indexCss).Length / 1024, 2)
+                $styleSize = [math]::Round((Get-Item $styleCss).Length / 1024, 2)
+                Write-Success "$blockName : index.js ($jsSize KB) + index.css ($cssSize KB) + style-index.css ($styleSize KB)"
+                $blocksCompiled += $blockName
             } else {
-                $size = Format-FileSize $file.Length
-                $fileSizes += $size
+                Write-Error "$blockName tiene archivos faltantes o vacíos"
             }
-        } else {
-            $blockOk = $false
         }
-    }
-    
-    if ($blockOk) {
-        Write-Success "OK ($($fileSizes -join ', '))"
-        $successfulBlocks += $blockName
+        Write-Host ""
     } else {
-        Write-Error "ERROR (faltan archivos o vacíos)"
-        $failedBlocks += $blockName
+        Write-Warning "No se encontraron bloques compilados en $buildBlocksPath"
     }
+} else {
+    Write-Warning "Carpeta $buildBlocksPath no existe"
 }
+
+$allBuildOk = $baseOk -and ($blocksCompiled.Count -gt 0)
 
 Write-Host ""
 
 # ============================================================================
-# [9/9] RESUMEN FINAL Y VERIFICACIÓN
+# [10/10] RESUMEN FINAL
 # ============================================================================
 
-Write-Step "Resumen final de verificación" -Number 9
+Write-Step "Resumen final de verificación" -Number 10 -Total 10
 
-Write-Info "Bloques compilados exitosamente: $($successfulBlocks.Count)"
-Write-Info "Bloques con errores: $($failedBlocks.Count)"
-Write-Host ""
-
-if ($successfulBlocks.Count -gt 0) {
-    Write-Success "Bloques compilados correctamente:"
-    foreach ($block in $successfulBlocks) {
-        Write-Info "  - $block"
-    }
-    Write-Host ""
-}
-
-if ($failedBlocks.Count -gt 0) {
-    Write-Error "Bloques con errores detectados:"
-    foreach ($block in $failedBlocks) {
-        Write-Info "  - $block"
-    }
-    Write-Host ""
-}
-
-# Determinar resultado final
-$buildSuccess = ($successfulBlocks.Count -gt 0) -and ($failedBlocks.Count -eq 0)
-
-if ($buildSuccess) {
+if ($allBuildOk -and $blocksCompiled.Count -gt 0) {
     Write-Header "✓ BUILD CLÍNICO COMPLETADO EXITOSAMENTE"
     
     Write-Host "El plugin EIPSI Forms está listo para uso clínico." -ForegroundColor Cyan
     Write-Host ""
     
-    $totalBlocks = $successfulBlocks.Count
-    $blockList = $successfulBlocks -join ", "
-    Write-Info "Total de bloques validados: $totalBlocks"
-    Write-Info "Bloques: $blockList"
+    Write-Success "Archivos base generados:"
+    Write-Info "  • build/index.js"
+    Write-Info "  • build/index.css"
+    Write-Info "  • build/style-index.css"
+    Write-Host ""
+    
+    Write-Host "Bloques compilados exitosamente:" -ForegroundColor Green
+    foreach ($block in $blocksCompiled) {
+        Write-Host "  • $block" -ForegroundColor Gray
+    }
+    
+    Write-Host "`nTotal de bloques: $($blocksCompiled.Count)" -ForegroundColor Green
     Write-Host ""
     
     Write-Success "Todos los artefactos de build están presentes y validados."
@@ -397,17 +426,16 @@ if ($buildSuccess) {
     Write-Error "El build no cumple con los requisitos de EIPSI Forms"
     Write-Host ""
     
-    if ($failedBlocks.Count -gt 0) {
-        Write-Warning "Sugerencias de corrección:"
-        Write-Info "1. Ejecuta: npm run build"
-        Write-Info "2. Verifica errores de lint: npm run lint:js"
-        Write-Info "3. Revisa la carpeta build/blocks/ para bloques incompletos"
-        Write-Info "4. Verifica que todos los bloques tengan los 3 archivos requeridos:"
-        Write-Info "   - index.js"
-        Write-Info "   - index.css"
-        Write-Info "   - style-index.css"
-        Write-Host ""
-    }
+    Write-Warning "Sugerencias de corrección:"
+    Write-Info "1. Ejecuta: npm run build"
+    Write-Info "2. Verifica errores de lint: npm run lint:js"
+    Write-Info "3. Revisa los archivos base en build/ (index.js, index.css, style-index.css)"
+    Write-Info "4. Revisa la carpeta build/blocks/ para bloques incompletos"
+    Write-Info "5. Verifica que todos los bloques tengan los 3 archivos requeridos:"
+    Write-Info "   - index.js"
+    Write-Info "   - index.css"
+    Write-Info "   - style-index.css"
+    Write-Host ""
     
     Write-Warning "Si el problema persiste, revisa la salida del build anterior."
     Write-Host ""
