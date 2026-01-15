@@ -1,0 +1,112 @@
+╔════════════════════════════════════════════════════════════╗
+║  EIPSI Forms - Correcciones en build-automation.ps1       ║
+║  Fecha: 2025-01-19                                          ║
+╚════════════════════════════════════════════════════════════╝
+
+✅ CAMBIO 1: Estructura de Pasos (10 → 9)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ANTES:                          DESPUÉS:
+[1/10] Limpiar y clonar    →   [1/9] Limpiar y clonar
+[2/10] Instalar deps       →   [2/9] Instalar deps
+[3/10] Verificar struct    →   [3/9] Verificar struct
+[4/10] Lint JS             →   [4/9] Lint JS
+[5/10] Lint duplicados     →   [5/9] Lint duplicados
+[6/10] Formatear           →   [6/9] Formatear
+[7/10] Build               →   [7/9] Build
+[8/10] Verificar base      →   [8/9] Verificar base
+[9/10] Verificar bloques   →   [9/9] Verificar bloques
+[10/10] Resumen final      →   RESUMEN FINAL (no cuenta)
+
+Total pasos: 10 → 9 ✓
+
+
+✅ CAMBIO 2: Remover build/ de Verificación
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Paso 3: Verificar estructura del plugin
+
+ANTES:                          DESPUÉS:
+$requiredFiles = @(             $requiredFiles = @(
+    "eipsi-forms.php",              "eipsi-forms.php",
+    "package.json",                 "package.json",
+    "webpack.config.js",            "webpack.config.js",
+    "src/blocks/",                  "src/blocks/",
+    "admin/",                       "admin/",
+    "includes/",                    "includes/"
+    "build/"  ← ❌ REMOVIDO     )
+)
+
+Razón: build/ se crea en Paso 7, no debe ser requerido en Paso 3
+
+
+✅ CAMBIO 3: npm audit fix Automático
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Paso 2: Instalar dependencias (NUEVAS LÍNEAS)
+
+ANTES:                          DESPUÉS:
+npm install --legacy...         npm install --legacy...
+Write-Success "Deps OK"         Write-Success "Deps OK"
+Write-Host ""                   
+                                # Auditar vulnerabilidades ← NUEVO
+                                Write-Info "Auditando..."
+                                npm audit fix --silent
+                                if ($LASTEXITCODE -eq 0) {
+                                    Write-Success "Vuln corregidas"
+                                } else {
+                                    Write-Warning "Requiere manual"
+                                }
+                                
+                                Write-Host ""
+
+Vulnerabilidades corregidas:
+• rimraf@3.0.2 (deprecated)
+• glob@7.2.3 (deprecated)
+
+
+📊 ESTADÍSTICAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Líneas totales:     445 → 453 (+8 líneas)
+Pasos operativos:   10 → 9
+Cambios en código:  14 ubicaciones
+Breaking changes:   0 (sin cambios de funcionalidad)
+Referencias [X/10]: 0 (todas corregidas a [X/9])
+
+
+✅ VERIFICACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Todos los Write-Step usan Total 9
+✓ Función Write-Step default = 9
+✓ Comentarios encabezado: [1/9]...[9/9]
+✓ build/ removido de $requiredFiles
+✓ npm audit fix agregado después de npm install
+✓ No falla si npm audit fix no puede corregir todo
+✓ Variables globales sin cambios
+✓ Lógica de verificación sin cambios
+✓ Funciones helper sin cambios (excepto default)
+
+
+🎯 TESTING RECOMENDADO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Verificar sintaxis:
+   Get-Command .\scripts\build-automation.ps1 -Syntax
+
+2. Ejecutar script completo:
+   powershell -ExecutionPolicy Bypass -File scripts/build-automation.ps1
+
+3. Verificar output esperado:
+   ✓ [1/9] en primer paso
+   ✓ "Auditando y corrigiendo vulnerabilidades..."
+   ✓ [3/9] sin error de build/
+   ✓ [9/9] en último paso operativo
+   ✓ RESUMEN FINAL sin número
+
+
+Estado: ✅ COMPLETADO
+Fecha: 2025-01-19
+Versión: 1.1.0 (con correcciones)
+

@@ -6,16 +6,15 @@
 # y validación de arquitectura modular para bloques individuales.
 #
 # Pasos:
-#   [1/10] Limpiar y clonar repositorio
-#   [2/10] Instalar dependencias
-#   [3/10] Verificar estructura del plugin
-#   [4/10] Lint: Verificar código JavaScript
-#   [5/10] Lint: Verificar duplicados de funciones
-#   [6/10] Formatear código estilo WordPress
-#   [7/10] Build de producción
-#   [8/10] Verificar archivos base del build
-#   [9/10] Verificar bloques individuales (modular)
-#   [10/10] Resumen final
+#   [1/9] Limpiar y clonar repositorio
+#   [2/9] Instalar dependencias
+#   [3/9] Verificar estructura del plugin
+#   [4/9] Lint: Verificar código JavaScript
+#   [5/9] Lint: Verificar duplicados de funciones
+#   [6/9] Formatear código estilo WordPress
+#   [7/9] Build de producción
+#   [8/9] Verificar archivos base del build
+#   [9/9] Verificar bloques individuales (modular)
 #
 # Uso:
 #   powershell -ExecutionPolicy Bypass -File scripts/build-automation.ps1
@@ -64,7 +63,7 @@ function Write-Step {
     param(
         [string]$Message,
         [int]$Number,
-        [int]$Total = 10
+        [int]$Total = 9
     )
     Write-Host ("[${Number}/${Total}] $Message" -f $Number, $Total) -ForegroundColor Cyan
 }
@@ -142,10 +141,10 @@ $workDir = "eipsi-forms-work"
 $parentDir = Split-Path -Parent (Get-Location)
 
 # ============================================================================
-# [1/10] LIMPIAR Y CLONAR REPOSITORIO
+# [1/9] LIMPIAR Y CLONAR REPOSITORIO
 # ============================================================================
 
-Write-Step "Limpiando carpeta anterior y clonando repositorio" -Number 1 -Total 10
+Write-Step "Limpiando carpeta anterior y clonando repositorio" -Number 1 -Total 9
 
 # Cambiar al directorio padre
 Write-Info "Cambiando a directorio padre: $parentDir"
@@ -176,10 +175,10 @@ Write-Info "Cambiando al directorio del repositorio: $workDir"
 Set-Location $workDir
 
 # ============================================================================
-# [2/10] INSTALAR DEPENDENCIAS
+# [2/9] INSTALAR DEPENDENCIAS
 # ============================================================================
 
-Write-Step "Instalando/actualizando dependencias" -Number 2 -Total 10
+Write-Step "Instalando/actualizando dependencias" -Number 2 -Total 9
 
 try {
     npm install --legacy-peer-deps
@@ -187,6 +186,16 @@ try {
         throw "npm install falló con código de salida $LASTEXITCODE"
     }
     Write-Success "Dependencias instaladas correctamente"
+    
+    # Auditar y corregir vulnerabilidades conocidas
+    Write-Info "Auditando y corrigiendo vulnerabilidades conocidas..."
+    npm audit fix --silent
+    if ($LASTEXITCODE -eq 0) {
+        Write-Success "Vulnerabilidades corregidas"
+    } else {
+        Write-Warning "Algunas vulnerabilidades requieren actualización manual"
+    }
+    
     Write-Host ""
 } catch {
     Write-Error "Error al instalar dependencias: $_"
@@ -194,10 +203,10 @@ try {
 }
 
 # ============================================================================
-# [3/10] VERIFICAR ESTRUCTURA DEL PLUGIN
+# [3/9] VERIFICAR ESTRUCTURA DEL PLUGIN
 # ============================================================================
 
-Write-Step "Verificando estructura del plugin" -Number 3 -Total 10
+Write-Step "Verificando estructura del plugin" -Number 3 -Total 9
 
 $requiredFiles = @(
     "eipsi-forms.php",
@@ -205,8 +214,7 @@ $requiredFiles = @(
     "webpack.config.js",
     "src/blocks/",
     "admin/",
-    "includes/",
-    "build/"
+    "includes/"
 )
 
 $structureOk = $true
@@ -229,10 +237,10 @@ Write-Success "Estructura del plugin verificada"
 Write-Host ""
 
 # ============================================================================
-# [4/10] LINT: VERIFICAR CÓDIGO JAVASCRIPT
+# [4/9] LINT: VERIFICAR CÓDIGO JAVASCRIPT
 # ============================================================================
 
-Write-Step "Ejecutando linting de JavaScript" -Number 4 -Total 10
+Write-Step "Ejecutando linting de JavaScript" -Number 4 -Total 9
 
 try {
     # Primero intentar auto-fix
@@ -252,10 +260,10 @@ try {
 }
 
 # ============================================================================
-# [5/10] LINT: VERIFICAR DUPLICADOS DE FUNCIONES
+# [5/9] LINT: VERIFICAR DUPLICADOS DE FUNCIONES
 # ============================================================================
 
-Write-Step "Verificando duplicados de funciones" -Number 5 -Total 10
+Write-Step "Verificando duplicados de funciones" -Number 5 -Total 9
 
 try {
     npm run lint:duplicates
@@ -272,10 +280,10 @@ try {
 }
 
 # ============================================================================
-# [6/10] FORMATEAR CÓDIGO
+# [6/9] FORMATEAR CÓDIGO
 # ============================================================================
 
-Write-Step "Formateando código estilo WordPress" -Number 6 -Total 10
+Write-Step "Formateando código estilo WordPress" -Number 6 -Total 9
 
 try {
     npm run format
@@ -290,10 +298,10 @@ try {
 }
 
 # ============================================================================
-# [7/10] BUILD DE PRODUCCIÓN
+# [7/9] BUILD DE PRODUCCIÓN
 # ============================================================================
 
-Write-Step "Ejecutando build de producción" -Number 7 -Total 10
+Write-Step "Ejecutando build de producción" -Number 7 -Total 9
 
 # Asegurar que la carpeta build esté limpia
 if (Test-Path "build") {
@@ -314,10 +322,10 @@ try {
 }
 
 # ============================================================================
-# [8/10] VERIFICAR ARCHIVOS BASE DEL BUILD
+# [8/9] VERIFICAR ARCHIVOS BASE DEL BUILD
 # ============================================================================
 
-Write-Step "Verificando archivos base del build" -Number 8 -Total 10
+Write-Step "Verificando archivos base del build" -Number 8 -Total 9
 
 $baseFiles = @(
     "build/index.js",
@@ -345,10 +353,10 @@ foreach ($file in $baseFiles) {
 Write-Host ""
 
 # ============================================================================
-# [9/10] VERIFICACIÓN DE ARTEFACTOS
+# [9/9] VERIFICACIÓN DE ARTEFACTOS
 # ============================================================================
 
-Write-Step "VERIFICANDO ARCHIVOS COMPILADOS..." -Number 9 -Total 10
+Write-Step "VERIFICANDO ARCHIVOS COMPILADOS..." -Number 9 -Total 9
 
 $buildBlocksPath = "build/blocks"
 $allBuildOk = $true
@@ -392,10 +400,11 @@ if (Test-Path $buildBlocksPath) {
 }
 
 # ============================================================================
-# [10/10] RESUMEN FINAL
+# RESUMEN FINAL
 # ============================================================================
 
-Write-Step "Resumen final de verificación" -Number 10 -Total 10
+Write-Host ""
+Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
 
 if ($allBuildOk -and $blocksCompiled.Count -gt 0) {
     Write-Header "✓ BUILD CLÍNICO COMPLETADO EXITOSAMENTE"
