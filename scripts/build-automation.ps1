@@ -40,6 +40,9 @@ $ErrorActionPreference = "Stop"
 # Configurar salida de UTF-8 para PowerShell
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
+# Colores para output
+$colorSuccess = "Green"
+
 # ============================================================================
 # FUNCIONES HELPER
 # ============================================================================
@@ -132,7 +135,9 @@ Write-Info "npm version: $npmVersion"
 Write-Host ""
 
 # Configuración del repositorio
-$repoUrl = "https://github.com/eipsi/eipsi-forms.git"
+$repoUrl = "https://github.com/Minorett/EIPSI-Forms-Plugin.git"
+$targetPath = "C:\Users\Mathi\Downloads"
+$folderName = "EIPSI-Forms"
 $workDir = "eipsi-forms-work"
 $parentDir = Split-Path -Parent (Get-Location)
 
@@ -340,21 +345,19 @@ foreach ($file in $baseFiles) {
 Write-Host ""
 
 # ============================================================================
-# [9/10] VERIFICAR BLOQUES INDIVIDUALES (MODULAR)
+# [9/10] VERIFICACIÓN DE ARTEFACTOS
 # ============================================================================
 
-Write-Step "Verificando bloques individuales (arquitectura modular)" -Number 9 -Total 10
+Write-Step "VERIFICANDO ARCHIVOS COMPILADOS..." -Number 9 -Total 10
 
 $buildBlocksPath = "build/blocks"
+$allBuildOk = $true
 $blocksCompiled = @()
 
 if (Test-Path $buildBlocksPath) {
     $blockDirs = Get-ChildItem -Path $buildBlocksPath -Directory -ErrorAction SilentlyContinue
     
     if ($blockDirs.Count -gt 0) {
-        Write-Info "Se encontraron $($blockDirs.Count) bloques compilados:"
-        Write-Host ""
-        
         foreach ($blockDir in $blockDirs) {
             $blockName = $blockDir.Name
             $blockPath = $blockDir.FullName
@@ -376,19 +379,17 @@ if (Test-Path $buildBlocksPath) {
                 $blocksCompiled += $blockName
             } else {
                 Write-Error "$blockName tiene archivos faltantes o vacíos"
+                $allBuildOk = $false
             }
         }
-        Write-Host ""
     } else {
-        Write-Warning "No se encontraron bloques compilados en $buildBlocksPath"
+        Write-Error "No se encontraron bloques compilados en $buildBlocksPath"
+        $allBuildOk = $false
     }
 } else {
-    Write-Warning "Carpeta $buildBlocksPath no existe"
+    Write-Error "Carpeta $buildBlocksPath no existe"
+    $allBuildOk = $false
 }
-
-$allBuildOk = $baseOk -and ($blocksCompiled.Count -gt 0)
-
-Write-Host ""
 
 # ============================================================================
 # [10/10] RESUMEN FINAL
@@ -408,12 +409,11 @@ if ($allBuildOk -and $blocksCompiled.Count -gt 0) {
     Write-Info "  • build/style-index.css"
     Write-Host ""
     
-    Write-Host "Bloques compilados exitosamente:" -ForegroundColor Green
+    Write-Host "Bloques compilados exitosamente:" -ForegroundColor $colorSuccess
     foreach ($block in $blocksCompiled) {
         Write-Host "  • $block" -ForegroundColor Gray
     }
-    
-    Write-Host "`nTotal de bloques: $($blocksCompiled.Count)" -ForegroundColor Green
+    Write-Host "`nTotal de bloques: $($blocksCompiled.Count)" -ForegroundColor $colorSuccess
     Write-Host ""
     
     Write-Success "Todos los artefactos de build están presentes y validados."
