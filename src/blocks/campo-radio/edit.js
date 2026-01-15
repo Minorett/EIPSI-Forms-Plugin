@@ -5,36 +5,7 @@ import { __ } from '@wordpress/i18n';
 import FieldSettings from '../../components/FieldSettings';
 import ConditionalLogicControl from '../../components/ConditionalLogicControl';
 import { parseOptions, normalizeLineEndings } from '../../utils/optionParser';
-
-const renderHelperText = ( text ) => {
-	if ( ! text || text.trim() === '' ) {
-		return null;
-	}
-
-	const lines = text.split( '\n' );
-
-	return (
-		<p className="field-helper">
-			{ lines.map( ( line, index ) => (
-				<span key={ index }>
-					{ line }
-					{ index < lines.length - 1 && <br /> }
-				</span>
-			) ) }
-		</p>
-	);
-};
-
-const getFieldId = ( fieldName, suffix = '' ) => {
-	if ( ! fieldName || fieldName.trim() === '' ) {
-		return undefined;
-	}
-
-	const normalized = fieldName.trim().replace( /\s+/g, '-' );
-	const sanitized = normalized.replace( /[^a-zA-Z0-9_-]/g, '-' );
-
-	return suffix ? `field-${ sanitized }-${ suffix }` : `field-${ sanitized }`;
-};
+import { renderHelperText, getFieldId } from '../../utils/field-helpers';
 
 export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {

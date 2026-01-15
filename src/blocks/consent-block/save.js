@@ -1,5 +1,6 @@
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 import { parseConsentMarkdown } from '../utils/markdownParser';
+import { renderConsentBody } from '../../utils/field-helpers';
 
 function getPlainTextFromHtml( html ) {
 	return ( html || '' )
@@ -7,29 +8,6 @@ function getPlainTextFromHtml( html ) {
 		.replace( /&nbsp;/g, ' ' )
 		.trim();
 }
-
-const renderConsentBody = ( text ) => {
-	if ( ! text || text.trim() === '' ) {
-		return null;
-	}
-
-	const lines = text.split( '\n' );
-
-	return (
-		<div className="eipsi-consent-body">
-			{ lines.map( ( line, index ) => {
-				// Parsear markdown en cada línea para frontend
-				const parsedLine = parseConsentMarkdown( line );
-				return (
-					<p
-						key={ `${ line }-${ index }` }
-						dangerouslySetInnerHTML={ { __html: parsedLine } }
-					/>
-				);
-			} ) }
-		</div>
-	);
-};
 
 export default function Save( { attributes } ) {
 	const {
@@ -62,7 +40,7 @@ export default function Save( { attributes } ) {
 				</h3>
 			) }
 
-			{ renderConsentBody( contenido ) }
+			{ renderConsentBody( contenido, parseConsentMarkdown ) }
 
 			{ textoComplementario && (
 				<p className="consent-note">

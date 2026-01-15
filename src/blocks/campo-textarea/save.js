@@ -1,34 +1,5 @@
 import { useBlockProps } from '@wordpress/block-editor';
-
-const renderHelperText = ( text ) => {
-	if ( ! text || text.trim() === '' ) {
-		return null;
-	}
-
-	const lines = text.split( '\n' );
-
-	return (
-		<p className="field-helper">
-			{ lines.map( ( line, index ) => (
-				<span key={ index }>
-					{ line }
-					{ index < lines.length - 1 && <br /> }
-				</span>
-			) ) }
-		</p>
-	);
-};
-
-const getFieldId = ( fieldName ) => {
-	if ( ! fieldName || fieldName.trim() === '' ) {
-		return undefined;
-	}
-
-	const normalized = fieldName.trim().replace( /\s+/g, '-' );
-	const sanitized = normalized.replace( /[^a-zA-Z0-9_-]/g, '-' );
-
-	return `field-${ sanitized }`;
-};
+import { renderHelperText, getFieldId } from '../../utils/field-helpers';
 
 export default function Save( { attributes } ) {
 	const { fieldName, label, required, placeholder, helperText, rows } =
