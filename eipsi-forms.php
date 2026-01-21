@@ -58,6 +58,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/randomization-frontend.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/rct-analytics-page.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/rct-analytics-api.php';
 
+// RCT Schema Migration (v1.3.6 - CRITICAL FIX)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/migrate-randomization-schema.php';
+
 /**
  * Enqueue RCT Analytics assets en admin
  */

@@ -78,7 +78,7 @@ function eipsi_create_randomization_assignments_table() {
 
     $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        template_id BIGINT(20) UNSIGNED NOT NULL,
+        randomization_id VARCHAR(255) NOT NULL,
         config_id VARCHAR(255) NOT NULL,
         user_fingerprint VARCHAR(255) NOT NULL,
         assigned_form_id BIGINT(20) UNSIGNED NOT NULL,
@@ -86,8 +86,8 @@ function eipsi_create_randomization_assignments_table() {
         last_access DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         access_count INT(11) DEFAULT 1,
         PRIMARY KEY  (id),
-        UNIQUE KEY unique_assignment (template_id, config_id, user_fingerprint),
-        KEY template_id (template_id),
+        UNIQUE KEY unique_assignment (randomization_id, config_id, user_fingerprint),
+        KEY randomization_id (randomization_id),
         KEY config_id (config_id),
         KEY user_fingerprint (user_fingerprint),
         KEY assigned_form_id (assigned_form_id),

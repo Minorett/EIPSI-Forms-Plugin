@@ -82,7 +82,7 @@ function eipsi_randomization_shortcode( $atts ) {
     $user_fingerprint = eipsi_get_user_fingerprint();
 
     // PASO 3: Buscar si ya existe una asignación previa para este usuario
-    $existing_assignment = eipsi_get_existing_assignment( $template_id, $config_id, $user_fingerprint );
+    $existing_assignment = eipsi_get_existing_assignment( $config_id, $user_fingerprint );
 
     if ( $existing_assignment ) {
         // YA FUE ASIGNADO - usar la asignación existente (persistencia)
@@ -103,7 +103,7 @@ function eipsi_randomization_shortcode( $atts ) {
         }
 
         // Guardar nueva asignación en DB
-        eipsi_create_assignment( $template_id, $config_id, $user_fingerprint, $assigned_form_id );
+        eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_id );
 
         error_log( "[EIPSI RCT] Nuevo usuario: {$user_fingerprint} → Formulario: {$assigned_form_id}" );
     }
@@ -112,7 +112,7 @@ function eipsi_randomization_shortcode( $atts ) {
     ob_start();
     ?>
     <div class="eipsi-randomization-container" 
-         data-randomization-id="<?php echo esc_attr( $randomization_id ); ?>"
+         data-randomization-id="<?php echo esc_attr( $config_id ); ?>"
          data-assigned-form="<?php echo esc_attr( $assigned_form_id ); ?>">
         
         <?php if ( ! empty( $config['showInstructions'] ) ) : ?>
@@ -307,11 +307,12 @@ function eipsi_get_client_ip() {
  */
 function eipsi_calculate_rct_assignment( $config, $user_fingerprint ) {
     $formularios = $config['formularios'];
+    $probabilidades = isset( $config['probabilidades'] ) ? $config['probabilidades'] : array();
     $method      = isset( $config['method'] ) ? $config['method'] : 'seeded';
 
     // Si es método seeded, usar hash del fingerprint como seed
     if ( $method === 'seeded' ) {
-        $seed = crc32( $user_fingerprint . $config['randomizationId'] );
+        $seed = crc32( $user_fingerprint . $config['config_id'] );
         mt_srand( $seed );
         error_log( "[EIPSI RCT] Método seeded - seed: {$seed}" );
     }
@@ -321,9 +322,12 @@ function eipsi_calculate_rct_assignment( $config, $user_fingerprint ) {
     $cumulative               = 0;
 
     foreach ( $formularios as $form ) {
-        $cumulative                 += $form['porcentaje'];
+        $form_id = isset( $form['id'] ) ? $form['id'] : 0;
+        $porcentaje = isset( $probabilidades[ $form_id ] ) ? intval( $probabilidades[ $form_id ] ) : 0;
+        
+        $cumulative += $porcentaje;
         $cumulative_probabilities[] = array(
-            'postId'     => $form['postId'],
+            'postId'     => $form_id,
             'cumulative' => $cumulative,
         );
     }
@@ -350,7 +354,8 @@ function eipsi_calculate_rct_assignment( $config, $user_fingerprint ) {
         mt_srand();
     }
     error_log( '[EIPSI RCT] Fallback: usando primer formulario' );
-    return intval( $formularios[0]['postId'] );
+    $first_form = reset( $formularios );
+    return intval( isset( $first_form['id'] ) ? $first_form['id'] : 0 );
 }
 
 /**
@@ -457,12 +462,11 @@ add_action( 'template_redirect', 'eipsi_handle_randomization_query_param' );
 /**
  * Función para obtener asignación existente (actualizada para nuevo flujo)
  * 
- * @param int $template_id Template ID
- * @param string $config_id Config ID
+ * @param string $config_id Config ID (randomization_id)
  * @param string $user_fingerprint Fingerprint del usuario
  * @return array|null Array con datos de asignación o null
  */
-function eipsi_get_existing_assignment( $template_id, $config_id, $user_fingerprint ) {
+function eipsi_get_existing_assignment( $config_id, $user_fingerprint ) {
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
@@ -471,11 +475,11 @@ function eipsi_get_existing_assignment( $template_id, $config_id, $user_fingerpr
     $assignment = $wpdb->get_row(
         $wpdb->prepare(
             "SELECT * FROM {$table_name} 
-            WHERE template_id = %d 
+            WHERE randomization_id = %s 
             AND config_id = %s 
             AND user_fingerprint = %s
             LIMIT 1",
-            $template_id,
+            $config_id,
             $config_id,
             $user_fingerprint
         ),
@@ -488,13 +492,12 @@ function eipsi_get_existing_assignment( $template_id, $config_id, $user_fingerpr
 /**
  * Función para crear nueva asignación (actualizada para nuevo flujo)
  * 
- * @param int $template_id Template ID
- * @param string $config_id Config ID
+ * @param string $config_id Config ID (randomization_id)
  * @param string $user_fingerprint Fingerprint del usuario
  * @param int $assigned_form_id Post ID del formulario asignado
  * @return bool True si se creó correctamente
  */
-function eipsi_create_assignment( $template_id, $config_id, $user_fingerprint, $assigned_form_id ) {
+function eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_id ) {
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
@@ -503,7 +506,7 @@ function eipsi_create_assignment( $template_id, $config_id, $user_fingerprint, $
     $result = $wpdb->insert(
         $table_name,
         array(
-            'template_id' => $template_id,
+            'randomization_id' => $config_id,
             'config_id' => $config_id,
             'user_fingerprint' => $user_fingerprint,
             'assigned_form_id' => $assigned_form_id,
@@ -511,7 +514,7 @@ function eipsi_create_assignment( $template_id, $config_id, $user_fingerprint, $
             'last_access' => current_time( 'mysql' ),
             'access_count' => 1,
         ),
-        array( '%d', '%s', '%s', '%d', '%s', '%s', '%d' )
+        array( '%s', '%s', '%s', '%d', '%s', '%s', '%d' )
     );
 
     if ( $result === false ) {
