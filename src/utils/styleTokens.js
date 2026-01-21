@@ -91,6 +91,11 @@ export const DEFAULT_STYLE_CONFIG = {
  * @return {Object} Normalized styleConfig object
  */
 export function migrateToStyleConfig( attributes ) {
+	// Defensive: ensure attributes is valid object
+	if ( ! attributes || typeof attributes !== 'object' ) {
+		return JSON.parse( JSON.stringify( DEFAULT_STYLE_CONFIG ) );
+	}
+
 	// If styleConfig already exists and is valid, return it
 	if (
 		attributes.styleConfig &&
@@ -151,77 +156,110 @@ export function migrateToStyleConfig( attributes ) {
  * @return {Object} CSS variables object
  */
 export function serializeToCSSVariables( styleConfig ) {
-	const config = styleConfig || DEFAULT_STYLE_CONFIG;
+	// Defensive: ensure config has complete structure
+	const config =
+		styleConfig && typeof styleConfig === 'object'
+			? styleConfig
+			: DEFAULT_STYLE_CONFIG;
+
+	// Deep merge with defaults to prevent undefined access
+	const safeConfig = {
+		colors: { ...DEFAULT_STYLE_CONFIG.colors, ...( config.colors || {} ) },
+		typography: {
+			...DEFAULT_STYLE_CONFIG.typography,
+			...( config.typography || {} ),
+		},
+		spacing: {
+			...DEFAULT_STYLE_CONFIG.spacing,
+			...( config.spacing || {} ),
+		},
+		borders: {
+			...DEFAULT_STYLE_CONFIG.borders,
+			...( config.borders || {} ),
+		},
+		shadows: {
+			...DEFAULT_STYLE_CONFIG.shadows,
+			...( config.shadows || {} ),
+		},
+		interactivity: {
+			...DEFAULT_STYLE_CONFIG.interactivity,
+			...( config.interactivity || {} ),
+		},
+	};
 
 	return {
 		// Colors
-		'--eipsi-color-primary': config.colors.primary,
-		'--eipsi-color-primary-hover': config.colors.primaryHover,
-		'--eipsi-color-secondary': config.colors.secondary,
-		'--eipsi-color-background': config.colors.background,
-		'--eipsi-color-background-subtle': config.colors.backgroundSubtle,
-		'--eipsi-color-text': config.colors.text,
-		'--eipsi-color-text-muted': config.colors.textMuted,
-		'--eipsi-color-input-bg': config.colors.inputBg,
-		'--eipsi-color-input-text': config.colors.inputText,
-		'--eipsi-color-input-border': config.colors.inputBorder,
-		'--eipsi-color-input-border-focus': config.colors.inputBorderFocus,
-		'--eipsi-color-input-error-bg': config.colors.inputErrorBg,
-		'--eipsi-color-input-icon': config.colors.inputIcon,
-		'--eipsi-color-button-bg': config.colors.buttonBg,
-		'--eipsi-color-button-text': config.colors.buttonText,
-		'--eipsi-color-button-hover-bg': config.colors.buttonHoverBg,
-		'--eipsi-color-error': config.colors.error,
-		'--eipsi-color-success': config.colors.success,
-		'--eipsi-color-warning': config.colors.warning,
-		'--eipsi-color-border': config.colors.border,
-		'--eipsi-color-border-dark': config.colors.borderDark,
+		'--eipsi-color-primary': safeConfig.colors.primary,
+		'--eipsi-color-primary-hover': safeConfig.colors.primaryHover,
+		'--eipsi-color-secondary': safeConfig.colors.secondary,
+		'--eipsi-color-background': safeConfig.colors.background,
+		'--eipsi-color-background-subtle': safeConfig.colors.backgroundSubtle,
+		'--eipsi-color-text': safeConfig.colors.text,
+		'--eipsi-color-text-muted': safeConfig.colors.textMuted,
+		'--eipsi-color-input-bg': safeConfig.colors.inputBg,
+		'--eipsi-color-input-text': safeConfig.colors.inputText,
+		'--eipsi-color-input-border': safeConfig.colors.inputBorder,
+		'--eipsi-color-input-border-focus': safeConfig.colors.inputBorderFocus,
+		'--eipsi-color-input-error-bg': safeConfig.colors.inputErrorBg,
+		'--eipsi-color-input-icon': safeConfig.colors.inputIcon,
+		'--eipsi-color-button-bg': safeConfig.colors.buttonBg,
+		'--eipsi-color-button-text': safeConfig.colors.buttonText,
+		'--eipsi-color-button-hover-bg': safeConfig.colors.buttonHoverBg,
+		'--eipsi-color-error': safeConfig.colors.error,
+		'--eipsi-color-success': safeConfig.colors.success,
+		'--eipsi-color-warning': safeConfig.colors.warning,
+		'--eipsi-color-border': safeConfig.colors.border,
+		'--eipsi-color-border-dark': safeConfig.colors.borderDark,
 
 		// Typography
-		'--eipsi-font-family-heading': config.typography.fontFamilyHeading,
-		'--eipsi-font-family-body': config.typography.fontFamilyBody,
-		'--eipsi-font-size-base': config.typography.fontSizeBase,
-		'--eipsi-font-size-h1': config.typography.fontSizeH1,
-		'--eipsi-font-size-h2': config.typography.fontSizeH2,
-		'--eipsi-font-size-h3': config.typography.fontSizeH3,
-		'--eipsi-font-size-small': config.typography.fontSizeSmall,
-		'--eipsi-font-weight-normal': config.typography.fontWeightNormal,
-		'--eipsi-font-weight-medium': config.typography.fontWeightMedium,
-		'--eipsi-font-weight-bold': config.typography.fontWeightBold,
-		'--eipsi-line-height-base': config.typography.lineHeightBase,
-		'--eipsi-line-height-heading': config.typography.lineHeightHeading,
+		'--eipsi-font-family-heading': safeConfig.typography.fontFamilyHeading,
+		'--eipsi-font-family-body': safeConfig.typography.fontFamilyBody,
+		'--eipsi-font-size-base': safeConfig.typography.fontSizeBase,
+		'--eipsi-font-size-h1': safeConfig.typography.fontSizeH1,
+		'--eipsi-font-size-h2': safeConfig.typography.fontSizeH2,
+		'--eipsi-font-size-h3': safeConfig.typography.fontSizeH3,
+		'--eipsi-font-size-small': safeConfig.typography.fontSizeSmall,
+		'--eipsi-font-weight-normal': safeConfig.typography.fontWeightNormal,
+		'--eipsi-font-weight-medium': safeConfig.typography.fontWeightMedium,
+		'--eipsi-font-weight-bold': safeConfig.typography.fontWeightBold,
+		'--eipsi-line-height-base': safeConfig.typography.lineHeightBase,
+		'--eipsi-line-height-heading': safeConfig.typography.lineHeightHeading,
 
 		// Spacing
-		'--eipsi-spacing-xs': config.spacing.xs,
-		'--eipsi-spacing-sm': config.spacing.sm,
-		'--eipsi-spacing-md': config.spacing.md,
-		'--eipsi-spacing-lg': config.spacing.lg,
-		'--eipsi-spacing-xl': config.spacing.xl,
-		'--eipsi-spacing-container-padding': config.spacing.containerPadding,
-		'--eipsi-spacing-field-gap': config.spacing.fieldGap,
-		'--eipsi-spacing-section-gap': config.spacing.sectionGap,
+		'--eipsi-spacing-xs': safeConfig.spacing.xs,
+		'--eipsi-spacing-sm': safeConfig.spacing.sm,
+		'--eipsi-spacing-md': safeConfig.spacing.md,
+		'--eipsi-spacing-lg': safeConfig.spacing.lg,
+		'--eipsi-spacing-xl': safeConfig.spacing.xl,
+		'--eipsi-spacing-container-padding':
+			safeConfig.spacing.containerPadding,
+		'--eipsi-spacing-field-gap': safeConfig.spacing.fieldGap,
+		'--eipsi-spacing-section-gap': safeConfig.spacing.sectionGap,
 
 		// Borders
-		'--eipsi-border-radius-sm': config.borders.radiusSm,
-		'--eipsi-border-radius-md': config.borders.radiusMd,
-		'--eipsi-border-radius-lg': config.borders.radiusLg,
-		'--eipsi-border-width': config.borders.width,
-		'--eipsi-border-width-focus': config.borders.widthFocus,
-		'--eipsi-border-style': config.borders.style,
+		'--eipsi-border-radius-sm': safeConfig.borders.radiusSm,
+		'--eipsi-border-radius-md': safeConfig.borders.radiusMd,
+		'--eipsi-border-radius-lg': safeConfig.borders.radiusLg,
+		'--eipsi-border-width': safeConfig.borders.width,
+		'--eipsi-border-width-focus': safeConfig.borders.widthFocus,
+		'--eipsi-border-style': safeConfig.borders.style,
 
 		// Shadows
-		'--eipsi-shadow-sm': config.shadows.sm,
-		'--eipsi-shadow-md': config.shadows.md,
-		'--eipsi-shadow-lg': config.shadows.lg,
-		'--eipsi-shadow-focus': config.shadows.focus,
-		'--eipsi-shadow-error': config.shadows.error,
+		'--eipsi-shadow-sm': safeConfig.shadows.sm,
+		'--eipsi-shadow-md': safeConfig.shadows.md,
+		'--eipsi-shadow-lg': safeConfig.shadows.lg,
+		'--eipsi-shadow-focus': safeConfig.shadows.focus,
+		'--eipsi-shadow-error': safeConfig.shadows.error,
 
 		// Interactivity
-		'--eipsi-transition-duration': config.interactivity.transitionDuration,
-		'--eipsi-transition-timing': config.interactivity.transitionTiming,
-		'--eipsi-hover-scale': config.interactivity.hoverScale,
-		'--eipsi-focus-outline-width': config.interactivity.focusOutlineWidth,
-		'--eipsi-focus-outline-offset': config.interactivity.focusOutlineOffset,
+		'--eipsi-transition-duration':
+			safeConfig.interactivity.transitionDuration,
+		'--eipsi-transition-timing': safeConfig.interactivity.transitionTiming,
+		'--eipsi-hover-scale': safeConfig.interactivity.hoverScale,
+		'--eipsi-focus-outline-width':
+			safeConfig.interactivity.focusOutlineWidth,
+		'--eipsi-focus-outline-offset':
+			safeConfig.interactivity.focusOutlineOffset,
 	};
 }
 
