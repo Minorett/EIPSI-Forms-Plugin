@@ -1,67 +1,66 @@
 {
-	"$schema": "https://schemas.wp.org/trunk/block.json",
-	"apiVersion": 3,
-	"name": "eipsi/campo-select",
-	"title": "EIPSI Campo Select",
-	"category": "eipsi-forms",
-	"icon": "list-view",
-	"description": "Campo de selección desplegable configurable para formularios EIPSI.",
-	"keywords": [ "form", "field", "select", "dropdown", "eipsi" ],
-	"textdomain": "eipsi-forms",
-	"parent": [ "eipsi/form-container", "eipsi/form-page" ],
-	"editorScript": "file:./index.js",
-	"editorStyle": "file:./editor.scss",
-	"style": "file:./style.scss",
-	"supports": {
-		"html": false,
-		"spacing": {
-			"margin": true,
-			"padding": true
-		}
-	},
-	"attributes": {
-		"fieldName": {
-			"type": "string",
-			"default": ""
-		},
-		"label": {
-			"type": "string",
-			"default": ""
-		},
-		"required": {
-			"type": "boolean",
-			"default": false
-		},
-		"placeholder": {
-			"type": "string",
-			"default": "Seleccioná una opción"
-		},
-		"helperText": {
-			"type": "string",
-			"default": ""
-		},
-		"options": {
-			"type": "array",
-			"default": []
-		},
-		"className": {
-			"type": "string",
-			"default": ""
-		}
-	},
-	"example": {
-		"attributes": {
-			"fieldName": "gender",
-			"label": "Género",
-			"required": true,
-			"placeholder": "Seleccioná una opción",
-			"helperText": "Este campo es obligatorio.",
-			"options": [
-				{ "label": "Femenino", "value": "female" },
-				{ "label": "Masculino", "value": "male" },
-				{ "label": "No binario", "value": "non-binary" },
-				{ "label": "Prefiero no decir", "value": "prefer-not-to-say" }
-			]
-		}
-	}
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "eipsi/campo-select",
+    "title": "EIPSI Campo Select",
+    "category": "eipsi-forms",
+    "icon": "list-view",
+    "description": "Campo de selección desplegable configurable para formularios EIPSI.",
+    "keywords": [ "form", "field", "select", "dropdown", "eipsi" ],
+    "textdomain": "eipsi-forms",
+    "parent": [ "eipsi/form-container", "eipsi/form-page" ],
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./editor.scss",
+    "style": "file:./style.scss",
+    "supports": {
+        "html": false,
+        "spacing": {
+            "margin": true,
+            "padding": true
+        }
+    },
+    "attributes": {
+        "fieldName": {
+            "type": "string",
+            "default": ""
+        },
+        "label": {
+            "type": "string",
+            "default": ""
+        },
+        "required": {
+            "type": "boolean",
+            "default": false
+        },
+        "placeholder": {
+            "type": "string",
+            "default": "Seleccioná una opción"
+        },
+        "helperText": {
+            "type": "string",
+            "default": ""
+        },
+        "options": {
+            "type": "string",
+            "default": ""
+        },
+        "conditionalLogic": {
+            "type": "object",
+            "default": null
+        },
+        "className": {
+            "type": "string",
+            "default": ""
+        }
+    },
+    "example": {
+        "attributes": {
+            "fieldName": "gender",
+            "label": "Género",
+            "required": true,
+            "placeholder": "Seleccioná una opción",
+            "helperText": "Este campo es obligatorio.",
+            "options": "Femenino; Masculino; No binario; Prefiero no decir"
+        }
+    }
 }
