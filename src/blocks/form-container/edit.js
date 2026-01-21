@@ -510,6 +510,11 @@ export default function Edit( {
 		'data-preset': presetName || 'Clinical Blue',
 	} );
 
+	// Generar estilo dinámico para variables CSS
+	const dynamicStyles = Object.entries( cssVars )
+		.map( ( [ key, value ] ) => `${ key }: ${ value }` )
+		.join( '; ' );
+
 	const ALLOWED_BLOCKS = [
 		'eipsi/form-page',
 		'eipsi/consent-block',
@@ -718,6 +723,15 @@ export default function Edit( {
 
 	return (
 		<>
+			{ /* CSS dinámico para variables */ }
+			<style>
+				{ `
+                    .eipsi-form-container-editor {
+                        ${ dynamicStyles }
+                    }
+                ` }
+			</style>
+
 			<InspectorControls>
 				<PanelBody
 					title={ __( 'Plantillas EIPSI', 'eipsi-forms' ) }
@@ -1657,7 +1671,7 @@ export default function Edit( {
 			) }
 
 			<div { ...blockProps }>
-				<div className="eipsi-form-container-preview">
+				<div className="eipsi-form-container-preview eipsi-form-container-editor">
 					{ ! formId && (
 						<div className="eipsi-form-placeholder">
 							<div className="components-placeholder">

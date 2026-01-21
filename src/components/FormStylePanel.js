@@ -53,9 +53,31 @@ const FormStylePanel = ( {
 
 	// Apply preset theme
 	const applyPreset = ( preset ) => {
-		setStyleConfig( JSON.parse( JSON.stringify( preset.config ) ) );
-		setActivePreset( preset.name );
-		setPresetName( preset.name ); // Save preset name to attributes
+		try {
+			// Validación defensiva
+			if ( ! preset || typeof preset !== 'object' ) {
+				return;
+			}
+
+			if ( ! preset.config || typeof preset.config !== 'object' ) {
+				return;
+			}
+
+			if ( typeof setStyleConfig !== 'function' ) {
+				return;
+			}
+
+			// Aplicar preset
+			setStyleConfig( JSON.parse( JSON.stringify( preset.config ) ) );
+			setActivePreset( preset.name );
+
+			// Guardar nombre del preset
+			if ( typeof setPresetName === 'function' ) {
+				setPresetName( preset.name );
+			}
+		} catch ( error ) {
+			// Silently handle errors
+		}
 	};
 
 	// Reset to defaults
