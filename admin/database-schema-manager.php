@@ -34,6 +34,18 @@ class EIPSI_Database_Schema_Manager {
                 'columns_added' => array(),
                 'columns_missing' => array(),
             ),
+            'randomization_configs_table' => array(
+                'exists' => false,
+                'created' => false,
+                'columns_added' => array(),
+                'columns_missing' => array(),
+            ),
+            'randomization_assignments_table' => array(
+                'exists' => false,
+                'created' => false,
+                'columns_added' => array(),
+                'columns_missing' => array(),
+            ),
             'errors' => array(),
         );
         
@@ -41,17 +53,28 @@ class EIPSI_Database_Schema_Manager {
             // External database sync
             $results_sync = self::sync_results_table( $mysqli );
             $events_sync = self::sync_events_table( $mysqli );
+            $rct_configs_sync = self::sync_randomization_configs_table( $mysqli );
+            $rct_assignments_sync = self::sync_randomization_assignments_table( $mysqli );
             
             $results['results_table'] = $results_sync;
             $results['events_table'] = $events_sync;
+            $results['randomization_configs_table'] = $rct_configs_sync;
+            $results['randomization_assignments_table'] = $rct_assignments_sync;
             
-            if ( ! $results_sync['success'] || ! $events_sync['success'] ) {
+            if ( ! $results_sync['success'] || ! $events_sync['success'] || 
+                 ! $rct_configs_sync['success'] || ! $rct_assignments_sync['success'] ) {
                 $results['success'] = false;
                 if ( ! $results_sync['success'] ) {
                     $results['errors'][] = $results_sync['error'];
                 }
                 if ( ! $events_sync['success'] ) {
                     $results['errors'][] = $events_sync['error'];
+                }
+                if ( ! $rct_configs_sync['success'] ) {
+                    $results['errors'][] = $rct_configs_sync['error'];
+                }
+                if ( ! $rct_assignments_sync['success'] ) {
+                    $results['errors'][] = $rct_assignments_sync['error'];
                 }
             }
         } else {
@@ -59,17 +82,28 @@ class EIPSI_Database_Schema_Manager {
             global $wpdb;
             $results_sync = self::sync_local_results_table();
             $events_sync = self::sync_local_events_table();
+            $rct_configs_sync = self::sync_local_randomization_configs_table();
+            $rct_assignments_sync = self::sync_local_randomization_assignments_table();
             
             $results['results_table'] = $results_sync;
             $results['events_table'] = $events_sync;
+            $results['randomization_configs_table'] = $rct_configs_sync;
+            $results['randomization_assignments_table'] = $rct_assignments_sync;
             
-            if ( ! $results_sync['success'] || ! $events_sync['success'] ) {
+            if ( ! $results_sync['success'] || ! $events_sync['success'] || 
+                 ! $rct_configs_sync['success'] || ! $rct_assignments_sync['success'] ) {
                 $results['success'] = false;
                 if ( ! $results_sync['success'] ) {
                     $results['errors'][] = $results_sync['error'];
                 }
                 if ( ! $events_sync['success'] ) {
                     $results['errors'][] = $events_sync['error'];
+                }
+                if ( ! $rct_configs_sync['success'] ) {
+                    $results['errors'][] = $rct_configs_sync['error'];
+                }
+                if ( ! $rct_assignments_sync['success'] ) {
+                    $results['errors'][] = $rct_assignments_sync['error'];
                 }
             }
         }
@@ -355,6 +389,330 @@ class EIPSI_Database_Schema_Manager {
     }
     
     /**
+     * Sync wp_eipsi_randomization_configs table in external database
+     */
+    private static function sync_randomization_configs_table( $mysqli ) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'eipsi_randomization_configs';
+        $charset = $mysqli->character_set_name();
+        
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+        
+        // Check if table exists
+        $check = $mysqli->query( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = $check && $check->num_rows > 0;
+        
+        if ( ! $result['exists'] ) {
+            // Create table
+            $sql = "CREATE TABLE IF NOT EXISTS `{$table_name}` (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                randomization_id varchar(255) NOT NULL,
+                formularios LONGTEXT NOT NULL,
+                probabilidades LONGTEXT,
+                method varchar(20) DEFAULT 'seeded',
+                manual_assignments LONGTEXT,
+                show_instructions tinyint(1) DEFAULT 0,
+                created_at datetime DEFAULT CURRENT_TIMESTAMP,
+                updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY randomization_id (randomization_id),
+                KEY method (method),
+                KEY created_at (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}";
+            
+            if ( ! $mysqli->query( $sql ) ) {
+                $result['success'] = false;
+                $result['error'] = 'Failed to create randomization_configs table: ' . $mysqli->error;
+                return $result;
+            }
+            
+            $result['created'] = true;
+            $result['exists'] = true;
+        }
+        
+        // Ensure required columns exist
+        $required_columns = array(
+            'formularios' => "ALTER TABLE `{$table_name}` ADD COLUMN formularios LONGTEXT NOT NULL AFTER randomization_id",
+            'probabilidades' => "ALTER TABLE `{$table_name}` ADD COLUMN probabilidades LONGTEXT AFTER formularios",
+            'method' => "ALTER TABLE `{$table_name}` ADD COLUMN method varchar(20) DEFAULT 'seeded' AFTER probabilidades",
+            'manual_assignments' => "ALTER TABLE `{$table_name}` ADD COLUMN manual_assignments LONGTEXT AFTER method",
+            'show_instructions' => "ALTER TABLE `{$table_name}` ADD COLUMN show_instructions tinyint(1) DEFAULT 0 AFTER manual_assignments",
+            'created_at' => "ALTER TABLE `{$table_name}` ADD COLUMN created_at datetime DEFAULT CURRENT_TIMESTAMP AFTER show_instructions",
+            'updated_at' => "ALTER TABLE `{$table_name}` ADD COLUMN updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at",
+        );
+        
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $check = $mysqli->query( "SHOW COLUMNS FROM `{$table_name}` LIKE '{$column}'" );
+            
+            if ( ! $check || $check->num_rows === 0 ) {
+                if ( $mysqli->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                } else {
+                    $result['columns_missing'][] = $column;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( "EIPSI Schema Manager: Failed to add column {$column} - " . $mysqli->error );
+                    }
+                }
+            }
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Sync wp_eipsi_randomization_assignments table in external database
+     */
+    private static function sync_randomization_assignments_table( $mysqli ) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
+        $charset = $mysqli->character_set_name();
+        
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+        
+        // Check if table exists
+        $check = $mysqli->query( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = $check && $check->num_rows > 0;
+        
+        if ( ! $result['exists'] ) {
+            // Create table
+            $sql = "CREATE TABLE IF NOT EXISTS `{$table_name}` (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                randomization_id varchar(255) NOT NULL,
+                config_id varchar(255) NOT NULL,
+                user_fingerprint varchar(255) NOT NULL,
+                assigned_form_id bigint(20) unsigned NOT NULL,
+                assigned_at datetime DEFAULT CURRENT_TIMESTAMP,
+                last_access datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                access_count int(11) DEFAULT 1,
+                PRIMARY KEY (id),
+                UNIQUE KEY unique_assignment (randomization_id, config_id, user_fingerprint),
+                KEY randomization_id (randomization_id),
+                KEY config_id (config_id),
+                KEY user_fingerprint (user_fingerprint),
+                KEY assigned_form_id (assigned_form_id),
+                KEY assigned_at (assigned_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}";
+            
+            if ( ! $mysqli->query( $sql ) ) {
+                $result['success'] = false;
+                $result['error'] = 'Failed to create randomization_assignments table: ' . $mysqli->error;
+                return $result;
+            }
+            
+            $result['created'] = true;
+            $result['exists'] = true;
+        }
+        
+        // Ensure required columns exist (CRITICAL: config_id is essential)
+        $required_columns = array(
+            'randomization_id' => "ALTER TABLE `{$table_name}` ADD COLUMN randomization_id varchar(255) NOT NULL AFTER id",
+            'config_id' => "ALTER TABLE `{$table_name}` ADD COLUMN config_id varchar(255) NOT NULL AFTER randomization_id",
+            'user_fingerprint' => "ALTER TABLE `{$table_name}` ADD COLUMN user_fingerprint varchar(255) NOT NULL AFTER config_id",
+            'assigned_form_id' => "ALTER TABLE `{$table_name}` ADD COLUMN assigned_form_id bigint(20) unsigned NOT NULL AFTER user_fingerprint",
+            'assigned_at' => "ALTER TABLE `{$table_name}` ADD COLUMN assigned_at datetime DEFAULT CURRENT_TIMESTAMP AFTER assigned_form_id",
+            'last_access' => "ALTER TABLE `{$table_name}` ADD COLUMN last_access datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER assigned_at",
+            'access_count' => "ALTER TABLE `{$table_name}` ADD COLUMN access_count int(11) DEFAULT 1 AFTER last_access",
+        );
+        
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $check = $mysqli->query( "SHOW COLUMNS FROM `{$table_name}` LIKE '{$column}'" );
+            
+            if ( ! $check || $check->num_rows === 0 ) {
+                if ( $mysqli->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                } else {
+                    $result['columns_missing'][] = $column;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( "EIPSI Schema Manager: Failed to add column {$column} - " . $mysqli->error );
+                    }
+                }
+            }
+        }
+        
+        // Ensure unique constraint exists
+        $check_constraint = $mysqli->query( "SHOW INDEX FROM `{$table_name}` WHERE Key_name = 'unique_assignment'" );
+        if ( ! $check_constraint || $check_constraint->num_rows === 0 ) {
+            $constraint_sql = "ALTER TABLE `{$table_name}` ADD CONSTRAINT unique_assignment UNIQUE (randomization_id, config_id, user_fingerprint)";
+            if ( $mysqli->query( $constraint_sql ) ) {
+                $result['columns_added'][] = 'unique_constraint_unique_assignment';
+            } else {
+                $result['columns_missing'][] = 'unique_constraint_unique_assignment';
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( "EIPSI Schema Manager: Failed to add unique constraint - " . $mysqli->error );
+                }
+            }
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Sync wp_eipsi_randomization_configs table in local WordPress database
+     */
+    private static function sync_local_randomization_configs_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'eipsi_randomization_configs';
+        
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+        
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+        
+        if ( ! $result['exists'] ) {
+            // Table should be created by activation hook, skip here
+            $result['success'] = false;
+            $result['error'] = 'Table does not exist and should be created by activation hook';
+            return $result;
+        }
+        
+        // Ensure required columns exist
+        $required_columns = array(
+            'formularios' => "ALTER TABLE {$table_name} ADD COLUMN formularios LONGTEXT NOT NULL AFTER randomization_id",
+            'probabilidades' => "ALTER TABLE {$table_name} ADD COLUMN probabilidades LONGTEXT AFTER formularios",
+            'method' => "ALTER TABLE {$table_name} ADD COLUMN method varchar(20) DEFAULT 'seeded' AFTER probabilidades",
+            'manual_assignments' => "ALTER TABLE {$table_name} ADD COLUMN manual_assignments LONGTEXT AFTER method",
+            'show_instructions' => "ALTER TABLE {$table_name} ADD COLUMN show_instructions tinyint(1) DEFAULT 0 AFTER manual_assignments",
+            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at datetime DEFAULT CURRENT_TIMESTAMP AFTER show_instructions",
+            'updated_at' => "ALTER TABLE {$table_name} ADD COLUMN updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at",
+        );
+        
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $table_name,
+                    $column
+                )
+            );
+            
+            if ( empty( $column_exists ) ) {
+                if ( false !== $wpdb->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                } else {
+                    $result['columns_missing'][] = $column;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
+                    }
+                }
+            }
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Sync wp_eipsi_randomization_assignments table in local WordPress database
+     */
+    private static function sync_local_randomization_assignments_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
+        
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+        
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+        
+        if ( ! $result['exists'] ) {
+            // Table should be created by activation hook, skip here
+            $result['success'] = false;
+            $result['error'] = 'Table does not exist and should be created by activation hook';
+            return $result;
+        }
+        
+        // Ensure required columns exist (CRITICAL: config_id is essential)
+        $required_columns = array(
+            'randomization_id' => "ALTER TABLE {$table_name} ADD COLUMN randomization_id varchar(255) NOT NULL AFTER id",
+            'config_id' => "ALTER TABLE {$table_name} ADD COLUMN config_id varchar(255) NOT NULL AFTER randomization_id",
+            'user_fingerprint' => "ALTER TABLE {$table_name} ADD COLUMN user_fingerprint varchar(255) NOT NULL AFTER config_id",
+            'assigned_form_id' => "ALTER TABLE {$table_name} ADD COLUMN assigned_form_id bigint(20) unsigned NOT NULL AFTER user_fingerprint",
+            'assigned_at' => "ALTER TABLE {$table_name} ADD COLUMN assigned_at datetime DEFAULT CURRENT_TIMESTAMP AFTER assigned_form_id",
+            'last_access' => "ALTER TABLE {$table_name} ADD COLUMN last_access datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER assigned_at",
+            'access_count' => "ALTER TABLE {$table_name} ADD COLUMN access_count int(11) DEFAULT 1 AFTER last_access",
+        );
+        
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $table_name,
+                    $column
+                )
+            );
+            
+            if ( empty( $column_exists ) ) {
+                if ( false !== $wpdb->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                } else {
+                    $result['columns_missing'][] = $column;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
+                    }
+                }
+            }
+        }
+        
+        // Ensure unique constraint exists
+        $constraint_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT DISTINCT CONSTRAINT_NAME 
+                FROM information_schema.table_constraints 
+                WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND CONSTRAINT_NAME = %s",
+                DB_NAME,
+                $table_name,
+                'unique_assignment'
+            )
+        );
+        
+        if ( empty( $constraint_exists ) ) {
+            $constraint_sql = "ALTER TABLE {$table_name} ADD CONSTRAINT unique_assignment UNIQUE (randomization_id, config_id, user_fingerprint)";
+            if ( false !== $wpdb->query( $constraint_sql ) ) {
+                $result['columns_added'][] = 'unique_constraint_unique_assignment';
+            } else {
+                $result['columns_missing'][] = 'unique_constraint_unique_assignment';
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'EIPSI Schema Manager: Failed to add unique constraint - ' . $wpdb->last_error );
+                }
+            }
+        }
+        
+        return $result;
+    }
+    
+    /**
      * Hook: Called when database credentials are changed
      */
     public static function on_credentials_changed() {
@@ -420,6 +778,8 @@ class EIPSI_Database_Schema_Manager {
         
         $results_table = $wpdb->prefix . 'vas_form_results';
         $events_table = $wpdb->prefix . 'vas_form_events';
+        $rct_configs_table = $wpdb->prefix . 'eipsi_randomization_configs';
+        $rct_assignments_table = $wpdb->prefix . 'eipsi_randomization_assignments';
         
         $repair_log = array(
             'success' => true,
@@ -431,20 +791,38 @@ class EIPSI_Database_Schema_Manager {
                 'exists' => false,
                 'columns_added' => array(),
             ),
+            'randomization_configs_table' => array(
+                'exists' => false,
+                'columns_added' => array(),
+            ),
+            'randomization_assignments_table' => array(
+                'exists' => false,
+                'columns_added' => array(),
+            ),
         );
         
         // Check if tables exist
-        if ( ! self::local_table_exists( $results_table ) || ! self::local_table_exists( $events_table ) ) {
+        $tables_exist = self::local_table_exists( $results_table ) && self::local_table_exists( $events_table );
+        $rct_tables_exist = self::local_table_exists( $rct_configs_table ) && self::local_table_exists( $rct_assignments_table );
+        
+        if ( ! $tables_exist || ! $rct_tables_exist ) {
             // Tables missing - recreate via activation hook
             eipsi_forms_activate();
-            $repair_log['results_table']['exists'] = true;
-            $repair_log['events_table']['exists'] = true;
-            error_log( '[EIPSI Forms] Schema repair: Tables recreated' );
+            
+            // Re-check tables
+            $repair_log['results_table']['exists'] = self::local_table_exists( $results_table );
+            $repair_log['events_table']['exists'] = self::local_table_exists( $events_table );
+            $repair_log['randomization_configs_table']['exists'] = self::local_table_exists( $rct_configs_table );
+            $repair_log['randomization_assignments_table']['exists'] = self::local_table_exists( $rct_assignments_table );
+            
+            error_log( '[EIPSI Forms] Schema repair: All tables recreated' );
             return $repair_log;
         }
         
         $repair_log['results_table']['exists'] = true;
         $repair_log['events_table']['exists'] = true;
+        $repair_log['randomization_configs_table']['exists'] = true;
+        $repair_log['randomization_assignments_table']['exists'] = true;
         
         // Repair results table
         $results_repair = self::repair_local_results_table( $results_table );
@@ -454,11 +832,22 @@ class EIPSI_Database_Schema_Manager {
         $events_repair = self::repair_local_events_table( $events_table );
         $repair_log['events_table']['columns_added'] = $events_repair;
         
+        // Repair randomization configs table
+        $rct_configs_repair = self::repair_local_randomization_configs_table( $rct_configs_table );
+        $repair_log['randomization_configs_table']['columns_added'] = $rct_configs_repair;
+        
+        // Repair randomization assignments table
+        $rct_assignments_repair = self::repair_local_randomization_assignments_table( $rct_assignments_table );
+        $repair_log['randomization_assignments_table']['columns_added'] = $rct_assignments_repair;
+        
         // Update version and timestamp
-        update_option( 'eipsi_db_schema_version', '1.2.2' );
+        update_option( 'eipsi_db_schema_version', '1.3.7' );
         update_option( 'eipsi_schema_last_verified', current_time( 'mysql' ) );
         
-        if ( ! empty( $results_repair ) || ! empty( $events_repair ) ) {
+        $columns_added_total = count( $results_repair ) + count( $events_repair ) + 
+                             count( $rct_configs_repair ) + count( $rct_assignments_repair );
+        
+        if ( $columns_added_total > 0 ) {
             error_log( '[EIPSI Forms] Schema repair completed - Columns added: ' . wp_json_encode( $repair_log ) );
         }
         
@@ -543,6 +932,101 @@ class EIPSI_Database_Schema_Manager {
         self::ensure_local_index( $table_name, 'form_id' );
         self::ensure_local_index( $table_name, 'session_id' );
         self::ensure_local_index( $table_name, 'event_type' );
+        
+        return $columns_added;
+    }
+    
+    /**
+     * Repair local randomization configs table - add missing columns
+     */
+    private static function repair_local_randomization_configs_table( $table_name ) {
+        global $wpdb;
+        
+        $required_columns = array(
+            'randomization_id' => "varchar(255) NOT NULL AFTER id",
+            'formularios' => "LONGTEXT NOT NULL AFTER randomization_id",
+            'probabilidades' => "LONGTEXT AFTER formularios",
+            'method' => "varchar(20) DEFAULT 'seeded' AFTER probabilidades",
+            'manual_assignments' => "LONGTEXT AFTER method",
+            'show_instructions' => "tinyint(1) DEFAULT 0 AFTER manual_assignments",
+            'created_at' => "datetime DEFAULT CURRENT_TIMESTAMP AFTER show_instructions",
+            'updated_at' => "datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at",
+        );
+        
+        $columns_added = array();
+        
+        foreach ( $required_columns as $col => $definition ) {
+            if ( ! self::local_column_exists( $table_name, $col ) ) {
+                $result = $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN {$col} {$definition}" );
+                if ( false !== $result ) {
+                    $columns_added[] = $col;
+                    error_log( "[EIPSI Forms] Added missing column '{$col}' to {$table_name}" );
+                }
+            }
+        }
+        
+        // Ensure indices
+        self::ensure_local_index( $table_name, 'randomization_id' );
+        self::ensure_local_index( $table_name, 'method' );
+        self::ensure_local_index( $table_name, 'created_at' );
+        
+        return $columns_added;
+    }
+    
+    /**
+     * Repair local randomization assignments table - add missing columns
+     */
+    private static function repair_local_randomization_assignments_table( $table_name ) {
+        global $wpdb;
+        
+        $required_columns = array(
+            'randomization_id' => "varchar(255) NOT NULL AFTER id",
+            'config_id' => "varchar(255) NOT NULL AFTER randomization_id",
+            'user_fingerprint' => "varchar(255) NOT NULL AFTER config_id",
+            'assigned_form_id' => "bigint(20) unsigned NOT NULL AFTER user_fingerprint",
+            'assigned_at' => "datetime DEFAULT CURRENT_TIMESTAMP AFTER assigned_form_id",
+            'last_access' => "datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER assigned_at",
+            'access_count' => "int(11) DEFAULT 1 AFTER last_access",
+        );
+        
+        $columns_added = array();
+        
+        foreach ( $required_columns as $col => $definition ) {
+            if ( ! self::local_column_exists( $table_name, $col ) ) {
+                $result = $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN {$col} {$definition}" );
+                if ( false !== $result ) {
+                    $columns_added[] = $col;
+                    error_log( "[EIPSI Forms] Added missing column '{$col}' to {$table_name}" );
+                }
+            }
+        }
+        
+        // Ensure indices
+        self::ensure_local_index( $table_name, 'randomization_id' );
+        self::ensure_local_index( $table_name, 'config_id' );
+        self::ensure_local_index( $table_name, 'user_fingerprint' );
+        self::ensure_local_index( $table_name, 'assigned_form_id' );
+        self::ensure_local_index( $table_name, 'assigned_at' );
+        
+        // Ensure unique constraint
+        $constraint_exists = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT DISTINCT CONSTRAINT_NAME 
+                FROM information_schema.table_constraints 
+                WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND CONSTRAINT_NAME = %s",
+                DB_NAME,
+                $table_name,
+                'unique_assignment'
+            )
+        );
+        
+        if ( empty( $constraint_exists ) ) {
+            $constraint_sql = "ALTER TABLE {$table_name} ADD CONSTRAINT unique_assignment UNIQUE (randomization_id, config_id, user_fingerprint)";
+            if ( false !== $wpdb->query( $constraint_sql ) ) {
+                $columns_added[] = 'unique_constraint_unique_assignment';
+                error_log( "[EIPSI Forms] Added unique constraint to {$table_name}" );
+            }
+        }
         
         return $columns_added;
     }

@@ -309,14 +309,52 @@ function eipsi_display_configuration_page() {
                                 <?php endif; ?>
                             </span>
                         </div>
-                        <?php if (!empty($sync['results_table']['columns_added']) || !empty($sync['events_table']['columns_added'])): ?>
+                        <div class="status-detail-row">
+                            <span class="detail-label"><?php echo esc_html__('RCT Configs Table:', 'eipsi-forms'); ?></span>
+                            <span class="detail-value">
+                                <?php if ($sync['randomization_configs_table']['exists']): ?>
+                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+                                    <?php echo esc_html__('Exists', 'eipsi-forms'); ?>
+                                    <?php if ($sync['randomization_configs_table']['created']): ?>
+                                        <em>(<?php echo esc_html__('created during last sync', 'eipsi-forms'); ?>)</em>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
+                                    <?php echo esc_html__('Missing', 'eipsi-forms'); ?>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                        <div class="status-detail-row">
+                            <span class="detail-label"><?php echo esc_html__('RCT Assignments Table:', 'eipsi-forms'); ?></span>
+                            <span class="detail-value">
+                                <?php if ($sync['randomization_assignments_table']['exists']): ?>
+                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+                                    <?php echo esc_html__('Exists', 'eipsi-forms'); ?>
+                                    <?php if ($sync['randomization_assignments_table']['created']): ?>
+                                        <em>(<?php echo esc_html__('created during last sync', 'eipsi-forms'); ?>)</em>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
+                                    <?php echo esc_html__('Missing', 'eipsi-forms'); ?>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                        <?php if (!empty($sync['results_table']['columns_added']) || !empty($sync['events_table']['columns_added']) || !empty($sync['randomization_configs_table']['columns_added']) || !empty($sync['randomization_assignments_table']['columns_added'])): ?>
                         <div class="status-detail-row">
                             <span class="detail-label"><?php echo esc_html__('Columns Added:', 'eipsi-forms'); ?></span>
                             <span class="detail-value">
                                 <?php
-                                $total_columns = count($sync['results_table']['columns_added']) + count($sync['events_table']['columns_added']);
+                                $total_columns = count($sync['results_table']['columns_added']) + count($sync['events_table']['columns_added']) + count($sync['randomization_configs_table']['columns_added']) + count($sync['randomization_assignments_table']['columns_added']);
                                 echo esc_html(sprintf(__('%d columns synced', 'eipsi-forms'), $total_columns));
                                 ?>
+                            </span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if (!empty($sync['randomization_assignments_table']['columns_added']) && in_array('config_id', $sync['randomization_assignments_table']['columns_added'])): ?>
+                        <div class="status-detail-row" style="background-color: #e8f5e8; padding: 8px; border-radius: 4px; margin-top: 8px;">
+                            <span class="detail-label" style="font-weight: bold;"><?php echo esc_html__('🔧 CRITICAL FIX APPLIED:', 'eipsi-forms'); ?></span>
+                            <span class="detail-value">
+                                <?php echo esc_html__('config_id column added to RCT Assignments table - randomization queries now functional', 'eipsi-forms'); ?>
                             </span>
                         </div>
                         <?php endif; ?>
