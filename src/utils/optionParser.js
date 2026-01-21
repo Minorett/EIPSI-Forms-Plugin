@@ -92,22 +92,52 @@ export function parseCommaSeparated( str ) {
 }
 
 /**
- * Parses options from a string with intelligent format detection
+ * Parses options from a string OR array with intelligent format detection
  *
  * Priority (for backwards compatibility):
  * 1. Semicolon-separated (;) – NEW STANDARD
  * 2. Newline-delimited (\n) – Current format
  * 3. Comma-separated with CSV quoting (,) – Legacy format
  *
- * @param {string} optionsString Raw options string from block attributes
+ * @param {string | Array} optionsInput Raw options (string OR array) from block attributes
  * @return {string[]} Array of trimmed, non-empty option strings
  */
-export function parseOptions( optionsString ) {
-	if ( ! optionsString || optionsString.trim() === '' ) {
+export function parseOptions( optionsInput ) {
+	// Handle undefined, null, empty string, empty array
+	if ( ! optionsInput ) {
 		return [];
 	}
 
-	const normalized = normalizeLineEndings( optionsString );
+	// If already an array, validate and return (legacy data support)
+	if ( Array.isArray( optionsInput ) ) {
+		return optionsInput
+			.map( ( option ) => {
+				// Handle objects like {label: "...", value: "..."}
+				if ( typeof option === 'object' && option !== null ) {
+					return String( option.label || option.value || '' );
+				}
+				// Handle primitives (string, number, etc)
+				return String( option || '' );
+			} )
+			.map( ( opt ) => opt.trim() )
+			.filter( ( opt ) => opt !== '' );
+	}
+
+	// If not a string at this point, convert to string
+	if ( typeof optionsInput !== 'string' ) {
+		const stringified = String( optionsInput );
+		if ( ! stringified || stringified.trim() === '' ) {
+			return [];
+		}
+		return [ stringified.trim() ];
+	}
+
+	// String parsing logic (original behavior)
+	if ( optionsInput.trim() === '' ) {
+		return [];
+	}
+
+	const normalized = normalizeLineEndings( optionsInput );
 
 	// Priority 1: Semicolon-separated (NEW STANDARD)
 	if ( normalized.includes( ';' ) ) {
