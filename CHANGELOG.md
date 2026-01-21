@@ -16,6 +16,39 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [1.3.6] – 2025-01-21 (CRITICAL FIX: RCT Schema Migration)
+
+### 🔴 HOTFIX - Sistema de Aleatorización RCT
+
+#### Fixed
+- ❌→✅ **SQL Error crítico:** "Unknown column 'template_id' in WHERE clause" - El sistema de aleatorización generaba errores SQL porque la tabla `wp_eipsi_randomization_assignments` usaba columna `template_id` pero el código esperaba `randomization_id`.
+- ❌→✅ **PHP Warnings:** "Undefined array key 'randomizationId'", "'porcentaje'", "'postId'" - Acceso a keys incorrectas en arrays de configuración.
+- ❌→✅ **Transaction Failures:** INSERT statements fallaban completamente, las asignaciones RCT no se registraban en base de datos.
+- ❌→✅ **RCT Analytics Dashboard:** JOINs entre tablas `configs` y `assignments` ahora funcionan correctamente, estadísticas se calculan sin errores.
+
+#### Changed
+- **Schema de base de datos:** Columna `template_id BIGINT(20)` → `randomization_id VARCHAR(255)` en tabla `wp_eipsi_randomization_assignments` (representa config_id, permite JOINs correctos).
+- **Índices actualizados:** `UNIQUE KEY unique_assignment (template_id, ...)` → `(randomization_id, ...)` para integridad referencial.
+- **Signatures de funciones DB:** `eipsi_get_existing_assignment()` y `eipsi_create_assignment()` simplificadas (menos parámetros, lógica más clara).
+- **Acceso seguro a arrays:** Uso de `isset()` en líneas 315, 326, 358 del shortcode handler para prevenir PHP warnings.
+- **Cálculo de probabilidades:** Obtiene porcentaje desde `$config['probabilidades'][$form_id]` en lugar de `$form['porcentaje']` inexistente.
+
+#### Added
+- **Script de migración automática:** `admin/migrate-randomization-schema.php` ejecuta migración de schema automáticamente en `admin_init`.
+- **Preservación de datos:** Migración usa `ALTER TABLE CHANGE COLUMN` para preservar 100% de datos existentes.
+- **Endpoint AJAX manual:** `/wp-admin/admin-ajax.php?action=eipsi_migrate_schema` para ejecutar migración manualmente si falla automática.
+- **Logging completo:** Cada paso de migración se registra en error_log de WordPress.
+- **Version tracking:** Opción `eipsi_randomization_schema_version` almacena versión actual (1.3.6).
+- **Documentación técnica:** `RCT-SCHEMA-MIGRATION-v1.3.6.md` con análisis completo de causa raíz, correcciones y deployment instructions.
+
+#### Technical Details
+- **Archivos modificados:** 4 archivos, ~230 líneas cambiadas
+- **Errores eliminados:** 5 errores críticos (1 SQL + 3 PHP Warnings + 1 Transaction Failure)
+- **Backward compatibility:** 100% - Migración idempotente, puede ejecutarse múltiples veces sin romper nada
+- **Testing:** Lint JS 0/0 errores, build webpack exitoso, prepared statements sanitizados
+
+---
+
 ## [1.3.1] – 2025-01-19 (RCT System: Fingerprinting + Persistencia Completa)
 
 ### Added
