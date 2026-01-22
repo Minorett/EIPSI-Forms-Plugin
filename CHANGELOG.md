@@ -6,13 +6,41 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
-## [Unreleased] – Próxima versión clínica
+## [1.3.16] – 2025-01-26 (CRITICAL: Delete Response con BD Externa Roto)
 
-### Planning
-- Integrated completion page (misma URL forever)
-- Save & Continue Later + 30s autosave + IndexedDB drafts
-- Conditional field visibility dentro de la misma página
-- Clinical templates (PHQ-9, GAD-7, etc.) con automatic scoring
+### 🔴 HOTFIX CRÍTICO - Eliminación de Respuestas Fallaba con BD Externa
+
+**Severidad:** MEDIA-ALTA - Delete no funciona cuando BD externa está configurada
+**Impacto:** Los clínicos usando BD externa no pueden eliminar registros, generando datos fantasma y confusión
+
+#### Fixed
+- ❌→✅ **Delete Response falla silenciosamente:** `admin/handlers.php` siempre intentaba eliminar de BD local usando `$wpdb->delete()`, pero `submissions-tab.php` mostraba registros de BD externa si estaba habilitada. Resultado: "Failed to delete response. The record may not exist."
+- ❌→✅ **Inconsistencia BD externa/local:** El sistema LEÍA de BD externa pero ELIMINABA de BD local, creando datos fantasma (registros visibles pero impossibles de borrar).
+- ❌→✅ **Sin feedback de error:** No había logs ni mensajes claros sobre por qué fallaba la eliminación.
+
+#### Changed
+- **`admin/handlers.php`:** Refactorizado lógica de eliminación (líneas 42-136).
+  - **Detectar BD externa:** Instanciar `EIPSI_External_Database` y verificar `$external_db->is_enabled()` antes de eliminar.
+  - **Lógica dual de eliminación:**
+    - **Si BD externa habilitada:** Usar `mysqli->query()` con `DELETE FROM vas_form_results WHERE id = X`
+    - **Si BD externa deshabilitada:** Usar `$wpdb->delete()` (comportamiento original)
+  - **Validación pre-delete:** `SELECT COUNT(*)` antes de DELETE en ambos casos para verificar existencia.
+  - **Fallback automático:** Si conexión a BD externa falla, intentar BD local.
+  - **Logging mejorado:** Logs detallados en WP_DEBUG mode con ID, Database (external/local), y error message.
+
+#### Technical Details
+- **Archivos modificados:** 1 archivo (admin/handlers.php), ~95 líneas refactorizadas
+- **Causa raíz:** `submissions-tab.php` usa `$external_db->is_enabled()` para leer, pero `handlers.php` nunca verificaba esto para eliminar
+- **Seguridad mantenida:** Nonce validation, permission check, ID sanitization intactos
+- **SQL injection prevention:** `intval($id)` + prepared statements en ambos casos
+- **Backward compatibility:** 100% - BD local funciona exactamente igual, BD externa ahora funciona correctamente
+- **Testing:** PHP syntax OK, no requiere npm build (PHP puro), no afecta lint JS
+
+#### Impact Analysis
+- **Antes del fix:** BD externa habilitada → delete falla silenciosamente → datos fantasma
+- **Después del fix:** Delete funciona correctamente con BD externa y local
+- **Risk level:** BAJO - Solo agrega lógica de detección, no modifica comportamiento existente de BD local
+- **Deployment priority:** ALTA - Funcionalidad crítica de administración corregida
 
 ---
 
