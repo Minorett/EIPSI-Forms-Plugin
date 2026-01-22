@@ -470,7 +470,17 @@ export default function Edit( {
 	useEffect( () => {
 		const updates = {};
 
-		if ( ! styleConfig ) {
+		const shouldRepairStyleConfig =
+			! styleConfig ||
+			typeof styleConfig !== 'object' ||
+			! styleConfig.colors ||
+			! styleConfig.typography ||
+			! styleConfig.spacing ||
+			! styleConfig.borders ||
+			! styleConfig.shadows ||
+			! styleConfig.interactivity;
+
+		if ( shouldRepairStyleConfig ) {
 			updates.styleConfig = migrateToStyleConfig( attributes );
 		}
 
@@ -498,8 +508,8 @@ export default function Edit( {
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- Migration runs only once on mount
 	}, [] );
 
-	// Get current style config (with fallback)
-	const currentConfig = styleConfig || migrateToStyleConfig( attributes );
+	// Get current style config (always normalized + legacy-safe)
+	const currentConfig = migrateToStyleConfig( attributes );
 
 	// Generate CSS variables for editor preview
 	const cssVars = serializeToCSSVariables( currentConfig );
