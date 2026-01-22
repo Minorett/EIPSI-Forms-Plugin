@@ -16,6 +16,53 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [Unreleased] – Próxima versión clínica
+
+### Planning
+- Integrated completion page (misma URL forever)
+- Save & Continue Later + 30s autosave + IndexedDB drafts
+- Conditional field visibility dentro de la misma página
+- Clinical templates (PHQ-9, GAD-7, etc.) con automatic scoring
+
+---
+
+## [1.3.9] – 2025-01-22 (CRITICAL: Editor Gutenberg Sin Estilos - WYSIWYG Roto)
+
+### 🔴 HOTFIX CRÍTICO - Estilos No Se Cargan en el Editor
+
+**Severidad:** MEDIA-ALTA - WYSIWYG no funciona correctamente en editor Gutenberg
+**Impacto:** Los psicólogos clínicos no pueden ver en tiempo real cómo se verán sus formularios, frustrando la experiencia de edición
+
+#### Fixed
+- ❌→✅ **Editor Gutenberg Monocromático:** Los CSS del plugin (`eipsi-forms.css`, `admin-style.css`, `theme-toggle.css`, `eipsi-randomization.css`) no se cargaban en el iframe del editor de bloques. Las CSS variables existían en el HTML pero el CSS que las consume estaba ausente.
+- ❌→✅ **WYSIWYG no funcional:** Cambiar presets (Azul, Rojo, Oscuro) no reflejaba visualmente en el preview del editor, aunque los datos correctos se guardaban en la base de datos.
+- ❌→✅ **Incoherencia Frontend-Editor:** Lo que se veía en el editor (gris, sin estilos) no coincidía con lo que se mostraba en el frontend (colores correctos, estilos aplicados).
+
+#### Changed
+- **`eipsi-forms.php`:** Nueva función `eipsi_forms_enqueue_block_editor_assets()` (líneas 453-494).
+  - Agregados 4 archivos CSS al hook `enqueue_block_editor_assets`:
+    1. `assets/css/eipsi-forms.css` - CSS principal del formulario (CONSUME las CSS variables)
+    2. `assets/css/admin-style.css` - Estilos de admin para coherencia visual
+    3. `assets/css/theme-toggle.css` - CSS para dark mode en editor
+    4. `assets/css/eipsi-randomization.css` - CSS para controles de aleatorización
+  - Hook `add_action('enqueue_block_editor_assets', ...)` - Ejecuta ANTES de registrar bloques
+
+#### Technical Details
+- **Archivos modificados:** 1 archivo (eipsi-forms.php), ~46 líneas agregadas
+- **Hook correcto:** `enqueue_block_editor_assets` (NO `admin_enqueue_scripts` que solo aplica a páginas admin específicas)
+- **Causa raíz:** `admin_enqueue_scripts` solo carga CSS en páginas Results & Experience, config, etc., pero NO en el iframe de Gutenberg donde se renderizan los bloques.
+- **Backward compatibility:** 100% - No afecta datos ni funcionalidad existente, solo agrega carga de CSS en editor
+- **Testing:** Lint JS 0/0 errores, build webpack exitoso (3 Sass deprecation warnings, no relacionados)
+- **Documentación:** Esta entrada en CHANGELOG.md
+
+#### Impact Analysis
+- **Antes del fix:** Editor monocromático (gris), sin colores, sin estilos, WYSIWYG no funciona
+- **Después del fix:** Editor muestra colores correctos, responde a cambios de preset, WYSIWYG funcional
+- **Risk level:** BAJO - Solo agrega carga de CSS en editor, sin modificar lógica de bloques o datos
+- **Deployment priority:** ALTA - Mejora significativamente la experiencia de usuario al editar formularios
+
+---
+
 ## [1.3.8] – 2025-01-22 (CRITICAL: Block Validation Errors - Editor Bloqueado)
 
 ### 🔴 HOTFIX CRÍTICO - Errores de Validación de Bloques
