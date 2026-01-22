@@ -18,6 +18,10 @@ export default function Save( { attributes } ) {
 		labels,
 		conditionalLogic,
 		scaleVariation = 'custom',
+		useGradient,
+		gradientType,
+		gradientColorStart,
+		gradientColorEnd,
 	} = attributes;
 
 	// Calcular el máximo actual
@@ -75,7 +79,21 @@ export default function Save( { attributes } ) {
 				</label>
 			) }
 			<div
-				className={ `likert-scale${ reversed ? ' reversed' : '' }` }
+				className={ `likert-scale${ reversed ? ' reversed' : '' }${
+					useGradient
+						? ` gradient-${ gradientType || 'improvement-right' }`
+						: ''
+				}` }
+				style={
+					useGradient && gradientType === 'custom'
+						? {
+								'--likert-gradient-color-start':
+									gradientColorStart || '#f44336',
+								'--likert-gradient-color-end':
+									gradientColorEnd || '#4caf50',
+						  }
+						: {}
+				}
 				data-scale={ `${ minValue }-${ maxValue }` }
 				data-reversed={ reversed ? 'true' : 'false' }
 			>

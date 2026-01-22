@@ -26,6 +26,10 @@ export default function Save( { attributes } ) {
 		valuePosition,
 		conditionalLogic,
 		labelAlignment,
+		useGradient,
+		gradientType,
+		gradientColorStart,
+		gradientColorEnd,
 	} = attributes;
 
 	const normalizedFieldName =
@@ -163,7 +167,23 @@ export default function Save( { attributes } ) {
 					type="range"
 					name={ normalizedFieldName }
 					id={ inputId }
-					className="vas-slider"
+					className={ `vas-slider${
+						useGradient
+							? ` gradient-${
+									gradientType || 'improvement-right'
+							  }`
+							: ''
+					}` }
+					style={
+						useGradient && gradientType === 'custom'
+							? {
+									'--vas-gradient-color-start':
+										gradientColorStart || '#f44336',
+									'--vas-gradient-color-end':
+										gradientColorEnd || '#4caf50',
+							  }
+							: {}
+					}
 					min={ sliderMin }
 					max={ sliderMax }
 					step={ safeStep }

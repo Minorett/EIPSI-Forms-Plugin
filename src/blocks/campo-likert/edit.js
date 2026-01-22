@@ -1,4 +1,8 @@
-import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
+import {
+	InspectorControls,
+	useBlockProps,
+	ColorPalette,
+} from '@wordpress/block-editor';
 import { useEffect, useState } from '@wordpress/element';
 import {
 	PanelBody,
@@ -36,6 +40,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		labels,
 		conditionalLogic,
 		scaleVariation = 'custom',
+		useGradient,
+		gradientType,
+		gradientColorStart,
+		gradientColorEnd,
+		gradientDocumentation,
 	} = attributes;
 
 	// Calcular el máximo actual
@@ -468,6 +477,207 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					) }
 				</PanelBody>
 
+				<PanelBody
+					title={ __( 'Gradient Styling (Advanced)', 'eipsi-forms' ) }
+					initialOpen={ false }
+				>
+					<ToggleControl
+						label={ __( 'Use Gradient Mode', 'eipsi-forms' ) }
+						help={ __(
+							'Por defecto, el slider usa el color del tema. El modo gradiente interpola entre colores para mostrar polaridad (bueno/malo).',
+							'eipsi-forms'
+						) }
+						checked={ !! useGradient }
+						onChange={ ( value ) =>
+							setAttributes( { useGradient: !! value } )
+						}
+					/>
+
+					{ useGradient && (
+						<>
+							<SelectControl
+								label={ __( 'Gradient Type', 'eipsi-forms' ) }
+								value={ gradientType || 'improvement-right' }
+								options={ [
+									{
+										label: __(
+											'Improvement → Right (0=Malo, 100=Bueno)',
+											'eipsi-forms'
+										),
+										value: 'improvement-right',
+									},
+									{
+										label: __(
+											'Improvement → Left (100=Malo, 0=Bueno)',
+											'eipsi-forms'
+										),
+										value: 'improvement-left',
+									},
+									{
+										label: __(
+											'Progress Neutral (sin interpretación)',
+											'eipsi-forms'
+										),
+										value: 'progress-neutral',
+									},
+									{
+										label: __(
+											'Custom Colors',
+											'eipsi-forms'
+										),
+										value: 'custom',
+									},
+								] }
+								onChange={ ( value ) =>
+									setAttributes( { gradientType: value } )
+								}
+							/>
+
+							{ gradientType === 'improvement-right' && (
+								<Notice status="info" isDismissible={ false }>
+									{ __(
+										'Usar para escalas donde valores MÁS ALTOS son MEJORES (ej: Satisfacción, Adherencia, Energía).',
+										'eipsi-forms'
+									) }
+								</Notice>
+							) }
+
+							{ gradientType === 'improvement-left' && (
+								<Notice status="info" isDismissible={ false }>
+									{ __(
+										'Usar para escalas donde valores MÁS BAJOS son MEJORES (ej: PHQ-9, Dolor, Ansiedad, Severidad).',
+										'eipsi-forms'
+									) }
+								</Notice>
+							) }
+
+							{ gradientType === 'progress-neutral' && (
+								<Notice status="info" isDismissible={ false }>
+									{ __(
+										'Usar para escalas sin interpretación "bueno/malo", solo mostrando progreso (ej: Frecuencia, Cantidad).',
+										'eipsi-forms'
+									) }
+								</Notice>
+							) }
+
+							{ gradientType === 'custom' && (
+								<>
+									<p>
+										<strong>
+											{ __(
+												'Color Inicial (valor min):',
+												'eipsi-forms'
+											) }
+										</strong>
+									</p>
+									<ColorPalette
+										colors={ [
+											{
+												name: 'Rojo',
+												color: '#f44336',
+											},
+											{
+												name: 'Naranja',
+												color: '#ff9800',
+											},
+											{
+												name: 'Amarillo',
+												color: '#ffc107',
+											},
+											{
+												name: 'Verde',
+												color: '#4caf50',
+											},
+											{
+												name: 'Azul',
+												color: '#1976d2',
+											},
+											{
+												name: 'Púrpura',
+												color: '#9c27b0',
+											},
+											{
+												name: 'Gris',
+												color: '#757575',
+											},
+										] }
+										value={ gradientColorStart }
+										onChange={ ( color ) =>
+											setAttributes( {
+												gradientColorStart: color,
+											} )
+										}
+									/>
+
+									<p style={ { marginTop: '16px' } }>
+										<strong>
+											{ __(
+												'Color Final (valor max):',
+												'eipsi-forms'
+											) }
+										</strong>
+									</p>
+									<ColorPalette
+										colors={ [
+											{
+												name: 'Rojo',
+												color: '#f44336',
+											},
+											{
+												name: 'Naranja',
+												color: '#ff9800',
+											},
+											{
+												name: 'Amarillo',
+												color: '#ffc107',
+											},
+											{
+												name: 'Verde',
+												color: '#4caf50',
+											},
+											{
+												name: 'Azul',
+												color: '#1976d2',
+											},
+											{
+												name: 'Púrpura',
+												color: '#9c27b0',
+											},
+											{
+												name: 'Gris',
+												color: '#757575',
+											},
+										] }
+										value={ gradientColorEnd }
+										onChange={ ( color ) =>
+											setAttributes( {
+												gradientColorEnd: color,
+											} )
+										}
+									/>
+								</>
+							) }
+
+							<TextareaControl
+								label={ __(
+									'Documentation (optional)',
+									'eipsi-forms'
+								) }
+								value={ gradientDocumentation || '' }
+								onChange={ ( value ) =>
+									setAttributes( {
+										gradientDocumentation: value,
+									} )
+								}
+								help={ __(
+									'Nota interna para explicar por qué se usa este gradiente (no visible para usuarios).',
+									'eipsi-forms'
+								) }
+							/>
+						</>
+					) }
+				</PanelBody>
+
 				<ConditionalLogicControl
 					attributes={ attributes }
 					setAttributes={ setAttributes }
@@ -492,7 +702,23 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				<div
 					className={ `likert-scale likert-preview${
 						reversed ? ' reversed' : ''
+					}${
+						useGradient
+							? ` gradient-${
+									gradientType || 'improvement-right'
+							  }`
+							: ''
 					}` }
+					style={
+						useGradient && gradientType === 'custom'
+							? {
+									'--likert-gradient-color-start':
+										gradientColorStart || '#f44336',
+									'--likert-gradient-color-end':
+										gradientColorEnd || '#4caf50',
+							  }
+							: {}
+					}
 					data-scale={ `${ minValue }-${ maxValue }` }
 					data-reversed={ reversed ? 'true' : 'false' }
 				>
