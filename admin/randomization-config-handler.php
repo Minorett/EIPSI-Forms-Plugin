@@ -81,6 +81,7 @@ function eipsi_save_randomization_config() {
         'seed' => $seed,
         'permitirOverride' => $permitirOverride,
         'registrarAsignaciones' => $registrarAsignaciones,
+        'persistent_mode' => $persistentMode,
         'created_at' => current_time( 'mysql' ),
         'created_by' => get_current_user_id(),
         'version' => '1.3.4'
@@ -95,7 +96,8 @@ function eipsi_save_randomization_config() {
     }
 
     // Generar shortcode único para el template
-    $shortcode = sprintf( '[eipsi_randomization template="%d" config="%s"]', $post_id, $config_id );
+    $persistent_mode_attr = $persistentMode ? 'yes' : 'no';
+    $shortcode = sprintf( '[eipsi_randomization template="%d" config="%s" persistent_mode="%s"]', $post_id, $config_id, $persistent_mode_attr );
 
     // Respuesta exitosa
     wp_send_json_success( array(
@@ -157,6 +159,11 @@ function eipsi_register_randomization_config_rest() {
                 'type' => 'boolean',
                 'default' => true,
             ),
+            'persistent_mode' => array(
+                'required' => false,
+                'type' => 'boolean',
+                'default' => true,
+            ),
         ),
     ) );
 }
@@ -177,6 +184,7 @@ function eipsi_randomization_config_rest_handler( $request ) {
     $seed = $request->get_param( 'seed' ) ?: '';
     $permitirOverride = $request->get_param( 'permitirOverride' ) ?: true;
     $registrarAsignaciones = $request->get_param( 'registrarAsignaciones' ) ?: true;
+    $persistentMode = $request->get_param( 'persistent_mode' ) ?: true;
 
     // Validaciones
     if ( ! $post_id ) {
@@ -237,6 +245,7 @@ function eipsi_randomization_config_rest_handler( $request ) {
         'seed' => $seed,
         'permitirOverride' => $permitirOverride,
         'registrarAsignaciones' => $registrarAsignaciones,
+        'persistent_mode' => $persistentMode,
         'created_at' => current_time( 'mysql' ),
         'created_by' => get_current_user_id(),
         'version' => '1.3.4'
@@ -254,7 +263,8 @@ function eipsi_randomization_config_rest_handler( $request ) {
     }
 
     // Generar shortcode único para el template
-    $shortcode = sprintf( '[eipsi_randomization template="%d" config="%s"]', $post_id, $config_id );
+    $persistent_mode_attr = $persistentMode ? 'yes' : 'no';
+    $shortcode = sprintf( '[eipsi_randomization template="%d" config="%s" persistent_mode="%s"]', $post_id, $config_id, $persistent_mode_attr );
 
     // Respuesta exitosa
     return new WP_REST_Response( array(
