@@ -23,7 +23,10 @@ import {
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useState } from '@wordpress/element';
-import { DEFAULT_STYLE_CONFIG } from '../utils/styleTokens';
+import {
+	DEFAULT_STYLE_CONFIG,
+	normalizeStyleConfig,
+} from '../utils/styleTokens';
 import { getContrastRating } from '../utils/contrastChecker';
 import { STYLE_PRESETS, getPresetPreview } from '../utils/stylePresets';
 import './FormStylePanel.css';
@@ -36,14 +39,16 @@ const FormStylePanel = ( {
 } ) => {
 	const [ activePreset, setActivePreset ] = useState( presetName || null );
 
-	const config = styleConfig || DEFAULT_STYLE_CONFIG;
+	// Blindaje: styleConfig puede venir incompleto (ej. {}) en bloques legacy.
+	// Normalizamos SIEMPRE para que el panel nunca intente leer config.colors.text de undefined.
+	const config = normalizeStyleConfig( styleConfig );
 
 	// Helper to update any nested config value
 	const updateConfig = ( category, key, value ) => {
 		const updated = {
 			...config,
 			[ category ]: {
-				...config[ category ],
+				...( config[ category ] || {} ),
 				[ key ]: value,
 			},
 		};
@@ -191,60 +196,64 @@ const FormStylePanel = ( {
 				</p>
 
 				<div className="eipsi-preset-grid">
-					{ STYLE_PRESETS.map( ( preset ) => {
-						const preview = getPresetPreview( preset );
-						const isActive = activePreset === preset.name;
+					{ ( STYLE_PRESETS || [] )
+						.filter( Boolean )
+						.map( ( preset ) => {
+							const preview = getPresetPreview( preset );
+							const isActive = activePreset === preset.name;
 
-						return (
-							<button
-								key={ preset.name }
-								className={ `eipsi-preset-button ${
-									isActive ? 'is-active' : ''
-								}` }
-								onClick={ () => applyPreset( preset ) }
-								title={ preset.description }
-							>
-								<div
-									className="eipsi-preset-preview"
-									style={ {
-										background: preview.backgroundSubtle,
-										borderColor: preview.border,
-										borderRadius: preview.borderRadius,
-										boxShadow: preview.shadow,
-									} }
+							return (
+								<button
+									key={ preset.name }
+									className={ `eipsi-preset-button ${
+										isActive ? 'is-active' : ''
+									}` }
+									onClick={ () => applyPreset( preset ) }
+									title={ preset.description }
 								>
 									<div
-										className="eipsi-preset-button-sample"
+										className="eipsi-preset-preview"
 										style={ {
-											background: preview.buttonBg,
-											color: preview.buttonText,
+											background:
+												preview.backgroundSubtle,
+											borderColor: preview.border,
 											borderRadius: preview.borderRadius,
+											boxShadow: preview.shadow,
 										} }
 									>
-										Button
+										<div
+											className="eipsi-preset-button-sample"
+											style={ {
+												background: preview.buttonBg,
+												color: preview.buttonText,
+												borderRadius:
+													preview.borderRadius,
+											} }
+										>
+											Button
+										</div>
+										<div
+											className="eipsi-preset-text"
+											style={ {
+												color: preview.text,
+												fontFamily: preview.fontFamily,
+											} }
+										>
+											Text
+										</div>
 									</div>
-									<div
-										className="eipsi-preset-text"
-										style={ {
-											color: preview.text,
-											fontFamily: preview.fontFamily,
-										} }
-									>
-										Text
-									</div>
-								</div>
-								<span className="eipsi-preset-name">
-									{ preset.name }
-								</span>
-								{ isActive && (
-									<Dashicon
-										icon="yes-alt"
-										className="eipsi-preset-checkmark"
-									/>
-								) }
-							</button>
-						);
-					} ) }
+									<span className="eipsi-preset-name">
+										{ preset.name }
+									</span>
+									{ isActive && (
+										<Dashicon
+											icon="yes-alt"
+											className="eipsi-preset-checkmark"
+										/>
+									) }
+								</button>
+							);
+						} ) }
 				</div>
 
 				<Button

@@ -84,6 +84,45 @@ export const DEFAULT_STYLE_CONFIG = {
 };
 
 /**
+ * Normalize styleConfig
+ * Deep-merges any partial config with DEFAULT_STYLE_CONFIG, so the editor never crashes
+ * when a saved block contains an incomplete object (e.g., {} or missing colors).
+ *
+ * @param {Object} styleConfig - Partial style config
+ * @return {Object} Normalized styleConfig
+ */
+export function normalizeStyleConfig( styleConfig ) {
+	const config =
+		styleConfig && typeof styleConfig === 'object' ? styleConfig : {};
+
+	return {
+		...DEFAULT_STYLE_CONFIG,
+		...config,
+		colors: { ...DEFAULT_STYLE_CONFIG.colors, ...( config.colors || {} ) },
+		typography: {
+			...DEFAULT_STYLE_CONFIG.typography,
+			...( config.typography || {} ),
+		},
+		spacing: {
+			...DEFAULT_STYLE_CONFIG.spacing,
+			...( config.spacing || {} ),
+		},
+		borders: {
+			...DEFAULT_STYLE_CONFIG.borders,
+			...( config.borders || {} ),
+		},
+		shadows: {
+			...DEFAULT_STYLE_CONFIG.shadows,
+			...( config.shadows || {} ),
+		},
+		interactivity: {
+			...DEFAULT_STYLE_CONFIG.interactivity,
+			...( config.interactivity || {} ),
+		},
+	};
+}
+
+/**
  * Migrate legacy attributes to styleConfig format
  * Ensures backward compatibility with forms created before the token system
  *
@@ -96,12 +135,12 @@ export function migrateToStyleConfig( attributes ) {
 		return JSON.parse( JSON.stringify( DEFAULT_STYLE_CONFIG ) );
 	}
 
-	// If styleConfig already exists and is valid, return it
+	// If styleConfig already exists, normalize it (deep-merge with defaults)
 	if (
 		attributes.styleConfig &&
 		typeof attributes.styleConfig === 'object'
 	) {
-		return attributes.styleConfig;
+		return normalizeStyleConfig( attributes.styleConfig );
 	}
 
 	// Build config from legacy attributes or defaults
@@ -156,36 +195,8 @@ export function migrateToStyleConfig( attributes ) {
  * @return {Object} CSS variables object
  */
 export function serializeToCSSVariables( styleConfig ) {
-	// Defensive: ensure config has complete structure
-	const config =
-		styleConfig && typeof styleConfig === 'object'
-			? styleConfig
-			: DEFAULT_STYLE_CONFIG;
-
-	// Deep merge with defaults to prevent undefined access
-	const safeConfig = {
-		colors: { ...DEFAULT_STYLE_CONFIG.colors, ...( config.colors || {} ) },
-		typography: {
-			...DEFAULT_STYLE_CONFIG.typography,
-			...( config.typography || {} ),
-		},
-		spacing: {
-			...DEFAULT_STYLE_CONFIG.spacing,
-			...( config.spacing || {} ),
-		},
-		borders: {
-			...DEFAULT_STYLE_CONFIG.borders,
-			...( config.borders || {} ),
-		},
-		shadows: {
-			...DEFAULT_STYLE_CONFIG.shadows,
-			...( config.shadows || {} ),
-		},
-		interactivity: {
-			...DEFAULT_STYLE_CONFIG.interactivity,
-			...( config.interactivity || {} ),
-		},
-	};
+	// Defensive: deep-merge with defaults to prevent undefined access
+	const safeConfig = normalizeStyleConfig( styleConfig );
 
 	return {
 		// Colors
