@@ -450,6 +450,52 @@ function eipsi_forms_enqueue_admin_assets($hook) {
 
 add_action('admin_enqueue_scripts', 'eipsi_forms_enqueue_admin_assets');
 
+/**
+ * Enqueue CSS & JS for Block Editor (Gutenberg WYSIWYG)
+ *
+ * Asegura que los estilos principales se carguen en el preview del editor
+ * para que las CSS variables aplicadas por edit.js se rendericen correctamente.
+ *
+ * @since 1.3.8
+ */
+function eipsi_forms_enqueue_block_editor_assets() {
+    // === CARGAR CSS PRINCIPALES ===
+    // 1. CSS del formulario principal - CONSUME las CSS variables
+    wp_enqueue_style(
+        'eipsi-forms-styles',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-forms.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+
+    // 2. Estilos de admin (para coherencia visual en el editor)
+    wp_enqueue_style(
+        'eipsi-admin-style',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/admin-style.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+
+    // 3. CSS de tema (para dark mode en editor)
+    wp_enqueue_style(
+        'eipsi-theme-toggle',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/theme-toggle.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+
+    // 4. CSS de aleatorización (para randomization controls)
+    wp_enqueue_style(
+        'eipsi-randomization',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-randomization.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+}
+
+// HOOK CRÍTICO: Ejecutar ANTES de que se registren los bloques
+add_action('enqueue_block_editor_assets', 'eipsi_forms_enqueue_block_editor_assets');
+
 function eipsi_forms_register_blocks() {
     if (!function_exists('register_block_type')) {
         return;
