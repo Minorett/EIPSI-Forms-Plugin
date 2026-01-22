@@ -6,248 +6,457 @@
  */
 
 ( function () {
-	'use strict';
+    'use strict';
 
-	/* global navigator, CSS, requestAnimationFrame */
+    /* global navigator, CSS, requestAnimationFrame */
 
-	if ( typeof window === 'undefined' ) {
-		return;
-	}
+    if ( typeof window === 'undefined' ) {
+        return;
+    }
 
-	const AUTOSAVE_INTERVAL = 30000; // 30 segundos
-	const INPUT_DEBOUNCE = 800; // ms
-	const IDB_NAME = 'eipsi_forms';
-	const IDB_VERSION = 1;
-	const IDB_STORE = 'partial_responses';
-	const EXCLUDED_FIELDS = new Set( [
-		'form_id',
-		'form_action',
-		'ip_address',
-		'device',
-		'browser',
-		'os',
-		'screen_width',
-		'form_start_time',
-		'form_end_time',
-		'current_page',
-		'nonce',
-		'action',
-		'participant_id',
-		'session_id',
-		'eipsi_forms_nonce',
-	] );
+    const AUTOSAVE_INTERVAL = 30000; // 30 segundos
+    const INPUT_DEBOUNCE = 800; // ms
+    const IDB_NAME = 'eipsi_forms';
+    const IDB_VERSION = 1;
+    const IDB_STORE = 'partial_responses';
+    const EXCLUDED_FIELDS = new Set( [
+        'form_id',
+        'form_action',
+        'ip_address',
+        'device',
+        'browser',
+        'os',
+        'screen_width',
+        'form_start_time',
+        'form_end_time',
+        'current_page',
+        'nonce',
+        'action',
+        'participant_id',
+        'session_id',
+        'eipsi_forms_nonce',
+    ] );
 
-	class EIPSISaveContinue {
-		constructor( form, config ) {
-			this.form = form;
-			this.config = config || {};
-			this.formId = this.getFormId();
-			this.participantId = this.getParticipantId();
-			this.sessionId = this.getSessionId();
-			this.autosaveTimer = null;
-			this.db = null;
-			this.pendingSync = false;
-			this.initialized = false;
-			this.completed = false;
-			this.hasResponses = false;
-			this.beforeUnloadHandler = null;
-			this.inputDebounceId = null;
+    class EIPSISaveContinue {
+        constructor( form, config ) {
+            this.form = form;
+            this.config = config || {};
+            this.formId = this.getFormId();
+            this.participantId = this.getParticipantId();
+            this.sessionId = this.getSessionId();
+            this.autosaveTimer = null;
+            this.db = null;
+            this.pendingSync = false;
+            this.initialized = false;
+            this.completed = false;
+            this.hasResponses = false;
+            this.beforeUnloadHandler = null;
+            this.inputDebounceId = null;
 
-			this.init();
-		}
+            // Dirty state: el modal "Continuar" solo debe aparecer si hubo cambios reales
+            // respecto del estado inicial del formulario (incluyendo defaults/prellenado).
+            this.isDirty = false;
+            this.initialState = {};
+            this.initialStateHasResponses = false;
+            this.draftExists = false;
+            this.pristineCleanupTimeout = null;
+            this.everDirty = false;
 
-		async init() {
-			try {
-				this.db = await this.openDB();
-				this.initialized = true;
+            this.init();
+        }
 
-				await this.checkForPartialResponse();
-				this.setupAutosave();
-				this.setupBeforeUnload();
-				this.setupChangeListeners();
-			} catch ( error ) {
-				if ( window.console && window.console.error ) {
-					window.console.error(
-						'[EIPSI Save & Continue] Initialization failed:',
-						error
-					);
-				}
-			}
-		}
+        async init() {
+            try {
+                this.db = await this.openDB();
+                this.initialized = true;
 
-		getFormId() {
-			return (
-				this.form?.dataset?.formId ||
-				this.form?.querySelector( 'input[name="form_id"]' )?.value ||
-				'default'
-			);
-		}
+                await this.checkForPartialResponse();
+                this.setupAutosave();
+                this.setupBeforeUnload();
+                this.setupChangeListeners();
 
-		getParticipantId() {
-			const STORAGE_KEY = 'eipsi_participant_id';
-			let pid = null;
+                // Snapshot del estado inicial (después de decidir si hay borrador para recuperar).
+                this.captureInitialState();
+            } catch ( error ) {
+                if ( window.console && window.console.error ) {
+                    window.console.error(
+                        '[EIPSI Save & Continue] Initialization failed:',
+                        error
+                    );
+                }
+            }
+        }
 
-			try {
-				pid = window.localStorage.getItem( STORAGE_KEY );
-			} catch ( error ) {
-				pid = null;
-			}
+        getFormId() {
+            return (
+                this.form?.dataset?.formId ||
+                this.form?.querySelector( 'input[name="form_id"]' )?.value ||
+                'default'
+            );
+        }
 
-			if ( ! pid ) {
-				const randomSource = crypto.randomUUID
-					? crypto.randomUUID().replace( /-/g, '' )
-					: `${ Math.random()
-							.toString( 36 )
-							.substring( 2 ) }${ Date.now().toString( 36 ) }`;
-				pid = `p-${ randomSource.substring( 0, 12 ) }`;
+        getParticipantId() {
+            const STORAGE_KEY = 'eipsi_participant_id';
+            let pid = null;
 
-				try {
-					window.localStorage.setItem( STORAGE_KEY, pid );
-				} catch ( error ) {
-					// Ignore storage errors (Safari private mode, etc.)
-				}
-			}
+            try {
+                pid = window.localStorage.getItem( STORAGE_KEY );
+            } catch ( error ) {
+                pid = null;
+            }
 
-			return pid;
-		}
+            if ( ! pid ) {
+                const randomSource = crypto.randomUUID
+                    ? crypto.randomUUID().replace( /-/g, '' )
+                    : `${ Math.random()
+                            .toString( 36 )
+                            .substring( 2 ) }${ Date.now().toString( 36 ) }`;
+                pid = `p-${ randomSource.substring( 0, 12 ) }`;
 
-		getSessionId() {
-			const SESSION_KEY = `eipsi_session_${ this.formId || 'default' }`;
-			let sid = null;
+                try {
+                    window.localStorage.setItem( STORAGE_KEY, pid );
+                } catch ( error ) {
+                    // Ignore storage errors (Safari private mode, etc.)
+                }
+            }
 
-			try {
-				sid = window.sessionStorage.getItem( SESSION_KEY );
-			} catch ( error ) {
-				sid = null;
-			}
+            return pid;
+        }
 
-			if ( ! sid ) {
-				const timestamp = Date.now();
-				const random = Math.random().toString( 36 ).substring( 2, 8 );
-				sid = `sess-${ timestamp }-${ random }`;
+        getSessionId() {
+            const SESSION_KEY = `eipsi_session_${ this.formId || 'default' }`;
+            let sid = null;
 
-				try {
-					window.sessionStorage.setItem( SESSION_KEY, sid );
-				} catch ( error ) {
-					// Ignore storage errors
-				}
-			}
+            try {
+                sid = window.sessionStorage.getItem( SESSION_KEY );
+            } catch ( error ) {
+                sid = null;
+            }
 
-			return sid;
-		}
+            if ( ! sid ) {
+                const timestamp = Date.now();
+                const random = Math.random().toString( 36 ).substring( 2, 8 );
+                sid = `sess-${ timestamp }-${ random }`;
 
-		openDB() {
-			if ( ! window.indexedDB ) {
-				return Promise.resolve( null );
-			}
+                try {
+                    window.sessionStorage.setItem( SESSION_KEY, sid );
+                } catch ( error ) {
+                    // Ignore storage errors
+                }
+            }
 
-			return new Promise( ( resolve, reject ) => {
-				const request = window.indexedDB.open( IDB_NAME, IDB_VERSION );
+            return sid;
+        }
 
-				request.onerror = () =>
-					reject( new Error( 'IndexedDB unavailable' ) );
-				request.onsuccess = () => resolve( request.result );
-				request.onupgradeneeded = ( event ) => {
-					const db = event.target.result;
-					if ( ! db.objectStoreNames.contains( IDB_STORE ) ) {
-						db.createObjectStore( IDB_STORE, {
-							keyPath: [
-								'form_id',
-								'participant_id',
-								'session_id',
-							],
-						} );
-					}
-				};
-			} );
-		}
+        openDB() {
+            if ( ! window.indexedDB ) {
+                return Promise.resolve( null );
+            }
 
-		async checkForPartialResponse() {
-			const serverPartial = await this.loadFromServer();
-			if (
-				serverPartial &&
-				serverPartial.found &&
-				serverPartial.partial
-			) {
-				this.showRecoveryPopup( serverPartial.partial );
-				return;
-			}
+            return new Promise( ( resolve, reject ) => {
+                const request = window.indexedDB.open( IDB_NAME, IDB_VERSION );
 
-			const localPartial = await this.loadFromIDB();
-			if ( localPartial ) {
-				this.showRecoveryPopup( localPartial );
-			}
-		}
+                request.onerror = () =>
+                    reject( new Error( 'IndexedDB unavailable' ) );
+                request.onsuccess = () => resolve( request.result );
+                request.onupgradeneeded = ( event ) => {
+                    const db = event.target.result;
+                    if ( ! db.objectStoreNames.contains( IDB_STORE ) ) {
+                        db.createObjectStore( IDB_STORE, {
+                            keyPath: [
+                                'form_id',
+                                'participant_id',
+                                'session_id',
+                            ],
+                        } );
+                    }
+                };
+            } );
+        }
 
-		async loadFromServer() {
-			if ( ! this.config.ajaxUrl ) {
-				return null;
-			}
+        captureInitialState() {
+            // Estado base para comparar cambios reales.
+            // Importante: collectResponses() ya ignora campos excluidos y valores vacíos.
+            this.initialState = this.collectResponses();
+            this.initialStateHasResponses =
+                Object.keys( this.initialState ).length > 0;
+            this.isDirty = false;
+            this.everDirty = false;
 
-			try {
-				const formData = new FormData();
-				formData.append( 'action', 'eipsi_load_partial_response' );
-				formData.append( 'form_id', this.formId );
-				formData.append( 'participant_id', this.participantId );
-				formData.append( 'session_id', this.sessionId );
+            if ( this.pristineCleanupTimeout ) {
+                clearTimeout( this.pristineCleanupTimeout );
+                this.pristineCleanupTimeout = null;
+            }
+        }
 
-				const response = await fetch( this.config.ajaxUrl, {
-					method: 'POST',
-					body: formData,
-					credentials: 'same-origin',
-				} );
+        normalizeResponses( rawResponses ) {
+            const out = {};
 
-				const data = await response.json();
-				return data.success ? data.data : null;
-			} catch ( error ) {
-				return null;
-			}
-		}
+            if ( ! rawResponses || typeof rawResponses !== 'object' ) {
+                return out;
+            }
 
-		async loadFromIDB() {
-			if ( ! this.db ) {
-				return null;
-			}
+            Object.keys( rawResponses ).forEach( ( key ) => {
+                if ( EXCLUDED_FIELDS.has( key ) ) {
+                    return;
+                }
 
-			return new Promise( ( resolve ) => {
-				const transaction = this.db.transaction(
-					[ IDB_STORE ],
-					'readonly'
-				);
-				const store = transaction.objectStore( IDB_STORE );
-				const key = [ this.formId, this.participantId, this.sessionId ];
-				const request = store.get( key );
+                const value = rawResponses[ key ];
+                if ( value === undefined || value === null ) {
+                    return;
+                }
 
-				request.onsuccess = () => resolve( request.result || null );
-				request.onerror = () => resolve( null );
-			} );
-		}
+                if ( Array.isArray( value ) ) {
+                    const arr = value
+                        .map( ( v ) =>
+                            ( typeof v === 'string' ? v : `${ v }` ).trim()
+                        )
+                        .filter( ( v ) => v !== '' )
+                        .sort();
 
-		showRecoveryPopup( partial ) {
-			if ( document.querySelector( '.eipsi-recovery-popup' ) ) {
-				return;
-			}
+                    if ( arr.length ) {
+                        out[ key ] = arr;
+                    }
+                    return;
+                }
 
-			const rawUpdatedAt = partial.updated_at || new Date().toISOString();
-			const normalizedDate = new Date(
-				typeof rawUpdatedAt === 'string'
-					? rawUpdatedAt.replace( ' ', 'T' )
-					: rawUpdatedAt
-			);
-			const dateStr = Number.isNaN( normalizedDate.getTime() )
-				? 'tu última sesión'
-				: normalizedDate.toLocaleString( 'es', {
-						year: 'numeric',
-						month: 'long',
-						day: 'numeric',
-						hour: '2-digit',
-						minute: '2-digit',
-				  } );
+                const normalized =
+                    ( typeof value === 'string' ? value : `${ value }` ).trim();
+                if ( normalized === '' ) {
+                    return;
+                }
 
-			const popup = document.createElement( 'div' );
-			popup.className = 'eipsi-recovery-popup';
-			popup.setAttribute( 'data-modal-id', Date.now() );
-			popup.innerHTML = `
+                out[ key ] = normalized;
+            } );
+
+            return out;
+        }
+
+        areResponsesEqual( a, b ) {
+            const aObj = this.normalizeResponses( a );
+            const bObj = this.normalizeResponses( b );
+
+            const aKeys = Object.keys( aObj ).sort();
+            const bKeys = Object.keys( bObj ).sort();
+            if ( aKeys.length !== bKeys.length ) {
+                return false;
+            }
+
+            for ( let i = 0; i < aKeys.length; i++ ) {
+                const key = aKeys[ i ];
+                if ( key !== bKeys[ i ] ) {
+                    return false;
+                }
+
+                const aVal = aObj[ key ];
+                const bVal = bObj[ key ];
+
+                if ( Array.isArray( aVal ) || Array.isArray( bVal ) ) {
+                    if ( ! Array.isArray( aVal ) || ! Array.isArray( bVal ) ) {
+                        return false;
+                    }
+                    if ( aVal.length !== bVal.length ) {
+                        return false;
+                    }
+                    for ( let j = 0; j < aVal.length; j++ ) {
+                        if ( aVal[ j ] !== bVal[ j ] ) {
+                            return false;
+                        }
+                    }
+                    continue;
+                }
+
+                if ( aVal !== bVal ) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        updateDirtyState( currentResponses = null ) {
+            const current = currentResponses || this.collectResponses();
+            const wasDirty = this.isDirty;
+
+            this.isDirty = ! this.areResponsesEqual( current, this.initialState );
+            this.hasResponses = Object.keys( current ).length > 0;
+
+            if ( this.isDirty ) {
+                this.everDirty = true;
+            }
+
+            // Si volvemos exactamente al estado inicial, limpiamos el borrador (con debounce)
+            // para evitar modales falsos por saves previos.
+            if ( ! this.isDirty && wasDirty ) {
+                this.schedulePristineCleanup();
+            } else if ( this.isDirty && this.pristineCleanupTimeout ) {
+                clearTimeout( this.pristineCleanupTimeout );
+                this.pristineCleanupTimeout = null;
+            }
+
+            return this.isDirty;
+        }
+
+        schedulePristineCleanup() {
+            if ( this.pristineCleanupTimeout ) {
+                clearTimeout( this.pristineCleanupTimeout );
+            }
+
+            // Pequeño debounce: permite que el usuario siga escribiendo sin disparar
+            // discard/sync en cada pulsación.
+            this.pristineCleanupTimeout = window.setTimeout( () => {
+                this.pristineCleanupTimeout = null;
+
+                if ( this.completed || this.pendingSync || this.isDirty ) {
+                    return;
+                }
+
+                // Si hay un borrador previo, lo alineamos con el estado inicial:
+                // - Si el estado inicial estaba vacío: descartamos (no debería existir borrador)
+                // - Si había respuestas iniciales (defaults o sesión recuperada): re-sincronizamos
+                //   el baseline para evitar que quede un borrador "viejo" en el server.
+                if ( ! this.draftExists ) {
+                    return;
+                }
+
+                if ( ! this.initialStateHasResponses ) {
+                    // Importante: NO tocamos sessionStorage acá. Solo limpiamos el borrador.
+                    Promise.resolve()
+                        .then( () => this.clearFromIDB() )
+                        .then( () => this.discardFromServer() )
+                        .finally( () => {
+                            this.draftExists = false;
+                            this.hasResponses = false;
+                        } );
+                    return;
+                }
+
+                const baselineResponses = this.normalizeResponses( this.initialState );
+                const pageIndex = this.getCurrentPage();
+
+                this.pendingSync = true;
+                Promise.resolve()
+                    .then( () => this.saveToIDB( baselineResponses, pageIndex ) )
+                    .then( () => this.saveToServer( baselineResponses, pageIndex ) )
+                    .finally( () => {
+                        this.pendingSync = false;
+                        this.draftExists = true;
+                    } );
+            }, 1200 );
+        }
+
+        hasRealChanges( partial ) {
+            if ( ! partial ) {
+                return false;
+            }
+
+            const draftResponses = this.normalizeResponses( partial.responses || {} );
+            const baseline = this.collectResponses();
+
+            // Mostrar modal solo si el borrador tiene respuestas diferentes al baseline actual
+            // (ej: el paciente realmente contestó algo).
+            return ! this.areResponsesEqual( draftResponses, baseline );
+        }
+
+        async checkForPartialResponse() {
+            const serverPartial = await this.loadFromServer();
+            if (
+                serverPartial &&
+                serverPartial.found &&
+                serverPartial.partial
+            ) {
+                // Modal solo si hay cambios reales respecto al estado actual del formulario.
+                if ( this.hasRealChanges( serverPartial.partial ) ) {
+                    this.draftExists = true;
+                    this.showRecoveryPopup( serverPartial.partial );
+                    return;
+                }
+
+                // Draft "vacío" o idéntico al baseline: lo descartamos silenciosamente.
+                this.discardFromServer();
+            }
+
+            const localPartial = await this.loadFromIDB();
+            if ( localPartial ) {
+                if ( this.hasRealChanges( localPartial ) ) {
+                    this.draftExists = true;
+                    this.showRecoveryPopup( localPartial );
+                    return;
+                }
+
+                this.clearFromIDB();
+            }
+        }
+
+        async loadFromServer() {
+            if ( ! this.config.ajaxUrl ) {
+                return null;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append( 'action', 'eipsi_load_partial_response' );
+                formData.append( 'form_id', this.formId );
+                formData.append( 'participant_id', this.participantId );
+                formData.append( 'session_id', this.sessionId );
+
+                const response = await fetch( this.config.ajaxUrl, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                } );
+
+                const data = await response.json();
+                return data.success ? data.data : null;
+            } catch ( error ) {
+                return null;
+            }
+        }
+
+        async loadFromIDB() {
+            if ( ! this.db ) {
+                return null;
+            }
+
+            return new Promise( ( resolve ) => {
+                const transaction = this.db.transaction(
+                    [ IDB_STORE ],
+                    'readonly'
+                );
+                const store = transaction.objectStore( IDB_STORE );
+                const key = [ this.formId, this.participantId, this.sessionId ];
+                const request = store.get( key );
+
+                request.onsuccess = () => resolve( request.result || null );
+                request.onerror = () => resolve( null );
+            } );
+        }
+
+        showRecoveryPopup( partial ) {
+            if ( document.querySelector( '.eipsi-recovery-popup' ) ) {
+                return;
+            }
+
+            const rawUpdatedAt = partial.updated_at || new Date().toISOString();
+            const normalizedDate = new Date(
+                typeof rawUpdatedAt === 'string'
+                    ? rawUpdatedAt.replace( ' ', 'T' )
+                    : rawUpdatedAt
+            );
+            const dateStr = Number.isNaN( normalizedDate.getTime() )
+                ? 'tu última sesión'
+                : normalizedDate.toLocaleString( 'es', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                  } );
+
+            const popup = document.createElement( 'div' );
+            popup.className = 'eipsi-recovery-popup';
+            popup.setAttribute( 'data-modal-id', Date.now() );
+            popup.innerHTML = `
                 <div class="eipsi-recovery-overlay" aria-hidden="true"></div>
                 <div class="eipsi-recovery-modal" role="dialog" aria-live="polite">
                     <h3>Continuar donde quedaste</h3>
@@ -264,749 +473,833 @@
                 </div>
             `;
 
-			document.body.appendChild( popup );
-
-			const continueButton = popup.querySelector(
-				'[data-action="continue"]'
-			);
-			const restartButton = popup.querySelector(
-				'[data-action="restart"]'
-			);
-
-			if ( continueButton ) {
-				continueButton.addEventListener( 'click', async () => {
-					// Deshabilitar botón para evitar múltiples clics
-					continueButton.disabled = true;
-					continueButton.textContent = 'Cargando...';
-
-					try {
-						// Paso 1: Esperar a que el formulario esté listo
-						await this.waitForFormReady();
-
-						// Paso 2: Restaurar datos (async)
-						await this.restorePartial( partial );
-
-						// Paso 3: Asegurar que el formulario sea visible
-						await this.ensureFormVisible();
-
-						// Paso 4: Esperar un frame extra para que todo se renderice
-						await new Promise( ( resolve ) => {
-							requestAnimationFrame( () => {
-								requestAnimationFrame( resolve );
-							} );
-						} );
-
-						// Paso 5: Remover el modal completamente
-						this.closeRecoveryPopup( popup );
-					} catch ( error ) {
-						// Si algo falla, mostrar error en consola pero cerrar modal de todas formas
-						if (
-							this.config?.settings?.debug &&
-							window.console?.error
-						) {
-							window.console.error(
-								'[EIPSI Save & Continue] Error al restaurar sesión:',
-								error
-							);
-						}
-
-						// Forzar visibilidad del formulario
-						this.forceFormVisible();
-
-						// Cerrar modal de todas formas
-						this.closeRecoveryPopup( popup );
-					}
-				} );
-			}
-
-			if ( restartButton ) {
-				restartButton.addEventListener( 'click', async () => {
-					restartButton.disabled = true;
-					restartButton.textContent = 'Borrando...';
-
-					try {
-						await this.discardPartial();
-						this.forceFormVisible();
-						this.closeRecoveryPopup( popup );
-					} catch ( error ) {
-						if (
-							this.config?.settings?.debug &&
-							window.console?.error
-						) {
-							window.console.error(
-								'[EIPSI Save & Continue] Error al descartar sesión:',
-								error
-							);
-						}
-						// Cerrar modal de todas formas
-						this.closeRecoveryPopup( popup );
-					}
-				} );
-			}
-		}
-
-		closeRecoveryPopup( popup ) {
-			if ( ! popup || ! popup.parentNode ) {
-				return;
-			}
-
-			// Remover overlay primero para evitar capturar clics
-			const overlay = popup.querySelector( '.eipsi-recovery-overlay' );
-			if ( overlay ) {
-				overlay.style.pointerEvents = 'none';
-				overlay.style.opacity = '0';
-			}
-
-			// Remover modal con transición suave
-			const modal = popup.querySelector( '.eipsi-recovery-modal' );
-			if ( modal ) {
-				modal.style.opacity = '0';
-			}
-
-			// Remover del DOM después de la transición
-			setTimeout( () => {
-				if ( popup.parentNode ) {
-					popup.parentNode.removeChild( popup );
-				}
-			}, 200 );
-		}
-
-		waitForFormReady() {
-			const TIMEOUT_MS = 10000;
-			const CHECK_INTERVAL_MS = 100;
-
-			return new Promise( ( resolve ) => {
-				const startTime = Date.now();
-
-				const checkReady = () => {
-					if ( Date.now() - startTime > TIMEOUT_MS ) {
-						// Timeout: resolver de todas formas (mejor que quedar colgado)
-						if (
-							this.config?.settings?.debug &&
-							window.console?.warn
-						) {
-							window.console.warn(
-								'[EIPSI Save & Continue] Timeout esperando formulario, continuando...'
-							);
-						}
-						resolve();
-						return;
-					}
-
-					// Verificar que el formulario existe
-					if ( ! this.form || ! this.form.parentNode ) {
-						setTimeout( checkReady, CHECK_INTERVAL_MS );
-						return;
-					}
-
-					// Verificar que el formulario sea visible
-					const hasDimensions =
-						this.form.offsetHeight > 0 && this.form.offsetWidth > 0;
-					const isVisible =
-						this.form.style.display !== 'none' &&
-						this.form.style.visibility !== 'hidden';
-
-					if ( hasDimensions || isVisible ) {
-						resolve();
-					} else {
-						setTimeout( checkReady, CHECK_INTERVAL_MS );
-					}
-				};
-
-				checkReady();
-			} );
-		}
-
-		ensureFormVisible() {
-			return new Promise( ( resolve ) => {
-				if ( ! this.form ) {
-					resolve();
-					return;
-				}
-
-				// Remover clases de ocultamiento
-				this.form.classList.remove(
-					'hidden',
-					'eipsi-hidden',
-					'eipsi-form-hidden'
-				);
-
-				// Aplicar estilos inline para asegurar visibilidad
-				this.form.style.display = 'block';
-				this.form.style.visibility = 'visible';
-				this.form.style.opacity = '1';
-
-				// También asegurarse de que el contenedor padre sea visible
-				const formContainer = this.form.closest( '.eipsi-form' );
-				if ( formContainer ) {
-					formContainer.classList.remove(
-						'hidden',
-						'eipsi-hidden',
-						'eipsi-form-hidden'
-					);
-					formContainer.style.display = 'block';
-					formContainer.style.visibility = 'visible';
-					formContainer.style.opacity = '1';
-				}
-
-				// Esperar a que los estilos se apliquen usando requestAnimationFrame
-				requestAnimationFrame( () => {
-					// Segundo frame para asegurar que el navegador procesó los cambios
-					requestAnimationFrame( () => {
-						resolve();
-					} );
-				} );
-			} );
-		}
-
-		forceFormVisible() {
-			if ( ! this.form ) {
-				return;
-			}
-
-			// Forzar visibilidad sin importar el estado actual
-			this.form.style.setProperty( 'display', 'block', 'important' );
-			this.form.style.setProperty( 'visibility', 'visible', 'important' );
-			this.form.style.setProperty( 'opacity', '1', 'important' );
-			this.form.style.setProperty(
-				'pointer-events',
-				'auto',
-				'important'
-			);
-
-			const formContainer = this.form.closest( '.eipsi-form' );
-			if ( formContainer ) {
-				formContainer.style.setProperty(
-					'display',
-					'block',
-					'important'
-				);
-				formContainer.style.setProperty(
-					'visibility',
-					'visible',
-					'important'
-				);
-				formContainer.style.setProperty( 'opacity', '1', 'important' );
-				formContainer.style.setProperty(
-					'pointer-events',
-					'auto',
-					'important'
-				);
-			}
-		}
-
-		async restorePartial( partial ) {
-			const responses = partial.responses || {};
-			const pageIndex = partial.page_index || 1;
-
-			// Restaurar los valores de los campos
-			Object.keys( responses ).forEach( ( fieldName ) => {
-				this.setFieldValue( fieldName, responses[ fieldName ] );
-			} );
-
-			this.hasResponses = Object.keys( responses ).length > 0;
-
-			// Esperar un frame para que los campos se actualicen en el DOM
-			await new Promise( ( resolve ) => {
-				requestAnimationFrame( () => {
-					requestAnimationFrame( resolve );
-				} );
-			} );
-
-			// Configurar la página actual si EIPSIForms está disponible
-			if (
-				window.EIPSIForms &&
-				typeof window.EIPSIForms.setCurrentPage === 'function'
-			) {
-				try {
-					window.EIPSIForms.setCurrentPage( this.form, pageIndex, {
-						trackChange: false,
-					} );
-
-					// Esperar a que la página se renderice
-					await new Promise( ( resolve ) => {
-						requestAnimationFrame( () => {
-							requestAnimationFrame( resolve );
-						} );
-					} );
-
-					// Actualizar el navegador de historial
-					const navigator = window.EIPSIForms.getNavigator(
-						this.form
-					);
-					if ( navigator && navigator.reset ) {
-						navigator.reset();
-						navigator.pushHistory( pageIndex );
-					}
-				} catch ( error ) {
-					// Si setCurrentPage falla, continuar sin error crítico
-					if (
-						this.config?.settings?.debug &&
-						window.console?.warn
-					) {
-						window.console.warn(
-							'[EIPSI Save & Continue] Error al establecer página:',
-							error
-						);
-					}
-				}
-			}
-		}
-
-		setFieldValue( fieldName, value ) {
-			if ( value === undefined || value === null ) {
-				return;
-			}
-
-			const fields = this.form.querySelectorAll(
-				`[name="${ fieldName }"]`
-			);
-
-			if ( fields.length > 1 ) {
-				fields.forEach( ( field ) => {
-					if ( field.type === 'radio' ) {
-						field.checked = field.value === value;
-					} else if ( field.type === 'checkbox' ) {
-						if ( Array.isArray( value ) ) {
-							field.checked = value.includes( field.value );
-						} else {
-							field.checked =
-								value === true ||
-								value === 'true' ||
-								field.value === value;
-						}
-					}
-				} );
-				return;
-			}
-
-			const safeFieldName =
-				window.CSS && window.CSS.escape
-					? CSS.escape( fieldName )
-					: fieldName.replace(
-							/([ #.;?*+~'"^$\[\]()=>|/@])/g,
-							'\\$1'
-					  );
-
-			const field =
-				fields[ 0 ] ||
-				this.form.querySelector( `[id="${ safeFieldName }"]` );
-
-			if ( ! field ) {
-				return;
-			}
-
-			if ( field.type === 'checkbox' ) {
-				if ( Array.isArray( value ) ) {
-					field.checked = value.includes( field.value );
-				} else {
-					field.checked =
-						value === true ||
-						value === 'true' ||
-						field.value === value;
-				}
-				return;
-			}
-
-			if (
-				field.tagName === 'SELECT' &&
-				field.multiple &&
-				Array.isArray( value )
-			) {
-				Array.from( field.options ).forEach( ( option ) => {
-					option.selected = value.includes( option.value );
-				} );
-				return;
-			}
-
-			const normalized = Array.isArray( value ) ? value[ 0 ] : value;
-			field.value = normalized;
-
-			if ( field.type === 'range' ) {
-				field.dispatchEvent( new Event( 'input', { bubbles: true } ) );
-			}
-		}
-
-		async discardPartial() {
-			await this.clearFromIDB();
-			await this.discardFromServer();
-
-			// Limpiar almacenamiento local/sesión
-			try {
-				const sessionKey = `eipsi_session_${
-					this.formId || 'default'
-				}`;
-				window.sessionStorage.removeItem( sessionKey );
-
-				const storageKey = `eipsi_form_responses_${
-					this.formId || 'default'
-				}`;
-				window.localStorage.removeItem( storageKey );
-			} catch ( error ) {
-				// Ignore
-			}
-
-			this.hasResponses = false;
-			this.completed = false;
-		}
-
-		async clearFromIDB() {
-			if ( ! this.db ) {
-				this.hasResponses = false;
-				return false;
-			}
-
-			return new Promise( ( resolve ) => {
-				const transaction = this.db.transaction(
-					[ IDB_STORE ],
-					'readwrite'
-				);
-				const store = transaction.objectStore( IDB_STORE );
-				const key = [ this.formId, this.participantId, this.sessionId ];
-				const request = store.delete( key );
-
-				request.onsuccess = () => {
-					this.hasResponses = false;
-					resolve( true );
-				};
-				request.onerror = () => resolve( false );
-			} );
-		}
-
-		async discardFromServer() {
-			if ( ! this.config.ajaxUrl ) {
-				return;
-			}
-
-			try {
-				const formData = new URLSearchParams();
-				formData.append( 'action', 'eipsi_discard_partial_response' );
-				formData.append( 'form_id', this.formId );
-				formData.append( 'participant_id', this.participantId );
-				formData.append( 'session_id', this.sessionId );
-
-				await fetch( this.config.ajaxUrl, {
-					method: 'POST',
-					body: formData,
-					headers: {
-						'Content-Type': 'application/x-www-form-urlencoded',
-					},
-					keepalive: true,
-					credentials: 'same-origin',
-				} );
-			} catch ( error ) {
-				// Silencioso: mientras IndexedDB se limpie, el usuario puede continuar
-			}
-		}
-
-		setupAutosave() {
-			if ( this.autosaveTimer ) {
-				clearInterval( this.autosaveTimer );
-			}
-
-			this.autosaveTimer = window.setInterval( () => {
-				this.savePartial( 'auto' );
-			}, AUTOSAVE_INTERVAL );
-		}
-
-		setupBeforeUnload() {
-			if ( this.beforeUnloadHandler ) {
-				return;
-			}
-
-			this.beforeUnloadHandler = ( event ) => {
-				if ( this.completed ) {
-					return;
-				}
-
-				this.savePartialSync();
-
-				if ( this.hasResponses ) {
-					const message =
-						'Tus respuestas se están guardando. Podés volver cuando quieras.';
-					event.preventDefault();
-					event.returnValue = message;
-					return message;
-				}
-
-				return undefined;
-			};
-
-			window.addEventListener( 'beforeunload', this.beforeUnloadHandler );
-		}
-
-		removeBeforeUnload() {
-			if ( this.beforeUnloadHandler ) {
-				window.removeEventListener(
-					'beforeunload',
-					this.beforeUnloadHandler
-				);
-				this.beforeUnloadHandler = null;
-			}
-		}
-
-		setupChangeListeners() {
-			const fields = this.form.querySelectorAll(
-				'input, textarea, select'
-			);
-
-			fields.forEach( ( field ) => {
-				field.addEventListener( 'input', () =>
-					this.handleFieldInput()
-				);
-				field.addEventListener( 'change', () =>
-					this.savePartial( 'field-change' )
-				);
-			} );
-		}
-
-		handleFieldInput() {
-			if ( this.completed ) {
-				return;
-			}
-
-			if ( this.inputDebounceId ) {
-				clearTimeout( this.inputDebounceId );
-			}
-
-			this.inputDebounceId = window.setTimeout( () => {
-				this.saveToIDB();
-			}, INPUT_DEBOUNCE );
-		}
-
-		async savePartial( trigger = 'manual' ) {
-			if ( this.completed || this.pendingSync ) {
-				return;
-			}
-
-			this.pendingSync = true;
-
-			try {
-				const responses = this.collectResponses();
-				const currentPage = this.getCurrentPage();
-				this.hasResponses = Object.keys( responses ).length > 0;
-
-				if (
-					this.config?.settings?.debug &&
-					window.console &&
-					typeof window.console.debug === 'function'
-				) {
-					window.console.debug(
-						'[EIPSI Save & Continue] Guardando borrador',
-						{
-							trigger,
-							page: currentPage,
-							hasResponses: this.hasResponses,
-						}
-					);
-				}
-
-				await this.saveToIDB( responses, currentPage );
-				await this.saveToServer( responses, currentPage );
-			} catch ( error ) {
-				if ( window.console && window.console.warn ) {
-					window.console.warn(
-						'[EIPSI Save & Continue] Save failed:',
-						error
-					);
-				}
-			} finally {
-				this.pendingSync = false;
-			}
-		}
-
-		savePartialSync() {
-			if ( this.completed || ! this.config.ajaxUrl ) {
-				return;
-			}
-
-			const responses = this.collectResponses();
-			const currentPage = this.getCurrentPage();
-
-			const payload = new URLSearchParams();
-			payload.append( 'action', 'eipsi_save_partial_response' );
-			payload.append( 'form_id', this.formId );
-			payload.append( 'participant_id', this.participantId );
-			payload.append( 'session_id', this.sessionId );
-			payload.append( 'page_index', currentPage );
-			payload.append( 'responses', JSON.stringify( responses ) );
-
-			const bodyString = payload.toString();
-
-			if ( navigator.sendBeacon ) {
-				const blob = new Blob( [ bodyString ], {
-					type: 'application/x-www-form-urlencoded',
-				} );
-				navigator.sendBeacon( this.config.ajaxUrl, blob );
-			} else {
-				fetch( this.config.ajaxUrl, {
-					method: 'POST',
-					body: bodyString,
-					headers: {
-						'Content-Type': 'application/x-www-form-urlencoded',
-					},
-					keepalive: true,
-					credentials: 'same-origin',
-				} ).catch( () => {} );
-			}
-
-			this.saveToIDB( responses, currentPage );
-		}
-
-		collectResponses() {
-			const responses = {};
-			const formData = new FormData( this.form );
-
-			formData.forEach( ( value, key ) => {
-				if ( EXCLUDED_FIELDS.has( key ) ) {
-					return;
-				}
-
-				if ( value instanceof File ) {
-					return;
-				}
-
-				const normalized =
-					typeof value === 'string' ? value : `${ value }`;
-
-				if ( responses[ key ] !== undefined ) {
-					if ( ! Array.isArray( responses[ key ] ) ) {
-						responses[ key ] = [ responses[ key ] ];
-					}
-					responses[ key ].push( normalized );
-				} else {
-					responses[ key ] = normalized;
-				}
-			} );
-
-			return responses;
-		}
-
-		getCurrentPage() {
-			const pageInput = this.form.querySelector( '.eipsi-current-page' );
-			return pageInput ? parseInt( pageInput.value, 10 ) || 1 : 1;
-		}
-
-		async saveToIDB( responses = null, pageIndex = null ) {
-			if ( ! this.db ) {
-				return false;
-			}
-
-			const payload = {
-				form_id: this.formId,
-				participant_id: this.participantId,
-				session_id: this.sessionId,
-				page_index: pageIndex || this.getCurrentPage(),
-				responses: responses || this.collectResponses(),
-				updated_at: new Date().toISOString(),
-			};
-
-			return new Promise( ( resolve ) => {
-				const transaction = this.db.transaction(
-					[ IDB_STORE ],
-					'readwrite'
-				);
-				const store = transaction.objectStore( IDB_STORE );
-				const request = store.put( payload );
-
-				request.onsuccess = () => resolve( true );
-				request.onerror = () => resolve( false );
-			} );
-		}
-
-		async saveToServer( responses = null, pageIndex = null ) {
-			if ( ! this.config.ajaxUrl ) {
-				return false;
-			}
-
-			try {
-				const formData = new FormData();
-				formData.append( 'action', 'eipsi_save_partial_response' );
-				formData.append( 'form_id', this.formId );
-				formData.append( 'participant_id', this.participantId );
-				formData.append( 'session_id', this.sessionId );
-				formData.append(
-					'page_index',
-					pageIndex || this.getCurrentPage()
-				);
-				formData.append(
-					'responses',
-					JSON.stringify( responses || this.collectResponses() )
-				);
-
-				const response = await fetch( this.config.ajaxUrl, {
-					method: 'POST',
-					body: formData,
-					keepalive: true,
-					credentials: 'same-origin',
-				} );
-
-				const data = await response.json();
-				return !! data.success;
-			} catch ( error ) {
-				return false;
-			}
-		}
-
-		handleFormCompleted() {
-			this.completed = true;
-			this.clearFromIDB();
-			this.discardFromServer();
-			this.removeBeforeUnload();
-
-			// Limpiar almacenamiento local/sesión
-			try {
-				const sessionKey = `eipsi_session_${
-					this.formId || 'default'
-				}`;
-				window.sessionStorage.removeItem( sessionKey );
-
-				// Limpiar cualquier respaldo en localStorage si existiera (por compatibilidad)
-				const storageKey = `eipsi_form_responses_${
-					this.formId || 'default'
-				}`;
-				window.localStorage.removeItem( storageKey );
-			} catch ( error ) {
-				// Ignore storage errors
-			}
-
-			if ( this.autosaveTimer ) {
-				clearInterval( this.autosaveTimer );
-				this.autosaveTimer = null;
-			}
-
-			if ( this.inputDebounceId ) {
-				clearTimeout( this.inputDebounceId );
-				this.inputDebounceId = null;
-			}
-		}
-
-		destroy() {
-			this.handleFormCompleted();
-			if ( this.db ) {
-				this.db.close();
-				this.db = null;
-			}
-		}
-	}
-
-	document.addEventListener( 'DOMContentLoaded', () => {
-		const forms = document.querySelectorAll(
-			'.eipsi-form form, .eipsi-form form'
-		);
-
-		forms.forEach( ( form ) => {
-			if ( ! window.eipsiFormsConfig || form.eipsiSaveContinue ) {
-				return;
-			}
-
-			const instance = new EIPSISaveContinue(
-				form,
-				window.eipsiFormsConfig
-			);
-			form.eipsiSaveContinue = instance;
-		} );
-	} );
-
-	window.EIPSISaveContinue = EIPSISaveContinue;
+            document.body.appendChild( popup );
+
+            const continueButton = popup.querySelector(
+                '[data-action="continue"]'
+            );
+            const restartButton = popup.querySelector(
+                '[data-action="restart"]'
+            );
+
+            if ( continueButton ) {
+                continueButton.addEventListener( 'click', async () => {
+                    // Deshabilitar botón para evitar múltiples clics
+                    continueButton.disabled = true;
+                    continueButton.textContent = 'Cargando...';
+
+                    try {
+                        // Paso 1: Esperar a que el formulario esté listo
+                        await this.waitForFormReady();
+
+                        // Paso 2: Restaurar datos (async)
+                        await this.restorePartial( partial );
+
+                        // Paso 3: Asegurar que el formulario sea visible
+                        await this.ensureFormVisible();
+
+                        // Paso 4: Esperar un frame extra para que todo se renderice
+                        await new Promise( ( resolve ) => {
+                            requestAnimationFrame( () => {
+                                requestAnimationFrame( resolve );
+                            } );
+                        } );
+
+                        // Paso 5: Remover el modal completamente
+                        this.closeRecoveryPopup( popup );
+                    } catch ( error ) {
+                        // Si algo falla, mostrar error en consola pero cerrar modal de todas formas
+                        if (
+                            this.config?.settings?.debug &&
+                            window.console?.error
+                        ) {
+                            window.console.error(
+                                '[EIPSI Save & Continue] Error al restaurar sesión:',
+                                error
+                            );
+                        }
+
+                        // Forzar visibilidad del formulario
+                        this.forceFormVisible();
+
+                        // Cerrar modal de todas formas
+                        this.closeRecoveryPopup( popup );
+                    }
+                } );
+            }
+
+            if ( restartButton ) {
+                restartButton.addEventListener( 'click', async () => {
+                    restartButton.disabled = true;
+                    restartButton.textContent = 'Borrando...';
+
+                    try {
+                        await this.discardPartial();
+                        this.forceFormVisible();
+                        this.closeRecoveryPopup( popup );
+                    } catch ( error ) {
+                        if (
+                            this.config?.settings?.debug &&
+                            window.console?.error
+                        ) {
+                            window.console.error(
+                                '[EIPSI Save & Continue] Error al descartar sesión:',
+                                error
+                            );
+                        }
+                        // Cerrar modal de todas formas
+                        this.closeRecoveryPopup( popup );
+                    }
+                } );
+            }
+        }
+
+        closeRecoveryPopup( popup ) {
+            if ( ! popup || ! popup.parentNode ) {
+                return;
+            }
+
+            // Remover overlay primero para evitar capturar clics
+            const overlay = popup.querySelector( '.eipsi-recovery-overlay' );
+            if ( overlay ) {
+                overlay.style.pointerEvents = 'none';
+                overlay.style.opacity = '0';
+            }
+
+            // Remover modal con transición suave
+            const modal = popup.querySelector( '.eipsi-recovery-modal' );
+            if ( modal ) {
+                modal.style.opacity = '0';
+            }
+
+            // Remover del DOM después de la transición
+            setTimeout( () => {
+                if ( popup.parentNode ) {
+                    popup.parentNode.removeChild( popup );
+                }
+            }, 200 );
+        }
+
+        waitForFormReady() {
+            const TIMEOUT_MS = 10000;
+            const CHECK_INTERVAL_MS = 100;
+
+            return new Promise( ( resolve ) => {
+                const startTime = Date.now();
+
+                const checkReady = () => {
+                    if ( Date.now() - startTime > TIMEOUT_MS ) {
+                        // Timeout: resolver de todas formas (mejor que quedar colgado)
+                        if (
+                            this.config?.settings?.debug &&
+                            window.console?.warn
+                        ) {
+                            window.console.warn(
+                                '[EIPSI Save & Continue] Timeout esperando formulario, continuando...'
+                            );
+                        }
+                        resolve();
+                        return;
+                    }
+
+                    // Verificar que el formulario existe
+                    if ( ! this.form || ! this.form.parentNode ) {
+                        setTimeout( checkReady, CHECK_INTERVAL_MS );
+                        return;
+                    }
+
+                    // Verificar que el formulario sea visible
+                    const hasDimensions =
+                        this.form.offsetHeight > 0 && this.form.offsetWidth > 0;
+                    const isVisible =
+                        this.form.style.display !== 'none' &&
+                        this.form.style.visibility !== 'hidden';
+
+                    if ( hasDimensions || isVisible ) {
+                        resolve();
+                    } else {
+                        setTimeout( checkReady, CHECK_INTERVAL_MS );
+                    }
+                };
+
+                checkReady();
+            } );
+        }
+
+        ensureFormVisible() {
+            return new Promise( ( resolve ) => {
+                if ( ! this.form ) {
+                    resolve();
+                    return;
+                }
+
+                // Remover clases de ocultamiento
+                this.form.classList.remove(
+                    'hidden',
+                    'eipsi-hidden',
+                    'eipsi-form-hidden'
+                );
+
+                // Aplicar estilos inline para asegurar visibilidad
+                this.form.style.display = 'block';
+                this.form.style.visibility = 'visible';
+                this.form.style.opacity = '1';
+
+                // También asegurarse de que el contenedor padre sea visible
+                const formContainer = this.form.closest( '.eipsi-form' );
+                if ( formContainer ) {
+                    formContainer.classList.remove(
+                        'hidden',
+                        'eipsi-hidden',
+                        'eipsi-form-hidden'
+                    );
+                    formContainer.style.display = 'block';
+                    formContainer.style.visibility = 'visible';
+                    formContainer.style.opacity = '1';
+                }
+
+                // Esperar a que los estilos se apliquen usando requestAnimationFrame
+                requestAnimationFrame( () => {
+                    // Segundo frame para asegurar que el navegador procesó los cambios
+                    requestAnimationFrame( () => {
+                        resolve();
+                    } );
+                } );
+            } );
+        }
+
+        forceFormVisible() {
+            if ( ! this.form ) {
+                return;
+            }
+
+            // Forzar visibilidad sin importar el estado actual
+            this.form.style.setProperty( 'display', 'block', 'important' );
+            this.form.style.setProperty( 'visibility', 'visible', 'important' );
+            this.form.style.setProperty( 'opacity', '1', 'important' );
+            this.form.style.setProperty(
+                'pointer-events',
+                'auto',
+                'important'
+            );
+
+            const formContainer = this.form.closest( '.eipsi-form' );
+            if ( formContainer ) {
+                formContainer.style.setProperty(
+                    'display',
+                    'block',
+                    'important'
+                );
+                formContainer.style.setProperty(
+                    'visibility',
+                    'visible',
+                    'important'
+                );
+                formContainer.style.setProperty( 'opacity', '1', 'important' );
+                formContainer.style.setProperty(
+                    'pointer-events',
+                    'auto',
+                    'important'
+                );
+            }
+        }
+
+        async restorePartial( partial ) {
+            const responses = this.normalizeResponses( partial.responses || {} );
+            const pageIndex = partial.page_index || 1;
+
+            // Restaurar los valores de los campos
+            Object.keys( responses ).forEach( ( fieldName ) => {
+                this.setFieldValue( fieldName, responses[ fieldName ] );
+            } );
+
+            this.hasResponses = Object.keys( responses ).length > 0;
+            this.draftExists = this.hasResponses;
+
+            // Esperar un frame para que los campos se actualicen en el DOM
+            await new Promise( ( resolve ) => {
+                requestAnimationFrame( () => {
+                    requestAnimationFrame( resolve );
+                } );
+            } );
+
+            // Configurar la página actual si EIPSIForms está disponible
+            if (
+                window.EIPSIForms &&
+                typeof window.EIPSIForms.setCurrentPage === 'function'
+            ) {
+                try {
+                    window.EIPSIForms.setCurrentPage( this.form, pageIndex, {
+                        trackChange: false,
+                    } );
+
+                    // Esperar a que la página se renderice
+                    await new Promise( ( resolve ) => {
+                        requestAnimationFrame( () => {
+                            requestAnimationFrame( resolve );
+                        } );
+                    } );
+
+                    // Actualizar el navegador de historial
+                    const navigator = window.EIPSIForms.getNavigator(
+                        this.form
+                    );
+                    if ( navigator && navigator.reset ) {
+                        navigator.reset();
+                        navigator.pushHistory( pageIndex );
+                    }
+                } catch ( error ) {
+                    // Si setCurrentPage falla, continuar sin error crítico
+                    if (
+                        this.config?.settings?.debug &&
+                        window.console?.warn
+                    ) {
+                        window.console.warn(
+                            '[EIPSI Save & Continue] Error al establecer página:',
+                            error
+                        );
+                    }
+                }
+            }
+
+            // Desde este punto, el baseline es el formulario restaurado.
+            this.captureInitialState();
+        }
+
+        setFieldValue( fieldName, value ) {
+            if ( value === undefined || value === null ) {
+                return;
+            }
+
+            const fields = this.form.querySelectorAll(
+                `[name="${ fieldName }"]`
+            );
+
+            if ( fields.length > 1 ) {
+                fields.forEach( ( field ) => {
+                    if ( field.type === 'radio' ) {
+                        field.checked = field.value === value;
+                    } else if ( field.type === 'checkbox' ) {
+                        if ( Array.isArray( value ) ) {
+                            field.checked = value.includes( field.value );
+                        } else {
+                            field.checked =
+                                value === true ||
+                                value === 'true' ||
+                                field.value === value;
+                        }
+                    }
+                } );
+                return;
+            }
+
+            const safeFieldName =
+                window.CSS && window.CSS.escape
+                    ? CSS.escape( fieldName )
+                    : fieldName.replace(
+                            /([ #.;?*+~'"^$\[\]()=>|/@])/g,
+                            '\\$1'
+                      );
+
+            const field =
+                fields[ 0 ] ||
+                this.form.querySelector( `[id="${ safeFieldName }"]` );
+
+            if ( ! field ) {
+                return;
+            }
+
+            if ( field.type === 'checkbox' ) {
+                if ( Array.isArray( value ) ) {
+                    field.checked = value.includes( field.value );
+                } else {
+                    field.checked =
+                        value === true ||
+                        value === 'true' ||
+                        field.value === value;
+                }
+                return;
+            }
+
+            if (
+                field.tagName === 'SELECT' &&
+                field.multiple &&
+                Array.isArray( value )
+            ) {
+                Array.from( field.options ).forEach( ( option ) => {
+                    option.selected = value.includes( option.value );
+                } );
+                return;
+            }
+
+            const normalized = Array.isArray( value ) ? value[ 0 ] : value;
+            field.value = normalized;
+
+            if ( field.type === 'range' ) {
+                field.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+            }
+        }
+
+        async discardPartial() {
+            await this.clearFromIDB();
+            await this.discardFromServer();
+
+            // Limpiar almacenamiento local/sesión
+            try {
+                const sessionKey = `eipsi_session_${
+                    this.formId || 'default'
+                }`;
+                window.sessionStorage.removeItem( sessionKey );
+
+                const storageKey = `eipsi_form_responses_${
+                    this.formId || 'default'
+                }`;
+                window.localStorage.removeItem( storageKey );
+            } catch ( error ) {
+                // Ignore
+            }
+
+            this.hasResponses = false;
+            this.completed = false;
+            this.isDirty = false;
+            this.draftExists = false;
+
+            if ( this.pristineCleanupTimeout ) {
+                clearTimeout( this.pristineCleanupTimeout );
+                this.pristineCleanupTimeout = null;
+            }
+        }
+
+        async clearFromIDB() {
+            if ( ! this.db ) {
+                this.hasResponses = false;
+                return false;
+            }
+
+            return new Promise( ( resolve ) => {
+                const transaction = this.db.transaction(
+                    [ IDB_STORE ],
+                    'readwrite'
+                );
+                const store = transaction.objectStore( IDB_STORE );
+                const key = [ this.formId, this.participantId, this.sessionId ];
+                const request = store.delete( key );
+
+                request.onsuccess = () => {
+                    this.hasResponses = false;
+                    resolve( true );
+                };
+                request.onerror = () => resolve( false );
+            } );
+        }
+
+        async discardFromServer() {
+            if ( ! this.config.ajaxUrl ) {
+                return;
+            }
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append( 'action', 'eipsi_discard_partial_response' );
+                formData.append( 'form_id', this.formId );
+                formData.append( 'participant_id', this.participantId );
+                formData.append( 'session_id', this.sessionId );
+
+                await fetch( this.config.ajaxUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    keepalive: true,
+                    credentials: 'same-origin',
+                } );
+            } catch ( error ) {
+                // Silencioso: mientras IndexedDB se limpie, el usuario puede continuar
+            }
+        }
+
+        setupAutosave() {
+            if ( this.autosaveTimer ) {
+                clearInterval( this.autosaveTimer );
+            }
+
+            this.autosaveTimer = window.setInterval( () => {
+                this.savePartial( 'auto' );
+            }, AUTOSAVE_INTERVAL );
+        }
+
+        setupBeforeUnload() {
+            if ( this.beforeUnloadHandler ) {
+                return;
+            }
+
+            this.beforeUnloadHandler = ( event ) => {
+                if ( this.completed ) {
+                    return;
+                }
+
+                // Recalcular estado antes de salir.
+                this.updateDirtyState();
+
+                if ( this.isDirty ) {
+                    this.savePartialSync();
+                } else if (
+                    this.draftExists &&
+                    this.everDirty &&
+                    ! this.initialStateHasResponses
+                ) {
+                    // Caso crítico: hubo un borrador en algún momento, pero el formulario
+                    // volvió a quedar "vacío". Limpiamos para que NO aparezca el modal.
+                    this.clearFromIDB();
+                    this.discardFromServer();
+                    this.draftExists = false;
+                    this.hasResponses = false;
+                }
+
+                if ( this.hasResponses ) {
+                    const message =
+                        'Tus respuestas se están guardando. Podés volver cuando quieras.';
+                    event.preventDefault();
+                    event.returnValue = message;
+                    return message;
+                }
+
+                return undefined;
+            };
+
+            window.addEventListener( 'beforeunload', this.beforeUnloadHandler );
+        }
+
+        removeBeforeUnload() {
+            if ( this.beforeUnloadHandler ) {
+                window.removeEventListener(
+                    'beforeunload',
+                    this.beforeUnloadHandler
+                );
+                this.beforeUnloadHandler = null;
+            }
+        }
+
+        setupChangeListeners() {
+            const fields = this.form.querySelectorAll(
+                'input, textarea, select'
+            );
+
+            fields.forEach( ( field ) => {
+                field.addEventListener( 'input', () => {
+                    this.updateDirtyState();
+                    this.handleFieldInput();
+                } );
+                field.addEventListener( 'change', () => {
+                    this.updateDirtyState();
+                    this.savePartial( 'field-change' );
+                } );
+            } );
+        }
+
+        handleFieldInput() {
+            if ( this.completed ) {
+                return;
+            }
+
+            if ( this.inputDebounceId ) {
+                clearTimeout( this.inputDebounceId );
+            }
+
+            this.inputDebounceId = window.setTimeout( () => {
+                const responses = this.collectResponses();
+                this.updateDirtyState( responses );
+
+                // Si no hay cambios reales, no generamos borrador local.
+                if ( ! this.isDirty ) {
+                    return;
+                }
+
+                const currentPage = this.getCurrentPage();
+                this.saveToIDB( responses, currentPage )
+                    .then( () => {
+                        this.draftExists = true;
+                    } )
+                    .catch( () => {} );
+            }, INPUT_DEBOUNCE );
+        }
+
+        async savePartial( trigger = 'manual' ) {
+            if ( this.completed || this.pendingSync ) {
+                return;
+            }
+
+            const responses = this.collectResponses();
+            this.updateDirtyState( responses );
+
+            // Clave: si NO hubo cambios reales, NO guardamos (ni server ni IDB).
+            if ( ! this.isDirty ) {
+                return;
+            }
+
+            this.pendingSync = true;
+
+            try {
+                const currentPage = this.getCurrentPage();
+                this.hasResponses = Object.keys( responses ).length > 0;
+
+                if (
+                    this.config?.settings?.debug &&
+                    window.console &&
+                    typeof window.console.debug === 'function'
+                ) {
+                    window.console.debug(
+                        '[EIPSI Save & Continue] Guardando borrador',
+                        {
+                            trigger,
+                            page: currentPage,
+                            hasResponses: this.hasResponses,
+                            isDirty: this.isDirty,
+                        }
+                    );
+                }
+
+                await this.saveToIDB( responses, currentPage );
+                await this.saveToServer( responses, currentPage );
+                this.draftExists = true;
+            } catch ( error ) {
+                if ( window.console && window.console.warn ) {
+                    window.console.warn(
+                        '[EIPSI Save & Continue] Save failed:',
+                        error
+                    );
+                }
+            } finally {
+                this.pendingSync = false;
+            }
+        }
+
+        savePartialSync() {
+            if ( this.completed || ! this.config.ajaxUrl ) {
+                return;
+            }
+
+            const responses = this.collectResponses();
+            this.updateDirtyState( responses );
+
+            // Si no hay cambios reales, no generamos borrador por beforeunload.
+            if ( ! this.isDirty ) {
+                return;
+            }
+
+            const currentPage = this.getCurrentPage();
+
+            const payload = new URLSearchParams();
+            payload.append( 'action', 'eipsi_save_partial_response' );
+            payload.append( 'form_id', this.formId );
+            payload.append( 'participant_id', this.participantId );
+            payload.append( 'session_id', this.sessionId );
+            payload.append( 'page_index', currentPage );
+            payload.append( 'responses', JSON.stringify( responses ) );
+
+            const bodyString = payload.toString();
+
+            if ( navigator.sendBeacon ) {
+                const blob = new Blob( [ bodyString ], {
+                    type: 'application/x-www-form-urlencoded',
+                } );
+                navigator.sendBeacon( this.config.ajaxUrl, blob );
+            } else {
+                fetch( this.config.ajaxUrl, {
+                    method: 'POST',
+                    body: bodyString,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    keepalive: true,
+                    credentials: 'same-origin',
+                } ).catch( () => {} );
+            }
+
+            this.saveToIDB( responses, currentPage );
+            this.draftExists = true;
+        }
+
+        collectResponses() {
+            const responses = {};
+            const formData = new FormData( this.form );
+
+            formData.forEach( ( value, key ) => {
+                if ( EXCLUDED_FIELDS.has( key ) ) {
+                    return;
+                }
+
+                // Por ahora no guardamos archivos como parte del borrador.
+                if ( value instanceof File ) {
+                    return;
+                }
+
+                const normalizedRaw =
+                    typeof value === 'string' ? value : `${ value }`;
+                const normalized = normalizedRaw.trim();
+
+                // Clave: un formulario "sin intervención" no debe generar borrador.
+                // Si el valor está vacío ("" o solo espacios), lo tratamos como "sin respuesta".
+                if ( normalized === '' ) {
+                    return;
+                }
+
+                if ( responses[ key ] !== undefined ) {
+                    if ( ! Array.isArray( responses[ key ] ) ) {
+                        responses[ key ] = [ responses[ key ] ];
+                    }
+                    responses[ key ].push( normalized );
+                } else {
+                    responses[ key ] = normalized;
+                }
+            } );
+
+            // Estabilizar arrays (checkboxes) para que las comparaciones sean consistentes.
+            Object.keys( responses ).forEach( ( key ) => {
+                if ( Array.isArray( responses[ key ] ) ) {
+                    responses[ key ].sort();
+                }
+            } );
+
+            return responses;
+        }
+
+        getCurrentPage() {
+            const pageInput = this.form.querySelector( '.eipsi-current-page' );
+            return pageInput ? parseInt( pageInput.value, 10 ) || 1 : 1;
+        }
+
+        async saveToIDB( responses = null, pageIndex = null ) {
+            if ( ! this.db ) {
+                return false;
+            }
+
+            const payload = {
+                form_id: this.formId,
+                participant_id: this.participantId,
+                session_id: this.sessionId,
+                page_index: pageIndex || this.getCurrentPage(),
+                responses: responses || this.collectResponses(),
+                updated_at: new Date().toISOString(),
+            };
+
+            return new Promise( ( resolve ) => {
+                const transaction = this.db.transaction(
+                    [ IDB_STORE ],
+                    'readwrite'
+                );
+                const store = transaction.objectStore( IDB_STORE );
+                const request = store.put( payload );
+
+                request.onsuccess = () => resolve( true );
+                request.onerror = () => resolve( false );
+            } );
+        }
+
+        async saveToServer( responses = null, pageIndex = null ) {
+            if ( ! this.config.ajaxUrl ) {
+                return false;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append( 'action', 'eipsi_save_partial_response' );
+                formData.append( 'form_id', this.formId );
+                formData.append( 'participant_id', this.participantId );
+                formData.append( 'session_id', this.sessionId );
+                formData.append(
+                    'page_index',
+                    pageIndex || this.getCurrentPage()
+                );
+                formData.append(
+                    'responses',
+                    JSON.stringify( responses || this.collectResponses() )
+                );
+
+                const response = await fetch( this.config.ajaxUrl, {
+                    method: 'POST',
+                    body: formData,
+                    keepalive: true,
+                    credentials: 'same-origin',
+                } );
+
+                const data = await response.json();
+                return !! data.success;
+            } catch ( error ) {
+                return false;
+            }
+        }
+
+        handleFormCompleted() {
+            this.completed = true;
+            this.clearFromIDB();
+            this.discardFromServer();
+            this.removeBeforeUnload();
+
+            // Limpiar almacenamiento local/sesión
+            try {
+                const sessionKey = `eipsi_session_${
+                    this.formId || 'default'
+                }`;
+                window.sessionStorage.removeItem( sessionKey );
+
+                // Limpiar cualquier respaldo en localStorage si existiera (por compatibilidad)
+                const storageKey = `eipsi_form_responses_${
+                    this.formId || 'default'
+                }`;
+                window.localStorage.removeItem( storageKey );
+            } catch ( error ) {
+                // Ignore storage errors
+            }
+
+            if ( this.autosaveTimer ) {
+                clearInterval( this.autosaveTimer );
+                this.autosaveTimer = null;
+            }
+
+            if ( this.inputDebounceId ) {
+                clearTimeout( this.inputDebounceId );
+                this.inputDebounceId = null;
+            }
+
+            if ( this.pristineCleanupTimeout ) {
+                clearTimeout( this.pristineCleanupTimeout );
+                this.pristineCleanupTimeout = null;
+            }
+
+            this.isDirty = false;
+            this.draftExists = false;
+            this.hasResponses = false;
+            this.everDirty = false;
+        }
+
+        destroy() {
+            this.handleFormCompleted();
+            if ( this.db ) {
+                this.db.close();
+                this.db = null;
+            }
+        }
+    }
+
+    document.addEventListener( 'DOMContentLoaded', () => {
+        const forms = document.querySelectorAll(
+            '.eipsi-form form, .eipsi-form form'
+        );
+
+        forms.forEach( ( form ) => {
+            if ( ! window.eipsiFormsConfig || form.eipsiSaveContinue ) {
+                return;
+            }
+
+            const instance = new EIPSISaveContinue(
+                form,
+                window.eipsiFormsConfig
+            );
+            form.eipsiSaveContinue = instance;
+        } );
+    } );
+
+    window.EIPSISaveContinue = EIPSISaveContinue;
 } )();
