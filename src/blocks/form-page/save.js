@@ -27,15 +27,10 @@ export default function Save( { attributes } ) {
 		className: 'eipsi-page-content',
 	} );
 
-	const pageNumber = isThankYouPage ? null : page || 1;
-
 	return (
 		<div { ...blockProps }>
 			{ ! isThankYouPage && (
 				<div className="page-header">
-					<span className={ `page-badge page-${ pageNumber }` }>
-						{ __( 'Page', 'eipsi-forms' ) } { pageNumber }
-					</span>
 					{ title && (
 						<div className="page-header-content">
 							<h3 className="page-header-title">{ title }</h3>
