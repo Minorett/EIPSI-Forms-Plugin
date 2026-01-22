@@ -496,6 +496,40 @@ function eipsi_forms_enqueue_block_editor_assets() {
 // HOOK CRÍTICO: Ejecutar ANTES de que se registren los bloques
 add_action('enqueue_block_editor_assets', 'eipsi_forms_enqueue_block_editor_assets');
 
+/**
+ * Enqueue CSS & JS for FRONTEND (página publicada)
+ *
+ * Asegura que los estilos se carguen en el frontend del formulario
+ * para que todos los bloques se vean correctamente.
+ *
+ * @since 1.3.12
+ */
+function eipsi_forms_enqueue_frontend_assets() {
+    // Solo en frontend, NO en admin
+    if ( is_admin() ) {
+        return;
+    }
+
+    // CSS del formulario principal
+    wp_enqueue_style(
+        'eipsi-forms-frontend',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-forms.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+
+    // CSS del tema (variables y dark mode)
+    wp_enqueue_style(
+        'eipsi-theme-toggle-frontend',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/theme-toggle.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+}
+
+// Hook para FRONTEND (página publicada)
+add_action('wp_enqueue_scripts', 'eipsi_forms_enqueue_frontend_assets');
+
 function eipsi_forms_register_blocks() {
     if (!function_exists('register_block_type')) {
         return;

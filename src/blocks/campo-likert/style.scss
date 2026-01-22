@@ -249,20 +249,14 @@
     }
 
     .likert-item {
-        // Visual indication that the scale is reversed
+        // Mantener la lógica de inversión pero SIN indicadores visuales
         background: var(--eipsi-color-background-subtle, #f8f9fa);
 
         &:hover {
             background: var(--eipsi-color-background, #ffffff);
         }
     }
-
-    // Optional: add a visual indicator for the reversed state
-    &::before {
-        content: '↔️';
-        display: inline-block;
-        margin-right: 0.5em;
-        font-size: 0.9em;
-        opacity: 0.7;
-    }
+    
+    // ELIMINADO: No mostrar indicadores visuales al usuario
+    // La inversión funciona internamente sin revelarla al usuario
 }
