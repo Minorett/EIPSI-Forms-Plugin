@@ -374,26 +374,23 @@ function eipsi_randomization_detect_rest_handler( $request ) {
  */
 function eipsi_parse_shortcodes_input( $input ) {
     $formularios = array();
-    $lines = explode( "\n", $input );
-
-    foreach ( $lines as $line ) {
-        $line = trim( $line );
-        if ( empty( $line ) ) {
-            continue;
-        }
-
-        // Regex para [eipsi_form id="XXXX"] o [eipsi_form id='XXXX']
-        $matches = array();
-        if ( preg_match( '/\[eipsi_form\s+id=["\']?(\d+)["\']?\]/i', $line, $matches ) ) {
-            $form_id = intval( $matches[1] );
-            if ( $form_id > 0 ) {
+    
+    // Usar regex global para encontrar TODOS los shortcodes (no solo por línea)
+    // Soporta: espacios, saltos de línea, sin espacios
+    // Formato: [eipsi_form id="2482"], [eipsi_form id='2482'], [eipsi_form id=2482]
+    
+    $pattern = '/\[eipsi_form\s+id\s*=\s*["\']?(\d+)["\']?\]/i';
+    
+    if ( preg_match_all( $pattern, $input, $matches ) ) {
+        // $matches[1] contiene todos los form_ids encontrados
+        foreach ( $matches[1] as $match ) {
+            $form_id = intval( $match );
+            if ( $form_id > 0 && ! isset( $formularios[ $form_id ] ) ) {
                 // Evitar duplicados
-                if ( ! isset( $formularios[ $form_id ] ) ) {
-                    $formularios[ $form_id ] = array(
-                        'id' => $form_id,
-                        'shortcode' => $line,
-                    );
-                }
+                $formularios[ $form_id ] = array(
+                    'id' => $form_id,
+                    'shortcode' => '[eipsi_form id="' . $form_id . '"]',
+                );
             }
         }
     }
