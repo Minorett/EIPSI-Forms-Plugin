@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.3.6
+ * Version: 1.3.15
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization
- * Stable tag: 1.3.6
+ * Stable tag: 1.3.15
  * 
  * @package EIPSI_Forms
  */
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('EIPSI_FORMS_VERSION', '1.3.6');
+define('EIPSI_FORMS_VERSION', '1.3.15');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -590,6 +590,25 @@ function eipsi_forms_enqueue_frontend_assets() {
             'smoothScroll' => apply_filters('eipsi_forms_smooth_scroll', true),
         ),
     ));
+
+    // === SAVE & CONTINUE SYSTEM (v1.3.15 - CRITICAL FIX) ===
+    // CSS del modal de recuperación de sesión
+    wp_enqueue_style(
+        'eipsi-save-continue-css',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-save-continue.css',
+        array('eipsi-forms-css'),
+        EIPSI_FORMS_VERSION
+    );
+
+    // JS de Save & Continue: autosave + IndexedDB + modal de recuperación
+    wp_enqueue_script(
+        'eipsi-save-continue-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-save-continue.js',
+        array('eipsi-forms-js'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+    // === FIN SAVE & CONTINUE ===
 
     // Enqueue Randomization Public System styles (Fase 3)
     wp_enqueue_style(
