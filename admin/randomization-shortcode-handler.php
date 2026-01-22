@@ -32,7 +32,6 @@ function eipsi_randomization_shortcode( $atts ) {
         array(
             'template' => '', // Template ID del Form Library
             'config' => '',   // Config ID único
-            'persistent_mode' => 'yes', // NUEVO: yes/no para persistencia
         ),
         $atts,
         'eipsi_randomization'
@@ -40,7 +39,6 @@ function eipsi_randomization_shortcode( $atts ) {
 
     $template_id = intval( $atts['template'] );
     $config_id = sanitize_text_field( $atts['config'] );
-    $persistent_mode = strtolower( $atts['persistent_mode'] ) !== 'no'; // true = persistir, false = test mode
 
     if ( empty( $template_id ) || empty( $config_id ) ) {
         return eipsi_randomization_error_notice(
@@ -50,7 +48,7 @@ function eipsi_randomization_shortcode( $atts ) {
 
     // PASO 1: Obtener configuración desde post meta (nuevo flujo)
     $config = eipsi_get_randomization_config_from_post_meta( $template_id, $config_id );
-
+    
     if ( ! $config ) {
         // Fallback: buscar configuración legacy en blocks (backwards compatibility)
         $config_post = eipsi_get_randomization_config_post( $template_id );
@@ -65,8 +63,11 @@ function eipsi_randomization_shortcode( $atts ) {
             );
         }
 
-        $config = eipsi_extract_randomization_config( $config_post->ID, $randomization_id );
+        $config = eipsi_extract_randomization_config( $config_post->ID, $config_id );
     }
+
+    // Obtener persistent_mode desde la configuración (default: true)
+    $persistent_mode = isset( $config['persistent_mode'] ) ? (bool) $config['persistent_mode'] : true;
 
     if ( ! $config || empty( $config['formularios'] ) ) {
         return eipsi_randomization_error_notice(
@@ -83,16 +84,11 @@ function eipsi_randomization_shortcode( $atts ) {
     // PASO 2: Obtener fingerprint del usuario (desde POST/AJAX o generar en servidor)
     $user_fingerprint = eipsi_get_user_fingerprint();
 
-    // PASO 3: Buscar si ya existe una asignación previa para este usuario (solo si persistent_mode = true)
-    $existing_assignment = null;
-    
-    if ( $persistent_mode ) {
-        $existing_assignment = eipsi_get_existing_assignment( $config_id, $user_fingerprint );
-    }
-    // Si persistent_mode = false, $existing_assignment permanece null = siempre reasignar
+    // PASO 3: Buscar si ya existe una asignación previa para este usuario
+    $existing_assignment = eipsi_get_existing_assignment( $config_id, $user_fingerprint );
 
-    if ( $existing_assignment ) {
-        // YA FUE ASIGNADO - usar la asignación existente (persistencia)
+    if ( $existing_assignment && $persistent_mode ) {
+        // YA FUE ASIGNADO Y MODO PERSISTENTE - usar la asignación existente (persistencia)
         $assigned_form_id = (int) $existing_assignment['assigned_form_id'];
 
         // Actualizar timestamp y contador de accesos
@@ -100,7 +96,7 @@ function eipsi_randomization_shortcode( $atts ) {
 
         error_log( "[EIPSI RCT] Usuario existente: {$user_fingerprint} → Formulario: {$assigned_form_id} (PERSISTENTE)" );
     } else {
-        // NUEVA ASIGNACIÓN
+        // NUEVA ASIGNACIÓN (ya sea primer acceso o persistent_mode=false)
         // Primero revisar asignaciones manuales
         $assigned_form_id = eipsi_check_manual_assignment( $config, $user_fingerprint );
 
@@ -109,10 +105,20 @@ function eipsi_randomization_shortcode( $atts ) {
             $assigned_form_id = eipsi_calculate_rct_assignment( $config, $user_fingerprint );
         }
 
-        // Guardar nueva asignación en DB
-        eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_id, $persistent_mode );
-
-        error_log( "[EIPSI RCT] Nuevo usuario: {$user_fingerprint} → Formulario: {$assigned_form_id}" );
+        // Si ya existe una asignación pero estamos en modo test (persistent_mode=false), actualizamos en lugar de insertar
+        if ( $existing_assignment ) {
+            eipsi_update_assignment_full( $existing_assignment['id'], $assigned_form_id, $persistent_mode );
+            error_log( "[EIPSI RCT] Usuario reasignado (test mode): {$user_fingerprint} → Formulario: {$assigned_form_id}" );
+        } else {
+            // Guardar nueva asignación en DB
+            eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_id, $persistent_mode );
+            
+            if ( $persistent_mode ) {
+                error_log( "[EIPSI RCT] Nuevo usuario: {$user_fingerprint} → Formulario: {$assigned_form_id} (PERSISTENTE)" );
+            } else {
+                error_log( "[EIPSI RCT] Nuevo usuario: {$user_fingerprint} → Formulario: {$assigned_form_id} (TEST MODE)" );
+            }
+        }
     }
 
     // PASO 4: Renderizar el formulario asignado
@@ -375,6 +381,48 @@ function eipsi_calculate_rct_assignment( $config, $user_fingerprint ) {
  * Función legacy removida - usar versión actualizada en línea 523
  * Con el nuevo esquema: template_id + config_id
  */
+
+/**
+ * Función para actualizar una asignación existente (usada en test mode)
+ * 
+ * @param int $assignment_id ID de la asignación en la DB
+ * @param int $assigned_form_id Nuevo formulario asignado
+ * @param bool $persistent_mode Nuevo estado del modo persistente
+ * @return bool True si se actualizó correctamente
+ */
+function eipsi_update_assignment_full( $assignment_id, $assigned_form_id, $persistent_mode = true ) {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
+
+    $data = array(
+        'assigned_form_id' => $assigned_form_id,
+        'last_access' => current_time( 'mysql' ),
+        'access_count' => 1, // Reiniciamos contador en reasignación
+    );
+    
+    $format = array( '%d', '%s', '%d' );
+
+    // Intentar agregar persistent_mode si la columna existe
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $column_check = $wpdb->get_results( "SHOW COLUMNS FROM {$table_name} LIKE 'persistent_mode'" );
+    
+    if ( ! empty( $column_check ) ) {
+        $data['persistent_mode'] = $persistent_mode ? 1 : 0;
+        $format[] = '%d';
+    }
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+    $result = $wpdb->update( 
+        $table_name, 
+        $data, 
+        array( 'id' => $assignment_id ), 
+        $format, 
+        array( '%d' ) 
+    );
+
+    return $result !== false;
+}
 
 /**
  * Actualizar timestamp y contador de accesos
