@@ -71,7 +71,11 @@
         },
         "showValue": {
             "type": "boolean",
-            "default": true
+            "default": false
+        },
+        "showCurrentValue": {
+            "type": "boolean",
+            "default": false
         },
         "className": {
             "type": "string",
@@ -109,8 +113,8 @@
             "minValue": 0,
             "maxValue": 100,
             "step": 1,
-            "defaultValue": 0,
-            "showValue": true
+            "defaultValue": 50,
+            "showValue": false
         }
     }
 }

@@ -95,8 +95,53 @@ function eipsi_randomization_shortcode( $atts ) {
         eipsi_update_assignment_access( $existing_assignment['id'] );
 
         error_log( "[EIPSI RCT] Usuario existente: {$user_fingerprint} → Formulario: {$assigned_form_id} (PERSISTENTE)" );
+    } elseif ( ! $persistent_mode ) {
+        // MODO NO PERSISTENTE (F5 = ROTACIÓN CÍCLICA DEL "SOMBRERO")
+        // Cada F5 avanza una posición en el array de formularios
+        
+        // Obtener formularios disponibles
+        $formularios_ids = array();
+        foreach ( $config['formularios'] as $form ) {
+            if ( isset( $form['id'] ) && $form['id'] ) {
+                $formularios_ids[] = intval( $form['id'] );
+            }
+        }
+        
+        if ( empty( $formularios_ids ) ) {
+            return eipsi_randomization_error_notice(
+                __( 'ℹ️ No hay formularios configurados para esta aleatorización.', 'eipsi-forms' )
+            );
+        }
+        
+        // Calcular la posición actual (rotación cíclica basada en sesión/browser)
+        $rotation_key = 'eipsi_rotation_' . $config_id;
+        $current_position = 0;
+        
+        // Intentar obtener posición desde cookie primero (para F5 correcto)
+        if ( isset( $_COOKIE[ $rotation_key ] ) ) {
+            $current_position = intval( $_COOKIE[ $rotation_key ] );
+        }
+        
+        // Obtener el formulario para esta posición
+        $total_forms = count( $formularios_ids );
+        $form_index = $current_position % $total_forms;
+        $assigned_form_id = $formularios_ids[ $form_index ];
+        
+        // Actualizar cookie para el próximo F5 (avanzar una posición)
+        $next_position = ( $current_position + 1 ) % $total_forms;
+        setcookie( $rotation_key, $next_position, time() + 86400, '/' ); // 24 horas
+        
+        error_log( "[EIPSI RCT] F5 Rotation: position={$current_position}/{$total_forms} → form={$assigned_form_id}" );
+        
+        // Si ya existe una asignación previa, actualizar para tracking
+        if ( $existing_assignment ) {
+            eipsi_update_assignment_full( $existing_assignment['id'], $assigned_form_id, false );
+        } else {
+            // Crear nueva asignación para tracking
+            eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_id, false );
+        }
     } else {
-        // NUEVA ASIGNACIÓN (ya sea primer acceso o persistent_mode=false)
+        // NUEVA ASIGNACIÓN (primer acceso con persistent_mode=true)
         // Primero revisar asignaciones manuales
         $assigned_form_id = eipsi_check_manual_assignment( $config, $user_fingerprint );
 
