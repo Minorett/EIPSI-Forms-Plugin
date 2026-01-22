@@ -51,43 +51,20 @@ module.exports = {
     // Generate individual entry points for each block
     entry: generateBlockEntries(),
     // Enable aggressive tree-shaking and dead code elimination
+    //
+    // IMPORTANT (WordPress/Gutenberg reality):
+    // Gutenberg enqueues each block entry script individually via block.json.
+    // If we generate extra shared chunks (splitChunks), WordPress does NOT know
+    // it must also enqueue those chunk files — resulting in blocks that simply
+    // never register in the editor ("Tu sitio no es compatible con el bloque...").
+    //
+    // So we keep bundles self-contained per entry point.
     optimization: {
         ...( defaultConfig.optimization || {} ),
         usedExports: true,
         sideEffects: false,
         minimize: true,
-        splitChunks: {
-            chunks: 'all',
-            minSize: 20000,  // ← Only split chunks > 20KB
-            cacheGroups: {
-                // ✅ WORDPRESS - Priority 10 (highest)
-                // Shared WordPress deps extracted to single chunk
-                wordpress: {
-                    test: /[\\/]node_modules[\\/]@wordpress[\\/]/,
-                    name: 'wordpress',
-                    priority: 10,
-                    reuseExistingChunk: true,
-                    enforce: true,  // ← Force extraction
-                },
-                // ✅ VENDORS - Priority 5 (medium)
-                // Other node_modules extracted separately
-                vendors: {
-                    test: /[\\/]node_modules[\\/]/,
-                    name: 'vendors',
-                    priority: 5,
-                    reuseExistingChunk: true,
-                    enforce: true,  // ← Force extraction
-                },
-                // ✅ COMMON - Priority 0 (lowest)
-                // Code shared between 2+ entry points
-                // IMPORTANT: minChunks: 2 ensures no orphan code
-                common: {
-                    minChunks: 2,  // Only extract if used in 2+ chunks
-                    priority: 0,
-                    reuseExistingChunk: true,
-                    minSize: 0,  // ← Even small shared code
-                },
-            },
-        },
+        splitChunks: false,
+        runtimeChunk: false,
     },
 };
