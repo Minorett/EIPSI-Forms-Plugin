@@ -9,7 +9,7 @@ import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 
 export default function Edit( { attributes, setAttributes, clientId } ) {
-	const { title, pageIndex } = attributes;
+	const { title, page, pageType } = attributes;
 
 	const computedPageIndex = useSelect(
 		( select ) => {
@@ -33,12 +33,17 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	);
 
 	useEffect( () => {
-		if ( computedPageIndex && computedPageIndex !== pageIndex ) {
-			setAttributes( { pageIndex: computedPageIndex } );
+		if ( computedPageIndex !== null && computedPageIndex !== page ) {
+			const isThankYou = pageType === 'thank_you';
+			const shouldBeHidden = isThankYou || computedPageIndex !== 1;
+			setAttributes( {
+				page: computedPageIndex,
+				isHidden: shouldBeHidden,
+			} );
 		}
-	}, [ computedPageIndex, pageIndex, setAttributes ] );
+	}, [ computedPageIndex, page, pageType, setAttributes ] );
 
-	const currentPageIndex = computedPageIndex || pageIndex || 1;
+	const currentPageIndex = computedPageIndex || page || 1;
 
 	const blockProps = useBlockProps( {
 		className: 'eipsi-page-editor',

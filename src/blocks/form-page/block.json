@@ -24,13 +24,22 @@
             "type": "string",
             "default": ""
         },
-        "pageIndex": {
+        "page": {
             "type": "number",
             "default": 1
         },
         "pageType": {
             "type": "string",
             "default": "standard"
+        },
+        "isHidden": {
+            "type": "boolean",
+            "default": false
+        },
+        "children": {
+            "type": "string",
+            "source": "html",
+            "selector": ".eipsi-page-content"
         },
         "enableRestartButton": {
             "type": "boolean",
@@ -48,8 +57,9 @@
     "example": {
         "attributes": {
             "title": "Información Personal",
-            "pageIndex": 1,
+            "page": 1,
             "pageType": "standard",
+            "isHidden": false,
             "enableRestartButton": false,
             "restartButtonLabel": ""
         }

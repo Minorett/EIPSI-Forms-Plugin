@@ -4,9 +4,10 @@ import { __ } from '@wordpress/i18n';
 export default function Save( { attributes } ) {
 	const {
 		title,
-		pageIndex,
+		page,
 		className,
 		pageType,
+		isHidden,
 		enableRestartButton,
 		restartButtonLabel,
 	} = attributes;
@@ -17,11 +18,9 @@ export default function Save( { attributes } ) {
 		className: `eipsi-page ${
 			isThankYouPage ? 'eipsi-thank-you-page-block' : ''
 		} ${ className || '' }`.trim(),
-		'data-page': isThankYouPage ? 'thank-you' : pageIndex,
-		'data-page-type': isThankYouPage ? 'thank_you' : 'standard',
-		style: {
-			display: isThankYouPage || pageIndex !== 1 ? 'none' : undefined,
-		},
+		'data-page': isThankYouPage ? 'thank-you' : page || 1,
+		'data-page-type': pageType || 'standard',
+		style: isHidden ? { display: 'none' } : undefined,
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps.save( {
