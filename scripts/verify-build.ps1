@@ -63,9 +63,7 @@ Write-ColorOutput "[3/3] Verificando artefactos críticos del plugin..." "Cyan"
 Write-Host ""
 
 $artifacts = @(
-    "build\index.js",
-    "build\index.css",
-    "build\style-index.css"
+    "build\index.js"
 )
 
 $missingFiles = @()

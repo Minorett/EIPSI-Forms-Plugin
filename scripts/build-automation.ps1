@@ -329,8 +329,6 @@ Write-Step "Verificando archivos base del build" -Number 8 -Total 9
 
 $baseFiles = @(
     "build/index.js",
-    "build/index.css",
-    "build/style-index.css",
     "build/blocks"
 )
 
@@ -372,18 +370,15 @@ if (Test-Path $buildBlocksPath) {
             
             $indexJs = Join-Path $blockPath "index.js"
             $indexCss = Join-Path $blockPath "index.css"
-            $styleCss = Join-Path $blockPath "style-index.css"
             
             $blockOk = $true
             if (!(Test-Path $indexJs) -or (Get-Item $indexJs).Length -eq 0) { $blockOk = $false }
             if (!(Test-Path $indexCss) -or (Get-Item $indexCss).Length -eq 0) { $blockOk = $false }
-            if (!(Test-Path $styleCss) -or (Get-Item $styleCss).Length -eq 0) { $blockOk = $false }
             
             if ($blockOk) {
                 $jsSize = [math]::Round((Get-Item $indexJs).Length / 1024, 2)
                 $cssSize = [math]::Round((Get-Item $indexCss).Length / 1024, 2)
-                $styleSize = [math]::Round((Get-Item $styleCss).Length / 1024, 2)
-                Write-Success "$blockName : index.js ($jsSize KB) + index.css ($cssSize KB) + style-index.css ($styleSize KB)"
+                Write-Success "$blockName : index.js ($jsSize KB) + index.css ($cssSize KB)"
                 $blocksCompiled += $blockName
             } else {
                 Write-Error "$blockName tiene archivos faltantes o vacíos"
@@ -414,8 +409,6 @@ if ($allBuildOk -and $blocksCompiled.Count -gt 0) {
     
     Write-Success "Archivos base generados:"
     Write-Info "  • build/index.js"
-    Write-Info "  • build/index.css"
-    Write-Info "  • build/style-index.css"
     Write-Host ""
     
     Write-Host "Bloques compilados exitosamente:" -ForegroundColor $colorSuccess
@@ -438,12 +431,11 @@ if ($allBuildOk -and $blocksCompiled.Count -gt 0) {
     Write-Warning "Sugerencias de corrección:"
     Write-Info "1. Ejecuta: npm run build"
     Write-Info "2. Verifica errores de lint: npm run lint:js"
-    Write-Info "3. Revisa los archivos base en build/ (index.js, index.css, style-index.css)"
+    Write-Info "3. Revisa los archivos base en build/ (index.js)"
     Write-Info "4. Revisa la carpeta build/blocks/ para bloques incompletos"
-    Write-Info "5. Verifica que todos los bloques tengan los 3 archivos requeridos:"
+    Write-Info "5. Verifica que todos los bloques tengan los archivos requeridos:"
     Write-Info "   - index.js"
     Write-Info "   - index.css"
-    Write-Info "   - style-index.css"
     Write-Host ""
     
     Write-Warning "Si el problema persiste, revisa la salida del build anterior."

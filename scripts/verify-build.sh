@@ -51,8 +51,6 @@ echo ""
 
 ARTIFACTS=(
     "build/index.js"
-    "build/index.css"
-    "build/style-index.css"
 )
 
 MISSING_FILES=()

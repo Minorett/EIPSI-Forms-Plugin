@@ -16,11 +16,14 @@ function generateBlockEntries() {
     const blocksDir = './src/blocks';
     const entries = {};
 
-    // Add individual entries for each block
-    // NOTE: We do NOT include a main index entry point here because:
-    // 1. WordPress already enqueues frontend scripts from assets/js directly
-    // 2. Gutenberg blocks are loaded via their individual entry points
-    // 3. Including both causes orphan modules (duplicate code never used)
+    // ✅ CENTRAL ENTRY POINT - Standard WordPress architecture
+    // Ensures all WordPress dependencies are available globally
+    if (fs.existsSync('./src/index.js')) {
+        entries['index'] = './src/index.js';
+    }
+
+    // Individual block entry points
+    // Each block can import what it needs; duplicates are de-duped by webpack
     if (fs.existsSync(blocksDir)) {
         const blockFolders = fs.readdirSync(blocksDir, { withFileTypes: true })
             .filter(dirent => dirent.isDirectory())
@@ -55,26 +58,34 @@ module.exports = {
         minimize: true,
         splitChunks: {
             chunks: 'all',
+            minSize: 20000,  // ← Only split chunks > 20KB
             cacheGroups: {
-                // Extract common @wordpress dependencies
+                // ✅ WORDPRESS - Priority 10 (highest)
+                // Shared WordPress deps extracted to single chunk
                 wordpress: {
                     test: /[\\/]node_modules[\\/]@wordpress[\\/]/,
                     name: 'wordpress',
                     priority: 10,
                     reuseExistingChunk: true,
+                    enforce: true,  // ← Force extraction
                 },
-                // Extract other node_modules
+                // ✅ VENDORS - Priority 5 (medium)
+                // Other node_modules extracted separately
                 vendors: {
                     test: /[\\/]node_modules[\\/]/,
                     name: 'vendors',
                     priority: 5,
                     reuseExistingChunk: true,
+                    enforce: true,  // ← Force extraction
                 },
-                // Extract common EIPSI components
+                // ✅ COMMON - Priority 0 (lowest)
+                // Code shared between 2+ entry points
+                // IMPORTANT: minChunks: 2 ensures no orphan code
                 common: {
-                    minChunks: 2,
+                    minChunks: 2,  // Only extract if used in 2+ chunks
                     priority: 0,
                     reuseExistingChunk: true,
+                    minSize: 0,  // ← Even small shared code
                 },
             },
         },
