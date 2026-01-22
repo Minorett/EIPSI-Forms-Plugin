@@ -32,6 +32,7 @@ function eipsi_randomization_shortcode( $atts ) {
         array(
             'template' => '', // Template ID del Form Library
             'config' => '',   // Config ID único
+            'persistent_mode' => 'yes', // NUEVO: yes/no para persistencia
         ),
         $atts,
         'eipsi_randomization'
@@ -39,6 +40,7 @@ function eipsi_randomization_shortcode( $atts ) {
 
     $template_id = intval( $atts['template'] );
     $config_id = sanitize_text_field( $atts['config'] );
+    $persistent_mode = strtolower( $atts['persistent_mode'] ) !== 'no'; // true = persistir, false = test mode
 
     if ( empty( $template_id ) || empty( $config_id ) ) {
         return eipsi_randomization_error_notice(
@@ -81,8 +83,13 @@ function eipsi_randomization_shortcode( $atts ) {
     // PASO 2: Obtener fingerprint del usuario (desde POST/AJAX o generar en servidor)
     $user_fingerprint = eipsi_get_user_fingerprint();
 
-    // PASO 3: Buscar si ya existe una asignación previa para este usuario
-    $existing_assignment = eipsi_get_existing_assignment( $config_id, $user_fingerprint );
+    // PASO 3: Buscar si ya existe una asignación previa para este usuario (solo si persistent_mode = true)
+    $existing_assignment = null;
+    
+    if ( $persistent_mode ) {
+        $existing_assignment = eipsi_get_existing_assignment( $config_id, $user_fingerprint );
+    }
+    // Si persistent_mode = false, $existing_assignment permanece null = siempre reasignar
 
     if ( $existing_assignment ) {
         // YA FUE ASIGNADO - usar la asignación existente (persistencia)
@@ -91,7 +98,7 @@ function eipsi_randomization_shortcode( $atts ) {
         // Actualizar timestamp y contador de accesos
         eipsi_update_assignment_access( $existing_assignment['id'] );
 
-        error_log( "[EIPSI RCT] Usuario existente: {$user_fingerprint} → Formulario: {$assigned_form_id}" );
+        error_log( "[EIPSI RCT] Usuario existente: {$user_fingerprint} → Formulario: {$assigned_form_id} (PERSISTENTE)" );
     } else {
         // NUEVA ASIGNACIÓN
         // Primero revisar asignaciones manuales
@@ -103,7 +110,7 @@ function eipsi_randomization_shortcode( $atts ) {
         }
 
         // Guardar nueva asignación en DB
-        eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_id );
+        eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_id, $persistent_mode );
 
         error_log( "[EIPSI RCT] Nuevo usuario: {$user_fingerprint} → Formulario: {$assigned_form_id}" );
     }
@@ -121,7 +128,13 @@ function eipsi_randomization_shortcode( $atts ) {
                 ℹ️ <?php esc_html_e( 'Este estudio utiliza aleatorización: cada participante recibe un formulario asignado aleatoriamente.', 'eipsi-forms' ); ?>
             </p>
             <p style="margin: 0.5rem 0 0 0; color: #1565c0; font-size: 0.9rem;">
-                <?php esc_html_e( 'Su asignación es persistente. En futuras sesiones recibirá el mismo formulario.', 'eipsi-forms' ); ?>
+                <?php
+                if ( $persistent_mode ) {
+                    esc_html_e( '✅ Su asignación es PERSISTENTE. En futuras sesiones recibirá el mismo formulario.', 'eipsi-forms' );
+                } else {
+                    esc_html_e( '⚠️ MODO TEST: Su asignación cambia en cada visita (para validar el funcionamiento).', 'eipsi-forms' );
+                }
+                ?>
             </p>
         </div>
         <?php endif; ?>
@@ -495,27 +508,40 @@ function eipsi_get_existing_assignment( $config_id, $user_fingerprint ) {
  * @param string $config_id Config ID (randomization_id)
  * @param string $user_fingerprint Fingerprint del usuario
  * @param int $assigned_form_id Post ID del formulario asignado
+ * @param bool $persistent_mode Modo persistente (true/false)
  * @return bool True si se creó correctamente
  */
-function eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_id ) {
+function eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_id, $persistent_mode = true ) {
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
 
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-    $result = $wpdb->insert(
-        $table_name,
-        array(
-            'randomization_id' => $config_id,
-            'config_id' => $config_id,
-            'user_fingerprint' => $user_fingerprint,
-            'assigned_form_id' => $assigned_form_id,
-            'assigned_at' => current_time( 'mysql' ),
-            'last_access' => current_time( 'mysql' ),
-            'access_count' => 1,
-        ),
-        array( '%s', '%s', '%s', '%d', '%s', '%s', '%d' )
+    // Intentar insertar con la columna persistent_mode (si existe)
+    // Si falla, la función autofix la creará automáticamente en la próxima ejecución
+    $data = array(
+        'randomization_id' => $config_id,
+        'config_id' => $config_id,
+        'user_fingerprint' => $user_fingerprint,
+        'assigned_form_id' => $assigned_form_id,
+        'assigned_at' => current_time( 'mysql' ),
+        'last_access' => current_time( 'mysql' ),
+        'access_count' => 1,
     );
+
+    $format = array( '%s', '%s', '%s', '%d', '%s', '%s', '%d' );
+
+    // Intentar agregar persistent_mode si la columna existe
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $column_check = $wpdb->get_results( "SHOW COLUMNS FROM {$table_name} LIKE 'persistent_mode'" );
+    
+    if ( ! empty( $column_check ) ) {
+        $data['persistent_mode'] = $persistent_mode ? 1 : 0;
+        $format[] = '%d';
+        error_log( "[EIPSI RCT] Asignación creada con persistent_mode={$persistent_mode}" );
+    }
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+    $result = $wpdb->insert( $table_name, $data, $format );
 
     if ( $result === false ) {
         error_log( "[EIPSI RCT] ERROR al crear asignación: {$wpdb->last_error}" );

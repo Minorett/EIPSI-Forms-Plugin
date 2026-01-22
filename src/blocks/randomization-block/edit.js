@@ -22,6 +22,7 @@ import {
 	Card,
 	CardBody,
 	CardHeader,
+	ToggleControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { useState } from '@wordpress/element';
@@ -243,6 +244,56 @@ export default function Edit( { attributes, setAttributes } ) {
 						) }
 					</p>
 				</PanelBody>
+
+				{ savedConfig?.formularios &&
+					savedConfig.formularios.length > 0 && (
+						<PanelBody
+							title={ __(
+								'⚙️ Configuración Avanzada',
+								'eipsi-forms'
+							) }
+							initialOpen={ false }
+						>
+							<ToggleControl
+								label={ __(
+									'Modo Persistente (Recomendado)',
+									'eipsi-forms'
+								) }
+								help={
+									savedConfig.persistentMode !== false
+										? __(
+												'Los participantes mantienen la misma asignación en futuras visitas',
+												'eipsi-forms'
+										  )
+										: __(
+												'⚠️ MODO TEST: Los participantes reciben una nueva asignación en cada visita',
+												'eipsi-forms'
+										  )
+								}
+								checked={ savedConfig.persistentMode !== false }
+								onChange={ ( value ) => {
+									const updatedConfig = {
+										...savedConfig,
+										persistentMode: value,
+									};
+									setAttributes( {
+										savedConfig: updatedConfig,
+									} );
+								} }
+							/>
+							{ savedConfig.persistentMode === false && (
+								<Notice
+									status="warning"
+									isDismissible={ false }
+								>
+									{ __(
+										'⚠️ Estás en MODO TEST. La aleatorización se reevalúa en cada carga de página. No usar en producción para estudios clínicos.',
+										'eipsi-forms'
+									) }
+								</Notice>
+							) }
+						</PanelBody>
+					) }
 			</InspectorControls>
 
 			<Card>
