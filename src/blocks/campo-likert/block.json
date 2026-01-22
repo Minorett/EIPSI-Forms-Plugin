@@ -63,6 +63,26 @@
         "className": {
             "type": "string",
             "default": ""
+        },
+        "useGradient": {
+            "type": "boolean",
+            "default": false
+        },
+        "gradientType": {
+            "type": "string",
+            "default": "improvement-right"
+        },
+        "gradientColorStart": {
+            "type": "string",
+            "default": "#f44336"
+        },
+        "gradientColorEnd": {
+            "type": "string",
+            "default": "#4caf50"
+        },
+        "gradientDocumentation": {
+            "type": "string",
+            "default": ""
         }
     },
     "example": {

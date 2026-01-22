@@ -1359,6 +1359,139 @@ select[aria-invalid="true"]:focus {
     border-color: var(--eipsi-color-error, #d32f2f);
 }
 
+/* ==========================================
+   LIKERT GRADIENT MODES (Opcional)
+   ========================================== */
+
+/* 
+   NOTA CRÍTICA (igual que VAS):
+   El gradiente debe aplicarse de manera progresiva a cada radio button.
+   Usamos nth-child para asignar color según posición en la escala.
+*/
+
+/* TIPO 1: IMPROVEMENT → RIGHT (min=Malo, max=Bueno)
+   Usar para: Satisfacción, Adherencia, Energía
+*/
+.likert-scale.gradient-improvement-right .likert-item:nth-child(1) .likert-label-text::before {
+    border-color: #f44336;
+}
+.likert-scale.gradient-improvement-right .likert-item:nth-child(1) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #f44336;
+    border-color: #f44336;
+}
+
+.likert-scale.gradient-improvement-right .likert-item:nth-child(2) .likert-label-text::before {
+    border-color: #ff9800;
+}
+.likert-scale.gradient-improvement-right .likert-item:nth-child(2) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #ff9800;
+    border-color: #ff9800;
+}
+
+.likert-scale.gradient-improvement-right .likert-item:nth-child(3) .likert-label-text::before {
+    border-color: #ffc107;
+}
+.likert-scale.gradient-improvement-right .likert-item:nth-child(3) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #ffc107;
+    border-color: #ffc107;
+}
+
+.likert-scale.gradient-improvement-right .likert-item:nth-child(4) .likert-label-text::before {
+    border-color: #8bc34a;
+}
+.likert-scale.gradient-improvement-right .likert-item:nth-child(4) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #8bc34a;
+    border-color: #8bc34a;
+}
+
+.likert-scale.gradient-improvement-right .likert-item:nth-child(5) .likert-label-text::before,
+.likert-scale.gradient-improvement-right .likert-item:nth-child(n+5) .likert-label-text::before {
+    border-color: #4caf50;
+}
+.likert-scale.gradient-improvement-right .likert-item:nth-child(5) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before,
+.likert-scale.gradient-improvement-right .likert-item:nth-child(n+5) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #4caf50;
+    border-color: #4caf50;
+}
+
+/* TIPO 2: IMPROVEMENT → LEFT (min=Bueno, max=Malo) - INVERSO
+   Usar para: PHQ-9, GAD-7, Dolor, Ansiedad, Severidad
+*/
+.likert-scale.gradient-improvement-left .likert-item:nth-child(1) .likert-label-text::before {
+    border-color: #4caf50;
+}
+.likert-scale.gradient-improvement-left .likert-item:nth-child(1) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #4caf50;
+    border-color: #4caf50;
+}
+
+.likert-scale.gradient-improvement-left .likert-item:nth-child(2) .likert-label-text::before {
+    border-color: #8bc34a;
+}
+.likert-scale.gradient-improvement-left .likert-item:nth-child(2) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #8bc34a;
+    border-color: #8bc34a;
+}
+
+.likert-scale.gradient-improvement-left .likert-item:nth-child(3) .likert-label-text::before {
+    border-color: #ffc107;
+}
+.likert-scale.gradient-improvement-left .likert-item:nth-child(3) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #ffc107;
+    border-color: #ffc107;
+}
+
+.likert-scale.gradient-improvement-left .likert-item:nth-child(4) .likert-label-text::before {
+    border-color: #ff9800;
+}
+.likert-scale.gradient-improvement-left .likert-item:nth-child(4) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #ff9800;
+    border-color: #ff9800;
+}
+
+.likert-scale.gradient-improvement-left .likert-item:nth-child(5) .likert-label-text::before,
+.likert-scale.gradient-improvement-left .likert-item:nth-child(n+5) .likert-label-text::before {
+    border-color: #f44336;
+}
+.likert-scale.gradient-improvement-left .likert-item:nth-child(5) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before,
+.likert-scale.gradient-improvement-left .likert-item:nth-child(n+5) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #f44336;
+    border-color: #f44336;
+}
+
+/* TIPO 3: PROGRESS NEUTRAL (sin interpretación)
+   Usar para: Frecuencia, Cantidad, Escalas ordinarias sin polaridad
+*/
+.likert-scale.gradient-progress-neutral .likert-item .likert-label-text::before {
+    border-color: #757575;
+}
+.likert-scale.gradient-progress-neutral .likert-item .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: #757575;
+    border-color: #757575;
+}
+
+/* TIPO 4: CUSTOM (usuario elige colores)
+   Usa CSS variables para interpolar entre start/end
+   Nota: nth-child mantiene lógica de 5 puntos para simplicidad
+*/
+.likert-scale.gradient-custom .likert-item:nth-child(1) .likert-label-text::before {
+    border-color: var(--likert-gradient-color-start, #f44336);
+}
+.likert-scale.gradient-custom .likert-item:nth-child(1) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: var(--likert-gradient-color-start, #f44336);
+    border-color: var(--likert-gradient-color-start, #f44336);
+}
+
+.likert-scale.gradient-custom .likert-item:nth-child(5) .likert-label-text::before,
+.likert-scale.gradient-custom .likert-item:nth-child(n+5) .likert-label-text::before {
+    border-color: var(--likert-gradient-color-end, #4caf50);
+}
+.likert-scale.gradient-custom .likert-item:nth-child(5) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before,
+.likert-scale.gradient-custom .likert-item:nth-child(n+5) .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
+    background: var(--likert-gradient-color-end, #4caf50);
+    border-color: var(--likert-gradient-color-end, #4caf50);
+}
+
 /* ============================================================================
    12. VAS SLIDER FIELDS - CLINICAL RESEARCH DESIGN
    ============================================================================ */
@@ -1499,21 +1632,35 @@ select[aria-invalid="true"]:focus {
     position: relative;
 }
 
-/* Range Input Slider with Professional Gradient */
+/* ==========================================
+   VAS SLIDER - DEFAULT (Monocromático Theme-Aware)
+   ========================================== */
+
+/* 
+   NOTA CRÍTICA:
+   El gradiente rojo→verde asume polaridad (0=malo, 100=bueno)
+   que NO es universal en escalas clínicas:
+   - PHQ-9: valores altos = PEOR (depresión severa)
+   - Dolor: valores altos = PEOR
+   - Satisfacción: valores altos = MEJOR
+   - Frecuencia: sin interpretación bueno/malo
+   
+   Por eso, el DEFAULT es monocromático basado en tema.
+   Los gradientes son OPCIONALES y deben elegirse conscientemente.
+*/
+
 .vas-slider {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
     height: 12px;
     
-    /* Professional gradient: bad → warning → good */
+    /* DEFAULT: Monocromático basado en variable CSS de theme */
     background: linear-gradient(
         to right,
-        #f44336 0%,
-        #ff9800 25%,
-        #ffc107 50%,
-        #4caf50 75%,
-        #2e7d32 100%
+        var(--eipsi-color-primary-light, #64b5f6) 0%,
+        var(--eipsi-color-primary, #1976d2) 50%,
+        var(--eipsi-color-primary-dark, #1565c0) 100%
     );
     
     border: 2px solid var(--eipsi-color-border-dark, #cbd5e0);
@@ -1522,6 +1669,61 @@ select[aria-invalid="true"]:focus {
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================
+   VAS SLIDER - GRADIENT MODES (Opcional)
+   ========================================== */
+
+/* TIPO 1: IMPROVEMENT → RIGHT (0=Malo, 100=Bueno)
+   Usar para: Satisfacción, Adherencia, Energía
+*/
+.vas-slider.gradient-improvement-right {
+    background: linear-gradient(
+        to right,
+        #f44336 0%,      /* Rojo - malo */
+        #ff9800 25%,     /* Naranja */
+        #ffc107 50%,     /* Amarillo - neutral */
+        #8bc34a 75%,     /* Verde claro */
+        #4caf50 100%     /* Verde oscuro - bueno */
+    );
+}
+
+/* TIPO 2: IMPROVEMENT → LEFT (100=Malo, 0=Bueno) - INVERSO
+   Usar para: PHQ-9, GAD-7, Dolor, Ansiedad, Severidad
+*/
+.vas-slider.gradient-improvement-left {
+    background: linear-gradient(
+        to right,
+        #4caf50 0%,      /* Verde - bueno */
+        #8bc34a 25%,     /* Verde claro */
+        #ffc107 50%,     /* Amarillo - neutral */
+        #ff9800 75%,     /* Naranja */
+        #f44336 100%     /* Rojo - malo */
+    );
+}
+
+/* TIPO 3: PROGRESS NEUTRAL (sin interpretación bueno/malo)
+   Usar para: Frecuencia, Cantidad, Escalas ordinarias sin polaridad
+*/
+.vas-slider.gradient-progress-neutral {
+    background: linear-gradient(
+        to right,
+        #e0e0e0 0%,
+        #9e9e9e 50%,
+        #424242 100%
+    );
+}
+
+/* TIPO 4: CUSTOM (usuario elige colores)
+   Los colores se inyectan via CSS variables por JavaScript
+*/
+.vas-slider.gradient-custom {
+    background: linear-gradient(
+        to right,
+        var(--vas-gradient-color-start, #f44336) 0%,
+        var(--vas-gradient-color-end, #4caf50) 100%
+    );
 }
 
 .vas-slider:hover {
