@@ -24,5 +24,5 @@ import './editor.scss';
 
 // Optionally: Add global initialization or shared utilities here
 if ( process.env.NODE_ENV === 'development' ) {
-    // console.log('EIPSI Forms loaded');
+	// console.log('EIPSI Forms loaded');
 }

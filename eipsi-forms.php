@@ -493,41 +493,123 @@ function eipsi_forms_enqueue_block_editor_assets() {
     );
 }
 
-// HOOK CRÍTICO: Ejecutar ANTES de que se registren los bloques
+// Hook CRÍTICO: Ejecutar ANTES de que se registren los bloques
 add_action('enqueue_block_editor_assets', 'eipsi_forms_enqueue_block_editor_assets');
 
 /**
  * Enqueue CSS & JS for FRONTEND (página publicada)
  *
- * Asegura que los estilos se carguen en el frontend del formulario
- * para que todos los bloques se vean correctamente.
+ * Versión completa con soporte para:
+ * - Block styles
+ * - Fingerprinting para aleatorización RCT
+ * - Tracking de progreso
+ * - Randomization system
+ * - Dark mode
  *
  * @since 1.3.12
  */
 function eipsi_forms_enqueue_frontend_assets() {
     // Solo en frontend, NO en admin
-    if ( is_admin() ) {
+    if (is_admin()) {
         return;
     }
 
-    // CSS del formulario principal
+    // Ensure block styles are registered before enqueueing main CSS
+    if (!wp_style_is('eipsi-blocks-style', 'registered')) {
+        wp_register_style(
+            'eipsi-blocks-style',
+            EIPSI_FORMS_PLUGIN_URL . 'build/style-index.css',
+            array(),
+            EIPSI_FORMS_VERSION
+        );
+    }
+
     wp_enqueue_style(
-        'eipsi-forms-frontend',
+        'eipsi-forms-css',
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-forms.css',
-        array(),
+        array('eipsi-blocks-style'),
         EIPSI_FORMS_VERSION
     );
 
-    // CSS del tema (variables y dark mode)
+    // Dark mode theme toggle styles - CRITICAL for all form fields
     wp_enqueue_style(
-        'eipsi-theme-toggle-frontend',
+        'eipsi-theme-toggle-css',
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/theme-toggle.css',
-        array(),
+        array('eipsi-forms-css'),
         EIPSI_FORMS_VERSION
+    );
+
+    // Fingerprinting script para aleatorización RCT (v1.3.1)
+    wp_enqueue_script(
+        'eipsi-fingerprint-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-fingerprint.js',
+        array(),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+
+    wp_enqueue_script(
+        'eipsi-tracking-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-tracking.js',
+        array(),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+
+    wp_localize_script('eipsi-tracking-js', 'eipsiTrackingConfig', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('eipsi_tracking_nonce'),
+    ));
+
+    wp_enqueue_script(
+        'eipsi-forms-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-forms.js',
+        array('eipsi-tracking-js'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+
+    wp_localize_script('eipsi-forms-js', 'eipsiFormsConfig', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('eipsi_forms_nonce'),
+        'strings' => array(
+            'requiredField' => 'Este campo es obligatorio.',
+            'sliderRequired' => 'Por favor, interactúe con la escala para continuar.',
+            'invalidEmail' => 'Por favor, introduzca una dirección de correo electrónico válida.',
+            'submitting' => 'Enviando...',
+            'submit' => 'Enviar',
+            'error' => 'Ocurrió un error. Por favor, inténtelo de nuevo.',
+            'success' => '¡Formulario enviado correctamente!',
+            'studyClosedMessage' => __('Este estudio está cerrado y no acepta más respuestas. Contacta al investigador si tienes dudas.', 'eipsi-forms'),
+        ),
+        'settings' => array(
+            'debug' => apply_filters('eipsi_forms_debug_mode', defined('WP_DEBUG') && WP_DEBUG),
+            'enableAutoScroll' => apply_filters('eipsi_forms_enable_auto_scroll', true),
+            'scrollOffset' => apply_filters('eipsi_forms_scroll_offset', 20),
+            'validateOnBlur' => apply_filters('eipsi_forms_validate_on_blur', true),
+            'smoothScroll' => apply_filters('eipsi_forms_smooth_scroll', true),
+        ),
+    ));
+
+    // Enqueue Randomization Public System styles (Fase 3)
+    wp_enqueue_style(
+        'eipsi-randomization-css',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-randomization.css',
+        array('eipsi-theme-toggle-css'),
+        EIPSI_FORMS_VERSION
+    );
+
+    // Enqueue Randomization Public System script (Fase 3)
+    wp_enqueue_script(
+        'eipsi-randomization-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-randomization.js',
+        array('eipsi-forms-js'),
+        EIPSI_FORMS_VERSION,
+        true
     );
 }
 
-// Hook para FRONTEND (página publicada)
+// Hook para FRONTEND (página publicada) - Solo una vez
 add_action('wp_enqueue_scripts', 'eipsi_forms_enqueue_frontend_assets');
 
 function eipsi_forms_register_blocks() {
@@ -715,114 +797,6 @@ function eipsi_forms_render_form_block($attributes) {
     $output .= '</div>';
 
     return $output;
-}
-
-function eipsi_forms_enqueue_frontend_assets() {
-    static $assets_enqueued = false;
-
-    if ($assets_enqueued) {
-        return;
-    }
-
-    // Ensure block styles are registered before enqueueing main CSS
-    if (!wp_style_is('eipsi-blocks-style', 'registered')) {
-        wp_register_style(
-            'eipsi-blocks-style',
-            EIPSI_FORMS_PLUGIN_URL . 'build/style-index.css',
-            array(),
-            EIPSI_FORMS_VERSION
-        );
-    }
-
-    wp_enqueue_style(
-        'eipsi-forms-css',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-forms.css',
-        array('eipsi-blocks-style'),
-        EIPSI_FORMS_VERSION
-    );
-
-    // Dark mode theme toggle styles - CRITICAL for all form fields
-    wp_enqueue_style(
-        'eipsi-theme-toggle-css',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/css/theme-toggle.css',
-        array('eipsi-forms-css'),
-        EIPSI_FORMS_VERSION
-    );
-
-
-    // Fingerprinting script para aleatorización RCT (v1.3.1)
-    wp_enqueue_script(
-        'eipsi-fingerprint-js',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-fingerprint.js',
-        array(),
-        EIPSI_FORMS_VERSION,
-        true
-    );
-
-    wp_enqueue_script(
-        'eipsi-tracking-js',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-tracking.js',
-        array(),
-        EIPSI_FORMS_VERSION,
-        true
-    );
-
-    wp_localize_script('eipsi-tracking-js', 'eipsiTrackingConfig', array(
-        'ajaxUrl' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('eipsi_tracking_nonce'),
-    ));
-
-    wp_enqueue_script(
-        'eipsi-forms-js',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-forms.js',
-        array('eipsi-tracking-js'),
-        EIPSI_FORMS_VERSION,
-        true
-    );
-
-    wp_localize_script('eipsi-forms-js', 'eipsiFormsConfig', array(
-        'ajaxUrl' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('eipsi_forms_nonce'),
-        'strings' => array(
-            'requiredField' => 'Este campo es obligatorio.',
-            'sliderRequired' => 'Por favor, interactúe con la escala para continuar.',
-            'invalidEmail' => 'Por favor, introduzca una dirección de correo electrónico válida.',
-            'submitting' => 'Enviando...',
-            'submit' => 'Enviar',
-            'error' => 'Ocurrió un error. Por favor, inténtelo de nuevo.',
-            'success' => '¡Formulario enviado correctamente!',
-            'studyClosedMessage' => __('Este estudio está cerrado y no acepta más respuestas. Contacta al investigador si tienes dudas.', 'eipsi-forms'),
-        ),
-        'settings' => array(
-            'debug' => apply_filters('eipsi_forms_debug_mode', defined('WP_DEBUG') && WP_DEBUG),
-            'enableAutoScroll' => apply_filters('eipsi_forms_enable_auto_scroll', true),
-            'scrollOffset' => apply_filters('eipsi_forms_scroll_offset', 20),
-            'validateOnBlur' => apply_filters('eipsi_forms_validate_on_blur', true),
-            'smoothScroll' => apply_filters('eipsi_forms_smooth_scroll', true),
-        ),
-    ));
-    // Enqueue Randomization Public System styles (Fase 3)
-    wp_enqueue_style(
-        'eipsi-randomization-css',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-randomization.css',
-        array('eipsi-theme-toggle-css'),
-        EIPSI_FORMS_VERSION
-    );
-
-    // Enqueue Randomization Public System script (Fase 3)
-    wp_enqueue_script(
-        'eipsi-randomization-js',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-randomization.js',
-        array('eipsi-forms-js'),
-        EIPSI_FORMS_VERSION,
-        true
-    );
-
-    // Dark mode is now CSS-only via @media (prefers-color-scheme: dark)
-    // No JavaScript needed - the theme-toggle.js file is deprecated as of v4.0.0
-    // wp_enqueue_script( 'eipsi-theme-toggle-js', ... ) is removed
-
-    $assets_enqueued = true;
 }
 
 // Register admin post handlers
