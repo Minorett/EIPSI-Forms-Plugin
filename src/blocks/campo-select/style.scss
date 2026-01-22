@@ -6,4 +6,71 @@
         font-style: italic;
         line-height: 1.5;
     }
+
+    // ==========================================
+    // SELECT - INDICADOR VISUAL (Flecha ▼)
+    // ==========================================
+    .eipsi-select-field {
+        position: relative;
+    }
+
+    .eipsi-select-field select {
+        // Remover el select nativo para agregar custom
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+
+        // Espacio para la flecha
+        padding-right: 2.5rem;
+
+        // Estilos consistentes con el resto del diseño
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--eipsi-color-input-border, #e2e8f0);
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        background-color: var(--eipsi-color-input-bg, #ffffff);
+        color: var(--eipsi-color-text, #2c3e50);
+        transition: all 0.2s ease;
+        min-height: 44px; // WCAG 2.1 AA
+
+        &:hover {
+            border-color: var(--eipsi-color-border-dark, #cbd5e0);
+            background-color: var(--eipsi-color-background, #ffffff);
+        }
+
+        &:focus {
+            outline: none;
+            border-color: var(--eipsi-color-primary, #005a87);
+            box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+        }
+
+        // Placeholder styling
+        option[value=""][disabled] {
+            color: var(--eipsi-color-text-muted, #64748b);
+        }
+    }
+
+    // Flecha visual con ::after
+    .eipsi-select-field::after {
+        content: '▼';
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: var(--eipsi-color-text-muted, #64748b);
+        font-size: 0.65rem;
+        z-index: 1;
+    }
+
+    // Cuando está en error
+    &.has-error .eipsi-select-field select {
+        border-color: var(--eipsi-color-error, #d32f2f);
+
+        &:focus {
+            box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.1);
+        }
+    }
 }
