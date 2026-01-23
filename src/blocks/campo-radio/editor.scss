@@ -13,21 +13,9 @@
         position: relative;
         transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
         
-        &::before {
-            content: "EIPSI Radio";
-            position: absolute;
-            top: -10px;
-            left: 12px;
-            background: var(--eipsi-color-primary, #005a87);
-            color: var(--eipsi-color-button-text, #ffffff);
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
+        // ✅ v1.3.18 - Badge removed: Clean interface, block type is already visible in editor
+        // No ::before badge needed - users can identify block by its content and icon
+        
         > label {
             display: block;
             margin-bottom: var(--eipsi-spacing-xs, 0.5em);
