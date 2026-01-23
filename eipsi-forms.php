@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.3.16
+ * Version: 1.3.17
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization
- * Stable tag: 1.3.16
+ * Stable tag: 1.3.17
  * 
  * @package EIPSI_Forms
  */
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('EIPSI_FORMS_VERSION', '1.3.16');
+define('EIPSI_FORMS_VERSION', '1.3.17');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -113,30 +113,32 @@ add_action('init', function() {
 
 /**
  * Crear página especial para acceso aleatorizado
+ * DESHABILITADO por defecto (v1.3.17) - Ya no se crea automáticamente
+ * Si se necesita, el usuario puede crear la página manualmente y agregar el shortcode
  */
-function eipsi_create_randomization_page() {
-    // Buscar si ya existe
-    $page = get_page_by_path('estudio-aleatorio');
-    
-    if (!$page) {
-        // Crear página si no existe
-        $page_id = wp_insert_post(array(
-            'post_title' => __('Estudio Aleatorizado', 'eipsi-forms'),
-            'post_name' => 'estudio-aleatorio',
-            'post_type' => 'page',
-            'post_status' => 'publish',
-            'post_content' => '[eipsi_randomized_form_page]'
-        ));
-        
-        if ($page_id && !is_wp_error($page_id)) {
-            update_option('eipsi_randomization_page_id', $page_id);
-            error_log('[EIPSI Forms] Página de aleatorización creada: /estudio-aleatorio/');
-        }
-    }
-}
+// function eipsi_create_randomization_page() {
+//     // Buscar si ya existe
+//     $page = get_page_by_path('estudio-aleatorio');
+//     
+//     if (!$page) {
+//         // Crear página si no existe
+//         $page_id = wp_insert_post(array(
+//             'post_title' => __('Estudio Aleatorizado', 'eipsi-forms'),
+//             'post_name' => 'estudio-aleatorio',
+//             'post_type' => 'page',
+//             'post_status' => 'publish',
+//             'post_content' => '[eipsi_randomized_form_page]'
+//         ));
+//         
+//         if ($page_id && !is_wp_error($page_id)) {
+//             update_option('eipsi_randomization_page_id', $page_id);
+//             error_log('[EIPSI Forms] Página de aleatorización creada: /estudio-aleatorio/');
+//         }
+//     }
+// }
 
-// Ejecutar en activación del plugin
-add_action('eipsi_forms_activation', 'eipsi_create_randomization_page');
+// // Ejecutar en activación del plugin
+// add_action('eipsi_forms_activation', 'eipsi_create_randomization_page');
 
 function eipsi_forms_activate() {
     global $wpdb;
@@ -514,20 +516,11 @@ function eipsi_forms_enqueue_frontend_assets() {
         return;
     }
 
-    // Ensure block styles are registered before enqueueing main CSS
-    if (!wp_style_is('eipsi-blocks-style', 'registered')) {
-        wp_register_style(
-            'eipsi-blocks-style',
-            EIPSI_FORMS_PLUGIN_URL . 'build/style-index.css',
-            array(),
-            EIPSI_FORMS_VERSION
-        );
-    }
-
+    // Enqueue main form CSS (no longer uses build/style-index.css - removed in v1.3.10 CSS refactor)
     wp_enqueue_style(
         'eipsi-forms-css',
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-forms.css',
-        array('eipsi-blocks-style'),
+        array(),  // Removed dependency on eipsi-blocks-style (no longer exists)
         EIPSI_FORMS_VERSION
     );
 
