@@ -45,6 +45,11 @@ export default function Save( { attributes } ) {
 		'data-required': required ? 'true' : 'false',
 		'data-field-type': 'vas-slider',
 		'data-value-position': valuePosition || 'above',
+		'data-labels': labels || '',
+		'data-min-value': sliderMin,
+		'data-max-value': sliderMax,
+		'data-step': safeStep,
+		'data-initial-value': safeInitialValue,
 	};
 
 	if (
