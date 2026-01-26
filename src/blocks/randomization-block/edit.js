@@ -561,6 +561,29 @@ export default function Edit( { attributes, setAttributes } ) {
 											? __( '✅ Copiado', 'eipsi-forms' )
 											: __( '📋 Copiar', 'eipsi-forms' ) }
 									</Button>
+
+									<Button
+										variant="secondary"
+										href={ `/wp-admin/admin.php?page=eipsi-results&tab=rct-analytics&config=${ encodeURIComponent(
+											savedConfig?.config_id || ''
+										) }` }
+										target="_blank"
+										rel="noopener noreferrer"
+										disabled={ ! savedConfig?.config_id }
+										className="analytics-button"
+										style={ {
+											background:
+												'linear-gradient(135deg, #3b82f6, #2563eb)',
+											color: 'white',
+											border: 'none',
+										} }
+									>
+										📊{ ' ' }
+										{ __(
+											'Ver Analytics en Vivo',
+											'eipsi-forms'
+										) }
+									</Button>
 								</div>
 								<Notice
 									status="success"
