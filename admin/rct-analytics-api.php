@@ -20,6 +20,7 @@ function eipsi_register_rct_analytics_endpoints() {
     add_action('wp_ajax_eipsi_get_randomizations', 'eipsi_get_randomizations');
     add_action('wp_ajax_eipsi_get_randomization_details', 'eipsi_get_randomization_details');
     add_action('wp_ajax_eipsi_get_randomization_users', 'eipsi_get_randomization_users');
+    add_action('wp_ajax_eipsi_get_distribution_stats', 'eipsi_get_distribution_stats');
 }
 add_action('init', 'eipsi_register_rct_analytics_endpoints');
 
@@ -530,4 +531,321 @@ function eipsi_download_assignments_csv() {
     }
 }
 add_action('wp_ajax_eipsi_download_assignments_csv', 'eipsi_download_assignments_csv');
+
+/**
+ * Obtener estadísticas de distribución: Teórico vs Real
+ * 
+ * Compara la distribución configurada (teórica) vs la distribución actual (real)
+ * para detectar desbalances, sesgos o errores en la aleatorización
+ * 
+ * @param string $randomization_id ID de la configuración de aleatorización
+ * @param string $format Formato de respuesta: 'json' | 'summary'
+ * @return array Estadísticas de distribución con drift analysis
+ */
+function eipsi_get_distribution_stats() {
+    // Verificar nonce y permisos
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized', 403);
+        return;
+    }
+
+    $randomization_id = sanitize_text_field($_POST['randomization_id'] ?? '');
+    $format = sanitize_text_field($_POST['format'] ?? 'json');
+
+    if (empty($randomization_id)) {
+        wp_send_json_error('ID de aleatorización requerido');
+        return;
+    }
+
+    global $wpdb;
+
+    try {
+        // Obtener configuración de aleatorización
+        $config_query = "
+            SELECT 
+                rc.randomization_id,
+                rc.formularios,
+                rc.probabilidades,
+                rc.created_at,
+                COUNT(DISTINCT ra.user_fingerprint) as total_assigned,
+                COUNT(CASE WHEN ra.last_access IS NOT NULL THEN 1 END) as completed_count
+            FROM {$wpdb->prefix}eipsi_randomization_configs rc
+            LEFT JOIN {$wpdb->prefix}eipsi_randomization_assignments ra 
+                ON rc.randomization_id = ra.randomization_id
+            WHERE rc.randomization_id = %s
+            GROUP BY rc.id
+        ";
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $config = $wpdb->get_row($wpdb->prepare($config_query, $randomization_id));
+
+        if (!$config) {
+            wp_send_json_error('Aleatorización no encontrada');
+            return;
+        }
+
+        // Decodificar configuración
+        $formularios = json_decode($config->formularios, true) ?: array();
+        $probabilidades = json_decode($config->probabilidades, true) ?: array();
+
+        $total_assigned = intval($config->total_assigned);
+        $completed_count = intval($config->completed_count);
+
+        // Obtener distribución real por formulario
+        $distribution_query = "
+            SELECT 
+                ra.assigned_form_id,
+                COUNT(*) as assigned_count,
+                COUNT(CASE WHEN ra.last_access IS NOT NULL THEN 1 END) as completed_count,
+                AVG(ra.access_count) as avg_access_count,
+                AVG(DATEDIFF(CURDATE(), DATE(ra.assigned_at))) as avg_days_to_complete
+            FROM {$wpdb->prefix}eipsi_randomization_assignments ra
+            WHERE ra.randomization_id = %s
+            GROUP BY ra.assigned_form_id
+        ";
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $distribution_raw = $wpdb->get_results($wpdb->prepare($distribution_query, $randomization_id));
+
+        // Crear mapa de distribución real
+        $real_distribution = array();
+        foreach ($distribution_raw as $dist) {
+            $real_distribution[$dist->assigned_form_id] = array(
+                'assigned_count' => intval($dist->assigned_count),
+                'completed_count' => intval($dist->completed_count),
+                'avg_access_count' => round($dist->avg_access_count, 1),
+                'avg_days_to_complete' => round($dist->avg_days_to_complete, 1)
+            );
+        }
+
+        // Procesar cada formulario configurado
+        $formularios_stats = array();
+        $total_drift_sum = 0;
+        $max_drift = 0;
+        $max_drift_form_id = null;
+
+        foreach ($formularios as $form_config) {
+            $form_id = intval($form_config['id']);
+            $theoretical_probability = floatval($probabilidades[$form_id] ?? 0);
+
+            // Obtener datos reales para este formulario
+            $real_data = $real_distribution[$form_id] ?? array(
+                'assigned_count' => 0,
+                'completed_count' => 0,
+                'avg_access_count' => 0,
+                'avg_days_to_complete' => 0
+            );
+
+            // Calcular porcentajes reales
+            $assigned_count = $real_data['assigned_count'];
+            $assigned_percentage = $total_assigned > 0 ? 
+                round(($assigned_count / $total_assigned) * 100, 1) : 0;
+
+            // Calcular drift (diferencia entre real y teórico)
+            $drift_percentage = 0;
+            $drift_status = 'ok';
+
+            if ($theoretical_probability > 0) {
+                $drift = $assigned_percentage - $theoretical_probability;
+                $drift_percentage = round(($drift / $theoretical_probability) * 100, 1);
+
+                // Determinar status basado en thresholds
+                if (abs($drift_percentage) <= 3) {
+                    $drift_status = 'ok';
+                } elseif (abs($drift_percentage) <= 5) {
+                    $drift_status = 'warning';
+                } else {
+                    $drift_status = 'alert';
+                }
+            }
+
+            // Calcular tasas de completado
+            $completion_rate = $assigned_count > 0 ? 
+                round(($real_data['completed_count'] / $assigned_count) * 100, 1) : 0;
+            $dropout_rate = 100 - $completion_rate;
+
+            // Obtener título del formulario
+            $form_title = get_the_title($form_id) ?: "Formulario ID: {$form_id}";
+
+            // Determinar indicador de estado
+            $status_indicator = '✅';
+            if ($drift_status === 'warning') {
+                $status_indicator = '⚠️';
+            } elseif ($drift_status === 'alert') {
+                $status_indicator = '🔴';
+            }
+
+            $form_stats = array(
+                'form_id' => $form_id,
+                'form_title' => $form_title,
+                'probability_theoretical' => $theoretical_probability,
+                'assigned_count' => $assigned_count,
+                'assigned_percentage' => $assigned_percentage,
+                'completed_count' => $real_data['completed_count'],
+                'completion_rate' => $completion_rate,
+                'dropout_rate' => $dropout_rate,
+                'drift_percentage' => $drift_percentage,
+                'drift_status' => $drift_status,
+                'avg_access_count' => $real_data['avg_access_count'],
+                'avg_days_to_complete' => $real_data['avg_days_to_complete'],
+                'status_indicator' => $status_indicator
+            );
+
+            $formularios_stats[] = $form_stats;
+
+            // Actualizar estadísticas globales
+            $total_drift_sum += abs($drift_percentage);
+            if (abs($drift_percentage) > $max_drift) {
+                $max_drift = abs($drift_percentage);
+                $max_drift_form_id = $form_id;
+            }
+        }
+
+        // Calcular resumen global
+        $avg_drift = count($formularios_stats) > 0 ? $total_drift_sum / count($formularios_stats) : 0;
+        $overall_completion_rate = $total_assigned > 0 ? 
+            round(($completed_count / $total_assigned) * 100, 1) : 0;
+
+        // Calcular health score (0-100)
+        $health_score = calculate_health_score($avg_drift, $overall_completion_rate, $total_assigned);
+
+        // Determinar estado general
+        $overall_status = 'ok';
+        if ($max_drift > 5) {
+            $overall_status = 'alert';
+        } elseif ($max_drift > 3) {
+            $overall_status = 'warning';
+        }
+
+        // Generar recomendación
+        $recommendation = generate_distribution_recommendation($overall_status, $max_drift, $max_drift_form_id, $formularios);
+
+        // Calcular margen de error (95% CI)
+        $margin_error = calculate_margin_error($total_assigned);
+
+        // Respuesta
+        $response = array(
+            'success' => true,
+            'randomization_id' => $randomization_id,
+            'created_at' => $config->created_at,
+            'total_assigned' => $total_assigned,
+            'completed_count' => $completed_count,
+            'formularios' => $formularios_stats,
+            'summary' => array(
+                'total_drift' => round($total_drift_sum, 1),
+                'max_drift' => $max_drift,
+                'max_drift_form_id' => $max_drift_form_id,
+                'overall_status' => $overall_status,
+                'health_score' => $health_score,
+                'recommendation' => $recommendation
+            ),
+            'metadata' => array(
+                'calculation_timestamp' => time(),
+                'sample_size_note' => $total_assigned . ' asignaciones (±' . $margin_error . '% error margin)'
+            )
+        );
+
+        wp_send_json_success($response);
+
+    } catch (Exception $e) {
+        error_log('[EIPSI Distribution Stats] Error: ' . $e->getMessage());
+        wp_send_json_error('Error interno del servidor');
+    }
+}
+
+/**
+ * Calcular health score basado en drift promedio, tasa de completado y tamaño de muestra
+ * 
+ * @param float $avg_drift Drift promedio absoluto
+ * @param float $completion_rate Tasa de completado general
+ * @param int $sample_size Tamaño de muestra
+ * @return int Health score (0-100)
+ */
+function calculate_health_score($avg_drift, $completion_rate, $sample_size) {
+    // Base score
+    $score = 100;
+    
+    // Penalizar drift alto
+    $drift_penalty = min($avg_drift * 2, 30); // Max 30 puntos por drift
+    $score -= $drift_penalty * 0.5;
+    
+    // Penalizar completado bajo
+    $completion_penalty = max(0, 100 - $completion_rate);
+    $score -= $completion_penalty * 0.4;
+    
+    // Penalizar muestra pequeña
+    $min_sample_size = 100; // Tamaño mínimo para análisis confiable
+    $sample_penalty = max(0, (1 - ($sample_size / $min_sample_size)) * 20);
+    $score -= $sample_penalty;
+    
+    return max(0, min(100, round($score)));
+}
+
+/**
+ * Generar recomendación basada en el análisis de distribución
+ * 
+ * @param string $overall_status Estado general
+ * @param float $max_drift Máximo drift encontrado
+ * @param int $max_drift_form_id ID del formulario con máximo drift
+ * @param array $formularios Configuración de formularios
+ * @return string Recomendación en español
+ */
+function generate_distribution_recommendation($overall_status, $max_drift, $max_drift_form_id, $formularios) {
+    if ($overall_status === 'ok') {
+        return 'Distribución saludable. Los desbalances están dentro del rango estadísticamente esperado.';
+    }
+    
+    if ($overall_status === 'warning') {
+        $form_title = 'Formulario desconocido';
+        foreach ($formularios as $form) {
+            if (intval($form['id']) === $max_drift_form_id) {
+                $form_title = get_the_title($form['id']) ?: 'Formulario ID: ' . $form['id'];
+                break;
+            }
+        }
+        
+        return "Monitorear {$form_title} (drift: {$max_drift}%). Verificar que no haya sesgos sistemáticos.";
+    }
+    
+    if ($overall_status === 'alert') {
+        $form_title = 'Formulario desconocido';
+        foreach ($formularios as $form) {
+            if (intval($form['id']) === $max_drift_form_id) {
+                $form_title = get_the_title($form['id']) ?: 'Formulario ID: ' . $form['id'];
+                break;
+            }
+        }
+        
+        $actions = array();
+        
+        if ($max_drift > 10) {
+            $actions[] = 'Verificar configuración de probabilidades';
+            $actions[] = 'Revisar algoritmo de seed';
+            $actions[] = 'Validar persistencia de asignaciones';
+        }
+        
+        $actions[] = 'Aumentar tamaño de muestra';
+        $actions[] = 'Investigar posibles sesgos en fingerprinting';
+        
+        return "ALERTA: {$form_title} muestra drift crítico ({$max_drift}%). " . implode('. ', $actions) . '.';
+    }
+    
+    return 'Revisar configuración de distribución.';
+}
+
+/**
+ * Calcular margen de error para el tamaño de muestra dado (95% CI)
+ * 
+ * @param int $n Tamaño de muestra
+ * @return float Margen de error en porcentaje
+ */
+function calculate_margin_error($n) {
+    if ($n <= 0) return 100;
+    
+    // Fórmula: 1.96 * sqrt(p(1-p)/n) * 100
+    // Asumiendo p=0.5 (peor caso)
+    $margin = 1.96 * sqrt(0.5 * 0.5 / $n) * 100;
+    
+    return round($margin, 1);
+}
 ?>
