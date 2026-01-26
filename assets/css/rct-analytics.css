@@ -272,6 +272,30 @@
     color: white;
 }
 
+.rct-button-analysis {
+    background: #8b5cf6;
+    color: white;
+    border-color: #8b5cf6;
+}
+
+.rct-button-analysis:hover {
+    background: #7c3aed;
+    color: white;
+    border-color: #7c3aed;
+}
+
+.rct-button-download {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+.rct-button-download:hover {
+    background: #059669;
+    color: white;
+    border-color: #059669;
+}
+
 /* Estado vacío */
 .empty-state {
     text-align: center;
@@ -623,5 +647,524 @@
 
     .users-table tbody tr:hover {
         background: #4b5563;
+    }
+}
+
+/* =========================================
+   PILAR 3: DISTRIBUTION STATS - Estilos
+   ========================================= */
+
+/* Widget de distribución */
+.rct-distribution-widget {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.distribution-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.distribution-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.overall-status {
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.overall-status.ok {
+    background: #d4edda;
+    color: #155724;
+}
+
+.overall-status.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.overall-status.alert {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Tabla de distribución */
+.distribution-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.distribution-table th {
+    background: #f8fafc;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #e2e8f0;
+    color: #374151;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.distribution-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #1f2937;
+}
+
+.distribution-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.distribution-table .row-ok {
+    background: #f0f9ff;
+}
+
+.distribution-table .row-warning {
+    background: #fffbf0;
+}
+
+.distribution-table .row-alert {
+    background: #fff5f5;
+}
+
+/* Indicadores de drift */
+.drift {
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.drift.ok {
+    color: #28a745;
+    background: #d4edda;
+}
+
+.drift.warning {
+    color: #ffc107;
+    background: #fff3cd;
+}
+
+.drift.alert {
+    color: #dc3545;
+    background: #f8d7da;
+}
+
+/* Resumen de distribución */
+.distribution-summary {
+    background: #f8fafc;
+    padding: 15px;
+    border-left: 4px solid #3b82f6;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.distribution-summary strong {
+    color: #1f2937;
+}
+
+/* Health Score Circular */
+.health-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    font-weight: bold;
+    color: white;
+    margin: 20px auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.health-score:hover {
+    transform: scale(1.05);
+}
+
+.health-score.green {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.health-score.orange {
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+}
+
+.health-score.red {
+    background: linear-gradient(135deg, #dc3545, #e74c3c);
+}
+
+.health-score .score-value {
+    font-size: 3em;
+    line-height: 1;
+    margin-bottom: 5px;
+}
+
+.health-score .score-label {
+    font-size: 0.9em;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Gráfico alternativo (sin Chart.js) */
+.distribution-chart-fallback {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 6px;
+}
+
+.distribution-chart-fallback h4 {
+    margin: 0 0 15px 0;
+    color: #1f2937;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.chart-bars {
+    margin-bottom: 15px;
+}
+
+.chart-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+}
+
+.chart-label {
+    min-width: 150px;
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+}
+
+.chart-bars-container {
+    flex: 1;
+    position: relative;
+    height: 20px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    margin: 0 15px;
+    overflow: hidden;
+}
+
+.chart-bars-container .bar {
+    height: 100%;
+    border-radius: 10px;
+    position: absolute;
+    top: 0;
+    transition: width 0.3s ease;
+}
+
+.chart-bars-container .bar.theoretical {
+    background: linear-gradient(90deg, rgba(100, 150, 200, 0.8), rgba(100, 150, 200, 1));
+    z-index: 2;
+}
+
+.chart-bars-container .bar.real {
+    background: linear-gradient(90deg, rgba(76, 175, 80, 0.8), rgba(76, 175, 80, 1));
+    z-index: 1;
+}
+
+.chart-values {
+    display: flex;
+    gap: 10px;
+    min-width: 120px;
+    justify-content: flex-end;
+}
+
+.chart-values .value {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.chart-values .value.theoretical {
+    color: #64748b;
+    background: #f1f5f9;
+}
+
+.chart-values .value.real {
+    color: #059669;
+    background: #d1fae5;
+}
+
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.legend-color {
+    width: 16px;
+    height: 8px;
+    border-radius: 4px;
+}
+
+.legend-color.theoretical {
+    background: rgba(100, 150, 200, 1);
+}
+
+.legend-color.real {
+    background: rgba(76, 175, 80, 1);
+}
+
+/* Modal de análisis de distribución */
+#rct-distribution-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#rct-distribution-modal .eipsi-modal-content {
+    background: white;
+    border-radius: 8px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+#rct-distribution-modal .eipsi-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 8px 8px 0 0;
+}
+
+#rct-distribution-modal .eipsi-modal-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+#rct-distribution-modal .eipsi-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #64748b;
+    padding: 5px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+#rct-distribution-modal .eipsi-modal-close:hover {
+    background: #e2e8f0;
+    color: #1f2937;
+}
+
+#rct-distribution-modal .eipsi-modal-body {
+    padding: 20px;
+}
+
+/* Responsive para distribución stats */
+@media (max-width: 768px) {
+    .rct-distribution-widget {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .distribution-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .distribution-table {
+        font-size: 12px;
+    }
+
+    .distribution-table th,
+    .distribution-table td {
+        padding: 8px 6px;
+    }
+
+    .health-score {
+        width: 100px;
+        height: 100px;
+    }
+
+    .health-score .score-value {
+        font-size: 2.5em;
+    }
+
+    .chart-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .chart-label {
+        min-width: auto;
+    }
+
+    .chart-bars-container {
+        margin: 0;
+        width: 100%;
+    }
+
+    .chart-values {
+        justify-content: flex-start;
+    }
+
+    #rct-distribution-modal .eipsi-modal-content {
+        max-width: 95vw;
+        margin: 2% auto;
+    }
+}
+
+/* Dark mode para distribution stats */
+@media (prefers-color-scheme: dark) {
+    .rct-distribution-widget {
+        background: #374151;
+        border-color: #4b5563;
+    }
+
+    .distribution-header {
+        border-bottom-color: #4b5563;
+    }
+
+    .distribution-header h3 {
+        color: #f3f4f6;
+    }
+
+    .distribution-table {
+        color: #f3f4f6;
+    }
+
+    .distribution-table th {
+        background: #4b5563;
+        color: #e5e7eb;
+        border-bottom-color: #6b7280;
+    }
+
+    .distribution-table td {
+        color: #f3f4f6;
+        border-bottom-color: #4b5563;
+    }
+
+    .distribution-table tbody tr:hover {
+        background: #4b5563;
+    }
+
+    .distribution-table .row-ok {
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    .distribution-table .row-warning {
+        background: rgba(245, 158, 11, 0.1);
+    }
+
+    .distribution-table .row-alert {
+        background: rgba(239, 68, 68, 0.1);
+    }
+
+    .distribution-summary {
+        background: #4b5563;
+        color: #f3f4f6;
+    }
+
+    .distribution-chart-fallback {
+        background: #374151;
+        color: #f3f4f6;
+    }
+
+    .distribution-chart-fallback h4 {
+        color: #f3f4f6;
+    }
+
+    .chart-row {
+        background: #374151;
+        color: #f3f4f6;
+    }
+
+    .chart-label {
+        color: #e5e7eb;
+    }
+
+    .chart-bars-container {
+        background: #6b7280;
+    }
+
+    .chart-values .value.theoretical {
+        background: #6b7280;
+        color: #d1d5db;
+    }
+
+    .chart-values .value.real {
+        background: #065f46;
+        color: #d1fae5;
+    }
+
+    .legend-item {
+        color: #d1d5db;
+    }
+
+    #rct-distribution-modal .eipsi-modal-content {
+        background: #374151;
+    }
+
+    #rct-distribution-modal .eipsi-modal-header {
+        background: #4b5563;
+        border-bottom-color: #6b7280;
+    }
+
+    #rct-distribution-modal .eipsi-modal-header h3 {
+        color: #f3f4f6;
+    }
+
+    #rct-distribution-modal .eipsi-modal-close {
+        color: #d1d5db;
+    }
+
+    #rct-distribution-modal .eipsi-modal-close:hover {
+        background: #6b7280;
+        color: #f3f4f6;
     }
 }

@@ -44,6 +44,19 @@ function eipsi_display_rct_analytics() {
         <!-- Mensajes -->
         <div id="rct-message-container"></div>
 
+        <!-- Modal para detalles -->
+        <div id="rct-details-modal" class="eipsi-modal" style="display: none;">
+            <div class="eipsi-modal-content">
+                <div class="eipsi-modal-header">
+                    <h3 id="modal-title">Detalles</h3>
+                    <button type="button" class="eipsi-modal-close">&times;</button>
+                </div>
+                <div class="eipsi-modal-body">
+                    <div id="modal-body"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Dashboard Container -->
         <div id="rct-dashboard" class="rct-dashboard">
             <div class="loading-indicator">
@@ -301,6 +314,18 @@ function eipsi_display_rct_analytics() {
 
         .rct-button-primary:hover {
             background: #1d4ed8;
+        }
+
+        .rct-button-analysis {
+            background: #8b5cf6;
+            color: white;
+            border-color: #8b5cf6;
+        }
+
+        .rct-button-analysis:hover {
+            background: #7c3aed;
+            color: white;
+            border-color: #7c3aed;
         }
 
         /* Estado vacío */
@@ -574,6 +599,9 @@ function eipsi_display_rct_analytics() {
                         <div class="rct-actions-buttons">
                             <button type="button" class="rct-button rct-button-primary rct-view-details" data-randomization-id="${escapeHtml(rct.randomization_id)}">
                                 👁️ Ver Detalles
+                            </button>
+                            <button type="button" class="rct-button rct-button-analysis" onclick="showDistributionAnalysis('${escapeHtml(rct.randomization_id)}')">
+                                📊 Análisis Distribución
                             </button>
                             <button type="button" class="rct-button" onclick="copyRCTId('${escapeHtml(rct.randomization_id)}')">
                                 📋 Copiar ID
