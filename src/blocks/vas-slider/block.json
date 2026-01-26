@@ -45,13 +45,9 @@
             "type": "string",
             "default": ""
         },
-        "minLabel": {
+        "labels": {
             "type": "string",
-            "default": "Ningún dolor"
-        },
-        "maxLabel": {
-            "type": "string",
-            "default": "Máximo dolor"
+            "default": ""
         },
         "minValue": {
             "type": "number",
@@ -65,7 +61,7 @@
             "type": "number",
             "default": 1
         },
-        "defaultValue": {
+        "initialValue": {
             "type": "number",
             "default": 50
         },
@@ -75,7 +71,31 @@
         },
         "showCurrentValue": {
             "type": "boolean",
+            "default": true
+        },
+        "labelFontSize": {
+            "type": "number",
+            "default": 16
+        },
+        "valueFontSize": {
+            "type": "number",
+            "default": 36
+        },
+        "showLabelContainers": {
+            "type": "boolean",
             "default": false
+        },
+        "boldLabels": {
+            "type": "boolean",
+            "default": true
+        },
+        "valuePosition": {
+            "type": "string",
+            "default": "above"
+        },
+        "labelAlignment": {
+            "type": "number",
+            "default": 50
         },
         "className": {
             "type": "string",
@@ -100,6 +120,14 @@
         "gradientDocumentation": {
             "type": "string",
             "default": ""
+        },
+        "conditionalLogic": {
+            "type": "object",
+            "default": {
+                "enabled": false,
+                "rules": [],
+                "type": "all"
+            }
         }
     },
     "example": {
@@ -108,13 +136,12 @@
             "label": "Nivel de Dolor",
             "required": true,
             "helperText": "Arrastrá el marcador para indicar tu nivel de dolor actual.",
-            "minLabel": "Ningún dolor",
-            "maxLabel": "Máximo dolor",
+            "labels": "Ningún dolor;Máximo dolor",
             "minValue": 0,
             "maxValue": 100,
             "step": 1,
-            "defaultValue": 50,
-            "showValue": false
+            "initialValue": 50,
+            "showCurrentValue": true
         }
     }
 }

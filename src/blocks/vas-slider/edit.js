@@ -101,14 +101,20 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 	const [ previewValue, setPreviewValue ] = useState(
 		clampValueToRange(
-			sanitizeNumber( initialValue, sliderMin ),
+			sanitizeNumber(
+				initialValue,
+				Math.floor( ( sliderMin + sliderMax ) / 2 )
+			),
 			sliderMin,
 			sliderMax
 		)
 	);
 
 	useEffect( () => {
-		const safeInitial = sanitizeNumber( initialValue, sliderMin );
+		const safeInitial = sanitizeNumber(
+			initialValue,
+			Math.floor( ( sliderMin + sliderMax ) / 2 )
+		);
 		const clampedInitial = clampValueToRange(
 			safeInitial,
 			sliderMin,
@@ -120,7 +126,10 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	}, [ initialValue, sliderMin, sliderMax, setAttributes ] );
 
 	useEffect( () => {
-		const safeInitial = sanitizeNumber( initialValue, sliderMin );
+		const safeInitial = sanitizeNumber(
+			initialValue,
+			Math.floor( ( sliderMin + sliderMax ) / 2 )
+		);
 		const clampedInitial = clampValueToRange(
 			safeInitial,
 			sliderMin,

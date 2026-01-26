@@ -1845,11 +1845,17 @@
 					}
 
 					rafId = window.requestAnimationFrame( () => {
-						const valueDisplay = document.getElementById(
-							slider.getAttribute( 'aria-labelledby' )
-						);
+						const valueDisplayId = slider.getAttribute( 'aria-labelledby' );
+							let valueDisplay = valueDisplayId ? document.getElementById( valueDisplayId ) : null;
 
-						if ( valueDisplay ) {
+							if ( ! valueDisplay ) {
+								const container = slider.closest( '.vas-slider-container' );
+								if ( container ) {
+									valueDisplay = container.querySelector( '.vas-current-value-solo' );
+								}
+							}
+
+							if ( valueDisplay ) {
 							valueDisplay.textContent = value;
 						}
 
@@ -3088,17 +3094,17 @@
 
 			if ( type === 'success' ) {
 				messageElement.innerHTML = `
-                    <div class="form-message__icon">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.15"/>
-                            <path d="M7 12L10.5 15.5L17 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <div class="form-message__content">
-                        <div class="form-message__title">${ message }</div>
-                    </div>
-                    <div class="form-message__confetti" aria-hidden="true"></div>
-                `;
+					<div class="form-message__icon">
+						<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+							<circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.15"/>
+							<path d="M7 12L10.5 15.5L17 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+					<div class="form-message__content">
+						<div class="form-message__title">${ message }</div>
+					</div>
+					<div class="form-message__confetti" aria-hidden="true"></div>
+				`;
 
 				if ( ! prefersReducedMotion ) {
 					this.createConfetti( messageElement );
@@ -3127,16 +3133,16 @@
 				}, 8000 );
 			} else if ( type === 'error' ) {
 				messageElement.innerHTML = `
-                    <div class="form-message__icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
-                            <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="form-message__content">
-                        <div class="form-message__title">${ message }</div>
-                    </div>
-                `;
+					<div class="form-message__icon">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+							<circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"/>
+							<path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+						</svg>
+					</div>
+					<div class="form-message__content">
+						<div class="form-message__title">${ message }</div>
+					</div>
+				`;
 			} else {
 				messageElement.textContent = message;
 			}
@@ -3703,10 +3709,10 @@
 			if ( config.logo_url ) {
 				// Use the logo URL from config (from Form Container block)
 				logoHtml = `<div class="eipsi-thank-you-logo">
-                    <img src="${ this.escapeHtml(
+					<img src="${ this.escapeHtml(
 						config.logo_url
 					) }" alt="Logo" class="eipsi-logo-image">
-                </div>`;
+				</div>`;
 			} else if ( config.show_logo ) {
 				// Fetch logo from WordPress customizer via AJAX
 				this.fetchAndRenderLogo( thankYouPage );
@@ -3722,14 +3728,14 @@
 						: '';
 
 				buttonHtml = `
-                    <div class="eipsi-thank-you-actions">
-                        <button type="button" 
-                                class="eipsi-thank-you-button" 
-                                ${ buttonAction }>
-                            ${ this.escapeHtml( config.button_text ) }
-                        </button>
-                    </div>
-                `;
+					<div class="eipsi-thank-you-actions">
+						<button type="button" 
+								class="eipsi-thank-you-button" 
+								${ buttonAction }>
+							${ this.escapeHtml( config.button_text ) }
+						</button>
+					</div>
+				`;
 			}
 
 			const titleText =
@@ -3740,15 +3746,15 @@
 			);
 
 			thankYouPage.innerHTML = `
-                <div class="eipsi-thank-you-content">
-                    ${ logoHtml }
-                    <h2 class="eipsi-thank-you-title">${ this.escapeHtml(
+				<div class="eipsi-thank-you-content">
+					${ logoHtml }
+					<h2 class="eipsi-thank-you-title">${ this.escapeHtml(
 						titleText
 					) }</h2>
-                    <div class="eipsi-thank-you-message">${ messageHtml }</div>
-                    ${ buttonHtml }
-                </div>
-            `;
+					<div class="eipsi-thank-you-message">${ messageHtml }</div>
+					${ buttonHtml }
+				</div>
+			`;
 
 			// Add animation if enabled
 			if ( config.show_animation ) {
