@@ -12,11 +12,16 @@
 
     // Configuración global
     const RCT_ANALYTICS_CONFIG = {
-        ajaxUrl: eipsiAdmin?.ajaxUrl || '/wp-admin/admin-ajax.php',
-        nonce: eipsiAdmin?.nonce || '',
+        ajaxUrl: eipsiRCTAnalytics?.ajaxUrl || '/wp-admin/admin-ajax.php',
+        nonce: eipsiRCTAnalytics?.nonce || '',
         refreshInterval: 60000, // 60 segundos
         autoRefresh: true,
         maxRetries: 3,
+
+        // Integración Editor → Analytics
+        autoLoadConfigId: null,
+        filterMode: 'all', // all | single
+        autoOpened: false,
     };
 
     // Estado global
@@ -37,6 +42,9 @@
             return;
         }
 
+        // Detectar si venimos pre-filtrados por ?config=
+        initializeConfigFilter();
+
         // Configurar eventos
         setupEventHandlers();
 
@@ -49,6 +57,22 @@
         }
 
         console.log( 'EIPSI RCT Analytics Dashboard inicializado' );
+    }
+
+    /**
+     * Inicializar filtro por config desde URL
+     */
+    function initializeConfigFilter() {
+        const urlParams = new URLSearchParams( window.location.search );
+        const configId = urlParams.get( 'config' );
+
+        if ( configId ) {
+            RCT_ANALYTICS_CONFIG.autoLoadConfigId = configId;
+            RCT_ANALYTICS_CONFIG.filterMode = 'single';
+
+            // Clase útil para estilos (modo single)
+            document.body.classList.add( 'rct-single-config' );
+        }
     }
 
     /**
@@ -176,17 +200,53 @@
     function renderRCTDashboard( data ) {
         const container = $( '#rct-dashboard' );
 
-        if ( ! data || data.length === 0 ) {
+        let filteredData = data;
+
+        // Modo single-config: mostrar solo la config pedida
+        if (
+            RCT_ANALYTICS_CONFIG.filterMode === 'single' &&
+            RCT_ANALYTICS_CONFIG.autoLoadConfigId
+        ) {
+            filteredData = ( data || [] ).filter( ( r ) =>
+                r.randomization_id === RCT_ANALYTICS_CONFIG.autoLoadConfigId
+            );
+
+            // Si no existe, volvemos a modo normal (fallback elegante)
+            if ( filteredData.length === 0 ) {
+                RCT_ANALYTICS_CONFIG.filterMode = 'all';
+                RCT_ANALYTICS_CONFIG.autoLoadConfigId = null;
+                document.body.classList.remove( 'rct-single-config' );
+                filteredData = data;
+            }
+        }
+
+        if ( ! filteredData || filteredData.length === 0 ) {
             container.html( getEmptyState() );
             return;
         }
 
         let html = '';
-        data.forEach( function ( rct ) {
+        filteredData.forEach( function ( rct ) {
             html += renderRCtCard( rct );
         } );
 
         container.html( html );
+
+        // Auto-abrir el modal de detalles (Monitoreo en Vivo)
+        if (
+            RCT_ANALYTICS_CONFIG.filterMode === 'single' &&
+            RCT_ANALYTICS_CONFIG.autoLoadConfigId &&
+            ! RCT_ANALYTICS_CONFIG.autoOpened
+        ) {
+            RCT_ANALYTICS_CONFIG.autoOpened = true;
+
+            setTimeout( function () {
+                showRCTDetails( RCT_ANALYTICS_CONFIG.autoLoadConfigId );
+
+                // feedback visual
+                $( '#rct-details-modal' ).addClass( 'auto-opened' );
+            }, 600 );
+        }
     }
 
     /**

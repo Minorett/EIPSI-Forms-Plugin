@@ -13,6 +13,32 @@ if (!defined('ABSPATH')) {
 }
 
 /**
+ * Verificar si un config_id (randomization_id) existe en la base de datos
+ *
+ * @param string $config_id Randomization ID
+ * @return bool
+ */
+function eipsi_check_config_exists($config_id) {
+    global $wpdb;
+
+    $config_id = sanitize_text_field($config_id);
+    if (empty($config_id)) {
+        return false;
+    }
+
+    $query = "
+        SELECT COUNT(*)
+        FROM {$wpdb->prefix}eipsi_randomization_configs
+        WHERE randomization_id = %s
+    ";
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $count = $wpdb->get_var($wpdb->prepare($query, $config_id));
+    return intval($count) > 0;
+}
+
+
+/**
  * Registrar los endpoints AJAX
  */
 function eipsi_register_rct_analytics_endpoints() {

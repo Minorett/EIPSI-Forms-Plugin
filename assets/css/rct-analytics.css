@@ -68,6 +68,85 @@
     100% { transform: rotate(360deg); }
 }
 
+/* Breadcrumb de integración */
+.rct-breadcrumb {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 12px;
+    padding: 10px 15px;
+    background: #f1f5f9;
+    border-left: 3px solid #3b82f6;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.rct-breadcrumb a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.rct-breadcrumb a:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+.rct-breadcrumb .separator {
+    color: #cbd5e1;
+}
+
+.rct-breadcrumb .current {
+    font-weight: 700;
+    color: #334155;
+}
+
+/* Config ID Badge */
+.config-id-badge {
+    display: inline-block;
+    font-size: 12px;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    margin-left: 12px;
+}
+
+.config-id-badge code {
+    background: transparent;
+    padding: 0;
+    color: #3b82f6;
+    font-weight: 700;
+    cursor: copy;
+}
+
+/* Modo single-config (feedback visual) */
+body.rct-single-config .rct-dashboard {
+    border: 2px dashed #3b82f6;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+/* Modal auto-abierto (visual feedback) */
+.eipsi-modal.auto-opened {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 /* Cards de aleatorización */
 .rct-card {
     background: #f8fafc;

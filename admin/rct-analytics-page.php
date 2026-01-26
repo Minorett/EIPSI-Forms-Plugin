@@ -23,13 +23,48 @@ function eipsi_display_rct_analytics() {
     // Verificar nonce para AJAX
     $nonce = wp_create_nonce('eipsi_rct_analytics_nonce');
     $ajax_url = admin_url('admin-ajax.php');
+
+    // Auto-load config desde URL (?config=...)
+    $requested_config_id = isset($_GET['config']) ? sanitize_text_field(wp_unslash($_GET['config'])) : '';
+    $auto_load_config = '';
+    if (!empty($requested_config_id) && function_exists('eipsi_check_config_exists')) {
+        if (eipsi_check_config_exists($requested_config_id)) {
+            $auto_load_config = $requested_config_id;
+        }
+    }
+
+    // URL para volver al listado de Results & Experience (mantiene el tab rct-analytics)
+    $back_to_results_url = admin_url('admin.php?page=eipsi-results&tab=rct-analytics');
     ?>
     
     <div class="wrap eipsi-rct-analytics">
         <div class="rct-header">
-            <h1>
-                🎲 <?php esc_html_e('RCT Analytics Dashboard', 'eipsi-forms'); ?>
-            </h1>
+            <div class="rct-header-left">
+                <?php if (!empty($auto_load_config)) : ?>
+                    <div class="rct-breadcrumb">
+                        <a href="<?php echo esc_url($back_to_results_url); ?>">
+                            ← <?php esc_html_e('Volver a Editar', 'eipsi-forms'); ?>
+                        </a>
+                        <span class="separator">/</span>
+                        <span class="current"><?php esc_html_e('Monitoreo en Vivo', 'eipsi-forms'); ?></span>
+                    </div>
+                <?php endif; ?>
+
+                <h1>
+                    🎲 <?php esc_html_e('RCT Analytics Dashboard', 'eipsi-forms'); ?>
+                    <?php if (!empty($auto_load_config)) : ?>
+                        <span class="config-id-badge">
+                            <?php esc_html_e('Config:', 'eipsi-forms'); ?>
+                            <code
+                                title="<?php echo esc_attr($auto_load_config); ?>"
+                                data-copy-id="<?php echo esc_attr($auto_load_config); ?>"
+                            >
+                                <?php echo esc_html(substr($auto_load_config, 0, 8)); ?>...
+                            </code>
+                        </span>
+                    <?php endif; ?>
+                </h1>
+            </div>
             <div class="rct-actions">
                 <button type="button" id="refresh-rct-data" class="button button-secondary">
                     🔄 <?php esc_html_e('Actualizar', 'eipsi-forms'); ?>
