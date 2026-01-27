@@ -142,8 +142,8 @@ function eipsi_randomization_shortcode( $atts ) {
         }
     } else {
         // NUEVA ASIGNACIÓN (primer acceso con persistent_mode=true)
-        // Primero revisar asignaciones manuales
-        $assigned_form_id = eipsi_check_manual_assignment( $config, $user_fingerprint );
+        // Primero revisar asignaciones manuales desde DB (overrides)
+        $assigned_form_id = eipsi_check_manual_override_db( $config_id, $user_fingerprint );
 
         if ( ! $assigned_form_id ) {
             // Calcular asignación aleatoria
@@ -205,6 +205,57 @@ function eipsi_randomization_shortcode( $atts ) {
 }
 
 add_shortcode( 'eipsi_randomization', 'eipsi_randomization_shortcode' );
+
+/**
+ * Verificar si existe un override manual en DB para un usuario
+ *
+ * @param string $randomization_id ID de la configuración
+ * @param string $user_fingerprint Fingerprint del usuario
+ * @return int|null Form ID asignado manualmente o null
+ */
+function eipsi_check_manual_override_db( $randomization_id, $user_fingerprint ) {
+    global $wpdb;
+
+    $overrides_table = $wpdb->prefix . 'eipsi_manual_overrides';
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $override = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT assigned_form_id, expires_at, status
+            FROM {$overrides_table}
+            WHERE randomization_id = %s
+            AND user_fingerprint = %s
+            AND status = 'active'
+            LIMIT 1",
+            $randomization_id,
+            $user_fingerprint
+        )
+    );
+
+    if ( $override ) {
+        // Verificar si NO ha expirado
+        if ( ! $override->expires_at || strtotime( $override->expires_at ) > time() ) {
+            error_log( "[EIPSI Manual Override] Override encontrado para {$user_fingerprint} → Form {$override->assigned_form_id}" );
+            return intval( $override->assigned_form_id );
+        } else {
+            error_log( "[EIPSI Manual Override] Override expirado para {$user_fingerprint}" );
+            // Marcar como expired (background task)
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+            $wpdb->update(
+                $overrides_table,
+                array( 'status' => 'expired' ),
+                array(
+                    'randomization_id' => $randomization_id,
+                    'user_fingerprint'   => $user_fingerprint
+                ),
+                array( '%s' ),
+                array( '%s', '%s' )
+            );
+        }
+    }
+
+    return null;
+}
 
 /**
  * Buscar el post que contiene la configuración de aleatorización

@@ -47,6 +47,12 @@ function eipsi_register_rct_analytics_endpoints() {
     add_action('wp_ajax_eipsi_get_randomization_details', 'eipsi_get_randomization_details');
     add_action('wp_ajax_eipsi_get_randomization_users', 'eipsi_get_randomization_users');
     add_action('wp_ajax_eipsi_get_distribution_stats', 'eipsi_get_distribution_stats');
+
+    // Endpoints para asignaciones manuales
+    add_action('wp_ajax_eipsi_get_manual_overrides', 'eipsi_get_manual_overrides');
+    add_action('wp_ajax_eipsi_create_manual_override', 'eipsi_create_manual_override');
+    add_action('wp_ajax_eipsi_revoke_manual_override', 'eipsi_revoke_manual_override');
+    add_action('wp_ajax_eipsi_delete_manual_override', 'eipsi_delete_manual_override');
 }
 add_action('init', 'eipsi_register_rct_analytics_endpoints');
 
@@ -861,17 +867,311 @@ function generate_distribution_recommendation($overall_status, $max_drift, $max_
 
 /**
  * Calcular margen de error para el tamaño de muestra dado (95% CI)
- * 
+ *
  * @param int $n Tamaño de muestra
  * @return float Margen de error en porcentaje
  */
 function calculate_margin_error($n) {
     if ($n <= 0) return 100;
-    
+
     // Fórmula: 1.96 * sqrt(p(1-p)/n) * 100
     // Asumiendo p=0.5 (peor caso)
     $margin = 1.96 * sqrt(0.5 * 0.5 / $n) * 100;
-    
+
     return round($margin, 1);
+}
+
+/**
+ * ========================================
+ * ASIGNACIONES MANUALES (OVERRIDES)
+ * ========================================
+ */
+
+/**
+ * Obtener lista de asignaciones manuales para una configuración
+ */
+function eipsi_get_manual_overrides() {
+    // Verificar nonce y permisos
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized', 403);
+        return;
+    }
+
+    $randomization_id = sanitize_text_field($_POST['randomization_id'] ?? '');
+    if (empty($randomization_id)) {
+        wp_send_json_error('ID de aleatorización requerido');
+        return;
+    }
+
+    // Verificar que la configuración existe
+    if (!function_exists('eipsi_check_config_exists') || !eipsi_check_config_exists($randomization_id)) {
+        wp_send_json_error('Configuración no encontrada');
+        return;
+    }
+
+    global $wpdb;
+
+    try {
+        $table_name = $wpdb->prefix . 'eipsi_manual_overrides';
+
+        // Query para obtener overrides
+        $query = "
+            SELECT
+                id,
+                randomization_id,
+                user_fingerprint,
+                assigned_form_id,
+                reason,
+                created_by,
+                created_at,
+                updated_at,
+                status,
+                expires_at
+            FROM {$table_name}
+            WHERE randomization_id = %s
+            ORDER BY created_at DESC
+        ";
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $results = $wpdb->get_results($wpdb->prepare($query, $randomization_id));
+
+        $overrides = array();
+        foreach ($results as $row) {
+            // Obtener título del formulario
+            $form_title = get_the_title($row->assigned_form_id);
+            if (!$form_title) {
+                $form_title = "Formulario ID: {$row->assigned_form_id}";
+            }
+
+            // Obtener nombre del creador
+            $creator = get_userdata($row->created_by);
+            $creator_name = $creator ? $creator->display_name : 'Desconocido';
+
+            // Anonimizar fingerprint (8 chars + ...)
+            $fingerprint_short = substr($row->user_fingerprint, 0, 8) . '...' . substr($row->user_fingerprint, -6);
+
+            // Formatear fechas
+            $created_formatted = date_i18n('j M, H:i', strtotime($row->created_at));
+            $expires_formatted = $row->expires_at ? date_i18n('j M, H:i', strtotime($row->expires_at)) : 'Nunca';
+
+            // Determinar si está expirado
+            $is_expired = false;
+            if ($row->expires_at && strtotime($row->expires_at) < time()) {
+                $is_expired = true;
+            }
+
+            $overrides[] = array(
+                'id' => $row->id,
+                'randomization_id' => $row->randomization_id,
+                'fingerprint' => $fingerprint_short,
+                'fingerprint_full' => $row->user_fingerprint,
+                'assigned_form_id' => $row->assigned_form_id,
+                'form_title' => $form_title,
+                'reason' => $row->reason,
+                'created_by' => $row->created_by,
+                'creator_name' => $creator_name,
+                'created_at' => $row->created_at,
+                'created_formatted' => $created_formatted,
+                'status' => $row->status,
+                'expires_at' => $row->expires_at,
+                'expires_formatted' => $expires_formatted,
+                'is_expired' => $is_expired
+            );
+        }
+
+        wp_send_json_success(array(
+            'overrides' => $overrides,
+            'total' => count($overrides)
+        ));
+
+    } catch (Exception $e) {
+        error_log('[EIPSI Manual Overrides] Error: ' . $e->getMessage());
+        wp_send_json_error('Error interno del servidor');
+    }
+}
+
+/**
+ * Crear o actualizar una asignación manual
+ */
+function eipsi_create_manual_override() {
+    // Verificar nonce y permisos
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized', 403);
+        return;
+    }
+
+    $randomization_id = sanitize_text_field($_POST['randomization_id'] ?? '');
+    $user_fingerprint = sanitize_text_field($_POST['user_fingerprint'] ?? '');
+    $assigned_form_id = intval($_POST['assigned_form_id'] ?? 0);
+    $reason = sanitize_textarea_field($_POST['reason'] ?? '');
+    $expires_days = intval($_POST['expires_days'] ?? 0);
+
+    // Validaciones
+    if (empty($randomization_id) || empty($user_fingerprint) || empty($assigned_form_id)) {
+        wp_send_json_error('Faltan parámetros requeridos');
+        return;
+    }
+
+    // Verificar que la configuración existe
+    if (!function_exists('eipsi_check_config_exists') || !eipsi_check_config_exists($randomization_id)) {
+        wp_send_json_error('Configuración no encontrada');
+        return;
+    }
+
+    // Verificar que el formulario existe
+    $form = get_post($assigned_form_id);
+    if (!$form || $form->post_status !== 'publish') {
+        wp_send_json_error('Formulario no encontrado');
+        return;
+    }
+
+    global $wpdb;
+
+    try {
+        $table_name = $wpdb->prefix . 'eipsi_manual_overrides';
+        $current_user_id = get_current_user_id();
+
+        // Calcular expires_at si se especifica días
+        $expires_at = null;
+        if ($expires_days > 0) {
+            $expires_at = date('Y-m-d H:i:s', strtotime("+{$expires_days} days"));
+        }
+
+        // Usar ON DUPLICATE KEY UPDATE para INSERT o UPDATE
+        // La UNIQUE KEY (randomization_id, user_fingerprint) garantiza 1 override por usuario/config
+        $query = "
+            INSERT INTO {$table_name}
+                (randomization_id, user_fingerprint, assigned_form_id, reason, created_by, status, expires_at)
+            VALUES (%s, %s, %d, %s, %d, 'active', %s)
+            ON DUPLICATE KEY UPDATE
+                assigned_form_id = VALUES(assigned_form_id),
+                reason = VALUES(reason),
+                status = 'active',
+                expires_at = VALUES(expires_at),
+                updated_at = NOW()
+        ";
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        $result = $wpdb->query($wpdb->prepare(
+            $query,
+            $randomization_id,
+            $user_fingerprint,
+            $assigned_form_id,
+            $reason,
+            $current_user_id,
+            $expires_at
+        ));
+
+        if ($result === false) {
+            throw new Exception($wpdb->last_error);
+        }
+
+        error_log("[EIPSI Manual Overrides] Override creado/actualizado: {$randomization_id} / {$user_fingerprint} → Form {$assigned_form_id}");
+
+        wp_send_json_success(array(
+            'message' => 'Asignación manual guardada correctamente',
+            'randomization_id' => $randomization_id,
+            'user_fingerprint' => $user_fingerprint,
+            'assigned_form_id' => $assigned_form_id
+        ));
+
+    } catch (Exception $e) {
+        error_log('[EIPSI Manual Overrides] Error al crear: ' . $e->getMessage());
+        wp_send_json_error('Error al guardar asignación manual: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Revocar una asignación manual (soft delete - marca como revoked)
+ */
+function eipsi_revoke_manual_override() {
+    // Verificar nonce y permisos
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized', 403);
+        return;
+    }
+
+    $override_id = intval($_POST['override_id'] ?? 0);
+    if (empty($override_id)) {
+        wp_send_json_error('ID de override requerido');
+        return;
+    }
+
+    global $wpdb;
+
+    try {
+        $table_name = $wpdb->prefix . 'eipsi_manual_overrides';
+
+        // Actualizar status a revoked
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        $result = $wpdb->update(
+            $table_name,
+            array('status' => 'revoked'),
+            array('id' => $override_id),
+            array('%s'),
+            array('%d')
+        );
+
+        if ($result === false) {
+            throw new Exception($wpdb->last_error);
+        }
+
+        error_log("[EIPSI Manual Overrides] Override revocado: ID {$override_id}");
+
+        wp_send_json_success(array(
+            'message' => 'Asignación manual revocada correctamente',
+            'override_id' => $override_id
+        ));
+
+    } catch (Exception $e) {
+        error_log('[EIPSI Manual Overrides] Error al revocar: ' . $e->getMessage());
+        wp_send_json_error('Error al revocar asignación manual: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Eliminar permanentemente una asignación manual
+ */
+function eipsi_delete_manual_override() {
+    // Verificar nonce y permisos
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized', 403);
+        return;
+    }
+
+    $override_id = intval($_POST['override_id'] ?? 0);
+    if (empty($override_id)) {
+        wp_send_json_error('ID de override requerido');
+        return;
+    }
+
+    global $wpdb;
+
+    try {
+        $table_name = $wpdb->prefix . 'eipsi_manual_overrides';
+
+        // DELETE permanente
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        $result = $wpdb->delete(
+            $table_name,
+            array('id' => $override_id),
+            array('%d')
+        );
+
+        if ($result === false) {
+            throw new Exception($wpdb->last_error);
+        }
+
+        error_log("[EIPSI Manual Overrides] Override eliminado: ID {$override_id}");
+
+        wp_send_json_success(array(
+            'message' => 'Asignación manual eliminada correctamente',
+            'override_id' => $override_id
+        ));
+
+    } catch (Exception $e) {
+        error_log('[EIPSI Manual Overrides] Error al eliminar: ' . $e->getMessage());
+        wp_send_json_error('Error al eliminar asignación manual: ' . $e->getMessage());
+    }
 }
 ?>

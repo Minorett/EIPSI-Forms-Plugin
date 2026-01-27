@@ -111,13 +111,65 @@ function eipsi_create_randomization_assignments_table() {
 }
 
 /**
+ * Crear tabla de asignaciones manuales (overrides)
+ *
+ * Almacena asignaciones manuales que sobrescriben la aleatorización:
+ * - randomization_id: A qué estudio pertenece
+ * - user_fingerprint: Identificador único del dispositivo
+ * - assigned_form_id: Formulario asignado manualmente
+ * - status: active, revoked, expired
+ * - expires_at: Cuándo expira la asignación (NULL = nunca)
+ */
+function eipsi_create_manual_overrides_table() {
+    global $wpdb;
+
+    $table_name      = $wpdb->prefix . 'eipsi_manual_overrides';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        randomization_id VARCHAR(100) NOT NULL,
+        user_fingerprint VARCHAR(255) NOT NULL,
+        assigned_form_id BIGINT(20) UNSIGNED NOT NULL,
+        reason TEXT,
+        created_by BIGINT(20) UNSIGNED,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        status ENUM('active', 'revoked', 'expired') DEFAULT 'active',
+        expires_at DATETIME NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY unique_override (randomization_id, user_fingerprint),
+        KEY randomization_id (randomization_id),
+        KEY user_fingerprint (user_fingerprint),
+        KEY status (status),
+        KEY created_at (created_at)
+    ) {$charset_collate};";
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta( $sql );
+
+    // Verificar si se creó correctamente
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+
+    if ( $table_exists === $table_name ) {
+        error_log( '[EIPSI Forms] Tabla creada: ' . $table_name );
+        return true;
+    } else {
+        error_log( '[EIPSI Forms] ERROR: No se pudo crear tabla ' . $table_name );
+        return false;
+    }
+}
+
+/**
  * Crear ambas tablas en activación del plugin
  */
 function eipsi_create_randomization_tables() {
-    $configs_created     = eipsi_create_randomization_configs_table();
-    $assignments_created = eipsi_create_randomization_assignments_table();
+    $configs_created         = eipsi_create_randomization_configs_table();
+    $assignments_created     = eipsi_create_randomization_assignments_table();
+    $overrides_created       = eipsi_create_manual_overrides_table();
 
-    if ( $configs_created && $assignments_created ) {
+    if ( $configs_created && $assignments_created && $overrides_created ) {
         error_log( '[EIPSI Forms] Sistema de aleatorización RCT configurado correctamente ✓' );
         update_option( 'eipsi_randomization_db_version', '1.3.1' );
         return true;
@@ -301,22 +353,26 @@ function eipsi_get_study_stats( $randomization_id ) {
 
 /**
  * Verificar si las tablas existen
- * 
- * @return bool True si ambas tablas existen
+ *
+ * @return bool True si todas las tablas existen
  */
 function eipsi_randomization_tables_exist() {
     global $wpdb;
 
     $configs_table     = $wpdb->prefix . 'eipsi_randomization_configs';
     $assignments_table = $wpdb->prefix . 'eipsi_randomization_assignments';
+    $overrides_table   = $wpdb->prefix . 'eipsi_manual_overrides';
 
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
     $configs_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$configs_table}'" ) === $configs_table;
-    
+
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
     $assignments_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$assignments_table}'" ) === $assignments_table;
 
-    return $configs_exists && $assignments_exists;
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $overrides_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$overrides_table}'" ) === $overrides_table;
+
+    return $configs_exists && $assignments_exists && $overrides_exists;
 }
 
 // Hook para activación
