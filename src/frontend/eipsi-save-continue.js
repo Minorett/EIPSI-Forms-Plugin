@@ -325,8 +325,16 @@
 					restartButton.textContent = 'Borrando...';
 
 					try {
+						// PASO 1: Cerrar sesión de aleatorización (si existe)
+						await this.closeRandomizationSession();
+
+						// PASO 2: Descartar respuestas parciales
 						await this.discardPartial();
+
+						// PASO 3: Forzar visibilidad del formulario
 						this.forceFormVisible();
+
+						// PASO 4: Cerrar modal de recuperación
 						this.closeRecoveryPopup( popup );
 					} catch ( error ) {
 						if (
@@ -550,6 +558,153 @@
 						);
 					}
 				}
+			}
+		}
+
+		/**
+		 * Obtener fingerprint del usuario desde localStorage/cookie
+		 *
+		 * @return {string|null} Fingerprint del usuario o null
+		 */
+		getUserFingerprint() {
+			// OPCIÓN 1: Intentar desde localStorage (usado por fingerprinting)
+			try {
+				const fpData = window.localStorage.getItem(
+					'eipsi_user_fingerprint'
+				);
+				if ( fpData ) {
+					const parsed = JSON.parse( fpData );
+					if ( parsed && parsed.fingerprint ) {
+						return parsed.fingerprint;
+					}
+				}
+			} catch ( error ) {
+				// Ignore localStorage errors
+			}
+
+			// OPCIÓN 2: Intentar desde cookie (fallback para navegadores con localStorage deshabilitado)
+			if ( document.cookie ) {
+				const cookies = document.cookie.split( ';' );
+				for ( let i = 0; i < cookies.length; i++ ) {
+					const cookie = cookies[ i ].trim();
+					if ( cookie.startsWith( 'eipsi_fingerprint=' ) ) {
+						return cookie.substring( 'eipsi_fingerprint='.length );
+					}
+				}
+			}
+
+			// OPCIÓN 3: Intentar desde sessionStorage (usado en algunos flujos)
+			try {
+				const sessionFp =
+					window.sessionStorage.getItem( 'eipsi_fingerprint' );
+				if ( sessionFp ) {
+					return sessionFp;
+				}
+			} catch ( error ) {
+				// Ignore sessionStorage errors
+			}
+
+			return null;
+		}
+
+		/**
+		 * Obtener randomization_id desde el contenedor de aleatorización
+		 *
+		 * @return {string|null} Randomization ID o null
+		 */
+		getRandomizationId() {
+			// Buscar el contenedor de aleatorización en el árbol del formulario
+			const container = this.form.closest(
+				'.eipsi-randomization-container'
+			);
+			if ( container ) {
+				return container.getAttribute( 'data-randomization-id' );
+			}
+			return null;
+		}
+
+		/**
+		 * Cerrar sesión de aleatorización (persistent_mode=OFF)
+		 *
+		 * Elimina la asignación del usuario de la DB y borra la cookie de rotación.
+		 * Si no hay randomization_id o fingerprint, no hace nada (sin errores).
+		 *
+		 * @return {Promise<boolean>} True si se cerró correctamente o no hay aleatorización
+		 */
+		async closeRandomizationSession() {
+			const randomizationId = this.getRandomizationId();
+			const userFingerprint = this.getUserFingerprint();
+
+			// Si no hay aleatorización activa, no hacer nada (no es un error)
+			if ( ! randomizationId || ! userFingerprint ) {
+				if ( this.config?.settings?.debug && window.console?.debug ) {
+					window.console.debug(
+						'[EIPSI Save & Continue] No hay sesión de aleatorización activa'
+					);
+				}
+				return true;
+			}
+
+			// Si no hay ajaxUrl, no se puede hacer la petición
+			if ( ! this.config.ajaxUrl ) {
+				if ( this.config?.settings?.debug && window.console?.warn ) {
+					window.console.warn(
+						'[EIPSI Save & Continue] No hay ajaxUrl para cerrar sesión de aleatorización'
+					);
+				}
+				return false;
+			}
+
+			try {
+				const formData = new URLSearchParams();
+				formData.append(
+					'action',
+					'eipsi_close_randomization_session'
+				);
+				formData.append( 'randomization_id', randomizationId );
+				formData.append( 'user_fingerprint', userFingerprint );
+
+				const response = await fetch( this.config.ajaxUrl, {
+					method: 'POST',
+					body: formData,
+					headers: {
+						'Content-Type': 'application/x-www-form-urlencoded',
+					},
+					credentials: 'same-origin',
+				} );
+
+				if ( ! response.ok ) {
+					if (
+						this.config?.settings?.debug &&
+						window.console?.warn
+					) {
+						window.console.warn(
+							'[EIPSI Save & Continue] Error al cerrar sesión de aleatorización:',
+							response.status
+						);
+					}
+					return false;
+				}
+
+				const data = await response.json();
+
+				if ( this.config?.settings?.debug && window.console?.debug ) {
+					window.console.debug(
+						'[EIPSI Save & Continue] Sesión de aleatorización cerrada:',
+						data
+					);
+				}
+
+				return data.success || false;
+			} catch ( error ) {
+				if ( this.config?.settings?.debug && window.console?.error ) {
+					window.console.error(
+						'[EIPSI Save & Continue] Error al cerrar sesión de aleatorización:',
+						error
+					);
+				}
+				// No lanzar error (permitir que el flujo continúe)
+				return false;
 			}
 		}
 
@@ -1009,4 +1164,115 @@
 	} );
 
 	window.EIPSISaveContinue = EIPSISaveContinue;
+
+	/**
+	 * Handler global para botones "Comenzar de nuevo" en thank-you page
+	 *
+	 * Detecta si el formulario está dentro de un contenedor de aleatorización
+	 * y cierra la sesión antes de recargar la página.
+	 */
+	document.addEventListener( 'DOMContentLoaded', () => {
+		const restartButtons = document.querySelectorAll(
+			'.eipsi-randomization-container [data-action="restart"]'
+		);
+
+		restartButtons.forEach( ( button ) => {
+			button.addEventListener( 'click', async ( event ) => {
+				event.preventDefault();
+				button.disabled = true;
+				button.textContent = 'Reiniciando...';
+
+				try {
+					// Obtener randomization_id desde el contenedor
+					const container = button.closest(
+						'.eipsi-randomization-container'
+					);
+					const randomizationId = container
+						? container.getAttribute( 'data-randomization-id' )
+						: null;
+
+					// Obtener fingerprint del usuario
+					let userFingerprint = null;
+
+					// OPCIÓN 1: Desde localStorage (usado por fingerprinting)
+					try {
+						const fpData = window.localStorage.getItem(
+							'eipsi_user_fingerprint'
+						);
+						if ( fpData ) {
+							const parsed = JSON.parse( fpData );
+							if ( parsed && parsed.fingerprint ) {
+								userFingerprint = parsed.fingerprint;
+							}
+						}
+					} catch ( error ) {
+						// Ignore
+					}
+
+					// OPCIÓN 2: Desde cookie
+					if ( ! userFingerprint && document.cookie ) {
+						const cookies = document.cookie.split( ';' );
+						for ( let i = 0; i < cookies.length; i++ ) {
+							const cookie = cookies[ i ].trim();
+							if ( cookie.startsWith( 'eipsi_fingerprint=' ) ) {
+								userFingerprint = cookie.substring(
+									'eipsi_fingerprint='.length
+								);
+								break;
+							}
+						}
+					}
+
+					// OPCIÓN 3: Desde sessionStorage
+					if ( ! userFingerprint ) {
+						try {
+							userFingerprint =
+								window.sessionStorage.getItem(
+									'eipsi_fingerprint'
+								);
+						} catch ( error ) {
+							// Ignore
+						}
+					}
+
+					// Si hay randomization_id y fingerprint, cerrar sesión
+					if (
+						randomizationId &&
+						userFingerprint &&
+						window.eipsiFormsConfig &&
+						window.eipsiFormsConfig.ajaxUrl
+					) {
+						const formData = new URLSearchParams();
+						formData.append(
+							'action',
+							'eipsi_close_randomization_session'
+						);
+						formData.append( 'randomization_id', randomizationId );
+						formData.append( 'user_fingerprint', userFingerprint );
+
+						await fetch( window.eipsiFormsConfig.ajaxUrl, {
+							method: 'POST',
+							body: formData,
+							headers: {
+								'Content-Type':
+									'application/x-www-form-urlencoded',
+							},
+							credentials: 'same-origin',
+						} );
+					}
+				} catch ( error ) {
+					// Ignorar errores (continuar de todas formas)
+					if ( window.console && window.console.warn ) {
+						window.console.warn(
+							'[EIPSI Save & Continue] Error al cerrar sesión de aleatorización:',
+							error
+						);
+					}
+				}
+
+				// Recargar la página (esto asignará un nuevo formulario en rotación)
+				window.location.reload();
+			} );
+		} );
+	} );
 } )();
