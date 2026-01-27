@@ -29,6 +29,18 @@
 		}
 	},
 	"attributes": {
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"helperText": {
+			"type": "string",
+			"default": ""
+		},
+		"placeholder": {
+			"type": "string",
+			"default": ""
+		},
 		"content": {
 			"type": "string",
 			"default": ""
@@ -44,7 +56,8 @@
 	},
 	"example": {
 		"attributes": {
-			"content": "Por favor, respondé a las siguientes preguntas con honestidad. Tus respuestas son confidenciales y serán utilizadas únicamente para fines de investigación.",
+			"label": "Instrucciones",
+			"helperText": "Por favor, respondé a las siguientes preguntas con honestidad. Tus respuestas son confidenciales.",
 			"level": "normal"
 		}
 	}
