@@ -22,6 +22,9 @@ export default function Save( { attributes } ) {
 	const blockProps = useBlockProps.save( {
 		className: 'form-group eipsi-field eipsi-description-field',
 		'data-field-type': 'description',
+		'data-label': label || '',
+		'data-helper-text': helperText || '',
+		'data-placeholder': placeholder || '',
 	} );
 
 	return (
