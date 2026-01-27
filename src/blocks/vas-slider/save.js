@@ -37,6 +37,29 @@ export default function Save( { attributes } ) {
 			? fieldName.trim()
 			: undefined;
 
+	// ✅ FIX v1.3.19: Move variable declarations BEFORE usage to avoid TDZ error
+	const safeStep = step && step > 0 ? step : 1;
+	const sliderMin =
+		typeof minValue === 'number' && ! Number.isNaN( minValue )
+			? minValue
+			: 0;
+	const sliderMaxCandidate =
+		typeof maxValue === 'number' && ! Number.isNaN( maxValue )
+			? maxValue
+			: sliderMin + safeStep;
+	const sliderMax =
+		sliderMaxCandidate > sliderMin
+			? sliderMaxCandidate
+			: sliderMin + safeStep;
+
+	const safeInitialValue =
+		typeof initialValue === 'number' &&
+		! Number.isNaN( initialValue ) &&
+		initialValue >= sliderMin &&
+		initialValue <= sliderMax
+			? initialValue
+			: Math.floor( ( sliderMin + sliderMax ) / 2 );
+
 	const blockPropsData = {
 		className: `form-group eipsi-field eipsi-vas-slider-field${
 			valuePosition === 'below' ? ' vas-value-below' : ''
@@ -65,28 +88,6 @@ export default function Save( { attributes } ) {
 	const blockProps = useBlockProps.save( blockPropsData );
 
 	const inputId = getFieldId( normalizedFieldName );
-
-	const safeStep = step && step > 0 ? step : 1;
-	const sliderMin =
-		typeof minValue === 'number' && ! Number.isNaN( minValue )
-			? minValue
-			: 0;
-	const sliderMaxCandidate =
-		typeof maxValue === 'number' && ! Number.isNaN( maxValue )
-			? maxValue
-			: sliderMin + safeStep;
-	const sliderMax =
-		sliderMaxCandidate > sliderMin
-			? sliderMaxCandidate
-			: sliderMin + safeStep;
-
-	const safeInitialValue =
-		typeof initialValue === 'number' &&
-		! Number.isNaN( initialValue ) &&
-		initialValue >= sliderMin &&
-		initialValue <= sliderMax
-			? initialValue
-			: Math.floor( ( sliderMin + sliderMax ) / 2 );
 
 	const parsedLabels = labels ? parseOptions( labels ) : [];
 	const resolvedLabels =
