@@ -14,6 +14,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Obtener configuración existente por config_id (helper function)
+ * 
+ * @param int $post_id Template post ID
+ * @param string $config_id Config ID (ej: 'rct_post_456_eipsi')
+ * @return array|false Configuración o false si no existe
+ * @since 1.3.19
+ */
+function eipsi_get_randomization_config_by_id( $post_id, $config_id ) {
+    $meta_key = '_randomization_config_' . $config_id;
+    return get_post_meta( $post_id, $meta_key, true );
+}
+
+/**
  * Endpoint AJAX para guardar configuración de aleatorización
  * 
  * @since 1.3.4
@@ -68,8 +81,10 @@ function eipsi_save_randomization_config() {
         }
     }
 
-    // Generar config_id único
-    $config_id = 'config_' . $post_id . '_' . time() . '_' . wp_generate_password( 8, false );
+    // ✅ v1.3.19 - Config ID estable y determinístico (basado SOLO en post_id)
+    // ANTES: 'config_456_1706270400_aB3Cd' (cambiaba cada save por time())
+    // AHORA: 'rct_post_456_eipsi' (SIEMPRE el mismo para post_id 456)
+    $config_id = 'rct_post_' . intval( $post_id ) . '_eipsi';
 
     // Preparar configuración
     $config = array(
@@ -85,24 +100,39 @@ function eipsi_save_randomization_config() {
         'persistent_mode' => $persistentMode,
         'created_at' => current_time( 'mysql' ),
         'created_by' => get_current_user_id(),
-        'version' => '1.3.4'
+        'version' => '1.3.19'
     );
 
-    // Guardar como post meta del template
+    // ✅ v1.3.19 - Buscar si YA existe este config (para UPDATE en lugar de siempre INSERT)
     $meta_key = '_randomization_config_' . $config_id;
-    $result = update_post_meta( $post_id, $meta_key, $config );
+    $existing_config = get_post_meta( $post_id, $meta_key, true );
 
-    if ( ! $result ) {
+    // ✅ v1.3.19 - UPDATE si existe, INSERT si no existe
+    if ( $existing_config ) {
+        // YA EXISTE → UPDATE (mantiene config_id estable)
+        $result = update_post_meta( $post_id, $meta_key, $config );
+        $action = 'updated';
+        error_log( "[EIPSI RCT v1.3.19] Config actualizada: {$config_id}" );
+    } else {
+        // NO EXISTE → INSERT (primera vez)
+        $result = add_post_meta( $post_id, $meta_key, $config, true );
+        $action = 'created';
+        error_log( "[EIPSI RCT v1.3.19] Config creada: {$config_id}" );
+    }
+
+    if ( ! $result && $action === 'created' ) {
+        // Solo error si era INSERT y falló (UPDATE puede retornar false si no hay cambios)
         wp_send_json_error( array( 'message' => 'Error guardando configuración en la base de datos' ) );
     }
 
-    // Generar shortcode único para el template
+    // ✅ v1.3.19 - Shortcode NUNCA cambia (generado UNA SOLA VEZ basado en config_id estable)
     $shortcode = sprintf( '[eipsi_randomization template="%d" config="%s"]', $post_id, $config_id );
 
     // Respuesta exitosa
     wp_send_json_success( array(
         'config_id' => $config_id,
         'shortcode' => $shortcode,
+        'action' => $action, // 'created' o 'updated'
         'message' => 'Configuración guardada exitosamente'
     ) );
 }
@@ -231,8 +261,10 @@ function eipsi_randomization_config_rest_handler( $request ) {
         }
     }
 
-    // Generar config_id único
-    $config_id = 'config_' . $post_id . '_' . time() . '_' . wp_generate_password( 8, false );
+    // ✅ v1.3.19 - Config ID estable y determinístico (basado SOLO en post_id)
+    // ANTES: 'config_456_1706270400_aB3Cd' (cambiaba cada save por time())
+    // AHORA: 'rct_post_456_eipsi' (SIEMPRE el mismo para post_id 456)
+    $config_id = 'rct_post_' . intval( $post_id ) . '_eipsi';
 
     // Preparar configuración
     $config = array(
@@ -248,21 +280,35 @@ function eipsi_randomization_config_rest_handler( $request ) {
         'persistent_mode' => $persistentMode,
         'created_at' => current_time( 'mysql' ),
         'created_by' => get_current_user_id(),
-        'version' => '1.3.4'
+        'version' => '1.3.19'
     );
 
-    // Guardar como post meta del template
+    // ✅ v1.3.19 - Buscar si YA existe este config (para UPDATE en lugar de siempre INSERT)
     $meta_key = '_randomization_config_' . $config_id;
-    $result = update_post_meta( $post_id, $meta_key, $config );
+    $existing_config = get_post_meta( $post_id, $meta_key, true );
 
-    if ( ! $result ) {
+    // ✅ v1.3.19 - UPDATE si existe, INSERT si no existe
+    if ( $existing_config ) {
+        // YA EXISTE → UPDATE (mantiene config_id estable)
+        $result = update_post_meta( $post_id, $meta_key, $config );
+        $action = 'updated';
+        error_log( "[EIPSI RCT v1.3.19] Config actualizada (REST): {$config_id}" );
+    } else {
+        // NO EXISTE → INSERT (primera vez)
+        $result = add_post_meta( $post_id, $meta_key, $config, true );
+        $action = 'created';
+        error_log( "[EIPSI RCT v1.3.19] Config creada (REST): {$config_id}" );
+    }
+
+    if ( ! $result && $action === 'created' ) {
+        // Solo error si era INSERT y falló (UPDATE puede retornar false si no hay cambios)
         return new WP_REST_Response( array(
             'success' => false,
             'message' => 'Error guardando configuración en la base de datos'
         ), 500 );
     }
 
-    // Generar shortcode único para el template
+    // ✅ v1.3.19 - Shortcode NUNCA cambia (generado UNA SOLA VEZ basado en config_id estable)
     $shortcode = sprintf( '[eipsi_randomization template="%d" config="%s"]', $post_id, $config_id );
 
     // Respuesta exitosa
@@ -270,6 +316,7 @@ function eipsi_randomization_config_rest_handler( $request ) {
         'success' => true,
         'config_id' => $config_id,
         'shortcode' => $shortcode,
+        'action' => $action, // 'created' o 'updated'
         'message' => 'Configuración guardada exitosamente'
     ), 200 );
 }
