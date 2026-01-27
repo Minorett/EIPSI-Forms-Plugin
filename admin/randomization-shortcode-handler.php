@@ -66,7 +66,9 @@ function eipsi_randomization_shortcode( $atts ) {
         $config = eipsi_extract_randomization_config( $config_post->ID, $config_id );
     }
 
-    // Obtener persistent_mode desde la configuración (default: true)
+    // ✅ v1.3.19 - Obtener persistent_mode desde la configuración (default: true)
+    // - true (default): Cada usuario asignado UNA VEZ, luego persistente
+    // - false: Cada F5/reload = rotación cíclica (TESTING MODE)
     $persistent_mode = isset( $config['persistent_mode'] ) ? (bool) $config['persistent_mode'] : true;
 
     if ( ! $config || empty( $config['formularios'] ) ) {

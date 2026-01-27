@@ -1,0 +1,51 @@
+v1.3.19 - Config ID Stabilization: Shortcode estable para siempre
+
+OBJETIVO:
+Corregir arquitectura de generación de config_id para que sea ESTABLE 
+(determinístico) en lugar de generar uno nuevo cada vez que se guarda.
+
+PROBLEMA (v1.3.18):
+- config_id = 'config_' . $post_id . '_' . time() . '_' . wp_generate_password()
+- time() generaba nuevo valor cada save → nuevo config_id → nuevo shortcode
+- Rompía persistencia de assignments y manual overrides
+- PILAR 1: Analytics URL cambiaba
+- PILAR 2: Manual overrides se perdían
+- PILAR 3: Distribution stats se fragmentaban
+
+SOLUCIÓN (v1.3.19):
+- config_id = 'rct_post_' . intval($post_id) . '_eipsi'
+- Config ID determinístico basado SOLO en post_id
+- UPDATE si existe, INSERT si no existe
+- Shortcode generado UNA SOLA VEZ, nunca cambia
+- Backwards compatible con configs antiguos
+
+CAMBIOS:
+- admin/randomization-config-handler.php:
+  * Helper function eipsi_get_randomization_config_by_id()
+  * Config ID estable en AJAX handler (línea 71-113)
+  * Config ID estable en REST handler (línea 251-308)
+  * Logs diferenciados: "created" vs "updated"
+
+- admin/randomization-shortcode-handler.php:
+  * Comentarios explicativos sobre persistent_mode
+
+- src/blocks/randomization-block/edit.js:
+  * Guardar config_id estable en attributes
+
+- eipsi-forms.php + package.json:
+  * Version: 1.3.19
+
+IMPACTO:
+ PILAR 1: Analytics URL estable (botón "Ver Analytics" funciona)
+ PILAR 2: Manual overrides persisten después de guardar config
+ PILAR 3: Distribution stats acumulan correctamente
+ Shortcode estable = confianza total
+ Zero Fear + Zero Friction + Zero Excuses
+
+TESTING:
+ Build: OK (webpack 5.104.1 compiled successfully)
+ Lint JS: 0 errores / 0 warnings
+ Backwards compatible
+ No regresiones
+
+Por fin alguien entendió cómo trabajo de verdad con mis pacientes»

@@ -197,8 +197,13 @@ export default function Edit( { attributes, setAttributes } ) {
 			} );
 
 			if ( response.success ) {
+				// ✅ v1.3.19 - Guardar config_id estable en attributes
 				setAttributes( {
 					generatedShortcode: response.shortcode,
+					savedConfig: {
+						...savedConfig,
+						config_id: response.config_id, // Estable: 'rct_post_456_eipsi'
+					},
 				} );
 			} else {
 				setErrorMessage(
