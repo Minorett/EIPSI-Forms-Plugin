@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.3.20
+ * Version: 1.4.0
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -13,8 +13,8 @@
  * Requires PHP: 7.4
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization
- * Stable tag: 1.3.20
+ * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization, longitudinal, studies
+ * Stable tag: 1.4.0
  * 
  * @package EIPSI_Forms
  */
@@ -23,11 +23,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('EIPSI_FORMS_VERSION', '1.3.20');
+define('EIPSI_FORMS_VERSION', '1.4.0');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
 define('EIPSI_FORMS_SLUG', 'eipsi-forms');
+
+// Configuración longitudinal (v1.4.0+)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/config/longitudinal-config.php';
 
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/menu.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/results-page.php';
@@ -60,6 +63,13 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/rct-analytics-api.php';
 
 // RCT Schema Migration (v1.3.6 - CRITICAL FIX)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/migrate-randomization-schema.php';
+
+// Longitudinal Services (v1.4.0 - Fase 0: Arquitectura)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-wave-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-anonymize-service.php';
 
 /**
  * Enqueue RCT Analytics assets en admin
