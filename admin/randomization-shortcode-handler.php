@@ -697,6 +697,49 @@ function eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_
     return true;
 }
 
+/**
+ * Función para cerrar sesión de aleatorización (persistent_mode=OFF)
+ * 
+ * Elimina la asignación del usuario de la tabla y borra la cookie de rotación.
+ * Esto permite que el próximo F5/reload asigne un nuevo formulario en la rotación cíclica.
+ * 
+ * @param string $config_id Config ID (randomization_id)
+ * @param string $user_fingerprint Fingerprint del usuario
+ * @return bool True si se cerró correctamente
+ */
+function eipsi_close_randomization_session( $config_id, $user_fingerprint ) {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'eipsi_randomization_assignments';
+
+    // Eliminar asignación de la tabla
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+    $result = $wpdb->delete(
+        $table_name,
+        array(
+            'randomization_id' => $config_id,
+            'config_id' => $config_id,
+            'user_fingerprint' => $user_fingerprint,
+        ),
+        array( '%s', '%s', '%s' )
+    );
+
+    // Eliminar cookie de rotación
+    $rotation_key = 'eipsi_rotation_' . $config_id;
+    if ( isset( $_COOKIE[ $rotation_key ] ) ) {
+        setcookie( $rotation_key, '', time() - 3600, '/' );
+        unset( $_COOKIE[ $rotation_key ] );
+    }
+
+    if ( $result !== false ) {
+        error_log( "[EIPSI RCT] Sesión cerrada para fingerprint={$user_fingerprint} en config={$config_id}" );
+        return true;
+    } else {
+        error_log( "[EIPSI RCT] ERROR al cerrar sesión: {$wpdb->last_error}" );
+        return false;
+    }
+}
+
 /* 
  * EIPSI Randomization Shortcode Handler - END OF FILE
  * Todos los comentarios están correctamente cerrados.

@@ -165,6 +165,10 @@ add_action('wp_ajax_nopriv_eipsi_validate_reminder_token', 'eipsi_validate_remin
 add_action('wp_ajax_eipsi_send_reminder_manual', 'eipsi_send_reminder_manual_handler');
 add_action('wp_ajax_eipsi_unsubscribe_reminders', 'eipsi_unsubscribe_reminders_handler');
 
+// === Close Randomization Session (persistent_mode=OFF) ===
+add_action( 'wp_ajax_nopriv_eipsi_close_randomization_session', 'eipsi_close_randomization_session_handler' );
+add_action( 'wp_ajax_eipsi_close_randomization_session', 'eipsi_close_randomization_session_handler' );
+
 /**
  * AJAX Handler: Get list of available forms for randomization dropdown
  *
@@ -2496,3 +2500,49 @@ function eipsi_get_randomization_pages_handler() {
 }
 
 ?>
+/**
+ * AJAX Handler: Close randomization session (persistent_mode=OFF)
+ * 
+ * Elimina la asignación del usuario y borra la cookie de rotación.
+ * Esto permite que en el próximo F5/reload se asigne un nuevo formulario (rotación cíclica).
+ * 
+ * @since 1.3.20
+ */
+function eipsi_close_randomization_session_handler() {
+    // Validar nonce (aceptar POST)
+    $nonce = '';
+    if ( isset( $_POST['nonce'] ) ) {
+        $nonce = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
+    }
+
+    // Validar parámetros requeridos
+    $randomization_id = isset( $_POST['randomization_id'] ) ? sanitize_text_field( wp_unslash( $_POST['randomization_id'] ) ) : '';
+    $user_fingerprint = isset( $_POST['user_fingerprint'] ) ? sanitize_text_field( wp_unslash( $_POST['user_fingerprint'] ) ) : '';
+
+    if ( empty( $randomization_id ) || empty( $user_fingerprint ) ) {
+        wp_send_json_error( array(
+            'message' => __( 'Parámetros incompletos (randomization_id o user_fingerprint faltantes)', 'eipsi-forms' )
+        ), 400 );
+        return;
+    }
+
+    // Llamar a la función de cierre de sesión (requiere randomization-shortcode-handler.php)
+    if ( ! function_exists( 'eipsi_close_randomization_session' ) ) {
+        wp_send_json_error( array(
+            'message' => __( 'Función eipsi_close_randomization_session no disponible', 'eipsi-forms' )
+        ), 500 );
+        return;
+    }
+
+    $success = eipsi_close_randomization_session( $randomization_id, $user_fingerprint );
+
+    if ( $success ) {
+        wp_send_json_success( array(
+            'message' => __( 'Sesión de aleatorización cerrada correctamente', 'eipsi-forms' )
+        ) );
+    } else {
+        wp_send_json_error( array(
+            'message' => __( 'Error al cerrar sesión de aleatorización', 'eipsi-forms' )
+        ), 500 );
+    }
+}
