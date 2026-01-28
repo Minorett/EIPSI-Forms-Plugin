@@ -2794,3 +2794,34 @@ function eipsi_close_randomization_session_handler() {
         ), 500 );
     }
 }
+
+/**
+ * AJAX Handler: Save Form Authentication Config
+ * 
+ * Saves the _eipsi_require_login post meta for form templates
+ * 
+ * @since 1.4.0
+ */
+add_action('wp_ajax_eipsi_save_form_auth_config', 'eipsi_ajax_save_form_auth_config');
+
+function eipsi_ajax_save_form_auth_config() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('edit_posts')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    $template_id = absint($_POST['template_id'] ?? 0);
+    $require_login = (bool) ($_POST['require_login'] ?? false);
+    
+    if (!$template_id) {
+        wp_send_json_error('Template ID missing');
+    }
+    
+    update_post_meta($template_id, '_eipsi_require_login', $require_login ? 1 : 0);
+    
+    wp_send_json_success(array(
+        'message' => 'Configuration saved',
+        'require_login' => $require_login
+    ));
+}

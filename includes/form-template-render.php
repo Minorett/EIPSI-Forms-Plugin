@@ -85,13 +85,24 @@ function eipsi_get_form_template($template_id) {
  *
  * @param int    $template_id Template post ID
  * @param string $context     block|shortcode
+ * @param array  $options    Optional: { 'survey_id' => 123 }
  * @return string HTML markup
  */
-function eipsi_render_form_template_markup($template_id, $context = 'block') {
+function eipsi_render_form_template_markup($template_id, $context = 'block', $options = array()) {
     $template = eipsi_get_form_template($template_id);
 
     if (is_wp_error($template)) {
         return eipsi_render_form_notice($template->get_error_message(), 'error');
+    }
+
+    // Check if form requires login
+    if (eipsi_form_requires_login($template_id)) {
+        // If NOT authenticated → show login gate
+        if (!eipsi_is_participant_logged_in()) {
+            ob_start();
+            include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/login-gate.php';
+            return ob_get_clean();
+        }
     }
 
     // Ensure frontend assets are loaded
@@ -124,4 +135,57 @@ function eipsi_render_form_shortcode_markup($template_id) {
     }
 
     return eipsi_render_form_template_markup($template_id, 'shortcode');
+}
+
+/**
+ * Check if form requires login
+ * 
+ * @param int $template_id
+ * @return bool
+ */
+function eipsi_form_requires_login($template_id) {
+    $require_login = get_post_meta($template_id, '_eipsi_require_login', true);
+    return (bool) $require_login;
+}
+
+/**
+ * Check if participant is authenticated
+ * 
+ * @return bool
+ */
+function eipsi_is_participant_logged_in() {
+    // Check if session cookie or session in DB exists
+    // Use same method as participant-auth.js
+    return isset($_COOKIE[EIPSI_SESSION_COOKIE_NAME]) || 
+           (isset($_SESSION['eipsi_participant_id']) && !empty($_SESSION['eipsi_participant_id']));
+}
+
+/**
+ * Get current authenticated participant
+ * 
+ * @return array|false { 'id' => ..., 'email' => ..., 'survey_id' => ... } or false
+ */
+function eipsi_get_current_participant() {
+    if (!eipsi_is_participant_logged_in()) {
+        return false;
+    }
+    
+    // Search in session or cookie
+    $participant_id = $_SESSION['eipsi_participant_id'] ?? 
+                     $_COOKIE['eipsi_participant_id'] ?? 
+                     false;
+    
+    if (!$participant_id) {
+        return false;
+    }
+    
+    // Fetch from DB
+    global $wpdb;
+    return $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT id, email, survey_id FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+            absint($participant_id)
+        ),
+        ARRAY_A
+    );
 }

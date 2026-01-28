@@ -28,6 +28,7 @@ import {
 import FormStylePanel from '../../components/FormStylePanel';
 import ConditionalLogicMap from '../../components/ConditionalLogicMap';
 import TimingTable from '../../components/TimingTable';
+import AuthOptionsPanel from './components/AuthOptionsPanel';
 
 const COMPLETION_DEFAULTS = {
 	title: '¡Gracias por completar el cuestionario!',
@@ -71,6 +72,8 @@ export default function Edit( {
 		capturePageTiming,
 		captureFieldTiming,
 		showTimingAnalysis,
+		// Auth
+		requireLogin, // eslint-disable-next-line no-unused-vars
 	} = attributes;
 
 	// Blindaje: si por cualquier motivo randomConfig llega undefined/null (bloques viejos, etc.),
@@ -1670,6 +1673,11 @@ export default function Edit( {
 						</div>
 					) }
 				</PanelBody>
+
+				<AuthOptionsPanel
+					attributes={ attributes }
+					setAttributes={ setAttributes }
+				/>
 			</InspectorControls>
 
 			{ isMapOpen && (
