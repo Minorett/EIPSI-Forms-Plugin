@@ -57,10 +57,18 @@
             
             var $form = $(this);
             var $submitBtn = $form.find('button[type="submit"]');
-            var originalText = $submitBtn.text();
+            var $btnText = $submitBtn.find('.button-text');
+            var $spinner = $submitBtn.find('.eipsi-spinner');
+            var originalText = $btnText.length ? $btnText.text() : $submitBtn.text();
             
             // Mostrar estado de carga
-            $submitBtn.text(eipsiAuth.strings.registering).prop('disabled', true);
+            if ($btnText.length) {
+                $btnText.text(eipsiAuth.strings.registering);
+            } else {
+                $submitBtn.text(eipsiAuth.strings.registering);
+            }
+            if ($spinner.length) $spinner.show();
+            $submitBtn.prop('disabled', true);
             $form.find('.error-message').remove();
             
             // Recopilar datos del formulario
@@ -77,13 +85,25 @@
             // Validación básica frontend
             if (!formData.email || !formData.password || !formData.survey_id) {
                 window.EIPSIParticipantAuth.showError($form, 'Campos requeridos faltantes');
-                $submitBtn.text(originalText).prop('disabled', false);
+                if ($btnText.length) {
+                    $btnText.text(originalText);
+                } else {
+                    $submitBtn.text(originalText);
+                }
+                if ($spinner.length) $spinner.hide();
+                $submitBtn.prop('disabled', false);
                 return;
             }
             
             if (formData.password.length < 8) {
                 window.EIPSIParticipantAuth.showError($form, 'La contraseña debe tener al menos 8 caracteres');
-                $submitBtn.text(originalText).prop('disabled', false);
+                if ($btnText.length) {
+                    $btnText.text(originalText);
+                } else {
+                    $submitBtn.text(originalText);
+                }
+                if ($spinner.length) $spinner.hide();
+                $submitBtn.prop('disabled', false);
                 return;
             }
             
@@ -120,7 +140,13 @@
                     window.EIPSIParticipantAuth.showError($form, 'Error de conexión. Intenta nuevamente.');
                 },
                 complete: function() {
-                    $submitBtn.text(originalText).prop('disabled', false);
+                    if ($btnText.length) {
+                        $btnText.text(originalText);
+                    } else {
+                        $submitBtn.text(originalText);
+                    }
+                    if ($spinner.length) $spinner.hide();
+                    $submitBtn.prop('disabled', false);
                 }
             });
         },
@@ -133,10 +159,18 @@
             
             var $form = $(this);
             var $submitBtn = $form.find('button[type="submit"]');
-            var originalText = $submitBtn.text();
+            var $btnText = $submitBtn.find('.button-text');
+            var $spinner = $submitBtn.find('.eipsi-spinner');
+            var originalText = $btnText.length ? $btnText.text() : $submitBtn.text();
             
             // Mostrar estado de carga
-            $submitBtn.text(eipsiAuth.strings.logging_in).prop('disabled', true);
+            if ($btnText.length) {
+                $btnText.text(eipsiAuth.strings.logging_in);
+            } else {
+                $submitBtn.text(eipsiAuth.strings.logging_in);
+            }
+            if ($spinner.length) $spinner.show();
+            $submitBtn.prop('disabled', true);
             $form.find('.error-message').remove();
             
             // Recopilar datos del formulario
@@ -151,7 +185,13 @@
             // Validación básica frontend
             if (!formData.email || !formData.password || !formData.survey_id) {
                 window.EIPSIParticipantAuth.showError($form, 'Campos requeridos faltantes');
-                $submitBtn.text(originalText).prop('disabled', false);
+                if ($btnText.length) {
+                    $btnText.text(originalText);
+                } else {
+                    $submitBtn.text(originalText);
+                }
+                if ($spinner.length) $spinner.hide();
+                $submitBtn.prop('disabled', false);
                 return;
             }
             
@@ -194,7 +234,13 @@
                     window.EIPSIParticipantAuth.showError($form, 'Error de conexión. Intenta nuevamente.');
                 },
                 complete: function() {
-                    $submitBtn.text(originalText).prop('disabled', false);
+                    if ($btnText.length) {
+                        $btnText.text(originalText);
+                    } else {
+                        $submitBtn.text(originalText);
+                    }
+                    if ($spinner.length) $spinner.hide();
+                    $submitBtn.prop('disabled', false);
                 }
             });
         },
@@ -315,7 +361,7 @@
          * Mostrar mensaje de error
          */
         showError: function($container, message) {
-            var $error = $('<div class="error-message" style="color: #d63384; margin: 10px 0;">' + message + '</div>');
+            var $error = $('<div class="error-message" role="alert" aria-live="assertive" style="color: #d63384; margin: 10px 0;">' + message + '</div>');
             $container.prepend($error);
             
             // Auto-remover después de 5 segundos
@@ -330,7 +376,7 @@
          * Mostrar mensaje de éxito
          */
         showSuccess: function($container, message) {
-            var $success = $('<div class="success-message" style="color: #198754; margin: 10px 0;">' + message + '</div>');
+            var $success = $('<div class="success-message" role="status" style="color: #198754; margin: 10px 0;">' + message + '</div>');
             $container.prepend($success);
             
             // Auto-remover después de 3 segundos

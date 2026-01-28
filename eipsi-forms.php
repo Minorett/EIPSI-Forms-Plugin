@@ -149,6 +149,35 @@ function eipsi_enqueue_participant_auth_assets() {
     ));
 }
 
+/**
+ * Enqueue Survey Login assets (frontend)
+ * 
+ * @since 1.4.0
+ */
+add_action('wp_enqueue_scripts', 'eipsi_enqueue_survey_login_assets');
+function eipsi_enqueue_survey_login_assets() {
+    // Detectar si hay shortcode [eipsi_survey_login] en la página actual
+    global $post;
+    if (!is_a($post, 'WP_Post')) return;
+    
+    if (has_shortcode($post->post_content, 'eipsi_survey_login')) {
+        wp_enqueue_style(
+            'eipsi-survey-login-css',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/css/survey-login.css',
+            array(),
+            EIPSI_FORMS_VERSION
+        );
+        
+        wp_enqueue_script(
+            'eipsi-survey-login-js',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/js/survey-login.js',
+            array('jquery', 'eipsi-participant-auth'),
+            EIPSI_FORMS_VERSION,
+            true
+        );
+    }
+}
+
 // Registrar el shortcode de aleatorización pública (legacy)
 add_action('init', function() {
     if (function_exists('eipsi_randomized_form_shortcode')) {
