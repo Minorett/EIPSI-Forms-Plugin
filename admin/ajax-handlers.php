@@ -838,6 +838,9 @@ function eipsi_forms_submit_form_handler() {
     $start_time = isset($_POST['form_start_time']) ? sanitize_text_field($_POST['form_start_time']) : '';
     $end_time = isset($_POST['form_end_time']) ? sanitize_text_field($_POST['form_end_time']) : '';
     
+    // ✅ v1.4.0 - Capturar user fingerprint desde POST
+    $user_fingerprint = isset($_POST['eipsi_user_fingerprint']) ? sanitize_text_field($_POST['eipsi_user_fingerprint']) : '';
+    
     // Obtener IDs universales del frontend
     $frontend_participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
     $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
@@ -1013,6 +1016,7 @@ function eipsi_forms_submit_form_handler() {
         'form_id' => $stable_form_id,
         'participant_id' => $participant_id,
         'session_id' => $session_id,
+        'user_fingerprint' => $user_fingerprint,  // ✅ v1.4.0 - Guardar fingerprint
         'form_name' => $form_name,
         'created_at' => current_time('mysql'),
         'submitted_at' => $submitted_at,
