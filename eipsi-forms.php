@@ -696,6 +696,24 @@ function eipsi_forms_enqueue_frontend_assets() {
         EIPSI_FORMS_VERSION,
         true
     );
+
+    // === LOGIN GATE SYSTEM (Task 1.3) ===
+    // CSS del login gate
+    wp_enqueue_style(
+        'eipsi-login-gate-css',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/login-gate.css',
+        array('eipsi-theme-toggle-css'),
+        EIPSI_FORMS_VERSION
+    );
+
+    // JS del login gate
+    wp_enqueue_script(
+        'eipsi-login-gate-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/login-gate.js',
+        array('jquery'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
 }
 
 // Hook para FRONTEND (página publicada) - Solo una vez
