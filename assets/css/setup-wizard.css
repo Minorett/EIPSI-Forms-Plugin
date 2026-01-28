@@ -1,0 +1,607 @@
+/**
+ * EIPSI Setup Wizard Styles
+ * 
+ * Estilos para el wizard de creación de estudios longitudinales.
+ * Compatible con dark mode y responsive design.
+ *
+ * @package EIPSI_Forms
+ * @since 1.5.1
+ */
+
+/* === WIZARD CONTAINER === */
+.eipsi-setup-wizard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* === PROGRESS BAR === */
+.eipsi-wizard-progress {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.progress-steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e9ecef;
+    z-index: 1;
+}
+
+.progress-bar-container {
+    position: relative;
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.progress-step {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0 0.5rem;
+}
+
+.progress-step .step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    border: 3px solid #e9ecef;
+}
+
+.progress-step .step-name {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.2;
+    transition: color 0.2s ease;
+}
+
+/* Progress Step States */
+.progress-step.active .step-number {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+}
+
+.progress-step.active .step-name {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.progress-step.completed .step-number {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.progress-step.completed .step-name {
+    color: #28a745;
+}
+
+.progress-step.completed .step-number::after {
+    content: '✓';
+    position: absolute;
+    font-size: 0.8rem;
+}
+
+.progress-step.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.progress-step.disabled .step-number {
+    background: #f8f9fa;
+    color: #dee2e6;
+    border-color: #f8f9fa;
+}
+
+/* === WIZARD CONTENT === */
+.eipsi-wizard-content {
+    margin: 2rem 0;
+    min-height: 400px;
+}
+
+.eipsi-wizard-step {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* === NAVIGATION === */
+.eipsi-wizard-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+}
+
+.eipsi-wizard-navigation .button {
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.eipsi-wizard-navigation .button-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.eipsi-wizard-navigation .button-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.eipsi-wizard-navigation .button-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.eipsi-wizard-navigation .button-secondary {
+    background: white;
+    color: #495057;
+    border: 2px solid #e9ecef;
+}
+
+.eipsi-wizard-navigation .button-secondary:hover {
+    background: #f8f9fa;
+    border-color: #ced4da;
+}
+
+/* === FORM STYLES === */
+.eipsi-wizard-step .form-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.eipsi-wizard-step .form-row {
+    display: flex;
+    flex-direction: column;
+}
+
+.eipsi-wizard-step .form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+    font-size: 0.95rem;
+}
+
+.eipsi-wizard-step .form-label.required::after {
+    content: ' *';
+    color: #e74c3c;
+}
+
+.eipsi-wizard-step .form-input,
+.eipsi-wizard-step .form-select,
+.eipsi-wizard-step .form-textarea {
+    padding: 0.75rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background: white;
+    font-family: inherit;
+}
+
+.eipsi-wizard-step .form-input:focus,
+.eipsi-wizard-step .form-select:focus,
+.eipsi-wizard-step .form-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: white;
+}
+
+.eipsi-wizard-step .form-textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.4;
+}
+
+.eipsi-wizard-step .form-help {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: #6c757d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    line-height: 1.3;
+}
+
+.eipsi-wizard-step .button-link {
+    background: none;
+    border: none;
+    color: #667eea;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 0.85rem;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.eipsi-wizard-step .button-link:hover {
+    color: #5a6fd8;
+}
+
+/* === CARDS & SECTIONS === */
+.step-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.step-header h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.step-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+.waves-config,
+.timing-config,
+.participants-config {
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 768px) {
+    .eipsi-setup-wizard {
+        padding: 1rem;
+    }
+    
+    .progress-steps {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .progress-step {
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .progress-step .step-name {
+        font-size: 0.75rem;
+    }
+    
+    .eipsi-wizard-navigation {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .eipsi-wizard-navigation .button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .field-group-inline {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .template-buttons {
+        flex-direction: column;
+    }
+    
+    .template-btn {
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .progress-steps {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .progress-steps::before {
+        display: none;
+    }
+    
+    .progress-step {
+        flex-direction: row;
+        justify-content: flex-start;
+        width: 100%;
+        padding: 0.5rem;
+    }
+    
+    .progress-step .step-number {
+        margin-right: 1rem;
+        margin-bottom: 0;
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+    
+    .progress-step .step-name {
+        font-size: 0.9rem;
+    }
+}
+
+/* === DARK MODE SUPPORT === */
+@media (prefers-color-scheme: dark) {
+    .eipsi-setup-wizard {
+        background: #1a1a1a;
+        color: #ecf0f1;
+    }
+    
+    .eipsi-wizard-progress,
+    .eipsi-wizard-navigation,
+    .waves-config,
+    .timing-config,
+    .participants-config {
+        background: #2c3e50;
+        border-color: #34495e;
+        color: #ecf0f1;
+    }
+    
+    .progress-steps::before {
+        background: #34495e;
+    }
+    
+    .progress-step .step-number {
+        background: #34495e;
+        color: #95a5a6;
+        border-color: #34495e;
+    }
+    
+    .progress-step.active .step-number {
+        background: #667eea;
+        border-color: #667eea;
+    }
+    
+    .progress-step.completed .step-number {
+        background: #28a745;
+        border-color: #28a745;
+    }
+    
+    .progress-step .step-name {
+        color: #95a5a6;
+    }
+    
+    .progress-step.active .step-name {
+        color: #667eea;
+    }
+    
+    .progress-step.completed .step-name {
+        color: #28a745;
+    }
+    
+    .progress-step.disabled .step-number {
+        background: #1a1a1a;
+        color: #495057;
+        border-color: #1a1a1a;
+    }
+    
+    .progress-step.disabled .step-name {
+        color: #495057;
+    }
+    
+    .eipsi-wizard-step .form-input,
+    .eipsi-wizard-step .form-select,
+    .eipsi-wizard-step .form-textarea {
+        background: #34495e;
+        border-color: #4a5f7a;
+        color: #ecf0f1;
+    }
+    
+    .eipsi-wizard-step .form-input:focus,
+    .eipsi-wizard-step .form-select:focus,
+    .eipsi-wizard-step .form-textarea:focus {
+        background: #34495e;
+        border-color: #667eea;
+        color: #ecf0f1;
+    }
+    
+    .eipsi-wizard-step .form-label {
+        color: #ecf0f1;
+    }
+    
+    .eipsi-wizard-step .form-help {
+        color: #95a5a6;
+    }
+    
+    .step-header {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: #ecf0f1;
+    }
+    
+    .eipsi-wizard-navigation .button-secondary {
+        background: #34495e;
+        color: #ecf0f1;
+        border-color: #4a5f7a;
+    }
+    
+    .eipsi-wizard-navigation .button-secondary:hover {
+        background: #2c3e50;
+        border-color: #667eea;
+    }
+}
+
+/* === ANIMATIONS === */
+.eipsi-wizard-step {
+    animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* === LOADING STATES === */
+.eipsi-wizard-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.eipsi-wizard-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #667eea;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* === SUCCESS STATES === */
+.eipsi-wizard-success {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 12px;
+    margin: 2rem 0;
+}
+
+.eipsi-wizard-success h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.eipsi-wizard-success p {
+    margin: 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* === ERROR STATES === */
+.eipsi-wizard-error {
+    background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.eipsi-wizard-error h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.eipsi-wizard-error ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.eipsi-wizard-error li {
+    margin-bottom: 0.25rem;
+}
+
+/* === PRINT STYLES === */
+@media print {
+    .eipsi-wizard-navigation,
+    .eipsi-wizard-progress {
+        display: none;
+    }
+    
+    .eipsi-setup-wizard {
+        padding: 0;
+    }
+    
+    .eipsi-wizard-content {
+        margin: 0;
+    }
+    
+    .summary-section {
+        page-break-inside: avoid;
+        margin-bottom: 1rem;
+    }
+}

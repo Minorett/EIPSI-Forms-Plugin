@@ -75,6 +75,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-wave-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-anonymize-service.php';
 
+// Setup Wizard (v1.5.1)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/setup-wizard.php';
+
 /**
  * Enqueue RCT Analytics assets en admin
  */
@@ -110,6 +113,46 @@ function eipsi_enqueue_rct_analytics_assets($hook) {
                 'success' => __('Actualizado correctamente', 'eipsi-forms'),
                 'confirmDelete' => __('¿Estás seguro de que quieres eliminar esta aleatorización?', 'eipsi-forms'),
                 'copied' => __('ID copiado al portapapeles', 'eipsi-forms')
+            )
+        ));
+    }
+}
+
+/**
+ * Enqueue Setup Wizard assets en admin (v1.5.1)
+ */
+add_action('admin_enqueue_scripts', 'eipsi_enqueue_setup_wizard_assets');
+function eipsi_enqueue_setup_wizard_assets($hook) {
+    // Solo cargar en la página del Setup Wizard
+    if ($hook === 'eipsi_page_eipsi-new-study') {
+        // Enqueue CSS
+        wp_enqueue_style(
+            'eipsi-setup-wizard-css',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/css/setup-wizard.css',
+            array(),
+            EIPSI_FORMS_VERSION
+        );
+
+        // Enqueue JS
+        wp_enqueue_script(
+            'eipsi-setup-wizard-js',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/js/setup-wizard.js',
+            array('jquery'),
+            EIPSI_FORMS_VERSION,
+            true
+        );
+
+        // Localizar script con datos necesarios
+        wp_localize_script('eipsi-setup-wizard-js', 'eipsiWizard', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('eipsi_wizard_action'),
+            'adminUrl' => admin_url(),
+            'strings' => array(
+                'loading' => __('Guardando...', 'eipsi-forms'),
+                'error' => __('Error al guardar', 'eipsi-forms'),
+                'success' => __('Guardado correctamente', 'eipsi-forms'),
+                'confirmActivation' => __('¿Estás seguro de activar este estudio?', 'eipsi-forms'),
+                'validationError' => __('Por favor, revisa los campos requeridos', 'eipsi-forms')
             )
         ));
     }

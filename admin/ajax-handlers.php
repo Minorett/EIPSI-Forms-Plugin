@@ -2825,3 +2825,142 @@ function eipsi_ajax_save_form_auth_config() {
         'require_login' => $require_login
     ));
 }
+
+/**
+ * EIPSI Setup Wizard AJAX Handlers
+ * 
+ * Handles AJAX requests for the setup wizard functionality.
+ *
+ * @since 1.5.1
+ */
+
+// Save wizard step
+add_action('wp_ajax_eipsi_save_wizard_step', 'eipsi_ajax_save_wizard_step');
+
+function eipsi_ajax_save_wizard_step() {
+    check_ajax_referer('eipsi_wizard_action', 'eipsi_wizard_nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    $step_number = intval($_POST['current_step'] ?? 0);
+    $step_data = $_POST;
+    
+    // Validate step number
+    if ($step_number < 1 || $step_number > 5) {
+        wp_send_json_error('Invalid step number');
+    }
+    
+    // Load validators
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/wizard-validators.php';
+    
+    // Validate step data
+    $validation_result = eipsi_validate_step_data($step_number, $step_data);
+    
+    if (!$validation_result['valid']) {
+        wp_send_json_error($validation_result['errors']);
+    }
+    
+    // Sanitize step data
+    $sanitized_data = eipsi_sanitize_step_data($step_number, $step_data);
+    
+    // Save to transient
+    $result = eipsi_save_wizard_step($step_number, $sanitized_data);
+    
+    if ($result) {
+        wp_send_json_success(array(
+            'message' => 'Step saved successfully',
+            'step' => $step_number
+        ));
+    } else {
+        wp_send_json_error('Failed to save step');
+    }
+}
+
+// Auto-save wizard step
+add_action('wp_ajax_eipsi_auto_save_wizard_step', 'eipsi_ajax_auto_save_wizard_step');
+
+function eipsi_ajax_auto_save_wizard_step() {
+    check_ajax_referer('eipsi_wizard_action', 'eipsi_wizard_nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    $step_number = intval($_POST['current_step'] ?? 0);
+    $step_data = $_POST;
+    
+    // Validate step number
+    if ($step_number < 1 || $step_number > 5) {
+        wp_send_json_error('Invalid step number');
+    }
+    
+    // Load validators
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/wizard-validators.php';
+    
+    // Sanitize step data (less strict validation for auto-save)
+    $sanitized_data = eipsi_sanitize_step_data($step_number, $step_data);
+    
+    // Save to transient
+    $result = eipsi_save_wizard_step($step_number, $sanitized_data);
+    
+    if ($result) {
+        wp_send_json_success(array(
+            'message' => 'Auto-save completed',
+            'step' => $step_number
+        ));
+    } else {
+        wp_send_json_error('Failed to auto-save step');
+    }
+}
+
+// Activate study
+add_action('wp_ajax_eipsi_activate_study', 'eipsi_ajax_activate_study');
+
+function eipsi_ajax_activate_study() {
+    check_ajax_referer('eipsi_wizard_action', 'eipsi_wizard_nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    // Load required files
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/wizard-validators.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/setup-wizard.php';
+    
+    // Get wizard data
+    $wizard_data = eipsi_get_wizard_data();
+    
+    // Validate all steps are complete
+    for ($i = 1; $i <= 4; $i++) {
+        if (empty($wizard_data['step_' . $i])) {
+            wp_send_json_error('Debes completar todos los pasos antes de activar el estudio.');
+        }
+    }
+    
+    // Validate activation confirmation
+    if (!isset($_POST['activation_confirmed']) || $_POST['activation_confirmed'] !== '1') {
+        wp_send_json_error('Debes confirmar la activación del estudio.');
+    }
+    
+    // Create the study
+    $study_id = eipsi_create_study_from_wizard($wizard_data);
+    
+    if (!$study_id) {
+        wp_send_json_error('Error al crear el estudio. Por favor, intenta nuevamente.');
+    }
+    
+    // Clear wizard transient
+    $transient_key = eipsi_get_wizard_transient_key();
+    delete_transient($transient_key);
+    
+    // Redirect to study dashboard
+    $redirect_url = admin_url('admin.php?page=eipsi-results&study_id=' . $study_id);
+    
+    wp_send_json_success(array(
+        'message' => 'Estudio creado exitosamente.',
+        'study_id' => $study_id,
+        'redirect_url' => $redirect_url
+    ));
+}
