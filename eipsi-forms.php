@@ -78,45 +78,84 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-anonymize-service.ph
 // Setup Wizard (v1.5.1)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/setup-wizard.php';
 
+// Study Dashboard (v1.5.2)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/study-dashboard-api.php';
+
 /**
  * Enqueue RCT Analytics assets en admin
  */
-add_action('admin_enqueue_scripts', 'eipsi_enqueue_rct_analytics_assets');
 function eipsi_enqueue_rct_analytics_assets($hook) {
     // Solo cargar en la página de Results & Experience
     if ($hook === 'eipsi_page_eipsi-results') {
-        // Enqueue CSS
-        wp_enqueue_style(
-            'eipsi-rct-analytics-css',
-            EIPSI_FORMS_PLUGIN_URL . 'assets/css/rct-analytics.css',
-            array(),
-            EIPSI_FORMS_VERSION
-        );
+        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'submissions';
 
-        // Enqueue JS
-        wp_enqueue_script(
-            'eipsi-rct-analytics-js',
-            EIPSI_FORMS_PLUGIN_URL . 'assets/js/rct-analytics.js',
-            array('jquery'),
-            EIPSI_FORMS_VERSION,
-            true
-        );
+        // Enqueue generic styles for all tabs in results page
+        // ...
 
-        // Localizar script con datos necesarios
-        wp_localize_script('eipsi-rct-analytics-js', 'eipsiRCTAnalytics', array(
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('eipsi_rct_analytics_nonce'),
-            'adminUrl' => admin_url(),
-            'strings' => array(
-                'loading' => __('Cargando datos...', 'eipsi-forms'),
-                'error' => __('Error al cargar datos', 'eipsi-forms'),
-                'success' => __('Actualizado correctamente', 'eipsi-forms'),
-                'confirmDelete' => __('¿Estás seguro de que quieres eliminar esta aleatorización?', 'eipsi-forms'),
-                'copied' => __('ID copiado al portapapeles', 'eipsi-forms')
-            )
-        ));
+        if ($active_tab === 'rct-analytics') {
+            // Enqueue CSS
+            wp_enqueue_style(
+                'eipsi-rct-analytics-css',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/css/rct-analytics.css',
+                array(),
+                EIPSI_FORMS_VERSION
+            );
+
+            // Enqueue JS
+            wp_enqueue_script(
+                'eipsi-rct-analytics-js',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/js/rct-analytics.js',
+                array('jquery'),
+                EIPSI_FORMS_VERSION,
+                true
+            );
+
+            // Localizar script con datos necesarios
+            wp_localize_script('eipsi-rct-analytics-js', 'eipsiRCTAnalytics', array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('eipsi_rct_analytics_nonce'),
+                'adminUrl' => admin_url(),
+                'strings' => array(
+                    'loading' => __('Cargando datos...', 'eipsi-forms'),
+                    'error' => __('Error al cargar datos', 'eipsi-forms'),
+                    'success' => __('Actualizado correctamente', 'eipsi-forms'),
+                    'confirmDelete' => __('¿Estás seguro de que quieres eliminar esta aleatorización?', 'eipsi-forms'),
+                    'copied' => __('ID copiado al portapapeles', 'eipsi-forms')
+                )
+            ));
+        }
+
+        // Enqueue Longitudinal Dashboard assets (v1.5.2)
+        if ($active_tab === 'longitudinal-studies') {
+            wp_enqueue_style(
+                'eipsi-study-dashboard-css',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/css/study-dashboard.css',
+                array(),
+                EIPSI_FORMS_VERSION
+            );
+
+            wp_enqueue_script(
+                'eipsi-study-dashboard-js',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/js/study-dashboard.js',
+                array('jquery'),
+                EIPSI_FORMS_VERSION,
+                true
+            );
+
+            wp_localize_script('eipsi-study-dashboard-js', 'eipsiStudyDash', array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('eipsi_study_dashboard_nonce'),
+                'strings' => array(
+                    'confirmReminder' => __('¿Estás seguro de enviar recordatorios manuales?', 'eipsi-forms'),
+                    'confirmClose' => __('¿Estás seguro de que quieres cerrar este estudio? Esta acción es irreversible.', 'eipsi-forms'),
+                    'success' => __('Operación exitosa', 'eipsi-forms'),
+                    'error' => __('Ha ocurrido un error', 'eipsi-forms')
+                )
+            ));
+        }
     }
 }
+add_action('admin_enqueue_scripts', 'eipsi_enqueue_rct_analytics_assets');
 
 /**
  * Enqueue Setup Wizard assets en admin (v1.5.1)

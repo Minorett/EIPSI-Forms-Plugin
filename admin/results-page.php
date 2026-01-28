@@ -19,7 +19,7 @@ function eipsi_display_form_responses() {
 
     // Determine active tab from URL param
     $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'submissions';
-    $allowed_tabs = array('submissions', 'completion', 'privacy', 'rct-analytics');
+    $allowed_tabs = array('submissions', 'completion', 'privacy', 'rct-analytics', 'longitudinal-studies');
 
     if (!in_array($active_tab, $allowed_tabs)) {
         $active_tab = 'submissions';
@@ -38,6 +38,11 @@ function eipsi_display_form_responses() {
                class="nav-tab <?php echo esc_attr(($active_tab === 'submissions') ? 'nav-tab-active' : ''); ?>"
                data-tab="submissions">
                 📊 <?php esc_html_e('Submissions', 'eipsi-forms'); ?>
+            </a>
+            <a href="?page=eipsi-results&tab=longitudinal-studies" 
+               class="nav-tab <?php echo esc_attr(($active_tab === 'longitudinal-studies') ? 'nav-tab-active' : ''); ?>"
+               data-tab="longitudinal-studies">
+                📚 <?php esc_html_e('Estudios', 'eipsi-forms'); ?>
             </a>
             <a href="?page=eipsi-results&tab=completion" 
                class="nav-tab <?php echo esc_attr(($active_tab === 'completion') ? 'nav-tab-active' : ''); ?>"
@@ -63,6 +68,13 @@ function eipsi_display_form_responses() {
         <?php if ($active_tab === 'submissions'): ?>
             <div class="tab-content" data-tab="submissions">
                 <?php include dirname(__FILE__) . '/tabs/submissions-tab.php'; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Tab: Longitudinal Studies (v1.5.2) -->
+        <?php if ($active_tab === 'longitudinal-studies'): ?>
+            <div class="tab-content" data-tab="longitudinal-studies">
+                <?php include dirname(__FILE__) . '/tabs/longitudinal-studies-tab.php'; ?>
             </div>
         <?php endif; ?>
         
