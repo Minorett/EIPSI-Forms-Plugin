@@ -29,6 +29,10 @@ define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
 define('EIPSI_FORMS_SLUG', 'eipsi-forms');
 
+// Authentication constants (v1.4.0+)
+define('EIPSI_SESSION_COOKIE_NAME', 'eipsi_session_token');
+define('EIPSI_SESSION_TTL_HOURS', 168); // 7 días
+
 // Configuración longitudinal (v1.4.0+)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/config/longitudinal-config.php';
 
@@ -109,6 +113,40 @@ function eipsi_enqueue_rct_analytics_assets($hook) {
             )
         ));
     }
+}
+
+/**
+ * Enqueue Participant Auth assets (frontend + admin)
+ * 
+ * @since 1.4.0
+ */
+add_action('wp_enqueue_scripts', 'eipsi_enqueue_participant_auth_assets');
+add_action('admin_enqueue_scripts', 'eipsi_enqueue_participant_auth_assets');
+
+function eipsi_enqueue_participant_auth_assets() {
+    // Solo enqueue si hay autenticación de participantes en esta página
+    // TODO: Lógica futura para detectar si la página actual usa auth de participantes
+    
+    wp_enqueue_script(
+        'eipsi-participant-auth',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/participant-auth.js',
+        array('jquery'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+    
+    wp_localize_script('eipsi-participant-auth', 'eipsiAuth', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('eipsi_participant_nonce'),
+        'strings' => array(
+            'registering' => __('Registrando...', 'eipsi-forms'),
+            'logging_in' => __('Ingresando...', 'eipsi-forms'),
+            'success' => __('Éxito!', 'eipsi-forms'),
+            'error' => __('Error', 'eipsi-forms'),
+            'confirm_logout' => __('¿Estás seguro de que quieres cerrar sesión?', 'eipsi-forms'),
+            'loading' => __('Cargando...', 'eipsi-forms')
+        )
+    ));
 }
 
 // Registrar el shortcode de aleatorización pública (legacy)

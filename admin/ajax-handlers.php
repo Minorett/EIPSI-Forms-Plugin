@@ -2499,7 +2499,251 @@ function eipsi_get_randomization_pages_handler() {
     wp_send_json_success($matching_pages);
 }
 
-?>
+// =================================================================
+// PARTICIPANT AUTHENTICATION ENDPOINTS (v1.4.0+)
+// =================================================================
+
+/**
+ * Get error message based on error code
+ * 
+ * @param string $error_code
+ * @return string
+ */
+function eipsi_get_error_message($error_code) {
+    $messages = array(
+        'invalid_email' => __('Email inválido.', 'eipsi-forms'),
+        'short_password' => __('La contraseña debe tener al menos 8 caracteres.', 'eipsi-forms'),
+        'email_exists' => __('Este email ya está registrado en este estudio.', 'eipsi-forms'),
+        'db_error' => __('Error de base de datos. Intenta nuevamente.', 'eipsi-forms'),
+        'user_not_found' => __('Usuario no encontrado.', 'eipsi-forms'),
+        'user_inactive' => __('Usuario inactivo. Contacta al administrador.', 'eipsi-forms'),
+        'invalid_credentials' => __('Email o contraseña incorrectos.', 'eipsi-forms'),
+        'missing_fields' => __('Campos requeridos faltantes.', 'eipsi-forms'),
+        'rate_limited' => __('Demasiados intentos fallidos. Intenta en 15 minutos.', 'eipsi-forms'),
+        'not_authenticated' => __('No estás autenticado.', 'eipsi-forms'),
+        'participant_not_found' => __('Participante no encontrado.', 'eipsi-forms')
+    );
+    
+    return isset($messages[$error_code]) ? $messages[$error_code] : __('Error desconocido.', 'eipsi-forms');
+}
+
+/**
+ * Rate limit check: máximo 5 intentos fallidos en 15 minutos
+ * 
+ * @param string $email
+ * @param int $survey_id
+ * @return bool
+ */
+function eipsi_check_login_rate_limit($email, $survey_id) {
+    $key = 'eipsi_login_attempts_' . md5($email . $survey_id);
+    $attempts = get_transient($key);
+    
+    return !($attempts && $attempts >= 5);
+}
+
+/**
+ * Record failed login attempt
+ * 
+ * @param string $email
+ * @param int $survey_id
+ */
+function eipsi_record_failed_login($email, $survey_id) {
+    $key = 'eipsi_login_attempts_' . md5($email . $survey_id);
+    $attempts = (int) get_transient($key);
+    set_transient($key, $attempts + 1, 15 * MINUTE_IN_SECONDS);
+}
+
+/**
+ * Clear login rate limit on successful login
+ * 
+ * @param string $email
+ * @param int $survey_id
+ */
+function eipsi_clear_login_rate_limit($email, $survey_id) {
+    $key = 'eipsi_login_attempts_' . md5($email . $survey_id);
+    delete_transient($key);
+}
+
+/**
+ * AJAX Handler: Participant Registration
+ * 
+ * Endpoint: eipsi_participant_register
+ * Hooks: wp_ajax_nopriv_eipsi_participant_register, wp_ajax_eipsi_participant_register
+ */
+add_action('wp_ajax_nopriv_eipsi_participant_register', 'eipsi_participant_register_handler');
+add_action('wp_ajax_eipsi_participant_register', 'eipsi_participant_register_handler');
+
+function eipsi_participant_register_handler() {
+    // Verificar nonce
+    check_ajax_referer('eipsi_participant_nonce', 'nonce', true);
+    
+    // Obtener datos
+    $survey_id = isset($_POST['survey_id']) ? absint($_POST['survey_id']) : 0;
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : ''; // NO sanitizar
+    $first_name = isset($_POST['first_name']) ? sanitize_text_field($_POST['first_name']) : '';
+    $last_name = isset($_POST['last_name']) ? sanitize_text_field($_POST['last_name']) : '';
+    
+    // Validar
+    if (!$survey_id || !$email || !$password) {
+        wp_send_json_error([
+            'error' => 'missing_fields',
+            'message' => eipsi_get_error_message('missing_fields')
+        ]);
+    }
+    
+    // Llamar servicio
+    $result = EIPSI_Participant_Service::create_participant(
+        $survey_id,
+        $email,
+        $password,
+        ['first_name' => $first_name, 'last_name' => $last_name]
+    );
+    
+    if ($result['success']) {
+        // Opcionalmente, crear sesión automáticamente (login after register)
+        $auth_result = EIPSI_Auth_Service::authenticate($survey_id, $email, $password);
+        if ($auth_result['success']) {
+            EIPSI_Auth_Service::create_session(
+                $auth_result['participant_id'],
+                $survey_id,
+                defined('EIPSI_SESSION_TTL_HOURS') ? EIPSI_SESSION_TTL_HOURS : 168
+            );
+        }
+        wp_send_json_success([
+            'participant_id' => $result['participant_id'],
+            'message' => __('Registro exitoso. Bienvenido!', 'eipsi-forms')
+        ]);
+    } else {
+        wp_send_json_error([
+            'error' => $result['error'],
+            'message' => eipsi_get_error_message($result['error'])
+        ]);
+    }
+}
+
+/**
+ * AJAX Handler: Participant Login
+ * 
+ * Endpoint: eipsi_participant_login
+ * Hooks: wp_ajax_nopriv_eipsi_participant_login, wp_ajax_eipsi_participant_login
+ */
+add_action('wp_ajax_nopriv_eipsi_participant_login', 'eipsi_participant_login_handler');
+add_action('wp_ajax_eipsi_participant_login', 'eipsi_participant_login_handler');
+
+function eipsi_participant_login_handler() {
+    check_ajax_referer('eipsi_participant_nonce', 'nonce', true);
+    
+    $survey_id = absint($_POST['survey_id'] ?? 0);
+    $email = sanitize_email($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    
+    if (!$survey_id || !$email || !$password) {
+        wp_send_json_error([
+            'error' => 'missing_fields',
+            'message' => eipsi_get_error_message('missing_fields')
+        ]);
+    }
+    
+    // Rate limit check
+    if (!eipsi_check_login_rate_limit($email, $survey_id)) {
+        wp_send_json_error([
+            'error' => 'rate_limited',
+            'message' => eipsi_get_error_message('rate_limited')
+        ]);
+    }
+    
+    // Autenticar
+    $auth_result = EIPSI_Auth_Service::authenticate($survey_id, $email, $password);
+    
+    if ($auth_result['success']) {
+        // Crear sesión
+        EIPSI_Auth_Service::create_session(
+            $auth_result['participant_id'],
+            $survey_id,
+            defined('EIPSI_SESSION_TTL_HOURS') ? EIPSI_SESSION_TTL_HOURS : 168
+        );
+        
+        // Limpiar rate limit
+        eipsi_clear_login_rate_limit($email, $survey_id);
+        
+        wp_send_json_success([
+            'participant_id' => $auth_result['participant_id'],
+            'message' => __('Login exitoso!', 'eipsi-forms'),
+            'redirect' => add_query_arg('loggedin', 1, home_url())
+        ]);
+    } else {
+        // Registrar intento fallido para rate limit
+        eipsi_record_failed_login($email, $survey_id);
+        
+        wp_send_json_error([
+            'error' => $auth_result['error'],
+            'message' => eipsi_get_error_message($auth_result['error'])
+        ]);
+    }
+}
+
+/**
+ * AJAX Handler: Participant Logout
+ * 
+ * Endpoint: eipsi_participant_logout
+ * Hooks: wp_ajax_nopriv_eipsi_participant_logout, wp_ajax_eipsi_participant_logout
+ */
+add_action('wp_ajax_nopriv_eipsi_participant_logout', 'eipsi_participant_logout_handler');
+add_action('wp_ajax_eipsi_participant_logout', 'eipsi_participant_logout_handler');
+
+function eipsi_participant_logout_handler() {
+    check_ajax_referer('eipsi_participant_nonce', 'nonce', true);
+    
+    EIPSI_Auth_Service::destroy_session();
+    
+    wp_send_json_success([
+        'message' => __('Logout exitoso.', 'eipsi-forms'),
+        'redirect' => home_url()
+    ]);
+}
+
+/**
+ * AJAX Handler: Get Current Participant Info
+ * 
+ * Endpoint: eipsi_participant_info
+ * Hooks: wp_ajax_nopriv_eipsi_participant_info, wp_ajax_eipsi_participant_info
+ */
+add_action('wp_ajax_nopriv_eipsi_participant_info', 'eipsi_participant_info_handler');
+add_action('wp_ajax_eipsi_participant_info', 'eipsi_participant_info_handler');
+
+function eipsi_participant_info_handler() {
+    check_ajax_referer('eipsi_participant_nonce', 'nonce', true);
+    
+    $participant_id = EIPSI_Auth_Service::get_current_participant();
+    
+    if (!$participant_id) {
+        wp_send_json_error([
+            'error' => 'not_authenticated',
+            'message' => eipsi_get_error_message('not_authenticated')
+        ]);
+    }
+    
+    $participant = EIPSI_Participant_Service::get_by_id($participant_id);
+    
+    if (!$participant) {
+        wp_send_json_error([
+            'error' => 'participant_not_found',
+            'message' => eipsi_get_error_message('participant_not_found')
+        ]);
+    }
+    
+    // NUNCA retornar password_hash
+    wp_send_json_success([
+        'participant_id' => $participant->id,
+        'email' => $participant->email,
+        'first_name' => $participant->first_name,
+        'last_name' => $participant->last_name,
+        'survey_id' => $participant->survey_id,
+        'created_at' => $participant->created_at,
+        'last_login_at' => $participant->last_login_at
+    ]);
+}
 /**
  * AJAX Handler: Close randomization session (persistent_mode=OFF)
  * 

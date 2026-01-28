@@ -87,6 +87,7 @@ class EIPSI_Database_Schema_Manager {
             
             // Longitudinal tables (v1.4.0+)
             $participants_sync = self::sync_local_survey_participants_table();
+            $sessions_sync = self::sync_local_survey_sessions_table(); // Nueva tabla de sesiones
             $waves_sync = self::sync_local_survey_waves_table();
             $assignments_sync = self::sync_local_survey_assignments_table();
             $magic_links_sync = self::sync_local_survey_magic_links_table();
@@ -100,6 +101,7 @@ class EIPSI_Database_Schema_Manager {
             
             // Add longitudinal tables to results
             $results['survey_participants_table'] = $participants_sync;
+            $results['survey_sessions_table'] = $sessions_sync; // Nueva tabla de sesiones
             $results['survey_waves_table'] = $waves_sync;
             $results['survey_assignments_table'] = $assignments_sync;
             $results['survey_magic_links_table'] = $magic_links_sync;
@@ -108,9 +110,10 @@ class EIPSI_Database_Schema_Manager {
             
             if ( ! $results_sync['success'] || ! $events_sync['success'] || 
                  ! $rct_configs_sync['success'] || ! $rct_assignments_sync['success'] ||
-                 ! $participants_sync['success'] || ! $waves_sync['success'] ||
-                 ! $assignments_sync['success'] || ! $magic_links_sync['success'] ||
-                 ! $email_log_sync['success'] || ! $audit_log_sync['success'] ) {
+                 ! $participants_sync['success'] || ! $sessions_sync['success'] ||
+                 ! $waves_sync['success'] || ! $assignments_sync['success'] || 
+                 ! $magic_links_sync['success'] || ! $email_log_sync['success'] ||
+                 ! $audit_log_sync['success'] ) {
                 $results['success'] = false;
                 if ( ! $results_sync['success'] ) {
                     $results['errors'][] = $results_sync['error'];
@@ -126,6 +129,9 @@ class EIPSI_Database_Schema_Manager {
                 }
                 if ( ! $participants_sync['success'] ) {
                     $results['errors'][] = $participants_sync['error'];
+                }
+                if ( ! $sessions_sync['success'] ) {
+                    $results['errors'][] = $sessions_sync['error'];
                 }
                 if ( ! $waves_sync['success'] ) {
                     $results['errors'][] = $waves_sync['error'];
@@ -1196,6 +1202,95 @@ class EIPSI_Database_Schema_Manager {
             'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME NOT NULL AFTER last_name",
             'last_login_at' => "ALTER TABLE {$table_name} ADD COLUMN last_login_at DATETIME AFTER created_at",
             'is_active' => "ALTER TABLE {$table_name} ADD COLUMN is_active TINYINT(1) DEFAULT 1 AFTER last_login_at",
+        );
+        
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $table_name,
+                    $column
+                )
+            );
+            
+            if ( empty( $column_exists ) ) {
+                if ( false !== $wpdb->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                    error_log( "[EIPSI Forms] Added missing column '{$column}' to {$table_name}" );
+                } else {
+                    $result['columns_missing'][] = $column;
+                    $result['success'] = false;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
+                    }
+                }
+            }
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Sync wp_survey_sessions table in local DB
+     * 
+     * @since 1.4.0
+     * @return array Result with success status and details
+     */
+    private static function sync_local_survey_sessions_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'survey_sessions';
+        $charset_collate = $wpdb->get_charset_collate();
+        
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+        
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+        
+        if ( ! $result['exists'] ) {
+            // Create table
+            $sql = "CREATE TABLE {$table_name} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                token VARCHAR(255) NOT NULL,
+                participant_id BIGINT(20) UNSIGNED NOT NULL,
+                survey_id INT(11),
+                ip_address VARCHAR(45),
+                user_agent VARCHAR(500),
+                expires_at DATETIME NOT NULL,
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY unique_token (token),
+                KEY participant_id (participant_id),
+                KEY expires_at (expires_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+            
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+            
+            $result['created'] = true;
+            $result['exists'] = true;
+            
+            error_log( '[EIPSI Forms] Created table: ' . $table_name );
+        }
+        
+        // Ensure required columns exist (for future migrations)
+        $required_columns = array(
+            'token' => "ALTER TABLE {$table_name} ADD COLUMN token VARCHAR(255) NOT NULL AFTER id",
+            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NOT NULL AFTER token",
+            'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id INT(11) AFTER participant_id",
+            'ip_address' => "ALTER TABLE {$table_name} ADD COLUMN ip_address VARCHAR(45) AFTER survey_id",
+            'user_agent' => "ALTER TABLE {$table_name} ADD COLUMN user_agent VARCHAR(500) AFTER ip_address",
+            'expires_at' => "ALTER TABLE {$table_name} ADD COLUMN expires_at DATETIME NOT NULL AFTER user_agent",
+            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME NOT NULL AFTER expires_at",
         );
         
         foreach ( $required_columns as $column => $alter_sql ) {
