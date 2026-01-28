@@ -33,6 +33,16 @@ function eipsi_forms_menu() {
         'eipsi-db-config',
         'eipsi_display_configuration_page'
     );
+    
+    // Add submenu for Setup Wizard
+    add_submenu_page(
+        'eipsi-results',
+        __('Crear Nuevo Estudio', 'eipsi-forms'),
+        __('➕ Crear Estudio', 'eipsi-forms'),
+        'manage_options',
+        'eipsi-new-study',
+        'eipsi_display_setup_wizard_page'
+    );
 }
 
 add_action('admin_menu', 'eipsi_forms_menu');
