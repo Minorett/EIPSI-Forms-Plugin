@@ -1,0 +1,319 @@
+/**
+ * EIPSI Forms - Survey Login & Registration Styles
+ * @package EIPSI_Forms
+ * @since 1.4.0
+ */
+
+.eipsi-survey-login-container {
+    max-width: 400px;
+    margin: 2rem auto;
+    background: var(--eipsi-color-background, #ffffff);
+    border: 1px solid var(--eipsi-color-border, #e2e8f0);
+    border-radius: var(--eipsi-border-radius-lg, 20px);
+    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(0, 90, 135, 0.1));
+    overflow: hidden;
+    font-family: var(--eipsi-font-family-body, inherit);
+}
+
+.eipsi-survey-login-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--eipsi-color-border, #e2e8f0);
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+}
+
+.eipsi-survey-login-tab {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-weight: var(--eipsi-font-weight-bold, 700);
+    color: var(--eipsi-color-text-muted, #64748b);
+    transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+    border-bottom: 3px solid transparent;
+    font-size: 1rem;
+}
+
+.eipsi-survey-login-tab:hover {
+    color: var(--eipsi-color-primary, #005a87);
+    background: rgba(0, 90, 135, 0.05);
+}
+
+.eipsi-survey-login-tab.active {
+    color: var(--eipsi-color-primary, #005a87);
+    border-bottom-color: var(--eipsi-color-primary, #005a87);
+    background: var(--eipsi-color-background, #ffffff);
+}
+
+.eipsi-survey-login-content {
+    padding: 1.5rem;
+}
+
+.eipsi-survey-login-pane {
+    display: none;
+    animation: eipsiFadeIn 0.3s ease;
+}
+
+.eipsi-survey-login-pane.active {
+    display: block;
+}
+
+@keyframes eipsiFadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.eipsi-survey-login-form .eipsi-form-group {
+    margin-bottom: 1.25rem;
+}
+
+.eipsi-survey-login-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: var(--eipsi-font-weight-medium, 500);
+    color: var(--eipsi-color-text, #2c3e50);
+}
+
+.eipsi-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.eipsi-survey-login-form input[type="text"],
+.eipsi-survey-login-form input[type="email"],
+.eipsi-survey-login-form input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--eipsi-color-input-border, #e2e8f0);
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    background: var(--eipsi-color-input-bg, #ffffff);
+    color: var(--eipsi-color-text, #2c3e50);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-size: 1rem;
+}
+
+.eipsi-survey-login-form input:focus {
+    outline: none;
+    border-color: var(--eipsi-color-input-border-focus, #005a87);
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.2));
+}
+
+.eipsi-survey-login-form input.valid {
+    border-color: var(--eipsi-color-success, #198754);
+}
+
+.eipsi-survey-login-form input.invalid {
+    border-color: var(--eipsi-color-error, #ff6b6b);
+    background-color: var(--eipsi-color-input-error-bg, #fff5f5);
+}
+
+.eipsi-valid-icon {
+    position: absolute;
+    right: 12px;
+    color: var(--eipsi-color-success, #198754);
+    display: none;
+    font-weight: bold;
+}
+
+input.valid + .eipsi-valid-icon {
+    display: block;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--eipsi-color-text-muted, #64748b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.toggle-password:hover {
+    color: var(--eipsi-color-primary, #005a87);
+}
+
+.eipsi-form-options {
+    margin-bottom: 1.25rem;
+}
+
+.eipsi-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: var(--eipsi-color-text-muted, #64748b);
+}
+
+.eipsi-checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--eipsi-color-primary, #005a87);
+    margin: 0;
+}
+
+/* Auth messages styling (supports participant-auth.js injected divs) */
+.eipsi-survey-login-form .error-message,
+.eipsi-survey-login-form .success-message,
+.eipsi-error-message,
+.eipsi-success-message {
+    padding: 10px 12px;
+    border-radius: 4px;
+    margin-bottom: 1.25rem;
+    font-size: 0.875rem !important;
+    line-height: 1.4;
+}
+
+.eipsi-survey-login-form .error-message,
+.eipsi-error-message {
+    background: var(--eipsi-color-input-error-bg, #fff5f5) !important;
+    color: var(--eipsi-color-error, #ff6b6b) !important;
+    border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.eipsi-survey-login-form .success-message,
+.eipsi-success-message {
+    background: #e6f4ea !important;
+    color: var(--eipsi-color-success, #198754) !important;
+    border: 1px solid rgba(25, 135, 84, 0.2);
+}
+
+.eipsi-button-primary {
+    width: 100%;
+    padding: 12px 24px;
+    background: var(--eipsi-color-button-bg, #005a87);
+    color: var(--eipsi-color-button-text, #ffffff);
+    border: none;
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    font-weight: var(--eipsi-font-weight-bold, 700);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    font-size: 1rem;
+}
+
+.eipsi-button-primary:hover:not(:disabled) {
+    background: var(--eipsi-color-button-hover-bg, #003d5b);
+}
+
+.eipsi-button-primary:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.eipsi-button-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Spinner handled by CSS or injected icon */
+.eipsi-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: eipsiSpin 0.8s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes eipsiSpin {
+    to { transform: rotate(360deg); }
+}
+
+.eipsi-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.eipsi-form-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--eipsi-color-text-muted, #64748b);
+}
+
+.eipsi-form-footer p {
+    margin: 0.5rem 0;
+}
+
+.eipsi-form-footer a {
+    color: var(--eipsi-color-primary, #005a87);
+    text-decoration: none;
+    font-weight: var(--eipsi-font-weight-medium, 500);
+}
+
+.eipsi-form-footer a:hover {
+    text-decoration: underline;
+}
+
+small#password-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--eipsi-color-text-muted, #64748b);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .eipsi-survey-login-container {
+        margin: 1rem;
+        max-width: none;
+    }
+    
+    .eipsi-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .eipsi-survey-login-tab {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .eipsi-button-primary {
+        height: 48px;
+        padding: 12px;
+    }
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+    .eipsi-survey-login-container {
+        background: #1a1a1a;
+        border-color: #333333;
+        color: #e0e0e0;
+    }
+    
+    .eipsi-survey-login-tabs {
+        background: #2d2d2d;
+        border-bottom-color: #333333;
+    }
+
+    .eipsi-survey-login-tab.active {
+        background: #1a1a1a;
+        color: var(--eipsi-color-primary);
+    }
+
+    .eipsi-survey-login-form input[type="text"],
+    .eipsi-survey-login-form input[type="email"],
+    .eipsi-survey-login-form input[type="password"] {
+        background: #2d2d2d;
+        border-color: #444444;
+        color: #e0e0e0;
+    }
+
+    .eipsi-survey-login-form label {
+        color: #e0e0e0;
+    }
+}

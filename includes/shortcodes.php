@@ -33,6 +33,36 @@ function eipsi_form_shortcode($atts) {
 add_shortcode('eipsi_form', 'eipsi_form_shortcode');
 
 /**
+ * Shortcode: [eipsi_survey_login survey_id="123"]
+ * 
+ * Display a login/registration form for participants
+ * 
+ * @param array $atts Shortcode attributes
+ * @return string Rendered HTML
+ */
+function eipsi_survey_login_shortcode($atts) {
+    $atts = shortcode_atts(array(
+        'survey_id' => 0,
+        'redirect_url' => '', // opcional, redirect post-login
+    ), $atts, 'eipsi_survey_login');
+    
+    return eipsi_render_survey_login_form($atts);
+}
+add_shortcode('eipsi_survey_login', 'eipsi_survey_login_shortcode');
+
+/**
+ * Render helper for survey login form
+ * 
+ * @param array $atts Shortcode attributes
+ * @return string Rendered HTML
+ */
+function eipsi_render_survey_login_form($atts) {
+    ob_start();
+    include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/survey-login-form.php';
+    return ob_get_clean();
+}
+
+/**
  * Add helpful information to shortcode in admin
  * Shows available forms when editing posts/pages
  */
