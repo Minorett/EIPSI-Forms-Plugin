@@ -793,6 +793,9 @@ function eipsi_save_global_privacy_config_handler() {
 }
 
 function eipsi_forms_submit_form_handler() {
+    if (!session_id()) {
+        session_start();
+    }
     check_ajax_referer('eipsi_forms_nonce', 'nonce');
     
     // 1️⃣ VALIDACIÓN DE CONSENTIMIENTO OBLIGATORIA - PRIMER CHECK
@@ -916,6 +919,22 @@ function eipsi_forms_submit_form_handler() {
     // Usar Participant ID universal del frontend si está disponible, sino fallback al viejo sistema
     $participant_id = !empty($frontend_participant_id) ? $frontend_participant_id : generateStableFingerprint($user_data);
     
+    // Capture longitudinal context (v1.4.0)
+    $survey_id = EIPSI_Auth_Service::get_current_survey();
+    $wave_index = null;
+
+    // Try to get wave context from session if available
+    if (isset($_SESSION['eipsi_wave_id'])) {
+        $wave_id = absint($_SESSION['eipsi_wave_id']);
+        $wave_index_val = $wpdb->get_var($wpdb->prepare(
+            "SELECT wave_index FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+            $wave_id
+        ));
+        if ($wave_index_val !== null) {
+            $wave_index = (int) $wave_index_val;
+        }
+    }
+
     $submitted_at = current_time('mysql');
     
     // Obtener configuración de privacidad
@@ -1015,6 +1034,8 @@ function eipsi_forms_submit_form_handler() {
     $data = array(
         'form_id' => $stable_form_id,
         'participant_id' => $participant_id,
+        'survey_id' => $survey_id,
+        'wave_index' => $wave_index,
         'session_id' => $session_id,
         'user_fingerprint' => $user_fingerprint,  // ✅ v1.4.0 - Guardar fingerprint
         'form_name' => $form_name,
@@ -1081,7 +1102,7 @@ function eipsi_forms_submit_form_handler() {
         $wpdb_result = $wpdb->insert(
             $table_name,
             $data,
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
+            array('%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
         );
         
         if ($wpdb_result === false) {
@@ -1098,7 +1119,7 @@ function eipsi_forms_submit_form_handler() {
                 $wpdb_result = $wpdb->insert(
                     $table_name,
                     $data,
-                    array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
+                    array('%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
                 );
                 
                 if ($wpdb_result !== false) {
