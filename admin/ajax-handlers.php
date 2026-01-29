@@ -2964,3 +2964,4 @@ function eipsi_ajax_activate_study() {
         'redirect_url' => $redirect_url
     ));
 }
+// DASHBOARD-EIPSI-MARKER
