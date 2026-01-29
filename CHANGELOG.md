@@ -208,7 +208,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 - ❌→✅ **SQL Error crítico:** "Unknown column 'template_id' in WHERE clause" - El sistema de aleatorización generaba errores SQL porque la tabla `wp_eipsi_randomization_assignments` usaba columna `template_id` pero el código esperaba `randomization_id`.
 - ❌→✅ **PHP Warnings:** "Undefined array key 'randomizationId'", "'porcentaje'", "'postId'" - Acceso a keys incorrectas en arrays de configuración.
 - ❌→✅ **Transaction Failures:** INSERT statements fallaban completamente, las asignaciones RCT no se registraban en base de datos.
-- ❌→✅ **RCT Analytics Dashboard:** JOINs entre tablas `configs` y `assignments` ahora funcionan correctamente, estadísticas se calculan sin errores.
+- ❌→✅ **Randomization Dashboard:** JOINs entre tablas `configs` y `assignments` ahora funcionan correctamente, estadísticas se calculan sin errores.
 
 #### Changed
 - **Schema de base de datos:** Columna `template_id BIGINT(20)` → `randomization_id VARCHAR(255)` en tabla `wp_eipsi_randomization_assignments` (representa config_id, permite JOINs correctos).

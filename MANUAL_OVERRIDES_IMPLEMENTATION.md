@@ -50,7 +50,7 @@ CREATE TABLE wp_eipsi_manual_overrides (
 
 ### 2. ✅ Endpoints AJAX (Backend)
 
-**Archivo:** `/admin/rct-analytics-api.php`
+**Archivo:** `/admin/randomization-api.php`
 
 **4 funciones implementadas:**
 
@@ -155,9 +155,9 @@ if (!$assigned_form_id) {
 
 ---
 
-### 4. ✅ UI en RCT Analytics Dashboard
+### 4. ✅ UI en Randomization Dashboard
 
-**Archivo:** `/admin/rct-analytics-page.php`
+**Archivo:** `/admin/randomization-page.php`
 
 **Componentes agregados:**
 
@@ -224,7 +224,7 @@ function deleteManualOverride(overrideId)
 
 ### 5. ✅ Estilos CSS
 
-**Archivo:** `/admin/rct-analytics-page.php` (sección `<style>`)
+**Archivo:** `/admin/randomization-page.php` (sección `<style>`)
 
 **Clases CSS:**
 - `.modal-medium` - Modal de 700px ancho
@@ -334,7 +334,7 @@ function deleteManualOverride(overrideId)
 - ✅ Útil para intervenciones puntuales, estudios piloto, etc.
 
 ### 4. **Interfaz Intuitiva**
-- ✅ Todo desde el dashboard RCT Analytics
+- ✅ Todo desde el dashboard Randomization
 - ✅ Sin necesidad de SQL ni código
 - ✅ Botón claro y visible en cada card
 

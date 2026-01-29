@@ -1,6 +1,6 @@
 <?php
 /**
- * EIPSI Forms - RCT Analytics Dashboard
+ * EIPSI Forms - Randomization Dashboard
  * Dashboard principal para monitorear estudios de aleatorización controlada
  * 
  * @package EIPSI_Forms
@@ -12,16 +12,16 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Renderizar página principal del RCT Analytics Dashboard
+ * Renderizar página principal del Randomization Dashboard
  */
-function eipsi_display_rct_analytics() {
+function eipsi_display_randomization() {
     // Verificar permisos
     if (!current_user_can('manage_options')) {
         wp_die(__('Unauthorized', 'eipsi-forms'));
     }
 
     // Verificar nonce para AJAX
-    $nonce = wp_create_nonce('eipsi_rct_analytics_nonce');
+    $nonce = wp_create_nonce('eipsi_randomization_nonce');
     $ajax_url = admin_url('admin-ajax.php');
 
     // Auto-load config desde URL (?config=...)
@@ -33,11 +33,11 @@ function eipsi_display_rct_analytics() {
         }
     }
 
-    // URL para volver al listado de Results & Experience (mantiene el tab rct-analytics)
-    $back_to_results_url = admin_url('admin.php?page=eipsi-results&tab=rct-analytics');
+    // URL para volver al listado de Results & Experience (mantiene el tab randomization)
+    $back_to_results_url = admin_url('admin.php?page=eipsi-results&tab=randomization');
     ?>
     
-    <div class="wrap eipsi-rct-analytics">
+    <div class="wrap eipsi-randomization">
         <div class="rct-header">
             <div class="rct-header-left">
                 <?php if (!empty($auto_load_config)) : ?>
@@ -51,7 +51,7 @@ function eipsi_display_rct_analytics() {
                 <?php endif; ?>
 
                 <h1>
-                    🎲 <?php esc_html_e('RCT Analytics Dashboard', 'eipsi-forms'); ?>
+                    🎲 <?php esc_html_e('Randomization Dashboard', 'eipsi-forms'); ?>
                     <?php if (!empty($auto_load_config)) : ?>
                         <span class="config-id-badge">
                             <?php esc_html_e('Config:', 'eipsi-forms'); ?>
@@ -226,7 +226,7 @@ function eipsi_display_rct_analytics() {
     </div>
 
     <style>
-        .eipsi-rct-analytics {
+        .eipsi-randomization {
             background: white;
             padding: 20px;
             border-radius: 8px;

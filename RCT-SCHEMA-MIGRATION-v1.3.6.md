@@ -17,7 +17,7 @@ El sistema de aleatorización RCT generaba **tres categorías de errores crític
 2. ❌ **PHP Warnings:** `Undefined array key 'randomizationId'`, `'porcentaje'`, `'postId'`
 3. ❌ **Transaction Failure:** INSERT statements fallaban completamente
 
-**Impacto:** El shortcode `[eipsi_randomization]` no funcionaba, las asignaciones no se registraban en DB, y el RCT Analytics Dashboard no mostraba datos.
+**Impacto:** El shortcode `[eipsi_randomization]` no funcionaba, las asignaciones no se registraban en DB, y el Randomization Dashboard no mostraba datos.
 
 ---
 
@@ -27,7 +27,7 @@ El sistema de aleatorización RCT generaba **tres categorías de errores crític
 
 **Problema:**  
 La tabla `wp_eipsi_randomization_assignments` fue creada con columna `template_id`, pero:
-- RCT Analytics API esperaba `randomization_id` (para JOINs con tabla configs)
+- Randomization API esperaba `randomization_id` (para JOINs con tabla configs)
 - Funciones de estadísticas también esperaban `randomization_id`
 - El shortcode handler usaba `template_id` pero pasaba valores incorrectos
 
@@ -390,8 +390,8 @@ update_option( 'eipsi_randomization_schema_version', '1.3.6' );
 - Formulario asignado se renderiza correctamente
 - ✅ Resultado esperado: 0 errores SQL, 0 warnings PHP
 
-**4. RCT Analytics Dashboard**
-- Admin accede a "Results & Experience" > pestaña "RCT Analytics"
+**4. Randomization Dashboard**
+- Admin accede a "Results & Experience" > pestaña "Randomization"
 - JOINs entre `configs` y `assignments` funcionan
 - Estadísticas se calculan correctamente
 - Lista de asignaciones se muestra sin errores
@@ -465,7 +465,7 @@ CHANGE COLUMN randomization_id template_id BIGINT(20) UNSIGNED NOT NULL;
 - ❌→✅ SQL Error: "Unknown column 'template_id'" en sistema de aleatorización
 - ❌→✅ PHP Warnings: Undefined array keys en cálculo de probabilidades
 - ❌→✅ Transaction Failures: INSERT statements ahora funcionan correctamente
-- ❌→✅ RCT Analytics Dashboard: JOINs ahora funcionan, estadísticas correctas
+- ❌→✅ Randomization Dashboard: JOINs ahora funcionan, estadísticas correctas
 
 **Changed:**
 - Schema de `wp_eipsi_randomization_assignments`: `template_id` → `randomization_id`
@@ -512,7 +512,7 @@ SELECT * FROM wp_eipsi_randomization_assignments;
 1. Acceder a frontend con shortcode `[eipsi_randomization template="2424" config="config_XXX"]`
 2. Verificar que NO hay errores PHP en pantalla
 3. Verificar que formulario se renderiza correctamente
-4. Ir a Admin > Results & Experience > RCT Analytics
+4. Ir a Admin > Results & Experience > Randomization
 5. Confirmar que asignaciones se muestran correctamente
 
 **PASO 5: Limpiar Backup (Opcional)**

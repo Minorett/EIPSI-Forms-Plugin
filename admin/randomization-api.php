@@ -1,8 +1,8 @@
 <?php
 /**
- * EIPSI Forms - RCT Analytics API
+ * EIPSI Forms - Randomization API
  * 
- * Maneja los endpoints AJAX para el RCT Analytics Dashboard
+ * Maneja los endpoints AJAX para el Randomization Dashboard
  * 
  * @package EIPSI_Forms
  * @since 1.3.2
@@ -41,7 +41,7 @@ function eipsi_check_config_exists($config_id) {
 /**
  * Registrar los endpoints AJAX
  */
-function eipsi_register_rct_analytics_endpoints() {
+function eipsi_register_randomization_endpoints() {
     // Para usuarios logueados
     add_action('wp_ajax_eipsi_get_randomizations', 'eipsi_get_randomizations');
     add_action('wp_ajax_eipsi_get_randomization_details', 'eipsi_get_randomization_details');
@@ -54,14 +54,14 @@ function eipsi_register_rct_analytics_endpoints() {
     add_action('wp_ajax_eipsi_revoke_manual_override', 'eipsi_revoke_manual_override');
     add_action('wp_ajax_eipsi_delete_manual_override', 'eipsi_delete_manual_override');
 }
-add_action('init', 'eipsi_register_rct_analytics_endpoints');
+add_action('init', 'eipsi_register_randomization_endpoints');
 
 /**
  * Obtener lista de aleatorizaciones para el dashboard
  */
 function eipsi_get_randomizations() {
     // Verificar nonce y permisos
-    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_randomization_nonce') || !current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized', 403);
         return;
     }
@@ -181,7 +181,7 @@ function eipsi_get_randomizations() {
         ));
 
     } catch (Exception $e) {
-        error_log('[EIPSI RCT Analytics] Error: ' . $e->getMessage());
+        error_log('[EIPSI Randomization] Error: ' . $e->getMessage());
         wp_send_json_error('Error interno del servidor');
     }
 }
@@ -191,7 +191,7 @@ function eipsi_get_randomizations() {
  */
 function eipsi_get_randomization_details() {
     // Verificar nonce y permisos
-    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_randomization_nonce') || !current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized', 403);
         return;
     }
@@ -327,7 +327,7 @@ function eipsi_get_randomization_details() {
         ));
 
     } catch (Exception $e) {
-        error_log('[EIPSI RCT Analytics] Error en detalles: ' . $e->getMessage());
+        error_log('[EIPSI Randomization] Error en detalles: ' . $e->getMessage());
         wp_send_json_error('Error interno del servidor');
     }
 }
@@ -337,7 +337,7 @@ function eipsi_get_randomization_details() {
  */
 function eipsi_get_randomization_users() {
     // Verificar nonce y permisos
-    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_randomization_nonce') || !current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized', 403);
         return;
     }
@@ -423,7 +423,7 @@ function eipsi_get_randomization_users() {
         ));
 
     } catch (Exception $e) {
-        error_log('[EIPSI RCT Analytics] Error en usuarios: ' . $e->getMessage());
+        error_log('[EIPSI Randomization] Error en usuarios: ' . $e->getMessage());
         wp_send_json_error('Error interno del servidor');
     }
 }
@@ -433,7 +433,7 @@ function eipsi_get_randomization_users() {
  */
 function eipsi_download_assignments_csv() {
     // Verificar nonce y permisos
-    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_randomization_nonce') || !current_user_can('manage_options')) {
         wp_die('No autorizado', '', array('response' => 403));
     }
 
@@ -558,7 +558,7 @@ function eipsi_download_assignments_csv() {
         exit;
 
     } catch (Exception $e) {
-        error_log('[EIPSI RCT Analytics] Error en descarga CSV: ' . $e->getMessage());
+        error_log('[EIPSI Randomization] Error en descarga CSV: ' . $e->getMessage());
         wp_die('Error generando CSV: ' . $e->getMessage());
     }
 }
@@ -576,7 +576,7 @@ add_action('wp_ajax_eipsi_download_assignments_csv', 'eipsi_download_assignments
  */
 function eipsi_get_distribution_stats() {
     // Verificar nonce y permisos
-    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_randomization_nonce') || !current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized', 403);
         return;
     }
@@ -892,7 +892,7 @@ function calculate_margin_error($n) {
  */
 function eipsi_get_manual_overrides() {
     // Verificar nonce y permisos
-    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_randomization_nonce') || !current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized', 403);
         return;
     }
@@ -995,7 +995,7 @@ function eipsi_get_manual_overrides() {
  */
 function eipsi_create_manual_override() {
     // Verificar nonce y permisos
-    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_randomization_nonce') || !current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized', 403);
         return;
     }
@@ -1086,7 +1086,7 @@ function eipsi_create_manual_override() {
  */
 function eipsi_revoke_manual_override() {
     // Verificar nonce y permisos
-    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_randomization_nonce') || !current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized', 403);
         return;
     }
@@ -1134,7 +1134,7 @@ function eipsi_revoke_manual_override() {
  */
 function eipsi_delete_manual_override() {
     // Verificar nonce y permisos
-    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_rct_analytics_nonce') || !current_user_can('manage_options')) {
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_randomization_nonce') || !current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized', 403);
         return;
     }

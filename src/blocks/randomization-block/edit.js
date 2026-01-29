@@ -569,7 +569,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 									<Button
 										variant="secondary"
-										href={ `/wp-admin/admin.php?page=eipsi-results&tab=rct-analytics&config=${ encodeURIComponent(
+										href={ `/wp-admin/admin.php?page=eipsi-results&tab=randomization&config=${ encodeURIComponent(
 											savedConfig?.config_id || ''
 										) }` }
 										target="_blank"
