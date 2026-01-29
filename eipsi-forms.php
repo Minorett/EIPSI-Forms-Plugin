@@ -74,6 +74,7 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-wave-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-anonymize-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
 
 // Setup Wizard (v1.5.1)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/setup-wizard.php';
@@ -388,6 +389,25 @@ function eipsi_forms_activate() {
 
 register_activation_hook(__FILE__, 'eipsi_forms_activate');
 register_deactivation_hook(__FILE__, 'eipsi_forms_deactivate');
+
+/**
+ * Sincronizar schema longitudinal/RCT al activar plugin
+ *
+ * @since 1.4.0
+ */
+register_activation_hook(EIPSI_FORMS_PLUGIN_FILE, function() {
+    do_action('eipsi_sync_longitudinal_tables');
+    do_action('eipsi_sync_rct_tables');
+});
+
+/**
+ * Sincronizar schema longitudinal cada vez que se carga el plugin
+ *
+ * @since 1.4.0
+ */
+add_action('plugins_loaded', function() {
+    do_action('eipsi_sync_longitudinal_tables');
+}, 5);
 
 /**
  * Add weekly schedule interval for WP-Cron

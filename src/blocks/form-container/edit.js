@@ -72,8 +72,6 @@ export default function Edit( {
 		capturePageTiming,
 		captureFieldTiming,
 		showTimingAnalysis,
-		// Auth
-		requireLogin, // eslint-disable-next-line no-unused-vars
 	} = attributes;
 
 	// Blindaje: si por cualquier motivo randomConfig llega undefined/null (bloques viejos, etc.),
