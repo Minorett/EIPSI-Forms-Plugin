@@ -1,5 +1,5 @@
 /**
- * EIPSI Forms - RCT Analytics Dashboard JavaScript
+ * EIPSI Forms - Randomization Dashboard JavaScript
  *
  * Maneja toda la funcionalidad interactiva del dashboard RCT
  *
@@ -12,8 +12,8 @@
 
     // Configuración global
     const RCT_ANALYTICS_CONFIG = {
-        ajaxUrl: eipsiRCTAnalytics?.ajaxUrl || '/wp-admin/admin-ajax.php',
-        nonce: eipsiRCTAnalytics?.nonce || '',
+        ajaxUrl: eipsiRandomization?.ajaxUrl || '/wp-admin/admin-ajax.php',
+        nonce: eipsiRandomization?.nonce || '',
         refreshInterval: 60000, // 60 segundos
         autoRefresh: true,
         maxRetries: 3,
@@ -38,7 +38,7 @@
     function initRCTDashboard() {
         // Verificar que jQuery esté disponible
         if ( typeof $ === 'undefined' ) {
-            console.error( 'EIPSI RCT Analytics: jQuery no disponible' );
+            console.error( 'EIPSI Randomization: jQuery no disponible' );
             return;
         }
 
@@ -56,7 +56,7 @@
             startAutoRefresh();
         }
 
-        console.log( 'EIPSI RCT Analytics Dashboard inicializado' );
+        console.log( 'EIPSI Randomization Dashboard inicializado' );
     }
 
     /**
@@ -160,7 +160,7 @@
                 }
             },
             error: function ( xhr, status, error ) {
-                console.error( 'EIPSI RCT Analytics: Error al cargar datos', {
+                console.error( 'EIPSI Randomization: Error al cargar datos', {
                     xhr,
                     status,
                     error,

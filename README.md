@@ -2,7 +2,7 @@
 
 > Plugin multipágina diseñado para psicólogxs y psiquiatras hispanohablantes. Probado en tablets en sala, con foco en **cero miedo + cero fricción + cero pérdida de datos**.
 
-- **Versión clínica estable:** 1.3.6 (Producción — RCT Analytics Dashboard, Consolidación de utilidades)
+- **Versión clínica estable:** 1.3.6 (Producción — Randomization Dashboard, Consolidación de utilidades)
 - **Compatibilidad probada:** WordPress 5.8+, PHP 7.4+
 - **Licencia:** GPL v2 o posterior
 
@@ -30,7 +30,7 @@ EIPSI Forms convierte WordPress en una herramienta clínica de última generaci�
 - Frontend de acceso aleatorizado con validación automática
 - Exportación de datos de aleatorización con metadatos completos
 
-### 📊 RCT Analytics Dashboard
+### 📊 Randomization Dashboard
 - **Estadísticas en tiempo real:** distribución de usuarios por brazo
 - Monitoreo de balanceo de asignaciones
 - Visualización de asignaciones por formulario
@@ -80,8 +80,8 @@ EIPSI Forms convierte WordPress en una herramienta clínica de última generaci�
   3. **Privacy & Metadata:** toggles granulares para cada metadato y recordatorio de retenciones
 - Todo ocurre en WordPress, sin paneles externos ni dependencias SaaS
 
-### 📊 Dashboard RCT Analytics (nuevo en v1.3.2)
-- **Pestaña "RCT Analytics":** estadísticas en tiempo real de aleatorización
+### 📊 Dashboard Randomization (nuevo en v1.3.2)
+- **Pestaña "Randomization":** estadísticas en tiempo real de aleatorización
 - Distribución de usuarios por brazo y por formulario
 - Monitoreo de balanceo de asignaciones
 - Exportación de datos de aleatorización con metadatos
@@ -105,7 +105,7 @@ EIPSI Forms convierte WordPress en una herramienta clínica de última generaci�
 - ✅ **Patrón de auto-descubrimiento:** cualquier nuevo bloque se registra automáticamente
 
 ### v1.3.2 (Enero 2025)
-- ✅ **RCT Analytics Dashboard:** panel completo con estadísticas en tiempo real
+- ✅ **Randomization Dashboard:** panel completo con estadísticas en tiempo real
 - ✅ **Monitoreo de distribución:** visualización de balanceo de brazos por formulario
 - ✅ **Exportación RCT:** datos de aleatorización en Excel/CSV con metadatos
 - ✅ **API de análisis RCT:** endpoints optimizados para queries rápidas
@@ -190,7 +190,7 @@ npm run build
 2. **Añadir Randomization Block:** inserta el bloque **"Randomization Block"** al inicio del formulario
 3. **Configurar brazos:** define los brazos (control, experimental, etc.) y porcentajes
 4. **Configurar lógica:** usa `jump_to_page` para redirigir a diferentes páginas según el brazo asignado
-5. **Activar tracking:** ver asignaciones en **EIPSI Forms → RCT Analytics**
+5. **Activar tracking:** ver asignaciones en **EIPSI Forms → Randomization**
 6. **Exportar datos:** descarga la distribución de aleatorización en Excel/CSV
 
 ### Guardar y continuar después
@@ -204,7 +204,7 @@ npm run build
 2. **Pestaña Submissions:** ver todos los envíos con filtros por formulario
 3. **Ver detalle:** clic en cualquier envío para ver respuestas completas
 4. **Exportar:** descarga en Excel (XLSX) o CSV UTF-8 con metadatos
-5. **Pestaña RCT Analytics:** ver estadísticas de aleatorización en tiempo real
+5. **Pestaña Randomization:** ver estadísticas de aleatorización en tiempo real
 
 ---
 
@@ -327,7 +327,7 @@ EIPSI-Forms-Plugin/
 ├── build/                       # Build compilado (auto-generado)
 │   └── blocks/                  # 12 directorios de bloques compilados
 ├── admin/                       # Pages y handlers de admin
-│   ├── rct-analytics-page.php   # Dashboard RCT Analytics
+│   ├── randomization-page.php   # Dashboard Randomization
 │   ├── ajax-handlers.php        # AJAX handlers
 │   └── results-experience.php   # Panel Results & Experience
 ├── assets/                      # CSS, JS, imágenes
@@ -350,7 +350,7 @@ EIPSI-Forms-Plugin/
 - Save & Continue Later con IndexedDB + autosave 30s
 - Lógica condicional avanzada (AND/OR, jump_to_page)
 - Panel "Results & Experience" con 3 pestañas
-- Dashboard "RCT Analytics" con estadísticas en tiempo real
+- Dashboard "Randomization" con estadísticas en tiempo real
 - Escalas clínicas (Likert, VAS Slider)
 - Dark mode automático
 - Exportación Excel/CSV

@@ -61,9 +61,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-shortcode-handler.php
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-config-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/randomization-frontend.php';
 
-// RCT Analytics Dashboard (v1.3.2)
-require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/rct-analytics-page.php';
-require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/rct-analytics-api.php';
+// Randomization Dashboard (v1.3.2)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-page.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-api.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/waves-manager-api.php';
 
 // RCT Schema Migration (v1.3.6 - CRITICAL FIX)
@@ -84,9 +84,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/setup-wizard.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/study-dashboard-api.php';
 
 /**
- * Enqueue RCT Analytics assets en admin
+ * Enqueue Randomization assets en admin
  */
-function eipsi_enqueue_rct_analytics_assets($hook) {
+function eipsi_enqueue_randomization_assets($hook) {
     // Solo cargar en la página de Results & Experience
     if ($hook === 'eipsi_page_eipsi-results') {
         $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'submissions';
@@ -94,28 +94,28 @@ function eipsi_enqueue_rct_analytics_assets($hook) {
         // Enqueue generic styles for all tabs in results page
         // ...
 
-        if ($active_tab === 'rct-analytics') {
+        if ($active_tab === 'randomization') {
             // Enqueue CSS
             wp_enqueue_style(
-                'eipsi-rct-analytics-css',
-                EIPSI_FORMS_PLUGIN_URL . 'assets/css/rct-analytics.css',
+                'eipsi-randomization-css',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/css/randomization.css',
                 array(),
                 EIPSI_FORMS_VERSION
             );
 
             // Enqueue JS
             wp_enqueue_script(
-                'eipsi-rct-analytics-js',
-                EIPSI_FORMS_PLUGIN_URL . 'assets/js/rct-analytics.js',
+                'eipsi-randomization-js',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/js/randomization.js',
                 array('jquery'),
                 EIPSI_FORMS_VERSION,
                 true
             );
 
             // Localizar script con datos necesarios
-            wp_localize_script('eipsi-rct-analytics-js', 'eipsiRCTAnalytics', array(
+            wp_localize_script('eipsi-randomization-js', 'eipsiRandomization', array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('eipsi_rct_analytics_nonce'),
+                'nonce' => wp_create_nonce('eipsi_randomization_nonce'),
                 'adminUrl' => admin_url(),
                 'strings' => array(
                     'loading' => __('Cargando datos...', 'eipsi-forms'),
@@ -188,7 +188,7 @@ function eipsi_enqueue_rct_analytics_assets($hook) {
         }
     }
 }
-add_action('admin_enqueue_scripts', 'eipsi_enqueue_rct_analytics_assets');
+add_action('admin_enqueue_scripts', 'eipsi_enqueue_randomization_assets');
 
 /**
  * Enqueue Setup Wizard assets en admin (v1.5.1)

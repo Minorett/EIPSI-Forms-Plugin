@@ -1,12 +1,12 @@
 /**
- * EIPSI Forms - RCT Analytics Dashboard Styles
+ * EIPSI Forms - Randomization Dashboard Styles
  * Estilos para el dashboard de analytics de estudios RCT
  * 
  * @package EIPSI_Forms
  * @since 1.3.2
  */
 
-.eipsi-rct-analytics {
+.eipsi-randomization {
     background: white;
     padding: 20px;
     border-radius: 8px;
@@ -646,7 +646,7 @@ body.rct-single-config .rct-dashboard {
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-    .eipsi-rct-analytics {
+    .eipsi-randomization {
         background: #1f2937;
         color: #f3f4f6;
     }
