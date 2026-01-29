@@ -1161,64 +1161,24 @@ function eipsi_forms_submit_form_handler() {
         // Mark partial response as completed
         EIPSI_Partial_Responses::mark_completed($form_name, $participant_id, $session_id);
         
-        // === Task 2.4B: Marcar assignment como submitted y obtener próxima toma ===
-        $next_wave_data = null;
-        $has_next_wave = false;
-        
-        // Si hay contexto longitudinal (wave_id en sesión), actualizar assignment
-        if (isset($_SESSION['eipsi_wave_id']) && $survey_id) {
-            $wave_id = absint($_SESSION['eipsi_wave_id']);
-            
-            // Cargar Wave_Service
-            require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/Wave_Service.php';
-            
-            // Marcar assignment como submitted
-            $marked = Wave_Service::mark_assignment_submitted($participant_id, $survey_id, $wave_id);
-            
-            if (!$marked && defined('WP_DEBUG') && WP_DEBUG) {
-                error_log(sprintf(
-                    '[EIPSI] Warning: No se pudo marcar assignment como submitted (participant_id=%d, survey_id=%d, wave_id=%d)',
-                    $participant_id,
-                    $survey_id,
-                    $wave_id
-                ));
-            }
-            
-            // Obtener próxima toma pendiente
-            $next_wave = Wave_Service::get_next_pending_wave($participant_id, $survey_id);
-            
-            if ($next_wave) {
-                $has_next_wave = true;
-                $next_wave_data = array(
-                    'wave_index' => $next_wave['wave_index'],
-                    'due_at' => $next_wave['due_at'],
-                    'wave_name' => $next_wave['wave_name']
-                );
-            }
-        }
-        
-        // Preparar respuesta de éxito con información de próximas tomas
-        $success_response = array(
-            'message' => __('¡GRACIAS! Tu respuesta ha sido guardada exitosamente', 'eipsi-forms'),
-            'external_db' => false,
-            'insert_id' => $insert_id,
-            'has_next' => $has_next_wave,
-            'next_wave' => $next_wave_data
-        );
-        
-        // Si no hay próxima toma, agregar mensaje de completado
-        if (!$has_next_wave && $survey_id) {
-            $success_response['completion_message'] = __('Todas las tomas completadas ✅', 'eipsi-forms');
-        }
-        
         if ($used_fallback) {
             // Fallback succeeded - inform user with warning
-            $success_response['fallback_used'] = true;
-            $success_response['warning'] = __('Form was saved to local database (external database temporarily unavailable).', 'eipsi-forms');
-            $success_response['error_code'] = $error_info['error_code'];
+            wp_send_json_success(array(
+                'message' => __('Form submitted successfully!', 'eipsi-forms'),
+                'external_db' => false,
+                'fallback_used' => true,
+                'warning' => __('Form was saved to local database (external database temporarily unavailable).', 'eipsi-forms'),
+                'insert_id' => $insert_id,
+                'error_code' => $error_info['error_code']
+            ));
+        } else {
+            // Normal WordPress DB submission
+            wp_send_json_success(array(
+                'message' => __('Form submitted successfully!', 'eipsi-forms'),
+                'external_db' => false,
+                'insert_id' => $insert_id
+            ));
         }
-        
-        wp_send_json_success($success_response);
     }
 }
 

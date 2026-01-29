@@ -3013,9 +3013,12 @@
                             }
                         }
 
+                        // Task 2.4B: Pasar datos de próxima toma al thank-you page
+                        const nextWaveData = data.data || {};
+                        
                         // Show integrated thank-you page after 1.5 seconds
                         setTimeout( () => {
-                            this.showIntegratedThankYouPage( form );
+                            this.showIntegratedThankYouPage( form, nextWaveData );
                         }, 1500 );
                     } else {
                         const strings = this.config.strings || {};
@@ -3564,7 +3567,7 @@
             }
         },
 
-        showIntegratedThankYouPage( form ) {
+        showIntegratedThankYouPage( form, nextWaveData = {} ) {
             // Check if a thank-you page block already exists
             const existingThankYouPage = form.querySelector(
                 '.eipsi-page[data-page="thank-you"], .eipsi-thank-you-page-block'
@@ -3583,10 +3586,10 @@
 
                 if ( completionConfig ) {
                     // Use config from Form Container block
-                    this.createThankYouPage( form, completionConfig );
+                    this.createThankYouPage( form, completionConfig, nextWaveData );
                 } else {
                     // Fallback: try to fetch from backend or use default
-                    this.fetchCompletionConfigFromBackend( form );
+                    this.fetchCompletionConfigFromBackend( form, nextWaveData );
                 }
             }
         },
@@ -3620,7 +3623,7 @@
             return null;
         },
 
-        fetchCompletionConfigFromBackend( form ) {
+        fetchCompletionConfigFromBackend( form, nextWaveData = {} ) {
             fetch( this.config.ajaxUrl, {
                 method: 'POST',
                 headers: {
@@ -3643,11 +3646,11 @@
                             button_text: 'Comenzar de nuevo',
                             button_action: 'reload',
                             show_animation: false,
-                        } );
+                        }, nextWaveData );
                         return;
                     }
 
-                    this.createThankYouPage( form, data.data.config );
+                    this.createThankYouPage( form, data.data.config, nextWaveData );
                 } )
                 .catch( () => {
                     // Fallback to default message if network error
@@ -3660,7 +3663,7 @@
                         button_text: 'Comenzar de nuevo',
                         button_action: 'reload',
                         show_animation: false,
-                    } );
+                    }, nextWaveData );
                 } );
         },
 
@@ -3722,7 +3725,7 @@
             }
         },
 
-        createThankYouPage( form, config ) {
+        createThankYouPage( form, config, nextWaveData = {} ) {
             // Mark form as completed (sets state + tracking)
             this.markFormCompleted( form );
 
@@ -3767,6 +3770,49 @@
                 this.fetchAndRenderLogo( thankYouPage );
             }
 
+            // Task 2.4B: Generar HTML de próximas tomas
+            let nextWaveHtml = '';
+            if ( nextWaveData && nextWaveData.has_next && nextWaveData.next_wave ) {
+                const nextWave = nextWaveData.next_wave;
+                const waveIndex = nextWave.wave_index || '';
+                const waveName = nextWave.wave_name || `Toma ${waveIndex}`;
+                const dueAt = nextWave.due_at || '';
+                
+                const formattedDate = dueAt ? new Date(dueAt).toLocaleDateString('es-ES', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                }) : '';
+
+                nextWaveHtml = `
+                    <div class="eipsi-next-wave-info" style="margin: 30px 0; padding: 20px; background: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 4px;">
+                        <h3 style="margin: 0 0 12px 0; font-size: 18px; color: #0369a1; display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 20px;">📋</span>
+                            Próximas tomas
+                        </h3>
+                        <p style="margin: 0 0 8px 0; font-size: 15px; color: #374151; line-height: 1.5;">
+                            <strong>${this.escapeHtml(waveName)}</strong>
+                        </p>
+                        ${formattedDate ? `<p style="margin: 0 0 15px 0; font-size: 14px; color: #6b7280;">
+                            📅 Fecha estimada: ${formattedDate}
+                        </p>` : ''}
+                        <p style="margin: 0; font-size: 13px; color: #9ca3af; display: flex; align-items: center; gap: 8px;">
+                            <span>📧</span>
+                            Recibirás un recordatorio por email 7 días antes de la fecha.
+                        </p>
+                    </div>
+                `;
+            } else if ( nextWaveData && !nextWaveData.has_next && nextWaveData.completion_message ) {
+                nextWaveHtml = `
+                    <div class="eipsi-next-wave-info" style="margin: 30px 0; padding: 20px; background: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px;">
+                        <p style="margin: 0; font-size: 16px; color: #065f46; display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 20px;">✅</span>
+                            ${this.escapeHtml(nextWaveData.completion_message)}
+                        </p>
+                    </div>
+                `;
+            }
+
             let buttonHtml = '';
             if ( config.show_home_button ) {
                 const buttonAction =
@@ -3774,14 +3820,18 @@
                         ? 'onclick="window.close();"'
                         : config.button_action === 'reload'
                         ? 'onclick="window.location.reload();"'
-                        : '';
+                        : 'onclick="window.location.href = '/';"';
+
+                const buttonLabel = nextWaveData && !nextWaveData.has_next 
+                    ? 'Volver a inicio'
+                    : config.button_text;
 
                 buttonHtml = `
                     <div class="eipsi-thank-you-actions">
                         <button type="button" 
                                 class="eipsi-thank-you-button" 
                                 ${ buttonAction }>
-                            ${ this.escapeHtml( config.button_text ) }
+                            ${ this.escapeHtml( buttonLabel ) }
                         </button>
                     </div>
                 `;
@@ -3801,6 +3851,7 @@
                         titleText
                     ) }</h2>
                     <div class="eipsi-thank-you-message">${ messageHtml }</div>
+                    ${ nextWaveHtml }
                     ${ buttonHtml }
                 </div>
             `;
