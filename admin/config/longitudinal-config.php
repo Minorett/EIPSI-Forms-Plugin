@@ -35,11 +35,13 @@ define('EIPSI_PARTICIPANT_ID_STRATEGY', 'email');
 
 /**
  * Versión del schema longitudinal
- * 
+ *
  * Se usa para migraciones de base de datos. Cambiar este número
  * cuando se modifiquen las tablas wp_survey_* para ejecutar migraciones.
+ *
+ * @since 1.4.0
  */
-define('EIPSI_LONGITUDINAL_DB_VERSION', '1.0.0');
+define('EIPSI_LONGITUDINAL_DB_VERSION', '1.1.0');
 
 // =================================================================
 // CONFIGURACIÓN DE SESIONES

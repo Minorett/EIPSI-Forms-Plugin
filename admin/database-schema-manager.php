@@ -1323,15 +1323,16 @@ class EIPSI_Database_Schema_Manager {
     
     /**
      * Sync wp_survey_waves table in local DB
-     * 
+     *
      * @since 1.4.0
      * @return array Result with success status and details
      */
     private static function sync_local_survey_waves_table() {
         global $wpdb;
+
         $table_name = $wpdb->prefix . 'survey_waves';
         $charset_collate = $wpdb->get_charset_collate();
-        
+
         $result = array(
             'success' => true,
             'exists' => false,
@@ -1340,85 +1341,98 @@ class EIPSI_Database_Schema_Manager {
             'columns_missing' => array(),
             'error' => null,
         );
-        
-        // Check if table exists
+
         $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
         $result['exists'] = ! empty( $table_exists );
-        
-        if ( ! $result['exists'] ) {
-            // Create table
-            $sql = "CREATE TABLE {$table_name} (
-                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-                survey_id INT(11) NOT NULL,
-                wave_index INT(11) NOT NULL,
-                form_template_id INT(11) NOT NULL,
-                due_at DATETIME,
-                description TEXT,
-                created_at DATETIME NOT NULL,
-                PRIMARY KEY (id),
-                UNIQUE KEY unique_survey_wave (survey_id, wave_index),
-                KEY form_template_id (form_template_id),
-                KEY due_at (due_at)
-            ) {$charset_collate};";
-            
-            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-            dbDelta( $sql );
-            
+        $already_existed = $result['exists'];
+
+        // Create / update table via dbDelta
+        $sql = "CREATE TABLE {$table_name} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            study_id BIGINT(20) UNSIGNED NOT NULL,
+            wave_index INT NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            form_id BIGINT(20) UNSIGNED NOT NULL,
+
+            start_date DATETIME NULL,
+            due_date DATETIME NULL,
+
+            reminder_days INT DEFAULT 3,
+            retry_enabled TINYINT(1) DEFAULT 1,
+            retry_days INT DEFAULT 7,
+            max_retries INT DEFAULT 3,
+
+            status ENUM('draft', 'active', 'completed', 'paused') DEFAULT 'draft',
+            is_mandatory TINYINT(1) DEFAULT 1,
+
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+            PRIMARY KEY (id),
+            KEY idx_study_id (study_id),
+            KEY idx_wave_index (study_id, wave_index),
+            KEY idx_status (status),
+            KEY idx_due_date (due_date),
+            UNIQUE KEY uk_study_index (study_id, wave_index)
+        ) ENGINE=InnoDB {$charset_collate};";
+
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        dbDelta( $sql );
+
+        if ( ! $already_existed ) {
             $result['created'] = true;
-            $result['exists'] = true;
-            
-            error_log( '[EIPSI Forms] Created table: ' . $table_name );
         }
-        
-        // Ensure required columns exist
-        $required_columns = array(
-            'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id INT(11) NOT NULL AFTER id",
-            'wave_index' => "ALTER TABLE {$table_name} ADD COLUMN wave_index INT(11) NOT NULL AFTER survey_id",
-            'form_template_id' => "ALTER TABLE {$table_name} ADD COLUMN form_template_id INT(11) NOT NULL AFTER wave_index",
-            'due_at' => "ALTER TABLE {$table_name} ADD COLUMN due_at DATETIME AFTER form_template_id",
-            'description' => "ALTER TABLE {$table_name} ADD COLUMN description TEXT AFTER due_at",
-            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME NOT NULL AFTER description",
-        );
-        
-        foreach ( $required_columns as $column => $alter_sql ) {
-            $column_exists = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
-                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
-                    DB_NAME,
-                    $table_name,
-                    $column
-                )
+
+        $result['exists'] = true;
+
+        // Attempt safe data migration from old v1.4.0 schema if present
+        // survey_id -> study_id, form_template_id -> form_id, due_at -> due_date, description -> name
+        if ( self::local_column_exists( $table_name, 'survey_id' ) && self::local_column_exists( $table_name, 'study_id' ) ) {
+            $wpdb->query( "UPDATE {$table_name} SET study_id = survey_id WHERE (study_id IS NULL OR study_id = 0) AND survey_id IS NOT NULL" );
+        }
+
+        if ( self::local_column_exists( $table_name, 'form_template_id' ) && self::local_column_exists( $table_name, 'form_id' ) ) {
+            $wpdb->query( "UPDATE {$table_name} SET form_id = form_template_id WHERE (form_id IS NULL OR form_id = 0) AND form_template_id IS NOT NULL" );
+        }
+
+        if ( self::local_column_exists( $table_name, 'due_at' ) && self::local_column_exists( $table_name, 'due_date' ) ) {
+            $wpdb->query( "UPDATE {$table_name} SET due_date = due_at WHERE due_date IS NULL AND due_at IS NOT NULL" );
+        }
+
+        if ( self::local_column_exists( $table_name, 'description' ) && self::local_column_exists( $table_name, 'name' ) ) {
+            $wpdb->query( "UPDATE {$table_name} SET name = COALESCE(NULLIF(description, ''), CONCAT('Wave ', wave_index)) WHERE name = '' OR name IS NULL" );
+        }
+
+        // Ensure foreign keys (best effort)
+        if ( function_exists( 'eipsi_longitudinal_ensure_foreign_key' ) ) {
+            eipsi_longitudinal_ensure_foreign_key(
+                $table_name,
+                'fk_waves_study',
+                "ALTER TABLE {$table_name} ADD CONSTRAINT fk_waves_study FOREIGN KEY (study_id) REFERENCES {$wpdb->prefix}survey_studies(id) ON DELETE CASCADE"
             );
-            
-            if ( empty( $column_exists ) ) {
-                if ( false !== $wpdb->query( $alter_sql ) ) {
-                    $result['columns_added'][] = $column;
-                    error_log( "[EIPSI Forms] Added missing column '{$column}' to {$table_name}" );
-                } else {
-                    $result['columns_missing'][] = $column;
-                    $result['success'] = false;
-                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
-                    }
-                }
-            }
+
+            eipsi_longitudinal_ensure_foreign_key(
+                $table_name,
+                'fk_waves_form',
+                "ALTER TABLE {$table_name} ADD CONSTRAINT fk_waves_form FOREIGN KEY (form_id) REFERENCES {$wpdb->posts}(ID) ON DELETE RESTRICT"
+            );
         }
-        
+
         return $result;
     }
     
     /**
      * Sync wp_survey_assignments table in local DB
-     * 
+     *
      * @since 1.4.0
      * @return array Result with success status and details
      */
     private static function sync_local_survey_assignments_table() {
         global $wpdb;
+
         $table_name = $wpdb->prefix . 'survey_assignments';
         $charset_collate = $wpdb->get_charset_collate();
-        
+
         $result = array(
             'success' => true,
             'exists' => false,
@@ -1427,73 +1441,84 @@ class EIPSI_Database_Schema_Manager {
             'columns_missing' => array(),
             'error' => null,
         );
-        
-        // Check if table exists
+
         $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
         $result['exists'] = ! empty( $table_exists );
-        
-        if ( ! $result['exists'] ) {
-            // Create table
-            $sql = "CREATE TABLE {$table_name} (
-                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-                participant_id BIGINT(20) UNSIGNED NOT NULL,
-                survey_id INT(11),
-                wave_id BIGINT(20) UNSIGNED NOT NULL,
-                status ENUM('pending', 'in_progress', 'submitted') DEFAULT 'pending',
-                submitted_at DATETIME,
-                created_at DATETIME NOT NULL,
-                updated_at DATETIME NOT NULL,
-                PRIMARY KEY (id),
-                UNIQUE KEY unique_participant_wave (participant_id, survey_id, wave_id),
-                KEY status (status),
-                KEY wave_id (wave_id)
-            ) {$charset_collate};";
-            
-            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-            dbDelta( $sql );
-            
+        $already_existed = $result['exists'];
+
+        // Create / update table via dbDelta
+        $sql = "CREATE TABLE {$table_name} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+
+            study_id BIGINT(20) UNSIGNED NOT NULL,
+            wave_id BIGINT(20) UNSIGNED NOT NULL,
+            participant_id BIGINT(20) UNSIGNED NOT NULL,
+
+            status ENUM('pending', 'in_progress', 'submitted', 'skipped', 'expired') DEFAULT 'pending',
+
+            assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            first_viewed_at DATETIME NULL,
+            submitted_at DATETIME NULL,
+
+            reminder_count INT DEFAULT 0,
+            last_reminder_sent DATETIME NULL,
+
+            retry_count INT DEFAULT 0,
+            last_retry_sent DATETIME NULL,
+
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+            PRIMARY KEY (id),
+            KEY idx_study_id (study_id),
+            KEY idx_wave_id (wave_id),
+            KEY idx_participant_id (participant_id),
+            KEY idx_status (status),
+            KEY idx_submitted_at (submitted_at),
+            UNIQUE KEY uk_wave_participant (wave_id, participant_id)
+        ) ENGINE=InnoDB {$charset_collate};";
+
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        dbDelta( $sql );
+
+        if ( ! $already_existed ) {
             $result['created'] = true;
-            $result['exists'] = true;
-            
-            error_log( '[EIPSI Forms] Created table: ' . $table_name );
         }
-        
-        // Ensure required columns exist
-        $required_columns = array(
-            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NOT NULL AFTER id",
-            'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id INT(11) AFTER participant_id",
-            'wave_id' => "ALTER TABLE {$table_name} ADD COLUMN wave_id BIGINT(20) UNSIGNED NOT NULL AFTER survey_id",
-            'status' => "ALTER TABLE {$table_name} ADD COLUMN status ENUM('pending', 'in_progress', 'submitted') DEFAULT 'pending' AFTER wave_id",
-            'submitted_at' => "ALTER TABLE {$table_name} ADD COLUMN submitted_at DATETIME AFTER status",
-            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME NOT NULL AFTER submitted_at",
-            'updated_at' => "ALTER TABLE {$table_name} ADD COLUMN updated_at DATETIME NOT NULL AFTER created_at",
-        );
-        
-        foreach ( $required_columns as $column => $alter_sql ) {
-            $column_exists = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
-                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
-                    DB_NAME,
-                    $table_name,
-                    $column
-                )
+
+        $result['exists'] = true;
+
+        // Attempt safe data migration from old v1.4.0 schema if present
+        // survey_id -> study_id
+        if ( self::local_column_exists( $table_name, 'survey_id' ) && self::local_column_exists( $table_name, 'study_id' ) ) {
+            $wpdb->query( "UPDATE {$table_name} SET study_id = survey_id WHERE (study_id IS NULL OR study_id = 0) AND survey_id IS NOT NULL" );
+        }
+
+        // created_at -> assigned_at
+        if ( self::local_column_exists( $table_name, 'created_at' ) && self::local_column_exists( $table_name, 'assigned_at' ) ) {
+            $wpdb->query( "UPDATE {$table_name} SET assigned_at = created_at WHERE assigned_at IS NULL AND created_at IS NOT NULL" );
+        }
+
+        // Ensure foreign keys (best effort)
+        if ( function_exists( 'eipsi_longitudinal_ensure_foreign_key' ) ) {
+            eipsi_longitudinal_ensure_foreign_key(
+                $table_name,
+                'fk_assignments_study',
+                "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_study FOREIGN KEY (study_id) REFERENCES {$wpdb->prefix}survey_studies(id) ON DELETE CASCADE"
             );
-            
-            if ( empty( $column_exists ) ) {
-                if ( false !== $wpdb->query( $alter_sql ) ) {
-                    $result['columns_added'][] = $column;
-                    error_log( "[EIPSI Forms] Added missing column '{$column}' to {$table_name}" );
-                } else {
-                    $result['columns_missing'][] = $column;
-                    $result['success'] = false;
-                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
-                    }
-                }
-            }
+
+            eipsi_longitudinal_ensure_foreign_key(
+                $table_name,
+                'fk_assignments_wave',
+                "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_wave FOREIGN KEY (wave_id) REFERENCES {$wpdb->prefix}survey_waves(id) ON DELETE CASCADE"
+            );
+
+            eipsi_longitudinal_ensure_foreign_key(
+                $table_name,
+                'fk_assignments_participant',
+                "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE"
+            );
         }
-        
+
         return $result;
     }
     
@@ -1771,3 +1796,225 @@ class EIPSI_Database_Schema_Manager {
         return $result;
     }
 }
+
+// =================================================================
+// LONGITUDINAL TABLES (v2.1.0 / Task 2.1)
+// Global sync functions + hooks
+// =================================================================
+
+/**
+ * Verifica si existe una FK por nombre.
+ *
+ * @param string $table_name Nombre real de la tabla (con prefix)
+ * @param string $constraint_name Nombre del constraint
+ * @return bool
+ */
+function eipsi_longitudinal_fk_exists($table_name, $constraint_name) {
+    global $wpdb;
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $exists = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT CONSTRAINT_NAME
+            FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = %s
+              AND TABLE_NAME = %s
+              AND CONSTRAINT_NAME = %s
+              AND CONSTRAINT_TYPE = 'FOREIGN KEY'",
+            DB_NAME,
+            $table_name,
+            $constraint_name
+        )
+    );
+
+    return !empty($exists);
+}
+
+/**
+ * Intenta agregar una FK (best effort, sin romper el sitio si falla).
+ *
+ * @param string $table_name Nombre real de la tabla (con prefix)
+ * @param string $constraint_name Nombre del constraint
+ * @param string $alter_sql SQL ALTER TABLE ... ADD CONSTRAINT ...
+ * @return bool
+ */
+function eipsi_longitudinal_ensure_foreign_key($table_name, $constraint_name, $alter_sql) {
+    global $wpdb;
+
+    if (eipsi_longitudinal_fk_exists($table_name, $constraint_name)) {
+        return true;
+    }
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+    $result = $wpdb->query($alter_sql);
+
+    if ($result === false) {
+        error_log('[EIPSI] Failed to add FK ' . $constraint_name . ' on ' . $table_name . ': ' . $wpdb->last_error);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Sincronizar tabla wp_survey_waves
+ * Crear si no existe, actualizar si es necesario
+ */
+function eipsi_sync_survey_waves_table() {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'survey_waves';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE {$table_name} (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        study_id BIGINT(20) UNSIGNED NOT NULL,
+
+        wave_index INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        form_id BIGINT(20) UNSIGNED NOT NULL,
+
+        start_date DATETIME NULL,
+        due_date DATETIME NULL,
+
+        reminder_days INT DEFAULT 3,
+        retry_enabled BOOLEAN DEFAULT 1,
+        retry_days INT DEFAULT 7,
+        max_retries INT DEFAULT 3,
+
+        status ENUM('draft', 'active', 'completed', 'paused') DEFAULT 'draft',
+        is_mandatory BOOLEAN DEFAULT 1,
+
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+        PRIMARY KEY (id),
+        INDEX idx_study_id (study_id),
+        INDEX idx_wave_index (study_id, wave_index),
+        INDEX idx_status (status),
+        INDEX idx_due_date (due_date),
+        UNIQUE KEY uk_study_index (study_id, wave_index)
+    ) ENGINE=InnoDB {$charset_collate};";
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta($sql);
+
+    // Foreign keys (best effort)
+    eipsi_longitudinal_ensure_foreign_key(
+        $table_name,
+        'fk_waves_study',
+        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_waves_study FOREIGN KEY (study_id) REFERENCES {$wpdb->prefix}survey_studies(id) ON DELETE CASCADE"
+    );
+
+    eipsi_longitudinal_ensure_foreign_key(
+        $table_name,
+        'fk_waves_form',
+        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_waves_form FOREIGN KEY (form_id) REFERENCES {$wpdb->posts}(ID) ON DELETE RESTRICT"
+    );
+
+    error_log('[EIPSI] Synced survey_waves table');
+}
+
+/**
+ * Sincronizar tabla wp_survey_assignments
+ */
+function eipsi_sync_survey_assignments_table() {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'survey_assignments';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE {$table_name} (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+
+        study_id BIGINT(20) UNSIGNED NOT NULL,
+        wave_id BIGINT(20) UNSIGNED NOT NULL,
+        participant_id BIGINT(20) UNSIGNED NOT NULL,
+
+        status ENUM('pending', 'in_progress', 'submitted', 'skipped', 'expired') DEFAULT 'pending',
+
+        assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        first_viewed_at DATETIME NULL,
+        submitted_at DATETIME NULL,
+
+        reminder_count INT DEFAULT 0,
+        last_reminder_sent DATETIME NULL,
+
+        retry_count INT DEFAULT 0,
+        last_retry_sent DATETIME NULL,
+
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+        PRIMARY KEY (id),
+        INDEX idx_study_id (study_id),
+        INDEX idx_wave_id (wave_id),
+        INDEX idx_participant_id (participant_id),
+        INDEX idx_status (status),
+        INDEX idx_submitted_at (submitted_at),
+        UNIQUE KEY uk_wave_participant (wave_id, participant_id)
+    ) ENGINE=InnoDB {$charset_collate};";
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta($sql);
+
+    // Foreign keys (best effort)
+    eipsi_longitudinal_ensure_foreign_key(
+        $table_name,
+        'fk_assignments_study',
+        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_study FOREIGN KEY (study_id) REFERENCES {$wpdb->prefix}survey_studies(id) ON DELETE CASCADE"
+    );
+
+    eipsi_longitudinal_ensure_foreign_key(
+        $table_name,
+        'fk_assignments_wave',
+        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_wave FOREIGN KEY (wave_id) REFERENCES {$wpdb->prefix}survey_waves(id) ON DELETE CASCADE"
+    );
+
+    eipsi_longitudinal_ensure_foreign_key(
+        $table_name,
+        'fk_assignments_participant',
+        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE"
+    );
+
+    error_log('[EIPSI] Synced survey_assignments table');
+}
+
+/**
+ * (Compat) Sincronizar tabla wp_survey_participants
+ *
+ * En esta codebase la creación/repair completa vive dentro del Schema Manager.
+ * Lo dejamos como wrapper para que Task 2.1 pueda llamar el mismo entrypoint.
+ */
+function eipsi_sync_survey_participants_table() {
+    if (class_exists('EIPSI_Database_Schema_Manager') && method_exists('EIPSI_Database_Schema_Manager', 'verify_and_sync_schema')) {
+        EIPSI_Database_Schema_Manager::verify_and_sync_schema();
+    }
+}
+
+/**
+ * Versioned table creation / migrations
+ */
+function eipsi_maybe_create_tables() {
+    $db_version = get_option('eipsi_longitudinal_db_version', '0');
+
+    if (defined('EIPSI_LONGITUDINAL_DB_VERSION') && version_compare($db_version, EIPSI_LONGITUDINAL_DB_VERSION, '<')) {
+        // Crear tablas participantes (si aplica)
+        eipsi_sync_survey_participants_table();
+
+        // Crear tablas NUEVAS
+        eipsi_sync_survey_waves_table();
+        eipsi_sync_survey_assignments_table();
+
+        // Actualizar versión
+        update_option('eipsi_longitudinal_db_version', EIPSI_LONGITUDINAL_DB_VERSION);
+        error_log('[EIPSI] Database schema updated to v' . EIPSI_LONGITUDINAL_DB_VERSION);
+    }
+}
+
+/**
+ * Hook para sincronizar tablas longitudinales
+ */
+add_action('eipsi_sync_longitudinal_tables', function() {
+    eipsi_maybe_create_tables();
+});
