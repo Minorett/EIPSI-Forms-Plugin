@@ -19,7 +19,7 @@ function eipsi_display_form_responses() {
 
     // Determine active tab from URL param
     $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'submissions';
-    $allowed_tabs = array('submissions', 'completion', 'privacy', 'rct-analytics', 'longitudinal-studies');
+    $allowed_tabs = array('submissions', 'completion', 'privacy', 'rct-analytics', 'longitudinal-studies', 'waves-manager');
 
     if (!in_array($active_tab, $allowed_tabs)) {
         $active_tab = 'submissions';
@@ -58,6 +58,11 @@ function eipsi_display_form_responses() {
                class="nav-tab <?php echo esc_attr(($active_tab === 'rct-analytics') ? 'nav-tab-active' : ''); ?>"
                data-tab="rct-analytics">
                 🎲 <?php esc_html_e('RCT Analytics', 'eipsi-forms'); ?>
+            </a>
+            <a href="?page=eipsi-results&tab=waves-manager" 
+               class="nav-tab <?php echo esc_attr(($active_tab === 'waves-manager') ? 'nav-tab-active' : ''); ?>"
+               data-tab="waves-manager">
+                🌊 <?php esc_html_e('Waves Manager', 'eipsi-forms'); ?>
             </a>
         </h2>
         
@@ -104,6 +109,13 @@ function eipsi_display_form_responses() {
                     echo '<p>Error: RCT Analytics no disponible</p>';
                 }
                 ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Tab 5: Waves Manager -->
+        <?php if ($active_tab === 'waves-manager'): ?>
+            <div class="tab-content" data-tab="waves-manager">
+                <?php include dirname(__FILE__) . '/tabs/waves-manager-tab.php'; ?>
             </div>
         <?php endif; ?>
         

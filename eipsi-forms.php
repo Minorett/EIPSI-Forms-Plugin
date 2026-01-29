@@ -64,6 +64,7 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/randomization-frontend.php';
 // RCT Analytics Dashboard (v1.3.2)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/rct-analytics-page.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/rct-analytics-api.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/waves-manager-api.php';
 
 // RCT Schema Migration (v1.3.6 - CRITICAL FIX)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/migrate-randomization-schema.php';
@@ -122,6 +123,37 @@ function eipsi_enqueue_rct_analytics_assets($hook) {
                     'success' => __('Actualizado correctamente', 'eipsi-forms'),
                     'confirmDelete' => __('¿Estás seguro de que quieres eliminar esta aleatorización?', 'eipsi-forms'),
                     'copied' => __('ID copiado al portapapeles', 'eipsi-forms')
+                )
+            ));
+        }
+
+        // Enqueue Waves Manager assets (v1.4.0)
+        if ($active_tab === 'waves-manager') {
+            wp_enqueue_style(
+                'eipsi-waves-manager-css',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/css/waves-manager.css',
+                array(),
+                EIPSI_FORMS_VERSION
+            );
+
+            wp_enqueue_script(
+                'eipsi-waves-manager-js',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/js/waves-manager.js',
+                array('jquery'),
+                EIPSI_FORMS_VERSION,
+                true
+            );
+
+            wp_localize_script('eipsi-waves-manager-js', 'eipsiWavesManager', array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('eipsi_waves_nonce'),
+                'strings' => array(
+                    'loading' => __('Cargando...', 'eipsi-forms'),
+                    'error' => __('Ha ocurrido un error', 'eipsi-forms'),
+                    'success' => __('Operación exitosa', 'eipsi-forms'),
+                    'confirmDelete' => __('¿Estás seguro de que quieres eliminar esta onda? Esta acción es irreversible.', 'eipsi-forms'),
+                    'confirmAssign' => __('¿Estás seguro de asignar los participantes seleccionados?', 'eipsi-forms'),
+                    'noParticipants' => __('Por favor, selecciona al menos un participante.', 'eipsi-forms')
                 )
             ));
         }

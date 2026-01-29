@@ -1,0 +1,341 @@
+/**
+ * EIPSI Forms - Waves Manager Styles
+ * 
+ * @package EIPSI_Forms
+ * @since 1.4.0
+ */
+
+:root {
+    --eipsi-primary: #2271b1;
+    --eipsi-primary-hover: #135e96;
+    --eipsi-danger: #d63638;
+    --eipsi-bg-card: #ffffff;
+    --eipsi-border: #ccd0d4;
+    --eipsi-text: #1d2327;
+    --eipsi-text-muted: #64748b;
+}
+
+/* Dark Mode support */
+@media (prefers-color-scheme: dark) {
+    .eipsi-results-page:has(.eipsi-waves-manager-wrap) {
+        --eipsi-bg-card: #1e1e1e;
+        --eipsi-border: #3c434a;
+        --eipsi-text: #f0f0f1;
+        --eipsi-text-muted: #a0aec0;
+    }
+}
+
+.eipsi-waves-manager-wrap {
+    padding: 10px 0;
+}
+
+/* Header & Study Selector */
+.eipsi-waves-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    background: var(--eipsi-bg-card);
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--eipsi-border);
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.study-selector-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#eipsi-study-selector {
+    min-width: 250px;
+}
+
+/* Waves Grid */
+.eipsi-waves-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.eipsi-wave-card {
+    background: var(--eipsi-bg-card);
+    border: 1px solid var(--eipsi-border);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.eipsi-wave-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-color: var(--eipsi-primary);
+}
+
+.wave-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.wave-index {
+    background: var(--eipsi-primary);
+    color: white;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.wave-name {
+    margin: 0;
+    font-size: 18px;
+    flex: 1;
+    color: var(--eipsi-text);
+}
+
+.wave-status {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.status-draft { background: #e2e8f0; color: #475569; }
+.status-active { background: #dcfce7; color: #166534; }
+.status-completed { background: #dbeafe; color: #1e40af; }
+.status-paused { background: #fef3c7; color: #92400e; }
+
+.wave-card-body {
+    flex: 1;
+}
+
+.wave-description {
+    font-size: 14px;
+    color: var(--eipsi-text-muted);
+    margin-bottom: 15px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.wave-meta {
+    font-size: 13px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.wave-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+    background: rgba(0,0,0,0.02);
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-weight: bold;
+    font-size: 16px;
+    color: var(--eipsi-text);
+}
+
+.stat-label {
+    font-size: 11px;
+    color: var(--eipsi-text-muted);
+}
+
+.wave-progress {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--eipsi-primary);
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 12px;
+    font-weight: bold;
+    min-width: 35px;
+}
+
+.wave-card-actions {
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid var(--eipsi-border);
+    padding-top: 15px;
+}
+
+.wave-card-actions .button {
+    font-size: 12px;
+}
+
+/* Modals */
+.eipsi-modal {
+    display: none;
+    position: fixed;
+    z-index: 100000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
+    justify-content: center;
+    align-items: center;
+}
+
+.eipsi-modal-content {
+    background-color: var(--eipsi-bg-card);
+    padding: 25px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    max-height: 90vh;
+    overflow-y: auto;
+    color: var(--eipsi-text);
+}
+
+.eipsi-modal-content.modal-large {
+    max-width: 800px;
+}
+
+.eipsi-close-modal {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: var(--eipsi-text-muted);
+}
+
+.eipsi-close-modal:hover {
+    color: var(--eipsi-text);
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="datetime-local"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+}
+
+.modal-footer {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid var(--eipsi-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Participant List in Modal */
+.participants-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--eipsi-border);
+    margin: 15px 0;
+}
+
+.assign-filters {
+    margin-bottom: 15px;
+}
+
+.selection-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.eipsi-empty-state {
+    text-align: center;
+    padding: 40px;
+    background: var(--eipsi-bg-card);
+    border: 2px dashed var(--eipsi-border);
+    border-radius: 8px;
+    color: var(--eipsi-text-muted);
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .eipsi-waves-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .button {
+        width: 100%;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .wave-card-actions {
+        flex-direction: column;
+    }
+    
+    .wave-card-actions .button {
+        width: 100%;
+    }
+}
