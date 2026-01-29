@@ -357,6 +357,8 @@ function eipsi_forms_activate() {
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         form_id varchar(20) DEFAULT NULL,
         participant_id varchar(20) DEFAULT NULL,
+        survey_id INT(11) DEFAULT NULL,
+        wave_index INT(11) DEFAULT NULL,
         session_id varchar(255) DEFAULT NULL,
         participant varchar(255) DEFAULT NULL,
         interaction varchar(255) DEFAULT NULL,
@@ -382,8 +384,9 @@ function eipsi_forms_activate() {
         KEY participant_id (participant_id),
         KEY session_id (session_id),
         KEY submitted_at (submitted_at),
+        KEY participant_survey_wave (participant_id, survey_id, wave_index),
         KEY form_participant (form_id, participant_id)
-    ) $charset_collate;";
+        ) $charset_collate;";
     
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);

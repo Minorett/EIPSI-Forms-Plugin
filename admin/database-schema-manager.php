@@ -360,6 +360,8 @@ class EIPSI_Database_Schema_Manager {
         $required_columns = array(
             'form_id' => "ALTER TABLE {$table_name} ADD COLUMN form_id varchar(20) DEFAULT NULL AFTER id",
             'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id varchar(20) DEFAULT NULL AFTER form_id",
+            'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id INT(11) DEFAULT NULL AFTER participant_id",
+            'wave_index' => "ALTER TABLE {$table_name} ADD COLUMN wave_index INT(11) DEFAULT NULL AFTER survey_id",
             'session_id' => "ALTER TABLE {$table_name} ADD COLUMN session_id varchar(255) DEFAULT NULL AFTER participant_id",
             'browser' => "ALTER TABLE {$table_name} ADD COLUMN browser varchar(100) DEFAULT NULL AFTER device",
             'os' => "ALTER TABLE {$table_name} ADD COLUMN os varchar(100) DEFAULT NULL AFTER browser",
@@ -914,7 +916,9 @@ class EIPSI_Database_Schema_Manager {
         $required_columns = array(
             'form_id' => "varchar(20) DEFAULT NULL AFTER id",
             'participant_id' => "varchar(20) DEFAULT NULL AFTER form_id",
-            'session_id' => "varchar(255) DEFAULT NULL AFTER participant_id",
+            'survey_id' => "INT(11) DEFAULT NULL AFTER participant_id",
+            'wave_index' => "INT(11) DEFAULT NULL AFTER survey_id",
+            'session_id' => "varchar(255) DEFAULT NULL AFTER wave_index",
             'form_name' => "varchar(255) NOT NULL AFTER session_id",
             'form_responses' => "longtext DEFAULT NULL",
             'metadata' => "LONGTEXT DEFAULT NULL AFTER ip_address",
@@ -940,6 +944,9 @@ class EIPSI_Database_Schema_Manager {
         self::ensure_local_index( $table_name, 'form_id' );
         self::ensure_local_index( $table_name, 'participant_id' );
         self::ensure_local_index( $table_name, 'session_id' );
+
+        // v1.4.0 - Composite index for faster lookups
+        $wpdb->query( "ALTER TABLE {$table_name} ADD KEY IF NOT EXISTS participant_survey_wave (participant_id, survey_id, wave_index)" );
         
         return $columns_added;
     }
@@ -974,6 +981,9 @@ class EIPSI_Database_Schema_Manager {
         // Ensure indices
         self::ensure_local_index( $table_name, 'form_id' );
         self::ensure_local_index( $table_name, 'session_id' );
+
+        // v1.4.0 - Composite index for faster lookups
+        $wpdb->query( "ALTER TABLE {$table_name} ADD KEY IF NOT EXISTS participant_survey_wave (participant_id, survey_id, wave_index)" );
         self::ensure_local_index( $table_name, 'event_type' );
         
         return $columns_added;
