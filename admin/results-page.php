@@ -19,7 +19,7 @@ function eipsi_display_form_responses() {
 
     // Determine active tab from URL param
     $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'submissions';
-    $allowed_tabs = array('submissions', 'completion', 'privacy', 'randomization', 'longitudinal-studies', 'waves-manager');
+    $allowed_tabs = array('submissions', 'completion', 'privacy', 'randomization', 'longitudinal-studies', 'waves-manager', 'cron-reminders');
 
     if (!in_array($active_tab, $allowed_tabs)) {
         $active_tab = 'submissions';
@@ -59,10 +59,15 @@ function eipsi_display_form_responses() {
                data-tab="randomization">
                 🎲 <?php esc_html_e('Randomization', 'eipsi-forms'); ?>
             </a>
-            <a href="?page=eipsi-results&tab=waves-manager" 
+            <a href="?page=eipsi-results&tab=waves-manager"
                class="nav-tab <?php echo esc_attr(($active_tab === 'waves-manager') ? 'nav-tab-active' : ''); ?>"
                data-tab="waves-manager">
                 🌊 <?php esc_html_e('Waves Manager', 'eipsi-forms'); ?>
+            </a>
+            <a href="?page=eipsi-results&tab=cron-reminders"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'cron-reminders') ? 'nav-tab-active' : ''); ?>"
+               data-tab="cron-reminders">
+                ⏰ <?php esc_html_e('Recordatorios', 'eipsi-forms'); ?>
             </a>
         </h2>
         
@@ -118,7 +123,14 @@ function eipsi_display_form_responses() {
                 <?php include dirname(__FILE__) . '/tabs/waves-manager-tab.php'; ?>
             </div>
         <?php endif; ?>
-        
+
+        <!-- Tab 6: Cron Reminders (Task 4.2) -->
+        <?php if ($active_tab === 'cron-reminders'): ?>
+            <div class="tab-content" data-tab="cron-reminders">
+                <?php include dirname(__FILE__) . '/tabs/cron-reminders-tab.php'; ?>
+            </div>
+        <?php endif; ?>
+
     </div>
 
     <style>
