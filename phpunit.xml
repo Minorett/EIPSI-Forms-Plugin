@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php">
+    <testsuites>
+        <testsuite name="EIPSI Forms Longitudinal Tests">
+            <directory prefix="test-">./tests/</directory>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist>
+            <directory suffix=".php">./admin/</directory>
+            <directory suffix=".php">./includes/</directory>
+        </whitelist>
+    </filter>
+</phpunit>
