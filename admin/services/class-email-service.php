@@ -1,15 +1,16 @@
 <?php
 /**
- * EIPSI Email Service
- * 
- * Gestiona envío de emails automáticos para participantes:
- * - Bienvenida al estudio
- * - Recordatorios de waves pendientes
- * - Magic links para acceso directo
- * - Confirmaciones de envío
- * - Recuperación de dropouts
+ * EIPSI_Email_Service
+ *
+ * Servicio de emails transaccionales para estudios longitudinales:
+ * - Templates HTML
+ * - Magic links
+ * - Logging
+ * - Rate limiting
  *
  * @package EIPSI_Forms
+ * @subpackage Services
+ * @version 1.4.1
  * @since 1.4.0
  */
 
@@ -20,11 +21,13 @@ if (!defined('ABSPATH')) {
 class EIPSI_Email_Service {
     
     /**
-     * Generar URL completa de magic link
-     * 
-     * @param int $survey_id
-     * @param int $participant_id
-     * @return string|false Full URL or false on failure
+     * Generate magic link URL.
+     *
+     * @param int $survey_id Survey ID.
+     * @param int $participant_id Participant ID.
+     * @return string|false Full URL or false on failure.
+     * @since 1.4.1
+     * @access public
      */
     public static function generate_magic_link_url($survey_id, $participant_id) {
         if (!class_exists('EIPSI_MagicLinksService')) {
@@ -42,11 +45,15 @@ class EIPSI_Email_Service {
     }
     
     /**
-     * Enviar email de bienvenida a nuevo participante
-     * 
-     * @param int $survey_id
-     * @param int $participant_id
-     * @return bool
+     * Send welcome email con magic link.
+     *
+     * Template: includes/emails/welcome.php
+     *
+     * @param int $survey_id Survey ID.
+     * @param int $participant_id Participant ID.
+     * @return bool True si enviado, false si error.
+     * @since 1.4.1
+     * @access public
      */
     public static function send_welcome_email($survey_id, $participant_id) {
         $participant = self::get_participant($participant_id);
@@ -76,12 +83,16 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Enviar recordatorio de wave pendiente
-     * 
-     * @param int $survey_id
-     * @param int $participant_id
-     * @param int|object $wave Wave object or ID
-     * @return bool
+     * Send wave reminder email.
+     *
+     * Template: includes/emails/wave-reminder.php
+     *
+     * @param int        $survey_id Survey ID.
+     * @param int        $participant_id Participant ID.
+     * @param int|object $wave Wave object or ID.
+     * @return bool True si enviado, false si error.
+     * @since 1.4.1
+     * @access public
      */
     public static function send_wave_reminder_email($survey_id, $participant_id, $wave) {
         $participant = self::get_participant($participant_id);
@@ -132,13 +143,17 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Enviar confirmación de recepción
-     * 
-     * @param int $survey_id
-     * @param int $participant_id
-     * @param int|object $wave Wave that was just completed
-     * @param int|object|null $next_wave Next wave object (optional)
-     * @return bool
+     * Send wave confirmation email.
+     *
+     * Template: includes/emails/wave-confirmation.php
+     *
+     * @param int             $survey_id Survey ID.
+     * @param int             $participant_id Participant ID.
+     * @param int|object      $wave Wave completed.
+     * @param int|object|null $next_wave Next wave object (optional).
+     * @return bool True si enviado, false si error.
+     * @since 1.4.1
+     * @access public
      */
     public static function send_wave_confirmation_email($survey_id, $participant_id, $wave, $next_wave = null) {
         $participant = self::get_participant($participant_id);
@@ -188,12 +203,16 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Enviar recuperación de dropout (te extrañamos)
-     * 
-     * @param int $survey_id
-     * @param int $participant_id
-     * @param int|object $wave Missed wave
-     * @return bool
+     * Send dropout recovery email.
+     *
+     * Template: includes/emails/dropout-recovery.php
+     *
+     * @param int        $survey_id Survey ID.
+     * @param int        $participant_id Participant ID.
+     * @param int|object $wave Missed wave.
+     * @return bool True si enviado, false si error.
+     * @since 1.4.1
+     * @access public
      */
     public static function send_dropout_recovery_email($survey_id, $participant_id, $wave) {
         $participant = self::get_participant($participant_id);
@@ -236,7 +255,12 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Helper: Obtener participante por ID
+     * Get participant by ID (helper).
+     *
+     * @param int $participant_id Participant ID.
+     * @return object|null Participant object.
+     * @since 1.4.1
+     * @access private
      */
     private static function get_participant($participant_id) {
         global $wpdb;
@@ -254,7 +278,13 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Helper: Renderizar plantilla HTML
+     * Render email template HTML.
+     *
+     * @param string $template_name Template base name.
+     * @param array  $placeholders Placeholders to replace.
+     * @return string Rendered HTML.
+     * @since 1.4.1
+     * @access private
      */
     private static function render_template($template_name, $placeholders = array()) {
         $file_path = plugin_dir_path(dirname(dirname(__FILE__))) . 'includes/emails/' . $template_name . '.php';
@@ -282,7 +312,17 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Helper: Enviar email y registrar log
+     * Send email and log result (helper).
+     *
+     * @param int    $survey_id Survey ID.
+     * @param int    $participant_id Participant ID.
+     * @param string $to Email recipient.
+     * @param string $type Email type.
+     * @param string $subject Email subject.
+     * @param string $content Email HTML content.
+     * @return bool True si enviado.
+     * @since 1.4.1
+     * @access private
      */
     private static function send_email($survey_id, $participant_id, $to, $type, $subject, $content) {
         $headers = array('Content-Type: text/html; charset=UTF-8');
@@ -304,7 +344,16 @@ class EIPSI_Email_Service {
     }
     
     /**
-     * Registrar envío en log
+     * Log email sent/failed.
+     *
+     * @param int    $survey_id Survey ID.
+     * @param int    $participant_id Participant ID.
+     * @param string $type Type (welcome, reminder, confirmation, recovery).
+     * @param string $status Status (sent, failed, pending).
+     * @param string|null $error_message Optional error message.
+     * @return void
+     * @since 1.4.1
+     * @access public
      */
     public static function log_email($survey_id, $participant_id, $type, $status, $error_message = null) {
         global $wpdb;
@@ -328,7 +377,12 @@ class EIPSI_Email_Service {
     }
     
     /**
-     * Helper to get email quickly
+     * Get participant email (helper).
+     *
+     * @param int $participant_id Participant ID.
+     * @return string|null Email address or null.
+     * @since 1.4.1
+     * @access private
      */
     private static function get_participant_email($participant_id) {
         global $wpdb;
@@ -336,7 +390,13 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Obtener historial de emails enviados
+     * Get email history for survey.
+     *
+     * @param int $survey_id Survey ID.
+     * @param int $limit Límite de registros.
+     * @return array Email logs.
+     * @since 1.4.1
+     * @access public
      */
     public static function get_email_history($survey_id, $limit = 100) {
         global $wpdb;
@@ -350,13 +410,15 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Obtener logs de emails con filtros (para dashboard)
-     * 
-     * @param int $survey_id ID del estudio (opcional)
-     * @param array $filters Filtros {type, status, date_from, date_to}
-     * @param int $limit Límite de resultados
-     * @param int $offset Offset para paginación
+     * Get email log entries with filters (dashboard).
+     *
+     * @param int   $survey_id ID del estudio (opcional).
+     * @param array $filters Filtros {type, status, date_from, date_to}.
+     * @param int   $limit Límite de resultados.
+     * @param int   $offset Offset para paginación.
      * @return array {logs, total}
+     * @since 1.4.1
+     * @access public
      */
     public static function get_email_log_entries($survey_id = 0, $filters = array(), $limit = 20, $offset = 0) {
         global $wpdb;
@@ -422,10 +484,12 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Obtener detalles de un email log específico
-     * 
-     * @param int $email_log_id ID del log
-     * @return object|null
+     * Get email log details.
+     *
+     * @param int $email_log_id ID del log.
+     * @return object|null Email log details.
+     * @since 1.4.1
+     * @access public
      */
     public static function get_email_details($email_log_id) {
         global $wpdb;
@@ -442,10 +506,12 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Reenviar email fallido
-     * 
-     * @param int $email_log_id ID del log original
+     * Resend failed email.
+     *
+     * @param int $email_log_id ID del log original.
      * @return array {success, message, new_log_id}
+     * @since 1.4.1
+     * @access public
      */
     public static function resend_email($email_log_id) {
         global $wpdb;
@@ -517,10 +583,12 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Obtener estadísticas de entregabilidad
-     * 
-     * @param int $survey_id ID del estudio
+     * Get email deliverability stats.
+     *
+     * @param int $survey_id ID del estudio.
      * @return array {sent, failed, total, success_rate}
+     * @since 1.4.1
+     * @access public
      */
     public static function get_email_deliverability_stats($survey_id = 0) {
         global $wpdb;

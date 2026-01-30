@@ -14,6 +14,94 @@ EIPSI Forms convierte WordPress en una herramienta clínica de última generaci�
 
 ---
 
+## Longitudinal Studies (v1.4.0+)
+
+EIPSI Forms soporta estudios longitudinales completos:
+
+### Features
+- **Multiple Waves:** T1, T2, T3... con intervalos personalizables
+- **Magic Links:** Autenticación sin login para participantes
+- **Email Automation:** Recordatorios automáticos, confirmaciones, recuperación de dropouts
+- **Session Management:** TTL de 7 días, secure cookies (HttpOnly, Secure, SameSite)
+- **Export Data:** Filtros avanzados, múltiples formatos (Excel, CSV)
+- **Monitoring:** Dashboard de observabilidad en tiempo real
+- **Anonymization:** Hash participant_id manteniendo integridad de datos
+- **Security:** Rate limiting, prepared statements, audit logging
+
+### Quick Start
+
+#### 1. Create Survey
+```
+Admin → EIPSI Forms → Create Survey
+Title: "My Longitudinal Study"
+Type: "Longitudinal"
+```
+
+#### 2. Add Waves
+```
+Waves tab → Add Wave
+Wave 1 (T1): Due 2025-02-15
+Wave 2 (T2): Due 2025-02-22
+Wave 3 (T3): Due 2025-03-01
+```
+
+#### 3. Invite Participants
+```
+Participants tab → Import Emails
+Upload CSV: participant1@email.com, participant2@email.com...
+System sends magic links automatically (cron)
+```
+
+#### 4. Monitor Progress
+```
+Results → Monitoring tab
+View: email stats, cron jobs, sessions, database health
+Auto-refresh cada 30 segundos
+```
+
+#### 5. Export Data
+```
+Results → Export tab
+Filters: survey, wave, date range, status
+Formats: Excel (.xlsx), CSV (.csv)
+Includes: completion rates, response times
+```
+
+#### 6. Anonymize (Optional)
+```
+Results → Anonymization tab
+Close survey → anonymize responses
+participant_id → NULL (audit logged)
+```
+
+### Architecture
+Ver `LONGITUDINAL-ARCHITECTURE.md` para detalles técnicos.
+
+### Testing
+```bash
+# Manual tests
+See PHASE-6-TESTING-MANUAL.md
+
+# Unit tests
+phpunit --configuration phpunit.xml
+# Expected: 32/32 tests pass
+```
+
+### Monitoring
+Dashboard accesible en:
+```
+wp-admin → EIPSI Forms → Results & Experience → Monitoring
+```
+
+Métricas en tiempo real:
+- 📧 Email: sent, failed, bounce rate, pending
+- ⏰ Cron: status de 4 jobs
+- 🔐 Sessions: active, expired, unused
+- 💾 Database: size, connection status
+- 📋 Audit log: últimas 10 acciones
+
+---
+
 ## Características clínicas actuales
 
 ### 🎯 Formularios multipágina sin sorpresas
