@@ -52,31 +52,23 @@ add_action('admin_init', function() {
             // Usar BD externa
             $mysqli = $external_db->get_connection();
             if ($mysqli) {
-                // Verificar que el registro existe antes de eliminar
+                // Use prepared statements to prevent SQL injection
                 $table_name = 'vas_form_results'; // Tabla en BD externa
-                $escaped_id = intval($id);
                 
-                // Primero verificar que existe
-                $check_query = "SELECT COUNT(*) as count FROM `{$table_name}` WHERE id = {$escaped_id}";
-                $check_result = $mysqli->query($check_query);
-                
-                if ($check_result) {
-                    $row = $check_result->fetch_assoc();
-                    if ($row['count'] > 0) {
-                        // El registro existe, proceder a eliminar
-                        $delete_query = "DELETE FROM `{$table_name}` WHERE id = {$escaped_id}";
-                        $delete_result = $mysqli->query($delete_query);
-                        
-                        if ($delete_result) {
-                            $result = $mysqli->affected_rows;
-                        } else {
-                            $error_message = 'Database query error: ' . $mysqli->error;
-                        }
-                    } else {
+                // Atomic delete with prepared statement (no race condition)
+                $stmt = $mysqli->prepare("DELETE FROM `{$table_name}` WHERE id = ?");
+                if ($stmt) {
+                    $stmt->bind_param('i', $id);
+                    $stmt->execute();
+                    $result = $stmt->affected_rows;
+                    
+                    if ($result === 0) {
                         $error_message = 'Record not found in external database';
                     }
+                    
+                    $stmt->close();
                 } else {
-                    $error_message = 'Failed to verify record existence: ' . $mysqli->error;
+                    $error_message = 'Failed to prepare statement: ' . $mysqli->error;
                 }
                 
                 $mysqli->close();
@@ -95,12 +87,10 @@ add_action('admin_init', function() {
             global $wpdb;
             $table_name = $wpdb->prefix . 'vas_form_results';
             
-            // Verificar que el registro existe antes de eliminar
-            $count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE id = %d", $id));
+            // Atomic delete - no race condition
+            $result = $wpdb->delete($table_name, array('id' => $id), array('%d'));
             
-            if ($count > 0) {
-                $result = $wpdb->delete($table_name, array('id' => $id), array('%d'));
-            } else {
+            if ($result === false || $result === 0) {
                 $error_message = 'Record not found in local database';
             }
         }
