@@ -76,6 +76,11 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-wave-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-anonymize-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/class-survey-access-handler.php';
+
+// Initialize Survey Access Handler
+$eipsi_survey_access = new EIPSI_Survey_Access_Handler();
+$eipsi_survey_access->init();
 
 // Setup Wizard (v1.5.1)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/setup-wizard.php';

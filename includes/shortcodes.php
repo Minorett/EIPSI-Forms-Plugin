@@ -27,6 +27,12 @@ function eipsi_form_shortcode($atts) {
     
     $template_id = absint($atts['id']);
     
+    // Allow overriding from URL if id is 0 or not set, ONLY if authenticated
+    // This allows a single /survey/ page to serve multiple forms based on magic links
+    if ($template_id === 0 && isset($_GET['form_id']) && function_exists('eipsi_is_participant_logged_in') && eipsi_is_participant_logged_in()) {
+        $template_id = absint($_GET['form_id']);
+    }
+    
     // Use shared render helper
     return eipsi_render_form_shortcode_markup($template_id);
 }
