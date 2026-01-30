@@ -348,4 +348,195 @@ class EIPSI_Email_Service {
             $limit
         ));
     }
+
+    /**
+     * Obtener logs de emails con filtros (para dashboard)
+     * 
+     * @param int $survey_id ID del estudio (opcional)
+     * @param array $filters Filtros {type, status, date_from, date_to}
+     * @param int $limit Límite de resultados
+     * @param int $offset Offset para paginación
+     * @return array {logs, total}
+     */
+    public static function get_email_log_entries($survey_id = 0, $filters = array(), $limit = 20, $offset = 0) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'survey_email_log';
+        $participants_table = $wpdb->prefix . 'survey_participants';
+        
+        $where = array();
+        $params = array();
+        
+        // Survey filter
+        if ($survey_id > 0) {
+            $where[] = 'el.survey_id = %d';
+            $params[] = $survey_id;
+        }
+        
+        // Type filter
+        if (!empty($filters['type'])) {
+            $where[] = 'el.email_type = %s';
+            $params[] = sanitize_text_field($filters['type']);
+        }
+        
+        // Status filter
+        if (!empty($filters['status'])) {
+            $where[] = 'el.status = %s';
+            $params[] = sanitize_text_field($filters['status']);
+        }
+        
+        // Date range filters
+        if (!empty($filters['date_from'])) {
+            $where[] = 'DATE(el.sent_at) >= %s';
+            $params[] = sanitize_text_field($filters['date_from']);
+        }
+        
+        if (!empty($filters['date_to'])) {
+            $where[] = 'DATE(el.sent_at) <= %s';
+            $params[] = sanitize_text_field($filters['date_to']);
+        }
+        
+        $where_clause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+        
+        // Get total count
+        $count_query = "SELECT COUNT(*) FROM {$table_name} el {$where_clause}";
+        $total = $wpdb->get_var($wpdb->prepare($count_query, $params));
+        
+        // Get logs with participant names
+        $query = "SELECT el.*, 
+                         CONCAT(p.first_name, ' ', p.last_name) as participant_name
+                  FROM {$table_name} el
+                  LEFT JOIN {$participants_table} p ON el.participant_id = p.id
+                  {$where_clause}
+                  ORDER BY el.sent_at DESC
+                  LIMIT %d OFFSET %d";
+        
+        $params[] = (int) $limit;
+        $params[] = (int) $offset;
+        
+        $logs = $wpdb->get_results($wpdb->prepare($query, $params));
+        
+        return array(
+            'logs' => $logs,
+            'total' => (int) $total
+        );
+    }
+
+    /**
+     * Obtener detalles de un email log específico
+     * 
+     * @param int $email_log_id ID del log
+     * @return object|null
+     */
+    public static function get_email_details($email_log_id) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'survey_email_log';
+        
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT el.*, 
+                    CONCAT(p.first_name, ' ', p.last_name) as participant_name
+             FROM {$table_name} el
+             LEFT JOIN {$wpdb->prefix}survey_participants p ON el.participant_id = p.id
+             WHERE el.id = %d",
+            (int) $email_log_id
+        ));
+    }
+
+    /**
+     * Reenviar email fallido
+     * 
+     * @param int $email_log_id ID del log original
+     * @return array {success, message, new_log_id}
+     */
+    public static function resend_email($email_log_id) {
+        global $wpdb;
+        
+        // Get original email log
+        $original_log = self::get_email_details($email_log_id);
+        
+        if (!$original_log) {
+            return array(
+                'success' => false,
+                'message' => 'Email log not found'
+            );
+        }
+        
+        if ($original_log->status === 'sent') {
+            return array(
+                'success' => false,
+                'message' => 'Email already sent successfully'
+            );
+        }
+        
+        // Get participant and wave info if needed
+        $participant = self::get_participant($original_log->participant_id);
+        if (!$participant) {
+            return array(
+                'success' => false,
+                'message' => 'Participant not found'
+            );
+        }
+        
+        // Get wave if needed (for reminder/recovery types)
+        $wave = null;
+        if (in_array($original_log->email_type, array('reminder', 'recovery'))) {
+            $wave = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                $original_log->metadata ? json_decode($original_log->metadata, true)['wave_id'] ?? 0 : 0
+            ));
+        }
+        
+        // Resend based on type
+        $result = false;
+        switch ($original_log->email_type) {
+            case 'welcome':
+                $result = self::send_welcome_email($original_log->survey_id, $original_log->participant_id);
+                break;
+            case 'reminder':
+                $result = $wave ? self::send_wave_reminder_email($original_log->survey_id, $original_log->participant_id, $wave) : false;
+                break;
+            case 'confirmation':
+                $result = self::send_wave_confirmation_email($original_log->survey_id, $original_log->participant_id, $wave);
+                break;
+            case 'recovery':
+                $result = $wave ? self::send_dropout_recovery_email($original_log->survey_id, $original_log->participant_id, $wave) : false;
+                break;
+        }
+        
+        if ($result) {
+            return array(
+                'success' => true,
+                'message' => 'Email resent successfully',
+                'new_log_id' => $wpdb->insert_id
+            );
+        } else {
+            return array(
+                'success' => false,
+                'message' => 'Failed to resend email'
+            );
+        }
+    }
+
+    /**
+     * Obtener estadísticas de entregabilidad
+     * 
+     * @param int $survey_id ID del estudio
+     * @return array {sent, failed, total, success_rate}
+     */
+    public static function get_email_deliverability_stats($survey_id = 0) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'survey_email_log';
+        
+        $where = $survey_id > 0 ? $wpdb->prepare("WHERE survey_id = %d", $survey_id) : '';
+        
+        $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} {$where}");
+        $sent = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} {$where}" . ($where ? ' AND ' : 'WHERE ') . "status = 'sent'");
+        $failed = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} {$where}" . ($where ? ' AND ' : 'WHERE ') . "status = 'failed'");
+        
+        return array(
+            'total' => $total,
+            'sent' => $sent,
+            'failed' => $failed,
+            'success_rate' => $total > 0 ? round(($sent / $total) * 100, 1) : 0
+        );
+    }
 }

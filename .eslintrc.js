@@ -4,7 +4,7 @@ module.exports = {
 		{
 			// Test files - allow console and relax JSDoc requirements
 			files: [
-				'test-*.js',
+				'est-*.js',
 				'scripts/test-*.js',
 				'*-validation.js',
 				'*-audit.js',
@@ -19,6 +19,13 @@ module.exports = {
 				'no-bitwise': 'off',
 				'no-shadow': 'off',
 				'no-nested-ternary': 'off',
+			},
+		},
+		{
+			// Email Log - allow alert/confirm for user confirmations
+			files: [ 'admin/js/email-log.js' ],
+			rules: {
+				'no-alert': 'off',
 			},
 		},
 	],

@@ -232,4 +232,241 @@ class EIPSI_Assignment_Service {
 
         return $updated !== false;
     }
+
+    /**
+     * Obtener participantes en riesgo (para Dropout Management)
+     *
+     * @param int $study_id ID del estudio
+     * @param int $days_overdue Días de retraso para considerar en riesgo (default: 7)
+     * @return array Lista de participantes con info de wave y retraso
+     */
+    public static function get_at_risk_participants($study_id = 0, $days_overdue = 7) {
+        global $wpdb;
+
+        $assignments_table = $wpdb->prefix . 'survey_assignments';
+        $participants_table = $wpdb->prefix . 'survey_participants';
+        $waves_table = $wpdb->prefix . 'survey_waves';
+
+        $where_clause = "WHERE a.status = 'pending' AND a.due_at < DATE_SUB(NOW(), INTERVAL %d DAY)";
+        $params = array((int) $days_overdue);
+
+        if ($study_id > 0) {
+            $where_clause .= " AND a.study_id = %d";
+            $params[] = (int) $study_id;
+        }
+
+        // Query: participante + wave + assignment info
+        $query = "SELECT a.id as assignment_id,
+                         a.wave_id,
+                         a.participant_id,
+                         a.due_at,
+                         p.first_name,
+                         p.last_name,
+                         p.email,
+                         p.is_active,
+                         w.name as wave_name,
+                         w.wave_index,
+                         COALESCE(MAX(s.created_at), a.due_at) as last_activity_at
+                  FROM {$assignments_table} a
+                  JOIN {$participants_table} p ON a.participant_id = p.id
+                  JOIN {$waves_table} w ON a.wave_id = w.id
+                  LEFT JOIN {$wpdb->prefix}survey_sessions s ON s.participant_id = p.id
+                  {$where_clause}
+                  GROUP BY a.id, a.wave_id, a.participant_id, a.due_at, p.first_name, p.last_name, p.email, p.is_active, w.name, w.wave_index
+                  ORDER BY a.due_at ASC";
+
+        return $wpdb->get_results($wpdb->prepare($query, $params));
+    }
+
+    /**
+     * Obtener estadísticas de dropout
+     *
+     * @param int $study_id ID del estudio
+     * @param int $days_overdue Días de retraso
+     * @return array {at_risk, pending, reminders_today}
+     */
+    public static function get_dropout_stats($study_id = 0, $days_overdue = 7) {
+        global $wpdb;
+
+        $assignments_table = $wpdb->prefix . 'survey_assignments';
+        $where = $study_id > 0 ? "WHERE study_id = %d" : "";
+        $params = $study_id > 0 ? array((int) $study_id) : array();
+
+        // At risk (pending + overdue)
+        $at_risk_where = $where ? $where . " AND " : "WHERE ";
+        $at_risk_where .= "status = 'pending' AND due_at < DATE_SUB(NOW(), INTERVAL %d DAY)";
+        $params = array_merge($params, array((int) $days_overdue));
+
+        $at_risk = (int) $wpdb->get_var(
+            $wpdb->prepare("SELECT COUNT(*) FROM {$assignments_table} {$at_risk_where}", $params)
+        );
+
+        // Pending total
+        $pending_where = $where ? $where . " AND " : "WHERE ";
+        $pending_where .= "status = 'pending'";
+        $pending_params = $study_id > 0 ? array((int) $study_id) : array();
+
+        $pending = (int) $wpdb->get_var(
+            $wpdb->prepare("SELECT COUNT(*) FROM {$assignments_table} {$pending_where}", $pending_params)
+        );
+
+        // Reminders sent today
+        $email_log_table = $wpdb->prefix . 'survey_email_log';
+        $email_where = $where ? str_replace('study_id', 'survey_id', $where) . " AND " : "WHERE ";
+        $email_where .= "DATE(sent_at) = CURDATE() AND email_type IN ('reminder', 'recovery')";
+        $email_params = $study_id > 0 ? array((int) $study_id) : array();
+
+        $reminders_today = (int) $wpdb->get_var(
+            $wpdb->prepare("SELECT COUNT(*) FROM {$email_log_table} {$email_where}", $email_params)
+        );
+
+        return array(
+            'at_risk' => $at_risk,
+            'pending' => $pending,
+            'reminders_today' => $reminders_today
+        );
+    }
+
+    /**
+     * Extender vencimiento de asignación
+     *
+     * @param int $assignment_id ID de la asignación
+     * @param int $days Días a extender
+     * @return bool|WP_Error
+     */
+    public static function extend_wave_deadline($assignment_id, $days = 7) {
+        global $wpdb;
+
+        $assignment_id = absint($assignment_id);
+        $days = absint($days);
+
+        if (!$assignment_id || $days < 1) {
+            return new WP_Error('invalid_params', 'Invalid assignment_id or days');
+        }
+
+        // Get current due_at
+        $current_due = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT due_at FROM {$wpdb->prefix}survey_assignments WHERE id = %d",
+                $assignment_id
+            )
+        );
+
+        if (!$current_due) {
+            return new WP_Error('assignment_not_found', 'Assignment not found');
+        }
+
+        // Calculate new due date
+        $new_due_date = date('Y-m-d H:i:s', strtotime($current_due . " +{$days} days"));
+
+        // Update
+        $updated = $wpdb->update(
+            $wpdb->prefix . 'survey_assignments',
+            array('due_at' => $new_due_date),
+            array('id' => $assignment_id),
+            array('%s'),
+            array('%d')
+        );
+
+        if ($updated === false) {
+            return new WP_Error('db_error', 'Failed to extend deadline: ' . $wpdb->last_error);
+        }
+
+        return true;
+    }
+
+    /**
+     * Marcar wave como completada (manual override)
+     *
+     * @param int $assignment_id ID de la asignación
+     * @return bool|WP_Error
+     */
+    public static function mark_wave_completed($assignment_id) {
+        global $wpdb;
+
+        $assignment_id = absint($assignment_id);
+
+        if (!$assignment_id) {
+            return new WP_Error('invalid_params', 'Invalid assignment_id');
+        }
+
+        // Get wave_id and participant_id first
+        $assignment = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT wave_id, participant_id FROM {$wpdb->prefix}survey_assignments WHERE id = %d",
+                $assignment_id
+            ),
+            ARRAY_A
+        );
+
+        if (!$assignment) {
+            return new WP_Error('assignment_not_found', 'Assignment not found');
+        }
+
+        // Update to submitted
+        $updated = $wpdb->update(
+            $wpdb->prefix . 'survey_assignments',
+            array(
+                'status' => 'submitted',
+                'submitted_at' => current_time('mysql')
+            ),
+            array('id' => $assignment_id),
+            array('%s', '%s'),
+            array('%d')
+        );
+
+        if ($updated === false) {
+            return new WP_Error('db_error', 'Failed to mark completed: ' . $wpdb->last_error);
+        }
+
+        return true;
+    }
+
+    /**
+     * Desactivar participante
+     *
+     * @param int $participant_id ID del participante
+     * @return bool|WP_Error
+     */
+    public static function deactivate_participant($participant_id) {
+        global $wpdb;
+
+        $participant_id = absint($participant_id);
+
+        if (!$participant_id) {
+            return new WP_Error('invalid_params', 'Invalid participant_id');
+        }
+
+        $updated = $wpdb->update(
+            $wpdb->prefix . 'survey_participants',
+            array('is_active' => 0),
+            array('id' => $participant_id),
+            array('%d'),
+            array('%d')
+        );
+
+        if ($updated === false) {
+            return new WP_Error('db_error', 'Failed to deactivate participant: ' . $wpdb->last_error);
+        }
+
+        return true;
+    }
+
+    /**
+     * Obtener asignación por ID
+     *
+     * @param int $assignment_id
+     * @return array|null
+     */
+    public static function get_assignment_by_id($assignment_id) {
+        global $wpdb;
+
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}survey_assignments WHERE id = %d",
+                absint($assignment_id)
+            ),
+            ARRAY_A
+        );
+    }
 }
