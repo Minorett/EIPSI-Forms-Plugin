@@ -1787,7 +1787,7 @@ class EIPSI_Database_Schema_Manager {
     
     /**
      * Sync wp_survey_audit_log table in local DB
-     *
+     * 
      * @since 1.4.0
      * @return array Result with success status and details
      */
@@ -1795,7 +1795,7 @@ class EIPSI_Database_Schema_Manager {
         global $wpdb;
         $table_name = $wpdb->prefix . 'survey_audit_log';
         $charset_collate = $wpdb->get_charset_collate();
-
+        
         $result = array(
             'success' => true,
             'exists' => false,
@@ -1804,64 +1804,59 @@ class EIPSI_Database_Schema_Manager {
             'columns_missing' => array(),
             'error' => null,
         );
-
+        
         // Check if table exists
         $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
         $result['exists'] = ! empty( $table_exists );
-
+        
         if ( ! $result['exists'] ) {
-            // Create table with v1.4.2 schema (TASK 5.1)
+            // Create table
             $sql = "CREATE TABLE {$table_name} (
                 id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-                survey_id BIGINT(20) UNSIGNED NOT NULL,
-                participant_id BIGINT(20) UNSIGNED NULL,
                 action VARCHAR(100) NOT NULL,
-                actor_type ENUM('admin', 'system') DEFAULT 'system',
-                actor_id BIGINT(20) UNSIGNED NULL,
-                actor_username VARCHAR(255) NULL,
-                ip_address VARCHAR(45) NULL,
-                metadata JSON NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                survey_id INT(11),
+                participant_id BIGINT(20) UNSIGNED,
+                actor_type ENUM('admin', 'system', 'participant') DEFAULT 'system',
+                actor_id BIGINT(20) UNSIGNED,
+                metadata JSON,
+                created_at DATETIME NOT NULL,
                 PRIMARY KEY (id),
-                INDEX idx_survey_action (survey_id, action),
-                INDEX idx_survey_created (survey_id, created_at),
-                INDEX idx_action_created (action, created_at),
-                INDEX idx_participant_id (participant_id)
+                KEY survey_id (survey_id),
+                KEY action (action),
+                KEY created_at (created_at)
             ) {$charset_collate};";
-
+            
             require_once ABSPATH . 'wp-admin/includes/upgrade.php';
             dbDelta( $sql );
-
+            
             $result['created'] = true;
             $result['exists'] = true;
-
+            
             error_log( '[EIPSI Forms] Created table: ' . $table_name );
         }
-
-        // Ensure required columns exist (v1.4.2 update)
+        
+        // Ensure required columns exist
         $required_columns = array(
-            'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id BIGINT(20) UNSIGNED NOT NULL AFTER id",
-            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NULL AFTER survey_id",
-            'action' => "ALTER TABLE {$table_name} ADD COLUMN action VARCHAR(100) NOT NULL AFTER participant_id",
-            'actor_type' => "ALTER TABLE {$table_name} ADD COLUMN actor_type ENUM('admin', 'system') DEFAULT 'system' AFTER action",
-            'actor_id' => "ALTER TABLE {$table_name} ADD COLUMN actor_id BIGINT(20) UNSIGNED NULL AFTER actor_type",
-            'actor_username' => "ALTER TABLE {$table_name} ADD COLUMN actor_username VARCHAR(255) NULL AFTER actor_id",
-            'ip_address' => "ALTER TABLE {$table_name} ADD COLUMN ip_address VARCHAR(45) NULL AFTER actor_username",
-            'metadata' => "ALTER TABLE {$table_name} ADD COLUMN metadata JSON NULL AFTER ip_address",
-            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP AFTER metadata",
+            'action' => "ALTER TABLE {$table_name} ADD COLUMN action VARCHAR(100) NOT NULL AFTER id",
+            'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id INT(11) AFTER action",
+            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED AFTER survey_id",
+            'actor_type' => "ALTER TABLE {$table_name} ADD COLUMN actor_type ENUM('admin', 'system', 'participant') DEFAULT 'system' AFTER participant_id",
+            'actor_id' => "ALTER TABLE {$table_name} ADD COLUMN actor_id BIGINT(20) UNSIGNED AFTER actor_type",
+            'metadata' => "ALTER TABLE {$table_name} ADD COLUMN metadata JSON AFTER actor_id",
+            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME NOT NULL AFTER metadata",
         );
-
+        
         foreach ( $required_columns as $column => $alter_sql ) {
             $column_exists = $wpdb->get_results(
                 $wpdb->prepare(
-                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
                     WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
                     DB_NAME,
                     $table_name,
                     $column
                 )
             );
-
+            
             if ( empty( $column_exists ) ) {
                 if ( false !== $wpdb->query( $alter_sql ) ) {
                     $result['columns_added'][] = $column;
@@ -1875,29 +1870,7 @@ class EIPSI_Database_Schema_Manager {
                 }
             }
         }
-
-        // Ensure proper indices exist (v1.4.2 update)
-        self::ensure_local_index( $table_name, 'survey_id' );
-        self::ensure_local_index( $table_name, 'action' );
-        self::ensure_local_index( $table_name, 'created_at' );
-        self::ensure_local_index( $table_name, 'participant_id' );
-
-        // Composite indices for performance
-        $existing_indices = $wpdb->get_results( "SHOW INDEX FROM {$table_name}" );
-        $index_names = array_column( $existing_indices, 'Key_name' );
-
-        if ( ! in_array( 'idx_survey_action', $index_names, true ) ) {
-            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_survey_action (survey_id, action)" );
-        }
-
-        if ( ! in_array( 'idx_survey_created', $index_names, true ) ) {
-            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_survey_created (survey_id, created_at)" );
-        }
-
-        if ( ! in_array( 'idx_action_created', $index_names, true ) ) {
-            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_action_created (action, created_at)" );
-        }
-
+        
         return $result;
     }
 }
@@ -2218,53 +2191,6 @@ function eipsi_sync_survey_email_log_table() {
 }
 
 /**
- * Sincronizar tabla wp_survey_audit_log
- * Log de auditoría para acciones sensibles (v1.4.2 TASK 5.1)
- */
-function eipsi_sync_survey_audit_log_table() {
-    global $wpdb;
-
-    $table_name = $wpdb->prefix . 'survey_audit_log';
-    $charset_collate = $wpdb->get_charset_collate();
-
-    $sql = "CREATE TABLE {$table_name} (
-        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        survey_id BIGINT(20) UNSIGNED NOT NULL,
-        participant_id BIGINT(20) UNSIGNED NULL,
-        action VARCHAR(100) NOT NULL,
-        actor_type ENUM('admin', 'system') DEFAULT 'system',
-        actor_id BIGINT(20) UNSIGNED NULL,
-        actor_username VARCHAR(255) NULL,
-        ip_address VARCHAR(45) NULL,
-        metadata JSON NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
-        INDEX idx_survey_action (survey_id, action),
-        INDEX idx_survey_created (survey_id, created_at),
-        INDEX idx_action_created (action, created_at),
-        INDEX idx_participant_id (participant_id)
-    ) ENGINE=InnoDB {$charset_collate};";
-
-    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-    dbDelta($sql);
-
-    // Foreign keys (best effort)
-    eipsi_longitudinal_ensure_foreign_key(
-        $table_name,
-        'fk_audit_survey',
-        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_audit_survey FOREIGN KEY (survey_id) REFERENCES {$wpdb->posts}(ID) ON DELETE CASCADE"
-    );
-
-    eipsi_longitudinal_ensure_foreign_key(
-        $table_name,
-        'fk_audit_participant',
-        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_audit_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE"
-    );
-
-    error_log('[EIPSI] Synced survey_audit_log table');
-}
-
-/**
  * Sincronizar tabla wp_survey_participants (wrapper para Schema Manager)
  */
 function eipsi_sync_survey_participants_table() {
@@ -2288,7 +2214,6 @@ function eipsi_maybe_create_tables() {
         eipsi_sync_survey_assignments_table();
         eipsi_sync_survey_magic_links_table(); // v1.4.1
         eipsi_sync_survey_email_log_table();   // v1.4.1
-        eipsi_sync_survey_audit_log_table();   // v1.4.2 TASK 5.1
 
         // Actualizar versión
         update_option('eipsi_longitudinal_db_version', EIPSI_LONGITUDINAL_DB_VERSION);
