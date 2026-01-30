@@ -19,7 +19,7 @@ function eipsi_display_form_responses() {
 
     // Determine active tab from URL param
     $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'submissions';
-    $allowed_tabs = array('submissions', 'completion', 'privacy', 'randomization', 'longitudinal-studies', 'waves-manager', 'cron-reminders', 'email-log');
+    $allowed_tabs = array('submissions', 'completion', 'privacy', 'randomization', 'longitudinal-studies', 'waves-manager', 'cron-reminders', 'email-log', 'monitoring');
 
     if (!in_array($active_tab, $allowed_tabs)) {
         $active_tab = 'submissions';
@@ -73,6 +73,11 @@ function eipsi_display_form_responses() {
                class="nav-tab <?php echo esc_attr(($active_tab === 'email-log') ? 'nav-tab-active' : ''); ?>"
                data-tab="email-log">
                 📧 <?php esc_html_e('Email Log & Dropout', 'eipsi-forms'); ?>
+            </a>
+            <a href="?page=eipsi-results&tab=monitoring"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'monitoring') ? 'nav-tab-active' : ''); ?>"
+               data-tab="monitoring">
+                🔧 <?php esc_html_e('Monitoring', 'eipsi-forms'); ?>
             </a>
         </h2>
         
@@ -186,6 +191,13 @@ function eipsi_display_form_responses() {
                 ));
                 ?>
                 <?php include dirname(__FILE__) . '/tabs/email-log-tab.php'; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Tab 8: Monitoring -->
+        <?php if ($active_tab === 'monitoring'): ?>
+            <div class="tab-content" data-tab="monitoring">
+                <?php include dirname(__FILE__) . '/tabs/monitoring-tab.php'; ?>
             </div>
         <?php endif; ?>
 

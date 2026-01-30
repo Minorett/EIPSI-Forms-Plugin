@@ -165,9 +165,82 @@ add_action('wp_ajax_nopriv_eipsi_validate_reminder_token', 'eipsi_validate_remin
 add_action('wp_ajax_eipsi_send_reminder_manual', 'eipsi_send_reminder_manual_handler');
 add_action('wp_ajax_eipsi_unsubscribe_reminders', 'eipsi_unsubscribe_reminders_handler');
 
+// Monitoring dashboard handlers
+add_action('wp_ajax_eipsi_get_monitoring_data', 'eipsi_get_monitoring_data_handler');
+add_action('wp_ajax_eipsi_get_audit_log', 'eipsi_get_audit_log_handler');
+add_action('wp_ajax_eipsi_export_monitoring_report', 'eipsi_export_monitoring_report_handler');
+
 // === Close Randomization Session (persistent_mode=OFF) ===
 add_action( 'wp_ajax_nopriv_eipsi_close_randomization_session', 'eipsi_close_randomization_session_handler' );
 add_action( 'wp_ajax_eipsi_close_randomization_session', 'eipsi_close_randomization_session_handler' );
+
+/**
+ * AJAX Handler: Monitoring data
+ */
+function eipsi_get_monitoring_data_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/monitoring.php';
+
+    $data = array(
+        'email' => EIPSI_Monitoring::get_email_stats(),
+        'cron' => EIPSI_Monitoring::get_cron_status(),
+        'sessions' => EIPSI_Monitoring::get_session_stats(),
+        'database' => EIPSI_Monitoring::get_db_health(),
+        'timestamp' => current_time('mysql'),
+    );
+
+    wp_send_json_success($data);
+}
+
+/**
+ * AJAX Handler: Audit log entries
+ */
+function eipsi_get_audit_log_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/monitoring.php';
+
+    $limit = isset($_POST['limit']) ? absint($_POST['limit']) : 10;
+    $entries = EIPSI_Monitoring::get_audit_log_entries($limit);
+
+    wp_send_json_success($entries);
+}
+
+/**
+ * AJAX Handler: Export monitoring report
+ */
+function eipsi_export_monitoring_report_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/monitoring.php';
+
+    $data = array(
+        'email' => EIPSI_Monitoring::get_email_stats(),
+        'cron' => EIPSI_Monitoring::get_cron_status(),
+        'sessions' => EIPSI_Monitoring::get_session_stats(),
+        'database' => EIPSI_Monitoring::get_db_health(),
+        'audit_log' => EIPSI_Monitoring::get_audit_log_entries(50),
+    );
+
+    $filename = 'monitoring_report_' . gmdate('Y-m-d_H-i-s') . '.json';
+    header('Content-Type: application/json');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    echo wp_json_encode($data, JSON_PRETTY_PRINT);
+    exit;
+}
 
 /**
  * AJAX Handler: Get list of available forms for randomization dropdown

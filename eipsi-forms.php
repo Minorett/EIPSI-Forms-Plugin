@@ -47,6 +47,7 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/configuration.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-email-log-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-handlers.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/monitoring.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/study-close-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/completion-message-backend.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/form-library.php';
