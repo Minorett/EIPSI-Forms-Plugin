@@ -2128,18 +2128,23 @@ function eipsi_sync_survey_email_log_table() {
 
     $sql = "CREATE TABLE {$table_name} (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        survey_id BIGINT(20) UNSIGNED NULL,
         participant_id BIGINT(20) UNSIGNED NOT NULL,
         email_type VARCHAR(50) NOT NULL,
         recipient_email VARCHAR(255) NOT NULL,
         subject VARCHAR(500) NOT NULL,
-        content TEXT,
+        content LONGTEXT,
         status ENUM('sent', 'failed', 'bounced') DEFAULT 'sent',
         sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         error_message TEXT NULL,
+        magic_link_used BOOLEAN DEFAULT 0,
         metadata JSON NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
         PRIMARY KEY (id),
+        INDEX idx_survey_id (survey_id),
         INDEX idx_participant_id (participant_id),
+        INDEX idx_survey_participant (survey_id, participant_id),
         INDEX idx_email_type (email_type),
         INDEX idx_status (status),
         INDEX idx_sent_at (sent_at)
@@ -2153,6 +2158,13 @@ function eipsi_sync_survey_email_log_table() {
         $table_name,
         'fk_email_log_participant',
         "ALTER TABLE {$table_name} ADD CONSTRAINT fk_email_log_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE"
+    );
+
+    // Add survey_id FK if possible
+    eipsi_longitudinal_ensure_foreign_key(
+        $table_name,
+        'fk_email_log_survey',
+        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_email_log_survey FOREIGN KEY (survey_id) REFERENCES {$wpdb->posts}(ID) ON DELETE SET NULL"
     );
 
     error_log('[EIPSI] Synced survey_email_log table');
