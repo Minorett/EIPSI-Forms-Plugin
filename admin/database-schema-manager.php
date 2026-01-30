@@ -1534,8 +1534,9 @@ class EIPSI_Database_Schema_Manager {
     
     /**
      * Sync wp_survey_magic_links table in local DB
+     * Magic links for Save & Continue Later feature
      * 
-     * @since 1.4.0
+     * @since 1.4.1
      * @return array Result with success status and details
      */
     private static function sync_local_survey_magic_links_table() {
@@ -1557,23 +1558,21 @@ class EIPSI_Database_Schema_Manager {
         $result['exists'] = ! empty( $table_exists );
         
         if ( ! $result['exists'] ) {
-            // Create table
+            // Create table with v1.4.1 schema
             $sql = "CREATE TABLE {$table_name} (
                 id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-                token_hash VARCHAR(255) NOT NULL UNIQUE,
+                survey_id BIGINT(20) UNSIGNED NOT NULL,
                 participant_id BIGINT(20) UNSIGNED NOT NULL,
-                survey_id INT(11),
-                wave_id BIGINT(20) UNSIGNED,
+                token_hash VARCHAR(255) NOT NULL,
+                token_plain VARCHAR(36),
                 expires_at DATETIME NOT NULL,
-                used_at DATETIME,
-                max_uses INT(11) DEFAULT 1,
-                use_count INT(11) DEFAULT 0,
-                created_at DATETIME NOT NULL,
+                used_at DATETIME NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
-                UNIQUE KEY unique_token (token_hash),
-                KEY participant_id (participant_id),
-                KEY expires_at (expires_at),
-                KEY used_at (used_at)
+                INDEX idx_survey_participant (survey_id, participant_id),
+                INDEX idx_token_hash (token_hash),
+                INDEX idx_expires_used (expires_at, used_at),
+                UNIQUE KEY uk_token_hash (token_hash)
             ) {$charset_collate};";
             
             require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -1583,19 +1582,68 @@ class EIPSI_Database_Schema_Manager {
             $result['exists'] = true;
             
             error_log( '[EIPSI Forms] Created table: ' . $table_name );
+        } else {
+            // Table exists, check for v1.4.1 updates (remove old columns, add new ones)
+            
+            // Check if we need to migrate from old schema (wave_id, max_uses, use_count)
+            $old_columns = array('wave_id', 'max_uses', 'use_count');
+            $has_old_schema = false;
+            
+            foreach ($old_columns as $old_col) {
+                $column_exists = $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+                        WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                        DB_NAME,
+                        $table_name,
+                        $old_col
+                    )
+                );
+                
+                if ($column_exists > 0) {
+                    $has_old_schema = true;
+                    break;
+                }
+            }
+            
+            if ($has_old_schema) {
+                // Migrate data to temp table and recreate
+                error_log('[EIPSI Forms] Migrating wp_survey_magic_links to v1.4.1 schema');
+                
+                // Drop and recreate with new schema
+                $wpdb->query("DROP TABLE IF EXISTS {$table_name}");
+                
+                $sql = "CREATE TABLE {$table_name} (
+                    id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                    survey_id BIGINT(20) UNSIGNED NOT NULL,
+                    participant_id BIGINT(20) UNSIGNED NOT NULL,
+                    token_hash VARCHAR(255) NOT NULL,
+                    token_plain VARCHAR(36),
+                    expires_at DATETIME NOT NULL,
+                    used_at DATETIME NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    INDEX idx_survey_participant (survey_id, participant_id),
+                    INDEX idx_token_hash (token_hash),
+                    INDEX idx_expires_used (expires_at, used_at),
+                    UNIQUE KEY uk_token_hash (token_hash)
+                ) {$charset_collate};";
+                
+                dbDelta( $sql );
+                
+                error_log('[EIPSI Forms] Migrated wp_survey_magic_links to v1.4.1 schema');
+            }
         }
         
-        // Ensure required columns exist
+        // Ensure required v1.4.1 columns exist
         $required_columns = array(
-            'token_hash' => "ALTER TABLE {$table_name} ADD COLUMN token_hash VARCHAR(255) NOT NULL UNIQUE AFTER id",
-            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NOT NULL AFTER token_hash",
-            'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id INT(11) AFTER participant_id",
-            'wave_id' => "ALTER TABLE {$table_name} ADD COLUMN wave_id BIGINT(20) UNSIGNED AFTER survey_id",
-            'expires_at' => "ALTER TABLE {$table_name} ADD COLUMN expires_at DATETIME NOT NULL AFTER wave_id",
-            'used_at' => "ALTER TABLE {$table_name} ADD COLUMN used_at DATETIME AFTER expires_at",
-            'max_uses' => "ALTER TABLE {$table_name} ADD COLUMN max_uses INT(11) DEFAULT 1 AFTER used_at",
-            'use_count' => "ALTER TABLE {$table_name} ADD COLUMN use_count INT(11) DEFAULT 0 AFTER max_uses",
-            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME NOT NULL AFTER use_count",
+            'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id BIGINT(20) UNSIGNED NOT NULL AFTER id",
+            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NOT NULL AFTER survey_id",
+            'token_hash' => "ALTER TABLE {$table_name} ADD COLUMN token_hash VARCHAR(255) NOT NULL AFTER participant_id",
+            'token_plain' => "ALTER TABLE {$table_name} ADD COLUMN token_plain VARCHAR(36) AFTER token_hash",
+            'expires_at' => "ALTER TABLE {$table_name} ADD COLUMN expires_at DATETIME NOT NULL AFTER token_plain",
+            'used_at' => "ALTER TABLE {$table_name} ADD COLUMN used_at DATETIME NULL AFTER expires_at",
+            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP AFTER used_at",
         );
         
         foreach ( $required_columns as $column => $alter_sql ) {
@@ -2015,6 +2063,125 @@ function eipsi_maybe_create_tables() {
         // Crear tablas NUEVAS
         eipsi_sync_survey_waves_table();
         eipsi_sync_survey_assignments_table();
+
+        // Actualizar versión
+        update_option('eipsi_longitudinal_db_version', EIPSI_LONGITUDINAL_DB_VERSION);
+        error_log('[EIPSI] Database schema updated to v' . EIPSI_LONGITUDINAL_DB_VERSION);
+    }
+}
+
+/**
+ * Sincronizar tabla wp_survey_magic_links
+ * Magic links para Save & Continue Later
+ */
+function eipsi_sync_survey_magic_links_table() {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'survey_magic_links';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE {$table_name} (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        survey_id BIGINT(20) UNSIGNED NOT NULL,
+        participant_id BIGINT(20) UNSIGNED NOT NULL,
+        token_hash VARCHAR(255) NOT NULL,
+        token_plain VARCHAR(36),
+        expires_at DATETIME NOT NULL,
+        used_at DATETIME NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+        PRIMARY KEY (id),
+        INDEX idx_survey_participant (survey_id, participant_id),
+        INDEX idx_token_hash (token_hash),
+        INDEX idx_expires_used (expires_at, used_at),
+        UNIQUE KEY uk_token_hash (token_hash)
+    ) ENGINE=InnoDB {$charset_collate};";
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta($sql);
+
+    // Foreign keys (best effort)
+    eipsi_longitudinal_ensure_foreign_key(
+        $table_name,
+        'fk_magic_links_survey',
+        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_magic_links_survey FOREIGN KEY (survey_id) REFERENCES {$wpdb->posts}(ID) ON DELETE CASCADE"
+    );
+
+    eipsi_longitudinal_ensure_foreign_key(
+        $table_name,
+        'fk_magic_links_participant',
+        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_magic_links_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE"
+    );
+
+    error_log('[EIPSI] Synced survey_magic_links table');
+}
+
+/**
+ * Sincronizar tabla wp_survey_email_log
+ * Log de emails enviados
+ */
+function eipsi_sync_survey_email_log_table() {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'survey_email_log';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE {$table_name} (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        participant_id BIGINT(20) UNSIGNED NOT NULL,
+        email_type VARCHAR(50) NOT NULL,
+        recipient_email VARCHAR(255) NOT NULL,
+        subject VARCHAR(500) NOT NULL,
+        content TEXT,
+        status ENUM('sent', 'failed', 'bounced') DEFAULT 'sent',
+        sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        error_message TEXT NULL,
+        metadata JSON NULL,
+
+        PRIMARY KEY (id),
+        INDEX idx_participant_id (participant_id),
+        INDEX idx_email_type (email_type),
+        INDEX idx_status (status),
+        INDEX idx_sent_at (sent_at)
+    ) ENGINE=InnoDB {$charset_collate};";
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta($sql);
+
+    // Foreign key (best effort)
+    eipsi_longitudinal_ensure_foreign_key(
+        $table_name,
+        'fk_email_log_participant',
+        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_email_log_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE"
+    );
+
+    error_log('[EIPSI] Synced survey_email_log table');
+}
+
+/**
+ * Sincronizar tabla wp_survey_participants (wrapper para Schema Manager)
+ */
+function eipsi_sync_survey_participants_table() {
+    if (class_exists('EIPSI_Database_Schema_Manager') && method_exists('EIPSI_Database_Schema_Manager', 'verify_and_sync_schema')) {
+        EIPSI_Database_Schema_Manager::verify_and_sync_schema();
+    }
+}
+
+/**
+ * Versioned table creation / migrations
+ */
+function eipsi_maybe_create_tables() {
+    $db_version = get_option('eipsi_longitudinal_db_version', '0');
+
+    if (defined('EIPSI_LONGITUDINAL_DB_VERSION') && version_compare($db_version, EIPSI_LONGITUDINAL_DB_VERSION, '<')) {
+        // Crear tablas participantes (si aplica)
+        eipsi_sync_survey_participants_table();
+
+        // Crear tablas NUEVAS
+        eipsi_sync_survey_waves_table();
+        eipsi_sync_survey_assignments_table();
+        eipsi_sync_survey_magic_links_table(); // v1.4.1
+        eipsi_sync_survey_email_log_table();   // v1.4.1
 
         // Actualizar versión
         update_option('eipsi_longitudinal_db_version', EIPSI_LONGITUDINAL_DB_VERSION);
