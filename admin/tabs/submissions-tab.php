@@ -21,11 +21,17 @@ if ($external_db->is_enabled()) {
     // Usar BD externa si está habilitada
     $mysqli = $external_db->get_connection();
     if ($mysqli) {
-        $result = $mysqli->query("SELECT DISTINCT form_id FROM `{$table_name}` WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $forms[] = $row['form_id'];
+        // Use prepared statement to prevent SQL injection
+        $stmt = $mysqli->prepare("SELECT DISTINCT form_id FROM `{$table_name}` WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+        if ($stmt) {
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    $forms[] = $row['form_id'];
+                }
             }
+            $stmt->close();
         }
         $mysqli->close();
     } else {
@@ -37,8 +43,12 @@ if ($external_db->is_enabled()) {
     $forms = $wpdb->get_col("SELECT DISTINCT form_id FROM $table_name WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
 }
 
-// Filtro actual
+// Filtro actual - with whitelist validation
 $current_form = isset($_GET['form_filter']) ? sanitize_text_field($_GET['form_filter']) : '';
+if (!empty($current_form) && !in_array($current_form, $forms, true)) {
+    // Invalid form_id - reject it
+    $current_form = '';
+}
 
 // NUEVO: Determinar si mostrar columna Form
 $show_form_column = empty($current_form);
@@ -87,28 +97,32 @@ $colspan = $show_form_column ? 8 : 7;
     }
     
     if (isset($_GET['error'])) {
-        $error_message = '';
-        switch ($_GET['error']) {
-            case 'permission':
-                $error_message = __('You do not have sufficient permissions to perform this action.', 'eipsi-forms');
-                break;
-            case 'invalid':
-                $error_message = __('Invalid request. Please try again.', 'eipsi-forms');
-                break;
-            case 'nonce':
-                $error_message = __('Security check failed. Please refresh the page and try again.', 'eipsi-forms');
-                break;
-            case 'delete':
-                $error_message = __('Failed to delete response. The record may not exist.', 'eipsi-forms');
-                break;
-            default:
-                $error_message = __('An error occurred. Please try again.', 'eipsi-forms');
+        // Whitelist validation for error types
+        $allowed_errors = array('permission', 'invalid', 'nonce', 'delete');
+        $error_type = isset($_GET['error']) ? sanitize_key($_GET['error']) : '';
+        
+        if (in_array($error_type, $allowed_errors, true)) {
+            $error_message = '';
+            switch ($error_type) {
+                case 'permission':
+                    $error_message = __('You do not have sufficient permissions to perform this action.', 'eipsi-forms');
+                    break;
+                case 'invalid':
+                    $error_message = __('Invalid request. Please try again.', 'eipsi-forms');
+                    break;
+                case 'nonce':
+                    $error_message = __('Security check failed. Please refresh the page and try again.', 'eipsi-forms');
+                    break;
+                case 'delete':
+                    $error_message = __('Failed to delete response. The record may not exist.', 'eipsi-forms');
+                    break;
+            }
+            ?>
+            <div class="notice notice-error is-dismissible">
+                <p><?php echo esc_html($error_message); ?></p>
+            </div>
+            <?php
         }
-        ?>
-        <div class="notice notice-error is-dismissible">
-            <p><?php echo esc_html($error_message); ?></p>
-        </div>
-        <?php
     }
     ?>
     

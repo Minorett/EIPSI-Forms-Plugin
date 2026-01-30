@@ -1176,7 +1176,7 @@ class EIPSI_Database_Schema_Manager {
         $result['exists'] = ! empty( $table_exists );
         
         if ( ! $result['exists'] ) {
-            // Create table
+            // Create table with security indices
             $sql = "CREATE TABLE {$table_name} (
                 id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
                 survey_id INT(11),
@@ -1190,7 +1190,11 @@ class EIPSI_Database_Schema_Manager {
                 PRIMARY KEY (id),
                 UNIQUE KEY unique_survey_email (survey_id, email),
                 KEY survey_id (survey_id),
-                KEY is_active (is_active)
+                KEY is_active (is_active),
+                KEY idx_survey_email (survey_id, email),
+                KEY idx_participant_active (is_active),
+                KEY idx_email (email),
+                KEY idx_created_at (created_at)
             ) {$charset_collate};";
             
             require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -1237,6 +1241,22 @@ class EIPSI_Database_Schema_Manager {
                     }
                 }
             }
+        }
+        
+        // VULN 10 FIX: Ensure security indices exist for wp_survey_participants
+        self::ensure_local_index( $table_name, 'email' );
+        self::ensure_local_index( $table_name, 'created_at' );
+        
+        // Composite indices for performance and security
+        $existing_indices = $wpdb->get_results( "SHOW INDEX FROM {$table_name}" );
+        $index_names = array_column( $existing_indices, 'Key_name' );
+        
+        if ( ! in_array( 'idx_survey_email', $index_names, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_survey_email (survey_id, email)" );
+        }
+        
+        if ( ! in_array( 'idx_participant_active', $index_names, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_participant_active (is_active)" );
         }
         
         return $result;
