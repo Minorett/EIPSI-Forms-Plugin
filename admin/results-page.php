@@ -19,7 +19,7 @@ function eipsi_display_form_responses() {
 
     // Determine active tab from URL param
     $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'submissions';
-    $allowed_tabs = array('submissions', 'completion', 'privacy', 'randomization', 'longitudinal-studies', 'waves-manager', 'cron-reminders');
+    $allowed_tabs = array('submissions', 'completion', 'privacy', 'randomization', 'longitudinal-studies', 'waves-manager', 'cron-reminders', 'email-log');
 
     if (!in_array($active_tab, $allowed_tabs)) {
         $active_tab = 'submissions';
@@ -68,6 +68,11 @@ function eipsi_display_form_responses() {
                class="nav-tab <?php echo esc_attr(($active_tab === 'cron-reminders') ? 'nav-tab-active' : ''); ?>"
                data-tab="cron-reminders">
                 ⏰ <?php esc_html_e('Recordatorios', 'eipsi-forms'); ?>
+            </a>
+            <a href="?page=eipsi-results&tab=email-log"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'email-log') ? 'nav-tab-active' : ''); ?>"
+               data-tab="email-log">
+                📧 <?php esc_html_e('Email Log & Dropout', 'eipsi-forms'); ?>
             </a>
         </h2>
         
@@ -128,6 +133,59 @@ function eipsi_display_form_responses() {
         <?php if ($active_tab === 'cron-reminders'): ?>
             <div class="tab-content" data-tab="cron-reminders">
                 <?php include dirname(__FILE__) . '/tabs/cron-reminders-tab.php'; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Tab 7: Email Log & Dropout Management (Task 4.3) -->
+        <?php if ($active_tab === 'email-log'): ?>
+            <div class="tab-content" data-tab="email-log">
+                <?php
+                // Enqueue CSS and JS
+                wp_enqueue_style('eipsi-email-log-css', plugins_url('admin/css/email-log.css', EIPSI_FORMS_PLUGIN_FILE), array(), '1.5.0');
+                wp_enqueue_script('eipsi-email-log-js', plugins_url('admin/js/email-log.js', EIPSI_FORMS_PLUGIN_FILE), array('jquery'), '1.5.0', true);
+
+                // Localize script
+                wp_localize_script('eipsi-email-log-js', 'eipsi', array(
+                    'nonce' => wp_create_nonce('eipsi_admin_nonce'),
+                    'ajaxUrl' => admin_url('admin-ajax.php'),
+                    'i18n' => array(
+                        'loading' => __('Cargando...', 'eipsi-forms'),
+                        'errorLoading' => __('Error al cargar', 'eipsi-forms'),
+                        'connectionError' => __('Error de conexión', 'eipsi-forms'),
+                        'view' => __('Ver', 'eipsi-forms'),
+                        'resend' => __('Reenviar', 'eipsi-forms'),
+                        'page' => __('Página', 'eipsi-forms'),
+                        'of' => __('de', 'eipsi-forms'),
+                        'noEmails' => __('No se encontraron emails', 'eipsi-forms'),
+                        'noAtRisk' => __('No hay participantes en riesgo', 'eipsi-forms'),
+                        'selectParticipants' => __('Por favor selecciona al menos un participante', 'eipsi-forms'),
+                        'confirmResend' => __('¿Deseas reenviar este email?', 'eipsi-forms'),
+                        'emailSent' => __('Email enviado exitosamente', 'eipsi-forms'),
+                        'errorSending' => __('Error al enviar email', 'eipsi-forms'),
+                        'reminder' => __('Recordatorio', 'eipsi-forms'),
+                        'extend' => __('Extender', 'eipsi-forms'),
+                        'complete' => __('Completada', 'eipsi-forms'),
+                        'deactivate' => __('Desactivar', 'eipsi-forms'),
+                        'confirmReminder' => __('¿Deseas enviar un recordatorio a este participante?', 'eipsi-forms'),
+                        'reminderSent' => __('Recordatorio enviado exitosamente', 'eipsi-forms'),
+                        'extended' => __('Vencimiento extendido', 'eipsi-forms'),
+                        'days' => __('días', 'eipsi-forms'),
+                        'confirmComplete' => __('¿Deseas marcar esta toma como completada?', 'eipsi-forms'),
+                        'markedComplete' => __('Toma marcada como completada', 'eipsi-forms'),
+                        'confirmDeactivate' => __('¿Deseas desactivar este participante?', 'eipsi-forms'),
+                        'deactivated' => __('Participante desactivado', 'eipsi-forms'),
+                        'actionComplete' => __('Acción completada exitosamente', 'eipsi-forms'),
+                        'error' => __('Error', 'eipsi-forms'),
+                        'type' => __('Tipo', 'eipsi-forms'),
+                        'to' => __('Para', 'eipsi-forms'),
+                        'status' => __('Estado', 'eipsi-forms'),
+                        'sentAt' => __('Enviado', 'eipsi-forms'),
+                        'subject' => __('Asunto', 'eipsi-forms'),
+                        'content' => __('Contenido', 'eipsi-forms')
+                    )
+                ));
+                ?>
+                <?php include dirname(__FILE__) . '/tabs/email-log-tab.php'; ?>
             </div>
         <?php endif; ?>
 

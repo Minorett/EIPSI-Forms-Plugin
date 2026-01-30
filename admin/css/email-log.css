@@ -1,0 +1,590 @@
+/**
+ * Email Log & Dropout Management Styles
+ * 
+ * @package EIPSI_Forms
+ * @since 1.5.0
+ */
+
+/* === Header & Layout === */
+.eipsi-email-log-wrap {
+    padding: 20px;
+    max-width: 100%;
+}
+
+.eipsi-tab-header {
+    margin-bottom: 25px;
+}
+
+.eipsi-tab-header h1 {
+    font-size: 28px;
+    margin: 0 0 10px 0;
+    color: #1d2327;
+}
+
+.eipsi-tab-header .description {
+    color: #646970;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* === Stats Cards === */
+.eipsi-email-stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.eipsi-stat-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.eipsi-stat-card.eipsi-stat-success {
+    border-left: 4px solid #00a32a;
+}
+
+.eipsi-stat-card.eipsi-stat-error {
+    border-left: 4px solid #d63638;
+}
+
+.eipsi-stat-card.eipsi-stat-total {
+    border-left: 4px solid #2271b1;
+}
+
+.eipsi-stat-card .stat-label {
+    display: block;
+    font-size: 13px;
+    color: #646970;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.eipsi-stat-card .stat-value {
+    display: block;
+    font-size: 32px;
+    font-weight: 700;
+    color: #1d2327;
+    margin-bottom: 5px;
+}
+
+.eipsi-stat-card .stat-sublabel {
+    display: block;
+    font-size: 12px;
+    color: #00a32a;
+}
+
+/* === Sub Tabs === */
+.eipsi-sub-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #c3c4c7;
+    padding-bottom: 1px;
+}
+
+.eipsi-sub-tab-button {
+    background: transparent;
+    border: none;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #50575e;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.eipsi-sub-tab-button:hover {
+    background: #f6f7f7;
+    color: #1d2327;
+}
+
+.eipsi-sub-tab-button.active {
+    color: #2271b1;
+    font-weight: 600;
+}
+
+.eipsi-sub-tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #2271b1;
+    border-radius: 3px 3px 0 0;
+}
+
+/* === Tab Content === */
+.eipsi-tab-content {
+    display: none;
+}
+
+.eipsi-tab-content.active {
+    display: block;
+}
+
+/* === Filters Toolbar === */
+.eipsi-filters-toolbar {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+}
+
+.eipsi-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.eipsi-filter-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d2327;
+    margin: 0;
+}
+
+.eipsi-filter-select,
+.eipsi-filter-input {
+    padding: 6px 12px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 13px;
+    min-width: 120px;
+}
+
+.eipsi-filter-input[type="date"] {
+    min-width: 140px;
+}
+
+/* === Email Log Table === */
+.eipsi-email-log-table-wrapper {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.eipsi-email-log-table {
+    margin: 0;
+}
+
+.eipsi-email-log-table thead th {
+    background: #f6f7f7;
+    border-bottom: 1px solid #c3c4c7;
+    padding: 12px 15px;
+    font-weight: 600;
+}
+
+.eipsi-email-log-table tbody td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+/* Email Status Badges */
+.eipsi-email-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.eipsi-email-status.sent {
+    background: #edfaef;
+    color: #00a32a;
+}
+
+.eipsi-email-status.failed {
+    background: #fbeeea;
+    color: #d63638;
+}
+
+/* Email Type Badges */
+.eipsi-email-type {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.eipsi-email-type.welcome {
+    background: #e6f0ff;
+    color: #2271b1;
+}
+
+.eipsi-email-type.reminder {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.eipsi-email-type.confirmation {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.eipsi-email-type.recovery {
+    background: #f8d7da;
+    color: #842029;
+}
+
+/* Action Buttons */
+.eipsi-action-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.eipsi-action-buttons .button {
+    padding: 5px 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    height: auto;
+}
+
+.eipsi-action-buttons .button-primary {
+    background: #2271b1;
+    border-color: #2271b1;
+}
+
+.eipsi-action-buttons .button-primary:hover {
+    background: #135e96;
+    border-color: #135e96;
+}
+
+/* === Pagination === */
+.eipsi-pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    border-top: 1px solid #c3c4c7;
+    background: #f6f7f7;
+}
+
+.eipsi-pagination-wrapper span {
+    font-size: 13px;
+    color: #646970;
+}
+
+/* === Dropout Stats === */
+.eipsi-dropout-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.eipsi-dropout-stat {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+}
+
+.eipsi-dropout-stat .stat-label {
+    display: block;
+    font-size: 12px;
+    color: #646970;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.eipsi-dropout-stat .stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: #d63638;
+}
+
+/* === Dropout Table === */
+.eipsi-dropout-table-wrapper {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.eipsi-dropout-table {
+    margin: 0;
+}
+
+.eipsi-dropout-table thead th {
+    background: #f6f7f7;
+    border-bottom: 1px solid #c3c4c7;
+    padding: 12px 15px;
+    font-weight: 600;
+}
+
+.eipsi-dropout-table tbody td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+/* At Risk Badge */
+.eipsi-at-risk-badge {
+    display: inline-block;
+    background: #d63638;
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.eipsi-safe-badge {
+    display: inline-block;
+    background: #00a32a;
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* === Bulk Actions === */
+.eipsi-bulk-actions-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 15px 20px;
+    border-top: 1px solid #c3c4c7;
+    background: #f6f7f7;
+}
+
+.eipsi-bulk-actions-wrapper label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d2327;
+    margin: 0;
+}
+
+/* === Modals === */
+.eipsi-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.eipsi-modal-content {
+    background: #fff;
+    border-radius: 8px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    position: relative;
+}
+
+.eipsi-modal-content.eipsi-modal-small {
+    max-width: 400px;
+}
+
+.eipsi-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #646970;
+    cursor: pointer;
+    line-height: 1;
+    z-index: 10;
+}
+
+.eipsi-modal-close:hover {
+    color: #1d2327;
+}
+
+.eipsi-modal-content h3 {
+    margin: 0 0 20px 0;
+    padding: 0 40px 0 20px;
+    color: #1d2327;
+    font-size: 20px;
+}
+
+#eipsi-email-details-body {
+    padding: 0 20px 20px;
+}
+
+/* Email Detail Styles */
+.eipsi-email-detail-row {
+    padding: 12px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.eipsi-email-detail-row:last-child {
+    border-bottom: none;
+}
+
+.eipsi-email-detail-label {
+    font-weight: 600;
+    color: #50575e;
+    display: block;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.eipsi-email-detail-value {
+    color: #1d2327;
+    font-size: 14px;
+}
+
+.eipsi-email-content-preview {
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* === Dark Mode === */
+@media (prefers-color-scheme: dark) {
+    .eipsi-email-log-wrap {
+        background: #1d2327;
+    }
+    
+    .eipsi-tab-header h1 {
+        color: #f0f0f1;
+    }
+    
+    .eipsi-tab-header .description {
+        color: #a7aaad;
+    }
+    
+    .eipsi-stat-card {
+        background: #2c3338;
+        border-color: #50575e;
+        color: #f0f0f1;
+    }
+    
+    .eipsi-stat-card .stat-value {
+        color: #f0f0f1;
+    }
+    
+    .eipsi-sub-tab-button {
+        color: #a7aaad;
+    }
+    
+    .eipsi-sub-tab-button:hover {
+        background: #2c3338;
+        color: #f0f0f1;
+    }
+    
+    .eipsi-filters-toolbar,
+    .eipsi-email-log-table-wrapper,
+    .eipsi-dropout-table-wrapper {
+        background: #2c3338;
+        border-color: #50575e;
+    }
+    
+    .eipsi-email-log-table thead th,
+    .eipsi-dropout-table thead th {
+        background: #1d2327;
+        border-color: #50575e;
+        color: #f0f0f1;
+    }
+    
+    .eipsi-email-log-table tbody td,
+    .eipsi-dropout-table tbody td {
+        border-color: #3c434a;
+        color: #f0f0f1;
+    }
+    
+    .eipsi-dropout-stat {
+        background: #2c3338;
+        border-color: #50575e;
+    }
+    
+    .eipsi-bulk-actions-wrapper {
+        background: #1d2327;
+        border-color: #50575e;
+    }
+    
+    .eipsi-modal-content {
+        background: #2c3338;
+        color: #f0f0f1;
+    }
+    
+    .eipsi-modal-content h3 {
+        color: #f0f0f1;
+    }
+    
+    .eipsi-email-detail-row {
+        border-color: #3c434a;
+    }
+    
+    .eipsi-email-detail-label {
+        color: #a7aaad;
+    }
+    
+    .eipsi-email-detail-value {
+        color: #f0f0f1;
+    }
+    
+    .eipsi-email-content-preview {
+        background: #1d2327;
+        border-color: #50575e;
+    }
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+    .eipsi-email-stats-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .eipsi-dropout-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .eipsi-filters-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .eipsi-filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .eipsi-filter-select,
+    .eipsi-filter-input {
+        width: 100%;
+    }
+    
+    .eipsi-action-buttons {
+        flex-direction: column;
+    }
+    
+    .eipsi-action-buttons .button {
+        width: 100%;
+    }
+}
