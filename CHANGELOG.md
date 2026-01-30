@@ -54,6 +54,91 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [1.4.2] - 2025-02-06
+
+### Added
+- **Export Longitudinal:** Filtros avanzados (survey, wave, date range, status)
+  - Excel (.xlsx) y CSV (.csv) support
+  - Stats dashboard (completion rates, avg response times)
+  - Dynamic columns según form fields
+  - admin/tabs/export-tab.php, admin/services/class-export-service.php
+
+- **Monitoring Dashboard:** Observabilidad completa
+  - 5 cards: Email, Cron, Sessions, Database, Audit Log
+  - Auto-refresh cada 30 segundos
+  - Export monitoring report (JSON)
+  - Real-time metrics sin cache
+  - admin/monitoring.php, admin/tabs/monitoring-tab.php
+
+- **Testing Suite:** Validación completa
+  - 6 manual test scenarios (signup→waves→export→anonymize, magic links, cron, dropout, export, sessions)
+  - 32+ PHPUnit unit tests (Participant, Auth, Wave, Email services)
+  - 100% coverage de métodos críticos
+  - PHASE-6-TESTING-MANUAL.md, tests/*.php
+
+### Fixed
+- Security: 12 vulnerabilidades corregidas (SQL injection, XSS, rate limiting, etc.)
+- Database: Índices optimizados para queries frecuentes
+- Performance: Batch email processing + transient caching
+
+### Changed
+- Version bump: 1.4.2
+- admin/results-page.php: Nuevo tab "Monitoring"
+- admin/ajax-handlers.php: +6 AJAX endpoints (export, monitoring, testing)
+
+### Security
+- Rate limiting: 5 intentos login / 15 min, 2 emails/min max
+- Session TTL: 7 días
+- Magic link TTL: 30 min
+- Cookie flags: HttpOnly, Secure, SameSite=Lax
+- Audit log: todas las acciones registradas
+
+---
+
+## [1.4.1] - 2025-02-05
+
+### Added
+- **Email Service:** Sistema transaccional completo
+  - Templates HTML (welcome, wave-reminder, wave-confirmation, dropout-recovery)
+  - EIPSI_Email_Service class
+  - Magic link integration
+  - Email logging en wp_survey_email_log
+  - Placeholders dinámicos (name, dates, links)
+
+### Fixed
+- Email delivery: Retry mechanism para fallidos
+- Logging: Timestamp + status tracking
+
+---
+
+## [1.4.0] - 2025-02-04
+
+### Added
+- **Longitudinal Study Support:** Arquitectura completa
+  - Waves: T1, T2, T3... con due dates
+  - Participants: invitación por email + magic links
+  - Sessions: 7 días TTL con secure cookies
+  - Magic Links: 30 min TTL, one-time use
+  - Rate limiting: 5 intentos login / 15 min
+  - Auth Service: token generation + validation
+  - Wave Service: completion tracking + stats
+  - Participant Service: CRUD + anonymization
+  - User fingerprinting: identificación de sesiones
+
+- **Databases:**
+  - wp_survey_participants (email, status, anonymized, etc.)
+  - wp_survey_waves (wave_index, due_date, etc.)
+  - wp_survey_responses (participant_id, wave_id, submitted_at, etc.)
+  - wp_survey_sessions (token, expires_at, secure cookies, etc.)
+  - wp_survey_email_log (email tracking + logging)
+  - wp_survey_audit_log (anonymization + security audit trail)
+
+### Changed
+- Version: 1.3.19 → 1.4.0
+- Architecture: Shift hacia longitudinal studies
+
+---
+
 ## [1.3.9] – 2025-01-22 (CRITICAL: Editor Gutenberg Sin Estilos - WYSIWYG Roto)
 
 ### 🔴 HOTFIX CRÍTICO - Estilos No Se Cargan en el Editor

@@ -1,7 +1,17 @@
 <?php
 /**
- * System Monitoring Dashboard
- * Recopila métricas de email, cron, sesiones, DB en tiempo real
+ * EIPSI_Monitoring
+ *
+ * Observabilidad del sistema:
+ * - Email stats
+ * - Cron job status
+ * - Session stats
+ * - Database health
+ * - Audit log
+ *
+ * @package EIPSI_Forms
+ * @subpackage Monitoring
+ * @version 1.4.2
  */
 
 defined('ABSPATH') || exit;
@@ -9,7 +19,12 @@ defined('ABSPATH') || exit;
 class EIPSI_Monitoring {
 
     /**
-     * Get email statistics
+     * Get email statistics.
+     *
+     * @return array Array con keys: sent_today, failed_today, bounce_rate, last_sent, pending_count.
+     * @since 1.4.2
+     * @access public
+     * @static
      */
     public static function get_email_stats() {
         global $wpdb;
@@ -61,7 +76,12 @@ class EIPSI_Monitoring {
     }
 
     /**
-     * Get cron job status
+     * Get cron job status.
+     *
+     * @return array Array con keys: wave_reminders, session_cleanup, email_retry, dropout_recovery.
+     * @since 1.4.2
+     * @access public
+     * @static
      */
     public static function get_cron_status() {
         $status = array(
@@ -100,7 +120,12 @@ class EIPSI_Monitoring {
     }
 
     /**
-     * Get session statistics
+     * Get session statistics.
+     *
+     * @return array Array con keys: active_sessions, expired_today, unused_sessions.
+     * @since 1.4.2
+     * @access public
+     * @static
      */
     public static function get_session_stats() {
         global $wpdb;
@@ -138,7 +163,12 @@ class EIPSI_Monitoring {
     }
 
     /**
-     * Get database health
+     * Get database health metrics.
+     *
+     * @return array Array con keys: table_size_mb, connection_status, queries_per_minute, slow_queries.
+     * @since 1.4.2
+     * @access public
+     * @static
      */
     public static function get_db_health() {
         global $wpdb;
@@ -169,7 +199,13 @@ class EIPSI_Monitoring {
     }
 
     /**
-     * Get audit log recent entries
+     * Get audit log entries.
+     *
+     * @param int $limit Number of entries to return (default 10).
+     * @return array Array de audit log objects.
+     * @since 1.4.2
+     * @access public
+     * @static
      */
     public static function get_audit_log_entries($limit = 10) {
         global $wpdb;
@@ -189,6 +225,15 @@ class EIPSI_Monitoring {
         ));
     }
 
+    /**
+     * Check if table exists in database.
+     *
+     * @param string $table Table name.
+     * @return bool True si existe.
+     * @since 1.4.2
+     * @access private
+     * @static
+     */
     private static function table_exists($table) {
         global $wpdb;
 

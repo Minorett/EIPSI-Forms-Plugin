@@ -1,10 +1,16 @@
 <?php
 /**
- * Wave Service
+ * EIPSI_Wave_Service
  *
- * Gestión de tomas/waves en estudios longitudinales.
+ * Gestiona waves (oleadas) en estudios longitudinales:
+ * - CRUD operations
+ * - Due date calculation
+ * - Completion tracking
+ * - Stats
  *
  * @package EIPSI_Forms
+ * @subpackage Services
+ * @version 1.4.2
  * @since 1.4.0
  */
 
@@ -15,11 +21,13 @@ if (!defined('ABSPATH')) {
 class EIPSI_Wave_Service {
 
     /**
-     * Crear nueva wave
+     * Create wave for survey.
      *
-     * @param int   $study_id   ID del estudio
-     * @param array $wave_data  Datos de la wave
-     * @return int|WP_Error     Wave ID insertado o WP_Error
+     * @param int   $study_id ID del estudio.
+     * @param array $wave_data Datos de la wave.
+     * @return int|WP_Error Wave ID insertado o WP_Error.
+     * @since 1.4.0
+     * @access public
      */
     public static function create_wave($study_id, $wave_data) {
         global $wpdb;
@@ -88,10 +96,12 @@ class EIPSI_Wave_Service {
     }
 
     /**
-     * Obtener wave por ID
+     * Get wave by ID.
      *
-     * @param int $wave_id
-     * @return array|null
+     * @param int $wave_id Wave ID.
+     * @return array|null Wave data.
+     * @since 1.4.0
+     * @access public
      */
     public static function get_wave($wave_id) {
         global $wpdb;
@@ -106,11 +116,13 @@ class EIPSI_Wave_Service {
     }
 
     /**
-     * Obtener todas las waves de un estudio
+     * Get study waves.
      *
-     * @param int         $study_id
-     * @param string|null $status
-     * @return array
+     * @param int         $study_id Study ID.
+     * @param string|null $status Status filter.
+     * @return array Waves list.
+     * @since 1.4.0
+     * @access public
      */
     public static function get_study_waves($study_id, $status = null) {
         global $wpdb;
@@ -132,11 +144,13 @@ class EIPSI_Wave_Service {
     }
 
     /**
-     * Actualizar wave
+     * Update wave.
      *
-     * @param int   $wave_id
-     * @param array $wave_data
-     * @return bool|WP_Error
+     * @param int   $wave_id Wave ID.
+     * @param array $wave_data Datos a actualizar.
+     * @return bool|WP_Error True si actualiza o WP_Error si falla.
+     * @since 1.4.0
+     * @access public
      */
     public static function update_wave($wave_id, $wave_data) {
         global $wpdb;
@@ -225,10 +239,12 @@ class EIPSI_Wave_Service {
     }
 
     /**
-     * Obtener estadísticas de una wave
+     * Get wave completion stats.
      *
-     * @param int $wave_id
-     * @return array
+     * @param int $wave_id Wave ID.
+     * @return array Stats array.
+     * @since 1.4.2
+     * @access public
      */
     public static function get_wave_stats($wave_id) {
         global $wpdb;
@@ -266,12 +282,14 @@ class EIPSI_Wave_Service {
     }
 
     /**
-     * Eliminar wave (con validación)
+     * Delete wave with validation.
      *
      * No permite borrar una wave con asignaciones ya submitted.
      *
-     * @param int $wave_id
-     * @return bool|WP_Error
+     * @param int $wave_id Wave ID.
+     * @return bool|WP_Error True si elimina o WP_Error si falla.
+     * @since 1.4.0
+     * @access public
      */
     public static function delete_wave($wave_id) {
         global $wpdb;

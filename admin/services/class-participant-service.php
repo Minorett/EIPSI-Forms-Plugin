@@ -1,11 +1,15 @@
 <?php
 /**
- * EIPSI Participant Service
- * 
- * Gestiona participantes y su ciclo de vida en el sistema longitudinal.
- * Los participantes pueden registrarse con email+password y recibir waves.
+ * EIPSI_Participant_Service
+ *
+ * Gestiona participantes y su ciclo de vida en estudios longitudinales:
+ * - CRUD de participantes
+ * - Status tracking (active/inactive)
+ * - Password management
  *
  * @package EIPSI_Forms
+ * @subpackage Services
+ * @version 1.4.2
  * @since 1.4.0
  */
 
@@ -16,15 +20,17 @@ if (!defined('ABSPATH')) {
 class EIPSI_Participant_Service {
     
     /**
-     * Crear nuevo participante
-     * 
+     * Create participant for survey.
+     *
      * Valida email, password y crea registro en wp_survey_participants.
-     * 
-     * @param int $survey_id ID del survey
-     * @param string $email Email del participante (será sanitizado)
-     * @param string $password Password en texto plano (será hasheado)
-     * @param array $metadata Datos adicionales (first_name, last_name)
+     *
+     * @param int    $survey_id ID del survey.
+     * @param string $email Email del participante (será sanitizado).
+     * @param string $password Password en texto plano (será hasheado).
+     * @param array  $metadata Datos adicionales (first_name, last_name).
      * @return array { success: bool, participant_id: int|null, error: string|null }
+     * @since 1.4.0
+     * @access public
      */
     public static function create_participant($survey_id, $email, $password, $metadata = array()) {
         global $wpdb;
@@ -116,11 +122,13 @@ class EIPSI_Participant_Service {
     }
     
     /**
-     * Obtener participante por email + survey
-     * 
-     * @param int $survey_id ID del survey
-     * @param string $email Email del participante
-     * @return object|null Fila de wp_survey_participants
+     * Get participant by email.
+     *
+     * @param int    $survey_id ID del survey.
+     * @param string $email Email del participante.
+     * @return object|null Fila de wp_survey_participants.
+     * @since 1.4.0
+     * @access public
      */
     public static function get_by_email($survey_id, $email) {
         global $wpdb;
@@ -137,10 +145,12 @@ class EIPSI_Participant_Service {
     }
     
     /**
-     * Obtener participante por ID
-     * 
-     * @param int $participant_id ID del participante
-     * @return object|null
+     * Get participant by ID.
+     *
+     * @param int $participant_id ID del participante.
+     * @return object|null Participante o null si no existe.
+     * @since 1.4.0
+     * @access public
      */
     public static function get_by_id($participant_id) {
         global $wpdb;
@@ -153,11 +163,13 @@ class EIPSI_Participant_Service {
     }
     
     /**
-     * Verificar password
-     * 
-     * @param int $participant_id ID del participante
-     * @param string $plain_password Password en texto plano
-     * @return bool
+     * Verify participant password.
+     *
+     * @param int    $participant_id ID del participante.
+     * @param string $plain_password Password en texto plano.
+     * @return bool True si el password es válido.
+     * @since 1.4.0
+     * @access public
      */
     public static function verify_password($participant_id, $plain_password) {
         global $wpdb;
@@ -181,10 +193,12 @@ class EIPSI_Participant_Service {
     }
     
     /**
-     * Actualizar último login
-     * 
-     * @param int $participant_id ID del participante
-     * @return bool
+     * Update last login timestamp.
+     *
+     * @param int $participant_id ID del participante.
+     * @return bool True si actualizó correctamente.
+     * @since 1.4.0
+     * @access public
      */
     public static function update_last_login($participant_id) {
         global $wpdb;
@@ -202,11 +216,13 @@ class EIPSI_Participant_Service {
     }
     
     /**
-     * Marcar como activo/inactivo
-     * 
-     * @param int $participant_id ID del participante
-     * @param bool $is_active Estado (true = activo, false = inactivo)
-     * @return bool
+     * Set active/inactive participant status.
+     *
+     * @param int  $participant_id ID del participante.
+     * @param bool $is_active Estado (true = activo, false = inactivo).
+     * @return bool True si se actualizó correctamente.
+     * @since 1.4.0
+     * @access public
      */
     public static function set_active($participant_id, $is_active) {
         global $wpdb;
@@ -224,12 +240,14 @@ class EIPSI_Participant_Service {
     }
     
     /**
-     * Cambiar password del participante
-     * 
-     * @param int $participant_id ID del participante
-     * @param string $password_old Password actual
-     * @param string $password_new Password nuevo
+     * Change participant password.
+     *
+     * @param int    $participant_id ID del participante.
+     * @param string $password_old Password actual.
+     * @param string $password_new Password nuevo.
      * @return array { success: bool, error: string|null }
+     * @since 1.4.0
+     * @access public
      */
     public static function change_password($participant_id, $password_old, $password_new) {
         global $wpdb;
@@ -278,13 +296,15 @@ class EIPSI_Participant_Service {
     }
     
     /**
-     * Listar participantes con paginación y filtros
-     * 
-     * @param int $survey_id ID del survey
-     * @param int $page Página (default 1)
-     * @param int $per_page Registros por página (default 50)
-     * @param array $filters Filtros: status, search
+     * List participants with pagination and filters.
+     *
+     * @param int   $survey_id ID del survey.
+     * @param int   $page Página (default 1).
+     * @param int   $per_page Registros por página (default 50).
+     * @param array $filters Filtros: status, search.
      * @return array { total, participants, page, per_page, pages }
+     * @since 1.4.0
+     * @access public
      */
     public static function list_participants($survey_id, $page = 1, $per_page = 50, $filters = array()) {
         global $wpdb;

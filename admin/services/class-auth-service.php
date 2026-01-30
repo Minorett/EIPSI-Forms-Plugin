@@ -1,11 +1,15 @@
 <?php
 /**
- * EIPSI Auth Service
- * 
- * Maneja autenticación y sesiones del plugin para participantes.
- * Usa cookies propias del plugin, independientes de las sesiones de WordPress.
+ * EIPSI_Auth_Service
+ *
+ * Maneja autenticación sin login vía magic links y sesiones propias:
+ * - Token generation + validation
+ * - Session creation
+ * - Rate limiting
  *
  * @package EIPSI_Forms
+ * @subpackage Services
+ * @version 1.4.2
  * @since 1.4.0
  */
 
@@ -16,14 +20,16 @@ if (!defined('ABSPATH')) {
 class EIPSI_Auth_Service {
     
     /**
-     * Autenticar participante (login)
-     * 
+     * Authenticate participant (login).
+     *
      * Valida credenciales y crea sesión si son correctas.
-     * 
-     * @param int $survey_id ID del survey
-     * @param string $email Email del participante
-     * @param string $password Password en texto plano
+     *
+     * @param int    $survey_id ID del survey.
+     * @param string $email Email del participante.
+     * @param string $password Password en texto plano.
      * @return array { success: bool, participant_id: int|null, error: string|null }
+     * @since 1.4.0
+     * @access public
      */
     public static function authenticate($survey_id, $email, $password) {
         // Sanitizar email
@@ -71,16 +77,18 @@ class EIPSI_Auth_Service {
     }
     
     /**
-     * Crear sesión firmada (cookie propia del plugin)
-     * 
+     * Create session token and cookie.
+     *
      * La sesión se almacena en:
      * 1. Cookie HTTP-only: EIPSI_SESSION_COOKIE_NAME
      * 2. Tabla wp_survey_sessions (para invalidación)
-     * 
-     * @param int $participant_id ID del participante
-     * @param int $survey_id ID del survey
-     * @param int $ttl_hours Tiempo de vida en horas (default 168 = 7 días)
+     *
+     * @param int $participant_id ID del participante.
+     * @param int $survey_id ID del survey.
+     * @param int $ttl_hours Tiempo de vida en horas (default 168 = 7 días).
      * @return array { success: bool, token: string|null, error: string|null }
+     * @since 1.4.0
+     * @access public
      */
     public static function create_session($participant_id, $survey_id, $ttl_hours = 168) {
         global $wpdb;
@@ -176,11 +184,13 @@ class EIPSI_Auth_Service {
     }
     
     /**
-     * Obtener participante actual desde sesión
-     * 
+     * Get current participant from session.
+     *
      * Lee la cookie del plugin y valida contra la tabla wp_survey_sessions.
-     * 
-     * @return int|null (participant_id)
+     *
+     * @return int|null participant_id o null si no hay sesión.
+     * @since 1.4.0
+     * @access public
      */
     public static function get_current_participant() {
         global $wpdb;
@@ -209,9 +219,11 @@ class EIPSI_Auth_Service {
     }
     
     /**
-     * Obtener survey actual desde sesión
-     * 
-     * @return int|null (survey_id)
+     * Get current survey from session.
+     *
+     * @return int|null survey_id o null si no hay sesión.
+     * @since 1.4.0
+     * @access public
      */
     public static function get_current_survey() {
         global $wpdb;
@@ -240,11 +252,13 @@ class EIPSI_Auth_Service {
     }
     
     /**
-     * Destruir sesión (logout)
-     * 
+     * Destroy session (logout).
+     *
      * Elimina la cookie y marca la sesión como inválida en la DB.
-     * 
-     * @return bool
+     *
+     * @return bool True si se ejecutó el logout.
+     * @since 1.4.0
+     * @access public
      */
     public static function destroy_session() {
         global $wpdb;
@@ -289,22 +303,26 @@ class EIPSI_Auth_Service {
     }
     
     /**
-     * Validar sesión
-     * 
+     * Validate active session.
+     *
      * Verifica si hay una sesión válida activa.
-     * 
-     * @return bool
+     *
+     * @return bool True si hay sesión válida.
+     * @since 1.4.0
+     * @access public
      */
     public static function is_authenticated() {
         return self::get_current_participant() !== null;
     }
     
     /**
-     * Limpiar sesiones expiradas
-     * 
+     * Cleanup expired sessions.
+     *
      * DELETE FROM wp_survey_sessions WHERE expires_at < NOW()
-     * 
-     * @return int Número de sesiones eliminadas
+     *
+     * @return int Número de sesiones eliminadas.
+     * @since 1.4.0
+     * @access public
      */
     public static function cleanup_expired_sessions() {
         global $wpdb;
@@ -320,9 +338,11 @@ class EIPSI_Auth_Service {
     }
     
     /**
-     * Obtener información completa de la sesión actual
-     * 
-     * @return object|null Objeto con: participant_id, survey_id, ip_address, user_agent, created_at, expires_at, time_remaining_hours
+     * Get current session info.
+     *
+     * @return object|null Objeto con: participant_id, survey_id, ip_address, user_agent, created_at, expires_at, time_remaining_hours.
+     * @since 1.4.0
+     * @access public
      */
     public static function get_current_session_info() {
         global $wpdb;
