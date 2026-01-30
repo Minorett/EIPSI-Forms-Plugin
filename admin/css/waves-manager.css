@@ -1,11 +1,693 @@
 /**
- * Waves Manager - Anonymization Modal Styles
+ * EIPSI Forms - Waves Manager Styles
+ * Includes Close & Anonymize Study Modal
  * 
  * @package EIPSI_Forms
- * @since 1.4.3
- * 
- * Styles for Close & Anonymize Study modal
- * Implementation: TASK 5.2.3
+ * @since 1.5.0
  */
 
-/* Placeholder - styles will be implemented in TASK 5.2.3 */
+/* ===========================
+   MODAL CONTAINER & OVERLAY
+   =========================== */
+
+.eipsi-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: none;
+}
+
+.eipsi-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+.eipsi-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: eipsiSlideIn 0.3s ease-out;
+}
+
+@keyframes eipsiSlideIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -55%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+/* ===========================
+   MODAL HEADER
+   =========================== */
+
+.eipsi-modal-header {
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.eipsi-modal-header h2 {
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.4;
+}
+
+.eipsi-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 15px;
+}
+
+.eipsi-modal-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #000;
+}
+
+.eipsi-modal-close:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* ===========================
+   MODAL BODY
+   =========================== */
+
+.eipsi-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    color: #333;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.eipsi-modal-step {
+    display: none;
+}
+
+.eipsi-modal-step h3 {
+    margin: 0 0 15px 0;
+    padding: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #d63031;
+    line-height: 1.4;
+}
+
+/* ===========================
+   CHECKBOX LIST
+   =========================== */
+
+.eipsi-checkbox-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.eipsi-checkbox-list label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    padding: 8px 10px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.eipsi-checkbox-list label:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.eipsi-checkbox-list input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: #0073aa;
+}
+
+.eipsi-checkbox-list input[type="checkbox"]:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.eipsi-checkbox-list span {
+    color: #555;
+    line-height: 1.5;
+    flex: 1;
+}
+
+/* ===========================
+   FORM ELEMENTS
+   =========================== */
+
+.eipsi-form-select,
+.eipsi-form-textarea,
+.eipsi-form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+    background-color: #fff;
+    color: #333;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.eipsi-form-select {
+    cursor: pointer;
+}
+
+.eipsi-form-select:hover {
+    border-color: #999;
+}
+
+.eipsi-form-select:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
+}
+
+.eipsi-form-textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.eipsi-form-textarea:hover {
+    border-color: #999;
+}
+
+.eipsi-form-textarea:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
+}
+
+.eipsi-form-input {
+    font-family: monospace;
+    letter-spacing: 0.05em;
+}
+
+.eipsi-form-input:hover {
+    border-color: #999;
+}
+
+.eipsi-form-input:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
+}
+
+.eipsi-form-input::placeholder,
+.eipsi-form-textarea::placeholder {
+    color: #999;
+}
+
+/* Step 2 Label */
+.eipsi-modal-step label {
+    display: block;
+    margin-top: 15px;
+}
+
+.eipsi-modal-step label span {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Step 3 Message */
+#eipsi-step3-message {
+    display: none;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    border-left: 4px solid transparent;
+}
+
+#eipsi-step3-message.error {
+    background: #ffe6e6;
+    color: #d63031;
+    border-left-color: #d63031;
+}
+
+#eipsi-step3-message.success {
+    background: #e6ffe6;
+    color: #27ae60;
+    border-left-color: #27ae60;
+}
+
+/* ===========================
+   SUCCESS STATE
+   =========================== */
+
+#step-success {
+    text-align: center;
+}
+
+#step-success h3 {
+    color: #27ae60;
+    font-size: 20px;
+    margin-top: 10px;
+}
+
+#eipsi-success-message {
+    margin: 15px 0;
+    font-size: 15px;
+    color: #555;
+}
+
+#eipsi-success-details {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f0f9ff;
+    border-left: 4px solid #0073aa;
+    border-radius: 4px;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+#eipsi-success-details strong {
+    color: #0073aa;
+    display: block;
+    margin-top: 8px;
+    margin-bottom: 5px;
+}
+
+#eipsi-success-details strong:first-child {
+    margin-top: 0;
+}
+
+/* ===========================
+   MODAL FOOTER
+   =========================== */
+
+.eipsi-modal-footer {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.eipsi-modal-footer button {
+    min-width: 120px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.eipsi-modal-footer .button-primary {
+    background: #0073aa;
+    color: white;
+    border-color: #0073aa;
+}
+
+.eipsi-modal-footer .button-primary:hover:not(:disabled) {
+    background: #005a87;
+    border-color: #005a87;
+}
+
+.eipsi-modal-footer .button-primary:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.eipsi-modal-footer .button-secondary {
+    background: #f3f3f3;
+    color: #333;
+    border-color: #ddd;
+}
+
+.eipsi-modal-footer .button-secondary:hover:not(:disabled) {
+    background: #e0e0e0;
+    border-color: #999;
+}
+
+.eipsi-modal-footer .button-secondary:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.eipsi-modal-footer button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===========================
+   ANONYMIZE SECTION
+   =========================== */
+
+.eipsi-anonymize-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: #fff8f0;
+    border: 2px solid #ff6b6b;
+    border-radius: 4px;
+}
+
+.eipsi-anonymize-section h3 {
+    color: #d63031;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.eipsi-anonymize-section p {
+    margin: 10px 0;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.eipsi-anonymize-section .button {
+    font-size: 14px;
+    padding: 10px 20px;
+    margin-top: 10px;
+}
+
+.eipsi-anonymize-section .button-secondary {
+    background: #ff6b6b;
+    color: white;
+    border-color: #ff6b6b;
+}
+
+.eipsi-anonymize-section .button-secondary:hover {
+    background: #d63031;
+    border-color: #d63031;
+}
+
+/* ===========================
+   SCROLLBAR STYLING
+   =========================== */
+
+.eipsi-modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.eipsi-modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.eipsi-modal-body::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.eipsi-modal-body::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* ===========================
+   RESPONSIVE DESIGN
+   =========================== */
+
+/* Tablets (600px and down) */
+@media (max-width: 600px) {
+    .eipsi-modal-content {
+        width: 95%;
+        max-width: 95%;
+        max-height: 95vh;
+        border-radius: 8px;
+    }
+    
+    .eipsi-modal-header {
+        padding: 15px;
+    }
+    
+    .eipsi-modal-header h2 {
+        font-size: 16px;
+    }
+    
+    .eipsi-modal-body {
+        padding: 15px;
+        font-size: 13px;
+    }
+    
+    .eipsi-modal-step h3 {
+        font-size: 15px;
+        margin-bottom: 12px;
+    }
+    
+    .eipsi-checkbox-list {
+        gap: 10px;
+    }
+    
+    .eipsi-checkbox-list label {
+        padding: 6px 8px;
+    }
+    
+    .eipsi-form-select,
+    .eipsi-form-textarea,
+    .eipsi-form-input {
+        font-size: 13px;
+        padding: 9px 10px;
+    }
+    
+    .eipsi-modal-footer {
+        padding: 12px 15px;
+        gap: 8px;
+        flex-direction: column;
+    }
+    
+    .eipsi-modal-footer button {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .eipsi-anonymize-section {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 4px;
+    }
+    
+    .eipsi-anonymize-section h3 {
+        font-size: 15px;
+    }
+}
+
+/* Small phones (380px and down) */
+@media (max-width: 380px) {
+    .eipsi-modal-content {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0;
+        max-height: 100vh;
+    }
+    
+    .eipsi-modal-header h2 {
+        font-size: 14px;
+    }
+    
+    .eipsi-modal-body {
+        font-size: 12px;
+    }
+    
+    .eipsi-checkbox-list label {
+        gap: 8px;
+    }
+    
+    .eipsi-form-select,
+    .eipsi-form-textarea,
+    .eipsi-form-input {
+        font-size: 12px;
+    }
+}
+
+/* ===========================
+   DARK MODE (WordPress 5.9+)
+   =========================== */
+
+@media (prefers-color-scheme: dark) {
+    .eipsi-modal-content {
+        background: #2c2c2c;
+        color: #e0e0e0;
+    }
+    
+    .eipsi-modal-header {
+        background: #1e1e1e;
+        border-bottom-color: #444;
+    }
+    
+    .eipsi-modal-header h2 {
+        color: #e0e0e0;
+    }
+    
+    .eipsi-modal-close {
+        color: #999;
+    }
+    
+    .eipsi-modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #e0e0e0;
+    }
+    
+    .eipsi-modal-body {
+        color: #e0e0e0;
+    }
+    
+    .eipsi-modal-step h3 {
+        color: #ff9999;
+    }
+    
+    .eipsi-checkbox-list label:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .eipsi-checkbox-list span {
+        color: #ccc;
+    }
+    
+    .eipsi-form-select,
+    .eipsi-form-textarea,
+    .eipsi-form-input {
+        background-color: #1e1e1e;
+        color: #e0e0e0;
+        border-color: #444;
+    }
+    
+    .eipsi-form-select:hover,
+    .eipsi-form-textarea:hover,
+    .eipsi-form-input:hover {
+        border-color: #666;
+    }
+    
+    .eipsi-form-select:focus,
+    .eipsi-form-textarea:focus,
+    .eipsi-form-input:focus {
+        border-color: #0073aa;
+        box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.3);
+    }
+    
+    .eipsi-form-input::placeholder,
+    .eipsi-form-textarea::placeholder {
+        color: #666;
+    }
+    
+    .eipsi-modal-footer {
+        background: #1e1e1e;
+        border-top-color: #444;
+    }
+    
+    #eipsi-success-message {
+        color: #ccc;
+    }
+    
+    #eipsi-success-details {
+        background: #1e1e1e;
+        border-left-color: #0073aa;
+        color: #ccc;
+    }
+    
+    #eipsi-success-details strong {
+        color: #66b3ff;
+    }
+}
+
+/* ===========================
+   ACCESSIBILITY
+   =========================== */
+
+/* High contrast mode */
+@media (prefers-contrast: more) {
+    .eipsi-modal-content {
+        border: 2px solid currentColor;
+    }
+    
+    .eipsi-checkbox-list input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .eipsi-form-select,
+    .eipsi-form-textarea,
+    .eipsi-form-input {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .eipsi-modal-content {
+        animation: none;
+    }
+    
+    .eipsi-modal-close,
+    .eipsi-checkbox-list label,
+    .eipsi-form-select,
+    .eipsi-form-textarea,
+    .eipsi-form-input,
+    .eipsi-modal-footer button {
+        transition: none;
+    }
+}
+
+/* Focus visible */
+.eipsi-modal:focus-visible,
+.eipsi-modal-close:focus-visible,
+.eipsi-form-select:focus-visible,
+.eipsi-form-textarea:focus-visible,
+.eipsi-form-input:focus-visible,
+.eipsi-modal-footer button:focus-visible {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
