@@ -1,9 +1,9 @@
 <?php
 /**
  * EIPSI Forms - Cron Handlers for Longitudinal Reminders
- * 
+ *
  * Gestiona envío automático de recordatorios para tomas pendientes.
- * 
+ *
  * @package EIPSI_Forms
  * @since 1.3.0
  */
@@ -12,10 +12,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Registrar hooks de cron
+// === LEGACY CRON HOOKS (v1.3.0) ===
 add_action('eipsi_send_take_reminders_daily', 'eipsi_process_daily_reminders');
 add_action('eipsi_send_take_reminders_weekly', 'eipsi_process_weekly_reminders');
 add_action('eipsi_send_manual_reminder', 'eipsi_send_manual_reminder_handler', 10, 2);
+
+// === TASK 4.2 CRON HOOKS (v1.4.2) ===
+add_action('eipsi_send_wave_reminders_hourly', 'eipsi_run_send_wave_reminders');
+add_action('eipsi_send_dropout_recovery_hourly', 'eipsi_run_send_dropout_recovery');
 
 /**
  * Procesa recordatorios diarios
@@ -338,15 +342,372 @@ function eipsi_send_manual_reminder_handler($email, $reminder_link) {
     
     $headers = array('Content-Type: text/html; charset=UTF-8');
     $subject = __('Recordatorio: Toma pendiente', 'eipsi-forms');
-    
+
     $body = sprintf(
         '<p>%s</p><p><a href="%s">%s</a></p>',
         __('Hola, tu toma está lista para ser completada.', 'eipsi-forms'),
         esc_url($reminder_link),
         __('Responder ahora', 'eipsi-forms')
     );
-    
+
     wp_mail($email, $subject, $body, $headers);
-    
+
     error_log("[EIPSI Forms] Manual reminder sent to {$email}");
+}
+
+// =================================================================
+// TASK 4.2 - Longitudinal Reminders & Recovery (v1.4.2)
+// =================================================================
+
+/**
+ * Ejecuta el proceso de envío de recordatorios de waves
+ *
+ * @since 1.4.2
+ */
+function eipsi_run_send_wave_reminders() {
+    error_log('[EIPSI Cron] Wave reminders started at ' . current_time('mysql'));
+
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    if (!class_exists('EIPSI_Wave_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-wave-service.php';
+    }
+
+    global $wpdb;
+
+    // Obtener estudios publicados (surveys)
+    $surveys = get_posts(array(
+        'post_type' => 'eipsi_form',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+    ));
+
+    if (empty($surveys)) {
+        error_log('[EIPSI Cron] No surveys found for wave reminders');
+        return;
+    }
+
+    $total_sent = 0;
+    $total_failed = 0;
+
+    foreach ($surveys as $survey_id) {
+        // Obtener configuración de recordatorios para este survey
+        $reminders_enabled = get_post_meta($survey_id, '_eipsi_reminders_enabled', true);
+        $reminder_days_before = get_post_meta($survey_id, '_eipsi_reminder_days_before', true);
+        $max_emails = get_post_meta($survey_id, '_eipsi_max_reminder_emails_per_run', true);
+
+        // Validar configuración
+        if (!$reminders_enabled) {
+            continue;
+        }
+
+        $reminder_days_before = intval($reminder_days_before) ?: 3;
+        $max_emails = intval($max_emails) ?: 100;
+
+        // Obtener waves activas de este survey
+        $waves = EIPSI_Wave_Service::get_study_waves($survey_id, 'active');
+
+        if (empty($waves)) {
+            continue;
+        }
+
+        $survey_sent = 0;
+        $survey_failed = 0;
+
+        foreach ($waves as $wave) {
+            // Verificar si la wave vence en los próximos X días
+            $due_date = isset($wave['due_date']) ? $wave['due_date'] : null;
+            if (!$due_date) {
+                continue;
+            }
+
+            $due_timestamp = strtotime($due_date);
+            $now = current_time('timestamp');
+            $days_until_due = ceil(($due_timestamp - $now) / DAY_IN_SECONDS);
+
+            // Solo enviar si está dentro del rango de recordatorios
+            if ($days_until_due <= $reminder_days_before && $days_until_due >= 0) {
+                // Obtener participantes pendientes para esta wave
+                $pending_participants = $wpdb->get_col($wpdb->prepare(
+                    "SELECT p.id
+                    FROM {$wpdb->prefix}survey_participants p
+                    INNER JOIN {$wpdb->prefix}survey_assignments a ON p.id = a.participant_id
+                    WHERE p.survey_id = %d
+                    AND a.wave_id = %d
+                    AND a.status = 'pending'
+                    AND p.is_active = 1
+                    LIMIT %d",
+                    $survey_id,
+                    $wave['id'],
+                    $max_emails - $survey_sent
+                ));
+
+                foreach ($pending_participants as $participant_id) {
+                    // Verificar rate limiting (transient 24h)
+                    $transient_key = "eipsi_reminder_sent_{$participant_id}_{$wave['id']}";
+                    if (get_transient($transient_key)) {
+                        continue; // Ya se envió en las últimas 24h
+                    }
+
+                    // Verificar si ya se envió un recordatorio hoy (log check)
+                    $already_sent_today = $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(*)
+                        FROM {$wpdb->prefix}survey_email_log
+                        WHERE survey_id = %d
+                        AND participant_id = %d
+                        AND email_type = 'reminder'
+                        AND sent_at >= CURDATE()",
+                        $survey_id,
+                        $participant_id
+                    ));
+
+                    if ($already_sent_today > 0) {
+                        continue;
+                    }
+
+                    // Verificar email válido
+                    $participant = $wpdb->get_row($wpdb->prepare(
+                        "SELECT email, first_name FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+                        $participant_id
+                    ));
+
+                    if (!$participant || !is_email($participant->email)) {
+                        continue;
+                    }
+
+                    // Enviar recordatorio
+                    $sent = EIPSI_Email_Service::send_wave_reminder_email($survey_id, $participant_id, $wave);
+
+                    if ($sent) {
+                        // Set transient para rate limiting (24h)
+                        set_transient($transient_key, true, DAY_IN_SECONDS);
+                        $survey_sent++;
+                        $total_sent++;
+                        error_log("[EIPSI Cron] Wave reminder sent to participant {$participant_id} for wave {$wave['id']}");
+                    } else {
+                        $survey_failed++;
+                        $total_failed++;
+                        error_log("[EIPSI Cron] Failed to send wave reminder to participant {$participant_id}");
+                    }
+
+                    // Respetar max emails por survey
+                    if ($survey_sent >= $max_emails) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Enviar alerta al investigador si está habilitada
+        $alert_enabled = get_post_meta($survey_id, '_eipsi_investigator_alert_enabled', true);
+        if ($alert_enabled && $survey_sent > 0) {
+            $investigator_email = get_post_meta($survey_id, '_eipsi_investigator_alert_email', true);
+            if (is_email($investigator_email)) {
+                eipsi_send_investigator_alert($survey_id, array(
+                    'type' => 'wave_reminders',
+                    'sent' => $survey_sent,
+                    'failed' => $survey_failed,
+                ));
+            }
+        }
+    }
+
+    error_log("[EIPSI Cron] Wave reminders completed. Sent: {$total_sent}, Failed: {$total_failed}");
+}
+
+/**
+ * Ejecuta el proceso de recuperación de dropouts
+ *
+ * @since 1.4.2
+ */
+function eipsi_run_send_dropout_recovery() {
+    error_log('[EIPSI Cron] Dropout recovery started at ' . current_time('mysql'));
+
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    if (!class_exists('EIPSI_Wave_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-wave-service.php';
+    }
+
+    global $wpdb;
+
+    // Obtener estudios publicados
+    $surveys = get_posts(array(
+        'post_type' => 'eipsi_form',
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+    ));
+
+    if (empty($surveys)) {
+        error_log('[EIPSI Cron] No surveys found for dropout recovery');
+        return;
+    }
+
+    $total_sent = 0;
+    $total_failed = 0;
+
+    foreach ($surveys as $survey_id) {
+        // Obtener configuración de recovery
+        $recovery_enabled = get_post_meta($survey_id, '_eipsi_dropout_recovery_enabled', true);
+        $recovery_days = get_post_meta($survey_id, '_eipsi_dropout_recovery_days_overdue', true);
+        $max_emails = get_post_meta($survey_id, '_eipsi_max_recovery_emails_per_run', true);
+
+        if (!$recovery_enabled) {
+            continue;
+        }
+
+        $recovery_days = intval($recovery_days) ?: 7;
+        $max_emails = intval($max_emails) ?: 50;
+
+        // Obtener waves activas
+        $waves = EIPSI_Wave_Service::get_study_waves($survey_id, 'active');
+
+        if (empty($waves)) {
+            continue;
+        }
+
+        $survey_sent = 0;
+        $survey_failed = 0;
+
+        foreach ($waves as $wave) {
+            // Verificar si la wave ya venció hace X días
+            $due_date = isset($wave['due_date']) ? $wave['due_date'] : null;
+            if (!$due_date) {
+                continue;
+            }
+
+            $due_timestamp = strtotime($due_date);
+            $now = current_time('timestamp');
+            $days_overdue = floor(($now - $due_timestamp) / DAY_IN_SECONDS);
+
+            // Solo procesar waves que están overdue por recovery_days
+            if ($days_overdue >= $recovery_days) {
+                // Obtener participantes que NO han completado
+                $pending_participants = $wpdb->get_col($wpdb->prepare(
+                    "SELECT p.id
+                    FROM {$wpdb->prefix}survey_participants p
+                    INNER JOIN {$wpdb->prefix}survey_assignments a ON p.id = a.participant_id
+                    WHERE p.survey_id = %d
+                    AND a.wave_id = %d
+                    AND a.status != 'submitted'
+                    AND p.is_active = 1
+                    LIMIT %d",
+                    $survey_id,
+                    $wave['id'],
+                    $max_emails - $survey_sent
+                ));
+
+                foreach ($pending_participants as $participant_id) {
+                    // Verificar si ya se envió recovery email
+                    $already_sent = $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(*)
+                        FROM {$wpdb->prefix}survey_email_log
+                        WHERE survey_id = %d
+                        AND participant_id = %d
+                        AND email_type = 'recovery'",
+                        $survey_id,
+                        $participant_id
+                    ));
+
+                    if ($already_sent > 0) {
+                        continue; // Ya se envió recovery email
+                    }
+
+                    // Verificar email válido
+                    $participant = $wpdb->get_row($wpdb->prepare(
+                        "SELECT email, first_name FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+                        $participant_id
+                    ));
+
+                    if (!$participant || !is_email($participant->email)) {
+                        continue;
+                    }
+
+                    // Enviar email de recovery
+                    $sent = EIPSI_Email_Service::send_dropout_recovery_email($survey_id, $participant_id, $wave);
+
+                    if ($sent) {
+                        $survey_sent++;
+                        $total_sent++;
+                        error_log("[EIPSI Cron] Dropout recovery sent to participant {$participant_id} for wave {$wave['id']}");
+                    } else {
+                        $survey_failed++;
+                        $total_failed++;
+                        error_log("[EIPSI Cron] Failed to send dropout recovery to participant {$participant_id}");
+                    }
+
+                    // Respetar max emails por survey
+                    if ($survey_sent >= $max_emails) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Enviar alerta al investigador
+        $alert_enabled = get_post_meta($survey_id, '_eipsi_investigator_alert_enabled', true);
+        if ($alert_enabled && $survey_sent > 0) {
+            $investigator_email = get_post_meta($survey_id, '_eipsi_investigator_alert_email', true);
+            if (is_email($investigator_email)) {
+                eipsi_send_investigator_alert($survey_id, array(
+                    'type' => 'dropout_recovery',
+                    'sent' => $survey_sent,
+                    'failed' => $survey_failed,
+                ));
+            }
+        }
+    }
+
+    error_log("[EIPSI Cron] Dropout recovery completed. Sent: {$total_sent}, Failed: {$total_failed}");
+}
+
+/**
+ * Envía alerta al investigador con resumen de actividad
+ *
+ * @param int $survey_id
+ * @param array $stats
+ * @since 1.4.2
+ */
+function eipsi_send_investigator_alert($survey_id, $stats) {
+    $investigator_email = get_post_meta($survey_id, '_eipsi_investigator_alert_email', true);
+
+    if (!is_email($investigator_email)) {
+        return;
+    }
+
+    $survey_name = get_the_title($survey_id);
+    $subject = sprintf('[EIPSI Forms] Alerta de actividad - %s', $survey_name);
+
+    ob_start();
+    ?>
+    <p>Investigador/a,</p>
+    <p>Se ha completado una ejecución de cron para el estudio <strong><?php echo esc_html($survey_name); ?></strong>.</p>
+
+    <?php if ($stats['type'] === 'wave_reminders'): ?>
+        <h3>Recordatorios de Waves</h3>
+        <p>Recordatorios enviados: <strong><?php echo intval($stats['sent']); ?></strong></p>
+        <p>Fallos: <strong><?php echo intval($stats['failed']); ?></strong></p>
+    <?php elseif ($stats['type'] === 'dropout_recovery'): ?>
+        <h3>Recuperación de Dropouts</h3>
+        <p>Correos de recuperación enviados: <strong><?php echo intval($stats['sent']); ?></strong></p>
+        <p>Fallos: <strong><?php echo intval($stats['failed']); ?></strong></p>
+    <?php endif; ?>
+
+    <hr>
+    <p><small>Hora de ejecución: <?php echo current_time('Y-m-d H:i:s'); ?></small></p>
+    <p><small>Este mensaje fue generado automáticamente por EIPSI Forms. No respondas a este email.</small></p>
+    <?php
+    $message = ob_get_clean();
+
+    $headers = array('Content-Type: text/html; charset=UTF-8');
+
+    wp_mail($investigator_email, $subject, $message, $headers);
+
+    error_log("[EIPSI Cron] Investigator alert sent to {$investigator_email} for survey {$survey_id}");
 }

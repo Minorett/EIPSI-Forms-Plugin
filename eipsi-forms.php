@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.4.0
+ * Version: 1.4.2
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization, longitudinal, studies
- * Stable tag: 1.4.0
+ * Stable tag: 1.4.2
  * 
  * @package EIPSI_Forms
  */
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('EIPSI_FORMS_VERSION', '1.4.0');
+define('EIPSI_FORMS_VERSION', '1.4.2');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -339,21 +339,32 @@ add_action('init', function() {
 
 function eipsi_forms_activate() {
     global $wpdb;
-    
+
     // Crear página de aleatorización
     eipsi_create_randomization_page();
-    
+
     $charset_collate = $wpdb->get_charset_collate();
-    
-    // === Cron Reminders Scheduling (Fase 2) ===
+
+    // === Cron Reminders Scheduling (Fase 2 - Legacy) ===
     // Schedule daily reminders
     if (!wp_next_scheduled('eipsi_send_take_reminders_daily')) {
         wp_schedule_event(time(), 'daily', 'eipsi_send_take_reminders_daily');
     }
-    
+
     // Schedule weekly reminders
     if (!wp_next_scheduled('eipsi_send_take_reminders_weekly')) {
         wp_schedule_event(time(), 'weekly', 'eipsi_send_take_reminders_weekly');
+    }
+
+    // === Cron Reminders Scheduling (Task 4.2 - Longitudinal) ===
+    // Schedule hourly wave reminders
+    if (!wp_next_scheduled('eipsi_send_wave_reminders_hourly')) {
+        wp_schedule_event(time(), 'hourly', 'eipsi_send_wave_reminders_hourly');
+    }
+
+    // Schedule hourly dropout recovery
+    if (!wp_next_scheduled('eipsi_send_dropout_recovery_hourly')) {
+        wp_schedule_event(time(), 'hourly', 'eipsi_send_dropout_recovery_hourly');
     }
     
     // Create form results table
@@ -469,8 +480,13 @@ add_filter('cron_schedules', function($schedules) {
  * Cleanup scheduled cron events on deactivation
  */
 function eipsi_forms_deactivate() {
+    // Legacy cron jobs
     wp_clear_scheduled_hook('eipsi_send_take_reminders_daily');
     wp_clear_scheduled_hook('eipsi_send_take_reminders_weekly');
+
+    // Task 4.2 cron jobs (longitudinal)
+    wp_clear_scheduled_hook('eipsi_send_wave_reminders_hourly');
+    wp_clear_scheduled_hook('eipsi_send_dropout_recovery_hourly');
 }
 
 // Handle unsubscribe link from emails (Fase 2)
