@@ -9,6 +9,15 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Enqueue styles y scripts para modal de anonimización
+wp_enqueue_style('eipsi-waves-manager', EIPSI_PLUGIN_URL . 'admin/css/waves-manager.css', array(), EIPSI_VERSION);
+wp_enqueue_script('eipsi-waves-manager', EIPSI_PLUGIN_URL . 'admin/js/waves-manager.js', array('jquery'), EIPSI_VERSION, true);
+
+// Pasar datos al JS
+wp_localize_script('eipsi-waves-manager', 'eipsiWavesManagerData', array(
+    'anonymizeNonce' => wp_create_nonce('eipsi_anonymize_survey_nonce'),
+));
+
 global $wpdb;
 
 // 1. Fetch all studies
@@ -249,6 +258,146 @@ $available_forms = get_posts(array(
         <div class="modal-footer">
             <button type="button" class="button button-primary" id="confirm-assign-btn"><?php esc_html_e('Asignar Seleccionados', 'eipsi-forms'); ?></button>
             <button type="button" class="button eipsi-close-modal-btn"><?php esc_html_e('Cerrar', 'eipsi-forms'); ?></button>
+        </div>
+    </div>
+</div>
+
+<?php
+// Mostrar botón de anonimización solo si se puede anonimizar
+if (class_exists('EIPSI_Anonymize_Service') && $current_study_id) {
+    $can_anon = EIPSI_Anonymize_Service::can_anonymize_survey($current_study_id);
+    if ($can_anon['can_anonymize']) {
+        ?>
+        <!-- Sección: Cerrar & Anonimizar Estudio -->
+        <div class="eipsi-anonymize-section" style="margin-top: 30px; padding: 20px; background: #fff8f0; border: 2px solid #ff6b6b; border-radius: 4px;">
+            <h3 style="color: #d63031; margin-top: 0;">⚠️ Cerrar & Anonimizar Estudio</h3>
+            <p style="color: #555;">Esta acción es <strong>irreversible</strong>. Una vez anonimizado, los datos PII (emails, contraseñas, nombres) serán eliminados permanentemente.</p>
+            <button 
+                type="button" 
+                class="button button-secondary eipsi-btn-anonymize" 
+                id="eipsi-open-anonymize-modal"
+                data-survey-id="<?php echo esc_attr($current_study_id); ?>"
+            >
+                🔐 Close & Anonymize Study
+            </button>
+        </div>
+        <?php
+    }
+}
+?>
+
+<!-- Modal: Close & Anonymize Study -->
+<div id="eipsi-anonymize-modal" class="eipsi-modal" style="display: none;">
+    <div class="eipsi-modal-overlay"></div>
+    
+    <div class="eipsi-modal-content">
+        <!-- Header -->
+        <div class="eipsi-modal-header">
+            <h2 id="eipsi-modal-title">Cerrar & Anonimizar Estudio - Paso 1/3</h2>
+            <button type="button" class="eipsi-modal-close" id="eipsi-close-modal">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        
+        <!-- Body with Steps -->
+        <div class="eipsi-modal-body">
+            
+            <!-- PASO 1: Confirmar Intención -->
+            <div class="eipsi-modal-step" id="step-1" style="display: block;">
+                <h3>⚠️ Entiendo que esta acción es IRREVERSIBLE</h3>
+                
+                <div class="eipsi-checkbox-list">
+                    <label>
+                        <input type="checkbox" id="eipsi-confirm-1" />
+                        <span>Los emails de todos los participantes serán eliminados</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="eipsi-confirm-2" />
+                        <span>Las contraseñas de todos los participantes serán eliminadas</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="eipsi-confirm-3" />
+                        <span>Los nombres (first_name, last_name) serán eliminados</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="eipsi-confirm-4" />
+                        <span>Los participantes NO podrán volver a acceder al estudio</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="eipsi-confirm-5" />
+                        <span>Los datos de respuestas se mantendrán ANÓNIMOS para investigación</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="eipsi-confirm-6" />
+                        <span>Esta acción será registrada en audit log para auditoría</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- PASO 2: Razón de Cierre -->
+            <div class="eipsi-modal-step" id="step-2" style="display: none;">
+                <h3>¿Por qué estás cerrando el estudio?</h3>
+                
+                <select id="eipsi-close-reason" class="eipsi-form-select">
+                    <option value="">-- Seleccionar razón --</option>
+                    <option value="completed">Estudio completado exitosamente</option>
+                    <option value="participant_decision">Decisión de participantes</option>
+                    <option value="technical_issue">Problema técnico</option>
+                    <option value="regulatory">Razones regulatorias</option>
+                    <option value="other">Otra (especificar abajo)</option>
+                </select>
+                
+                <label style="margin-top: 15px;">
+                    <span style="display: block; margin-bottom: 5px;">Notas (opcional):</span>
+                    <textarea 
+                        id="eipsi-close-notes" 
+                        class="eipsi-form-textarea"
+                        rows="4"
+                        placeholder="Información adicional sobre el cierre..."
+                    ></textarea>
+                </label>
+            </div>
+            
+            <!-- PASO 3: Confirmación Final -->
+            <div class="eipsi-modal-step" id="step-3" style="display: none;">
+                <h3>✋ Confirmación Final</h3>
+                <p style="font-weight: bold; color: #d63031;">
+                    Escribe exactamente "<strong>ANONIMIZAR</strong>" para confirmar:
+                </p>
+                
+                <input 
+                    type="text" 
+                    id="eipsi-confirm-text" 
+                    class="eipsi-form-input"
+                    placeholder="Escribe ANONIMIZAR..."
+                    autocomplete="off"
+                />
+                
+                <div id="eipsi-step3-message" style="display: none; margin-top: 10px; padding: 10px; border-radius: 4px;"></div>
+            </div>
+            
+            <!-- Success Message -->
+            <div class="eipsi-modal-step" id="step-success" style="display: none;">
+                <div style="text-align: center;">
+                    <h3 style="color: #27ae60;">✅ Proceso Completado</h3>
+                    <p id="eipsi-success-message"></p>
+                    <div id="eipsi-success-details" style="margin-top: 15px; text-align: left; background: #f0f9ff; padding: 15px; border-radius: 4px;"></div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Footer with Buttons -->
+        <div class="eipsi-modal-footer">
+            <button type="button" class="button button-secondary" id="eipsi-modal-prev">
+                ← Anterior
+            </button>
+            <button type="button" class="button button-primary" id="eipsi-modal-next">
+                Siguiente →
+            </button>
+            <button type="button" class="button button-secondary" id="eipsi-modal-cancel">
+                Cancelar
+            </button>
         </div>
     </div>
 </div>
