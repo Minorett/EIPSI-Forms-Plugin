@@ -3105,3 +3105,70 @@ function eipsi_ajax_save_cron_reminders_config() {
 
     wp_send_json_success(__('Configuración guardada correctamente', 'eipsi-forms'));
 }
+
+/**
+ * AJAX Handler: Anonimizar survey
+ * 
+ * POST action=eipsi_anonymize_survey
+ * Parámetros:
+ *   - survey_id: ID del survey
+ *   - nonce: wp_nonce_field value
+ *   - close_reason: razón de cierre
+ *   - close_notes: notas (opcional)
+ */
+add_action('wp_ajax_eipsi_anonymize_survey', function() {
+    // 1. Validar nonce
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'eipsi_anonymize_survey_nonce')) {
+        wp_send_json_error(array('message' => 'Nonce inválido'), 403);
+    }
+    
+    // 2. Validar permisos
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'No tienes permisos para anonimizar'), 403);
+    }
+    
+    // 3. Obtener survey_id
+    $survey_id = intval($_POST['survey_id'] ?? 0);
+    if ($survey_id <= 0) {
+        wp_send_json_error(array('message' => 'Survey ID inválido'));
+    }
+    
+    // 4. Verificar que survey existe
+    $survey = get_post($survey_id);
+    if (!$survey || $survey->post_type !== 'eipsi_form') {
+        wp_send_json_error(array('message' => 'Survey no encontrado'));
+    }
+    
+    // 5. Verificar que se puede anonimizar
+    if (!class_exists('EIPSI_Anonymize_Service')) {
+        wp_send_json_error(array('message' => 'EIPSI_Anonymize_Service no disponible'));
+    }
+    
+    $can_anon = EIPSI_Anonymize_Service::can_anonymize_survey($survey_id);
+    if (!$can_anon['can_anonymize']) {
+        wp_send_json_error(array('message' => $can_anon['reason']));
+    }
+    
+    // 6. Construir audit_reason
+    $close_reason = sanitize_text_field($_POST['close_reason'] ?? '');
+    $close_notes = sanitize_textarea_field($_POST['close_notes'] ?? '');
+    
+    $audit_reason = $close_reason;
+    if ($close_notes) {
+        $audit_reason .= ' | ' . $close_notes;
+    }
+    
+    // 7. Ejecutar anonimización
+    $result = EIPSI_Anonymize_Service::anonymize_survey($survey_id, $audit_reason);
+    
+    if (!$result['success']) {
+        wp_send_json_error(array('message' => $result['error'] ?? 'Error desconocido al anonimizar'));
+    }
+    
+    // 8. Retornar success
+    wp_send_json_success(array(
+        'message' => 'Estudio anonimizado exitosamente',
+        'anonymized_count' => intval($result['anonymized_count']),
+        'survey_title' => sanitize_text_field($survey->post_title),
+    ));
+});
