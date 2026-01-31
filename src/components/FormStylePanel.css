@@ -261,10 +261,10 @@
     align-items: center;
     gap: 0.25rem;
     font-size: 0.85em;
-    color: #198754;
+    color: #008080;
     margin-top: 0.5rem;
 }
 
 .eipsi-contrast-success .dashicon {
-    color: #198754;
+    color: #008080;
 }

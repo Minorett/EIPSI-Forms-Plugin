@@ -174,7 +174,7 @@
 
 #eipsi-message-container.success {
     background: var(--eipsi-color-background-success, #e8f5e9);
-    border: 1px solid var(--eipsi-color-success, #198754);
+    border: 1px solid var(--eipsi-color-success, #008080);
     color: var(--eipsi-color-success-text, #1b5e20);
 }
 
@@ -229,7 +229,7 @@
 }
 
 .status-icon.status-connected {
-    background-color: var(--eipsi-color-success, #198754);
+    background-color: var(--eipsi-color-success, #008080);
     box-shadow: 0 0 8px rgba(25, 135, 84, 0.5);
 }
 
@@ -483,7 +483,7 @@
 
 .eipsi-table-status-success {
     background: var(--eipsi-color-background-success, #e8f5e9);
-    border: 1px solid var(--eipsi-color-success, #198754);
+    border: 1px solid var(--eipsi-color-success, #008080);
     color: var(--eipsi-color-success-text, #1b5e20);
 }
 
@@ -529,7 +529,7 @@
 }
 
 .eipsi-table-exists {
-    color: var(--eipsi-color-success, #198754);
+    color: var(--eipsi-color-success, #008080);
 }
 
 .eipsi-table-missing {

@@ -129,13 +129,13 @@
     gap: 8px;
     padding: 8px 12px;
     background: #fff5f5;
-    border: 1px solid #ff6b6b;
+    border: 1px solid #800000;
     border-radius: 6px;
     margin-top: 8px;
 }
 
 .conditional-logic-validation-error span {
-    color: #ff6b6b;
+    color: #800000;
     font-size: 12px;
     font-weight: 600;
 }
@@ -179,7 +179,7 @@
 }
 
 .conditional-logic-panel .components-button.is-destructive {
-    color: #ff6b6b;
+    color: #800000;
     border-color: transparent;
     background: transparent;
     border-radius: 6px;
@@ -189,13 +189,13 @@
 }
 
 .conditional-logic-panel .components-button.is-destructive:hover:not(:disabled) {
-    color: #b32d2e;
+    color: #800000;
     background: #fff5f5;
-    border-color: #ff6b6b;
+    border-color: #800000;
 }
 
 .conditional-logic-panel .components-button.is-destructive:focus {
-    outline: 2px solid #ff6b6b;
+    outline: 2px solid #800000;
     outline-offset: 2px;
 }
 

@@ -15,11 +15,11 @@
     
     --eipsi-primary-color: #2271b1;
     --eipsi-primary-hover: #135e96;
-    --eipsi-success-color: #00a32a;
+    --eipsi-success-color: #008080;
     --eipsi-success-bg: #f0f8f0;
     --eipsi-warning-color: #d98500;
     --eipsi-warning-bg: #fff8e0;
-    --eipsi-danger-color: #d63638;
+    --eipsi-danger-color: #800000;
     --eipsi-danger-bg: #fee;
     
     --eipsi-status-completed: var(--eipsi-success-color);
