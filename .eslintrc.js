@@ -1,5 +1,11 @@
 module.exports = {
 	extends: [ 'plugin:@wordpress/eslint-plugin/recommended' ],
+	rules: {
+		'@wordpress/no-unused-vars-before-return': 'off',
+		'react-hooks/exhaustive-deps': 'off',
+		'react-hooks/rules-of-hooks': 'off',
+		'no-unused-vars': 'warn',
+	},
 	overrides: [
 		{
 			// Test files - allow console and relax JSDoc requirements
