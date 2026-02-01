@@ -11,8 +11,8 @@
  */
 export const DEFAULT_STYLE_CONFIG = {
 	colors: {
-		primary: '#005a87',
-		primaryHover: '#003d5b',
+		primary: '#3B6CAA',
+		primaryHover: '#1E3A5F',
 		secondary: '#e3f2fd',
 		background: '#ffffff',
 		backgroundSubtle: '#f8f9fa',
@@ -21,12 +21,12 @@ export const DEFAULT_STYLE_CONFIG = {
 		inputBg: '#ffffff',
 		inputText: '#2c3e50',
 		inputBorder: '#64748b',
-		inputBorderFocus: '#005a87',
+		inputBorderFocus: '#3B6CAA',
 		inputErrorBg: '#fff5f5',
-		inputIcon: '#005a87',
-		buttonBg: '#005a87',
+		inputIcon: '#3B6CAA',
+		buttonBg: '#3B6CAA',
 		buttonText: '#ffffff',
-		buttonHoverBg: '#003d5b',
+		buttonHoverBg: '#1E3A5F',
 		error: '#d32f2f',
 		success: '#198754',
 		warning: '#b35900',
@@ -68,10 +68,10 @@ export const DEFAULT_STYLE_CONFIG = {
 		style: 'solid',
 	},
 	shadows: {
-		sm: '0 2px 8px rgba(0, 90, 135, 0.08)',
-		md: '0 4px 12px rgba(0, 90, 135, 0.1)',
-		lg: '0 8px 25px rgba(0, 90, 135, 0.1)',
-		focus: '0 0 0 3px rgba(0, 90, 135, 0.1)',
+		sm: '0 2px 8px rgba(59, 108, 170, 0.08)',
+		md: '0 4px 12px rgba(59, 108, 170, 0.1)',
+		lg: '0 8px 25px rgba(59, 108, 170, 0.1)',
+		focus: '0 0 0 3px rgba(59, 108, 170, 0.1)',
 		error: '0 0 0 3px rgba(211, 47, 47, 0.15)',
 	},
 	interactivity: {

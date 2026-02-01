@@ -16,14 +16,14 @@
 .conditional-logic-warning {
     padding: 12px 16px;
     background: #e3f2fd;
-    border: 2px solid #005a87;
+    border: 2px solid #3B6CAA;
     border-radius: 8px;
     margin-bottom: 16px;
 }
 
 .conditional-logic-warning p {
     margin: 0;
-    color: #003d5b;
+    color: #1E3A5F;
     font-size: 13px;
     line-height: 1.5;
 }
@@ -57,12 +57,12 @@
 
 .conditional-logic-rule:hover {
     border-color: #cbd5e0;
-    box-shadow: 0 2px 8px rgba(0, 90, 135, 0.1);
+    box-shadow: 0 2px 8px rgba(59, 108, 170, 0.1);
 }
 
 .conditional-logic-rule:focus-within {
-    border-color: #005a87;
-    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.15);
+    border-color: #3B6CAA;
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.15);
 }
 
 .conditional-logic-rule-header {
@@ -109,9 +109,9 @@
 }
 
 .conditional-logic-rule .components-select-control__input:focus {
-    border-color: #005a87;
+    border-color: #3B6CAA;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.15);
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.15);
 }
 
 .conditional-logic-rule .components-select-control__input:disabled {
@@ -150,8 +150,8 @@
 }
 
 .conditional-logic-panel .components-button.is-primary {
-    background: #005a87;
-    border-color: #005a87;
+    background: #3B6CAA;
+    border-color: #3B6CAA;
     color: #ffffff;
     border-radius: 6px;
     padding: 8px 16px;
@@ -160,13 +160,13 @@
 }
 
 .conditional-logic-panel .components-button.is-primary:hover:not(:disabled) {
-    background: #003d5b;
-    border-color: #003d5b;
-    box-shadow: 0 2px 4px rgba(0, 90, 135, 0.2);
+    background: #1E3A5F;
+    border-color: #1E3A5F;
+    box-shadow: 0 2px 4px rgba(59, 108, 170, 0.2);
 }
 
 .conditional-logic-panel .components-button.is-primary:focus {
-    outline: 2px solid #005a87;
+    outline: 2px solid #3B6CAA;
     outline-offset: 2px;
 }
 
@@ -200,8 +200,8 @@
 }
 
 .conditional-logic-panel .components-button.is-secondary {
-    border-color: #005a87;
-    color: #005a87;
+    border-color: #3B6CAA;
+    color: #3B6CAA;
     border-radius: 6px;
     padding: 8px 16px;
     font-weight: 600;
@@ -210,12 +210,12 @@
 
 .conditional-logic-panel .components-button.is-secondary:hover:not(:disabled) {
     background: #e3f2fd;
-    border-color: #003d5b;
-    color: #003d5b;
+    border-color: #1E3A5F;
+    color: #1E3A5F;
 }
 
 .conditional-logic-panel .components-button.is-secondary:focus {
-    outline: 2px solid #005a87;
+    outline: 2px solid #3B6CAA;
     outline-offset: 2px;
 }
 
@@ -319,7 +319,7 @@
    ---------------------------------------- */
 .eipsi-field[data-conditional-logic="true"] {
     position: relative;
-    border-left: 4px solid #005a87 !important;
+    border-left: 4px solid #3B6CAA !important;
 }
 
 .eipsi-field[data-conditional-logic="true"]::after {
@@ -330,7 +330,7 @@
     font-size: 16px;
     z-index: 2;
     opacity: 0.9;
-    background: #005a87;
+    background: #3B6CAA;
     color: #ffffff;
     width: 26px;
     height: 26px;
@@ -339,7 +339,7 @@
     align-items: center;
     justify-content: center;
     line-height: 1;
-    box-shadow: 0 2px 4px rgba(0, 90, 135, 0.2);
+    box-shadow: 0 2px 4px rgba(59, 108, 170, 0.2);
     transition: all 0.2s ease;
 }
 
@@ -359,7 +359,7 @@
    Accessibility Enhancements
    ---------------------------------------- */
 .conditional-logic-panel *:focus {
-    outline-color: #005a87;
+    outline-color: #3B6CAA;
     outline-width: 2px;
     outline-offset: 2px;
 }

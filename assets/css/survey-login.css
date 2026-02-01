@@ -10,7 +10,7 @@
     background: var(--eipsi-color-background, #ffffff);
     border: 1px solid var(--eipsi-color-border, #e2e8f0);
     border-radius: var(--eipsi-border-radius-lg, 20px);
-    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(59, 108, 170, 0.1));
     overflow: hidden;
     font-family: var(--eipsi-font-family-body, inherit);
 }
@@ -35,13 +35,13 @@
 }
 
 .eipsi-survey-login-tab:hover {
-    color: var(--eipsi-color-primary, #005a87);
-    background: rgba(0, 90, 135, 0.05);
+    color: var(--eipsi-color-primary, #3B6CAA);
+    background: rgba(59, 108, 170, 0.05);
 }
 
 .eipsi-survey-login-tab.active {
-    color: var(--eipsi-color-primary, #005a87);
-    border-bottom-color: var(--eipsi-color-primary, #005a87);
+    color: var(--eipsi-color-primary, #3B6CAA);
+    border-bottom-color: var(--eipsi-color-primary, #3B6CAA);
     background: var(--eipsi-color-background, #ffffff);
 }
 
@@ -95,8 +95,8 @@
 
 .eipsi-survey-login-form input:focus {
     outline: none;
-    border-color: var(--eipsi-color-input-border-focus, #005a87);
-    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.2));
+    border-color: var(--eipsi-color-input-border-focus, #3B6CAA);
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.2));
 }
 
 .eipsi-survey-login-form input.valid {
@@ -135,7 +135,7 @@ input.valid + .eipsi-valid-icon {
 }
 
 .toggle-password:hover {
-    color: var(--eipsi-color-primary, #005a87);
+    color: var(--eipsi-color-primary, #3B6CAA);
 }
 
 .eipsi-form-options {
@@ -155,7 +155,7 @@ input.valid + .eipsi-valid-icon {
     width: 16px;
     height: 16px;
     cursor: pointer;
-    accent-color: var(--eipsi-color-primary, #005a87);
+    accent-color: var(--eipsi-color-primary, #3B6CAA);
     margin: 0;
 }
 
@@ -188,7 +188,7 @@ input.valid + .eipsi-valid-icon {
 .eipsi-button-primary {
     width: 100%;
     padding: 12px 24px;
-    background: var(--eipsi-color-button-bg, #005a87);
+    background: var(--eipsi-color-button-bg, #3B6CAA);
     color: var(--eipsi-color-button-text, #ffffff);
     border: none;
     border-radius: var(--eipsi-border-radius-sm, 8px);
@@ -203,7 +203,7 @@ input.valid + .eipsi-valid-icon {
 }
 
 .eipsi-button-primary:hover:not(:disabled) {
-    background: var(--eipsi-color-button-hover-bg, #003d5b);
+    background: var(--eipsi-color-button-hover-bg, #1E3A5F);
 }
 
 .eipsi-button-primary:active:not(:disabled) {
@@ -248,7 +248,7 @@ input.valid + .eipsi-valid-icon {
 }
 
 .eipsi-form-footer a {
-    color: var(--eipsi-color-primary, #005a87);
+    color: var(--eipsi-color-primary, #3B6CAA);
     text-decoration: none;
     font-weight: var(--eipsi-font-weight-medium, 500);
 }

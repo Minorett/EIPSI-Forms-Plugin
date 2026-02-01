@@ -72,9 +72,9 @@ Colores antiguos que ya no deben usarse:
 
 | Antiguo | Nuevo | Archivos actualizados |
 |---------|-------|----------------------|
-| `#005a87` | `#3B6CAA` | Todos los CSS frontend |
-| `#003d5b` | `#1E3A5F` | Todos los CSS frontend |
-| `#0073aa` | `#3B6CAA` | Admin styles |
+| `#3B6CAA` | `#3B6CAA` | Todos los CSS frontend |
+| `#1E3A5F` | `#1E3A5F` | Todos los CSS frontend |
+| `#3B6CAA` | `#3B6CAA` | Admin styles |
 | `#198754` (green) | `#008080` (teal) | eipsi-forms.css, survey-login.css |
 | `#00a32a` (WP green) | `#008080` (teal) | email-log.css, participant-dashboard.css |
 | `#28a745` (Bootstrap green) | `#008080` (teal) | setup-wizard.css |

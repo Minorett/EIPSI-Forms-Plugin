@@ -227,12 +227,12 @@ function eipsi_display_form_responses() {
         }
         
         .nav-tab:hover {
-            color: #005a87;
+            color: #3B6CAA;
         }
         
         .nav-tab-active {
-            color: #005a87;
-            border-bottom-color: #005a87;
+            color: #3B6CAA;
+            border-bottom-color: #3B6CAA;
             font-weight: 600;
         }
         

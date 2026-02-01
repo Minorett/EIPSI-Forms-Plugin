@@ -32,9 +32,9 @@
             
             &:focus {
                 background: var(--eipsi-color-input-bg, #ffffff);
-                border-color: var(--eipsi-color-primary, #005a87);
+                border-color: var(--eipsi-color-primary, #3B6CAA);
                 outline: none;
-                box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
+                box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.1));
             }
             
             &::placeholder {

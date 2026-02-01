@@ -138,7 +138,7 @@ $config = EIPSI_Completion_Message::get_config();
     </form>
     
     <!-- Live Preview Info -->
-    <div style="margin: 30px 0; padding: 20px; background: #f0f6fc; border-left: 4px solid #005a87; border-radius: 6px;">
+    <div style="margin: 30px 0; padding: 20px; background: #f0f6fc; border-left: 4px solid #3B6CAA; border-radius: 6px;">
         <h3 style="margin-top: 0;"><?php _e('💡 How it works', 'eipsi-forms'); ?></h3>
         <ul style="margin: 10px 0;">
             <li><?php _e('After submitting any form, participants will see this thank-you page on the <strong>same URL</strong> (no external redirect)', 'eipsi-forms'); ?></li>

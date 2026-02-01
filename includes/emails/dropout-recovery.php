@@ -10,7 +10,7 @@
         .header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid #eeeeee; padding-bottom: 20px; }
         .header h1 { margin: 0; color: #1a1a1a; font-size: 24px; font-weight: 600; }
         .content { margin-bottom: 30px; font-size: 16px; }
-        .button { display: inline-block; background-color: #0073aa; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 500; margin-top: 20px; text-align: center; font-size: 16px; }
+        .button { display: inline-block; background-color: #3B6CAA; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 500; margin-top: 20px; text-align: center; font-size: 16px; }
         .button:hover { background-color: #005177; }
         .message-box { background-color: #fff8e1; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 4px; margin-top: 20px; }
         .footer { font-size: 13px; color: #666666; border-top: 1px solid #eeeeee; padding-top: 20px; text-align: center; }

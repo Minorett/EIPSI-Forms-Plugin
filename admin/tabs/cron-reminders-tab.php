@@ -77,7 +77,7 @@ if ($selected_survey_id) {
 
                 <!-- Section: Wave Reminders -->
                 <div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px;">
-                    <h3 style="margin-top: 0; color: #005a87;">
+                    <h3 style="margin-top: 0; color: #3B6CAA;">
                         ⏰ <?php _e('Recordatorios de Waves Pendientes', 'eipsi-forms'); ?>
                     </h3>
 

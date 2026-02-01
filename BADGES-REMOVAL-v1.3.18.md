@@ -51,7 +51,7 @@ Los badges estaban implementados en archivos `editor.scss` mediante pseudo-eleme
             position: absolute;
             top: -10px;
             left: 12px;
-            background: var(--eipsi-color-primary, #005a87);
+            background: var(--eipsi-color-primary, #3B6CAA);
             color: var(--eipsi-color-button-text, #ffffff);
             padding: 2px 8px;
             border-radius: 3px;
@@ -93,7 +93,7 @@ Los badges estaban implementados en archivos `editor.scss` mediante pseudo-eleme
 
 **ANTES (❌):**
 ```scss
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
     position: relative;
     transition: all var(--eipsi-transition-duration, 0.2s) ease;
     
@@ -102,7 +102,7 @@ Los badges estaban implementados en archivos `editor.scss` mediante pseudo-eleme
         position: absolute;
         top: -10px;
         left: 12px;
-        background: var(--eipsi-color-primary, #005a87);
+        background: var(--eipsi-color-primary, #3B6CAA);
         color: var(--eipsi-color-button-text, #ffffff);
         padding: 2px 8px;
         border-radius: 3px;
@@ -117,7 +117,7 @@ Los badges estaban implementados en archivos `editor.scss` mediante pseudo-eleme
 
 **DESPUÉS (✅):**
 ```scss
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
     position: relative;
     transition: all var(--eipsi-transition-duration, 0.2s) ease;
     

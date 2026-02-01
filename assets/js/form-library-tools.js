@@ -65,7 +65,7 @@
                                 <label style="display: flex; align-items: start; cursor: pointer; padding: 16px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8f9fa; transition: all 0.2s;">
                                     <input type="radio" name="export_mode" value="lite" checked style="margin-top: 4px; margin-right: 12px; cursor: pointer;">
                                     <div>
-                                        <strong style="color: #005a87; display: block; margin-bottom: 4px;">✨ Formato simplificado (recomendado)</strong>
+                                        <strong style="color: #3B6CAA; display: block; margin-bottom: 4px;">✨ Formato simplificado (recomendado)</strong>
                                         <span style="color: #666; font-size: 13px;">
                                             JSON limpio, editable a mano, ideal para demos y plantillas clínicas.
                                         </span>
@@ -116,8 +116,8 @@
 						background: '#f8f9fa',
 					} );
 					$( this ).closest( 'label' ).css( {
-						'border-color': '#005a87',
-						background: 'rgba(0, 90, 135, 0.05)',
+						'border-color': '#3B6CAA',
+						background: 'rgba(59, 108, 170, 0.05)',
 					} );
 				} )
 				.first()
@@ -412,7 +412,7 @@
                             <div class="eipsi-import-error" style="display: none;"></div>
                         </div>
                         <div class="eipsi-import-modal-footer">
-                            <a href="${ eipsiFormTools.templatesUrl }README.md" target="_blank" class="button button-link" style="margin-right: auto; color: #005a87; text-decoration: none;">
+                            <a href="${ eipsiFormTools.templatesUrl }README.md" target="_blank" class="button button-link" style="margin-right: auto; color: #3B6CAA; text-decoration: none;">
                                 📖 ${ eipsiFormTools.strings.importTutorial }
                             </a>
                             <button type="button" class="button button-secondary eipsi-import-cancel">

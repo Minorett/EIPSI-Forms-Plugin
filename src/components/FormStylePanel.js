@@ -140,8 +140,8 @@ const FormStylePanel = ( {
 
 	// Color presets for pickers
 	const colorPresets = [
-		{ name: 'EIPSI Blue', color: '#005a87' },
-		{ name: 'Dark Blue', color: '#003d5b' },
+		{ name: 'EIPSI Blue', color: '#3B6CAA' },
+		{ name: 'Dark Blue', color: '#1E3A5F' },
 		{ name: 'Light Blue', color: '#e3f2fd' },
 		{ name: 'Navy', color: '#2c5aa0' },
 		{ name: 'White', color: '#ffffff' },

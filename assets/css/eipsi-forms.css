@@ -18,7 +18,7 @@
  * generated from the styleConfig block attribute.
  * 
  * Default values align with clinical design guidance:
- * - Primary: #005a87 (EIPSI Institutional Blue - trust & professionalism)
+ * - Primary: #3B6CAA (EIPSI Institutional Blue - trust & professionalism)
  * - Secondary: #e3f2fd (Light Blue - calming backgrounds)
  * - Neutral: #ffffff, #f8f9fa, #e2e8f0 (clinical cleanliness)
  * - Text: #2c3e50 (soft dark - readable without harshness)
@@ -27,8 +27,8 @@
 
 :root {
     /* Colors - Clinical Palette */
-    --eipsi-color-primary: #005a87;
-    --eipsi-color-primary-hover: #003d5b;
+    --eipsi-color-primary: #3B6CAA;
+    --eipsi-color-primary-hover: #1E3A5F;
     --eipsi-color-secondary: #e3f2fd;
     --eipsi-color-background: #ffffff;
     --eipsi-color-background-subtle: #f8f9fa;
@@ -37,12 +37,12 @@
     --eipsi-color-input-bg: #ffffff;
     --eipsi-color-input-text: #2c3e50;
     --eipsi-color-input-border: #e2e8f0;
-    --eipsi-color-input-border-focus: #005a87;
+    --eipsi-color-input-border-focus: #3B6CAA;
     --eipsi-color-input-error-bg: #fff5f5;
-    --eipsi-color-input-icon: #005a87;
-    --eipsi-color-button-bg: #005a87;
+    --eipsi-color-input-icon: #3B6CAA;
+    --eipsi-color-button-bg: #3B6CAA;
     --eipsi-color-button-text: #ffffff;
-    --eipsi-color-button-hover-bg: #003d5b;
+    --eipsi-color-button-hover-bg: #1E3A5F;
     --eipsi-color-error: #800000;
     --eipsi-color-error-text: #ffffff;
     --eipsi-color-error-border-strong: rgba(255, 255, 255, 0.3);
@@ -68,42 +68,42 @@
     --eipsi-color-card-bg: #ffffff;
     --eipsi-color-card-bg-hover: #f8f9fa;
     --eipsi-color-card-border: #e2e8f0;
-    --eipsi-color-checked-bg: rgba(0, 90, 135, 0.05);
-    --eipsi-color-checked-shadow: rgba(0, 90, 135, 0.1);
+    --eipsi-color-checked-bg: rgba(59, 108, 170, 0.05);
+    --eipsi-color-checked-shadow: rgba(59, 108, 170, 0.1);
     
     /* Progress & Navigation */
     --eipsi-color-progress-bg: #f8f9fa;
     --eipsi-color-progress-border: #e2e8f0;
     --eipsi-color-progress-text: #2c3e50;
-    --eipsi-color-progress-text-highlight: #005a87;
+    --eipsi-color-progress-text-highlight: #3B6CAA;
     
     /* VAS Slider */
     --eipsi-color-vas-container-bg: #e3f2fd;
     --eipsi-color-vas-container-bg-hover: #d6edff;
     --eipsi-color-vas-container-border: #b3d9f2;
     --eipsi-color-vas-container-border-hover: #90c9eb;
-    --eipsi-color-vas-label-bg: rgba(0, 90, 135, 0.1);
-    --eipsi-color-vas-label-border: rgba(0, 90, 135, 0.2);
-    --eipsi-color-vas-label-text: #005a87;
+    --eipsi-color-vas-label-bg: rgba(59, 108, 170, 0.1);
+    --eipsi-color-vas-label-border: rgba(59, 108, 170, 0.2);
+    --eipsi-color-vas-label-text: #3B6CAA;
     --eipsi-color-vas-slider-track: #e2e8f0;
     --eipsi-color-vas-slider-track-hover: #cbd5e0;
-    --eipsi-color-vas-slider-thumb: #005a87;
-    --eipsi-color-vas-slider-thumb-secondary: #003d5b;
+    --eipsi-color-vas-slider-thumb: #3B6CAA;
+    --eipsi-color-vas-slider-thumb-secondary: #1E3A5F;
     --eipsi-color-vas-slider-thumb-border: #ffffff;
     --eipsi-shadow-slider-thumb: 0 3px 8px rgba(0, 0, 0, 0.3);
-    --eipsi-shadow-slider-thumb-hover: 0 5px 15px rgba(0, 90, 135, 0.4);
-    --eipsi-color-vas-value-text: #005a87;
-    --eipsi-color-vas-value-bg: rgba(0, 90, 135, 0.05);
-    --eipsi-color-vas-value-border: rgba(0, 90, 135, 0.2);
-    --eipsi-shadow-vas-value: 0 2px 8px rgba(0, 90, 135, 0.1);
+    --eipsi-shadow-slider-thumb-hover: 0 5px 15px rgba(59, 108, 170, 0.4);
+    --eipsi-color-vas-value-text: #3B6CAA;
+    --eipsi-color-vas-value-bg: rgba(59, 108, 170, 0.05);
+    --eipsi-color-vas-value-border: rgba(59, 108, 170, 0.2);
+    --eipsi-shadow-vas-value: 0 2px 8px rgba(59, 108, 170, 0.1);
     
     /* Description & Info Blocks */
     --eipsi-color-description-bg: #f8f9fa;
-    --eipsi-color-description-border: #005a87;
+    --eipsi-color-description-border: #3B6CAA;
     --eipsi-color-description-text: #2c3e50;
     
     /* Skip Links & Accessibility */
-    --eipsi-color-skip-link-bg: #005a87;
+    --eipsi-color-skip-link-bg: #3B6CAA;
     --eipsi-color-skip-link-text: #ffffff;
     
     /* Print & High Contrast */
@@ -142,10 +142,10 @@
     --eipsi-border-style: solid;
 
     /* Shadows */
-    --eipsi-shadow-sm: 0 2px 8px rgba(0, 90, 135, 0.08);
-    --eipsi-shadow-md: 0 4px 12px rgba(0, 90, 135, 0.1);
-    --eipsi-shadow-lg: 0 8px 25px rgba(0, 90, 135, 0.1);
-    --eipsi-shadow-focus: 0 0 0 3px rgba(0, 90, 135, 0.2);
+    --eipsi-shadow-sm: 0 2px 8px rgba(59, 108, 170, 0.08);
+    --eipsi-shadow-md: 0 4px 12px rgba(59, 108, 170, 0.1);
+    --eipsi-shadow-lg: 0 8px 25px rgba(59, 108, 170, 0.1);
+    --eipsi-shadow-focus: 0 0 0 3px rgba(59, 108, 170, 0.2);
     --eipsi-shadow-error: 0 0 0 3px rgba(211, 47, 47, 0.15);
 
     /* Interactivity */
@@ -165,7 +165,7 @@
     background: var(--eipsi-color-background, #ffffff);
     border-radius: var(--eipsi-border-radius-lg, 20px);
     border: var(--eipsi-border-width, 1px) var(--eipsi-border-style, solid) var(--eipsi-color-border, #e2e8f0);
-    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(59, 108, 170, 0.1));
     padding: var(--eipsi-spacing-container-padding, 2.5rem);
     max-width: 800px;
     margin: 0 auto;
@@ -184,7 +184,7 @@
 .vas-dinamico-form .form-description,
 .eipsi-form .form-description {
     background: var(--eipsi-color-background-subtle, #f8f9fa);
-    border-left: 4px solid var(--eipsi-color-primary, #005a87);
+    border-left: 4px solid var(--eipsi-color-primary, #3B6CAA);
     padding: 1.25rem 1.5rem;
     margin: 0 0 var(--eipsi-spacing-lg, 2rem) 0;
     border-radius: var(--eipsi-border-radius-sm, 8px);
@@ -265,7 +265,7 @@
 
 .vas-dinamico-form .eipsi-consent-checkbox-wrapper input[type="checkbox"],
 .eipsi-form .eipsi-consent-checkbox-wrapper input[type="checkbox"] {
-    accent-color: var(--eipsi-color-primary, #005a87);
+    accent-color: var(--eipsi-color-primary, #3B6CAA);
     margin-top: 2px;
     flex-shrink: 0;
     width: 18px;
@@ -311,7 +311,7 @@
 .eipsi-form h1,
 .eipsi-form h2,
 .eipsi-form h3 {
-    color: var(--eipsi-color-primary, #005a87);
+    color: var(--eipsi-color-primary, #3B6CAA);
     font-family: var(--eipsi-font-family-heading, inherit);
     font-weight: var(--eipsi-font-weight-bold, 700);
     line-height: var(--eipsi-line-height-heading, 1.3);
@@ -335,7 +335,7 @@
 
 /* Page Titles */
 .eipsi-page-title {
-    color: var(--eipsi-color-primary, #005a87);
+    color: var(--eipsi-color-primary, #3B6CAA);
     font-size: var(--eipsi-font-size-h2, 1.75rem);
     font-weight: var(--eipsi-font-weight-bold, 700);
     margin: 0 0 var(--eipsi-spacing-md, 1.5rem) 0;
@@ -406,8 +406,8 @@
     
     /* Professional gradient styling */
     background: linear-gradient(135deg, 
-        var(--eipsi-color-primary, #005a87) 0%,
-        var(--eipsi-color-primary-hover, #003d5b) 100%);
+        var(--eipsi-color-primary, #3B6CAA) 0%,
+        var(--eipsi-color-primary-hover, #1E3A5F) 100%);
     color: var(--eipsi-color-button-text, #ffffff);
     font-weight: 700;
     font-size: 14px;
@@ -417,7 +417,7 @@
     border-radius: 24px;
     
     /* Subtle shadow */
-    box-shadow: 0 2px 8px rgba(0, 90, 135, 0.25);
+    box-shadow: 0 2px 8px rgba(59, 108, 170, 0.25);
     
     /* Smooth transitions */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -432,12 +432,12 @@
 
 .page-badge:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 90, 135, 0.35);
+    box-shadow: 0 4px 16px rgba(59, 108, 170, 0.35);
 }
 
 /* Page-specific color variants */
 .page-badge.page-1 {
-    background: linear-gradient(135deg, #005a87, #003d5b);
+    background: linear-gradient(135deg, #3B6CAA, #1E3A5F);
 }
 
 .page-badge.page-2 {
@@ -635,9 +635,9 @@
 .eipsi-form input[type="email"]:focus,
 .eipsi-form input[type="number"]:focus {
     outline: none;
-    border-color: var(--eipsi-color-input-border-focus, #005a87);
+    border-color: var(--eipsi-color-input-border-focus, #3B6CAA);
     background: var(--eipsi-color-input-bg, #ffffff);
-    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.1));
 }
 
 .eipsi-text-field input::placeholder,
@@ -726,9 +726,9 @@ input[aria-invalid="true"]:focus {
 .vas-dinamico-form textarea:focus,
 .eipsi-form textarea:focus {
     outline: none;
-    border-color: var(--eipsi-color-input-border-focus, #005a87);
+    border-color: var(--eipsi-color-input-border-focus, #3B6CAA);
     background: var(--eipsi-color-input-bg, #ffffff);
-    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.1));
 }
 
 .has-error textarea,
@@ -793,8 +793,8 @@ textarea[aria-invalid="true"]:focus {
     font-family: inherit;
     color: var(--eipsi-color-input-text, #2c3e50);
     background-color: var(--eipsi-color-input-bg, #ffffff);
-    background-image: linear-gradient(45deg, transparent 50%, var(--eipsi-color-input-icon, #005a87) 50%),
-                      linear-gradient(135deg, var(--eipsi-color-input-icon, #005a87) 50%, transparent 50%);
+    background-image: linear-gradient(45deg, transparent 50%, var(--eipsi-color-input-icon, #3B6CAA) 50%),
+                      linear-gradient(135deg, var(--eipsi-color-input-icon, #3B6CAA) 50%, transparent 50%);
     background-position: calc(100% - 1.125rem) center,
                          calc(100% - 0.75rem) center;
     background-size: 0.375rem 0.375rem,
@@ -818,9 +818,9 @@ textarea[aria-invalid="true"]:focus {
 .vas-dinamico-form select:focus,
 .eipsi-form select:focus {
     outline: none;
-    border-color: var(--eipsi-color-input-border-focus, #005a87);
+    border-color: var(--eipsi-color-input-border-focus, #3B6CAA);
     background-color: var(--eipsi-color-input-bg, #ffffff);
-    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.1));
 }
 
 .has-error select,
@@ -869,18 +869,18 @@ select[aria-invalid="true"]:focus {
 .vas-dinamico-form .radio-list li:hover,
 .eipsi-form .radio-list li:hover {
     background: var(--eipsi-color-background-subtle, #f8f9fa);
-    border-color: var(--eipsi-color-primary, #005a87);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
     transform: translateX(4px);
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
 }
 
 /* Checked state on the card */
 .eipsi-radio-field .radio-list li:has(input[type="radio"]:checked),
 .vas-dinamico-form .radio-list li:has(input[type="radio"]:checked),
 .eipsi-form .radio-list li:has(input[type="radio"]:checked) {
-    background: var(--eipsi-color-checked-bg, rgba(0, 90, 135, 0.05));
-    border-color: var(--eipsi-color-primary, #005a87);
-    box-shadow: 0 0 0 3px var(--eipsi-color-checked-shadow, rgba(0, 90, 135, 0.1));
+    background: var(--eipsi-color-checked-bg, rgba(59, 108, 170, 0.05));
+    border-color: var(--eipsi-color-primary, #3B6CAA);
+    box-shadow: 0 0 0 3px var(--eipsi-color-checked-shadow, rgba(59, 108, 170, 0.1));
 }
 
 /* Label wrapper - full clickable area */
@@ -956,14 +956,14 @@ select[aria-invalid="true"]:focus {
 .vas-dinamico-form .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text,
 .eipsi-form .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text {
     font-weight: 700;
-    color: var(--eipsi-color-primary, #005a87);
+    color: var(--eipsi-color-primary, #3B6CAA);
 }
 
 .eipsi-radio-field .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text::before,
 .vas-dinamico-form .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text::before,
 .eipsi-form .radio-list li .radio-label-wrapper input[type="radio"]:checked + .radio-label-text::before {
-    background: var(--eipsi-color-primary, #005a87);
-    border-color: var(--eipsi-color-primary, #005a87);
+    background: var(--eipsi-color-primary, #3B6CAA);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
     box-shadow: inset 0 0 0 4px var(--eipsi-color-background, #ffffff);
 }
 
@@ -971,7 +971,7 @@ select[aria-invalid="true"]:focus {
 .eipsi-radio-field .radio-list li:hover .radio-label-text::before,
 .vas-dinamico-form .radio-list li:hover .radio-label-text::before,
 .eipsi-form .radio-list li:hover .radio-label-text::before {
-    border-color: var(--eipsi-color-primary, #005a87);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
     transform: scale(1.05);
 }
 
@@ -979,8 +979,8 @@ select[aria-invalid="true"]:focus {
 .eipsi-radio-field .radio-list li .radio-label-wrapper:focus-within .radio-label-text::before,
 .vas-dinamico-form .radio-list li .radio-label-wrapper:focus-within .radio-label-text::before,
 .eipsi-form .radio-list li .radio-label-wrapper:focus-within .radio-label-text::before {
-    border-color: var(--eipsi-color-primary, #005a87);
-    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.2));
+    border-color: var(--eipsi-color-primary, #3B6CAA);
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.2));
 }
 
 /* Error state */
@@ -1027,18 +1027,18 @@ select[aria-invalid="true"]:focus {
 .vas-dinamico-form .checkbox-list li:hover,
 .eipsi-form .checkbox-list li:hover {
     background: var(--eipsi-color-background-subtle, #f8f9fa);
-    border-color: var(--eipsi-color-primary, #005a87);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
     transform: translateX(4px);
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
 }
 
 .eipsi-checkbox-field .checkbox-list li:has(input[type="checkbox"]:checked),
 .eipsi-multiple-field .checkbox-list li:has(input[type="checkbox"]:checked),
 .vas-dinamico-form .checkbox-list li:has(input[type="checkbox"]:checked),
 .eipsi-form .checkbox-list li:has(input[type="checkbox"]:checked) {
-    background: var(--eipsi-color-checked-bg, rgba(0, 90, 135, 0.05));
-    border-color: var(--eipsi-color-primary, #005a87);
-    box-shadow: 0 0 0 3px var(--eipsi-color-checked-shadow, rgba(0, 90, 135, 0.1));
+    background: var(--eipsi-color-checked-bg, rgba(59, 108, 170, 0.05));
+    border-color: var(--eipsi-color-primary, #3B6CAA);
+    box-shadow: 0 0 0 3px var(--eipsi-color-checked-shadow, rgba(59, 108, 170, 0.1));
 }
 
 .eipsi-checkbox-field .checkbox-list li .checkbox-label-wrapper,
@@ -1115,15 +1115,15 @@ select[aria-invalid="true"]:focus {
 .vas-dinamico-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text,
 .eipsi-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text {
     font-weight: 700;
-    color: var(--eipsi-color-primary, #005a87);
+    color: var(--eipsi-color-primary, #3B6CAA);
 }
 
 .eipsi-checkbox-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::before,
 .eipsi-multiple-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::before,
 .vas-dinamico-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::before,
 .eipsi-form .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::before {
-    background: var(--eipsi-color-primary, #005a87);
-    border-color: var(--eipsi-color-primary, #005a87);
+    background: var(--eipsi-color-primary, #3B6CAA);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
 }
 
 .eipsi-checkbox-field .checkbox-list li .checkbox-label-wrapper input[type="checkbox"]:checked + .checkbox-label-text::after,
@@ -1145,7 +1145,7 @@ select[aria-invalid="true"]:focus {
 .eipsi-multiple-field .checkbox-list li:hover .checkbox-label-text::before,
 .vas-dinamico-form .checkbox-list li:hover .checkbox-label-text::before,
 .eipsi-form .checkbox-list li:hover .checkbox-label-text::before {
-    border-color: var(--eipsi-color-primary, #005a87);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
     transform: scale(1.05);
 }
 
@@ -1153,8 +1153,8 @@ select[aria-invalid="true"]:focus {
 .eipsi-multiple-field .checkbox-list li .checkbox-label-wrapper:focus-within .checkbox-label-text::before,
 .vas-dinamico-form .checkbox-list li .checkbox-label-wrapper:focus-within .checkbox-label-text::before,
 .eipsi-form .checkbox-list li .checkbox-label-wrapper:focus-within .checkbox-label-text::before {
-    border-color: var(--eipsi-color-primary, #005a87);
-    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.2));
+    border-color: var(--eipsi-color-primary, #3B6CAA);
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.2));
 }
 
 .has-error .checkbox-list li {
@@ -1227,9 +1227,9 @@ select[aria-invalid="true"]:focus {
 
 .eipsi-likert-field .likert-item:hover {
     background: var(--eipsi-color-background-subtle, #f8f9fa);
-    border-color: var(--eipsi-color-primary, #005a87);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
     transform: translateY(-2px);
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
 }
 
 .eipsi-likert-field .likert-item:active {
@@ -1237,9 +1237,9 @@ select[aria-invalid="true"]:focus {
 }
 
 .eipsi-likert-field .likert-item:has(input[type="radio"]:checked) {
-    background: var(--eipsi-color-checked-bg, rgba(0, 90, 135, 0.05));
-    border-color: var(--eipsi-color-primary, #005a87);
-    box-shadow: 0 0 0 3px var(--eipsi-color-checked-shadow, rgba(0, 90, 135, 0.1));
+    background: var(--eipsi-color-checked-bg, rgba(59, 108, 170, 0.05));
+    border-color: var(--eipsi-color-primary, #3B6CAA);
+    box-shadow: 0 0 0 3px var(--eipsi-color-checked-shadow, rgba(59, 108, 170, 0.1));
 }
 
 .eipsi-likert-field .likert-label-wrapper {
@@ -1331,23 +1331,23 @@ select[aria-invalid="true"]:focus {
 
 .eipsi-likert-field .likert-label-wrapper input[type="radio"]:checked + .likert-label-text {
     font-weight: 700;
-    color: var(--eipsi-color-primary, #005a87);
+    color: var(--eipsi-color-primary, #3B6CAA);
 }
 
 .eipsi-likert-field .likert-label-wrapper input[type="radio"]:checked + .likert-label-text::before {
-    background: var(--eipsi-color-primary, #005a87);
-    border-color: var(--eipsi-color-primary, #005a87);
+    background: var(--eipsi-color-primary, #3B6CAA);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
     box-shadow: inset 0 0 0 4px var(--eipsi-color-background, #ffffff);
 }
 
 .eipsi-likert-field .likert-item:hover .likert-label-text::before {
-    border-color: var(--eipsi-color-primary, #005a87);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
     transform: scale(1.05);
 }
 
 .eipsi-likert-field .likert-label-wrapper:focus-within .likert-label-text::before {
-    border-color: var(--eipsi-color-primary, #005a87);
-    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.2));
+    border-color: var(--eipsi-color-primary, #3B6CAA);
+    box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.2));
 }
 
 .eipsi-likert-field.has-error .likert-scale {
@@ -1732,7 +1732,7 @@ select[aria-invalid="true"]:focus {
 }
 
 .vas-slider:focus {
-    outline: 2px solid var(--eipsi-color-input-border-focus, #005a87);
+    outline: 2px solid var(--eipsi-color-input-border-focus, #3B6CAA);
     outline-offset: 4px;
 }
 
@@ -1742,7 +1742,7 @@ select[aria-invalid="true"]:focus {
     appearance: none;
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, var(--eipsi-color-vas-slider-thumb, #005a87), var(--eipsi-color-vas-slider-thumb-secondary, #003d5b));
+    background: linear-gradient(135deg, var(--eipsi-color-vas-slider-thumb, #3B6CAA), var(--eipsi-color-vas-slider-thumb-secondary, #1E3A5F));
     border: 4px solid var(--eipsi-color-vas-slider-thumb-border, #ffffff);
     border-radius: 50%;
     cursor: pointer;
@@ -1752,7 +1752,7 @@ select[aria-invalid="true"]:focus {
 
 .vas-slider::-webkit-slider-thumb:hover {
     transform: scale(1.15);
-    box-shadow: var(--eipsi-shadow-slider-thumb-hover, 0 5px 15px rgba(0, 90, 135, 0.4));
+    box-shadow: var(--eipsi-shadow-slider-thumb-hover, 0 5px 15px rgba(59, 108, 170, 0.4));
 }
 
 .vas-slider::-webkit-slider-thumb:active {
@@ -1763,7 +1763,7 @@ select[aria-invalid="true"]:focus {
 .vas-slider::-moz-range-thumb {
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, var(--eipsi-color-vas-slider-thumb, #005a87), var(--eipsi-color-vas-slider-thumb-secondary, #003d5b));
+    background: linear-gradient(135deg, var(--eipsi-color-vas-slider-thumb, #3B6CAA), var(--eipsi-color-vas-slider-thumb-secondary, #1E3A5F));
     border: 4px solid var(--eipsi-color-vas-slider-thumb-border, #ffffff);
     border-radius: 50%;
     cursor: pointer;
@@ -1773,7 +1773,7 @@ select[aria-invalid="true"]:focus {
 
 .vas-slider::-moz-range-thumb:hover {
     transform: scale(1.15);
-    box-shadow: var(--eipsi-shadow-slider-thumb-hover, 0 5px 15px rgba(0, 90, 135, 0.4));
+    box-shadow: var(--eipsi-shadow-slider-thumb-hover, 0 5px 15px rgba(59, 108, 170, 0.4));
 }
 
 /* Webkit Track */
@@ -1802,14 +1802,14 @@ select[aria-invalid="true"]:focus {
     display: inline-block;
     font-size: 2.5rem;
     font-weight: 700;
-    color: var(--eipsi-color-vas-value-text, #005a87);
-    background: var(--eipsi-color-vas-value-bg, rgba(0, 90, 135, 0.05));
-    border: 2px solid var(--eipsi-color-vas-value-border, rgba(0, 90, 135, 0.2));
+    color: var(--eipsi-color-vas-value-text, #3B6CAA);
+    background: var(--eipsi-color-vas-value-bg, rgba(59, 108, 170, 0.05));
+    border: 2px solid var(--eipsi-color-vas-value-border, rgba(59, 108, 170, 0.2));
     border-radius: 12px;
     padding: 0.5rem 1.5rem;
     min-width: 4rem;
     text-align: center;
-    box-shadow: var(--eipsi-shadow-vas-value, 0 2px 8px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-vas-value, 0 2px 8px rgba(59, 108, 170, 0.1));
 }
 
 /* VAS Error State */
@@ -1859,7 +1859,7 @@ select[aria-invalid="true"]:focus {
 
 .eipsi-description-field .description-content {
     background: var(--eipsi-color-description-bg, #f8f9fa);
-    border-left: 4px solid var(--eipsi-color-description-border, #005a87);
+    border-left: 4px solid var(--eipsi-color-description-border, #3B6CAA);
     padding: 1.25rem 1.5rem;
     border-radius: 8px;
     color: var(--eipsi-color-description-text, #2c3e50);
@@ -1918,7 +1918,7 @@ select[aria-invalid="true"]:focus {
 
 .eipsi-prev-button {
     background: var(--eipsi-color-background, #ffffff);
-    color: var(--eipsi-color-primary, #005a87);
+    color: var(--eipsi-color-primary, #3B6CAA);
     border-color: var(--eipsi-color-border, #e2e8f0);
 }
 
@@ -1933,21 +1933,21 @@ select[aria-invalid="true"]:focus {
 }
 
 .eipsi-prev-button:focus {
-    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #3B6CAA);
     outline-offset: var(--eipsi-focus-outline-offset, 3px);
 }
 
 .eipsi-next-button {
-    background: var(--eipsi-color-button-bg, #005a87);
+    background: var(--eipsi-color-button-bg, #3B6CAA);
     color: var(--eipsi-color-button-text, #ffffff);
-    border-color: var(--eipsi-color-button-bg, #005a87);
+    border-color: var(--eipsi-color-button-bg, #3B6CAA);
 }
 
 .eipsi-next-button:hover {
-    background: var(--eipsi-color-button-hover-bg, #003d5b);
-    border-color: var(--eipsi-color-button-hover-bg, #003d5b);
+    background: var(--eipsi-color-button-hover-bg, #1E3A5F);
+    border-color: var(--eipsi-color-button-hover-bg, #1E3A5F);
     transform: translateX(2px);
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.3));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.3));
 }
 
 .eipsi-next-button:active {
@@ -1955,37 +1955,37 @@ select[aria-invalid="true"]:focus {
 }
 
 .eipsi-next-button:focus {
-    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #3B6CAA);
     outline-offset: var(--eipsi-focus-outline-offset, 3px);
 }
 
 .eipsi-submit-button,
 .eipsi-submit-btn {
-    background: var(--eipsi-color-button-bg, #005a87);
+    background: var(--eipsi-color-button-bg, #3B6CAA);
     color: var(--eipsi-color-button-text, #ffffff);
-    border-color: var(--eipsi-color-button-bg, #005a87);
+    border-color: var(--eipsi-color-button-bg, #3B6CAA);
     padding: 1rem 2.5rem;
     font-weight: var(--eipsi-font-weight-bold, 700);
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.2));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.2));
 }
 
 .eipsi-submit-button:hover,
 .eipsi-submit-btn:hover {
-    background: var(--eipsi-color-button-hover-bg, #003d5b);
-    border-color: var(--eipsi-color-button-hover-bg, #003d5b);
+    background: var(--eipsi-color-button-hover-bg, #1E3A5F);
+    border-color: var(--eipsi-color-button-hover-bg, #1E3A5F);
     transform: translateY(-2px);
-    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(0, 90, 135, 0.15));
+    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(59, 108, 170, 0.15));
 }
 
 .eipsi-submit-button:active,
 .eipsi-submit-btn:active {
     transform: translateY(0);
-    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.2));
+    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(59, 108, 170, 0.2));
 }
 
 .eipsi-submit-button:focus,
 .eipsi-submit-btn:focus {
-    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #3B6CAA);
     outline-offset: var(--eipsi-focus-outline-offset, 3px);
 }
 
@@ -2014,7 +2014,7 @@ select[aria-invalid="true"]:focus {
 
 .form-progress .current-page,
 .form-progress .total-pages {
-    color: var(--eipsi-color-progress-text-highlight, #005a87);
+    color: var(--eipsi-color-progress-text-highlight, #3B6CAA);
     font-weight: 700;
     font-size: 1.125rem;
 }
@@ -2199,7 +2199,7 @@ select[aria-invalid="true"]:focus {
 /* Focus Visible for Modern Browsers */
 .vas-dinamico-form *:focus-visible,
 .eipsi-form *:focus-visible {
-    outline: 2px solid var(--eipsi-color-primary, #005a87);
+    outline: 2px solid var(--eipsi-color-primary, #3B6CAA);
     outline-offset: 2px;
 }
 
@@ -2236,7 +2236,7 @@ select[aria-invalid="true"]:focus {
     position: absolute;
     top: -40px;
     left: 0;
-    background: var(--eipsi-color-skip-link-bg, #005a87);
+    background: var(--eipsi-color-skip-link-bg, #3B6CAA);
     color: var(--eipsi-color-skip-link-text, #ffffff);
     padding: 0.5rem 1rem;
     text-decoration: none;
@@ -2341,7 +2341,7 @@ select[aria-invalid="true"]:focus {
     background: var(--eipsi-color-alert-bg, #f8f9fa);
     color: var(--eipsi-color-alert-text, #2c3e50);
     border: 2px solid var(--eipsi-color-alert-border, #e2e8f0);
-    border-left: 6px solid var(--eipsi-color-primary, #005a87);
+    border-left: 6px solid var(--eipsi-color-primary, #3B6CAA);
     border-radius: var(--eipsi-border-radius-sm, 8px);
     font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     font-size: var(--eipsi-font-size-base, 16px);
@@ -2427,7 +2427,7 @@ select[aria-invalid="true"]:focus {
     );
     color: var(--eipsi-color-button-text, #ffffff);
     border: none;
-    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(0, 90, 135, 0.15)),
+    box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(59, 108, 170, 0.15)),
                 0 12px 40px rgba(25, 135, 84, 0.2);
     padding: 2rem 2.5rem;
     gap: 1.5rem;
@@ -2745,7 +2745,7 @@ select[aria-invalid="true"]:focus {
 .eipsi-form .eipsi-next-button,
 .eipsi-form .eipsi-submit-button,
 .eipsi-form .eipsi-prev-button {
-    background-color: var(--eipsi-color-button-bg, #005a87);
+    background-color: var(--eipsi-color-button-bg, #3B6CAA);
     color: var(--eipsi-color-button-text, #ffffff);
     padding: 12px 24px;
     border: none;
@@ -2759,7 +2759,7 @@ select[aria-invalid="true"]:focus {
     text-align: center;
     font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     line-height: 1.5;
-    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.08));
+    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(59, 108, 170, 0.08));
 }
 
 /* Hover state */
@@ -2769,8 +2769,8 @@ select[aria-invalid="true"]:focus {
 .eipsi-form .eipsi-next-button:hover,
 .eipsi-form .eipsi-submit-button:hover,
 .eipsi-form .eipsi-prev-button:hover {
-    background-color: var(--eipsi-color-button-hover-bg, #003d5b);
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    background-color: var(--eipsi-color-button-hover-bg, #1E3A5F);
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
 }
 
 /* Focus state - accessibility */
@@ -2780,7 +2780,7 @@ select[aria-invalid="true"]:focus {
 .eipsi-form .eipsi-next-button:focus-visible,
 .eipsi-form .eipsi-submit-button:focus-visible,
 .eipsi-form .eipsi-prev-button:focus-visible {
-    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #3B6CAA);
     outline-offset: var(--eipsi-focus-outline-offset, 2px);
 }
 
@@ -2851,7 +2851,7 @@ select[aria-invalid="true"]:focus {
 .eipsi-form .eipsi-btn-primary,
 .vas-dinamico-form .eipsi-btn-secondary,
 .eipsi-form .eipsi-btn-secondary {
-    background-color: var(--eipsi-color-button-bg, #005a87);
+    background-color: var(--eipsi-color-button-bg, #3B6CAA);
     color: var(--eipsi-color-button-text, #ffffff);
     border: none;
     padding: 12px 24px;
@@ -2864,7 +2864,7 @@ select[aria-invalid="true"]:focus {
     text-align: center;
     font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     line-height: 1.5;
-    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.08));
+    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(59, 108, 170, 0.08));
 }
 
 /* Hover state */
@@ -2874,8 +2874,8 @@ select[aria-invalid="true"]:focus {
 .eipsi-form .eipsi-btn-primary:hover,
 .vas-dinamico-form .eipsi-btn-secondary:hover,
 .eipsi-form .eipsi-btn-secondary:hover {
-    background-color: var(--eipsi-color-button-hover-bg, #003d5b);
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    background-color: var(--eipsi-color-button-hover-bg, #1E3A5F);
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
     transform: translateY(-2px);
 }
 
@@ -2886,7 +2886,7 @@ select[aria-invalid="true"]:focus {
 .eipsi-form .eipsi-btn-primary:focus-visible,
 .vas-dinamico-form .eipsi-btn-secondary:focus-visible,
 .eipsi-form .eipsi-btn-secondary:focus-visible {
-    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #3B6CAA);
     outline-offset: var(--eipsi-focus-outline-offset, 2px);
 }
 
@@ -2979,7 +2979,7 @@ body.page-template-eipsi-form {
     padding: var(--eipsi-spacing-lg, 2rem);
     border-radius: var(--eipsi-border-radius-md, 12px);
     border: 1px solid var(--eipsi-color-border, #e2e8f0);
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
 }
 
 .eipsi-thank-you-logo {
@@ -3019,7 +3019,7 @@ body.page-template-eipsi-form {
 .eipsi-thank-you-button {
     display: inline-block;
     padding: var(--eipsi-spacing-sm, 1rem) var(--eipsi-spacing-lg, 2rem);
-    background-color: var(--eipsi-color-button-bg, #005a87);
+    background-color: var(--eipsi-color-button-bg, #3B6CAA);
     color: var(--eipsi-color-button-text, #ffffff);
     font-family: var(--eipsi-font-family-body, 'Segoe UI', sans-serif);
     font-size: var(--eipsi-font-size-base, 16px);
@@ -3028,18 +3028,18 @@ body.page-template-eipsi-form {
     border-radius: var(--eipsi-border-radius-sm, 8px);
     cursor: pointer;
     transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
-    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 90, 135, 0.08));
+    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(59, 108, 170, 0.08));
     text-decoration: none;
 }
 
 .eipsi-thank-you-button:hover {
-    background-color: var(--eipsi-color-button-hover-bg, #003d5b);
+    background-color: var(--eipsi-color-button-hover-bg, #1E3A5F);
     transform: scale(var(--eipsi-hover-scale, 1.02));
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
 }
 
 .eipsi-thank-you-button:focus-visible {
-    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #005a87);
+    outline: var(--eipsi-focus-outline-width, 2px) solid var(--eipsi-color-primary, #3B6CAA);
     outline-offset: var(--eipsi-focus-outline-offset, 2px);
 }
 
@@ -3669,8 +3669,8 @@ body.page-template-eipsi-form {
 .eipsi-toggle {
   padding: 10px 16px;
   border-radius: 6px;
-  border: 2px solid var(--eipsi-primary, #005a87);
-  background: var(--eipsi-primary, #005a87);
+  border: 2px solid var(--eipsi-primary, #3B6CAA);
+  background: var(--eipsi-primary, #3B6CAA);
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
@@ -3682,18 +3682,18 @@ body.page-template-eipsi-form {
   /* Hover state */
 }
 .eipsi-toggle:hover {
-  background: var(--eipsi-primary-hover, #003d5b);
-  border-color: var(--eipsi-primary-hover, #003d5b);
+  background: var(--eipsi-primary-hover, #1E3A5F);
+  border-color: var(--eipsi-primary-hover, #1E3A5F);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 90, 135, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 108, 170, 0.3);
 }
 .eipsi-toggle {
   /* Focus state - WCAG AAA */
 }
 .eipsi-toggle:focus-visible {
-  outline: 3px solid var(--eipsi-primary, #005a87);
+  outline: 3px solid var(--eipsi-primary, #3B6CAA);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(0, 90, 135, 0.2);
+  box-shadow: 0 0 0 4px rgba(59, 108, 170, 0.2);
 }
 .eipsi-toggle {
   /* Active state */
@@ -3765,7 +3765,7 @@ body.page-template-eipsi-form {
     /* Enhanced focus for mobile */
   }
   .eipsi-header .eipsi-toggle:focus-visible {
-    outline: 4px solid var(--eipsi-color-primary, var(--eipsi-primary, #005a87));
+    outline: 4px solid var(--eipsi-color-primary, var(--eipsi-primary, #3B6CAA));
     outline-offset: 3px;
   }
 }
