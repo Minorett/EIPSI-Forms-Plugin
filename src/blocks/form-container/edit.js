@@ -110,6 +110,17 @@ export default function Edit( {
 		typeof useCustomCompletion === 'boolean' ? useCustomCompletion : false;
 
 	const [ isMapOpen, setIsMapOpen ] = useState( false );
+	// === Estado para Plantillas Clinicas v1.5.0 ===
+	const [ selectedClinicalTemplate, setSelectedClinicalTemplate ] =
+		useState( '' );
+	const [ applyingClinicalTemplate, setApplyingClinicalTemplate ] =
+		useState( false );
+	const [ availableClinicalTemplates, setAvailableClinicalTemplates ] =
+		useState( [] );
+	const [ loadingClinicalTemplates, setLoadingClinicalTemplates ] =
+		useState( false );
+	const [ clinicalTemplateNotice, setClinicalTemplateNotice ] =
+		useState( null );
 	const [ selectedTemplate, setSelectedTemplate ] = useState( '' );
 	const [ applyingTemplate, setApplyingTemplate ] = useState( false );
 	const [ availableTemplates, setAvailableTemplates ] = useState( [] );
