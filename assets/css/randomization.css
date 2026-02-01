@@ -1247,3 +1247,25 @@ body.rct-single-config .rct-dashboard {
         color: #f3f4f6;
     }
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --eipsi-color-background: #0f172a;
+    --eipsi-color-background-subtle: #1e293b;
+    --eipsi-color-text: #e2e8f0;
+    --eipsi-color-text-muted: #94a3b8;
+    --eipsi-color-border: #334155;
+    --eipsi-color-primary: #60a5fa;
+    --eipsi-color-primary-hover: #3b82f6;
+  }
+  
+  .eipsi-randomization { background: #1e293b; color: #e2e8f0; }
+  .rct-card { background: #1e293b; border-color: #334155; }
+  .rct-card:hover { border-color: #60a5fa; }
+  .progress-fill { background: linear-gradient(90deg, #60a5fa, #3b82f6); }
+  .status-active { background: #1a2e1a; color: #86efac; }
+  .status-inactive { background: #2a1a1a; color: #fca5a5; }
+  .rct-header { background: #1e293b; color: #e2e8f0; border-color: #334155; }
+  .eipsi-modal-content { background: #1e293b; color: #e2e8f0; border-color: #334155; }
+  .metric-card { background: #1e293b; border-color: #334155; }
+}
