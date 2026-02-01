@@ -107,6 +107,23 @@ function eipsi_randomization_frontend_scripts() {
             true
         );
     }
+
+    // Enqueue CSS for Randomization UX
+    wp_enqueue_style(
+        'eipsi-randomization-css',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-randomization.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+
+    // Enqueue JS for Randomization UX
+    wp_enqueue_script(
+        'eipsi-randomization-ux',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-randomization-ux.js',
+        array(),
+        EIPSI_FORMS_VERSION,
+        true
+    );
 }
 
 /**
@@ -161,55 +178,4 @@ function eipsi_randomization_log( $message ) {
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         error_log( '[EIPSI RCT] ' . $message );
     }
-}
-
-/**
- * CSS adicional para el frontend
- */
-add_action( 'wp_head', 'eipsi_randomization_frontend_styles' );
-function eipsi_randomization_frontend_styles() {
-    global $post;
-    if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'eipsi_randomization' ) ) {
-        return;
-    }
-    ?>
-    <style>
-    .eipsi-randomization-container {
-        margin: 1rem 0;
-        padding: 1rem;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        background-color: #f9f9f9;
-    }
-    
-    .eipsi-randomization-notice {
-        background: #e3f2fd;
-        border-left: 4px solid #2196F3;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        border-radius: 4px;
-    }
-    
-    .eipsi-randomization-notice p {
-        margin: 0;
-        color: #0d47a1;
-        font-weight: 500;
-    }
-    
-    .eipsi-randomization-loading {
-        text-align: center;
-        padding: 2rem;
-        color: #666;
-    }
-    
-    .eipsi-randomization-error {
-        background: #ffebee;
-        border-left: 4px solid #f44336;
-        padding: 1rem;
-        margin: 1rem 0;
-        border-radius: 4px;
-        color: #c62828;
-    }
-    </style>
-    <?php
 }
