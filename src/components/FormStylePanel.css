@@ -63,15 +63,15 @@
 }
 
 .eipsi-preset-button:hover {
-    border-color: #005a87;
-    box-shadow: 0 2px 8px rgba(0, 90, 135, 0.1);
+    border-color: #3B6CAA;
+    box-shadow: 0 2px 8px rgba(59, 108, 170, 0.1);
     transform: translateY(-2px);
 }
 
 .eipsi-preset-button.is-active {
-    border-color: #005a87;
-    background: rgba(0, 90, 135, 0.05);
-    box-shadow: 0 0 0 3px rgba(0, 90, 135, 0.1);
+    border-color: #3B6CAA;
+    background: rgba(59, 108, 170, 0.05);
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.1);
 }
 
 /* Preset Preview Box */
@@ -119,7 +119,7 @@
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
-    color: #005a87;
+    color: #3B6CAA;
     font-size: 20px;
     line-height: 1;
 }
@@ -162,14 +162,14 @@
 
 /* Button Styles */
 .components-button.is-secondary {
-    border-color: #005a87;
-    color: #005a87;
+    border-color: #3B6CAA;
+    color: #3B6CAA;
 }
 
 .components-button.is-secondary:hover {
-    background: rgba(0, 90, 135, 0.05);
-    border-color: #003d5b;
-    color: #003d5b;
+    background: rgba(59, 108, 170, 0.05);
+    border-color: #1E3A5F;
+    color: #1E3A5F;
 }
 
 /* Flex Layout Adjustments */
@@ -218,7 +218,7 @@
 
 /* Accessibility: Focus States */
 .eipsi-preset-button:focus {
-    outline: 2px solid #005a87;
+    outline: 2px solid #3B6CAA;
     outline-offset: 2px;
 }
 

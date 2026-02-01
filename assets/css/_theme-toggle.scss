@@ -14,7 +14,7 @@
 
 :root {
     /* Core Colors - Light Mode */
-    --eipsi-color-primary: #005a87;
+    --eipsi-color-primary: #3B6CAA;
     --eipsi-color-primary-hover: #004466;
     --eipsi-color-secondary: #f0f4f8;
     --eipsi-color-background: #ffffff;
@@ -26,12 +26,12 @@
     --eipsi-color-input-bg: #ffffff;
     --eipsi-color-input-text: #1e293b;
     --eipsi-color-input-border: #cbd5e1;
-    --eipsi-color-input-border-focus: #005a87;
+    --eipsi-color-input-border-focus: #3B6CAA;
     --eipsi-color-input-error-bg: #fef2f2;
-    --eipsi-color-input-icon: #005a87;
+    --eipsi-color-input-icon: #3B6CAA;
 
     /* Button Colors */
-    --eipsi-color-button-bg: #005a87;
+    --eipsi-color-button-bg: #3B6CAA;
     --eipsi-color-button-text: #ffffff;
     --eipsi-color-button-hover-bg: #004466;
 
@@ -48,15 +48,15 @@
     --eipsi-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
     --eipsi-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
     --eipsi-shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.15);
-    --eipsi-shadow-focus: 0 0 0 3px rgba(0, 90, 135, 0.2);
+    --eipsi-shadow-focus: 0 0 0 3px rgba(59, 108, 170, 0.2);
     --eipsi-shadow-error: 0 0 0 3px rgba(220, 38, 38, 0.2);
 
     /* Cards & Surfaces */
     --eipsi-color-card-bg: #ffffff;
     --eipsi-color-card-bg-hover: #f9fafb;
     --eipsi-color-card-border: #e5e7eb;
-    --eipsi-color-checked-bg: rgba(0, 90, 135, 0.08);
-    --eipsi-color-checked-shadow: rgba(0, 90, 135, 0.15);
+    --eipsi-color-checked-bg: rgba(59, 108, 170, 0.08);
+    --eipsi-color-checked-shadow: rgba(59, 108, 170, 0.15);
 
     /* Success Message */
     --eipsi-color-success-dark: #047857;
@@ -73,21 +73,21 @@
     /* Progress Bar */
     --eipsi-color-progress-bg: #f3f4f6;
     --eipsi-color-progress-border: #d1d5db;
-    --eipsi-color-progress-fill: #005a87;
+    --eipsi-color-progress-fill: #3B6CAA;
     --eipsi-color-progress-text: #1f2937;
-    --eipsi-color-progress-text-highlight: #005a87;
+    --eipsi-color-progress-text-highlight: #3B6CAA;
 
     /* VAS Slider - CRITICAL */
     --eipsi-color-vas-container-bg: #ffffff;
     --eipsi-color-vas-container-bg-hover: #f5f7fa;
     --eipsi-color-vas-container-border: #e5e7eb;
     --eipsi-color-vas-slider-track: #d1d5db;
-    --eipsi-color-vas-slider-track-filled: #005a87;
-    --eipsi-color-vas-slider-thumb: #005a87;
+    --eipsi-color-vas-slider-track-filled: #3B6CAA;
+    --eipsi-color-vas-slider-thumb: #3B6CAA;
     --eipsi-color-vas-slider-thumb-hover: #004466;
     --eipsi-color-vas-label-text: #1e293b;
     --eipsi-color-vas-label-bg: transparent;
-    --eipsi-color-vas-value-text: #005a87;
+    --eipsi-color-vas-value-text: #3B6CAA;
     --eipsi-color-vas-value-bg: #f0f4f8;
 
     /* Transitions */

@@ -10,8 +10,8 @@
         .header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid #eeeeee; padding-bottom: 20px; }
         .header h1 { margin: 0; color: #1a1a1a; font-size: 24px; font-weight: 600; }
         .content { margin-bottom: 30px; font-size: 16px; }
-        .highlight-box { background-color: #f0f7fb; border-left: 4px solid #0073aa; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0; }
-        .button { display: inline-block; background-color: #0073aa; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 500; margin-top: 10px; text-align: center; font-size: 16px; width: 100%; box-sizing: border-box; }
+        .highlight-box { background-color: #f0f7fb; border-left: 4px solid #3B6CAA; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0; }
+        .button { display: inline-block; background-color: #3B6CAA; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 500; margin-top: 10px; text-align: center; font-size: 16px; width: 100%; box-sizing: border-box; }
         .button:hover { background-color: #005177; }
         .meta-info { font-size: 14px; color: #555; margin-top: 10px; text-align: center; }
         .footer { font-size: 13px; color: #666666; border-top: 1px solid #eeeeee; padding-top: 20px; text-align: center; }

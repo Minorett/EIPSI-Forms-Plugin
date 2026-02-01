@@ -53,9 +53,9 @@
 
         &:hover {
             background: var(--eipsi-color-background-subtle, #f8f9fa);
-            border-color: var(--eipsi-color-primary, #005a87);
+            border-color: var(--eipsi-color-primary, #3B6CAA);
             transform: translateY(-2px);
-            box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+            box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
         }
 
         &:active {
@@ -63,9 +63,9 @@
         }
 
         &:has(input[type="radio"]:checked) {
-            background: rgba(0, 90, 135, 0.05);
-            border-color: var(--eipsi-color-primary, #005a87);
-            box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
+            background: rgba(59, 108, 170, 0.05);
+            border-color: var(--eipsi-color-primary, #3B6CAA);
+            box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.1));
         }
 
         .likert-label-wrapper {

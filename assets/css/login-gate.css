@@ -75,7 +75,7 @@
 .eipsi-login-gate__btn--primary:hover {
     background: var(--eipsi-color-button-hover-bg);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 90, 135, 0.2);
+    box-shadow: 0 4px 12px rgba(59, 108, 170, 0.2);
 }
 
 .eipsi-login-gate__btn--secondary {
@@ -85,7 +85,7 @@
 }
 
 .eipsi-login-gate__btn--secondary:hover {
-    background: rgba(0, 90, 135, 0.05);
+    background: rgba(59, 108, 170, 0.05);
     transform: translateY(-2px);
 }
 

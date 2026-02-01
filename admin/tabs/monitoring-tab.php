@@ -468,12 +468,12 @@ jQuery(document).ready(function($) {
 }
 
 .card-footer a {
-    color: #0073aa;
+    color: #3B6CAA;
     text-decoration: none;
 }
 
 .card-footer a:hover {
-    color: #005a87;
+    color: #3B6CAA;
 }
 
 .audit-table {

@@ -105,7 +105,7 @@
 }
 
 .eipsi-modal-close:focus {
-    outline: 2px solid #0073aa;
+    outline: 2px solid #3B6CAA;
     outline-offset: 2px;
 }
 
@@ -169,11 +169,11 @@
     min-width: 18px;
     margin-top: 2px;
     cursor: pointer;
-    accent-color: #0073aa;
+    accent-color: #3B6CAA;
 }
 
 .eipsi-checkbox-list input[type="checkbox"]:focus {
-    outline: 2px solid #0073aa;
+    outline: 2px solid #3B6CAA;
     outline-offset: 2px;
 }
 
@@ -212,8 +212,8 @@
 
 .eipsi-form-select:focus {
     outline: none;
-    border-color: #0073aa;
-    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
+    border-color: #3B6CAA;
+    box-shadow: 0 0 0 2px rgba(59, 108, 170, 0.2);
 }
 
 .eipsi-form-textarea {
@@ -228,8 +228,8 @@
 
 .eipsi-form-textarea:focus {
     outline: none;
-    border-color: #0073aa;
-    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
+    border-color: #3B6CAA;
+    box-shadow: 0 0 0 2px rgba(59, 108, 170, 0.2);
 }
 
 .eipsi-form-input {
@@ -243,8 +243,8 @@
 
 .eipsi-form-input:focus {
     outline: none;
-    border-color: #0073aa;
-    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.2);
+    border-color: #3B6CAA;
+    box-shadow: 0 0 0 2px rgba(59, 108, 170, 0.2);
 }
 
 .eipsi-form-input::placeholder,
@@ -312,7 +312,7 @@
     margin-top: 15px;
     padding: 15px;
     background: #f0f9ff;
-    border-left: 4px solid #0073aa;
+    border-left: 4px solid #3B6CAA;
     border-radius: 4px;
     text-align: left;
     font-size: 13px;
@@ -320,7 +320,7 @@
 }
 
 #eipsi-success-details strong {
-    color: #0073aa;
+    color: #3B6CAA;
     display: block;
     margin-top: 8px;
     margin-bottom: 5px;
@@ -356,18 +356,18 @@
 }
 
 .eipsi-modal-footer .button-primary {
-    background: #0073aa;
+    background: #3B6CAA;
     color: white;
-    border-color: #0073aa;
+    border-color: #3B6CAA;
 }
 
 .eipsi-modal-footer .button-primary:hover:not(:disabled) {
-    background: #005a87;
-    border-color: #005a87;
+    background: #3B6CAA;
+    border-color: #3B6CAA;
 }
 
 .eipsi-modal-footer .button-primary:focus {
-    outline: 2px solid #0073aa;
+    outline: 2px solid #3B6CAA;
     outline-offset: 2px;
 }
 
@@ -383,7 +383,7 @@
 }
 
 .eipsi-modal-footer .button-secondary:focus {
-    outline: 2px solid #0073aa;
+    outline: 2px solid #3B6CAA;
     outline-offset: 2px;
 }
 
@@ -614,8 +614,8 @@
     .eipsi-form-select:focus,
     .eipsi-form-textarea:focus,
     .eipsi-form-input:focus {
-        border-color: #0073aa;
-        box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.3);
+        border-color: #3B6CAA;
+        box-shadow: 0 0 0 2px rgba(59, 108, 170, 0.3);
     }
     
     .eipsi-form-input::placeholder,
@@ -634,7 +634,7 @@
     
     #eipsi-success-details {
         background: #1e1e1e;
-        border-left-color: #0073aa;
+        border-left-color: #3B6CAA;
         color: #ccc;
     }
     
@@ -688,6 +688,6 @@
 .eipsi-form-textarea:focus-visible,
 .eipsi-form-input:focus-visible,
 .eipsi-modal-footer button:focus-visible {
-    outline: 2px solid #0073aa;
+    outline: 2px solid #3B6CAA;
     outline-offset: 2px;
 }

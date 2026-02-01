@@ -42,7 +42,7 @@
                 align-items: center;
                 justify-content: center;
                 gap: 0.35rem;
-                background: var(--eipsi-color-primary, #005a87);
+                background: var(--eipsi-color-primary, #3B6CAA);
                 color: #fff;
                 border: none;
                 border-radius: 999px;
@@ -50,17 +50,17 @@
                 font-weight: 600;
                 font-size: 1rem;
                 cursor: pointer;
-                box-shadow: 0 6px 18px rgba(0, 90, 135, 0.2);
+                box-shadow: 0 6px 18px rgba(59, 108, 170, 0.2);
                 transition: transform 0.2s ease, box-shadow 0.2s ease;
 
                 &:hover,
                 &:focus {
                     transform: translateY(-1px);
-                    box-shadow: 0 8px 24px rgba(0, 90, 135, 0.3);
+                    box-shadow: 0 8px 24px rgba(59, 108, 170, 0.3);
                 }
 
                 &:focus-visible {
-                    outline: 3px solid rgba(0, 90, 135, 0.5);
+                    outline: 3px solid rgba(59, 108, 170, 0.5);
                     outline-offset: 2px;
                 }
             }

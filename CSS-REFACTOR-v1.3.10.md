@@ -74,8 +74,8 @@
     
     /* Professional gradient styling */
     background: linear-gradient(135deg, 
-        var(--eipsi-color-primary, #005a87) 0%,
-        var(--eipsi-color-primary-hover, #003d5b) 100%);
+        var(--eipsi-color-primary, #3B6CAA) 0%,
+        var(--eipsi-color-primary-hover, #1E3A5F) 100%);
     color: var(--eipsi-color-button-text, #ffffff);
     font-weight: 700;
     font-size: 14px;
@@ -85,7 +85,7 @@
     border-radius: 24px;
     
     /* Subtle shadow */
-    box-shadow: 0 2px 8px rgba(0, 90, 135, 0.25);
+    box-shadow: 0 2px 8px rgba(59, 108, 170, 0.25);
     
     /* Smooth transitions */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -93,11 +93,11 @@
 
 .page-badge:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 90, 135, 0.35);
+    box-shadow: 0 4px 16px rgba(59, 108, 170, 0.35);
 }
 
 /* Page-specific color variants */
-.page-badge.page-1 { background: linear-gradient(135deg, #005a87, #003d5b); }
+.page-badge.page-1 { background: linear-gradient(135deg, #3B6CAA, #1E3A5F); }
 .page-badge.page-2 { background: linear-gradient(135deg, #388e3c, #2e7d32); }
 .page-badge.page-3 { background: linear-gradient(135deg, #d32f2f, #c62828); }
 .page-badge.page-4 { background: linear-gradient(135deg, #7b1fa2, #6a1b9a); }
@@ -121,8 +121,8 @@
 ```css
 .vas-label {
     padding: 0.625rem 0.875rem;
-    background: var(--eipsi-color-vas-label-bg, rgba(0, 90, 135, 0.1));
-    border: 2px solid var(--eipsi-color-vas-label-border, rgba(0, 90, 135, 0.2));
+    background: var(--eipsi-color-vas-label-bg, rgba(59, 108, 170, 0.1));
+    border: 2px solid var(--eipsi-color-vas-label-border, rgba(59, 108, 170, 0.2));
     border-radius: 8px;
     /* ❌ Cajas rectangulares feas */
 }
@@ -529,8 +529,8 @@ ls -lh build/blocks/form-page/
 
 ### **CSS Custom Properties utilizadas:**
 ```css
---eipsi-color-primary: #005a87
---eipsi-color-primary-hover: #003d5b
+--eipsi-color-primary: #3B6CAA
+--eipsi-color-primary-hover: #1E3A5F
 --eipsi-color-text-muted: #64748b
 --eipsi-color-border: #e2e8f0
 --eipsi-color-border-dark: #cbd5e0

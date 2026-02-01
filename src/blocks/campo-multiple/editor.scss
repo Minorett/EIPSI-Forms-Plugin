@@ -6,10 +6,10 @@
 .wp-block-eipsi-campo-multiple {
     &.eipsi-checkbox-field {
         padding: var(--eipsi-spacing-sm, 1em);
-        border: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-primary, #005a87);
+        border: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-primary, #3B6CAA);
         border-radius: var(--eipsi-border-radius-sm, 8px);
         background: var(--eipsi-color-background-subtle, #f8f9fa);
-        box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+        box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
         position: relative;
         transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
         
@@ -48,7 +48,7 @@
                 }
 
                 &:hover {
-                    background: var(--eipsi-color-secondary, rgba(0, 115, 170, 0.05));
+                    background: var(--eipsi-color-secondary, rgba(59, 108, 170, 0.05));
                 }
 
                 &.empty-state {
@@ -78,7 +78,7 @@
                         overflow: visible !important;
                         
                         cursor: not-allowed;
-                        accent-color: var(--eipsi-color-primary, #005a87);
+                        accent-color: var(--eipsi-color-primary, #3B6CAA);
                     }
 
                     .checkbox-label-text {
@@ -109,9 +109,9 @@
     
     &:hover {
         &.eipsi-checkbox-field {
-            border-color: var(--eipsi-color-primary-hover, #003d5b);
+            border-color: var(--eipsi-color-primary-hover, #1E3A5F);
             background: var(--eipsi-color-secondary, #e3f2fd);
-            box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
+            box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.1));
         }
     }
 }

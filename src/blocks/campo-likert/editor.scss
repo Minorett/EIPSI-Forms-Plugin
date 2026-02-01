@@ -5,10 +5,10 @@
 
 .wp-block-eipsi-campo-likert {
     padding: var(--eipsi-spacing-sm, 1em);
-    border: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-primary, #005a87);
+    border: var(--eipsi-border-width-focus, 2px) solid var(--eipsi-color-primary, #3B6CAA);
     border-radius: var(--eipsi-border-radius-sm, 8px);
     background: var(--eipsi-color-background-subtle, #f8f9fa);
-    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(0, 90, 135, 0.1));
+    box-shadow: var(--eipsi-shadow-md, 0 4px 12px rgba(59, 108, 170, 0.1));
     position: relative;
     font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
     transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
@@ -66,7 +66,7 @@
             }
             
             input[type="radio"] {
-                accent-color: var(--eipsi-color-primary, #005a87);
+                accent-color: var(--eipsi-color-primary, #3B6CAA);
                 
                 &:disabled {
                     cursor: not-allowed;
@@ -74,7 +74,7 @@
                 }
                 
                 &:checked + label {
-                    color: var(--eipsi-color-primary, #005a87);
+                    color: var(--eipsi-color-primary, #3B6CAA);
                     font-weight: var(--eipsi-font-weight-bold, 600);
                 }
             }
@@ -85,7 +85,7 @@
                 transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
                 
                 &:hover {
-                    color: var(--eipsi-color-primary, #005a87);
+                    color: var(--eipsi-color-primary, #3B6CAA);
                 }
             }
         }
@@ -138,7 +138,7 @@
     }
     
     &:hover {
-        box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(0, 90, 135, 0.1));
+        box-shadow: var(--eipsi-shadow-focus, 0 0 0 3px rgba(59, 108, 170, 0.1));
         
         // Hover effects específicos por tipo
         &[data-scale-variation*="agreement"] {

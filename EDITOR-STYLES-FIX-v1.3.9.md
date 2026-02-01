@@ -33,7 +33,7 @@ const cssVars = serializeToCSSVariables(currentConfig);
 // HTML output - CSS variables exist
 <div
   className="wp-block-eipsi-form-container"
-  style={cssVars}  // ← Variables CSS: --eipsi-color-primary: #005a87, etc.
+  style={cssVars}  // ← Variables CSS: --eipsi-color-primary: #3B6CAA, etc.
 >
 ```
 
@@ -49,7 +49,7 @@ const cssVars = serializeToCSSVariables(currentConfig);
 
 const blockProps = useBlockProps({
   className: 'eipsi-form eipsi-form ' + (className || ''),
-  style: cssVars,  // ← Variables CSS: --eipsi-color-primary: #005a87, etc.
+  style: cssVars,  // ← Variables CSS: --eipsi-color-primary: #3B6CAA, etc.
   'data-preset': presetName || 'Clinical Blue',
 });
 ```

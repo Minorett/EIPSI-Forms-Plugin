@@ -47,8 +47,8 @@
 
 .vas-filter-group select:focus,
 .vas-filter-group input[type="search"]:focus {
-    border-color: #0073aa;
-    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.2);
+    border-color: #3B6CAA;
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.2);
     outline: none;
     background: #fafafa;
 }
@@ -72,7 +72,7 @@
 
 .wp-list-table thead th,
 .wp-list-table thead td {
-    background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+    background: linear-gradient(135deg, #3B6CAA 0%, #1E3A5F 100%);
     color: #ffffff !important;
     font-weight: 700;
     font-size: 14px;
@@ -201,17 +201,17 @@
 }
 
 .wp-core-ui .button-primary {
-    background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
-    border: 2px solid #005a87;
+    background: linear-gradient(135deg, #3B6CAA 0%, #1E3A5F 100%);
+    border: 2px solid #1E3A5F;
     font-weight: 600;
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
 .wp-core-ui .button-primary:hover {
-    background: linear-gradient(135deg, #005a87 0%, #004366 100%);
+    background: linear-gradient(135deg, #1E3A5F 0%, #004366 100%);
     border-color: #004366;
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 115, 170, 0.4);
+    box-shadow: 0 2px 6px rgba(59, 108, 170, 0.4);
 }
 
 /* ==========================================================================
@@ -252,16 +252,16 @@
 }
 
 .tablenav-pages .pagination-links a:hover {
-    background: #0073aa;
+    background: #3B6CAA;
     color: #ffffff;
-    border-color: #0073aa;
+    border-color: #3B6CAA;
     transform: translateY(-1px);
 }
 
 .tablenav-pages .pagination-links .current {
-    background: #0073aa;
+    background: #3B6CAA;
     color: #ffffff;
-    border-color: #0073aa;
+    border-color: #3B6CAA;
     font-weight: 700;
 }
 
@@ -296,9 +296,9 @@
 }
 
 .notice-info {
-    border-color: #0073aa;
+    border-color: #3B6CAA;
     background: #f0f6fc;
-    color: #005a87;
+    color: #1E3A5F;
 }
 
 /* ==========================================================================
@@ -331,7 +331,7 @@
     padding: 6px 12px;
     border-radius: 20px;
     background: #f0f6fc;
-    border: 2px solid #0073aa;
+    border: 2px solid #3B6CAA;
 }
 
 /* ==========================================================================
@@ -356,7 +356,7 @@
     top: 100%;
     right: 0;
     background: #ffffff;
-    border: 2px solid #0073aa;
+    border: 2px solid #3B6CAA;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     list-style: none;
@@ -384,13 +384,13 @@
 
 .export-options li a:hover {
     background: #f0f6fc;
-    color: #0073aa;
-    border-left-color: #0073aa;
+    color: #3B6CAA;
+    border-left-color: #3B6CAA;
     padding-left: 25px;
 }
 
 .export-options li a:focus {
-    outline: 2px solid #0073aa;
+    outline: 2px solid #3B6CAA;
     outline-offset: -2px;
 }
 
@@ -483,8 +483,8 @@
 }
 
 .eipsi-toggle input:checked + .eipsi-toggle-slider {
-    background-color: #0073aa;
-    border-color: #005a87;
+    background-color: #3B6CAA;
+    border-color: #1E3A5F;
 }
 
 .eipsi-toggle input:checked + .eipsi-toggle-slider:before {
@@ -534,8 +534,8 @@
 
 #external-db-fields input[type="text"]:focus,
 #external-db-fields input[type="password"]:focus {
-    border-color: #0073aa;
-    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.2);
+    border-color: #3B6CAA;
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.2);
     outline: none;
 }
 
@@ -545,7 +545,7 @@
 
 .eipsi-status-card {
     background: #f0f6fc;
-    border-left: 6px solid #0073aa;
+    border-left: 6px solid #3B6CAA;
     border-radius: 8px;
 }
 
@@ -587,7 +587,7 @@
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
-    background: #0073aa;
+    background: #3B6CAA;
     color: #fff;
     border-radius: 4px;
     margin-left: 10px;
@@ -596,7 +596,7 @@
 
 .eipsi-count {
     font-weight: 700;
-    color: #0073aa;
+    color: #3B6CAA;
     font-size: 18px;
 }
 
@@ -658,11 +658,11 @@
 
 .eipsi-db-indicator-banner {
     background: linear-gradient(135deg, #f0f6fc 0%, #e3f2fd 100%);
-    border: 3px solid #0073aa;
+    border: 3px solid #3B6CAA;
     border-radius: 12px;
     padding: 20px 25px;
     margin: 25px 0;
-    box-shadow: 0 4px 16px rgba(0, 115, 170, 0.15);
+    box-shadow: 0 4px 16px rgba(59, 108, 170, 0.15);
 }
 
 .eipsi-db-indicator-content {
@@ -675,12 +675,12 @@
     flex-shrink: 0;
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+    background: linear-gradient(135deg, #3B6CAA 0%, #1E3A5F 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 115, 170, 0.25);
+    box-shadow: 0 4px 12px rgba(59, 108, 170, 0.25);
 }
 
 .eipsi-db-indicator-icon .dashicons {
@@ -729,11 +729,11 @@
 }
 
 .eipsi-db-badge--external {
-    background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+    background: linear-gradient(135deg, #3B6CAA 0%, #1E3A5F 100%);
 }
 
 .eipsi-db-badge--wordpress {
-    background: linear-gradient(135deg, #135e96 0%, #0073aa 100%);
+    background: linear-gradient(135deg, #135e96 0%, #3B6CAA 100%);
 }
 
 .eipsi-db-name {
@@ -744,7 +744,7 @@
     background: #ffffff;
     padding: 6px 12px;
     border-radius: 4px;
-    border: 2px solid #0073aa;
+    border: 2px solid #3B6CAA;
 }
 
 .eipsi-db-indicator-status {
@@ -898,8 +898,8 @@
 }
 
 .eipsi-alignment-advanced .components-number-control__input:focus {
-    border-color: #0073aa;
-    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.2);
+    border-color: #3B6CAA;
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.2);
     outline: none;
     background: #ffffff;
 }
