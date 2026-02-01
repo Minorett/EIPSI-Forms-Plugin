@@ -88,6 +88,8 @@ function eipsi_randomization_shortcode( $atts ) {
 
     // PASO 3: Buscar si ya existe una asignación previa para este usuario
     $existing_assignment = eipsi_get_existing_assignment( $config_id, $user_fingerprint );
+    
+    $is_new_assignment = false;
 
     if ( $existing_assignment && $persistent_mode ) {
         // YA FUE ASIGNADO Y MODO PERSISTENTE - usar la asignación existente (persistencia)
@@ -159,6 +161,7 @@ function eipsi_randomization_shortcode( $atts ) {
         } else {
             // Guardar nueva asignación en DB
             eipsi_create_assignment( $config_id, $user_fingerprint, $assigned_form_id, $persistent_mode );
+            $is_new_assignment = true; // MARK NEW ASSIGNMENT
             
             if ( $persistent_mode ) {
                 error_log( "[EIPSI RCT] Nuevo usuario: {$user_fingerprint} → Formulario: {$assigned_form_id} (PERSISTENTE)" );
@@ -168,13 +171,58 @@ function eipsi_randomization_shortcode( $atts ) {
         }
     }
 
+    // Determine Group Name
+    $group_name = get_the_title( $assigned_form_id );
+    
+    // Check if there is a custom label in config (optional optimization)
+    if ( ! empty( $config['formularios'] ) ) {
+        foreach ( $config['formularios'] as $form ) {
+            if ( isset( $form['id'] ) && intval( $form['id'] ) === $assigned_form_id ) {
+                 if ( ! empty( $form['label'] ) ) {
+                     $group_name = $form['label'];
+                 }
+                 break;
+            }
+        }
+    }
+
     // PASO 4: Renderizar el formulario asignado
     ob_start();
     ?>
     <div class="eipsi-randomization-container" 
          data-randomization-id="<?php echo esc_attr( $config_id ); ?>"
-         data-assigned-form="<?php echo esc_attr( $assigned_form_id ); ?>">
+         data-assigned-form="<?php echo esc_attr( $assigned_form_id ); ?>"
+         data-show-modal="<?php echo $is_new_assignment ? 'true' : 'false'; ?>">
         
+        <?php 
+        // 1. MODAL (Only if new assignment)
+        if ( $is_new_assignment ) : ?>
+            <div class="eipsi-rct-modal-overlay">
+                <div class="eipsi-rct-modal">
+                    <h3><?php esc_html_e( 'Estudio de Investigación', 'eipsi-forms' ); ?></h3>
+                    <p>
+                        <?php 
+                        printf( 
+                            esc_html__( 'Te hemos asignado al grupo: %s. Por favor completa el siguiente formulario.', 'eipsi-forms' ), 
+                            '<strong>' . esc_html( $group_name ) . '</strong>'
+                        ); 
+                        ?>
+                    </p>
+                    <button class="eipsi-rct-modal-btn"><?php esc_html_e( 'Comenzar', 'eipsi-forms' ); ?></button>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php 
+        // 2. BADGE (Always visible)
+        ?>
+        <div class="eipsi-rct-badge">
+            <span class="icon">🔖</span>
+            <span class="text">
+                <?php printf( esc_html__( 'Grupo: %s', 'eipsi-forms' ), esc_html( $group_name ) ); ?>
+            </span>
+        </div>
+
         <?php if ( ! empty( $config['showInstructions'] ) ) : ?>
         <div class="randomization-notice" style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px;">
             <p style="margin: 0; color: #0d47a1; font-weight: 500;">
@@ -538,7 +586,7 @@ function eipsi_update_assignment_access( $assignment_id ) {
         $wpdb->prepare(
             "UPDATE {$table_name} 
             SET last_access = %s,
-                access_count = access_count + 1
+            access_count = access_count + 1
             WHERE id = %d",
             current_time( 'mysql' ),
             $assignment_id
