@@ -6,7 +6,7 @@
     "scripts": {
         "build": "wp-scripts build && node scripts/fix-block-json-css-references.js",
         "start": "wp-scripts start",
-        "lint:js": "wp-scripts lint-js",
+        "lint:js": "ESLINT_USE_FLAT_CONFIG=false wp-scripts lint-js",
         "lint:scss": "wp-scripts lint-style",
         "format": "wp-scripts format",
         "lint:duplicates": "node scripts/check-duplicate-functions.js"
@@ -34,6 +34,10 @@
         "@wordpress/server-side-render": "^6.0.0"
     },
     "overrides": {
-        "webpack-dev-server": "^5.2.2"
+        "webpack-dev-server": "^5.2.2",
+        "eslint": "9.26.0",
+        "@eslint/plugin-kit": "0.3.4",
+        "lodash": "^4.17.21",
+        "lodash-es": "^4.17.21"
     }
 }
