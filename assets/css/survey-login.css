@@ -100,18 +100,18 @@
 }
 
 .eipsi-survey-login-form input.valid {
-    border-color: var(--eipsi-color-success, #198754);
+    border-color: var(--eipsi-color-success, #008080);
 }
 
 .eipsi-survey-login-form input.invalid {
-    border-color: var(--eipsi-color-error, #ff6b6b);
+    border-color: var(--eipsi-color-error, #800000);
     background-color: var(--eipsi-color-input-error-bg, #fff5f5);
 }
 
 .eipsi-valid-icon {
     position: absolute;
     right: 12px;
-    color: var(--eipsi-color-success, #198754);
+    color: var(--eipsi-color-success, #008080);
     display: none;
     font-weight: bold;
 }
@@ -174,14 +174,14 @@ input.valid + .eipsi-valid-icon {
 .eipsi-survey-login-form .error-message,
 .eipsi-error-message {
     background: var(--eipsi-color-input-error-bg, #fff5f5) !important;
-    color: var(--eipsi-color-error, #ff6b6b) !important;
+    color: var(--eipsi-color-error, #800000) !important;
     border: 1px solid rgba(255, 107, 107, 0.2);
 }
 
 .eipsi-survey-login-form .success-message,
 .eipsi-success-message {
     background: #e6f4ea !important;
-    color: var(--eipsi-color-success, #198754) !important;
+    color: var(--eipsi-color-success, #008080) !important;
     border: 1px solid rgba(25, 135, 84, 0.2);
 }
 

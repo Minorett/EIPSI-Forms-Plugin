@@ -45,11 +45,11 @@
 }
 
 .eipsi-stat-card.eipsi-stat-success {
-    border-left: 4px solid #00a32a;
+    border-left: 4px solid #008080;
 }
 
 .eipsi-stat-card.eipsi-stat-error {
-    border-left: 4px solid #d63638;
+    border-left: 4px solid #800000;
 }
 
 .eipsi-stat-card.eipsi-stat-total {
@@ -75,7 +75,7 @@
 .eipsi-stat-card .stat-sublabel {
     display: block;
     font-size: 12px;
-    color: #00a32a;
+    color: #008080;
 }
 
 /* === Sub Tabs === */
@@ -204,12 +204,12 @@
 
 .eipsi-email-status.sent {
     background: #edfaef;
-    color: #00a32a;
+    color: #008080;
 }
 
 .eipsi-email-status.failed {
     background: #fbeeea;
-    color: #d63638;
+    color: #800000;
 }
 
 /* Email Type Badges */
@@ -308,7 +308,7 @@
     display: block;
     font-size: 24px;
     font-weight: 700;
-    color: #d63638;
+    color: #800000;
 }
 
 /* === Dropout Table === */
@@ -338,7 +338,7 @@
 /* At Risk Badge */
 .eipsi-at-risk-badge {
     display: inline-block;
-    background: #d63638;
+    background: #800000;
     color: #fff;
     padding: 3px 8px;
     border-radius: 4px;
@@ -349,7 +349,7 @@
 
 .eipsi-safe-badge {
     display: inline-block;
-    background: #00a32a;
+    background: #008080;
     color: #fff;
     padding: 3px 8px;
     border-radius: 4px;

@@ -832,7 +832,7 @@ body.rct-single-config .rct-dashboard {
 }
 
 .drift.ok {
-    color: #28a745;
+    color: #008080;
     background: #d4edda;
 }
 
@@ -842,7 +842,7 @@ body.rct-single-config .rct-dashboard {
 }
 
 .drift.alert {
-    color: #dc3545;
+    color: #800000;
     background: #f8d7da;
 }
 
@@ -881,7 +881,7 @@ body.rct-single-config .rct-dashboard {
 }
 
 .health-score.green {
-    background: linear-gradient(135deg, #28a745, #20c997);
+    background: linear-gradient(135deg, #008080, #20c997);
 }
 
 .health-score.orange {
@@ -889,7 +889,7 @@ body.rct-single-config .rct-dashboard {
 }
 
 .health-score.red {
-    background: linear-gradient(135deg, #dc3545, #e74c3c);
+    background: linear-gradient(135deg, #800000, #e74c3c);
 }
 
 .health-score .score-value {

@@ -131,7 +131,7 @@
     padding: 0;
     font-size: 16px;
     font-weight: 600;
-    color: #d63031;
+    color: #800000;
     line-height: 1.4;
 }
 
@@ -278,14 +278,14 @@
 
 #eipsi-step3-message.error {
     background: #ffe6e6;
-    color: #d63031;
-    border-left-color: #d63031;
+    color: #800000;
+    border-left-color: #800000;
 }
 
 #eipsi-step3-message.success {
     background: #e6ffe6;
-    color: #27ae60;
-    border-left-color: #27ae60;
+    color: #008080;
+    border-left-color: #008080;
 }
 
 /* ===========================
@@ -297,7 +297,7 @@
 }
 
 #step-success h3 {
-    color: #27ae60;
+    color: #008080;
     font-size: 20px;
     margin-top: 10px;
 }
@@ -400,12 +400,12 @@
     margin-top: 30px;
     padding: 20px;
     background: #fff8f0;
-    border: 2px solid #ff6b6b;
+    border: 2px solid #800000;
     border-radius: 4px;
 }
 
 .eipsi-anonymize-section h3 {
-    color: #d63031;
+    color: #800000;
     margin-top: 0;
     margin-bottom: 10px;
     font-size: 16px;
@@ -426,14 +426,14 @@
 }
 
 .eipsi-anonymize-section .button-secondary {
-    background: #ff6b6b;
+    background: #800000;
     color: white;
-    border-color: #ff6b6b;
+    border-color: #800000;
 }
 
 .eipsi-anonymize-section .button-secondary:hover {
-    background: #d63031;
-    border-color: #d63031;
+    background: #800000;
+    border-color: #800000;
 }
 
 /* ===========================

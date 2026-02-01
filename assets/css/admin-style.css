@@ -186,16 +186,16 @@
    ========================================================================== */
 
 .button-link-delete {
-    color: #d63638 !important;
-    border: 2px solid #d63638 !important;
+    color: #800000 !important;
+    border: 2px solid #800000 !important;
     font-weight: 600;
     background: #ffffff;
 }
 
 .button-link-delete:hover {
-    background: #d63638 !important;
+    background: #800000 !important;
     color: #ffffff !important;
-    border-color: #d63638 !important;
+    border-color: #800000 !important;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(214, 54, 56, 0.3);
 }
@@ -610,7 +610,7 @@
 }
 
 .eipsi-error {
-    color: #d63638;
+    color: #800000;
     font-weight: 600;
     background: #fdf0f0;
     padding: 4px 8px;

@@ -110,13 +110,13 @@
 }
 
 .progress-step.completed .step-number {
-    background: #28a745;
+    background: #008080;
     color: white;
-    border-color: #28a745;
+    border-color: #008080;
 }
 
 .progress-step.completed .step-name {
-    color: #28a745;
+    color: #008080;
 }
 
 .progress-step.completed .step-number::after {
@@ -430,8 +430,8 @@
     }
     
     .progress-step.completed .step-number {
-        background: #28a745;
-        border-color: #28a745;
+        background: #008080;
+        border-color: #008080;
     }
     
     .progress-step .step-name {
@@ -443,7 +443,7 @@
     }
     
     .progress-step.completed .step-name {
-        color: #28a745;
+        color: #008080;
     }
     
     .progress-step.disabled .step-number {
@@ -543,7 +543,7 @@
 .eipsi-wizard-success {
     text-align: center;
     padding: 3rem 2rem;
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: linear-gradient(135deg, #008080 0%, #20c997 100%);
     color: white;
     border-radius: 12px;
     margin: 2rem 0;
@@ -563,7 +563,7 @@
 
 /* === ERROR STATES === */
 .eipsi-wizard-error {
-    background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+    background: linear-gradient(135deg, #800000 0%, #e74c3c 100%);
     color: white;
     padding: 1rem;
     border-radius: 8px;

@@ -22,7 +22,7 @@
  * - Secondary: #e3f2fd (Light Blue - calming backgrounds)
  * - Neutral: #ffffff, #f8f9fa, #e2e8f0 (clinical cleanliness)
  * - Text: #2c3e50 (soft dark - readable without harshness)
- * - Semantic: #ff6b6b (error), #198754 (success), #ffc107 (warning)
+ * - Semantic: #800000 (error), #008080 (success), #ffc107 (warning)
  */
 
 :root {
@@ -43,12 +43,12 @@
     --eipsi-color-button-bg: #005a87;
     --eipsi-color-button-text: #ffffff;
     --eipsi-color-button-hover-bg: #003d5b;
-    --eipsi-color-error: #ff6b6b;
+    --eipsi-color-error: #800000;
     --eipsi-color-error-text: #ffffff;
     --eipsi-color-error-border-strong: rgba(255, 255, 255, 0.3);
     --eipsi-shadow-error-strong: 0 4px 16px rgba(211, 47, 47, 0.25);
-    --eipsi-color-success: #198754;
-    --eipsi-color-success-dark: #156b47;
+    --eipsi-color-success: #008080;
+    --eipsi-color-success-dark: #006666;
     --eipsi-color-success-text: #ffffff;
     --eipsi-color-success-overlay: rgba(255, 255, 255, 0.15);
     --eipsi-color-success-subtitle: rgba(255, 255, 255, 0.95);
@@ -546,7 +546,7 @@
 .form-group label.required::after,
 .eipsi-field label.required::after {
     content: " *";
-    color: var(--eipsi-color-error, #ff6b6b);
+    color: var(--eipsi-color-error, #800000);
     font-weight: var(--eipsi-font-weight-bold, 700);
 }
 
@@ -561,7 +561,7 @@
 
 /* Error Messages */
 .form-error {
-    color: var(--eipsi-color-error, #ff6b6b);
+    color: var(--eipsi-color-error, #800000);
     font-size: var(--eipsi-font-size-small, 0.875rem);
     font-weight: var(--eipsi-font-weight-medium, 600);
     margin: var(--eipsi-spacing-xs, 0.5rem) 0 0 0;
@@ -575,11 +575,11 @@
 
 /* Error State */
 .has-error label {
-    color: var(--eipsi-color-error, #ff6b6b);
+    color: var(--eipsi-color-error, #800000);
 }
 
 .has-error .field-helper {
-    color: var(--eipsi-color-error, #ff6b6b);
+    color: var(--eipsi-color-error, #800000);
 }
 
 /* ============================================================================
@@ -1814,7 +1814,7 @@ select[aria-invalid="true"]:focus {
 
 /* VAS Error State */
 .eipsi-vas-slider-field.has-error .vas-slider-container {
-    border-color: var(--eipsi-color-error, #ff6b6b);
+    border-color: var(--eipsi-color-error, #800000);
     background: var(--eipsi-color-input-error-bg, #fff5f5);
 }
 
@@ -2419,11 +2419,11 @@ select[aria-invalid="true"]:focus {
 .form-message--success {
     position: relative;
     overflow: hidden;
-    background: var(--eipsi-color-success, #198754);
+    background: var(--eipsi-color-success, #008080);
     background: linear-gradient(
         135deg,
-        var(--eipsi-color-success, #198754) 0%,
-        var(--eipsi-color-success-dark, #156b47) 100%
+        var(--eipsi-color-success, #008080) 0%,
+        var(--eipsi-color-success-dark, #006666) 100%
     );
     color: var(--eipsi-color-button-text, #ffffff);
     border: none;
