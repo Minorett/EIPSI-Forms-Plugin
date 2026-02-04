@@ -27,7 +27,9 @@ if (!defined('ABSPATH')) {
  * En estudios longitudinales con login, usamos 'email' para permitir
  * que los participantes accedan desde diferentes dispositivos.
  */
-define('EIPSI_PARTICIPANT_ID_STRATEGY', 'email');
+if (!defined('EIPSI_PARTICIPANT_ID_STRATEGY')) {
+    define('EIPSI_PARTICIPANT_ID_STRATEGY', 'email');
+}
 
 // =================================================================
 // VERSIONADO DE SCHEMA
@@ -41,7 +43,9 @@ define('EIPSI_PARTICIPANT_ID_STRATEGY', 'email');
  *
  * @since 1.4.0
  */
-define('EIPSI_LONGITUDINAL_DB_VERSION', '1.1.0');
+if (!defined('EIPSI_LONGITUDINAL_DB_VERSION')) {
+    define('EIPSI_LONGITUDINAL_DB_VERSION', '1.1.0');
+}
 
 // =================================================================
 // CONFIGURACIÓN DE SESIONES
@@ -53,7 +57,9 @@ define('EIPSI_LONGITUDINAL_DB_VERSION', '1.1.0');
  * Default: 168 horas = 7 días
  * La sesión se almacena en una cookie HTTP-only y en wp_survey_sessions.
  */
-define('EIPSI_SESSION_TTL_HOURS', 168);
+if (!defined('EIPSI_SESSION_TTL_HOURS')) {
+    define('EIPSI_SESSION_TTL_HOURS', 168);
+}
 
 /**
  * Nombre de la cookie de sesión del plugin
@@ -61,21 +67,27 @@ define('EIPSI_SESSION_TTL_HOURS', 168);
  * Cookie HTTP-only para seguridad contra XSS.
  * No confundir con las cookies de WordPress.
  */
-define('EIPSI_SESSION_COOKIE_NAME', 'eipsi_participant_session');
+if (!defined('EIPSI_SESSION_COOKIE_NAME')) {
+    define('EIPSI_SESSION_COOKIE_NAME', 'eipsi_participant_session');
+}
 
 /**
  * Ruta de la cookie de sesión
  * 
  * '/' para que esté disponible en todo el sitio.
  */
-define('EIPSI_SESSION_COOKIE_PATH', '/');
+if (!defined('EIPSI_SESSION_COOKIE_PATH')) {
+    define('EIPSI_SESSION_COOKIE_PATH', '/');
+}
 
 /**
  * Dominio de la cookie de sesión
  * 
  * false para usar el dominio actual.
  */
-define('EIPSI_SESSION_COOKIE_DOMAIN', false);
+if (!defined('EIPSI_SESSION_COOKIE_DOMAIN')) {
+    define('EIPSI_SESSION_COOKIE_DOMAIN', false);
+}
 
 /**
  * Flag de seguridad para cookie de sesión
@@ -83,7 +95,9 @@ define('EIPSI_SESSION_COOKIE_DOMAIN', false);
  * true para enviar solo sobre HTTPS (si el sitio tiene SSL).
  * Si el sitio no tiene SSL, debe ser false.
  */
-define('EIPSI_SESSION_COOKIE_SECURE', is_ssl());
+if (!defined('EIPSI_SESSION_COOKIE_SECURE')) {
+    define('EIPSI_SESSION_COOKIE_SECURE', is_ssl());
+}
 
 /**
  * Flag de SameSite para cookie de sesión
@@ -91,7 +105,9 @@ define('EIPSI_SESSION_COOKIE_SECURE', is_ssl());
  * 'Lax' o 'Strict'. 'Strict' es más seguro pero puede causar problemas
  * con enlaces externos. 'Lax' permite navegación desde sitios externos.
  */
-define('EIPSI_SESSION_COOKIE_SAMESITE', 'Lax');
+if (!defined('EIPSI_SESSION_COOKIE_SAMESITE')) {
+    define('EIPSI_SESSION_COOKIE_SAMESITE', 'Lax');
+}
 
 // =================================================================
 // CONFIGURACIÓN DE MAGIC LINKS
