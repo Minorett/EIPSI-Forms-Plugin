@@ -2110,6 +2110,9 @@ function eipsi_maybe_create_tables() {
         // Crear tablas NUEVAS
         eipsi_sync_survey_waves_table();
         eipsi_sync_survey_assignments_table();
+        eipsi_sync_survey_magic_links_table(); // v1.4.1
+        eipsi_sync_survey_email_log_table();   // v1.4.1
+        eipsi_sync_survey_audit_log_table();   // v1.4.2 TASK 5.1
 
         // Actualizar versión
         update_option('eipsi_longitudinal_db_version', EIPSI_LONGITUDINAL_DB_VERSION);
@@ -2264,37 +2267,6 @@ function eipsi_sync_survey_audit_log_table() {
     error_log('[EIPSI] Synced survey_audit_log table');
 }
 
-/**
- * Sincronizar tabla wp_survey_participants (wrapper para Schema Manager)
- */
-function eipsi_sync_survey_participants_table() {
-    if (class_exists('EIPSI_Database_Schema_Manager') && method_exists('EIPSI_Database_Schema_Manager', 'verify_and_sync_schema')) {
-        EIPSI_Database_Schema_Manager::verify_and_sync_schema();
-    }
-}
-
-/**
- * Versioned table creation / migrations
- */
-function eipsi_maybe_create_tables() {
-    $db_version = get_option('eipsi_longitudinal_db_version', '0');
-
-    if (defined('EIPSI_LONGITUDINAL_DB_VERSION') && version_compare($db_version, EIPSI_LONGITUDINAL_DB_VERSION, '<')) {
-        // Crear tablas participantes (si aplica)
-        eipsi_sync_survey_participants_table();
-
-        // Crear tablas NUEVAS
-        eipsi_sync_survey_waves_table();
-        eipsi_sync_survey_assignments_table();
-        eipsi_sync_survey_magic_links_table(); // v1.4.1
-        eipsi_sync_survey_email_log_table();   // v1.4.1
-        eipsi_sync_survey_audit_log_table();   // v1.4.2 TASK 5.1
-
-        // Actualizar versión
-        update_option('eipsi_longitudinal_db_version', EIPSI_LONGITUDINAL_DB_VERSION);
-        error_log('[EIPSI] Database schema updated to v' . EIPSI_LONGITUDINAL_DB_VERSION);
-    }
-}
 
 /**
  * Hook para sincronizar tablas longitudinales
