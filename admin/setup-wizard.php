@@ -367,25 +367,3 @@ function eipsi_get_admin_users() {
     
     return $users;
 }
-
-/**
- * Check if a step is completed based on wizard data
- */
-function eipsi_is_step_completed($step_number, $wizard_data) {
-    $step_data = isset($wizard_data['step_' . $step_number]) ? $wizard_data['step_' . $step_number] : array();
-    
-    switch ($step_number) {
-        case 1:
-            return !empty($step_data['study_name']) && !empty($step_data['study_code']) && !empty($step_data['principal_investigator_id']);
-        case 2:
-            return !empty($step_data['number_of_waves']) && !empty($step_data['waves_config']);
-        case 3:
-            return !empty($step_data['timing_intervals']) || !empty($step_data['reminder_days_before']);
-        case 4:
-            return !empty($step_data['invitation_methods']);
-        case 5:
-            return false; // Step 5 is the activation step
-        default:
-            return false;
-    }
-}

@@ -29,10 +29,6 @@ define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
 define('EIPSI_FORMS_SLUG', 'eipsi-forms');
 
-// Authentication constants (v1.4.0+)
-define('EIPSI_SESSION_COOKIE_NAME', 'eipsi_session_token');
-define('EIPSI_SESSION_TTL_HOURS', 168); // 7 días
-
 // Configuración longitudinal (v1.4.0+)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/config/longitudinal-config.php';
 
