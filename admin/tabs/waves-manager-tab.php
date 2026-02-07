@@ -10,8 +10,8 @@ if (!defined('ABSPATH')) {
 }
 
 // Enqueue styles y scripts para modal de anonimización
-wp_enqueue_style('eipsi-waves-manager', EIPSI_PLUGIN_URL . 'admin/css/waves-manager.css', array(), EIPSI_VERSION);
-wp_enqueue_script('eipsi-waves-manager', EIPSI_PLUGIN_URL . 'admin/js/waves-manager.js', array('jquery'), EIPSI_VERSION, true);
+wp_enqueue_style('eipsi-waves-manager', EIPSI_FORMS_PLUGIN_URL . 'admin/css/waves-manager.css', array(), EIPSI_FORMS_VERSION);
+wp_enqueue_script('eipsi-waves-manager', EIPSI_FORMS_PLUGIN_URL . 'admin/js/waves-manager.js', array('jquery'), EIPSI_FORMS_VERSION, true);
 
 // Pasar datos al JS
 wp_localize_script('eipsi-waves-manager', 'eipsiWavesManagerData', array(

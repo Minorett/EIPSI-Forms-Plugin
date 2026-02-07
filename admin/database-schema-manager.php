@@ -86,6 +86,7 @@ class EIPSI_Database_Schema_Manager {
             $rct_assignments_sync = self::sync_local_randomization_assignments_table();
             
             // Longitudinal tables (v1.4.0+)
+            $studies_sync = self::sync_local_survey_studies_table();
             $participants_sync = self::sync_local_survey_participants_table();
             $sessions_sync = self::sync_local_survey_sessions_table(); // Nueva tabla de sesiones
             $waves_sync = self::sync_local_survey_waves_table();
@@ -100,6 +101,7 @@ class EIPSI_Database_Schema_Manager {
             $results['randomization_assignments_table'] = $rct_assignments_sync;
             
             // Add longitudinal tables to results
+            $results['survey_studies_table'] = $studies_sync;
             $results['survey_participants_table'] = $participants_sync;
             $results['survey_sessions_table'] = $sessions_sync; // Nueva tabla de sesiones
             $results['survey_waves_table'] = $waves_sync;
@@ -110,6 +112,7 @@ class EIPSI_Database_Schema_Manager {
             
             if ( ! $results_sync['success'] || ! $events_sync['success'] || 
                  ! $rct_configs_sync['success'] || ! $rct_assignments_sync['success'] ||
+                 ! $studies_sync['success'] ||
                  ! $participants_sync['success'] || ! $sessions_sync['success'] ||
                  ! $waves_sync['success'] || ! $assignments_sync['success'] || 
                  ! $magic_links_sync['success'] || ! $email_log_sync['success'] ||
@@ -126,6 +129,9 @@ class EIPSI_Database_Schema_Manager {
                 }
                 if ( ! $rct_assignments_sync['success'] ) {
                     $results['errors'][] = $rct_assignments_sync['error'];
+                }
+                if ( ! $studies_sync['success'] ) {
+                    $results['errors'][] = $studies_sync['error'];
                 }
                 if ( ! $participants_sync['success'] ) {
                     $results['errors'][] = $participants_sync['error'];
@@ -1157,6 +1163,55 @@ class EIPSI_Database_Schema_Manager {
      * @since 1.4.0
      * @return array Result with success status and details
      */
+    private static function sync_local_survey_studies_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'survey_studies';
+        $charset_collate = $wpdb->get_charset_collate();
+        
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+        
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+        
+        if ( ! $result['exists'] ) {
+            // Create table
+            $sql = "CREATE TABLE {$table_name} (
+                id INT(11) NOT NULL AUTO_INCREMENT,
+                study_code VARCHAR(50) NOT NULL,
+                study_name VARCHAR(255) NOT NULL,
+                description TEXT,
+                principal_investigator_id BIGINT(20) UNSIGNED,
+                status ENUM('active', 'completed', 'paused', 'archived') DEFAULT 'active',
+                config JSON,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY unique_study_code (study_code),
+                KEY status (status),
+                KEY principal_investigator_id (principal_investigator_id),
+                KEY created_at (created_at)
+            ) {$charset_collate};";
+            
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+            
+            $result['created'] = true;
+            $result['exists'] = true;
+            
+            error_log( '[EIPSI Forms] Created table: ' . $table_name );
+        }
+        
+        return $result;
+    }
+
     private static function sync_local_survey_participants_table() {
         global $wpdb;
         $table_name = $wpdb->prefix . 'survey_participants';
