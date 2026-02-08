@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.5.0
+ * Version: 1.4.2
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
