@@ -338,8 +338,8 @@ add_action('init', function() {
 function eipsi_forms_activate() {
     global $wpdb;
 
-    // Crear página de aleatorización
-    eipsi_create_randomization_page();
+    // Crear página de aleatorización (DESHABILITADO v1.3.17)
+    // eipsi_create_randomization_page();
 
     $charset_collate = $wpdb->get_charset_collate();
 
