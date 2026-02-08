@@ -1184,7 +1184,7 @@ class EIPSI_Database_Schema_Manager {
         if ( ! $result['exists'] ) {
             // Create table
             $sql = "CREATE TABLE {$table_name} (
-                id INT(11) NOT NULL AUTO_INCREMENT,
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
                 study_code VARCHAR(50) NOT NULL,
                 study_name VARCHAR(255) NOT NULL,
                 description TEXT,
@@ -1246,7 +1246,6 @@ class EIPSI_Database_Schema_Manager {
                 UNIQUE KEY unique_survey_email (survey_id, email),
                 KEY survey_id (survey_id),
                 KEY is_active (is_active),
-                KEY idx_survey_email (survey_id, email),
                 KEY idx_participant_active (is_active),
                 KEY idx_email (email),
                 KEY idx_created_at (created_at)
@@ -2038,12 +2037,12 @@ function eipsi_sync_survey_waves_table() {
         due_date DATETIME NULL,
 
         reminder_days INT DEFAULT 3,
-        retry_enabled BOOLEAN DEFAULT 1,
+        retry_enabled TINYINT(1) DEFAULT 1,
         retry_days INT DEFAULT 7,
         max_retries INT DEFAULT 3,
 
         status ENUM('draft', 'active', 'completed', 'paused') DEFAULT 'draft',
-        is_mandatory BOOLEAN DEFAULT 1,
+        is_mandatory TINYINT(1) DEFAULT 1,
 
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -2242,7 +2241,7 @@ function eipsi_sync_survey_email_log_table() {
         status ENUM('sent', 'failed', 'bounced') DEFAULT 'sent',
         sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         error_message TEXT NULL,
-        magic_link_used BOOLEAN DEFAULT 0,
+        magic_link_used TINYINT(1) DEFAULT 0,
         metadata JSON NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
