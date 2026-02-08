@@ -13,6 +13,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Start session before any output to avoid headers already sent warnings.
+if (!session_id()) {
+    session_start();
+}
+
 /**
  * Display Setup Wizard Page
  */
@@ -54,10 +59,6 @@ function eipsi_display_setup_wizard_page() {
  * Start wizard session and initialize transient
  */
 function eipsi_start_wizard_session() {
-    if (!session_id()) {
-        session_start();
-    }
-    
     // Initialize wizard transient if not exists
     $transient_key = eipsi_get_wizard_transient_key();
     if (false === get_transient($transient_key)) {
@@ -80,10 +81,6 @@ function eipsi_start_wizard_session() {
  * Get wizard transient key based on user session
  */
 function eipsi_get_wizard_transient_key() {
-    if (!session_id()) {
-        session_start();
-    }
-    
     $user_id = get_current_user_id();
     $session_id = session_id();
     
