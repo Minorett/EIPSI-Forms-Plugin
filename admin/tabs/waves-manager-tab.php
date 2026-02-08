@@ -21,7 +21,7 @@ wp_localize_script('eipsi-waves-manager', 'eipsiWavesManagerData', array(
 global $wpdb;
 
 // 1. Fetch all studies
-$studies = $wpdb->get_results("SELECT id, study_name, study_id FROM {$wpdb->prefix}survey_studies ORDER BY created_at DESC");
+$studies = $wpdb->get_results("SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies ORDER BY created_at DESC");
 
 // 2. Determine active study
 $current_study_id = isset($_GET['study_id']) ? absint($_GET['study_id']) : (isset($studies[0]) ? $studies[0]->id : 0);
@@ -66,7 +66,7 @@ $available_forms = get_posts(array(
                 <?php else: ?>
                     <?php foreach ($studies as $study): ?>
                         <option value="<?php echo esc_attr($study->id); ?>" <?php selected($current_study_id, $study->id); ?>>
-                            <?php echo esc_html($study->study_name . ' (' . $study->study_id . ')'); ?>
+                            <?php echo esc_html($study->study_name . ' (' . $study->study_code . ')'); ?>
                         </option>
                     <?php endforeach; ?>
                 <?php endif; ?>
