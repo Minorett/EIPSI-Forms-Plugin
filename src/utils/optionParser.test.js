@@ -5,6 +5,8 @@ import {
 	parseOptions,
 	stringifyOptions,
 	normalizeOptionsInput,
+	encodeNewlinesForAttribute,
+	decodeNewlinesFromAttribute,
 } from './optionParser';
 
 const CRLF_STRING = 'Sí\r\nNo\r\nTal vez';
@@ -131,5 +133,59 @@ describe( 'optionParser utility', () => {
 		const input = 'Opción 1, Opción 2, Opción 3';
 		const normalized = normalizeOptionsInput( input );
 		expect( normalized ).toBe( 'Opción 1; Opción 2; Opción 3' );
+	} );
+
+	test( 'encodeNewlinesForAttribute encodes newlines as HTML entities', () => {
+		const input = 'Muy\nbajo;Bajo;Neutral';
+		expect( encodeNewlinesForAttribute( input ) ).toBe(
+			'Muy&#10;bajo;Bajo;Neutral'
+		);
+	} );
+
+	test( 'encodeNewlinesForAttribute handles multiple newlines', () => {
+		const input = 'Línea 1\nLínea 2\nLínea 3';
+		expect( encodeNewlinesForAttribute( input ) ).toBe(
+			'Línea 1&#10;Línea 2&#10;Línea 3'
+		);
+	} );
+
+	test( 'encodeNewlinesForAttribute returns empty string for null/undefined', () => {
+		expect( encodeNewlinesForAttribute( null ) ).toBe( '' );
+		expect( encodeNewlinesForAttribute( undefined ) ).toBe( '' );
+		expect( encodeNewlinesForAttribute( '' ) ).toBe( '' );
+	} );
+
+	test( 'decodeNewlinesFromAttribute decodes &#10; to newlines', () => {
+		const input = 'Muy&#10;bajo;Bajo;Neutral';
+		expect( decodeNewlinesFromAttribute( input ) ).toBe(
+			'Muy\nbajo;Bajo;Neutral'
+		);
+	} );
+
+	test( 'decodeNewlinesFromAttribute decodes &#x0A; to newlines', () => {
+		const input = 'Muy&#x0A;bajo;Bajo;Neutral';
+		expect( decodeNewlinesFromAttribute( input ) ).toBe(
+			'Muy\nbajo;Bajo;Neutral'
+		);
+	} );
+
+	test( 'decodeNewlinesFromAttribute handles mixed formats', () => {
+		const input = 'Línea 1&#10;Línea 2\nLínea 3&#x0A;Línea 4';
+		expect( decodeNewlinesFromAttribute( input ) ).toBe(
+			'Línea 1\nLínea 2\nLínea 3\nLínea 4'
+		);
+	} );
+
+	test( 'decodeNewlinesFromAttribute returns empty string for null/undefined', () => {
+		expect( decodeNewlinesFromAttribute( null ) ).toBe( '' );
+		expect( decodeNewlinesFromAttribute( undefined ) ).toBe( '' );
+		expect( decodeNewlinesFromAttribute( '' ) ).toBe( '' );
+	} );
+
+	test( 'round-trip encoding/decoding preserves original newlines', () => {
+		const original = 'Muy\nbajo;Bajo;Neutral;Alto;Muy\nalto';
+		const encoded = encodeNewlinesForAttribute( original );
+		const decoded = decodeNewlinesFromAttribute( encoded );
+		expect( decoded ).toBe( original );
 	} );
 } );
