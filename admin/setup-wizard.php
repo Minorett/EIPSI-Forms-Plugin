@@ -13,10 +13,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Start session before any output to avoid headers already sent warnings.
-if (!session_id()) {
-    session_start();
-}
+// Delay session start until WordPress admin is initialized to avoid headers already sent warning
+add_action('admin_init', function() {
+    if (!session_id() && !headers_sent()) {
+        session_start();
+    }
+});
 
 /**
  * Display Setup Wizard Page
