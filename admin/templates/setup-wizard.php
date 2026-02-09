@@ -24,12 +24,15 @@ $success_message = isset($message) ? $message : '';
 ?>
 <div class="wrap eipsi-setup-wizard">
     <h1 class="wp-heading-inline">
-        <?php echo $current_step === 5 ? '✅ Confirmar y Activar Estudio' : 'Crear Estudio Longitudinal'; ?>
+        <?php echo $current_step === 5 ? '✅ Review & Activate Study' : 'Create Longitudinal Study'; ?>
     </h1>
+    <p class="eipsi-step-indicator">
+        <?php echo 'Step ' . $current_step . ' of 5'; ?>
+    </p>
     
     <?php if (!empty($errors)): ?>
         <div class="notice notice-error">
-            <p><strong>Errores encontrados:</strong></p>
+            <p><strong>Errors found:</strong></p>
             <ul>
                 <?php foreach ($errors as $error): ?>
                     <li><?php echo esc_html($error); ?></li>
@@ -49,11 +52,11 @@ $success_message = isset($message) ? $message : '';
         <div class="progress-steps">
             <?php
             $steps = array(
-                1 => 'Información Básica',
-                2 => 'Config Tomas',
-                3 => 'Timing',
-                4 => 'Participantes',
-                5 => 'Resumen'
+                1 => 'Basic Information',
+                2 => 'Wave Configuration',
+                3 => 'Timing & Scheduling',
+                4 => 'Participants',
+                5 => 'Review & Activate'
             );
             
             foreach ($steps as $step_num => $step_name):
@@ -87,7 +90,7 @@ $success_message = isset($message) ? $message : '';
         if (file_exists($step_template)) {
             include $step_template;
         } else {
-            echo '<div class="notice notice-error"><p>Template de paso no encontrado.</p></div>';
+            echo '<div class="notice notice-error"><p>Step template not found.</p></div>';
         }
         ?>
     </div>
@@ -96,17 +99,17 @@ $success_message = isset($message) ? $message : '';
     <div class="eipsi-wizard-navigation">
         <?php if ($current_step > 1): ?>
             <button type="button" class="button button-secondary" onclick="eipsiNavigateToStep(<?php echo $current_step - 1; ?>)">
-                ← Anterior
+                ← Previous
             </button>
         <?php endif; ?>
         
         <?php if ($current_step < 5): ?>
             <button type="button" class="button button-primary" onclick="eipsiSaveCurrentStep(<?php echo $current_step; ?>)">
-                Siguiente →
+                Next →
             </button>
         <?php else: ?>
             <button type="button" class="button button-primary" onclick="eipsiActivateStudy()">
-                Activar Estudio
+                Activate Study
             </button>
         <?php endif; ?>
     </div>
@@ -143,7 +146,7 @@ function eipsiSaveCurrentStep(step, callback) {
             window.location.href = '<?php echo admin_url('admin.php?page=eipsi-new-study&step='); ?>' + (step + 1);
         } else {
             // Handle validation errors or generic errors
-            let errorMessage = 'Error desconocido';
+            let errorMessage = 'Unknown error';
             if (data.data) {
                 if (Array.isArray(data.data)) {
                     errorMessage = data.data.join('\n');
@@ -153,17 +156,17 @@ function eipsiSaveCurrentStep(step, callback) {
                     errorMessage = data.data.message;
                 }
             }
-            alert('Error al guardar el paso:\n' + errorMessage);
+            alert('Error saving the step:\n' + errorMessage);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error de conexión. Por favor, intenta nuevamente.');
+        alert('Connection error. Please try again.');
     });
 }
 
 function eipsiActivateStudy() {
-    if (!confirm('¿Estás seguro de que deseas activar este estudio? Una vez activado, será difícil cambiar la estructura.')) {
+    if (!confirm('Are you sure you want to activate this study? Once activated, changing the structure will be difficult.')) {
         return;
     }
     
@@ -180,7 +183,7 @@ function eipsiActivateStudy() {
     if (confirmationCheckbox && confirmationCheckbox.checked) {
         formData.append('activation_confirmed', '1');
     } else {
-        alert('Debes confirmar la activación marcando la casilla correspondiente.');
+        alert('You must confirm activation by checking the box.');
         return;
     }
     
@@ -191,10 +194,10 @@ function eipsiActivateStudy() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('¡Estudio creado exitosamente!');
+            alert('Study created successfully!');
             window.location.href = data.data.redirect_url;
         } else {
-            let errorMessage = 'Error desconocido';
+            let errorMessage = 'Unknown error';
             if (data.data) {
                 if (Array.isArray(data.data)) {
                     errorMessage = data.data.join('\n');
@@ -204,12 +207,12 @@ function eipsiActivateStudy() {
                     errorMessage = data.data.message;
                 }
             }
-            alert('Error al activar el estudio:\n' + errorMessage);
+            alert('Error activating the study:\n' + errorMessage);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error de conexión. Por favor, intenta nuevamente.');
+        alert('Connection error. Please try again.');
     });
 }
 

@@ -130,7 +130,7 @@ function eipsi_handle_wizard_submission() {
     if (!isset($_POST['eipsi_wizard_nonce']) || !wp_verify_nonce($_POST['eipsi_wizard_nonce'], 'eipsi_wizard_action')) {
         return array(
             'success' => false,
-            'errors' => array('Error de seguridad. Por favor, recarga la página.')
+            'errors' => array('Security error. Please reload the page.')
         );
     }
     
@@ -147,7 +147,7 @@ function eipsi_handle_wizard_submission() {
         default:
             return array(
                 'success' => false,
-                'errors' => array('Acción no válida.')
+                'errors' => array('Invalid action.')
             );
     }
 }
@@ -183,7 +183,7 @@ function eipsi_save_step_submission($step_number) {
     return array(
         'success' => true,
         'redirect_url' => $redirect_url,
-        'message' => 'Paso guardado correctamente.'
+        'message' => 'Step saved successfully.'
     );
 }
 
@@ -198,7 +198,7 @@ function eipsi_activate_study_submission() {
         if (empty($wizard_data['step_' . $i])) {
             return array(
                 'success' => false,
-                'errors' => array('Debes completar todos los pasos antes de activar el estudio.')
+                'errors' => array('You must complete all steps before activating the study.')
             );
         }
     }
@@ -207,7 +207,7 @@ function eipsi_activate_study_submission() {
     if (!isset($_POST['activation_confirmed']) || $_POST['activation_confirmed'] !== '1') {
         return array(
             'success' => false,
-            'errors' => array('Debes confirmar la activación del estudio.')
+            'errors' => array('You must confirm study activation.')
         );
     }
     
@@ -217,7 +217,7 @@ function eipsi_activate_study_submission() {
     if (!$study_id) {
         return array(
             'success' => false,
-            'errors' => array('Error al crear el estudio. Por favor, intenta nuevamente.')
+            'errors' => array('Error creating the study. Please try again.')
         );
     }
     
@@ -231,7 +231,7 @@ function eipsi_activate_study_submission() {
     return array(
         'success' => true,
         'redirect_url' => $redirect_url,
-        'message' => 'Estudio creado exitosamente.'
+        'message' => 'Study created successfully.'
     );
 }
 
