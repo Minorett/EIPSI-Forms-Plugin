@@ -28,16 +28,16 @@ function wp_ajax_eipsi_get_study_overview_handler() {
         wp_send_json_error('Unauthorized');
     }
 
-    $study_id = isset($_GET['study_id']) ? sanitize_text_field($_GET['study_id']) : '';
+    $study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
     if (empty($study_id)) {
         wp_send_json_error('Missing study ID');
     }
 
     global $wpdb;
 
-    // 1. General study info
+    // 1. General study info (usar 'id' como PK, no 'study_id')
     $study = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM {$wpdb->prefix}survey_studies WHERE study_id = %s",
+        "SELECT * FROM {$wpdb->prefix}survey_studies WHERE id = %d",
         $study_id
     ));
 
@@ -46,31 +46,32 @@ function wp_ajax_eipsi_get_study_overview_handler() {
     }
 
     // 2. Participant stats
+    // La tabla participants usa 'survey_id' (que es el ID del estudio), no 'study_id'
     $participants_stats = array(
         'total' => (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants WHERE study_id = %s",
+            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants WHERE survey_id = %d",
             $study_id
         )),
         'completed' => (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(DISTINCT participant_id) FROM {$wpdb->prefix}survey_assignments 
-             WHERE study_id = %s AND status = 'completed'",
+             WHERE study_id = %d AND status = 'submitted'",
             $study_id
         )),
         'in_progress' => (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(DISTINCT participant_id) FROM {$wpdb->prefix}survey_assignments 
-             WHERE study_id = %s AND status = 'active'",
+             WHERE study_id = %d AND status = 'in_progress'",
             $study_id
         )),
         'inactive' => (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants 
-             WHERE study_id = %s AND status = 'inactive'",
+             WHERE survey_id = %d AND is_active = 0",
             $study_id
         )),
     );
 
     // 3. Waves stats
     $waves = $wpdb->get_results($wpdb->prepare(
-        "SELECT * FROM {$wpdb->prefix}survey_waves WHERE study_id = %s ORDER BY wave_order ASC",
+        "SELECT * FROM {$wpdb->prefix}survey_waves WHERE study_id = %d ORDER BY wave_index ASC",
         $study_id
     ));
 
@@ -81,15 +82,16 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             $wave->id
         ));
         $completed_assignments = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d AND status = 'completed'",
+            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d AND status = 'submitted'",
             $wave->id
         ));
         
+        // Usar nombres de columnas correctos según el schema
         $waves_stats[] = array(
             'id' => $wave->id,
-            'wave_name' => $wave->wave_name,
+            'wave_name' => $wave->name,
             'form_id' => $wave->form_id,
-            'deadline' => $wave->end_date,
+            'deadline' => $wave->due_date,
             'status' => $wave->status,
             'total' => $total_assignments,
             'completed' => $completed_assignments,
@@ -99,20 +101,21 @@ function wp_ajax_eipsi_get_study_overview_handler() {
     }
 
     // 4. Email stats
+    // La tabla email_log usa survey_id (INT), no study_id
     $emails_stats = array(
         'sent_today' => (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log 
-             WHERE study_id = %s AND DATE(sent_at) = CURDATE()",
+             WHERE survey_id = %d AND DATE(sent_at) = CURDATE()",
             $study_id
         )),
         'failed' => (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log 
-             WHERE study_id = %s AND status = 'failed'",
+             WHERE survey_id = %d AND status = 'failed'",
             $study_id
         )),
         'last_sent' => $wpdb->get_var($wpdb->prepare(
             "SELECT sent_at FROM {$wpdb->prefix}survey_email_log 
-             WHERE study_id = %s ORDER BY sent_at DESC LIMIT 1",
+             WHERE survey_id = %d ORDER BY sent_at DESC LIMIT 1",
             $study_id
         )),
     );
@@ -143,9 +146,9 @@ function wp_ajax_eipsi_get_wave_details_handler() {
     global $wpdb;
 
     $assignments = $wpdb->get_results($wpdb->prepare(
-        "SELECT a.*, p.email, p.full_name 
+        "SELECT a.*, p.email, CONCAT(p.first_name, ' ', p.last_name) as full_name 
          FROM {$wpdb->prefix}survey_assignments a
-         JOIN {$wpdb->prefix}survey_participants p ON a.participant_id = p.participant_id
+         JOIN {$wpdb->prefix}survey_participants p ON a.participant_id = p.id
          WHERE a.wave_id = %d",
         $wave_id
     ));
@@ -224,15 +227,16 @@ function wp_ajax_eipsi_get_study_email_logs_handler() {
         wp_send_json_error('Unauthorized');
     }
 
-    $study_id = isset($_GET['study_id']) ? sanitize_text_field($_GET['study_id']) : '';
+    $study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
     if (empty($study_id)) {
         wp_send_json_error('Missing study ID');
     }
 
     global $wpdb;
+    // La tabla email_log usa survey_id (INT), no study_id
     $logs = $wpdb->get_results($wpdb->prepare(
         "SELECT * FROM {$wpdb->prefix}survey_email_log 
-         WHERE study_id = %s 
+         WHERE survey_id = %d 
          ORDER BY sent_at DESC LIMIT 50",
         $study_id
     ));
