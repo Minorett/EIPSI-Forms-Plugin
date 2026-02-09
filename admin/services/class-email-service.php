@@ -545,9 +545,10 @@ class EIPSI_Email_Service {
         // Get wave if needed (for reminder/recovery types)
         $wave = null;
         if (in_array($original_log->email_type, array('reminder', 'recovery'))) {
+            $wave_id = $original_log->metadata ? json_decode($original_log->metadata, true)['wave_id'] ?? 0 : 0;
             $wave = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$wpdb->prefix}survey_waves WHERE id = %d",
-                $original_log->metadata ? json_decode($original_log->metadata, true)['wave_id'] ?? 0 : 0
+                $wave_id
             ));
         }
         
