@@ -300,6 +300,7 @@ class EIPSI_External_Database {
             survey_id INT(11) DEFAULT NULL,
             wave_index INT(11) DEFAULT NULL,
             session_id varchar(255) DEFAULT NULL,
+            user_fingerprint varchar(255) DEFAULT NULL,
             participant varchar(255) DEFAULT NULL,
             interaction varchar(255) DEFAULT NULL,
             form_name varchar(255) NOT NULL,
@@ -351,6 +352,7 @@ class EIPSI_External_Database {
             'survey_id' => "ALTER TABLE `{$table_name}` ADD COLUMN survey_id INT(11) DEFAULT NULL AFTER participant_id",
             'wave_index' => "ALTER TABLE `{$table_name}` ADD COLUMN wave_index INT(11) DEFAULT NULL AFTER survey_id",
             'session_id' => "ALTER TABLE `{$table_name}` ADD COLUMN session_id varchar(255) DEFAULT NULL AFTER wave_index",
+            'user_fingerprint' => "ALTER TABLE `{$table_name}` ADD COLUMN user_fingerprint varchar(255) DEFAULT NULL AFTER session_id",
             'duration_seconds' => "ALTER TABLE `{$table_name}` ADD COLUMN duration_seconds decimal(8,3) DEFAULT NULL AFTER duration",
             'submitted_at' => "ALTER TABLE `{$table_name}` ADD COLUMN submitted_at datetime DEFAULT NULL AFTER created_at",
             'start_timestamp_ms' => "ALTER TABLE `{$table_name}` ADD COLUMN start_timestamp_ms bigint(20) DEFAULT NULL AFTER duration_seconds",
@@ -564,11 +566,11 @@ class EIPSI_External_Database {
             error_log('EIPSI Forms External DB: Attempting insert into table ' . $table_name);
         }
         
-        // Prepare statement with new columns: session_id, metadata, status
+        // Prepare statement with new columns: session_id, user_fingerprint, metadata, status
         $stmt = $mysqli->prepare(
             "INSERT INTO `{$table_name}` 
-            (form_id, participant_id, survey_id, wave_index, session_id, form_name, created_at, submitted_at, ip_address, device, browser, os, screen_width, duration, duration_seconds, start_timestamp_ms, end_timestamp_ms, metadata, status, form_responses) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            (form_id, participant_id, survey_id, wave_index, session_id, user_fingerprint, form_name, created_at, submitted_at, ip_address, device, browser, os, screen_width, duration, duration_seconds, start_timestamp_ms, end_timestamp_ms, metadata, status, form_responses) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         
         if (!$stmt) {
@@ -587,14 +589,15 @@ class EIPSI_External_Database {
             );
         }
         
-        // Bind types: string × 13, int, int, double, bigint, bigint, string, string, string
+        // Bind types: string × 14, int, double, bigint, bigint, string × 3
         $stmt->bind_param(
-            'ssiissssssssiidiisss',
+            'ssiissssssssssidiisss',
             $data['form_id'],
             $data['participant_id'],
             $data['survey_id'],
             $data['wave_index'],
             $data['session_id'],
+            $data['user_fingerprint'],
             $data['form_name'],
             $data['created_at'],
             $data['submitted_at'],
@@ -838,7 +841,7 @@ class EIPSI_External_Database {
             
             // Check required columns
             $required_columns = array(
-                'form_id', 'participant_id', 'survey_id', 'wave_index', 'session_id', 'form_name',
+                'form_id', 'participant_id', 'survey_id', 'wave_index', 'session_id', 'user_fingerprint', 'form_name',
                 'created_at', 'submitted_at', 'duration_seconds',
                 'start_timestamp_ms', 'end_timestamp_ms', 'metadata',
                 'status', 'form_responses'
