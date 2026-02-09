@@ -786,13 +786,8 @@ class EIPSI_External_Database {
         $credentials = $this->get_credentials();
         
         if (!$credentials) {
-            return array(
-                'success' => false,
-                'message' => __('No external database configured', 'eipsi-forms'),
-                'using_wordpress_db' => true,
-                'results_table' => array('exists' => false),
-                'events_table' => array('exists' => false)
-            );
+            // No external DB configured - check local WordPress tables
+            return $this->check_local_table_status();
         }
         
         // Test connection
@@ -1101,6 +1096,196 @@ class EIPSI_External_Database {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Check local WordPress database table status
+     * Used when no external database is configured
+     * 
+     * @return array Detailed local table status information
+     */
+    private function check_local_table_status() {
+        global $wpdb;
+        
+        $last_verified = get_option('eipsi_schema_last_verified', null);
+        
+        // Table names
+        $results_table_name = $wpdb->prefix . 'vas_form_results';
+        $events_table_name = $wpdb->prefix . 'vas_form_events';
+        $rct_configs_table = $wpdb->prefix . 'eipsi_randomization_configs';
+        $rct_assignments_table = $wpdb->prefix . 'eipsi_randomization_assignments';
+        
+        // Longitudinal tables (v1.4.0+)
+        $survey_studies_table = $wpdb->prefix . 'survey_studies';
+        $survey_participants_table = $wpdb->prefix . 'survey_participants';
+        $survey_sessions_table = $wpdb->prefix . 'survey_sessions';
+        $survey_waves_table = $wpdb->prefix . 'survey_waves';
+        $survey_assignments_table = $wpdb->prefix . 'survey_assignments';
+        $survey_magic_links_table = $wpdb->prefix . 'survey_magic_links';
+        $survey_email_log_table = $wpdb->prefix . 'survey_email_log';
+        $survey_audit_log_table = $wpdb->prefix . 'survey_audit_log';
+        
+        // Check results table
+        $results_exists = $wpdb->get_var("SHOW TABLES LIKE '{$results_table_name}'") === $results_table_name;
+        $results_info = array(
+            'exists' => $results_exists,
+            'table_name' => $results_table_name,
+            'row_count' => 0,
+            'columns_ok' => false,
+            'missing_columns' => array()
+        );
+        
+        if ($results_exists) {
+            // Get row count
+            $results_info['row_count'] = intval($wpdb->get_var("SELECT COUNT(*) FROM {$results_table_name}"));
+            
+            // Check required columns
+            $required_columns = array(
+                'form_id', 'participant_id', 'survey_id', 'wave_index', 'session_id', 'user_fingerprint',
+                'form_name', 'created_at', 'submitted_at', 'duration_seconds',
+                'start_timestamp_ms', 'end_timestamp_ms', 'metadata',
+                'status', 'form_responses'
+            );
+            
+            foreach ($required_columns as $column) {
+                $column_exists = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                        WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                        DB_NAME,
+                        $results_table_name,
+                        $column
+                    )
+                );
+                if (empty($column_exists)) {
+                    $results_info['missing_columns'][] = $column;
+                }
+            }
+            
+            $results_info['columns_ok'] = empty($results_info['missing_columns']);
+        }
+        
+        // Check events table
+        $events_exists = $wpdb->get_var("SHOW TABLES LIKE '{$events_table_name}'") === $events_table_name;
+        $events_info = array(
+            'exists' => $events_exists,
+            'table_name' => $events_table_name,
+            'row_count' => 0,
+            'columns_ok' => false,
+            'missing_columns' => array()
+        );
+        
+        if ($events_exists) {
+            // Get row count
+            $events_info['row_count'] = intval($wpdb->get_var("SELECT COUNT(*) FROM {$events_table_name}"));
+            
+            // Check required columns
+            $required_columns = array(
+                'form_id', 'session_id', 'event_type', 'page_number',
+                'metadata', 'user_agent', 'created_at'
+            );
+            
+            foreach ($required_columns as $column) {
+                $column_exists = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                        WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                        DB_NAME,
+                        $events_table_name,
+                        $column
+                    )
+                );
+                if (empty($column_exists)) {
+                    $events_info['missing_columns'][] = $column;
+                }
+            }
+            
+            $events_info['columns_ok'] = empty($events_info['missing_columns']);
+        }
+        
+        // Check RCT config table
+        $rct_configs_exists = $wpdb->get_var("SHOW TABLES LIKE '{$rct_configs_table}'") === $rct_configs_table;
+        $rct_configs_info = array(
+            'exists' => $rct_configs_exists,
+            'table_name' => $rct_configs_table,
+            'row_count' => 0,
+            'columns_ok' => false
+        );
+        
+        if ($rct_configs_exists) {
+            $rct_configs_info['row_count'] = intval($wpdb->get_var("SELECT COUNT(*) FROM {$rct_configs_table}"));
+            $rct_configs_info['columns_ok'] = true; // Simplified check for now
+        }
+        
+        // Check RCT assignments table
+        $rct_assignments_exists = $wpdb->get_var("SHOW TABLES LIKE '{$rct_assignments_table}'") === $rct_assignments_table;
+        $rct_assignments_info = array(
+            'exists' => $rct_assignments_exists,
+            'table_name' => $rct_assignments_table,
+            'row_count' => 0,
+            'columns_ok' => false
+        );
+        
+        if ($rct_assignments_exists) {
+            $rct_assignments_info['row_count'] = intval($wpdb->get_var("SELECT COUNT(*) FROM {$rct_assignments_table}"));
+            $rct_assignments_info['columns_ok'] = true; // Simplified check for now
+        }
+        
+        // Check longitudinal tables
+        $longitudinal_tables = array(
+            'survey_studies' => $survey_studies_table,
+            'survey_participants' => $survey_participants_table,
+            'survey_sessions' => $survey_sessions_table,
+            'survey_waves' => $survey_waves_table,
+            'survey_assignments' => $survey_assignments_table,
+            'survey_magic_links' => $survey_magic_links_table,
+            'survey_email_log' => $survey_email_log_table,
+            'survey_audit_log' => $survey_audit_log_table,
+        );
+        
+        $longitudinal_info = array();
+        foreach ($longitudinal_tables as $key => $table_name) {
+            $exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
+            $longitudinal_info[$key] = array(
+                'exists' => $exists,
+                'table_name' => $table_name,
+                'row_count' => $exists ? intval($wpdb->get_var("SELECT COUNT(*) FROM {$table_name}")) : 0
+            );
+        }
+        
+        // Determine overall status
+        $all_tables_exist = $results_exists && $events_exists && $rct_configs_exists && $rct_assignments_exists;
+        $all_columns_ok = $results_info['columns_ok'] && $events_info['columns_ok'];
+        
+        // Calculate total records
+        $total_records = $results_info['row_count'] + $events_info['row_count'];
+        
+        // Build message
+        $message = '';
+        if (!$all_tables_exist) {
+            $message = __('⚠️ Algunas tablas de la base de datos local no existen', 'eipsi-forms');
+        } elseif (!$all_columns_ok) {
+            $message = __('⚠️ Las tablas existen pero faltan algunas columnas', 'eipsi-forms');
+        } else {
+            $message = __('✓ Todas las tablas locales están correctamente configuradas', 'eipsi-forms');
+        }
+        
+        return array(
+            'success' => true,
+            'message' => $message,
+            'db_name' => DB_NAME,
+            'db_host' => DB_HOST,
+            'all_tables_exist' => $all_tables_exist,
+            'all_columns_ok' => $all_columns_ok,
+            'using_wordpress_db' => true,
+            'last_verified' => $last_verified,
+            'total_records' => $total_records,
+            'results_table' => $results_info,
+            'events_table' => $events_info,
+            'randomization_configs_table' => $rct_configs_info,
+            'randomization_assignments_table' => $rct_assignments_info,
+            'longitudinal_tables' => $longitudinal_info
+        );
     }
 }
 
