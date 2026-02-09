@@ -253,49 +253,7 @@ function eipsi_display_configuration_page() {
                             <?php echo esc_html__('Estado de tablas locales', 'eipsi-forms'); ?>
                         </h4>
                         
-                        <!-- Results Table -->
-                        <div class="status-detail-row" style="margin-bottom: 8px;">
-                            <span class="detail-label" style="min-width: 200px;">
-                                <?php echo esc_html__('Tabla de resultados:', 'eipsi-forms'); ?>
-                            </span>
-                            <span class="detail-value">
-                                <?php if ($local_table_status['results_table']['exists']): ?>
-                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-                                    <?php echo esc_html__('Existe', 'eipsi-forms'); ?>
-                                    <span style="color: #666; font-size: 12px;">
-                                        (<?php echo number_format_i18n($local_table_status['results_table']['row_count']); ?> <?php echo esc_html__('registros', 'eipsi-forms'); ?>)
-                                    </span>
-                                    <?php if (!empty($local_table_status['results_table']['missing_columns'])): ?>
-                                        <span class="dashicons dashicons-warning" style="color: #f0b849;" title="<?php echo esc_attr(sprintf(__('Faltan columnas: %s', 'eipsi-forms'), implode(', ', $local_table_status['results_table']['missing_columns'])));"></span>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="dashicons dashicons-dismiss" style="color: #dc3232;"></span>
-                                    <?php echo esc_html__('No existe', 'eipsi-forms'); ?>
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        
-                        <!-- Events Table -->
-                        <div class="status-detail-row" style="margin-bottom: 8px;">
-                            <span class="detail-label" style="min-width: 200px;">
-                                <?php echo esc_html__('Tabla de eventos:', 'eipsi-forms'); ?>
-                            </span>
-                            <span class="detail-value">
-                                <?php if ($local_table_status['events_table']['exists']): ?>
-                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-                                    <?php echo esc_html__('Existe', 'eipsi-forms'); ?>
-                                    <span style="color: #666; font-size: 12px;">
-                                        (<?php echo number_format_i18n($local_table_status['events_table']['row_count']); ?> <?php echo esc_html__('registros', 'eipsi-forms'); ?>)
-                                    </span>
-                                    <?php if (!empty($local_table_status['events_table']['missing_columns'])): ?>
-                                        <span class="dashicons dashicons-warning" style="color: #f0b849;" title="<?php echo esc_attr(sprintf(__('Faltan columnas: %s', 'eipsi-forms'), implode(', ', $local_table_status['events_table']['missing_columns'])));"></span>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="dashicons dashicons-dismiss" style="color: #dc3232;"></span>
-                                    <?php echo esc_html__('No existe', 'eipsi-forms'); ?>
-                                <?php endif; ?>
-                            </span>
-                        </div>
+                        // ACÁ TENES QUE RECONSTRUIR EL PHP/JAVASCRIPT PARA QUE FUNCIONEN LOS BOTONES: "Verificar y reparar esquema local" ejecute la reparación del schema Y "Verificar estado de tablas locales" muestre el estado actual
                         
                         <!-- RCT Configs Table -->
                         <div class="status-detail-row" style="margin-bottom: 8px;">
