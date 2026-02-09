@@ -20,8 +20,9 @@ $offset = ($current_page - 1) * $per_page;
 $search = isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '';
 $where_clause = "";
 if (!empty($search)) {
+    // Buscar por nombre o código de estudio (study_code en lugar de study_id)
     $where_clause = $wpdb->prepare(
-        "WHERE study_name LIKE %s OR study_id LIKE %s",
+        "WHERE study_name LIKE %s OR study_code LIKE %s",
         '%' . $wpdb->esc_like($search) . '%',
         '%' . $wpdb->esc_like($search) . '%'
     );
@@ -98,14 +99,16 @@ $paused_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}survey_studi
             <?php else: ?>
                 <?php foreach ($studies as $study): ?>
                     <?php 
+                        // Usar study->id (PK) en lugar de study_id (no existe en schema)
+                        // La relación con participantes es por survey_id (el id del estudio)
                         $participant_count = $wpdb->get_var($wpdb->prepare(
-                            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants WHERE study_id = %s",
-                            $study->study_id
+                            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants WHERE survey_id = %d",
+                            $study->id
                         ));
                     ?>
                     <tr>
                         <td><strong><?php echo esc_html($study->study_name); ?></strong></td>
-                        <td><code><?php echo esc_html($study->study_id); ?></code></td>
+                        <td><code><?php echo esc_html($study->study_code); ?></code></td>
                         <td>
                             <span class="eipsi-badge badge-<?php echo esc_attr($study->status); ?>">
                                 <?php echo esc_html(ucfirst($study->status)); ?>
@@ -113,7 +116,7 @@ $paused_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}survey_studi
                         </td>
                         <td><?php echo (int)$participant_count; ?></td>
                         <td>
-                            <button class="button button-secondary eipsi-view-study" data-study-id="<?php echo esc_attr($study->study_id); ?>">
+                            <button class="button button-secondary eipsi-view-study" data-study-id="<?php echo esc_attr($study->id); ?>">
                                 👁️ <?php esc_html_e('Ver Detalles', 'eipsi-forms'); ?>
                             </button>
                         </td>
