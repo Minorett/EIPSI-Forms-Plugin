@@ -136,7 +136,9 @@ add_action('wp_ajax_nopriv_eipsi_check_external_db', 'eipsi_check_external_db_ha
 add_action('wp_ajax_eipsi_save_privacy_config', 'eipsi_save_privacy_config_handler');
 add_action('wp_ajax_eipsi_save_global_privacy_config', 'eipsi_save_global_privacy_config_handler');
 add_action('wp_ajax_eipsi_verify_schema', 'eipsi_verify_schema_handler');
+add_action('wp_ajax_eipsi_verify_local_schema', 'eipsi_verify_local_schema_handler');
 add_action('wp_ajax_eipsi_check_table_status', 'eipsi_check_table_status_handler');
+add_action('wp_ajax_eipsi_check_local_table_status', 'eipsi_check_local_table_status_handler');
 add_action('wp_ajax_eipsi_delete_all_data', 'eipsi_delete_all_data_handler');
 
 // Thank-you page handlers
@@ -1976,6 +1978,98 @@ function eipsi_verify_schema_handler() {
             'errors' => $result['errors']
         ));
     }
+}
+
+function eipsi_verify_local_schema_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Unauthorized', 'eipsi-forms')
+        ));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
+
+    $db_helper = new EIPSI_External_Database();
+    $before_status = $db_helper->get_local_table_status();
+
+    $repair_log = EIPSI_Database_Schema_Manager::repair_local_schema();
+    $after_status = $db_helper->get_local_table_status();
+
+    if (empty($repair_log) || (isset($repair_log['success']) && $repair_log['success'] === false)) {
+        wp_send_json_error(array(
+            'message' => __('No se pudo verificar el esquema local.', 'eipsi-forms')
+        ));
+    }
+
+    $tables_created = array();
+    $table_keys = array(
+        'results_table',
+        'events_table',
+        'randomization_configs_table',
+        'randomization_assignments_table',
+    );
+
+    foreach ($table_keys as $key) {
+        $before_exists = isset($before_status[$key]['exists']) ? (bool) $before_status[$key]['exists'] : false;
+        $after_exists = isset($after_status[$key]['exists']) ? (bool) $after_status[$key]['exists'] : false;
+        if (!$before_exists && $after_exists && !empty($after_status[$key]['table_name'])) {
+            $tables_created[] = $after_status[$key]['table_name'];
+        }
+    }
+
+    if (!empty($before_status['longitudinal_tables']) && !empty($after_status['longitudinal_tables'])) {
+        foreach ($after_status['longitudinal_tables'] as $key => $table_info) {
+            $before_exists = isset($before_status['longitudinal_tables'][$key]['exists']) ? (bool) $before_status['longitudinal_tables'][$key]['exists'] : false;
+            $after_exists = isset($table_info['exists']) ? (bool) $table_info['exists'] : false;
+            if (!$before_exists && $after_exists && !empty($table_info['table_name'])) {
+                $tables_created[] = $table_info['table_name'];
+            }
+        }
+    }
+
+    $columns_added_total = 0;
+    foreach ($repair_log as $table_info) {
+        if (is_array($table_info) && isset($table_info['columns_added']) && is_array($table_info['columns_added'])) {
+            $columns_added_total += count($table_info['columns_added']);
+        }
+    }
+
+    $last_verified = $after_status['last_verified'] ?? get_option('eipsi_schema_last_verified', '');
+    if (!empty($last_verified)) {
+        $last_verified = mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $last_verified);
+    }
+
+    wp_send_json_success(array(
+        'message' => __('Esquema local verificado y reparado correctamente.', 'eipsi-forms'),
+        'tables_created' => $tables_created,
+        'columns_added' => $columns_added_total,
+        'last_verified' => $last_verified,
+        'repair_log' => $repair_log
+    ));
+}
+
+function eipsi_check_local_table_status_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array(
+            'message' => __('Unauthorized', 'eipsi-forms')
+        ));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
+    $db_helper = new EIPSI_External_Database();
+
+    $result = $db_helper->get_local_table_status();
+
+    if (!empty($result['success'])) {
+        wp_send_json_success($result);
+    }
+
+    wp_send_json_error($result);
 }
 
 function eipsi_check_table_status_handler() {

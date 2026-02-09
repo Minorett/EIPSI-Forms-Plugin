@@ -918,6 +918,16 @@ class EIPSI_External_Database {
             'events_table' => $events_info
         );
     }
+
+    /**
+     * Get local WordPress database table status directly
+     * Useful even when external credentials are configured but disconnected.
+     *
+     * @return array Detailed local table status information
+     */
+    public function get_local_table_status() {
+        return $this->check_local_table_status();
+    }
     
     /**
      * Get connection status information
