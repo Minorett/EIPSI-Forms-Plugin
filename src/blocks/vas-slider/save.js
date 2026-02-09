@@ -1,5 +1,8 @@
 import { useBlockProps } from '@wordpress/block-editor';
-import { parseOptions } from '../../utils/optionParser';
+import {
+	parseOptions,
+	encodeNewlinesForAttribute,
+} from '../../utils/optionParser';
 import {
 	calculateLabelStyle,
 	alignmentInternalToDisplay,
@@ -68,7 +71,8 @@ export default function Save( { attributes } ) {
 		'data-required': required ? 'true' : 'false',
 		'data-field-type': 'vas-slider',
 		'data-value-position': valuePosition || 'above',
-		'data-labels': labels || '',
+		// Encode newlines for safe HTML attribute storage (fixes block recovery with manual line breaks)
+		'data-labels': labels ? encodeNewlinesForAttribute( labels ) : '',
 		'data-min-value': sliderMin,
 		'data-max-value': sliderMax,
 		'data-step': safeStep,

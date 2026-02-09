@@ -197,3 +197,35 @@ export function normalizeOptionsInput( value ) {
 
 	return stringifyOptions( options );
 }
+
+/**
+ * Encodes newlines for safe storage in HTML attributes
+ *
+ * HTML attributes cannot contain literal newlines. This function encodes
+ * them as HTML entities (&#10;) for safe attribute storage.
+ *
+ * @param {string} str String that may contain newlines
+ * @return {string} String with newlines encoded as &#10;
+ */
+export function encodeNewlinesForAttribute( str ) {
+	if ( ! str || typeof str !== 'string' ) {
+		return '';
+	}
+	return str.replace( /\n/g, '&#10;' );
+}
+
+/**
+ * Decodes HTML entities back to newlines
+ *
+ * Complement to encodeNewlinesForAttribute. Handles both &#10; and &#x0A;
+ * as well as literal newlines for backward compatibility.
+ *
+ * @param {string} str String that may contain encoded newlines
+ * @return {string} String with encoded newlines decoded back to \n
+ */
+export function decodeNewlinesFromAttribute( str ) {
+	if ( ! str || typeof str !== 'string' ) {
+		return '';
+	}
+	return str.replace( /&#10;|&#x0A;/gi, '\n' );
+}
