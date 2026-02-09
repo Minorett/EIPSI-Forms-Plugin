@@ -1052,8 +1052,6 @@ class EIPSI_Database_Schema_Manager {
         self::ensure_local_index( $table_name, 'form_id' );
         self::ensure_local_index( $table_name, 'session_id' );
 
-        // v1.4.0 - Composite index for faster lookups
-        $wpdb->query( "ALTER TABLE {$table_name} ADD KEY IF NOT EXISTS participant_survey_wave (participant_id, survey_id, wave_index)" );
         self::ensure_local_index( $table_name, 'event_type' );
         
         return $columns_added;
