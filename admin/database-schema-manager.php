@@ -832,6 +832,12 @@ class EIPSI_Database_Schema_Manager {
         $rct_configs_table = $wpdb->prefix . 'eipsi_randomization_configs';
         $rct_assignments_table = $wpdb->prefix . 'eipsi_randomization_assignments';
         
+        // Longitudinal tables (v1.4.0+)
+        $survey_studies_table = $wpdb->prefix . 'survey_studies';
+        $survey_participants_table = $wpdb->prefix . 'survey_participants';
+        $survey_waves_table = $wpdb->prefix . 'survey_waves';
+        $survey_assignments_table = $wpdb->prefix . 'survey_assignments';
+        
         $repair_log = array(
             'success' => true,
             'results_table' => array(
@@ -847,6 +853,22 @@ class EIPSI_Database_Schema_Manager {
                 'columns_added' => array(),
             ),
             'randomization_assignments_table' => array(
+                'exists' => false,
+                'columns_added' => array(),
+            ),
+            'survey_studies_table' => array(
+                'exists' => false,
+                'columns_added' => array(),
+            ),
+            'survey_participants_table' => array(
+                'exists' => false,
+                'columns_added' => array(),
+            ),
+            'survey_waves_table' => array(
+                'exists' => false,
+                'columns_added' => array(),
+            ),
+            'survey_assignments_table' => array(
                 'exists' => false,
                 'columns_added' => array(),
             ),
@@ -890,6 +912,10 @@ class EIPSI_Database_Schema_Manager {
         // Repair randomization assignments table
         $rct_assignments_repair = self::repair_local_randomization_assignments_table( $rct_assignments_table );
         $repair_log['randomization_assignments_table']['columns_added'] = $rct_assignments_repair;
+        
+        // Repair longitudinal tables
+        $survey_participants_repair = self::repair_local_survey_participants_table( $survey_participants_table );
+        $repair_log['survey_participants_table']['columns_added'] = $survey_participants_repair;
         
         // Update version and timestamp
         update_option( 'eipsi_db_schema_version', '1.3.7' );
@@ -1085,6 +1111,61 @@ class EIPSI_Database_Schema_Manager {
                 $columns_added[] = 'unique_constraint_unique_assignment';
                 error_log( "[EIPSI Forms] Added unique constraint to {$table_name}" );
             }
+        }
+        
+        return $columns_added;
+    }
+    
+    /**
+     * Repair local survey_participants table - add missing columns
+     * 
+     * @since 1.4.0
+     * @param string $table_name Full table name with prefix
+     * @return array Columns added
+     */
+    private static function repair_local_survey_participants_table( $table_name ) {
+        global $wpdb;
+        
+        $required_columns = array(
+            'survey_id' => "INT(11) AFTER id",
+            'email' => "VARCHAR(255) NOT NULL AFTER survey_id",
+            'password_hash' => "VARCHAR(255) AFTER email",
+            'first_name' => "VARCHAR(100) AFTER password_hash",
+            'last_name' => "VARCHAR(100) AFTER first_name",
+            'created_at' => "DATETIME NOT NULL AFTER last_name",
+            'last_login_at' => "DATETIME AFTER created_at",
+            'is_active' => "TINYINT(1) DEFAULT 1 AFTER last_login_at",
+        );
+        
+        $columns_added = array();
+        
+        foreach ( $required_columns as $col => $definition ) {
+            if ( ! self::local_column_exists( $table_name, $col ) ) {
+                $result = $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN {$col} {$definition}" );
+                if ( false !== $result ) {
+                    $columns_added[] = $col;
+                    error_log( "[EIPSI Forms] Added missing column '{$col}' to {$table_name}" );
+                }
+            }
+        }
+        
+        // Ensure security indices (VULN 10 FIX)
+        self::ensure_local_index( $table_name, 'email' );
+        self::ensure_local_index( $table_name, 'created_at' );
+        self::ensure_local_index( $table_name, 'is_active' );
+        
+        // Composite indices for performance
+        $existing_indices = $wpdb->get_results( "SHOW INDEX FROM {$table_name}" );
+        $index_names = array_column( $existing_indices, 'Key_name' );
+        
+        if ( ! in_array( 'idx_survey_email', $index_names, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_survey_email (survey_id, email)" );
+            $columns_added[] = 'idx_survey_email';
+        }
+        
+        if ( ! in_array( 'idx_participant_active', $index_names, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_participant_active (is_active)" );
+            $columns_added[] = 'idx_participant_active';
         }
         
         return $columns_added;
