@@ -333,23 +333,11 @@ function eipsi_store_participant_config($study_id, $participant_config) {
 
 /**
  * Get available forms for dropdowns
+ * 
+ * Busca tanto en form templates como en páginas con formularios activos
  */
 function eipsi_get_available_forms() {
-    $forms = get_posts(array(
-        'post_type' => 'page',
-        'posts_per_page' => -1,
-        'meta_query' => array(
-            array(
-                'key' => '_eipsi_form_active',
-                'value' => '1',
-                'compare' => '='
-            )
-        ),
-        'orderby' => 'title',
-        'order' => 'ASC'
-    ));
-    
-    return $forms;
+    return eipsi_get_available_forms_for_wizard();
 }
 
 /**

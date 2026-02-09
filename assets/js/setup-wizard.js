@@ -392,10 +392,21 @@
     }
 
     /**
-     * Get available forms HTML (placeholder - would be populated server-side)
+     * Get available forms HTML from localized data
      */
     function getAvailableFormsHTML() {
-        return '<!-- Forms would be populated server-side -->';
+        // Use forms data localized from WordPress
+        if (typeof eipsiWizard !== 'undefined' && eipsiWizard.availableForms) {
+            let optionsHtml = '<option value="">Seleccionar formulario...</option>';
+            
+            eipsiWizard.availableForms.forEach(function(form) {
+                optionsHtml += '<option value="' + form.ID + '">' + form.post_title + '</option>';
+            });
+            
+            return optionsHtml;
+        }
+        
+        return '<option value="">Cargando formularios...</option>';
     }
 
     /**

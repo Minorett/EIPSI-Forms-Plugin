@@ -41,6 +41,7 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/partial-responses.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/configuration.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers-wizard.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-email-log-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/monitoring.php';
@@ -217,11 +218,15 @@ function eipsi_enqueue_setup_wizard_assets($hook) {
             true
         );
 
+        // Get available forms for dropdowns
+        $available_forms = eipsi_get_available_forms_for_wizard();
+        
         // Localizar script con datos necesarios
         wp_localize_script('eipsi-setup-wizard-js', 'eipsiWizard', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('eipsi_wizard_action'),
             'adminUrl' => admin_url(),
+            'availableForms' => $available_forms,
             'strings' => array(
                 'loading' => __('Guardando...', 'eipsi-forms'),
                 'error' => __('Error al guardar', 'eipsi-forms'),
