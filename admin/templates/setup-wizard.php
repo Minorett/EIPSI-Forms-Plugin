@@ -125,8 +125,8 @@ function eipsiSaveCurrentStep(step, callback) {
     const form = document.getElementById('eipsi-wizard-form');
     const formData = new FormData(form);
     
-    // Add action for saving step
-    formData.append('wizard_action', 'save_step');
+    // Add WordPress action parameter (REQUIRED for admin-ajax.php)
+    formData.append('action', 'eipsi_save_wizard_step');
     formData.append('current_step', step);
     formData.append('eipsi_wizard_nonce', '<?php echo wp_create_nonce('eipsi_wizard_action'); ?>');
     
@@ -142,7 +142,18 @@ function eipsiSaveCurrentStep(step, callback) {
             // Navigate to next step automatically
             window.location.href = '<?php echo admin_url('admin.php?page=eipsi-new-study&step='); ?>' + (step + 1);
         } else {
-            alert('Error al guardar el paso: ' + (data.data || 'Error desconocido'));
+            // Handle validation errors or generic errors
+            let errorMessage = 'Error desconocido';
+            if (data.data) {
+                if (Array.isArray(data.data)) {
+                    errorMessage = data.data.join('\n');
+                } else if (typeof data.data === 'string') {
+                    errorMessage = data.data;
+                } else if (data.data.message) {
+                    errorMessage = data.data.message;
+                }
+            }
+            alert('Error al guardar el paso:\n' + errorMessage);
         }
     })
     .catch(error => {
@@ -159,8 +170,8 @@ function eipsiActivateStudy() {
     const form = document.getElementById('eipsi-wizard-form');
     const formData = new FormData(form);
     
-    // Add action for activation
-    formData.append('wizard_action', 'activate_study');
+    // Add WordPress action parameter (REQUIRED for admin-ajax.php)
+    formData.append('action', 'eipsi_activate_study');
     formData.append('current_step', 5);
     formData.append('eipsi_wizard_nonce', '<?php echo wp_create_nonce('eipsi_wizard_action'); ?>');
     
@@ -183,7 +194,17 @@ function eipsiActivateStudy() {
             alert('¡Estudio creado exitosamente!');
             window.location.href = data.data.redirect_url;
         } else {
-            alert('Error al activar el estudio: ' + (data.data || 'Error desconocido'));
+            let errorMessage = 'Error desconocido';
+            if (data.data) {
+                if (Array.isArray(data.data)) {
+                    errorMessage = data.data.join('\n');
+                } else if (typeof data.data === 'string') {
+                    errorMessage = data.data;
+                } else if (data.data.message) {
+                    errorMessage = data.data.message;
+                }
+            }
+            alert('Error al activar el estudio:\n' + errorMessage);
         }
     })
     .catch(error => {
@@ -200,7 +221,8 @@ function startAutoSave() {
         const form = document.getElementById('eipsi-wizard-form');
         if (form) {
             const formData = new FormData(form);
-            formData.append('wizard_action', 'auto_save');
+            // Add WordPress action parameter (REQUIRED for admin-ajax.php)
+            formData.append('action', 'eipsi_auto_save_wizard_step');
             formData.append('current_step', <?php echo $current_step; ?>);
             formData.append('eipsi_wizard_nonce', '<?php echo wp_create_nonce('eipsi_wizard_action'); ?>');
             
