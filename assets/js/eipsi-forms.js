@@ -83,10 +83,13 @@
 
     /**
      * Valida que el consentimiento esté aceptado
+     * @param {HTMLFormElement} form - El formulario específico a validar
      * @returns {boolean} true si está validado, false si no
      */
-    function validateConsentAccepted() {
-        const consentCheckbox = document.querySelector(
+    function validateConsentAccepted( form ) {
+        // ✅ FIX v1.4.3: Buscar solo DENTRO del formulario específico
+        // Evita validar checkboxes de otros formularios en la misma página
+        const consentCheckbox = form.querySelector(
             'input[name="eipsi_consent_accepted"]'
         );
         if ( ! consentCheckbox ) return true; // Si no hay bloque de consent, pasar
@@ -101,14 +104,13 @@
                 'background:#fee; color:#c33; padding:12px; margin:12px 0; border-left:4px solid #c33;';
 
             // Remover error previo si existe
-            const existingError = consentCheckbox
-                .closest( '.eipsi-consent-block' )
-                .querySelector( '.eipsi-consent-error' );
-            if ( existingError ) existingError.remove();
-
-            consentCheckbox
-                .closest( '.eipsi-consent-block' )
-                .appendChild( errorMsg );
+            const consentBlock = consentCheckbox.closest( '.eipsi-consent-block' );
+            if ( consentBlock ) {
+                const existingError = consentBlock.querySelector( '.eipsi-consent-error' );
+                if ( existingError ) existingError.remove();
+                consentBlock.appendChild( errorMsg );
+            }
+            
             consentCheckbox.scrollIntoView( {
                 behavior: 'smooth',
                 block: 'center',
@@ -118,10 +120,11 @@
         }
 
         // Limpiar mensaje de error si existe
-        const existingError = consentCheckbox
-            .closest( '.eipsi-consent-block' )
-            .querySelector( '.eipsi-consent-error' );
-        if ( existingError ) existingError.remove();
+        const consentBlock = consentCheckbox.closest( '.eipsi-consent-block' );
+        if ( consentBlock ) {
+            const existingError = consentBlock.querySelector( '.eipsi-consent-error' );
+            if ( existingError ) existingError.remove();
+        }
 
         return true;
     }
@@ -2887,7 +2890,7 @@
 
             // ✅ v1.4.3 - VALIDACIÓN DE CONSENTIMIENTO (FIX)
             // Se valida ANTES de cualquier otra validación
-            if ( ! validateConsentAccepted() ) {
+            if ( ! validateConsentAccepted( form ) ) {
                 this.showMessage(
                     form,
                     'error',
