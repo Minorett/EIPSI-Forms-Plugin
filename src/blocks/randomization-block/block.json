@@ -1,33 +1,32 @@
 {
-	"$schema": "https://schemas.wp.org/trunk/block.json",
-	"apiVersion": 3,
-	"name": "eipsi/randomization",
-	"title": "Aleatorización de Formularios",
-	"category": "eipsi-forms",
-	"description": "Configurá la aleatorización de formularios para estudios clínicos.",
-	"keywords": [ "randomization", "aleatorización", "estudios clínicos" ],
-	"version": "1.3.5",
-	"textdomain": "eipsi-forms",
-	"parent": [ "eipsi/form-container" ],
-	"attributes": {
-		"shortcodesInput": {
-			"type": "string",
-			"default": ""
-		},
-		"savedConfig": {
-			"type": "object",
-			"default": {}
-		},
-		"generatedShortcode": {
-			"type": "string",
-			"default": ""
-		}
-	},
-	"supports": {
-		"html": false,
-		"multiple": false
-	},
-	"editorScript": "file:./index.js",
-	"editorStyle": "file:./editor.scss",
-	"style": "file:./style.scss"
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "eipsi/randomization",
+    "title": "Aleatorización de Formularios",
+    "category": "eipsi-forms",
+    "description": "Configurá la aleatorización de formularios para estudios clínicos.",
+    "keywords": [ "randomization", "aleatorización", "estudios clínicos" ],
+    "version": "1.3.5",
+    "textdomain": "eipsi-forms",
+    "attributes": {
+        "shortcodesInput": {
+            "type": "string",
+            "default": ""
+        },
+        "savedConfig": {
+            "type": "object",
+            "default": {}
+        },
+        "generatedShortcode": {
+            "type": "string",
+            "default": ""
+        }
+    },
+    "supports": {
+        "html": false,
+        "multiple": false
+    },
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./editor.scss",
+    "style": "file:./style.scss"
 }
