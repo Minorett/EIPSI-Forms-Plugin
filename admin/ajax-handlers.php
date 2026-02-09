@@ -3409,33 +3409,3 @@ function eipsi_export_to_csv_handler() {
     
     wp_send_json_success(array("filename" => $filename));
 }
-
-
-/**
- * AJAX Handler: Check Local Table Status (when no external DB configured)
- * 
- * @since 1.4.3
- */
-add_action('wp_ajax_eipsi_check_local_table_status', 'eipsi_check_local_table_status_handler');
-
-function eipsi_check_local_table_status_handler() {
-    check_ajax_referer('eipsi_admin_nonce', 'nonce');
-
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(array(
-            'message' => __('Unauthorized', 'eipsi-forms')
-        ));
-    }
-
-    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
-    $db_helper = new EIPSI_External_Database();
-
-    // This will return local table status when no external DB is configured
-    $result = $db_helper->check_table_status();
-
-    if ($result['success']) {
-        wp_send_json_success($result);
-    } else {
-        wp_send_json_error($result);
-    }
-}
