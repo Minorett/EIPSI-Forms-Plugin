@@ -191,6 +191,7 @@ class EIPSI_Database_Schema_Manager {
                 form_id varchar(15) DEFAULT NULL,
                 participant_id varchar(255) DEFAULT NULL,
                 session_id varchar(255) DEFAULT NULL,
+                user_fingerprint varchar(255) DEFAULT NULL,
                 participant varchar(255) DEFAULT NULL,
                 interaction varchar(255) DEFAULT NULL,
                 form_name varchar(255) NOT NULL,
@@ -232,6 +233,7 @@ class EIPSI_Database_Schema_Manager {
             'form_id' => "ALTER TABLE `{$table_name}` ADD COLUMN form_id varchar(15) DEFAULT NULL AFTER id",
             'participant_id' => "ALTER TABLE `{$table_name}` ADD COLUMN participant_id varchar(255) DEFAULT NULL AFTER form_id",
             'session_id' => "ALTER TABLE `{$table_name}` ADD COLUMN session_id varchar(255) DEFAULT NULL AFTER participant_id",
+            'user_fingerprint' => "ALTER TABLE `{$table_name}` ADD COLUMN user_fingerprint varchar(255) DEFAULT NULL AFTER session_id",
             'browser' => "ALTER TABLE `{$table_name}` ADD COLUMN browser varchar(100) DEFAULT NULL AFTER device",
             'os' => "ALTER TABLE `{$table_name}` ADD COLUMN os varchar(100) DEFAULT NULL AFTER browser",
             'screen_width' => "ALTER TABLE `{$table_name}` ADD COLUMN screen_width int(11) DEFAULT NULL AFTER os",
@@ -312,9 +314,13 @@ class EIPSI_Database_Schema_Manager {
         
         // Ensure required columns exist
         $required_columns = array(
+            'form_id' => "ALTER TABLE `{$table_name}` ADD COLUMN form_id varchar(255) NOT NULL DEFAULT '' AFTER id",
+            'session_id' => "ALTER TABLE `{$table_name}` ADD COLUMN session_id varchar(255) NOT NULL DEFAULT '' AFTER form_id",
+            'event_type' => "ALTER TABLE `{$table_name}` ADD COLUMN event_type varchar(50) NOT NULL DEFAULT '' AFTER session_id",
             'page_number' => "ALTER TABLE `{$table_name}` ADD COLUMN page_number int(11) DEFAULT NULL AFTER event_type",
             'metadata' => "ALTER TABLE `{$table_name}` ADD COLUMN metadata text DEFAULT NULL AFTER page_number",
             'user_agent' => "ALTER TABLE `{$table_name}` ADD COLUMN user_agent text DEFAULT NULL AFTER metadata",
+            'created_at' => "ALTER TABLE `{$table_name}` ADD COLUMN created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER user_agent",
         );
         
         foreach ( $required_columns as $column => $alter_sql ) {
@@ -369,6 +375,7 @@ class EIPSI_Database_Schema_Manager {
             'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id INT(11) DEFAULT NULL AFTER participant_id",
             'wave_index' => "ALTER TABLE {$table_name} ADD COLUMN wave_index INT(11) DEFAULT NULL AFTER survey_id",
             'session_id' => "ALTER TABLE {$table_name} ADD COLUMN session_id varchar(255) DEFAULT NULL AFTER participant_id",
+            'user_fingerprint' => "ALTER TABLE {$table_name} ADD COLUMN user_fingerprint varchar(255) DEFAULT NULL AFTER session_id",
             'browser' => "ALTER TABLE {$table_name} ADD COLUMN browser varchar(100) DEFAULT NULL AFTER device",
             'os' => "ALTER TABLE {$table_name} ADD COLUMN os varchar(100) DEFAULT NULL AFTER browser",
             'screen_width' => "ALTER TABLE {$table_name} ADD COLUMN screen_width int(11) DEFAULT NULL AFTER os",
@@ -433,9 +440,40 @@ class EIPSI_Database_Schema_Manager {
             return $result;
         }
         
-        // Events table usually has all required columns from activation
-        // But we can add verification here if needed in the future
-        
+        // Ensure required columns exist
+        $required_columns = array(
+            'form_id' => "ALTER TABLE {$table_name} ADD COLUMN form_id varchar(255) NOT NULL DEFAULT '' AFTER id",
+            'session_id' => "ALTER TABLE {$table_name} ADD COLUMN session_id varchar(255) NOT NULL DEFAULT '' AFTER form_id",
+            'event_type' => "ALTER TABLE {$table_name} ADD COLUMN event_type varchar(50) NOT NULL DEFAULT '' AFTER session_id",
+            'page_number' => "ALTER TABLE {$table_name} ADD COLUMN page_number int(11) DEFAULT NULL AFTER event_type",
+            'metadata' => "ALTER TABLE {$table_name} ADD COLUMN metadata text DEFAULT NULL AFTER page_number",
+            'user_agent' => "ALTER TABLE {$table_name} ADD COLUMN user_agent text DEFAULT NULL AFTER metadata",
+            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER user_agent",
+        );
+
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $table_name,
+                    $column
+                )
+            );
+
+            if ( empty( $column_exists ) ) {
+                if ( false !== $wpdb->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                } else {
+                    $result['columns_missing'][] = $column;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
+                    }
+                }
+            }
+        }
+
         return $result;
     }
     

@@ -1070,7 +1070,7 @@ function eipsi_forms_submit_form_handler() {
     if ($ip_address !== null) {
         $metadata['network_info'] = array(
             'ip_address' => $ip_address,
-            'ip_storage_type' => $privacy_config['ip_storage']
+            'ip_storage_type' => ($privacy_config['ip_address'] ?? true) ? 'full' : 'anonymized'
         );
     }
     
@@ -1172,7 +1172,7 @@ function eipsi_forms_submit_form_handler() {
         $wpdb_result = $wpdb->insert(
             $table_name,
             $data,
-            array('%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
+            array('%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
         );
         
         if ($wpdb_result === false) {
@@ -1189,7 +1189,7 @@ function eipsi_forms_submit_form_handler() {
                 $wpdb_result = $wpdb->insert(
                     $table_name,
                     $data,
-                    array('%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
+                    array('%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
                 );
                 
                 if ($wpdb_result !== false) {
