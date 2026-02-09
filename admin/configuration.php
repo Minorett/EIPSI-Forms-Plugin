@@ -267,7 +267,6 @@ function eipsi_display_configuration_page() {
                                     </span>
                                     <?php if (!empty($local_table_status['results_table']['missing_columns'])): ?>
                                         <span class="dashicons dashicons-warning" style="color: #f0b849;" title="<?php echo esc_attr(sprintf(__('Faltan columnas: %s', 'eipsi-forms'), implode(', ', $local_table_status['results_table']['missing_columns'])));"></span>
-                                    <?php endif; ?>
                                 <?php else: ?>
                                     <span class="dashicons dashicons-dismiss" style="color: #dc3232;"></span>
                                     <?php echo esc_html__('No existe', 'eipsi-forms'); ?>
