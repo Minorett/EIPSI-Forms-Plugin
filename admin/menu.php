@@ -37,8 +37,8 @@ function eipsi_forms_menu() {
     // Add submenu for Setup Wizard
     add_submenu_page(
         'eipsi-results',
-        __('Crear Nuevo Estudio', 'eipsi-forms'),
-        __('➕ Crear Estudio', 'eipsi-forms'),
+        __('Create New Longitudinal Study', 'eipsi-forms'),
+        __('➕ New Study', 'eipsi-forms'),
         'manage_options',
         'eipsi-new-study',
         'eipsi_display_setup_wizard_page'
