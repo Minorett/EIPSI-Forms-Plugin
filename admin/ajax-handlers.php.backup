@@ -871,11 +871,14 @@ function eipsi_forms_submit_form_handler() {
     }
     check_ajax_referer('eipsi_forms_nonce', 'nonce');
     
-    
-    // ✅ v1.4.3 - VALIDACIÓN CONTEXTUAL DE CONSENTIMIENTO
-    // La validación de consentimiento se hace en el frontend (eipsi-forms.js líneas 88-127)
-    // Solo valida si existe el bloque consent-block en el formulario
-    // Esto permite usar bloques individuales sin consentimiento obligatorio
+    // 1️⃣ VALIDACIÓN DE CONSENTIMIENTO OBLIGATORIA - PRIMER CHECK
+    if (!isset($_POST['eipsi_consent_accepted']) || $_POST['eipsi_consent_accepted'] !== 'on') {
+        wp_send_json_error([
+            'message' => 'Debes aceptar los términos de consentimiento',
+            'error_code' => 'consent_required'
+        ], 403);
+        return; // ⛔ NO CONTINUAR BAJO NINGUNA CIRCUNSTANCIA
+    }
     
     global $wpdb;
     
