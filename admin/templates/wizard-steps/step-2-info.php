@@ -99,9 +99,9 @@ for ($i = 0; $i < count($waves_config); $i++) {
                                         class="form-select">
                                     <option value="">Seleccionar formulario...</option>
                                     <?php foreach ($available_forms as $form): ?>
-                                        <option value="<?php echo $form->ID; ?>"
-                                                <?php selected($waves_config[$i]['form_template_id'], $form->ID); ?>>
-                                            <?php echo esc_html($form->post_title); ?>
+                                        <option value="<?php echo esc_attr($form['ID']); ?>"
+                                                <?php selected($waves_config[$i]['form_template_id'], $form['ID']); ?>>
+                                            <?php echo esc_html($form['post_title']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
