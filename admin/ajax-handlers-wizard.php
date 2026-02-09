@@ -203,24 +203,38 @@ function eipsi_get_wizard_data_handler() {
  * Get available forms for wizard dropdown
  */
 function eipsi_get_available_forms_for_wizard() {
-    // Buscar form templates personalizados
-    $forms = get_posts(array(
-        'post_type' => 'eipsi_form_template',
-        'posts_per_page' => -1,
-        'post_status' => 'publish',
-        'orderby' => 'title',
-        'order' => 'ASC'
-    ));
-    
     $result = array();
-    foreach ($forms as $form) {
-        $result[] = array(
-            'ID' => $form->ID,
-            'post_title' => $form->post_title,
-            'type' => 'template'
-        );
+
+    // Buscar form templates personalizados (Form Library)
+    $template_post_types = array();
+
+    if (post_type_exists('eipsi_form_template')) {
+        $template_post_types[] = 'eipsi_form_template';
     }
-    
+
+    if (post_type_exists('eipsi_form')) {
+        $template_post_types[] = 'eipsi_form';
+    }
+
+    if (!empty($template_post_types)) {
+        $forms = get_posts(array(
+            'post_type' => $template_post_types,
+            'posts_per_page' => -1,
+            'post_status' => array('publish', 'private', 'draft', 'pending'),
+            'orderby' => 'title',
+            'order' => 'ASC'
+        ));
+
+        foreach ($forms as $form) {
+            $title = $form->post_title ? $form->post_title : __('(Sin título)', 'eipsi-forms');
+            $result[] = array(
+                'ID' => $form->ID,
+                'post_title' => $title,
+                'type' => $form->post_type
+            );
+        }
+    }
+
     // También buscar páginas con formularios activos (retrocompatibilidad)
     $pages_with_forms = get_posts(array(
         'post_type' => 'page',
@@ -235,7 +249,7 @@ function eipsi_get_available_forms_for_wizard() {
         'orderby' => 'title',
         'order' => 'ASC'
     ));
-    
+
     foreach ($pages_with_forms as $page) {
         $result[] = array(
             'ID' => $page->ID,
@@ -243,6 +257,6 @@ function eipsi_get_available_forms_for_wizard() {
             'type' => 'page'
         );
     }
-    
+
     return $result;
 }

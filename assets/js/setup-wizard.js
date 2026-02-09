@@ -397,7 +397,7 @@
     function getAvailableFormsHTML() {
         // Use forms data localized from WordPress
         if (typeof eipsiWizard !== 'undefined' && eipsiWizard.availableForms) {
-            let optionsHtml = '<option value="">Seleccionar formulario...</option>';
+            let optionsHtml = '';
             
             eipsiWizard.availableForms.forEach(function(form) {
                 optionsHtml += '<option value="' + form.ID + '">' + form.post_title + '</option>';
@@ -406,7 +406,7 @@
             return optionsHtml;
         }
         
-        return '<option value="">Cargando formularios...</option>';
+        return '';
     }
 
     /**

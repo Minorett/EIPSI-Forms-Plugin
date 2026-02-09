@@ -267,9 +267,13 @@ function getDefaultWaveName(index) {
 }
 
 function getAvailableFormsHTML() {
-    // This would need to be populated server-side or via AJAX
-    // For now, return a basic structure
-    return '<!-- Forms would be populated server-side -->';
+    if (typeof eipsiWizard !== 'undefined' && eipsiWizard.availableForms) {
+        return eipsiWizard.availableForms
+            .map((form) => `<option value="${form.ID}">${form.post_title}</option>`)
+            .join('');
+    }
+
+    return '';
 }
 
 // Initialize when page loads
