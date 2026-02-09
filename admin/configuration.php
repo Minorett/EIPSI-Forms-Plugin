@@ -252,9 +252,7 @@ function eipsi_display_configuration_page() {
                             <span class="dashicons dashicons-database-view"></span>
                             <?php echo esc_html__('Estado de tablas locales', 'eipsi-forms'); ?>
                         </h4>
-                        
-                        // ACÁ TENES QUE RECONSTRUIR EL PHP/JAVASCRIPT PARA QUE FUNCIONEN LOS BOTONES: "Verificar y reparar esquema local" ejecute la reparación del schema Y "Verificar estado de tablas locales" muestre el estado actual
-                        
+                                            
                         <!-- RCT Configs Table -->
                         <div class="status-detail-row" style="margin-bottom: 8px;">
                             <span class="detail-label" style="min-width: 200px;">
