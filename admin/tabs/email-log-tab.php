@@ -18,20 +18,36 @@ global $wpdb;
 $survey_id = isset($_GET['survey_id']) ? absint($_GET['survey_id']) : 0;
 
 // Stats resumen iniciales
-$sent_count = $wpdb->get_var($wpdb->prepare(
-    "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = %s" . ($survey_id ? " AND survey_id = %d" : ""),
-    'sent',
-    $survey_id
-));
-$failed_count = $wpdb->get_var($wpdb->prepare(
-    "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = %s" . ($survey_id ? " AND survey_id = %d" : ""),
-    'failed',
-    $survey_id
-));
-$total_emails = $wpdb->get_var($wpdb->prepare(
-    "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log" . ($survey_id ? " WHERE survey_id = %d" : ""),
-    $survey_id
-));
+if ($survey_id > 0) {
+    // Con filtro de survey_id
+    $sent_count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = %s AND survey_id = %d",
+        'sent',
+        $survey_id
+    ));
+    $failed_count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = %s AND survey_id = %d",
+        'failed',
+        $survey_id
+    ));
+    $total_emails = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE survey_id = %d",
+        $survey_id
+    ));
+} else {
+    // Sin filtro de survey_id
+    $sent_count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = %s",
+        'sent'
+    ));
+    $failed_count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = %s",
+        'failed'
+    ));
+    $total_emails = $wpdb->get_var(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log"
+    );
+}
 
 $success_rate = $total_emails > 0 ? round(($sent_count / $total_emails) * 100, 1) : 0;
 ?>
