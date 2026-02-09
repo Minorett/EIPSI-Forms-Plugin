@@ -2885,6 +2885,17 @@
                 return;
             }
 
+            // ✅ v1.4.3 - VALIDACIÓN DE CONSENTIMIENTO (FIX)
+            // Se valida ANTES de cualquier otra validación
+            if ( ! validateConsentAccepted() ) {
+                this.showMessage(
+                    form,
+                    'error',
+                    '⛔ Debes aceptar los términos de consentimiento para continuar.'
+                );
+                return;
+            }
+
             this.getCurrentPage( form );
 
             if ( ! this.validateForm( form ) ) {
