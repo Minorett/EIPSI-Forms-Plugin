@@ -983,20 +983,29 @@ class EIPSI_Database_Schema_Manager {
     private static function repair_local_results_table( $table_name ) {
         global $wpdb;
         
-        $required_columns = array(
-            'form_id' => "varchar(20) DEFAULT NULL AFTER id",
-            'participant_id' => "varchar(20) DEFAULT NULL AFTER form_id",
-            'survey_id' => "INT(11) DEFAULT NULL AFTER participant_id",
-            'wave_index' => "INT(11) DEFAULT NULL AFTER survey_id",
-            'session_id' => "varchar(255) DEFAULT NULL AFTER wave_index",
-            'form_name' => "varchar(255) NOT NULL AFTER session_id",
-            'form_responses' => "longtext DEFAULT NULL",
-            'metadata' => "LONGTEXT DEFAULT NULL AFTER ip_address",
-            'browser' => "varchar(100) DEFAULT NULL AFTER device",
-            'os' => "varchar(100) DEFAULT NULL AFTER browser",
-            'screen_width' => "int(11) DEFAULT NULL AFTER os",
-            'duration_seconds' => "decimal(8,3) DEFAULT NULL AFTER duration"
-        );
+    $required_columns = array(
+        'form_id' => "varchar(20) DEFAULT NULL AFTER id",
+        'participant_id' => "varchar(20) DEFAULT NULL AFTER form_id",
+        'survey_id' => "INT(11) DEFAULT NULL AFTER participant_id",
+        'wave_index' => "INT(11) DEFAULT NULL AFTER survey_id",
+        'session_id' => "varchar(255) DEFAULT NULL AFTER wave_index",
+        'user_fingerprint' => "varchar(255) DEFAULT NULL AFTER session_id",  // ← NUEVO
+        'form_name' => "varchar(255) NOT NULL AFTER user_fingerprint",  // ← Cambiado: AFTER user_fingerprint
+        'form_responses' => "longtext DEFAULT NULL AFTER form_name",  // ← Agregado AFTER
+        'created_at' => "datetime DEFAULT CURRENT_TIMESTAMP AFTER form_responses",  // ← NUEVO
+        'submitted_at' => "datetime DEFAULT NULL AFTER created_at",  // ← NUEVO
+        'ip_address' => "varchar(100) DEFAULT NULL AFTER submitted_at",  // ← NUEVO (antes no estaba)
+        'device' => "varchar(50) DEFAULT NULL AFTER ip_address",  // ← NUEVO (antes no estaba)
+        'browser' => "varchar(100) DEFAULT NULL AFTER device",  // ← Cambiado: AFTER device
+        'os' => "varchar(100) DEFAULT NULL AFTER browser",
+        'screen_width' => "int(11) DEFAULT NULL AFTER os",
+        'duration' => "int(11) DEFAULT NULL AFTER screen_width",  // ← NUEVO (antes no estaba)
+        'duration_seconds' => "decimal(8,3) DEFAULT NULL AFTER duration",  // ← Correcto: AFTER duration
+        'start_timestamp_ms' => "bigint(20) DEFAULT NULL AFTER duration_seconds",  // ← NUEVO
+        'end_timestamp_ms' => "bigint(20) DEFAULT NULL AFTER start_timestamp_ms",  // ← NUEVO
+        'metadata' => "LONGTEXT DEFAULT NULL AFTER end_timestamp_ms",  // ← Cambiado: AFTER end_timestamp_ms
+        'status' => "varchar(20) DEFAULT 'submitted' AFTER metadata"  // ← NUEVO
+    );
         
         $columns_added = array();
         
