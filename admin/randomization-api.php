@@ -565,6 +565,151 @@ function eipsi_download_assignments_csv() {
 add_action('wp_ajax_eipsi_download_assignments_csv', 'eipsi_download_assignments_csv');
 
 /**
+ * Generar y descargar Excel de asignaciones
+ */
+function eipsi_download_assignments_excel() {
+    // Verificar nonce y permisos
+    if (!wp_verify_nonce($_POST['nonce'], 'eipsi_randomization_nonce') || !current_user_can('manage_options')) {
+        wp_die('No autorizado', '', array('response' => 403));
+    }
+
+    $randomization_id = sanitize_text_field($_POST['randomization_id'] ?? '');
+    $form_id = isset($_POST['form_id']) ? intval($_POST['form_id']) : null;
+
+    if (empty($randomization_id)) {
+        wp_die('ID de aleatorización requerido');
+    }
+
+    global $wpdb;
+
+    try {
+        // Query base
+        $query = "
+            SELECT
+                ra.randomization_id,
+                ra.user_fingerprint,
+                ra.assigned_form_id,
+                ra.assigned_at,
+                ra.last_access,
+                ra.access_count
+            FROM {$wpdb->prefix}eipsi_randomization_assignments ra
+            WHERE ra.randomization_id = %s
+        ";
+
+        $params = array($randomization_id);
+
+        // Filtro opcional por formulario
+        if ($form_id) {
+            $query .= " AND ra.assigned_form_id = %d";
+            $params[] = $form_id;
+        }
+
+        $query .= " ORDER BY ra.assigned_at DESC";
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $results = $wpdb->get_results($wpdb->prepare($query, $params));
+
+        if (empty($results)) {
+            wp_die('No hay asignaciones para esta aleatorización' . ($form_id ? ' y formulario' : ''));
+        }
+
+        // Generar HTML para Excel
+        $html = '<table border="1">';
+
+        // Headers
+        $html .= '<thead><tr>';
+        $headers = array(
+            'Randomization ID',
+            'User Fingerprint',
+            'Form ID',
+            'Form Name',
+            'Assigned At',
+            'Last Access',
+            'Access Count',
+            'Days Since',
+            'Status'
+        );
+        foreach ($headers as $header) {
+            $html .= '<th style="background-color:#4CAF50;color:white;padding:10px;">' . esc_html($header) . '</th>';
+        }
+        $html .= '</tr></thead>';
+
+        // Body
+        $html .= '<tbody>';
+        foreach ($results as $row) {
+            // Obtener nombre del formulario
+            $form = get_post($row->assigned_form_id);
+            $form_name = $form ? $form->post_title : 'Desconocido';
+
+            // Calcular días desde asignación
+            $assigned_date = new DateTime($row->assigned_at, wp_timezone());
+            $today = new DateTime('now', wp_timezone());
+            $days_diff = $today->diff($assigned_date)->days;
+
+            // Determinar status
+            $completed_status = 'No Iniciado';
+            if ($row->last_access) {
+                $access_count = intval($row->access_count);
+                if ($access_count >= 3) {
+                    $completed_status = 'Completado';
+                } elseif ($access_count >= 1) {
+                    $completed_status = 'Parcial (' . $access_count . ' acceso' . ($access_count > 1 ? 's' : '') . ')';
+                } else {
+                    $completed_status = 'Abandonado (0 accesos)';
+                }
+            }
+
+            // Anonimizar fingerprint
+            $full_fp = $row->user_fingerprint;
+            $anon_fp = 'fp_' . substr($full_fp, 0, 8) . '...' . substr($full_fp, -8);
+
+            // Formatear fechas
+            $assigned_at = wp_date('Y-m-d H:i:s', strtotime($row->assigned_at));
+            $last_access = $row->last_access ? wp_date('Y-m-d H:i:s', strtotime($row->last_access)) : '';
+
+            $html .= '<tr>';
+            $html .= '<td style="padding:8px;">' . esc_html($row->randomization_id) . '</td>';
+            $html .= '<td style="padding:8px;monospace;">' . esc_html($anon_fp) . '</td>';
+            $html .= '<td style="padding:8px;">' . intval($row->assigned_form_id) . '</td>';
+            $html .= '<td style="padding:8px;">' . esc_html($form_name) . '</td>';
+            $html .= '<td style="padding:8px;">' . esc_html($assigned_at) . '</td>';
+            $html .= '<td style="padding:8px;">' . esc_html($last_access) . '</td>';
+            $html .= '<td style="padding:8px;text-align:center;">' . intval($row->access_count) . '</td>';
+            $html .= '<td style="padding:8px;text-align:center;">' . $days_diff . '</td>';
+            $html .= '<td style="padding:8px;">' . esc_html($completed_status) . '</td>';
+            $html .= '</tr>';
+        }
+        $html .= '</tbody></table>';
+
+        // Preparar nombre del archivo
+        $filename = $randomization_id . '_assignments' . ($form_id ? '_form_' . $form_id : '_complete') . '.xls';
+
+        // Headers para descarga
+        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . sanitize_file_name($filename) . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        // Meta tag para codificación UTF-8 en Excel
+        echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+        echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
+        echo '<style>
+            table { border-collapse: collapse; }
+            td, th { border: 1px solid #ddd; }
+        </style>';
+        echo '</head><body>';
+        echo $html;
+        echo '</body></html>';
+        exit;
+
+    } catch (Exception $e) {
+        error_log('[EIPSI Randomization] Error en descarga Excel: ' . $e->getMessage());
+        wp_die('Error generando Excel: ' . $e->getMessage());
+    }
+}
+add_action('wp_ajax_eipsi_download_assignments_excel', 'eipsi_download_assignments_excel');
+
+/**
  * Obtener estadísticas de distribución: Teórico vs Real
  * 
  * Compara la distribución configurada (teórica) vs la distribución actual (real)
