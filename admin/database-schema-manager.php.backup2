@@ -862,265 +862,113 @@ class EIPSI_Database_Schema_Manager {
      * Auto-detects and adds missing columns
      * Returns: array with repair details
      */
-    /**
-     * Repair LOCAL WordPress database schema
-     * Auto-detects and adds missing columns
-     * Creates all required tables if missing
-     * Returns: array with repair details
-     */
     public static function repair_local_schema() {
         global $wpdb;
-
+        
         $results_table = $wpdb->prefix . 'vas_form_results';
         $events_table = $wpdb->prefix . 'vas_form_events';
         $rct_configs_table = $wpdb->prefix . 'eipsi_randomization_configs';
         $rct_assignments_table = $wpdb->prefix . 'eipsi_randomization_assignments';
-
+        
         // Longitudinal tables (v1.4.0+)
         $survey_studies_table = $wpdb->prefix . 'survey_studies';
         $survey_participants_table = $wpdb->prefix . 'survey_participants';
-        $survey_sessions_table = $wpdb->prefix . 'survey_sessions';
         $survey_waves_table = $wpdb->prefix . 'survey_waves';
         $survey_assignments_table = $wpdb->prefix . 'survey_assignments';
-        $survey_magic_links_table = $wpdb->prefix . 'survey_magic_links';
-        $survey_email_log_table = $wpdb->prefix . 'survey_email_log';
-        $survey_audit_log_table = $wpdb->prefix . 'survey_audit_log';
-
+        
         $repair_log = array(
             'success' => true,
             'results_table' => array(
                 'exists' => false,
-                'created' => false,
                 'columns_added' => array(),
             ),
             'events_table' => array(
                 'exists' => false,
-                'created' => false,
                 'columns_added' => array(),
             ),
             'randomization_configs_table' => array(
                 'exists' => false,
-                'created' => false,
                 'columns_added' => array(),
             ),
             'randomization_assignments_table' => array(
                 'exists' => false,
-                'created' => false,
                 'columns_added' => array(),
             ),
             'survey_studies_table' => array(
                 'exists' => false,
-                'created' => false,
                 'columns_added' => array(),
             ),
             'survey_participants_table' => array(
                 'exists' => false,
-                'created' => false,
-                'columns_added' => array(),
-            ),
-            'survey_sessions_table' => array(
-                'exists' => false,
-                'created' => false,
                 'columns_added' => array(),
             ),
             'survey_waves_table' => array(
                 'exists' => false,
-                'created' => false,
                 'columns_added' => array(),
             ),
             'survey_assignments_table' => array(
                 'exists' => false,
-                'created' => false,
-                'columns_added' => array(),
-            ),
-            'survey_magic_links_table' => array(
-                'exists' => false,
-                'created' => false,
-                'columns_added' => array(),
-            ),
-            'survey_email_log_table' => array(
-                'exists' => false,
-                'created' => false,
-                'columns_added' => array(),
-            ),
-            'survey_audit_log_table' => array(
-                'exists' => false,
-                'created' => false,
                 'columns_added' => array(),
             ),
         );
-
-        // Check if core tables exist
-        $core_tables_exist = self::local_table_exists( $results_table ) && self::local_table_exists( $events_table );
+        
+        // Check if tables exist
+        $tables_exist = self::local_table_exists( $results_table ) && self::local_table_exists( $events_table );
         $rct_tables_exist = self::local_table_exists( $rct_configs_table ) && self::local_table_exists( $rct_assignments_table );
-
-        // Create core tables if missing
-        if ( ! $core_tables_exist || ! $rct_tables_exist ) {
-            // Tables missing - create via activation hook
+        
+        if ( ! $tables_exist || ! $rct_tables_exist ) {
+            // Tables missing - recreate via activation hook
             eipsi_forms_activate();
-
-            // Create randomization tables if they still don't exist
-            if ( ! self::local_table_exists( $rct_configs_table ) ) {
-                $sql = "CREATE TABLE {$rct_configs_table} (
-                    id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-                    randomization_id varchar(255) NOT NULL,
-                    formularios LONGTEXT NOT NULL,
-                    probabilidades LONGTEXT,
-                    method varchar(20) DEFAULT 'seeded',
-                    manual_assignments LONGTEXT,
-                    show_instructions tinyint(1) DEFAULT 0,
-                    created_at datetime DEFAULT CURRENT_TIMESTAMP,
-                    updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    PRIMARY KEY (id),
-                    UNIQUE KEY randomization_id (randomization_id),
-                    KEY method (method),
-                    KEY created_at (created_at)
-                ) " . $wpdb->get_charset_collate() . ";";
-
-                require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-                dbDelta( $sql );
-                $repair_log['randomization_configs_table']['created'] = true;
-                error_log( '[EIPSI Forms] Created randomization_configs table' );
-            }
-
-            if ( ! self::local_table_exists( $rct_assignments_table ) ) {
-                $sql = "CREATE TABLE {$rct_assignments_table} (
-                    id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-                    randomization_id varchar(255) NOT NULL,
-                    config_id varchar(255) NOT NULL,
-                    user_fingerprint varchar(255) NOT NULL,
-                    assigned_form_id bigint(20) unsigned NOT NULL,
-                    assigned_at datetime DEFAULT CURRENT_TIMESTAMP,
-                    last_access datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    access_count int(11) DEFAULT 1,
-                    PRIMARY KEY (id),
-                    UNIQUE KEY unique_assignment (randomization_id, config_id, user_fingerprint),
-                    KEY randomization_id (randomization_id),
-                    KEY config_id (config_id),
-                    KEY user_fingerprint (user_fingerprint),
-                    KEY assigned_form_id (assigned_form_id),
-                    KEY assigned_at (assigned_at)
-                ) " . $wpdb->get_charset_collate() . ";";
-
-                dbDelta( $sql );
-                $repair_log['randomization_assignments_table']['created'] = true;
-                error_log( '[EIPSI Forms] Created randomization_assignments table' );
-            }
-
-            // Re-check core tables
+            
+            // Re-check tables
             $repair_log['results_table']['exists'] = self::local_table_exists( $results_table );
             $repair_log['events_table']['exists'] = self::local_table_exists( $events_table );
             $repair_log['randomization_configs_table']['exists'] = self::local_table_exists( $rct_configs_table );
             $repair_log['randomization_assignments_table']['exists'] = self::local_table_exists( $rct_assignments_table );
-
-            if ( ! $core_tables_exist ) {
-                $repair_log['results_table']['created'] = true;
-                $repair_log['events_table']['created'] = true;
-                error_log( '[EIPSI Forms] Schema repair: Core tables created' );
-            }
-        } else {
-            $repair_log['results_table']['exists'] = true;
-            $repair_log['events_table']['exists'] = true;
-            $repair_log['randomization_configs_table']['exists'] = true;
-            $repair_log['randomization_assignments_table']['exists'] = true;
+            
+            error_log( '[EIPSI Forms] Schema repair: All tables recreated' );
+            return $repair_log;
         }
-
-        // Create/sync longitudinal tables (always run to ensure they exist)
-        $studies_sync = self::sync_local_survey_studies_table();
-        $repair_log['survey_studies_table']['exists'] = $studies_sync['exists'];
-        $repair_log['survey_studies_table']['created'] = $studies_sync['created'];
-        $repair_log['survey_studies_table']['columns_added'] = $studies_sync['columns_added'];
-
-        $participants_sync = self::sync_local_survey_participants_table();
-        $repair_log['survey_participants_table']['exists'] = $participants_sync['exists'];
-        $repair_log['survey_participants_table']['created'] = $participants_sync['created'];
-        $repair_log['survey_participants_table']['columns_added'] = $participants_sync['columns_added'];
-
-        $sessions_sync = self::sync_local_survey_sessions_table();
-        $repair_log['survey_sessions_table']['exists'] = $sessions_sync['exists'];
-        $repair_log['survey_sessions_table']['created'] = $sessions_sync['created'];
-        $repair_log['survey_sessions_table']['columns_added'] = $sessions_sync['columns_added'];
-
-        $waves_sync = self::sync_local_survey_waves_table();
-        $repair_log['survey_waves_table']['exists'] = $waves_sync['exists'];
-        $repair_log['survey_waves_table']['created'] = $waves_sync['created'];
-        $repair_log['survey_waves_table']['columns_added'] = $waves_sync['columns_added'];
-
-        $assignments_sync = self::sync_local_survey_assignments_table();
-        $repair_log['survey_assignments_table']['exists'] = $assignments_sync['exists'];
-        $repair_log['survey_assignments_table']['created'] = $assignments_sync['created'];
-        $repair_log['survey_assignments_table']['columns_added'] = $assignments_sync['columns_added'];
-
-        $magic_links_sync = self::sync_local_survey_magic_links_table();
-        $repair_log['survey_magic_links_table']['exists'] = $magic_links_sync['exists'];
-        $repair_log['survey_magic_links_table']['created'] = $magic_links_sync['created'];
-        $repair_log['survey_magic_links_table']['columns_added'] = $magic_links_sync['columns_added'];
-
-        $email_log_sync = self::sync_local_survey_email_log_table();
-        $repair_log['survey_email_log_table']['exists'] = $email_log_sync['exists'];
-        $repair_log['survey_email_log_table']['created'] = $email_log_sync['created'];
-        $repair_log['survey_email_log_table']['columns_added'] = $email_log_sync['columns_added'];
-
-        $audit_log_sync = self::sync_local_survey_audit_log_table();
-        $repair_log['survey_audit_log_table']['exists'] = $audit_log_sync['exists'];
-        $repair_log['survey_audit_log_table']['created'] = $audit_log_sync['created'];
-        $repair_log['survey_audit_log_table']['columns_added'] = $audit_log_sync['columns_added'];
-
+        
+        $repair_log['results_table']['exists'] = true;
+        $repair_log['events_table']['exists'] = true;
+        $repair_log['randomization_configs_table']['exists'] = true;
+        $repair_log['randomization_assignments_table']['exists'] = true;
+        
         // Repair results table
-        if ( $repair_log['results_table']['exists'] ) {
-            $results_repair = self::repair_local_results_table( $results_table );
-            $repair_log['results_table']['columns_added'] = $results_repair;
-        }
-
+        $results_repair = self::repair_local_results_table( $results_table );
+        $repair_log['results_table']['columns_added'] = $results_repair;
+        
         // Repair events table
-        if ( $repair_log['events_table']['exists'] ) {
-            $events_repair = self::repair_local_events_table( $events_table );
-            $repair_log['events_table']['columns_added'] = $events_repair;
-        }
-
+        $events_repair = self::repair_local_events_table( $events_table );
+        $repair_log['events_table']['columns_added'] = $events_repair;
+        
         // Repair randomization configs table
-        if ( $repair_log['randomization_configs_table']['exists'] ) {
-            $rct_configs_repair = self::repair_local_randomization_configs_table( $rct_configs_table );
-            $repair_log['randomization_configs_table']['columns_added'] = $rct_configs_repair;
-        }
-
+        $rct_configs_repair = self::repair_local_randomization_configs_table( $rct_configs_table );
+        $repair_log['randomization_configs_table']['columns_added'] = $rct_configs_repair;
+        
         // Repair randomization assignments table
-        if ( $repair_log['randomization_assignments_table']['exists'] ) {
-            $rct_assignments_repair = self::repair_local_randomization_assignments_table( $rct_assignments_table );
-            $repair_log['randomization_assignments_table']['columns_added'] = $rct_assignments_repair;
-        }
-
+        $rct_assignments_repair = self::repair_local_randomization_assignments_table( $rct_assignments_table );
+        $repair_log['randomization_assignments_table']['columns_added'] = $rct_assignments_repair;
+        
+        // Repair longitudinal tables
+        $survey_participants_repair = self::repair_local_survey_participants_table( $survey_participants_table );
+        $repair_log['survey_participants_table']['columns_added'] = $survey_participants_repair;
+        
         // Update version and timestamp
-        update_option( 'eipsi_db_schema_version', '1.4.3' );
+        update_option( 'eipsi_db_schema_version', '1.3.7' );
         update_option( 'eipsi_schema_last_verified', current_time( 'mysql' ) );
-
-        // Calculate total columns added
-        $columns_added_total = 0;
-        foreach ( $repair_log as $table_info ) {
-            if ( isset( $table_info['columns_added'] ) && is_array( $table_info['columns_added'] ) ) {
-                $columns_added_total += count( $table_info['columns_added'] );
-            }
-        }
-
+        
+        $columns_added_total = count( $results_repair ) + count( $events_repair ) + 
+                             count( $rct_configs_repair ) + count( $rct_assignments_repair );
+        
         if ( $columns_added_total > 0 ) {
             error_log( '[EIPSI Forms] Schema repair completed - Columns added: ' . wp_json_encode( $repair_log ) );
         }
-
-        // Check for any errors
-        $has_errors = false;
-        foreach ( $repair_log as $table_info ) {
-            if ( isset( $table_info['success'] ) && $table_info['success'] === false ) {
-                $has_errors = true;
-                break;
-            }
-        }
-
-        if ( $has_errors ) {
-            $repair_log['success'] = false;
-        }
-
+        
         return $repair_log;
     }
+    
     /**
      * Check if table exists in local database
      */

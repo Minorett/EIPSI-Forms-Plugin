@@ -462,29 +462,40 @@ function eipsi_display_configuration_page() {
                         <?php endif; ?>
 
                         <?php if ($status['connected']): ?>
-                        <button type="button" id="eipsi-verify-schema" class="button button-secondary" style="margin-top: 10px;">
-                            <span class="dashicons dashicons-update"></span>
-                            <?php echo esc_html__('Verify & Repair Schema', 'eipsi-forms'); ?>
-                        </button>
-                        <p class="description">
-                            <?php echo esc_html__('Manually verify database schema and create any missing tables or columns.', 'eipsi-forms'); ?>
-                        </p>
-                        <?php else: ?>
-                        <!-- Local Schema Verification Button -->
-                        <button type="button" id="eipsi-verify-local-schema" class="button button-secondary" style="margin-top: 10px;">
-                            <span class="dashicons dashicons-update"></span>
-                            <?php echo esc_html__('Verificar y reparar esquema local', 'eipsi-forms'); ?>
-                        </button>
-                        <p class="description">
-                            <?php echo esc_html__('Verifica el esquema de la base de datos de WordPress y crea las tablas o columnas que falten.', 'eipsi-forms'); ?>
-                        </p>
-                        
-                        <!-- Local Schema Results Container -->
-                        <div id="eipsi-local-schema-results" style="display: none; margin-top: 15px; padding: 12px; background: #f0f6fc; border-radius: 4px; border-left: 4px solid #2271b1;">
-                            <h4 style="margin-top: 0; margin-bottom: 10px;"><?php echo esc_html__('Resultados de verificación', 'eipsi-forms'); ?></h4>
-                            <div id="eipsi-local-schema-content"></div>
+                        <!-- External Database Schema Verification -->
+                        <div style="margin-bottom: 15px;">
+                            <h4 style="margin-top: 0; margin-bottom: 10px; color: #666;">
+                                <?php echo esc_html__('Base de datos externa:', 'eipsi-forms'); ?>
+                            </h4>
+                            <button type="button" id="eipsi-verify-schema" class="button button-secondary" style="margin-top: 10px;">
+                                <span class="dashicons dashicons-update"></span>
+                                <?php echo esc_html__('Verify & Repair Schema', 'eipsi-forms'); ?>
+                            </button>
+                            <p class="description">
+                                <?php echo esc_html__('Manually verify database schema and create any missing tables or columns.', 'eipsi-forms'); ?>
+                            </p>
                         </div>
                         <?php endif; ?>
+
+                        <!-- Local WordPress Database Schema Verification -->
+                        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+                            <h4 style="margin-top: 0; margin-bottom: 10px; color: #666;">
+                                <?php echo esc_html__('Base de datos local de WordPress:', 'eipsi-forms'); ?>
+                            </h4>
+                            <button type="button" id="eipsi-verify-local-schema" class="button button-secondary" style="margin-top: 10px;">
+                                <span class="dashicons dashicons-update"></span>
+                                <?php echo esc_html__('Verificar y reparar esquema local', 'eipsi-forms'); ?>
+                            </button>
+                            <p class="description">
+                                <?php echo esc_html__('Verifica el esquema de la base de datos de WordPress y crea las tablas o columnas que falten.', 'eipsi-forms'); ?>
+                            </p>
+
+                            <!-- Local Schema Results Container -->
+                            <div id="eipsi-local-schema-results" style="display: none; margin-top: 15px; padding: 12px; background: #f0f6fc; border-radius: 4px; border-left: 4px solid #2271b1;">
+                                <h4 style="margin-top: 0; margin-bottom: 10px;"><?php echo esc_html__('Resultados de verificación', 'eipsi-forms'); ?></h4>
+                                <div id="eipsi-local-schema-content"></div>
+                            </div>
+                        </div>
                     </div>
                     </div>
 
@@ -494,9 +505,14 @@ function eipsi_display_configuration_page() {
                             <span class="dashicons dashicons-database-view"></span>
                             <?php echo esc_html__('Database Table Status', 'eipsi-forms'); ?>
                         </h3>
-                        
+
                         <div id="eipsi-table-status-content">
                             <?php if ($status['connected']): ?>
+                            <!-- External Database Table Status -->
+                            <div style="margin-bottom: 20px;">
+                                <h4 style="margin-top: 0; margin-bottom: 10px; color: #666;">
+                                    <?php echo esc_html__('Base de datos externa:', 'eipsi-forms'); ?>
+                                </h4>
                                 <p class="description">
                                     <?php echo esc_html__('Check if required database tables exist in the external database.', 'eipsi-forms'); ?>
                                 </p>
@@ -504,7 +520,14 @@ function eipsi_display_configuration_page() {
                                     <span class="dashicons dashicons-search"></span>
                                     <?php echo esc_html__('Check Table Status', 'eipsi-forms'); ?>
                                 </button>
-                            <?php else: ?>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- Local WordPress Database Table Status -->
+                            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+                                <h4 style="margin-top: 0; margin-bottom: 10px; color: #666;">
+                                    <?php echo esc_html__('Base de datos local de WordPress:', 'eipsi-forms'); ?>
+                                </h4>
                                 <p class="description">
                                     <?php echo esc_html__('Verifica el estado detallado de las tablas en la base de datos de WordPress.', 'eipsi-forms'); ?>
                                 </p>
@@ -512,9 +535,9 @@ function eipsi_display_configuration_page() {
                                     <span class="dashicons dashicons-search"></span>
                                     <?php echo esc_html__('Verificar estado de tablas locales', 'eipsi-forms'); ?>
                                 </button>
-                            <?php endif; ?>
+                            </div>
                         </div>
-                        
+
                         <!-- Table Status Results (populated via AJAX) -->
                         <div id="eipsi-table-status-results" style="display: none; margin-top: 15px;"></div>
                     </div>
