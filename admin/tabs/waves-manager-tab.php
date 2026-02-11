@@ -30,6 +30,7 @@ wp_localize_script('eipsi-waves-manager', 'eipsiWavesManagerData', array(
     'strings' => array(
         'confirmDelete' => __('¿Estás seguro de eliminar esta onda? Esta acción no se puede deshacer.', 'eipsi-forms'),
         'confirmAssign' => __('¿Asignar los participantes seleccionados a esta onda?', 'eipsi-forms'),
+        'confirmDeleteParticipant' => __('¿Estás seguro de eliminar este participante? Esta acción no se puede deshacer.', 'eipsi-forms'),
         'saving' => __('Guardando...', 'eipsi-forms'),
         'sending' => __('Enviando...', 'eipsi-forms'),
         'success' => __('✓ Éxito', 'eipsi-forms'),
@@ -41,6 +42,9 @@ wp_localize_script('eipsi-waves-manager', 'eipsiWavesManagerData', array(
         'participantsAssigned' => __('participantes asignados.', 'eipsi-forms'),
         'remindersSent' => __('recordatorios enviados.', 'eipsi-forms'),
         'deadlineExtended' => __('Plazo extendido.', 'eipsi-forms'),
+        'participantAdded' => __('Participante agregado exitosamente.', 'eipsi-forms'),
+        'participantUpdated' => __('Participante actualizado exitosamente.', 'eipsi-forms'),
+        'participantDeleted' => __('Participante eliminado exitosamente.', 'eipsi-forms'),
     ),
 ));
 
@@ -224,7 +228,22 @@ $available_forms = get_posts(array(
                 <label for="wave_description"><?php esc_html_e('Descripción:', 'eipsi-forms'); ?></label>
                 <textarea id="wave_description" name="description" rows="3"></textarea>
             </div>
-            
+
+            <!-- Time Limit Configuration -->
+            <div class="form-group time-limit-section">
+                <label class="time-limit-header">
+                    <input type="checkbox" name="has_time_limit" id="has_time_limit" value="1">
+                    <?php esc_html_e('Limitar tiempo para completar el formulario', 'eipsi-forms'); ?>
+                </label>
+                <div class="time-limit-input" id="time-limit-input-container" style="display: none; margin-top: 10px; padding-left: 20px;">
+                    <div class="input-group">
+                        <input type="number" id="completion_time_limit" name="completion_time_limit" value="30" min="1" max="180" style="width: 100px;">
+                        <span class="input-suffix"><?php esc_html_e('minutos', 'eipsi-forms'); ?></span>
+                    </div>
+                    <small class="form-help"><?php esc_html_e('El participante debe completar el formulario dentro de este tiempo límite.', 'eipsi-forms'); ?></small>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>
                     <input type="checkbox" name="is_mandatory" value="1" checked>
@@ -420,3 +439,87 @@ if (class_exists('EIPSI_Anonymize_Service') && $current_study_id) {
         </div>
     </div>
 </div>
+
+<?php if ($current_study_id): ?>
+<!-- Participants Management Section -->
+<div class="eipsi-participants-section" style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2><?php esc_html_e('👥 Gestión de Participantes', 'eipsi-forms'); ?></h2>
+        <button type="button" class="button button-primary" id="eipsi-add-participant-btn">
+            ➕ <?php esc_html_e('Agregar Participante', 'eipsi-forms'); ?>
+        </button>
+    </div>
+    <p class="description" style="margin-bottom: 20px;">
+        <?php esc_html_e('Administra los participantes del estudio. Puedes agregar nuevos, editar información o eliminar participantes.', 'eipsi-forms'); ?>
+    </p>
+
+    <!-- Participants Table -->
+    <div class="participants-table-container">
+        <table class="wp-list-table widefat fixed striped" id="participants-table">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e('ID', 'eipsi-forms'); ?></th>
+                    <th><?php esc_html_e('Nombre', 'eipsi-forms'); ?></th>
+                    <th><?php esc_html_e('Email', 'eipsi-forms'); ?></th>
+                    <th><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
+                    <th><?php esc_html_e('Registrado', 'eipsi-forms'); ?></th>
+                    <th><?php esc_html_e('Acciones', 'eipsi-forms'); ?></th>
+                </tr>
+            </thead>
+            <tbody id="participants-tbody">
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px;">
+                        <span class="spinner is-active"></span> <?php esc_html_e('Cargando participantes...', 'eipsi-forms'); ?>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Add/Edit Participant -->
+<div id="eipsi-participant-modal" class="eipsi-modal" style="display:none;">
+    <div class="eipsi-modal-content">
+        <span class="eipsi-close-modal">&times;</span>
+        <h3 id="participant-modal-title"><?php esc_html_e('Agregar Participante', 'eipsi-forms'); ?></h3>
+        <form id="eipsi-participant-form">
+            <input type="hidden" name="participant_id" id="participant_id" value="">
+            <input type="hidden" name="study_id" value="<?php echo esc_attr($current_study_id); ?>">
+
+            <div class="form-group">
+                <label for="participant_email"><?php esc_html_e('Email:', 'eipsi-forms'); ?> <span class="required">*</span></label>
+                <input type="email" id="participant_email" name="email" required placeholder="participante@ejemplo.com">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="participant_first_name"><?php esc_html_e('Nombre:', 'eipsi-forms'); ?></label>
+                    <input type="text" id="participant_first_name" name="first_name" placeholder="Juan">
+                </div>
+                <div class="form-group">
+                    <label for="participant_last_name"><?php esc_html_e('Apellido:', 'eipsi-forms'); ?></label>
+                    <input type="text" id="participant_last_name" name="last_name" placeholder="Pérez">
+                </div>
+            </div>
+
+            <div class="form-group" id="password-field-container">
+                <label for="participant_password"><?php esc_html_e('Contraseña:', 'eipsi-forms'); ?></label>
+                <input type="password" id="participant_password" name="password" placeholder="<?php esc_attr_e('Dejar en blanco para generar automáticamente', 'eipsi-forms'); ?>">
+                <small class="form-help"><?php esc_html_e('Mínimo 8 caracteres. Se generará automáticamente si se deja en blanco.', 'eipsi-forms'); ?></small>
+            </div>
+
+            <div class="form-group" id="active-field-container" style="display: none;">
+                <label>
+                    <input type="checkbox" name="is_active" id="participant_is_active" value="1" checked>
+                    <?php esc_html_e('Participante activo', 'eipsi-forms'); ?>
+                </label>
+            </div>
+
+            <div class="modal-footer">
+                <button type="submit" class="button button-primary" id="save-participant-btn"><?php esc_html_e('Guardar Participante', 'eipsi-forms'); ?></button>
+                <button type="button" class="button eipsi-close-modal-btn"><?php esc_html_e('Cancelar', 'eipsi-forms'); ?></button>
+            </div>
+        </form>
+    </div>
+</div>
+<?php endif; ?>

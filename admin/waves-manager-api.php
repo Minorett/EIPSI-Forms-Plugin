@@ -1,8 +1,9 @@
 <?php
 /**
  * AJAX API Handlers for Waves Manager
- * 
+ *
  * @since 1.4.0
+ * @updated 1.5.2 - Added participant management and unlimited time support
  */
 
 if (!defined('ABSPATH')) {
@@ -16,9 +17,16 @@ add_action('wp_ajax_eipsi_save_wave', 'wp_ajax_eipsi_save_wave_handler');
 add_action('wp_ajax_eipsi_delete_wave', 'wp_ajax_eipsi_delete_wave_handler');
 add_action('wp_ajax_eipsi_get_wave', 'wp_ajax_eipsi_get_wave_handler');
 add_action('wp_ajax_eipsi_get_available_participants', 'wp_ajax_eipsi_get_available_participants_handler');
+add_action('wp_ajax_eipsi_get_study_participants', 'wp_ajax_eipsi_get_study_participants_handler');
 add_action('wp_ajax_eipsi_assign_participants', 'wp_ajax_eipsi_assign_participants_handler');
 add_action('wp_ajax_eipsi_extend_deadline', 'wp_ajax_eipsi_extend_deadline_handler');
 add_action('wp_ajax_eipsi_send_reminder', 'wp_ajax_eipsi_send_reminder_handler');
+
+// Participant Management Handlers
+add_action('wp_ajax_eipsi_add_participant', 'wp_ajax_eipsi_add_participant_handler');
+add_action('wp_ajax_eipsi_edit_participant', 'wp_ajax_eipsi_edit_participant_handler');
+add_action('wp_ajax_eipsi_delete_participant', 'wp_ajax_eipsi_delete_participant_handler');
+add_action('wp_ajax_eipsi_get_participant', 'wp_ajax_eipsi_get_participant_handler');
 
 /**
  * Create or Update Wave
@@ -32,10 +40,14 @@ function wp_ajax_eipsi_save_wave_handler() {
 
     $wave_id = isset($_POST['wave_id']) ? absint($_POST['wave_id']) : 0;
     $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
-    
+
     if (!$study_id) {
         wp_send_json_error('Missing study_id');
     }
+
+    // Handle unlimited time option
+    $has_time_limit = isset($_POST['has_time_limit']) ? 1 : 0;
+    $completion_time_limit = isset($_POST['completion_time_limit']) ? absint($_POST['completion_time_limit']) : 0;
 
     $wave_data = array(
         'name' => sanitize_text_field($_POST['name'] ?? ''),
@@ -44,6 +56,8 @@ function wp_ajax_eipsi_save_wave_handler() {
         'due_date' => sanitize_text_field($_POST['due_date'] ?? ''),
         'description' => sanitize_textarea_field($_POST['description'] ?? ''),
         'is_mandatory' => isset($_POST['is_mandatory']) ? 1 : 0,
+        'has_time_limit' => $has_time_limit,
+        'completion_time_limit' => $has_time_limit ? $completion_time_limit : null,
         'status' => 'active' // Default to active for now
     );
 
@@ -235,5 +249,259 @@ function wp_ajax_eipsi_send_reminder_handler() {
     wp_send_json_success(array(
         'message' => sprintf('Se han enviado %d recordatorios.', $sent_count),
         'sent' => $sent_count
+    ));
+}
+
+/**
+ * Get all participants for a study
+ */
+function wp_ajax_eipsi_get_study_participants_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_GET['study_id']) ? absint($_GET['study_id']) : 0;
+    if (!$study_id) {
+        wp_send_json_error('Missing study_id');
+    }
+
+    global $wpdb;
+
+    $participants = $wpdb->get_results($wpdb->prepare(
+        "SELECT p.id, p.email, p.first_name, p.last_name, p.created_at, p.is_active,
+                CONCAT(p.first_name, ' ', p.last_name) as full_name
+         FROM {$wpdb->prefix}survey_participants p
+         WHERE p.survey_id = %d
+         ORDER BY p.created_at DESC",
+        $study_id
+    ));
+
+    wp_send_json_success($participants);
+}
+
+/**
+ * Add new participant to study
+ */
+function wp_ajax_eipsi_add_participant_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+    $first_name = isset($_POST['first_name']) ? sanitize_text_field($_POST['first_name']) : '';
+    $last_name = isset($_POST['last_name']) ? sanitize_text_field($_POST['last_name']) : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
+
+    if (!$study_id || empty($email)) {
+        wp_send_json_error('Missing required fields');
+    }
+
+    if (!is_email($email)) {
+        wp_send_json_error('Invalid email address');
+    }
+
+    // Generate password if not provided
+    if (empty($password)) {
+        $password = wp_generate_password(12, true, true);
+    }
+
+    $result = EIPSI_Participant_Service::create_participant($study_id, $email, $password, array(
+        'first_name' => $first_name,
+        'last_name' => $last_name
+    ));
+
+    if (!$result['success']) {
+        $error_messages = array(
+            'invalid_email' => 'Invalid email address',
+            'short_password' => 'Password must be at least 8 characters',
+            'email_exists' => 'This email is already registered in this study',
+            'db_error' => 'Database error. Please try again.'
+        );
+        wp_send_json_error($error_messages[$result['error']] ?? 'Unknown error');
+    }
+
+    wp_send_json_success(array(
+        'message' => 'Participant added successfully',
+        'participant_id' => $result['participant_id'],
+        'temporary_password' => $password // Only shown once
+    ));
+}
+
+/**
+ * Get single participant details
+ */
+function wp_ajax_eipsi_get_participant_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $participant_id = isset($_GET['participant_id']) ? absint($_GET['participant_id']) : 0;
+    if (!$participant_id) {
+        wp_send_json_error('Missing participant_id');
+    }
+
+    $participant = EIPSI_Participant_Service::get_by_id($participant_id);
+
+    if (!$participant) {
+        wp_send_json_error('Participant not found');
+    }
+
+    // Remove sensitive data
+    unset($participant->password_hash);
+
+    wp_send_json_success($participant);
+}
+
+/**
+ * Edit participant
+ */
+function wp_ajax_eipsi_edit_participant_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $participant_id = isset($_POST['participant_id']) ? absint($_POST['participant_id']) : 0;
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+    $first_name = isset($_POST['first_name']) ? sanitize_text_field($_POST['first_name']) : '';
+    $last_name = isset($_POST['last_name']) ? sanitize_text_field($_POST['last_name']) : '';
+    $is_active = isset($_POST['is_active']) ? 1 : 0;
+
+    if (!$participant_id) {
+        wp_send_json_error('Missing participant_id');
+    }
+
+    if (!empty($email) && !is_email($email)) {
+        wp_send_json_error('Invalid email address');
+    }
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'survey_participants';
+
+    $data = array();
+    $formats = array();
+
+    if (!empty($email)) {
+        // Check for duplicate email
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$table_name} WHERE email = %s AND id != %d",
+            $email,
+            $participant_id
+        ));
+
+        if ($existing) {
+            wp_send_json_error('This email is already registered to another participant');
+        }
+
+        $data['email'] = $email;
+        $formats[] = '%s';
+    }
+
+    $data['first_name'] = $first_name;
+    $formats[] = '%s';
+
+    $data['last_name'] = $last_name;
+    $formats[] = '%s';
+
+    $data['is_active'] = $is_active;
+    $formats[] = '%d';
+
+    $result = $wpdb->update(
+        $table_name,
+        $data,
+        array('id' => $participant_id),
+        $formats,
+        array('%d')
+    );
+
+    if ($result === false) {
+        wp_send_json_error('Failed to update participant');
+    }
+
+    wp_send_json_success(array(
+        'message' => 'Participant updated successfully'
+    ));
+}
+
+/**
+ * Delete participant
+ */
+function wp_ajax_eipsi_delete_participant_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $participant_id = isset($_POST['participant_id']) ? absint($_POST['participant_id']) : 0;
+    $delete_data = isset($_POST['delete_data']) ? true : false;
+
+    if (!$participant_id) {
+        wp_send_json_error('Missing participant_id');
+    }
+
+    global $wpdb;
+
+    // Check if participant has submissions
+    $has_submissions = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_assignments WHERE participant_id = %d AND status = 'submitted'",
+        $participant_id
+    ));
+
+    if ($has_submissions > 0 && !$delete_data) {
+        // Just deactivate instead of delete
+        $result = EIPSI_Participant_Service::set_active($participant_id, false);
+        if ($result) {
+            wp_send_json_success(array(
+                'message' => 'Participant has submissions and was deactivated instead of deleted',
+                'deactivated' => true
+            ));
+        } else {
+            wp_send_json_error('Failed to deactivate participant');
+        }
+    }
+
+    // Delete participant's assignments first
+    $wpdb->delete(
+        $wpdb->prefix . 'survey_assignments',
+        array('participant_id' => $participant_id),
+        array('%d')
+    );
+
+    // Delete participant's magic links
+    $wpdb->delete(
+        $wpdb->prefix . 'survey_magic_links',
+        array('participant_id' => $participant_id),
+        array('%d')
+    );
+
+    // Delete participant's sessions
+    $wpdb->delete(
+        $wpdb->prefix . 'survey_sessions',
+        array('participant_id' => $participant_id),
+        array('%d')
+    );
+
+    // Finally delete participant
+    $result = $wpdb->delete(
+        $wpdb->prefix . 'survey_participants',
+        array('id' => $participant_id),
+        array('%d')
+    );
+
+    if ($result === false) {
+        wp_send_json_error('Failed to delete participant');
+    }
+
+    wp_send_json_success(array(
+        'message' => 'Participant deleted successfully'
     ));
 }

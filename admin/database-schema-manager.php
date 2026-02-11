@@ -1724,6 +1724,9 @@ class EIPSI_Database_Schema_Manager {
             retry_days INT DEFAULT 7,
             max_retries INT DEFAULT 3,
 
+            has_time_limit TINYINT(1) DEFAULT 0,
+            completion_time_limit INT DEFAULT NULL,
+
             status ENUM('draft', 'active', 'completed', 'paused') DEFAULT 'draft',
             is_mandatory TINYINT(1) DEFAULT 1,
 
@@ -2318,6 +2321,9 @@ function eipsi_sync_survey_waves_table() {
         retry_enabled TINYINT(1) DEFAULT 1,
         retry_days INT DEFAULT 7,
         max_retries INT DEFAULT 3,
+
+            has_time_limit TINYINT(1) DEFAULT 0,
+            completion_time_limit INT DEFAULT NULL,
 
         status ENUM('draft', 'active', 'completed', 'paused') DEFAULT 'draft',
         is_mandatory TINYINT(1) DEFAULT 1,
