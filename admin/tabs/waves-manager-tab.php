@@ -9,6 +9,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+global $wpdb;
+
+// 1. Fetch all studies
+$studies = $wpdb->get_results("SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies ORDER BY created_at DESC");
+
+// 2. Determine active study (BEFORE enqueue)
+$current_study_id = isset($_GET['study_id']) ? absint($_GET['study_id']) : (isset($studies[0]) ? $studies[0]->id : 0);
+
 // Enqueue styles y scripts para waves manager
 wp_enqueue_style('eipsi-waves-manager', EIPSI_FORMS_PLUGIN_URL . 'admin/css/waves-manager.css', array(), EIPSI_FORMS_VERSION);
 wp_enqueue_script('eipsi-waves-manager', EIPSI_FORMS_PLUGIN_URL . 'admin/js/waves-manager.js', array('jquery'), EIPSI_FORMS_VERSION, true);
@@ -35,14 +43,6 @@ wp_localize_script('eipsi-waves-manager', 'eipsiWavesManagerData', array(
         'deadlineExtended' => __('Plazo extendido.', 'eipsi-forms'),
     ),
 ));
-
-global $wpdb;
-
-// 1. Fetch all studies
-$studies = $wpdb->get_results("SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies ORDER BY created_at DESC");
-
-// 2. Determine active study
-$current_study_id = isset($_GET['study_id']) ? absint($_GET['study_id']) : (isset($studies[0]) ? $studies[0]->id : 0);
 
 // 3. Get waves for active study
 $waves = array();
