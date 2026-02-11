@@ -14,6 +14,7 @@ if (!defined('ABSPATH')) {
  */
 add_action('wp_ajax_eipsi_save_wave', 'wp_ajax_eipsi_save_wave_handler');
 add_action('wp_ajax_eipsi_delete_wave', 'wp_ajax_eipsi_delete_wave_handler');
+add_action('wp_ajax_eipsi_get_wave', 'wp_ajax_eipsi_get_wave_handler');
 add_action('wp_ajax_eipsi_get_available_participants', 'wp_ajax_eipsi_get_available_participants_handler');
 add_action('wp_ajax_eipsi_assign_participants', 'wp_ajax_eipsi_assign_participants_handler');
 add_action('wp_ajax_eipsi_extend_deadline', 'wp_ajax_eipsi_extend_deadline_handler');
@@ -88,6 +89,30 @@ function wp_ajax_eipsi_delete_wave_handler() {
     }
 
     wp_send_json_success('Onda eliminada');
+}
+
+/**
+ * Get Single Wave
+ */
+function wp_ajax_eipsi_get_wave_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $wave_id = isset($_GET['wave_id']) ? absint($_GET['wave_id']) : 0;
+    if (!$wave_id) {
+        wp_send_json_error('Missing wave_id');
+    }
+
+    $wave = EIPSI_Wave_Service::get_wave($wave_id);
+
+    if (!$wave) {
+        wp_send_json_error('Wave not found');
+    }
+
+    wp_send_json_success($wave);
 }
 
 /**

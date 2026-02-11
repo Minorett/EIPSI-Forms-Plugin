@@ -9,13 +9,31 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Enqueue styles y scripts para modal de anonimización
+// Enqueue styles y scripts para waves manager
 wp_enqueue_style('eipsi-waves-manager', EIPSI_FORMS_PLUGIN_URL . 'admin/css/waves-manager.css', array(), EIPSI_FORMS_VERSION);
 wp_enqueue_script('eipsi-waves-manager', EIPSI_FORMS_PLUGIN_URL . 'admin/js/waves-manager.js', array('jquery'), EIPSI_FORMS_VERSION, true);
 
-// Pasar datos al JS
+// Pasar datos al JS - Nonces y configuración para AJAX
 wp_localize_script('eipsi-waves-manager', 'eipsiWavesManagerData', array(
+    'ajaxUrl' => admin_url('admin-ajax.php'),
     'anonymizeNonce' => wp_create_nonce('eipsi_anonymize_survey_nonce'),
+    'wavesNonce' => wp_create_nonce('eipsi_waves_nonce'),
+    'studyId' => $current_study_id,
+    'strings' => array(
+        'confirmDelete' => __('¿Estás seguro de eliminar esta onda? Esta acción no se puede deshacer.', 'eipsi-forms'),
+        'confirmAssign' => __('¿Asignar los participantes seleccionados a esta onda?', 'eipsi-forms'),
+        'saving' => __('Guardando...', 'eipsi-forms'),
+        'sending' => __('Enviando...', 'eipsi-forms'),
+        'success' => __('✓ Éxito', 'eipsi-forms'),
+        'error' => __('✗ Error', 'eipsi-forms'),
+        'noParticipants' => __('No hay participantes disponibles para asignar.', 'eipsi-forms'),
+        'selectParticipants' => __('Por favor selecciona al menos un participante.', 'eipsi-forms'),
+        'waveSaved' => __('Onda guardada exitosamente.', 'eipsi-forms'),
+        'waveDeleted' => __('Onda eliminada.', 'eipsi-forms'),
+        'participantsAssigned' => __('participantes asignados.', 'eipsi-forms'),
+        'remindersSent' => __('recordatorios enviados.', 'eipsi-forms'),
+        'deadlineExtended' => __('Plazo extendido.', 'eipsi-forms'),
+    ),
 ));
 
 global $wpdb;
@@ -143,19 +161,19 @@ $available_forms = get_posts(array(
                             </div>
                             
                             <div class="wave-card-actions">
-                                <button type="button" class="button eipsi-edit-wave-btn" data-wave="<?php echo esc_attr(json_encode($wave)); ?>">
+                                <button type="button" class="button eipsi-edit-wave-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
                                     <?php esc_html_e('Editar', 'eipsi-forms'); ?>
                                 </button>
-                                <button type="button" class="button eipsi-assign-participants-btn">
+                                <button type="button" class="button eipsi-assign-participants-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
                                     <?php esc_html_e('Asignar', 'eipsi-forms'); ?>
                                 </button>
-                                <button type="button" class="button eipsi-extend-deadline-btn">
+                                <button type="button" class="button eipsi-extend-deadline-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
                                     <?php esc_html_e('Extender', 'eipsi-forms'); ?>
                                 </button>
-                                <button type="button" class="button eipsi-send-reminder-btn">
+                                <button type="button" class="button eipsi-send-reminder-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
                                     <?php esc_html_e('Recordatorio', 'eipsi-forms'); ?>
                                 </button>
-                                <button type="button" class="button button-link-delete eipsi-delete-wave-btn">
+                                <button type="button" class="button button-link-delete eipsi-delete-wave-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
                                     <?php esc_html_e('Eliminar', 'eipsi-forms'); ?>
                                 </button>
                             </div>
@@ -227,6 +245,7 @@ $available_forms = get_posts(array(
     <div class="eipsi-modal-content modal-large">
         <span class="eipsi-close-modal">&times;</span>
         <h3><?php esc_html_e('Asignar Participantes a la Onda', 'eipsi-forms'); ?> <span id="assign-wave-name"></span></h3>
+        <input type="hidden" id="assign-wave-id" value="">
         
         <div class="assign-filters">
             <p><?php esc_html_e('Selecciona los participantes que aún no están asignados a esta onda.', 'eipsi-forms'); ?></p>
