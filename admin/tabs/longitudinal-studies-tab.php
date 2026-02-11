@@ -9,7 +9,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Enqueue Study Dashboard JS
+// Enqueue styles and scripts
+wp_enqueue_style('eipsi-longitudinal-studies-tab', EIPSI_FORMS_PLUGIN_URL . 'assets/css/longitudinal-studies-tab.css', array(), EIPSI_FORMS_VERSION);
 wp_enqueue_script('eipsi-study-dashboard', EIPSI_FORMS_PLUGIN_URL . 'admin/js/study-dashboard.js', array('jquery'), EIPSI_FORMS_VERSION, true);
 
 // Localize data for JS
@@ -95,7 +96,7 @@ $paused_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}survey_studi
     </div>
 
     <!-- Studies Table -->
-    <table class="wp-list-table widefat fixed striped">
+    <table class="wp-list-table widefat fixed">
         <thead>
             <tr>
                 <th><?php esc_html_e('Nombre del Estudio', 'eipsi-forms'); ?></th>

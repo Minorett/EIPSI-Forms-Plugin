@@ -1,6 +1,7 @@
 /**
  * EIPSI Forms - Waves Manager Styles
  * Includes Close & Anonymize Study Modal
+ * High Contrast Dark Theme
  * 
  * @package EIPSI_Forms
  * @since 1.5.0
@@ -26,7 +27,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     cursor: pointer;
 }
 
@@ -35,9 +36,9 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    background: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
@@ -45,6 +46,7 @@
     flex-direction: column;
     overflow: hidden;
     animation: eipsiSlideIn 0.3s ease-out;
+    border: 2px solid #333;
 }
 
 @keyframes eipsiSlideIn {
@@ -64,8 +66,8 @@
 
 .eipsi-modal-header {
     padding: 20px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e0e0e0;
+    background: #2d3748;
+    border-bottom: 2px solid #4a5568;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -75,8 +77,8 @@
     margin: 0;
     padding: 0;
     font-size: 18px;
-    font-weight: 600;
-    color: #333;
+    font-weight: 700;
+    color: #ffffff;
     line-height: 1.4;
 }
 
@@ -84,29 +86,22 @@
     background: none;
     border: none;
     font-size: 28px;
-    line-height: 1;
+    color: #9ca3af;
     cursor: pointer;
-    color: #666;
+    line-height: 1;
     padding: 0;
     width: 32px;
     height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    transition: background 0.2s ease, color 0.2s ease;
-    flex-shrink: 0;
-    margin-left: 15px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
 }
 
 .eipsi-modal-close:hover {
-    background: rgba(0, 0, 0, 0.1);
-    color: #000;
-}
-
-.eipsi-modal-close:focus {
-    outline: 2px solid #3B6CAA;
-    outline-offset: 2px;
+    background: #4a5568;
+    color: #ffffff;
 }
 
 /* ===========================
@@ -114,220 +109,10 @@
    =========================== */
 
 .eipsi-modal-body {
-    flex: 1;
-    overflow-y: auto;
     padding: 20px;
-    color: #333;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-.eipsi-modal-step {
-    display: none;
-}
-
-.eipsi-modal-step h3 {
-    margin: 0 0 15px 0;
-    padding: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #800000;
-    line-height: 1.4;
-}
-
-/* ===========================
-   CHECKBOX LIST
-   =========================== */
-
-.eipsi-checkbox-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.eipsi-checkbox-list label {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
-    padding: 8px 10px;
-    border-radius: 4px;
-    transition: background 0.2s ease;
-}
-
-.eipsi-checkbox-list label:hover {
-    background: rgba(0, 0, 0, 0.02);
-}
-
-.eipsi-checkbox-list input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    min-width: 18px;
-    margin-top: 2px;
-    cursor: pointer;
-    accent-color: #3B6CAA;
-}
-
-.eipsi-checkbox-list input[type="checkbox"]:focus {
-    outline: 2px solid #3B6CAA;
-    outline-offset: 2px;
-}
-
-.eipsi-checkbox-list span {
-    color: #555;
-    line-height: 1.5;
+    overflow-y: auto;
     flex: 1;
-}
-
-/* ===========================
-   FORM ELEMENTS
-   =========================== */
-
-.eipsi-form-select,
-.eipsi-form-textarea,
-.eipsi-form-input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    font-family: inherit;
-    box-sizing: border-box;
-    background-color: #fff;
-    color: #333;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.eipsi-form-select {
-    cursor: pointer;
-}
-
-.eipsi-form-select:hover {
-    border-color: #999;
-}
-
-.eipsi-form-select:focus {
-    outline: none;
-    border-color: #3B6CAA;
-    box-shadow: 0 0 0 2px rgba(59, 108, 170, 0.2);
-}
-
-.eipsi-form-textarea {
-    resize: vertical;
-    min-height: 80px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-}
-
-.eipsi-form-textarea:hover {
-    border-color: #999;
-}
-
-.eipsi-form-textarea:focus {
-    outline: none;
-    border-color: #3B6CAA;
-    box-shadow: 0 0 0 2px rgba(59, 108, 170, 0.2);
-}
-
-.eipsi-form-input {
-    font-family: monospace;
-    letter-spacing: 0.05em;
-}
-
-.eipsi-form-input:hover {
-    border-color: #999;
-}
-
-.eipsi-form-input:focus {
-    outline: none;
-    border-color: #3B6CAA;
-    box-shadow: 0 0 0 2px rgba(59, 108, 170, 0.2);
-}
-
-.eipsi-form-input::placeholder,
-.eipsi-form-textarea::placeholder {
-    color: #999;
-}
-
-/* Step 2 Label */
-.eipsi-modal-step label {
-    display: block;
-    margin-top: 15px;
-}
-
-.eipsi-modal-step label span {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: #333;
-}
-
-/* Step 3 Message */
-#eipsi-step3-message {
-    display: none;
-    margin-top: 10px;
-    padding: 10px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 500;
-    border-left: 4px solid transparent;
-}
-
-#eipsi-step3-message.error {
-    background: #ffe6e6;
-    color: #800000;
-    border-left-color: #800000;
-}
-
-#eipsi-step3-message.success {
-    background: #e6ffe6;
-    color: #008080;
-    border-left-color: #008080;
-}
-
-/* ===========================
-   SUCCESS STATE
-   =========================== */
-
-#step-success {
-    text-align: center;
-}
-
-#step-success h3 {
-    color: #008080;
-    font-size: 20px;
-    margin-top: 10px;
-}
-
-#eipsi-success-message {
-    margin: 15px 0;
-    font-size: 15px;
-    color: #555;
-}
-
-#eipsi-success-details {
-    margin-top: 15px;
-    padding: 15px;
-    background: #f0f9ff;
-    border-left: 4px solid #3B6CAA;
-    border-radius: 4px;
-    text-align: left;
-    font-size: 13px;
-    line-height: 1.8;
-}
-
-#eipsi-success-details strong {
-    color: #3B6CAA;
-    display: block;
-    margin-top: 8px;
-    margin-bottom: 5px;
-}
-
-#eipsi-success-details strong:first-child {
-    margin-top: 0;
+    color: #e2e8f0;
 }
 
 /* ===========================
@@ -335,359 +120,662 @@
    =========================== */
 
 .eipsi-modal-footer {
-    padding: 15px 20px;
-    background: #f8f9fa;
-    border-top: 1px solid #e0e0e0;
+    padding: 20px;
+    background: #2d3748;
+    border-top: 2px solid #4a5568;
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
-    flex-wrap: wrap;
+    gap: 12px;
 }
 
-.eipsi-modal-footer button {
-    min-width: 120px;
-    padding: 8px 16px;
+/* ===========================
+   BUTTONS
+   =========================== */
+
+.eipsi-modal-footer .button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
     font-size: 14px;
-    font-weight: 500;
-    border-radius: 4px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    border: 1px solid transparent;
+    border: 2px solid transparent;
 }
 
 .eipsi-modal-footer .button-primary {
-    background: #3B6CAA;
+    background: #3b82f6;
     color: white;
-    border-color: #3B6CAA;
+    border-color: #3b82f6;
 }
 
-.eipsi-modal-footer .button-primary:hover:not(:disabled) {
-    background: #3B6CAA;
-    border-color: #3B6CAA;
-}
-
-.eipsi-modal-footer .button-primary:focus {
-    outline: 2px solid #3B6CAA;
-    outline-offset: 2px;
+.eipsi-modal-footer .button-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 .eipsi-modal-footer .button-secondary {
-    background: #f3f3f3;
-    color: #333;
-    border-color: #ddd;
+    background: #4a5568;
+    color: #e2e8f0;
+    border-color: #718096;
 }
 
-.eipsi-modal-footer .button-secondary:hover:not(:disabled) {
-    background: #e0e0e0;
-    border-color: #999;
+.eipsi-modal-footer .button-secondary:hover {
+    background: #374151;
+    border-color: #3b82f6;
 }
 
-.eipsi-modal-footer .button-secondary:focus {
-    outline: 2px solid #3B6CAA;
-    outline-offset: 2px;
-}
-
-.eipsi-modal-footer button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* ===========================
-   ANONYMIZE SECTION
-   =========================== */
-
-.eipsi-anonymize-section {
-    margin-top: 30px;
-    padding: 20px;
-    background: #fff8f0;
-    border: 2px solid #800000;
-    border-radius: 4px;
-}
-
-.eipsi-anonymize-section h3 {
-    color: #800000;
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.eipsi-anonymize-section p {
-    margin: 10px 0;
-    color: #555;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-.eipsi-anonymize-section .button {
-    font-size: 14px;
-    padding: 10px 20px;
-    margin-top: 10px;
-}
-
-.eipsi-anonymize-section .button-secondary {
-    background: #800000;
+.eipsi-modal-footer .button-danger {
+    background: #dc2626;
     color: white;
-    border-color: #800000;
+    border-color: #dc2626;
 }
 
-.eipsi-anonymize-section .button-secondary:hover {
-    background: #800000;
-    border-color: #800000;
+.eipsi-modal-footer .button-danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
 }
 
-/* ===========================
-   SCROLLBAR STYLING
-   =========================== */
-
-.eipsi-modal-body::-webkit-scrollbar {
-    width: 8px;
+.eipsi-modal-footer .button-link-delete {
+    background: transparent;
+    color: #f87171;
+    border: none;
+    text-decoration: underline;
 }
 
-.eipsi-modal-body::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-.eipsi-modal-body::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
-}
-
-.eipsi-modal-body::-webkit-scrollbar-thumb:hover {
-    background: #999;
+.eipsi-modal-footer .button-link-delete:hover {
+    color: #ef4444;
 }
 
 /* ===========================
-   RESPONSIVE DESIGN
+   WAVES MANAGER WRAPPER
    =========================== */
 
-/* Tablets (600px and down) */
-@media (max-width: 600px) {
-    .eipsi-modal-content {
-        width: 95%;
-        max-width: 95%;
-        max-height: 95vh;
-        border-radius: 8px;
+.eipsi-waves-manager-wrap {
+    background: #1a1a1a;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 2px solid #333;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ===========================
+   WAVES HEADER
+   =========================== */
+
+.eipsi-waves-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #2d3748;
+    border-radius: 12px;
+    border: 2px solid #4a5568;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.study-selector-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.study-selector-wrap label {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.study-selector-wrap select {
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border-radius: 8px;
+    border: 2px solid #4a5568;
+    background: #374151;
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #3b82f6 50%),
+                      linear-gradient(135deg, #3b82f6 50%, transparent 50%);
+    background-position: calc(100% - 1rem) center,
+                         calc(100% - 0.625rem) center;
+    background-size: 0.375rem 0.375rem,
+                     0.375rem 0.375rem;
+    background-repeat: no-repeat;
+}
+
+.study-selector-wrap select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.header-actions .button-primary {
+    background: #3b82f6;
+    color: white;
+    border: 2px solid #3b82f6;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.header-actions .button-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* ===========================
+   WAVES LIST
+   =========================== */
+
+.eipsi-waves-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.wave-card {
+    background: #2d3748;
+    border: 2px solid #4a5568;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.wave-card:hover {
+    transform: translateY(-4px);
+    border-color: #3b82f6;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+}
+
+.wave-card.wave-completed {
+    border-left: 4px solid #10b981;
+}
+
+.wave-card.wave-active {
+    border-left: 4px solid #3b82f6;
+}
+
+.wave-card.wave-pending {
+    border-left: 4px solid #f59e0b;
+}
+
+.wave-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.wave-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.wave-subtitle {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+}
+
+.wave-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wave-badge.active {
+    background: #1e3a8a;
+    color: #bfdbfe;
+    border: 1px solid #3b82f6;
+}
+
+.wave-badge.completed {
+    background: #064e3b;
+    color: #a7f3d0;
+    border: 1px solid #10b981;
+}
+
+.wave-badge.pending {
+    background: #78350f;
+    color: #fde68a;
+    border: 1px solid #d97706;
+}
+
+.wave-card-body {
+    margin: 1rem 0;
+}
+
+.wave-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #4a5568;
+    color: #e2e8f0;
+    font-size: 14px;
+}
+
+.wave-info-row:last-child {
+    border-bottom: none;
+}
+
+.wave-info-label {
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+.wave-info-value {
+    color: #ffffff;
+    font-weight: 600;
+    text-align: right;
+}
+
+.wave-card-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.wave-card-actions .button {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid;
+}
+
+.wave-card-actions .button-secondary {
+    background: #4a5568;
+    color: #e2e8f0;
+    border-color: #718096;
+}
+
+.wave-card-actions .button-secondary:hover {
+    background: #374151;
+    border-color: #3b82f6;
+}
+
+.wave-card-actions .button-link {
+    background: none;
+    border: none;
+    color: #60a5fa;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0.5rem;
+}
+
+.wave-card-actions .button-link:hover {
+    color: #3b82f6;
+}
+
+.wave-card-actions .button-delete {
+    background: transparent;
+    border: none;
+    color: #f87171;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: color 0.2s ease;
+}
+
+.wave-card-actions .button-delete:hover {
+    color: #ef4444;
+}
+
+/* ===========================
+   EMPTY STATE
+   =========================== */
+
+.eipsi-waves-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #2d3748;
+    border-radius: 12px;
+    border: 2px dashed #4a5568;
+}
+
+.eipsi-waves-empty h3 {
+    color: #ffffff;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.eipsi-waves-empty p {
+    color: #9ca3af;
+    margin: 0;
+}
+
+/* ===========================
+   WAVES FORM
+   =========================== */
+
+.eipsi-wave-form {
+    background: #2d3748;
+    border-radius: 12px;
+    border: 2px solid #4a5568;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.eipsi-wave-form h3 {
+    color: #ffffff;
+    font-size: 1.25rem;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #4a5568;
+}
+
+.eipsi-form-row {
+    margin-bottom: 1.5rem;
+}
+
+.eipsi-form-label {
+    display: block;
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 14px;
+}
+
+.eipsi-form-label.required::after {
+    content: ' *';
+    color: #ef4444;
+}
+
+.eipsi-form-input,
+.eipsi-form-select,
+.eipsi-form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 2px solid #4a5568;
+    background: #374151;
+    color: #ffffff;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.eipsi-form-input:focus,
+.eipsi-form-select:focus,
+.eipsi-form-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    background: #1f2937;
+}
+
+.eipsi-form-input::placeholder,
+.eipsi-form-textarea::placeholder {
+    color: #9ca3af;
+}
+
+.eipsi-form-textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.5;
+}
+
+.eipsi-form-select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #3b82f6 50%),
+                      linear-gradient(135deg, #3b82f6 50%, transparent 50%);
+    background-position: calc(100% - 1rem) center,
+                         calc(100% - 0.625rem) center;
+    background-size: 0.375rem 0.375rem,
+                     0.375rem 0.375rem;
+    background-repeat: no-repeat;
+}
+
+.eipsi-form-help {
+    margin-top: 0.25rem;
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+/* ===========================
+   REMINDERS SECTION
+   =========================== */
+
+.eipsi-reminders-section {
+    background: #374151;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border: 2px solid #4a5568;
+}
+
+.eipsi-reminders-section h4 {
+    color: #ffffff;
+    margin: 0 0 1rem 0;
+    font-size: 16px;
+}
+
+.reminder-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #1f2937;
+    border-radius: 8px;
+    border: 1px solid #4a5568;
+}
+
+.reminder-row:last-child {
+    margin-bottom: 0;
+}
+
+.reminder-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #3b82f6;
+    cursor: pointer;
+}
+
+.reminder-row label {
+    color: #e2e8f0;
+    font-size: 14px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.reminder-row input[type="number"] {
+    width: 80px;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 2px solid #4a5568;
+    background: #374151;
+    color: #ffffff;
+    text-align: center;
+}
+
+/* ===========================
+   TIMING SECTION
+   =========================== */
+
+.eipsi-timing-section {
+    background: #374151;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border: 2px solid #4a5568;
+}
+
+.eipsi-timing-section h4 {
+    color: #ffffff;
+    margin: 0 0 1rem 0;
+    font-size: 16px;
+}
+
+.timing-options {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.timing-option {
+    flex: 1;
+    min-width: 150px;
+    padding: 1rem;
+    background: #1f2937;
+    border: 2px solid #4a5568;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.timing-option:hover {
+    border-color: #3b82f6;
+}
+
+.timing-option.selected {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.timing-option input[type="radio"] {
+    display: none;
+}
+
+.timing-option-title {
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.timing-option-desc {
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* ===========================
+   TEMPLATE BUTTONS
+   =========================== */
+
+.eipsi-template-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.eipsi-template-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #4a5568;
+    color: #e2e8f0;
+    border: 2px solid #718096;
+}
+
+.eipsi-template-btn:hover {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* ===========================
+   LOADING STATE
+   =========================== */
+
+.eipsi-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 26, 26, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.eipsi-loading-overlay .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #4a5568;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.eipsi-loading-overlay p {
+    color: #e2e8f0;
+    margin-top: 1rem;
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+
+@media (max-width: 768px) {
+    .eipsi-waves-header {
+        flex-direction: column;
+        align-items: stretch;
     }
-    
-    .eipsi-modal-header {
-        padding: 15px;
+
+    .study-selector-wrap {
+        flex-direction: column;
+        align-items: stretch;
     }
-    
-    .eipsi-modal-header h2 {
-        font-size: 16px;
+
+    .header-actions {
+        width: 100%;
     }
-    
-    .eipsi-modal-body {
-        padding: 15px;
-        font-size: 13px;
+
+    .header-actions .button-primary {
+        width: 100%;
+        justify-content: center;
     }
-    
-    .eipsi-modal-step h3 {
-        font-size: 15px;
-        margin-bottom: 12px;
+
+    .eipsi-waves-list {
+        grid-template-columns: 1fr;
     }
-    
-    .eipsi-checkbox-list {
-        gap: 10px;
-    }
-    
-    .eipsi-checkbox-list label {
-        padding: 6px 8px;
-    }
-    
-    .eipsi-form-select,
-    .eipsi-form-textarea,
-    .eipsi-form-input {
-        font-size: 13px;
-        padding: 9px 10px;
-    }
-    
-    .eipsi-modal-footer {
-        padding: 12px 15px;
-        gap: 8px;
+
+    .wave-card-actions {
         flex-direction: column;
     }
-    
-    .eipsi-modal-footer button {
+
+    .wave-card-actions .button {
         width: 100%;
-        min-width: unset;
+        text-align: center;
     }
-    
-    .eipsi-anonymize-section {
-        margin-top: 20px;
-        padding: 15px;
-        border-radius: 4px;
-    }
-    
-    .eipsi-anonymize-section h3 {
-        font-size: 15px;
-    }
-}
-
-/* Small phones (380px and down) */
-@media (max-width: 380px) {
-    .eipsi-modal-content {
-        width: 100%;
-        max-width: 100%;
-        border-radius: 0;
-        max-height: 100vh;
-    }
-    
-    .eipsi-modal-header h2 {
-        font-size: 14px;
-    }
-    
-    .eipsi-modal-body {
-        font-size: 12px;
-    }
-    
-    .eipsi-checkbox-list label {
-        gap: 8px;
-    }
-    
-    .eipsi-form-select,
-    .eipsi-form-textarea,
-    .eipsi-form-input {
-        font-size: 12px;
-    }
-}
-
-/* ===========================
-   DARK MODE (WordPress 5.9+)
-   =========================== */
-
-@media (prefers-color-scheme: dark) {
-    .eipsi-modal-content {
-        background: #2c2c2c;
-        color: #e0e0e0;
-    }
-    
-    .eipsi-modal-header {
-        background: #1e1e1e;
-        border-bottom-color: #444;
-    }
-    
-    .eipsi-modal-header h2 {
-        color: #e0e0e0;
-    }
-    
-    .eipsi-modal-close {
-        color: #999;
-    }
-    
-    .eipsi-modal-close:hover {
-        background: rgba(255, 255, 255, 0.1);
-        color: #e0e0e0;
-    }
-    
-    .eipsi-modal-body {
-        color: #e0e0e0;
-    }
-    
-    .eipsi-modal-step h3 {
-        color: #ff9999;
-    }
-    
-    .eipsi-checkbox-list label:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
-    
-    .eipsi-checkbox-list span {
-        color: #ccc;
-    }
-    
-    .eipsi-form-select,
-    .eipsi-form-textarea,
-    .eipsi-form-input {
-        background-color: #1e1e1e;
-        color: #e0e0e0;
-        border-color: #444;
-    }
-    
-    .eipsi-form-select:hover,
-    .eipsi-form-textarea:hover,
-    .eipsi-form-input:hover {
-        border-color: #666;
-    }
-    
-    .eipsi-form-select:focus,
-    .eipsi-form-textarea:focus,
-    .eipsi-form-input:focus {
-        border-color: #3B6CAA;
-        box-shadow: 0 0 0 2px rgba(59, 108, 170, 0.3);
-    }
-    
-    .eipsi-form-input::placeholder,
-    .eipsi-form-textarea::placeholder {
-        color: #666;
-    }
-    
-    .eipsi-modal-footer {
-        background: #1e1e1e;
-        border-top-color: #444;
-    }
-    
-    #eipsi-success-message {
-        color: #ccc;
-    }
-    
-    #eipsi-success-details {
-        background: #1e1e1e;
-        border-left-color: #3B6CAA;
-        color: #ccc;
-    }
-    
-    #eipsi-success-details strong {
-        color: #66b3ff;
-    }
-}
-
-/* ===========================
-   ACCESSIBILITY
-   =========================== */
-
-/* High contrast mode */
-@media (prefers-contrast: more) {
-    .eipsi-modal-content {
-        border: 2px solid currentColor;
-    }
-    
-    .eipsi-checkbox-list input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-    }
-    
-    .eipsi-form-select,
-    .eipsi-form-textarea,
-    .eipsi-form-input {
-        border-width: 2px;
-    }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-    .eipsi-modal-content {
-        animation: none;
-    }
-    
-    .eipsi-modal-close,
-    .eipsi-checkbox-list label,
-    .eipsi-form-select,
-    .eipsi-form-textarea,
-    .eipsi-form-input,
-    .eipsi-modal-footer button {
-        transition: none;
-    }
-}
-
-/* Focus visible */
-.eipsi-modal:focus-visible,
-.eipsi-modal-close:focus-visible,
-.eipsi-form-select:focus-visible,
-.eipsi-form-textarea:focus-visible,
-.eipsi-form-input:focus-visible,
-.eipsi-modal-footer button:focus-visible {
-    outline: 2px solid #3B6CAA;
-    outline-offset: 2px;
 }
