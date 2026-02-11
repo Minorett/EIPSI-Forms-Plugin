@@ -1,0 +1,388 @@
+/**
+ * EIPSI Longitudinal Studies Tab Styles
+ * High Contrast Dark Theme
+ * 
+ * @since 1.5.2
+ */
+
+/* === MAIN CONTAINER === */
+.eipsi-longitudinal-studies-wrap {
+    background: #1a1a1a;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 2px solid #333;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+}
+
+/* === SUMMARY CARDS === */
+.eipsi-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.eipsi-card-stat {
+    background: #2d3748;
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid #4a5568;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.eipsi-card-stat:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+}
+
+.eipsi-card-stat .stat-label {
+    font-size: 14px;
+    color: #9ca3af;
+    margin-bottom: 8px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.eipsi-card-stat .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #60a5fa;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* === LIST FILTERS === */
+.eipsi-list-filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 1.5rem;
+    background: #2d3748;
+    border-radius: 12px;
+    border: 2px solid #4a5568;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.eipsi-list-filters form {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.eipsi-list-filters input[type="text"] {
+    background: #374151;
+    color: #ffffff;
+    border: 2px solid #4a5568;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 14px;
+    min-width: 200px;
+    transition: all 0.2s ease;
+}
+
+.eipsi-list-filters input[type="text"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    background: #1f2937;
+}
+
+.eipsi-list-filters input[type="text"]::placeholder {
+    color: #9ca3af;
+}
+
+.eipsi-list-filters .button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 14px;
+}
+
+.eipsi-list-filters .button-secondary {
+    background: #4a5568;
+    color: #e2e8f0;
+    border-color: #718096;
+}
+
+.eipsi-list-filters .button-secondary:hover {
+    background: #374151;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+.eipsi-list-filters .button-primary {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.eipsi-list-filters .button-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.eipsi-list-filters .button-link {
+    background: transparent;
+    border: none;
+    color: #60a5fa;
+    text-decoration: underline;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.eipsi-list-filters .button-link:hover {
+    color: #3b82f6;
+}
+
+/* === TABLE STYLES === */
+.eipsi-longitudinal-studies-wrap table.wp-list-table {
+    background: #2d3748;
+    border: 2px solid #4a5568;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table thead {
+    background: #1f2937;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table thead th {
+    color: #ffffff;
+    font-weight: 700;
+    padding: 1rem;
+    border-bottom: 2px solid #4a5568;
+    font-size: 14px;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody {
+    background: #2d3748;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody tr:nth-child(even) {
+    background: #374151;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody tr:hover {
+    background: #1f2937;
+    box-shadow: inset 0 0 0 2px #3b82f6;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody td {
+    color: #e2e8f0;
+    padding: 1rem;
+    border-bottom: 1px solid #4a5568;
+    font-size: 14px;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody td strong {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody td code {
+    background: #374151;
+    color: #60a5fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    border: 1px solid #4a5568;
+}
+
+/* === BADGES === */
+.eipsi-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid;
+    display: inline-block;
+}
+
+.badge-active { 
+    background: #065f46; 
+    color: #a7f3d0; 
+    border-color: #10b981; 
+}
+
+.badge-completed { 
+    background: #1e3a8a; 
+    color: #bfdbfe; 
+    border-color: #3b82f6; 
+}
+
+.badge-paused { 
+    background: #78350f; 
+    color: #fde68a; 
+    border-color: #d97706; 
+}
+
+.badge-closed { 
+    background: #374151; 
+    color: #d1d5db; 
+    border-color: #6b7280; 
+}
+
+/* === TABLE FOOTER / PAGINATION === */
+.tablenav {
+    background: #2d3748;
+    border: 2px solid #4a5568;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 20px;
+}
+
+.tablenav .tablenav-pages {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tablenav .tablenav-pages a,
+.tablenav .tablenav-pages span {
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #e2e8f0;
+    border: 2px solid #4a5568;
+    background: #374151;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.tablenav .tablenav-pages a:hover {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+.tablenav .tablenav-pages .current {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.tablenav .tablenav-pages .dots {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+}
+
+/* === EMPTY STATE === */
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody td[colspan] {
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+    padding: 3rem;
+    background: #2d3748;
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 768px) {
+    .eipsi-longitudinal-studies-wrap {
+        padding: 1rem;
+        margin: 1rem;
+    }
+    
+    .eipsi-summary-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .eipsi-list-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .eipsi-list-filters form {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .eipsi-list-filters input[type="text"] {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .eipsi-list-filters .button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .eipsi-longitudinal-studies-wrap table.wp-list-table {
+        font-size: 13px;
+    }
+    
+    .eipsi-longitudinal-studies-wrap table.wp-list-table thead th,
+    .eipsi-longitudinal-studies-wrap table.wp-list-table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .eipsi-card-stat {
+        padding: 1.5rem;
+    }
+    
+    .eipsi-card-stat .stat-value {
+        font-size: 24px;
+    }
+    
+    .eipsi-card-stat .stat-label {
+        font-size: 13px;
+    }
+}
+
+/* === ACCESSIBILITY === */
+@media (prefers-reduced-motion: reduce) {
+    .eipsi-card-stat,
+    .eipsi-list-filters .button,
+    .tablenav .tablenav-pages a {
+        transition: none;
+    }
+}
+
+/* === HIGH CONTRAST MODE === */
+@media (prefers-contrast: high) {
+    .eipsi-longitudinal-studies-wrap {
+        border-color: #000000;
+        border-width: 3px;
+    }
+    
+    .eipsi-card-stat,
+    .eipsi-list-filters {
+        border-color: #000000;
+        border-width: 3px;
+    }
+    
+    .eipsi-badge {
+        border-width: 2px;
+        font-weight: 800;
+    }
+}

@@ -6,6 +6,11 @@
 
 .eipsi-longitudinal-studies-wrap {
     margin-top: 20px;
+    background: #1a1a1a;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 2px solid #333;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .eipsi-summary-cards {
@@ -16,11 +21,11 @@
 }
 
 .eipsi-card-stat {
-    background: var(--eipsi-color-card-bg, #ffffff);
+    background: #2d3748;
     padding: 20px;
     border-radius: var(--eipsi-border-radius-sm, 8px);
-    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(59, 108, 170, 0.08));
-    border: var(--eipsi-border-width, 1px) solid var(--eipsi-color-border, #e2e8f0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 2px solid #4a5568;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -28,14 +33,14 @@
 
 .eipsi-card-stat .stat-label {
     font-size: 14px;
-    color: var(--eipsi-color-text-muted, #64748b);
+    color: #9ca3af;
     margin-bottom: 8px;
 }
 
 .eipsi-card-stat .stat-value {
     font-size: 28px;
     font-weight: 700;
-    color: var(--eipsi-color-primary, #3B6CAA);
+    color: #60a5fa;
 }
 
 .eipsi-list-filters {
@@ -43,6 +48,54 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+}
+
+.eipsi-list-filters input[type="text"] {
+    background: #2d3748;
+    color: #ffffff;
+    border: 2px solid #4a5568;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.eipsi-list-filters input[type="text"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.eipsi-list-filters input[type="text"]::placeholder {
+    color: #9ca3af;
+}
+
+.eipsi-list-filters .button {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.eipsi-list-filters .button-secondary {
+    background: #4a5568;
+    color: #e2e8f0;
+    border: 2px solid #718096;
+}
+
+.eipsi-list-filters .button-secondary:hover {
+    background: #2d3748;
+    border-color: #3b82f6;
+}
+
+.eipsi-list-filters .button-primary {
+    background: #3b82f6;
+    color: white;
+    border: 2px solid #3b82f6;
+}
+
+.eipsi-list-filters .button-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
 }
 
 .eipsi-badge {
@@ -54,10 +107,10 @@
     letter-spacing: 0.5px;
 }
 
-.badge-active { background: #dcfce7; color: #166534; }
-.badge-completed { background: #dbeafe; color: #1e40af; }
-.badge-paused { background: #fef3c7; color: #92400e; }
-.badge-closed { background: #f1f5f9; color: #475569; }
+.badge-active { background: #065f46; color: #a7f3d0; border: 1px solid #10b981; }
+.badge-completed { background: #1e3a8a; color: #bfdbfe; border: 1px solid #3b82f6; }
+.badge-paused { background: #78350f; color: #fde68a; border: 1px solid #d97706; }
+.badge-closed { background: #374151; color: #d1d5db; border: 1px solid #6b7280; }
 
 /* Modal & Dashboard Grid */
 .eipsi-modal-content.dashboard-wide {
@@ -74,20 +127,27 @@
 }
 
 .dashboard-card {
-    background: var(--eipsi-color-background-subtle, #f8fafc);
-    border: 1px solid var(--eipsi-color-border, #e2e8f0);
+    background: #2d3748;
+    border: 2px solid #4a5568;
     border-radius: var(--eipsi-border-radius-sm, 8px);
     padding: 20px;
-    box-shadow: var(--eipsi-shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.05));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .dashboard-card h3 {
     margin-top: 0;
-    border-bottom: 2px solid var(--eipsi-color-primary, #3B6CAA);
+    border-bottom: 2px solid #3b82f6;
     padding-bottom: 12px;
     font-size: 18px;
-    color: var(--eipsi-color-primary, #3B6CAA);
+    color: #ffffff;
     font-family: var(--eipsi-font-family-heading, inherit);
+    font-weight: 600;
+}
+
+.dashboard-card p,
+.dashboard-card .stat-row,
+.dashboard-card .card-body {
+    color: #e2e8f0;
 }
 
 .dashboard-card.full-width {
@@ -117,13 +177,13 @@
     width: 90px;
     font-size: 12px;
     font-weight: 500;
-    color: var(--eipsi-color-text-muted, #64748b);
+    color: #9ca3af;
 }
 
 .progress-bar-bg {
     flex-grow: 1;
     height: 10px;
-    background: var(--eipsi-color-progress-bg, #e2e8f0);
+    background: #4a5568;
     border-radius: 5px;
     overflow: hidden;
 }
@@ -145,17 +205,18 @@
 }
 
 .wave-item-card {
-    background: var(--eipsi-color-card-bg, white);
-    border: 1px solid var(--eipsi-color-border, #e2e8f0);
+    background: #374151;
+    border: 2px solid #4a5568;
     border-radius: var(--eipsi-border-radius-sm, 8px);
     padding: 15px;
-    box-shadow: var(--eipsi-shadow-sm);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: transform 0.2s ease;
 }
 
 .wave-item-card:hover {
     transform: translateY(-3px);
-    box-shadow: var(--eipsi-shadow-md);
+    border-color: #3b82f6;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
 }
 
 .wave-header {
@@ -165,7 +226,13 @@
     margin-bottom: 10px;
 }
 
-.wave-name { font-weight: 700; color: var(--eipsi-color-text); }
+.wave-name { font-weight: 700; color: #ffffff; }
+
+.wave-item-card p,
+.wave-item-card .wave-status,
+.wave-item-card .wave-meta {
+    color: #e2e8f0;
+}
 
 .wave-actions {
     display: flex;
@@ -195,4 +262,238 @@
         --eipsi-color-text-muted: #94a3b8;
         --eipsi-color-border: #334155;
     }
+}
+
+/* === MODAL STYLES === */
+.eipsi-modal-content {
+    background: #1a1a1a;
+    border: 2px solid #333;
+    color: #ffffff;
+}
+
+.eipsi-modal-header {
+    background: #2d3748;
+    border-bottom: 2px solid #4a5568;
+    color: #ffffff;
+}
+
+.eipsi-modal-header h2 {
+    color: #ffffff;
+    margin: 0;
+    font-weight: 700;
+}
+
+.eipsi-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #9ca3af;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.eipsi-modal-close:hover {
+    background: #4a5568;
+    color: #ffffff;
+}
+
+.eipsi-modal-footer {
+    background: #2d3748;
+    border-top: 2px solid #4a5568;
+}
+
+.eipsi-modal-footer .button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.eipsi-modal-footer .button-primary {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.eipsi-modal-footer .button-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+.eipsi-modal-footer .button-secondary {
+    background: #4a5568;
+    color: #e2e8f0;
+    border-color: #718096;
+}
+
+.eipsi-modal-footer .button-secondary:hover {
+    background: #374151;
+    border-color: #3b82f6;
+}
+
+/* === TABLE STYLES FOR EMAIL LOGS === */
+.eipsi-modal-body table {
+    background: #2d3748;
+    border: 2px solid #4a5568;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.eipsi-modal-body table thead {
+    background: #1f2937;
+}
+
+.eipsi-modal-body table thead th {
+    color: #ffffff;
+    font-weight: 700;
+    padding: 1rem;
+    border-bottom: 2px solid #4a5568;
+}
+
+.eipsi-modal-body table tbody {
+    background: #2d3748;
+}
+
+.eipsi-modal-body table tbody td {
+    color: #e2e8f0;
+    padding: 1rem;
+    border-bottom: 1px solid #4a5568;
+}
+
+.eipsi-modal-body table tbody tr:hover {
+    background: #374151;
+}
+
+/* === FORM STYLES FOR MODAL === */
+.eipsi-modal-body input[type="date"],
+.eipsi-modal-body input[type="text"],
+.eipsi-modal-body input[type="email"],
+.eipsi-modal-body input[type="number"],
+.eipsi-modal-body select,
+.eipsi-modal-body textarea {
+    background: #374151;
+    color: #ffffff;
+    border: 2px solid #4a5568;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.eipsi-modal-body input[type="date"]:focus,
+.eipsi-modal-body input[type="text"]:focus,
+.eipsi-modal-body input[type="email"]:focus,
+.eipsi-modal-body input[type="number"]:focus,
+.eipsi-modal-body select:focus,
+.eipsi-modal-body textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.eipsi-modal-body label {
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* === BUTTONS INSIDE MODAL CONTENT === */
+.button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.button-secondary {
+    background: #4a5568;
+    color: #e2e8f0;
+    border-color: #718096;
+}
+
+.button-secondary:hover {
+    background: #374151;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+.button-link-delete {
+    background: transparent;
+    border: none;
+    color: #f87171;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0.75rem 1.5rem;
+}
+
+.button-link-delete:hover {
+    color: #ef4444;
+}
+
+/* === LOADING OVERLAY === */
+.eipsi-loading-overlay {
+    background: rgba(26, 26, 26, 0.95);
+    color: #ffffff;
+}
+
+.eipsi-loading-overlay .spinner {
+    border: 4px solid #4a5568;
+    border-top: 4px solid #3b82f6;
+}
+
+/* === TABLE HEADER THEME === */
+.wp-list-table thead th {
+    background: #1f2937 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    padding: 1rem !important;
+    border-bottom: 2px solid #4a5568 !important;
+}
+
+.wp-list-table tbody tr:nth-child(even) {
+    background: #374151 !important;
+}
+
+.wp-list-table tbody tr:hover {
+    background: #1f2937 !important;
+}
+
+.wp-list-table tbody td {
+    color: #e2e8f0 !important;
+    border-bottom: 1px solid #4a5568 !important;
+    padding: 1rem !important;
+    vertical-align: middle !important;
+}
+
+.wp-list-table tbody td strong {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.wp-list-table tbody td code {
+    background: #374151;
+    color: #60a5fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    border: 1px solid #4a5568;
 }
