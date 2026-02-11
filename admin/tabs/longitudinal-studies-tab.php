@@ -9,6 +9,20 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Enqueue Study Dashboard JS
+wp_enqueue_script('eipsi-study-dashboard', EIPSI_FORMS_PLUGIN_URL . 'admin/js/study-dashboard.js', array('jquery'), EIPSI_FORMS_VERSION, true);
+
+// Localize data for JS
+wp_localize_script('eipsi-study-dashboard', 'eipsiStudyDashboardData', array(
+    'ajaxUrl' => admin_url('admin-ajax.php'),
+    'nonce' => wp_create_nonce('eipsi_study_dashboard_nonce'),
+    'strings' => array(
+        'loading' => __('Cargando...', 'eipsi-forms'),
+        'error' => __('Error', 'eipsi-forms'),
+        'success' => __('Éxito', 'eipsi-forms'),
+    ),
+));
+
 global $wpdb;
 
 // Pagination

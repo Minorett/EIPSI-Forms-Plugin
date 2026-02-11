@@ -1,6 +1,9 @@
 /**
- * EIPSI Forms - Waves Manager Modal
- * Handles Close & Anonymize Study modal logic
+ * EIPSI Forms - Waves Manager
+ * Handles Waves CRUD, Assignments, Reminders, and Close & Anonymize Study modal
+ *
+ * @package EIPSI_Forms
+ * @since 1.4.3
  */
 
 /* global eipsiWavesManagerData, ajaxurl */
@@ -16,6 +19,8 @@
 	const totalSteps = 3;
 	let modalNonce = '';
 	let surveyId = 0;
+	let currentWaveId = 0;
+	let currentWaveData = null;
 
 	// ===========================
 	// INITIALIZATION
@@ -23,7 +28,535 @@
 
 	$( document ).ready( function () {
 		initAnonymizeModal();
+		initWavesManager();
 	} );
+
+	// ===========================
+	// WAVES MANAGER FUNCTIONALITY
+	// ===========================
+
+	function initWavesManager() {
+		// Open Create Wave Modal
+		$( document ).on( 'click', '#eipsi-create-wave-btn', function () {
+			resetWaveForm();
+			const nextIndex = $( this ).data( 'next-index' );
+			$( '#wave_index' ).val( nextIndex );
+			$( '#wave-modal-title' ).text( 'Crear Nueva Onda' );
+			$( '#wave_id' ).val( '' );
+			$( '#eipsi-wave-modal' ).fadeIn( 200 );
+		} );
+
+		// Open Edit Wave Modal
+		$( document ).on( 'click', '.eipsi-edit-wave-btn', function () {
+			const waveId = $( this ).data( 'wave-id' );
+			currentWaveId = waveId;
+			loadWaveData( waveId );
+		} );
+
+		// Close Modal
+		$( document ).on(
+			'click',
+			'.eipsi-close-modal, .eipsi-close-modal-btn',
+			function () {
+				$( '.eipsi-modal' ).fadeOut( 200 );
+			}
+		);
+
+		// Close on overlay click
+		$( document ).on( 'click', '.eipsi-modal', function ( e ) {
+			if ( e.target === this ) {
+				$( this ).fadeOut( 200 );
+			}
+		} );
+
+		// Save Wave Form
+		$( document ).on( 'submit', '#eipsi-wave-form', function ( e ) {
+			e.preventDefault();
+			saveWave();
+		} );
+
+		// Delete Wave
+		$( document ).on( 'click', '.eipsi-delete-wave-btn', function () {
+			const waveId = $( this ).data( 'wave-id' );
+			if (
+				confirm(
+					eipsiWavesManagerData.strings.confirmDelete ||
+						'¿Estás seguro de eliminar esta onda?'
+				)
+			) {
+				deleteWave( waveId );
+			}
+		} );
+
+		// Open Assign Participants Modal
+		$( document ).on( 'click', '.eipsi-assign-participants-btn', function () {
+			const waveId = $( this ).data( 'wave-id' );
+			currentWaveId = waveId;
+			$( '#assign-wave-id' ).val( waveId );
+			loadAvailableParticipants( waveId );
+			$( '#eipsi-assign-modal' ).fadeIn( 200 );
+		} );
+
+		// Master checkbox for select all
+		$( document ).on( 'change', '#master-participant-check', function () {
+			$( '.participant-checkbox' ).prop( 'checked', $( this ).is( ':checked' ) );
+		} );
+
+		// Select/Deselect all buttons
+		$( document ).on( 'click', '#select-all-participants', function () {
+			$( '.participant-checkbox' ).prop( 'checked', true );
+		} );
+
+		$( document ).on( 'click', '#deselect-all-participants', function () {
+			$( '.participant-checkbox' ).prop( 'checked', false );
+		} );
+
+		// Confirm Assign Participants
+		$( document ).on( 'click', '#confirm-assign-btn', function () {
+			const selectedIds = [];
+			$( '.participant-checkbox:checked' ).each( function () {
+				selectedIds.push( $( this ).val() );
+			} );
+
+			if ( selectedIds.length === 0 ) {
+				alert(
+					eipsiWavesManagerData.strings.selectParticipants ||
+						'Por favor selecciona al menos un participante.'
+				);
+				return;
+			}
+
+			assignParticipants( currentWaveId, selectedIds );
+		} );
+
+		// Extend Deadline
+		$( document ).on( 'click', '.eipsi-extend-deadline-btn', function () {
+			const waveId = $( this ).data( 'wave-id' );
+			currentWaveId = waveId;
+			const newDeadline = prompt(
+				'Ingresa la nueva fecha de vencimiento (YYYY-MM-DD HH:MM):',
+				new Date().toISOString().slice( 0, 16 ).replace( 'T', ' ' )
+			);
+			if ( newDeadline ) {
+				extendDeadline( waveId, newDeadline );
+			}
+		} );
+
+		// Send Reminders
+		$( document ).on( 'click', '.eipsi-send-reminder-btn', function () {
+			const waveId = $( this ).data( 'wave-id' );
+			if (
+				confirm(
+					'¿Enviar recordatorios a todos los participantes pendientes de esta onda?'
+				)
+			) {
+				sendReminders( waveId );
+			}
+		} );
+	}
+
+	// ===========================
+	// WAVE CRUD OPERATIONS
+	// ===========================
+
+	function loadWaveData( waveId ) {
+		const $btn = $( '.eipsi-edit-wave-btn[data-wave-id="' + waveId + '"]');
+		const originalText = $btn.text();
+		$btn.text( 'Cargando...' ).prop( 'disabled', true );
+
+		$.ajax( {
+			url:
+				eipsiWavesManagerData.ajaxUrl ||
+				typeof ajaxurl !== 'undefined' ?
+					ajaxurl :
+					'/wp-admin/admin-ajax.php',
+			type: 'GET',
+			data: {
+				action: 'eipsi_get_wave',
+				wave_id: waveId,
+				nonce: eipsiWavesManagerData.wavesNonce,
+			},
+			success( response ) {
+				if ( response.success && response.data ) {
+					populateWaveForm( response.data );
+					$( '#wave-modal-title' ).text( 'Editar Onda' );
+					$( '#eipsi-wave-modal' ).fadeIn( 200 );
+				} else {
+					alert(
+						response.data ||
+							'Error al cargar los datos de la onda'
+					);
+				}
+			},
+			error() {
+				alert( 'Error de conexión al cargar los datos' );
+			},
+			complete() {
+				$btn.text( originalText ).prop( 'disabled', false );
+			},
+		} );
+	}
+
+	function populateWaveForm( waveData ) {
+		$( '#wave_id' ).val( waveData.id );
+		$( '#wave_name' ).val( waveData.name );
+		$( '#wave_index' ).val( waveData.wave_index );
+		$( '#form_id' ).val( waveData.form_id );
+		$( '#due_date' ).val( waveData.due_date ? waveData.due_date.slice( 0, 16 ) : '' );
+		$( '#wave_description' ).val( waveData.description || '' );
+		$( 'input[name="is_mandatory"]' ).prop( 'checked', parseInt( waveData.is_mandatory ) === 1 );
+	}
+
+	function resetWaveForm() {
+		$( '#eipsi-wave-form' )[ 0 ].reset();
+		$( '#wave_id' ).val( '' );
+		$( '#wave_index' ).val( 1 );
+		$( 'input[name="is_mandatory"]' ).prop( 'checked', true );
+	}
+
+	function saveWave() {
+		const $btn = $( '#save-wave-btn' );
+		const originalText = $btn.text();
+		$btn
+			.text( eipsiWavesManagerData.strings.saving || 'Guardando...' )
+			.prop( 'disabled', true );
+
+		const formData = $( '#eipsi-wave-form' ).serialize();
+
+		$.ajax( {
+			url:
+				eipsiWavesManagerData.ajaxUrl ||
+				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+			type: 'POST',
+			data: {
+				action: 'eipsi_save_wave',
+				nonce: eipsiWavesManagerData.wavesNonce,
+				wave_id: $( '#wave_id' ).val(),
+				study_id: $( 'input[name="study_id"]' ).val(),
+				name: $( '#wave_name' ).val(),
+				wave_index: $( '#wave_index' ).val(),
+				form_id: $( '#form_id' ).val(),
+				due_date: $( '#due_date' ).val(),
+				description: $( '#wave_description' ).val(),
+				is_mandatory: $( 'input[name="is_mandatory"]:checked' ).val() || 0,
+			},
+			success( response ) {
+				if ( response.success ) {
+					showNotification(
+						eipsiWavesManagerData.strings.waveSaved ||
+							'Onda guardada exitosamente',
+						'success'
+					);
+					$( '#eipsi-wave-modal' ).fadeOut( 200 );
+					// Reload page after short delay
+					setTimeout( function () {
+						window.location.reload();
+					}, 500 );
+				} else {
+					showNotification(
+						response.data || 'Error al guardar la onda',
+						'error'
+					);
+				}
+			},
+			error() {
+				showNotification( 'Error de conexión', 'error' );
+			},
+			complete() {
+				$btn.text( originalText ).prop( 'disabled', false );
+			},
+		} );
+	}
+
+	function deleteWave( waveId ) {
+		const $btn = $( '.eipsi-delete-wave-btn[data-wave-id="' + waveId + '"]');
+		const originalText = $btn.text();
+		$btn.text( 'Eliminando...' ).prop( 'disabled', true );
+
+		$.ajax( {
+			url:
+				eipsiWavesManagerData.ajaxUrl ||
+				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+			type: 'POST',
+			data: {
+				action: 'eipsi_delete_wave',
+				nonce: eipsiWavesManagerData.wavesNonce,
+				wave_id: waveId,
+			},
+			success( response ) {
+				if ( response.success ) {
+					showNotification(
+						eipsiWavesManagerData.strings.waveDeleted ||
+							'Onda eliminada',
+						'success'
+					);
+					// Reload page after short delay
+					setTimeout( function () {
+						window.location.reload();
+					}, 500 );
+				} else {
+					showNotification(
+						response.data || 'Error al eliminar la onda',
+						'error'
+					);
+					$btn.text( originalText ).prop( 'disabled', false );
+				}
+			},
+			error() {
+				showNotification( 'Error de conexión', 'error' );
+				$btn.text( originalText ).prop( 'disabled', false );
+			},
+		} );
+	}
+
+	// ===========================
+	// PARTICIPANT ASSIGNMENT
+	// ===========================
+
+	function loadAvailableParticipants( waveId ) {
+		const $tbody = $( '#available-participants-tbody' );
+		$tbody.html(
+			'<tr><td colspan="4" style="text-align:center;padding:20px;"><span class="spinner is-active"></span> Cargando participantes...</td></tr>'
+		);
+
+		$.ajax( {
+			url:
+				eipsiWavesManagerData.ajaxUrl ||
+				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+			type: 'GET',
+			data: {
+				action: 'eipsi_get_available_participants',
+				nonce: eipsiWavesManagerData.wavesNonce,
+				study_id: eipsiWavesManagerData.studyId,
+				wave_id: waveId,
+			},
+			success( response ) {
+				if ( response.success && response.data ) {
+					renderParticipantsList( response.data );
+				} else {
+					$tbody.html(
+						'<tr><td colspan="4" style="text-align:center;padding:20px;color:#666;">' +
+							( eipsiWavesManagerData.strings.noParticipants ||
+								'No hay participantes disponibles' ) +
+							'</td></tr>'
+					);
+				}
+			},
+			error() {
+				$tbody.html(
+					'<tr><td colspan="4" style="text-align:center;padding:20px;color:#d63638;">Error al cargar participantes</td></tr>'
+				);
+			},
+		} );
+	}
+
+	function renderParticipantsList( participants ) {
+		const $tbody = $( '#available-participants-tbody' );
+
+		if ( participants.length === 0 ) {
+			$tbody.html(
+				'<tr><td colspan="4" style="text-align:center;padding:20px;color:#666;">' +
+					( eipsiWavesManagerData.strings.noParticipants ||
+						'No hay participantes disponibles' ) +
+					'</td></tr>'
+			);
+			return;
+		}
+
+		let html = '';
+		participants.forEach( function ( p ) {
+			html +=
+				'<tr>' +
+				'<td class="check-column"><input type="checkbox" class="participant-checkbox" value="' +
+				p.id +
+				'"></td>' +
+				'<td>' +
+					escapeHtml( p.full_name || p.first_name + ' ' + p.last_name ) +
+					'</td>' +
+				'<td>' +
+					escapeHtml( p.email ) +
+					'</td>' +
+				'<td><code>' +
+					escapeHtml( p.participant_id ) +
+					'</code></td>' +
+				'</tr>';
+		} );
+		$tbody.html( html );
+	}
+
+	function assignParticipants( waveId, participantIds ) {
+		const $btn = $( '#confirm-assign-btn' );
+		const originalText = $btn.text();
+		$btn.text( 'Asignando...' ).prop( 'disabled', true );
+
+		$.ajax( {
+			url:
+				eipsiWavesManagerData.ajaxUrl ||
+				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+			type: 'POST',
+			data: {
+				action: 'eipsi_assign_participants',
+				nonce: eipsiWavesManagerData.wavesNonce,
+				study_id: eipsiWavesManagerData.studyId,
+				wave_id: waveId,
+				participant_ids: participantIds,
+			},
+			success( response ) {
+				if ( response.success ) {
+					const msg =
+						response.data.assigned_count +
+						' ' +
+						( eipsiWavesManagerData.strings.participantsAssigned ||
+							'participantes asignados' );
+					showNotification( msg, 'success' );
+					$( '#eipsi-assign-modal' ).fadeOut( 200 );
+					// Reload page after short delay
+					setTimeout( function () {
+						window.location.reload();
+					}, 500 );
+				} else {
+					showNotification(
+						response.data || 'Error al asignar participantes',
+						'error'
+					);
+				}
+			},
+			error() {
+				showNotification( 'Error de conexión', 'error' );
+			},
+			complete() {
+				$btn.text( originalText ).prop( 'disabled', false );
+			},
+		} );
+	}
+
+	// ===========================
+	// DEADLINE EXTENSION
+	// ===========================
+
+	function extendDeadline( waveId, newDeadline ) {
+		const $btn = $( '.eipsi-extend-deadline-btn[data-wave-id="' + waveId + '"]');
+		const originalText = $btn.text();
+		$btn.text( 'Extendiendo...' ).prop( 'disabled', true );
+
+		$.ajax( {
+			url:
+				eipsiWavesManagerData.ajaxUrl ||
+				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+			type: 'POST',
+			data: {
+				action: 'eipsi_extend_deadline',
+				nonce: eipsiWavesManagerData.wavesNonce,
+				wave_id: waveId,
+				new_deadline: newDeadline,
+			},
+			success( response ) {
+				if ( response.success ) {
+					showNotification(
+						eipsiWavesManagerData.strings.deadlineExtended ||
+							'Plazo extendido',
+						'success'
+					);
+					// Reload page after short delay
+					setTimeout( function () {
+						window.location.reload();
+					}, 500 );
+				} else {
+					showNotification(
+						response.data || 'Error al extender plazo',
+						'error'
+					);
+				}
+			},
+			error() {
+				showNotification( 'Error de conexión', 'error' );
+			},
+			complete() {
+				$btn.text( originalText ).prop( 'disabled', false );
+			},
+		} );
+	}
+
+	// ===========================
+	// SEND REMINDERS
+	// ===========================
+
+	function sendReminders( waveId ) {
+		const $btn = $( '.eipsi-send-reminder-btn[data-wave-id="' + waveId + '"]');
+		const originalText = $btn.text();
+		$btn
+			.text( eipsiWavesManagerData.strings.sending || 'Enviando...' )
+			.prop( 'disabled', true );
+
+		$.ajax( {
+			url:
+				eipsiWavesManagerData.ajaxUrl ||
+				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+			type: 'POST',
+			data: {
+				action: 'eipsi_send_reminder',
+				nonce: eipsiWavesManagerData.wavesNonce,
+				wave_id: waveId,
+			},
+			success( response ) {
+				if ( response.success ) {
+					const msg =
+						response.data.sent +
+						' ' +
+						( eipsiWavesManagerData.strings.remindersSent ||
+							'recordatorios enviados' );
+					showNotification( msg, 'success' );
+				} else {
+					showNotification(
+						response.data || 'Error al enviar recordatorios',
+						'error'
+					);
+				}
+			},
+			error() {
+				showNotification( 'Error de conexión', 'error' );
+			},
+			complete() {
+				$btn.text( originalText ).prop( 'disabled', false );
+			},
+		} );
+	}
+
+	// ===========================
+	// NOTIFICATION HELPER
+	// ===========================
+
+	function showNotification( message, type ) {
+		// Remove existing notifications
+		$( '.eipsi-notification' ).remove();
+
+		const cssClass = type === 'success' ? 'notice-success' : 'notice-error';
+		const icon = type === 'success' ? '✓' : '✗';
+
+		const $notification = $(
+			'<div class="eipsi-notification ' +
+				cssClass +
+				'" style="position:fixed;top:50px;right:20px;z-index:99999;padding:12px 20px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">' +
+				'<strong>' +
+				icon +
+				'</strong> ' +
+				message +
+				'</div>'
+		);
+
+		$( 'body' ).append( $notification );
+
+		// Auto-remove after 4 seconds
+		setTimeout( function () {
+			$notification.fadeOut( function () {
+				$( this ).remove();
+			} );
+		}, 4000 );
+	}
+
+	// ===========================
+	// ANONYMIZE MODAL (EXISTING)
+	// ===========================
 
 	function initAnonymizeModal() {
 		// Get nonce from localized data (WordPress global)
@@ -87,7 +620,7 @@
 	}
 
 	// ===========================
-	// MODAL VIEW UPDATE
+	// ANONYMIZE MODAL VIEW UPDATE
 	// ===========================
 
 	function updateModalView() {
@@ -124,7 +657,7 @@
 	}
 
 	// ===========================
-	// VALIDATIONS
+	// ANONYMIZE VALIDATIONS
 	// ===========================
 
 	function validateStep( step ) {
@@ -215,7 +748,7 @@
 	}
 
 	// ===========================
-	// SUBMISSION
+	// ANONYMIZE SUBMISSION
 	// ===========================
 
 	function submitAnonymization() {
@@ -325,7 +858,7 @@
 	}
 
 	// ===========================
-	// MODAL MANAGEMENT
+	// ANONYMIZE MODAL MANAGEMENT
 	// ===========================
 
 	function resetModal() {
@@ -369,6 +902,9 @@
 	 * @return {string} Escaped string
 	 */
 	function escapeHtml( unsafe ) {
+		if ( ! unsafe ) {
+			return '';
+		}
 		return unsafe
 			.replace( /&/g, '&amp;' )
 			.replace( /</g, '&lt;' )
