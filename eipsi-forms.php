@@ -55,6 +55,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/shortcodes.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'assets/js/eipsi-randomization-shortcode.php';
 
 // Sistema RCT completo (v1.3.1)
+// IMPORTANTE: manual-overrides-table.php debe cargarse ANTES de randomization-db-setup.php
+// porque este último llama a eipsi_create_manual_overrides_table() en sus hooks
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/manual-overrides-table.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-db-setup.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-shortcode-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-config-handler.php';
@@ -1070,9 +1073,6 @@ function eipsi_forms_render_form_block($attributes) {
 // Register admin post handlers
 add_action('admin_post_eipsi_forms_export_excel', 'eipsi_export_to_excel');
 // Deletion and editing of results are handled via admin_init in admin/handlers.php and admin/results-page.php
-
-// Load manual overrides table setup
-require_once plugin_dir_path(__FILE__) . 'admin/manual-overrides-table.php';
 
 // Puedes comentar o eliminar esto:
 // function eipsi_forms_load_textdomain() {
