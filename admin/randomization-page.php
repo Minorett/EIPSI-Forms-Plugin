@@ -471,6 +471,16 @@ function eipsi_display_randomization() {
             border-color: #7c3aed;
         }
 
+        .rct-button-export {
+            background: #059669;
+            color: white;
+            border-color: #059669;
+        }
+
+        .rct-button-export:hover {
+            background: #047857;
+        }
+
         /* Estado vacío */
         .empty-state {
             text-align: center;
@@ -937,6 +947,12 @@ function eipsi_display_randomization() {
                             <button type="button" class="rct-button" onclick="showManualOverrides('${escapeHtml(rct.randomization_id)}')">
                                 ✏️ Asignaciones Manuales
                             </button>
+                            <button type="button" class="rct-button rct-button-export" onclick="downloadAssignmentsCSV('${escapeHtml(rct.randomization_id)}')">
+                                📥 Exportar CSV
+                            </button>
+                            <button type="button" class="rct-button rct-button-export" onclick="downloadAssignmentsExcel('${escapeHtml(rct.randomization_id)}')">
+                                📊 Exportar Excel
+                            </button>
                             <button type="button" class="rct-button" onclick="copyRCTId('${escapeHtml(rct.randomization_id)}')">
                                 📋 Copiar ID
                             </button>
@@ -1056,6 +1072,75 @@ function eipsi_display_randomization() {
                     document.body.removeChild(textArea);
                     showMessage('ID copiado al portapapeles', 'success');
                 });
+            };
+
+            // Función para descargar asignaciones en CSV
+            window.downloadAssignmentsCSV = function(randomizationId) {
+                if (!confirm('¿Descargar todas las asignaciones en formato CSV?')) {
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('action', 'eipsi_download_assignments_csv');
+                formData.append('randomization_id', randomizationId);
+                formData.append('nonce', RCT_ANALYTICS.nonce);
+
+                // Crear form invisible para submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = RCT_ANALYTICS.ajaxUrl;
+                form.style.display = 'none';
+
+                for (const [key, value] of formData.entries()) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+
+                showMessage('Descargando archivo CSV...', 'success');
+            };
+
+            // Función para descargar asignaciones en Excel
+            window.downloadAssignmentsExcel = function(randomizationId) {
+                if (!confirm('¿Descargar todas las asignaciones en formato Excel?')) {
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('action', 'eipsi_download_assignments_excel');
+                formData.append('randomization_id', randomizationId);
+                formData.append('nonce', RCT_ANALYTICS.nonce);
+
+                // Crear form invisible para submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = RCT_ANALYTICS.ajaxUrl;
+                form.style.display = 'none';
+
+                for (const [key, value] of formData.entries()) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+
+                showMessage('Descargando archivo Excel...', 'success');
+            };
+
+            // Función para mostrar análisis de distribución
+            window.showDistributionAnalysis = function(randomizationId) {
+                showMessage('Función de análisis de distribución próximamente disponible', 'success');
             };
 
             function showMessage(message, type) {

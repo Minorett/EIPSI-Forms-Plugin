@@ -1071,6 +1071,9 @@ function eipsi_forms_render_form_block($attributes) {
 add_action('admin_post_eipsi_forms_export_excel', 'eipsi_export_to_excel');
 // Deletion and editing of results are handled via admin_init in admin/handlers.php and admin/results-page.php
 
+// Load manual overrides table setup
+require_once plugin_dir_path(__FILE__) . 'admin/manual-overrides-table.php';
+
 // Puedes comentar o eliminar esto:
 // function eipsi_forms_load_textdomain() {
 //     load_plugin_textdomain(
