@@ -779,3 +779,162 @@
         text-align: center;
     }
 }
+
+/* ===========================
+   PARTICIPANTS MANAGEMENT
+   =========================== */
+
+.eipsi-participants-section {
+    margin-top: 40px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.eipsi-participants-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.eipsi-participants-section h2 {
+    margin: 0;
+    color: #495057;
+    font-size: 1.4rem;
+}
+
+.participants-table-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#participants-table {
+    margin: 0;
+    border: none;
+}
+
+#participants-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    padding: 12px 15px;
+}
+
+#participants-table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+.participant-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.participant-status.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.participant-status.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.eipsi-edit-participant-btn,
+.eipsi-delete-participant-btn {
+    padding: 4px 12px !important;
+    font-size: 12px !important;
+}
+
+/* Time Limit Section */
+.time-limit-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.time-limit-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 0;
+}
+
+.time-limit-header input[type="checkbox"] {
+    margin: 0;
+}
+
+.time-limit-input .input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.time-limit-input .input-suffix {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.form-help {
+    display: block;
+    margin-top: 5px;
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+/* Dark mode support for participants */
+@media (prefers-color-scheme: dark) {
+    .eipsi-participants-section {
+        background: #2c3e50;
+        border-color: #34495e;
+    }
+
+    .eipsi-participants-section h2 {
+        color: #ecf0f1;
+    }
+
+    .participants-table-container {
+        background: #34495e;
+    }
+
+    #participants-table th {
+        background: #2c3e50;
+        color: #ecf0f1;
+    }
+
+    #participants-table td {
+        color: #ecf0f1;
+    }
+
+    .participant-status.status-active {
+        background: #27ae60;
+        color: white;
+    }
+
+    .participant-status.status-inactive {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .time-limit-section {
+        background: #34495e;
+        border-color: #4a5f7a;
+    }
+
+    .time-limit-input .input-suffix,
+    .form-help {
+        color: #95a5a6;
+    }
+}

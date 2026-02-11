@@ -171,6 +171,8 @@ class EIPSI_Wave_Service {
             'max_retries',
             'status',
             'is_mandatory',
+            'has_time_limit',
+            'completion_time_limit',
         );
 
         $data = array();
@@ -195,8 +197,13 @@ class EIPSI_Wave_Service {
                     break;
                 case 'retry_enabled':
                 case 'is_mandatory':
+                case 'has_time_limit':
                     $data[$key] = (int) (bool) $value;
                     $formats[] = '%d';
+                    break;
+                case 'completion_time_limit':
+                    $data[$key] = $value === null ? null : absint($value);
+                    $formats[] = $value === null ? null : '%d';
                     break;
                 case 'status':
                     $allowed_statuses = array('draft', 'active', 'completed', 'paused');
