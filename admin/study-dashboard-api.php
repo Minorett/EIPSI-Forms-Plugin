@@ -18,6 +18,8 @@ add_action('wp_ajax_eipsi_send_wave_reminder_manual', 'wp_ajax_eipsi_send_wave_r
 add_action('wp_ajax_eipsi_extend_wave_deadline', 'wp_ajax_eipsi_extend_wave_deadline_handler');
 add_action('wp_ajax_eipsi_get_study_email_logs', 'wp_ajax_eipsi_get_study_email_logs_handler');
 add_action('wp_ajax_eipsi_add_participant', 'wp_ajax_eipsi_add_participant_handler');
+add_action('wp_ajax_eipsi_validate_csv_participants', 'wp_ajax_eipsi_validate_csv_participants_handler');
+add_action('wp_ajax_eipsi_import_csv_participants', 'wp_ajax_eipsi_import_csv_participants_handler');
 
 /**
  * GET consolidated study data
@@ -332,4 +334,285 @@ function wp_ajax_eipsi_add_participant_handler() {
             'email_sent' => false
         ));
     }
+}
+
+/**
+ * POST validate CSV participants data
+ */
+function wp_ajax_eipsi_validate_csv_participants_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $csv_data = isset($_POST['csv_data']) ? $_POST['csv_data'] : '';
+
+    if (empty($study_id)) {
+        wp_send_json_error('Missing study ID');
+    }
+
+    if (empty($csv_data)) {
+        wp_send_json_error('No se proporcionaron datos CSV');
+    }
+
+    // Parsear CSV
+    $participants = eipsi_parse_csv_data($csv_data);
+
+    if (empty($participants)) {
+        wp_send_json_error('No se encontraron participantes válidos en el CSV');
+    }
+
+    // Límite máximo de participantes
+    if (count($participants) > 500) {
+        wp_send_json_error('El archivo CSV contiene más de 500 participantes. Por favor, divide el archivo en partes más pequeñas.');
+    }
+
+    global $wpdb;
+
+    // Validar cada participante
+    $validation_results = array();
+    $valid_count = 0;
+    $invalid_count = 0;
+    $existing_count = 0;
+
+    foreach ($participants as $index => $participant) {
+        $result = array(
+            'row' => $index + 1,
+            'email' => $participant['email'],
+            'first_name' => $participant['first_name'],
+            'last_name' => $participant['last_name'],
+            'is_valid' => true,
+            'errors' => array(),
+            'status' => 'valid' // valid, invalid, existing
+        );
+
+        // Validar email
+        if (empty($participant['email'])) {
+            $result['is_valid'] = false;
+            $result['errors'][] = 'Email vacío';
+        } elseif (!is_email($participant['email'])) {
+            $result['is_valid'] = false;
+            $result['errors'][] = 'Formato de email inválido';
+        } else {
+            // Verificar si ya existe en el estudio
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}survey_participants WHERE survey_id = %d AND email = %s",
+                $study_id,
+                sanitize_email($participant['email'])
+            ));
+
+            if ($existing) {
+                $result['status'] = 'existing';
+                $existing_count++;
+            }
+        }
+
+        // Sanitizar nombres
+        $result['first_name'] = sanitize_text_field($participant['first_name']);
+        $result['last_name'] = sanitize_text_field($participant['last_name']);
+
+        if (!$result['is_valid']) {
+            $result['status'] = 'invalid';
+            $invalid_count++;
+        } elseif ($result['status'] === 'valid') {
+            $valid_count++;
+        }
+
+        $validation_results[] = $result;
+    }
+
+    wp_send_json_success(array(
+        'participants' => $validation_results,
+        'summary' => array(
+            'total' => count($participants),
+            'valid' => $valid_count,
+            'invalid' => $invalid_count,
+            'existing' => $existing_count
+        )
+    ));
+}
+
+/**
+ * POST import CSV participants and send invitations
+ */
+function wp_ajax_eipsi_import_csv_participants_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $participants = isset($_POST['participants']) ? $_POST['participants'] : array();
+
+    if (empty($study_id)) {
+        wp_send_json_error('Missing study ID');
+    }
+
+    if (empty($participants)) {
+        wp_send_json_error('No hay participantes para importar');
+    }
+
+    // Cargar servicios necesarios
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    $results = array(
+        'imported' => 0,
+        'failed' => 0,
+        'emails_sent' => 0,
+        'emails_failed' => 0,
+        'errors' => array()
+    );
+
+    foreach ($participants as $participant) {
+        // Solo importar participantes válidos que no existan
+        if ($participant['status'] !== 'valid') {
+            continue;
+        }
+
+        $email = sanitize_email($participant['email']);
+        $first_name = sanitize_text_field($participant['first_name']);
+        $last_name = sanitize_text_field($participant['last_name']);
+
+        // Generar contraseña automática
+        $password = wp_generate_password(12, false);
+
+        $metadata = array();
+        if (!empty($first_name)) {
+            $metadata['first_name'] = $first_name;
+        }
+        if (!empty($last_name)) {
+            $metadata['last_name'] = $last_name;
+        }
+
+        // Crear participante
+        $participant_result = EIPSI_Participant_Service::create_participant($study_id, $email, $password, $metadata);
+
+        if (!$participant_result['success']) {
+            $results['failed']++;
+            $results['errors'][] = array(
+                'email' => $email,
+                'error' => $participant_result['error']
+            );
+            continue;
+        }
+
+        $results['imported']++;
+        $participant_id = $participant_result['participant_id'];
+
+        // Enviar invitación por email
+        $email_sent = EIPSI_Email_Service::send_welcome_email($study_id, $participant_id);
+
+        if ($email_sent) {
+            $results['emails_sent']++;
+        } else {
+            $results['emails_failed']++;
+        }
+    }
+
+    wp_send_json_success(array(
+        'message' => sprintf(
+            'Importación completada: %d participantes importados, %d emails enviados',
+            $results['imported'],
+            $results['emails_sent']
+        ),
+        'results' => $results
+    ));
+}
+
+/**
+ * Parse CSV data string into array
+ *
+ * @param string $csv_data CSV content
+ * @return array Parsed participants
+ */
+function eipsi_parse_csv_data($csv_data) {
+    $participants = array();
+
+    // Normalizar saltos de línea
+    $csv_data = str_replace("\r\n", "\n", $csv_data);
+    $csv_data = str_replace("\r", "\n", $csv_data);
+
+    $lines = explode("\n", $csv_data);
+
+    $is_first_line = true;
+    foreach ($lines as $line) {
+        $line = trim($line);
+
+        // Saltar líneas vacías
+        if (empty($line)) {
+            continue;
+        }
+
+        // Parsear CSV respetando comillas
+        $row = eipsi_parse_csv_line($line);
+
+        // Saltar encabezados si es la primera línea
+        if ($is_first_line) {
+            $is_first_line = false;
+            // Detectar si es encabezado (contiene 'email' o similar)
+            $first_col = strtolower(trim($row[0] ?? ''));
+            if (strpos($first_col, 'email') !== false) {
+                continue;
+            }
+        }
+
+        // Extraer datos
+        $participant = array(
+            'email' => trim($row[0] ?? ''),
+            'first_name' => trim($row[1] ?? ''),
+            'last_name' => trim($row[2] ?? '')
+        );
+
+        // Solo agregar si hay email
+        if (!empty($participant['email'])) {
+            $participants[] = $participant;
+        }
+    }
+
+    return $participants;
+}
+
+/**
+ * Parse a single CSV line respecting quotes
+ *
+ * @param string $line CSV line
+ * @return array Fields
+ */
+function eipsi_parse_csv_line($line) {
+    $fields = array();
+    $field = '';
+    $in_quotes = false;
+    $length = strlen($line);
+
+    for ($i = 0; $i < $length; $i++) {
+        $char = $line[$i];
+
+        if ($char === '"') {
+            if ($in_quotes && $i + 1 < $length && $line[$i + 1] === '"') {
+                // Comilla escapada
+                $field .= '"';
+                $i++;
+            } else {
+                $in_quotes = !$in_quotes;
+            }
+        } elseif ($char === ',' && !$in_quotes) {
+            $fields[] = $field;
+            $field = '';
+        } else {
+            $field .= $char;
+        }
+    }
+
+    $fields[] = $field;
+
+    return $fields;
 }

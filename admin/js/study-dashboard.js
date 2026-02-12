@@ -6,552 +6,951 @@
  * @since 1.4.3
  */
 
-/* global eipsiStudyDashboardData, ajaxurl */
+/* global eipsiStudyDash, ajaxurl */
 
 ( function ( $ ) {
-	'use strict';
-
-	// ===========================
-	// STATE
-	// ===========================
-
-	let currentStudyId = 0;
-	let isLoading = false;
-
-	// ===========================
-	// INITIALIZATION
-	// ===========================
-
-	$( document ).ready( function () {
-		initStudyDashboard();
-	} );
-
-	function initStudyDashboard() {
-		// Open Dashboard Modal
-		$( document ).on( 'click', '.eipsi-view-study', function () {
-			const studyId = $( this ).data( 'study-id' );
-			if ( ! studyId ) return;
-
-			currentStudyId = studyId;
-			openDashboardModal();
-			loadStudyOverview( studyId );
-		} );
-
-		// Close Modal
-		$( document ).on(
-			'click',
-			'.eipsi-modal-close, #eipsi-study-dashboard-modal .eipsi-modal-close',
-			function () {
-				closeDashboardModal();
-			}
-		);
-
-		// Close on overlay click
-		$( document ).on( 'click', '.eipsi-modal', function ( e ) {
-			if ( e.target === this ) {
-				$( this ).fadeOut( 200 );
-			}
-		} );
-
-		// Refresh Dashboard
-		$( document ).on( 'click', '#refresh-dashboard', function () {
-			if ( currentStudyId && ! isLoading ) {
-				loadStudyOverview( currentStudyId );
-			}
-		} );
-
-		// View Email Logs
-		$( document ).on( 'click', '#view-email-logs', function () {
-			if ( currentStudyId ) {
-				loadEmailLogs( currentStudyId );
-				$( '#eipsi-email-logs-modal' ).fadeIn( 200 );
-			}
-		} );
-
-		// Close Email Logs Modal
-		$( document ).on( 'click', '#eipsi-email-logs-modal .eipsi-modal-close', function () {
-			$( '#eipsi-email-logs-modal' ).fadeOut( 200 );
-		} );
-
-		// Close Extend Deadline Modal
-		$( document ).on( 'click', '#eipsi-extend-deadline-modal .eipsi-modal-close', function () {
-			$( '#eipsi-extend-deadline-modal' ).fadeOut( 200 );
-		} );
-
-		// Extend Deadline Form Submit
-		$( document ).on( 'submit', '#extend-deadline-form', function ( e ) {
-			e.preventDefault();
-			const waveId = $( '#extend-wave-id' ).val();
-			const newDeadline = $( '#new-deadline-date' ).val();
-			if ( waveId && newDeadline ) {
-				extendWaveDeadline( waveId, newDeadline );
-			}
-		} );
-
-		// Quick Action: Edit Study
-		$( document ).on( 'click', '#action-edit-study', function () {
-			if ( currentStudyId ) {
-				window.location.href =
-					'?page=eipsi-results&tab=waves-manager&study_id=' + currentStudyId;
-			}
-		} );
-
-		// Quick Action: Download Data
-		$( document ).on( 'click', '#action-download-data', function () {
-			if ( currentStudyId ) {
-				window.location.href =
-					'?page=eipsi-results&tab=export&study_id=' + currentStudyId;
-			}
-		} );
-
-		// Quick Action: View Participants
-		$( document ).on( 'click', '#action-view-participants', function () {
-			if ( currentStudyId ) {
-				alert(
-					'Funcionalidad de gestión de participantes disponible en la pestaña Waves Manager'
-				);
-			}
-		} );
-
-		// Quick Action: Close Study
-		$( document ).on( 'click', '#action-close-study', function () {
-			if ( currentStudyId ) {
-				if (
-					confirm(
-						'¿Estás seguro de cerrar este estudio? Esta acción requiere confirmación adicional.'
-					)
-				) {
-					closeStudyModal();
-				}
-			}
-		} );
-	}
-
-	// ===========================
-	// MODAL MANAGEMENT
-	// ===========================
-
-	function openDashboardModal() {
-		$( '#eipsi-study-dashboard-modal' ).fadeIn( 200 );
-		$( '#eipsi-dashboard-loading' ).show();
-		$( '#eipsi-dashboard-content' ).hide();
-	}
-
-	function closeDashboardModal() {
-		$( '#eipsi-study-dashboard-modal' ).fadeOut( 200 );
-		currentStudyId = 0;
-	}
-
-	function closeStudyModal() {
-		// Redirect to waves manager where anonymize button is available
-		window.location.href =
-			'?page=eipsi-results&tab=waves-manager&study_id=' + currentStudyId;
-	}
-
-	// ===========================
-	// DATA LOADING
-	// ===========================
-
-	function loadStudyOverview( studyId ) {
-		if ( isLoading ) return;
-		isLoading = true;
-
-		$( '#eipsi-dashboard-loading' ).show();
-		$( '#eipsi-dashboard-content' ).hide();
-
-		$.ajax( {
-			url:
-				eipsiStudyDashboardData.ajaxUrl ||
-				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
-			type: 'GET',
-			data: {
-				action: 'eipsi_get_study_overview',
-				nonce: eipsiStudyDashboardData.nonce,
-				study_id: studyId,
-			},
-			success( response ) {
-				if ( response.success && response.data ) {
-					renderDashboard( response.data );
-				} else {
-					showError(
-						response.data || 'Error al cargar los datos del estudio'
-					);
-				}
-			},
-			error() {
-				showError( 'Error de conexión al cargar los datos' );
-			},
-			complete() {
-				isLoading = false;
-				$( '#eipsi-dashboard-loading' ).hide();
-			},
-		} );
-	}
-
-	function renderDashboard( data ) {
-		// Update Modal Title
-		if ( data.general && data.general.study_name ) {
-			$( '#study-modal-title' ).text(
-				'Detalles: ' + escapeHtml( data.general.study_name )
-			);
-		}
-
-		// General Status Card
-		if ( data.general ) {
-			const statusBadge = getStatusBadge( data.general.status );
-			$( '#study-status-badge' ).html( statusBadge );
-			$( '#study-created-at' ).text( formatDate( data.general.created_at ) );
-			$( '#study-estimated-end' ).text(
-				data.general.estimated_end_date
-					? formatDate( data.general.estimated_end_date )
-					: 'No definida'
-			);
-			$( '#study-id-display' ).text( data.general.study_code );
-		}
-
-		// Participants Card
-		if ( data.participants ) {
-			const total = data.participants.total || 0;
-			const completed = data.participants.completed || 0;
-			const inProgress = data.participants.in_progress || 0;
-			const inactive = data.participants.inactive || 0;
-
-			$( '#total-participants' ).text( total );
-
-			// Progress bars
-			const completedPct = total > 0 ? Math.round( ( completed / total ) * 100 ) : 0;
-			const inProgressPct = total > 0 ? Math.round( ( inProgress / total ) * 100 ) : 0;
-			const inactivePct = total > 0 ? Math.round( ( inactive / total ) * 100 ) : 0;
-
-			$( '#bar-completed' ).css( 'width', completedPct + '%' );
-			$( '#percent-completed' ).text( completedPct + '%' );
-			$( '#bar-in-progress' ).css( 'width', inProgressPct + '%' );
-			$( '#percent-in-progress' ).text( inProgressPct + '%' );
-			$( '#bar-inactive' ).css( 'width', inactivePct + '%' );
-			$( '#percent-inactive' ).text( inactivePct + '%' );
-		}
-
-		// Waves Card
-		if ( data.waves && data.waves.length > 0 ) {
-			renderWaves( data.waves );
-		} else {
-			$( '#waves-container' ).html(
-				'<p style="text-align:center;color:#666;padding:20px;">No hay tomas configuradas</p>'
-			);
-		}
-
-		// Emails Card
-		if ( data.emails ) {
-			$( '#emails-sent-today' ).text( data.emails.sent_today || 0 );
-			$( '#emails-failed' ).text( data.emails.failed || 0 );
-			$( '#emails-last-sent' ).text(
-				data.emails.last_sent
-					? formatDateTime( data.emails.last_sent )
-					: 'Nunca'
-			);
-		}
-
-		// Show content
-		$( '#eipsi-dashboard-content' ).fadeIn( 200 );
-	}
-
-	function renderWaves( waves ) {
-		let html = '';
-
-		waves.forEach( function ( wave ) {
-			const statusBadge = getStatusBadge( wave.status );
-			const progressColor =
-				wave.progress >= 75 ? 'green' : wave.progress >= 50 ? 'blue' : 'orange';
-
-			html +=
-				'<div class="wave-summary-card" data-wave-id="' +
-				wave.id +
-				'">' +
-				'<div class="wave-header">' +
-				'<h4>' +
-				escapeHtml( wave.wave_name ) +
-				'</h4>' +
-				statusBadge +
-				'</div>' +
-				'<div class="wave-progress-bar">' +
-				'<div class="progress-fill ' +
-				progressColor +
-				'" style="width:' +
-				wave.progress +
-				'%">' +
-				'</div>' +
-				'<span class="progress-text">' +
-				wave.progress +
-				'%</span>' +
-				'</div>' +
-				'<div class="wave-stats-row">' +
-				'<span><strong>' +
-				wave.completed +
-				'</strong>/' +
-				wave.total +
-				' completados</span>' +
-				'<span class="deadline">Vence: ' +
-				( wave.deadline ? formatDate( wave.deadline ) : 'Sin fecha' ) +
-				'</span>' +
-				'</div>' +
-				'<div class="wave-actions-row">' +
-				'<button class="button button-small extend-deadline" data-wave-id="' +
-				wave.id +
-				'">📅 Extender</button>' +
-				'<button class="button button-small send-reminder" data-wave-id="' +
-				wave.id +
-				'">📧 Recordatorio</button>' +
-				'</div>' +
-				'</div>';
-		} );
-
-		$( '#waves-container' ).html( html );
-
-		// Bind wave action buttons
-		$( '.extend-deadline' ).on( 'click', function () {
-			const waveId = $( this ).data( 'wave-id' );
-			$( '#extend-wave-id' ).val( waveId );
-			$( '#eipsi-extend-deadline-modal' ).fadeIn( 200 );
-		} );
-
-		$( '.send-reminder' ).on( 'click', function () {
-			const waveId = $( this ).data( 'wave-id' );
-			sendWaveReminder( waveId );
-		} );
-	}
-
-	function loadEmailLogs( studyId ) {
-		const $tbody = $( '#email-logs-tbody' );
-		$tbody.html(
-			'<tr><td colspan="4" style="text-align:center;padding:20px;"><span class="spinner is-active"></span> Cargando...</td></tr>'
-		);
-
-		$.ajax( {
-			url:
-				eipsiStudyDashboardData.ajaxUrl ||
-				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
-			type: 'GET',
-			data: {
-				action: 'eipsi_get_study_email_logs',
-				nonce: eipsiStudyDashboardData.nonce,
-				study_id: studyId,
-			},
-			success( response ) {
-				if ( response.success && response.data ) {
-					renderEmailLogs( response.data );
-				} else {
-					$tbody.html(
-						'<tr><td colspan="4" style="text-align:center;color:#666;">No hay logs de emails</td></tr>'
-					);
-				}
-			},
-			error() {
-				$tbody.html(
-					'<tr><td colspan="4" style="text-align:center;color:#d63638;">Error al cargar logs</td></tr>'
-				);
-			},
-		} );
-	}
-
-	function renderEmailLogs( logs ) {
-		const $tbody = $( '#email-logs-tbody' );
-
-		if ( logs.length === 0 ) {
-			$tbody.html(
-				'<tr><td colspan="4" style="text-align:center;color:#666;">No hay emails registrados</td></tr>'
-			);
-			return;
-		}
-
-		let html = '';
-		logs.forEach( function ( log ) {
-			const statusBadge =
-				log.status === 'sent'
-					? '<span style="color:#27ae60;">✓ Enviado</span>'
-					: '<span style="color:#d63638;">✗ Fallido</span>';
-
-			html +=
-				'<tr>' +
-				'<td>' +
-				formatDateTime( log.sent_at ) +
-				'</td>' +
-				'<td>' +
-				escapeHtml( log.recipient_email ) +
-				'</td>' +
-				'<td>' +
-				escapeHtml( log.subject || 'Sin asunto' ) +
-				'</td>' +
-				'<td>' +
-				statusBadge +
-				'</td>' +
-				'</tr>';
-		} );
-
-		$tbody.html( html );
-	}
-
-	// ===========================
-	// ACTIONS
-	// ===========================
-
-	function extendWaveDeadline( waveId, newDeadline ) {
-		const $btn = $( '#extend-deadline-form button[type="submit"]' );
-		const originalText = $btn.text();
-		$btn.text( 'Guardando...' ).prop( 'disabled', true );
-
-		$.ajax( {
-			url:
-				eipsiStudyDashboardData.ajaxUrl ||
-				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
-			type: 'POST',
-			data: {
-				action: 'eipsi_extend_wave_deadline',
-				nonce: eipsiStudyDashboardData.nonce,
-				wave_id: waveId,
-				new_deadline: newDeadline + ' 23:59:59', // Add time to date
-			},
-			success( response ) {
-				if ( response.success ) {
-					showNotification( 'Plazo extendido exitosamente', 'success' );
-					$( '#eipsi-extend-deadline-modal' ).fadeOut( 200 );
-					// Refresh dashboard
-					loadStudyOverview( currentStudyId );
-				} else {
-					showNotification(
-						response.data || 'Error al extender plazo',
-						'error'
-					);
-				}
-			},
-			error() {
-				showNotification( 'Error de conexión', 'error' );
-			},
-			complete() {
-				$btn.text( originalText ).prop( 'disabled', false );
-			},
-		} );
-	}
-
-	function sendWaveReminder( waveId ) {
-		if (
-			! confirm(
-				'¿Enviar recordatorios a todos los participantes pendientes de esta toma?'
-			)
-		) {
-			return;
-		}
-
-		const $btn = $( '.send-reminder[data-wave-id="' + waveId + '"]' );
-		const originalText = $btn.text();
-		$btn.text( 'Enviando...' ).prop( 'disabled', true );
-
-		$.ajax( {
-			url:
-				eipsiStudyDashboardData.ajaxUrl ||
-				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
-			type: 'POST',
-			data: {
-				action: 'eipsi_send_wave_reminder_manual',
-				nonce: eipsiStudyDashboardData.nonce,
-				wave_id: waveId,
-			},
-			success( response ) {
-				if ( response.success ) {
-					showNotification( response.data.message || 'Recordatorios enviados', 'success' );
-				} else {
-					showNotification(
-						response.data || 'Error al enviar recordatorios',
-						'error'
-					);
-				}
-			},
-			error() {
-				showNotification( 'Error de conexión', 'error' );
-			},
-			complete() {
-				$btn.text( originalText ).prop( 'disabled', false );
-			},
-		} );
-	}
-
-	// ===========================
-	// HELPERS
-	// ===========================
-
-	function getStatusBadge( status ) {
-		const badges = {
-			active: '<span class="eipsi-badge badge-active">Activo</span>',
-			completed: '<span class="eipsi-badge badge-completed">Completado</span>',
-			paused: '<span class="eipsi-badge badge-paused">En Pausa</span>',
-			draft: '<span class="eipsi-badge badge-draft">Borrador</span>',
-		};
-		return badges[ status ] || '<span class="eipsi-badge">' + status + '</span>';
-	}
-
-	function formatDate( dateStr ) {
-		if ( ! dateStr ) return 'N/A';
-		const date = new Date( dateStr );
-		return date.toLocaleDateString( 'es-ES', {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-		} );
-	}
-
-	function formatDateTime( dateStr ) {
-		if ( ! dateStr ) return 'N/A';
-		const date = new Date( dateStr );
-		return date.toLocaleDateString( 'es-ES', {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit',
-		} );
-	}
-
-	function showNotification( message, type ) {
-		$( '.eipsi-notification' ).remove();
-
-		const cssClass = type === 'success' ? 'notice-success' : 'notice-error';
-		const icon = type === 'success' ? '✓' : '✗';
-
-		const $notification = $(
-			'<div class="eipsi-notification ' +
-				cssClass +
-				'" style="position:fixed;top:50px;right:20px;z-index:999999;padding:12px 20px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">' +
-				'<strong>' +
-				icon +
-				'</strong> ' +
-				message +
-				'</div>'
-		);
-
-		$( 'body' ).append( $notification );
-
-		setTimeout( function () {
-			$notification.fadeOut( function () {
-				$( this ).remove();
-			} );
-		}, 4000 );
-	}
-
-	function showError( message ) {
-		$( '#waves-container' ).html(
-			'<div style="color:#d63638;padding:20px;text-align:center;"><strong>Error:</strong> ' +
-				message +
-				'</div>'
-		);
-		$( '#eipsi-dashboard-content' ).show();
-	}
-
-	function escapeHtml( unsafe ) {
-		if ( ! unsafe ) return '';
-		return unsafe
-			.replace( /&/g, '&amp;' )
-			.replace( /</g, '&lt;' )
-			.replace( />/g, '&gt;' )
-			.replace( /"/g, '&quot;' )
-			.replace( /'/g, '&#039;' );
-	}
+    'use strict';
+
+    // ===========================
+    // STATE
+    // ===========================
+
+    let currentStudyId = 0;
+    let isLoading = false;
+
+    // ===========================
+    // INITIALIZATION
+    // ===========================
+
+    $( document ).ready( function () {
+        initStudyDashboard();
+    } );
+
+    function initStudyDashboard() {
+        // Open Dashboard Modal
+        $( document ).on( 'click', '.eipsi-view-study', function () {
+            const studyId = $( this ).data( 'study-id' );
+            if ( ! studyId ) return;
+
+            currentStudyId = studyId;
+            openDashboardModal();
+            loadStudyOverview( studyId );
+        } );
+
+        // Close Modal
+        $( document ).on(
+            'click',
+            '.eipsi-modal-close, #eipsi-study-dashboard-modal .eipsi-modal-close',
+            function () {
+                closeDashboardModal();
+            }
+        );
+
+        // Close on overlay click
+        $( document ).on( 'click', '.eipsi-modal', function ( e ) {
+            if ( e.target === this ) {
+                $( this ).fadeOut( 200 );
+            }
+        } );
+
+        // Refresh Dashboard
+        $( document ).on( 'click', '#refresh-dashboard', function () {
+            if ( currentStudyId && ! isLoading ) {
+                loadStudyOverview( currentStudyId );
+            }
+        } );
+
+        // View Email Logs
+        $( document ).on( 'click', '#view-email-logs', function () {
+            if ( currentStudyId ) {
+                loadEmailLogs( currentStudyId );
+                $( '#eipsi-email-logs-modal' ).fadeIn( 200 );
+            }
+        } );
+
+        // Close Email Logs Modal
+        $( document ).on( 'click', '#eipsi-email-logs-modal .eipsi-modal-close', function () {
+            $( '#eipsi-email-logs-modal' ).fadeOut( 200 );
+        } );
+
+        // Close Extend Deadline Modal
+        $( document ).on( 'click', '#eipsi-extend-deadline-modal .eipsi-modal-close', function () {
+            $( '#eipsi-extend-deadline-modal' ).fadeOut( 200 );
+        } );
+
+        // Extend Deadline Form Submit
+        $( document ).on( 'submit', '#extend-deadline-form', function ( e ) {
+            e.preventDefault();
+            const waveId = $( '#extend-wave-id' ).val();
+            const newDeadline = $( '#new-deadline-date' ).val();
+            if ( waveId && newDeadline ) {
+                extendWaveDeadline( waveId, newDeadline );
+            }
+        } );
+
+        // Quick Action: Edit Study
+        $( document ).on( 'click', '#action-edit-study', function () {
+            if ( currentStudyId ) {
+                window.location.href =
+                    '?page=eipsi-results&tab=waves-manager&study_id=' + currentStudyId;
+            }
+        } );
+
+        // Quick Action: Download Data
+        $( document ).on( 'click', '#action-download-data', function () {
+            if ( currentStudyId ) {
+                window.location.href =
+                    '?page=eipsi-results&tab=export&study_id=' + currentStudyId;
+            }
+        } );
+
+        // Quick Action: View Participants
+        $( document ).on( 'click', '#action-view-participants', function () {
+            if ( currentStudyId ) {
+                alert(
+                    'Funcionalidad de gestión de participantes disponible en la pestaña Waves Manager'
+                );
+            }
+        } );
+
+        // Quick Action: Close Study
+        $( document ).on( 'click', '#action-close-study', function () {
+            if ( currentStudyId ) {
+                if (
+                    confirm(
+                        '¿Estás seguro de cerrar este estudio? Esta acción requiere confirmación adicional.'
+                    )
+                ) {
+                    closeStudyModal();
+                }
+            }
+        } );
+
+        // Quick Action: Import CSV
+        $( document ).on( 'click', '#action-import-csv', function () {
+            if ( currentStudyId ) {
+                openCsvImportModal();
+            }
+        } );
+
+        // Close CSV Import Modal
+        $( document ).on( 'click', '#eipsi-import-csv-modal .eipsi-modal-close, #csv-cancel-btn', function () {
+            closeCsvImportModal();
+        } );
+
+        // CSV Upload area click
+        $( document ).on( 'click', '#csv-upload-area', function () {
+            $( '#csv-file-input' ).trigger( 'click' );
+        } );
+
+        // CSV File input change
+        $( document ).on( 'change', '#csv-file-input', function ( e ) {
+            const file = e.target.files[ 0 ];
+            if ( file ) {
+                handleCsvFile( file );
+            }
+        } );
+
+        // CSV Drag and drop
+        $( document ).on( 'dragover', '#csv-upload-area', function ( e ) {
+            e.preventDefault();
+            $( this ).addClass( 'dragover' );
+        } );
+
+        $( document ).on( 'dragleave', '#csv-upload-area', function ( e ) {
+            e.preventDefault();
+            $( this ).removeClass( 'dragover' );
+        } );
+
+        $( document ).on( 'drop', '#csv-upload-area', function ( e ) {
+            e.preventDefault();
+            $( this ).removeClass( 'dragover' );
+            const file = e.originalEvent.dataTransfer.files[ 0 ];
+            if ( file && ( file.name.endsWith( '.csv' ) || file.name.endsWith( '.txt' ) ) ) {
+                handleCsvFile( file );
+            } else {
+                showCsvError( 'Por favor, sube un archivo CSV válido' );
+            }
+        } );
+
+        // Download CSV Template
+        $( document ).on( 'click', '#download-csv-template', function ( e ) {
+            e.preventDefault();
+            downloadCsvTemplate();
+        } );
+
+        // Validate CSV Data
+        $( document ).on( 'click', '#csv-validate-btn', function () {
+            validateCsvData();
+        } );
+
+        // Import CSV Participants
+        $( document ).on( 'click', '#csv-import-btn', function () {
+            importCsvParticipants();
+        } );
+
+        // Done button
+        $( document ).on( 'click', '#csv-done-btn', function () {
+            closeCsvImportModal();
+            // Refresh dashboard to show updated participant count
+            if ( currentStudyId ) {
+                loadStudyOverview( currentStudyId );
+            }
+        } );
+    }
+
+    // ===========================
+    // MODAL MANAGEMENT
+    // ===========================
+
+    function openDashboardModal() {
+        $( '#eipsi-study-dashboard-modal' ).fadeIn( 200 );
+        $( '#eipsi-dashboard-loading' ).show();
+        $( '#eipsi-dashboard-content' ).hide();
+    }
+
+    function closeDashboardModal() {
+        $( '#eipsi-study-dashboard-modal' ).fadeOut( 200 );
+        currentStudyId = 0;
+    }
+
+    function closeStudyModal() {
+        // Redirect to waves manager where anonymize button is available
+        window.location.href =
+            '?page=eipsi-results&tab=waves-manager&study_id=' + currentStudyId;
+    }
+
+    // ===========================
+    // CSV IMPORT MODAL
+    // ===========================
+
+    let csvRawData = '';
+    let csvValidationResults = null;
+
+    function openCsvImportModal() {
+        resetCsvModal();
+        $( '#eipsi-import-csv-modal' ).fadeIn( 200 );
+    }
+
+    function closeCsvImportModal() {
+        $( '#eipsi-import-csv-modal' ).fadeOut( 200 );
+        resetCsvModal();
+    }
+
+    function resetCsvModal() {
+        csvRawData = '';
+        csvValidationResults = null;
+
+        // Reset steps
+        $( '.csv-import-step' ).hide();
+        $( '#csv-step-1' ).show();
+
+        // Reset buttons
+        $( '#csv-cancel-btn' ).show();
+        $( '#csv-validate-btn' ).hide();
+        $( '#csv-import-btn' ).hide().prop( 'disabled', true );
+        $( '#csv-done-btn' ).hide();
+
+        // Reset file input
+        $( '#csv-file-input' ).val( '' );
+
+        // Reset messages
+        $( '#csv-import-error, #csv-import-success' ).hide();
+
+        // Reset preview
+        $( '#csv-preview-tbody' ).empty();
+        $( '#csv-validation-summary' ).empty();
+    }
+
+    function showCsvStep( stepNumber ) {
+        $( '.csv-import-step' ).hide();
+        $( '#csv-step-' + stepNumber ).show();
+    }
+
+    function showCsvError( message ) {
+        $( '#csv-import-error' ).text( message ).show();
+        $( '#csv-import-success' ).hide();
+    }
+
+    function showCsvSuccess( message ) {
+        $( '#csv-import-success' ).text( message ).show();
+        $( '#csv-import-error' ).hide();
+    }
+
+    function handleCsvFile( file ) {
+        // Validar tamaño (máximo 1MB)
+        if ( file.size > 1024 * 1024 ) {
+            showCsvError( 'El archivo es demasiado grande. Máximo 1MB.' );
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = function ( e ) {
+            csvRawData = e.target.result;
+
+            // Contar líneas aproximadas
+            const lines = csvRawData.split( /\r\n|\n|\r/ ).filter( function ( line ) {
+                return line.trim() !== '';
+            } );
+
+            if ( lines.length === 0 ) {
+                showCsvError( 'El archivo CSV está vacío' );
+                return;
+            }
+
+            if ( lines.length > 501 ) {
+                showCsvError( 'El archivo contiene más de 500 participantes. Por favor, divide el archivo.' );
+                return;
+            }
+
+            // Mostrar botón de validar
+            $( '#csv-validate-btn' ).show();
+            showCsvSuccess( 'Archivo cargado: ' + ( lines.length - 1 ) + ' participantes detectados (aprox)' );
+        };
+
+        reader.onerror = function () {
+            showCsvError( 'Error al leer el archivo' );
+        };
+
+        reader.readAsText( file );
+    }
+
+    function downloadCsvTemplate() {
+        const template = 'email,first_name,last_name\n' +
+            'juan.perez@email.com,Juan,Pérez\n' +
+            'maria.garcia@email.com,María,García\n' +
+            'carlos.lopez@email.com,Carlos,López';
+
+        const blob = new Blob( [ template ], { type: 'text/csv;charset=utf-8;' } );
+        const link = document.createElement( 'a' );
+        link.href = URL.createObjectURL( blob );
+        link.download = 'plantilla_participantes_eipsi.csv';
+        link.click();
+    }
+
+    function validateCsvData() {
+        if ( ! csvRawData || ! currentStudyId ) {
+            showCsvError( 'No hay datos para validar' );
+            return;
+        }
+
+        const $btn = $( '#csv-validate-btn' );
+        const originalText = $btn.text();
+        $btn.text( 'Validando...' ).prop( 'disabled', true );
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_validate_csv_participants',
+                nonce: eipsiStudyDash.nonce,
+                study_id: currentStudyId,
+                csv_data: csvRawData,
+            },
+            success( response ) {
+                if ( response.success && response.data ) {
+                    csvValidationResults = response.data;
+                    renderCsvPreview( response.data );
+                    showCsvStep( 2 );
+
+                    // Mostrar/ocultar botones según validación
+                    $( '#csv-validate-btn' ).hide();
+                    if ( response.data.summary.valid > 0 ) {
+                        $( '#csv-import-btn' ).show().prop( 'disabled', false );
+                    }
+                } else {
+                    showCsvError( response.data || 'Error al validar el CSV' );
+                }
+            },
+            error() {
+                showCsvError( 'Error de conexión al validar' );
+            },
+            complete() {
+                $btn.text( originalText ).prop( 'disabled', false );
+            },
+        } );
+    }
+
+    function renderCsvPreview( data ) {
+        const summary = data.summary;
+        const participants = data.participants;
+
+        // Actualizar contador
+        $( '#csv-preview-count' ).text( summary.total + ' filas' );
+
+        // Resumen de validación
+        let summaryHtml = '<div class="validation-summary-inner">';
+        summaryHtml += '<span class="summary-item valid">✓ ' + summary.valid + ' válidos</span>';
+        if ( summary.invalid > 0 ) {
+            summaryHtml += '<span class="summary-item invalid">✗ ' + summary.invalid + ' inválidos</span>';
+        }
+        if ( summary.existing > 0 ) {
+            summaryHtml += '<span class="summary-item existing">⚠ ' + summary.existing + ' existentes</span>';
+        }
+        summaryHtml += '</div>';
+        $( '#csv-validation-summary' ).html( summaryHtml );
+
+        // Tabla de preview (mostrar máximo 50)
+        let html = '';
+        const previewLimit = Math.min( participants.length, 50 );
+
+        for ( let i = 0; i < previewLimit; i++ ) {
+            const p = participants[ i ];
+            let statusBadge = '';
+
+            if ( p.status === 'valid' ) {
+                statusBadge = '<span class="status-badge valid">✓ Válido</span>';
+            } else if ( p.status === 'invalid' ) {
+                statusBadge = '<span class="status-badge invalid" title="' + escapeHtml( p.errors.join( ', ' ) ) + '">✗ Inválido</span>';
+            } else if ( p.status === 'existing' ) {
+                statusBadge = '<span class="status-badge existing">⚠ Existente</span>';
+            }
+
+            html += '<tr class="status-' + p.status + '">';
+            html += '<td>' + p.row + '</td>';
+            html += '<td>' + escapeHtml( p.email ) + '</td>';
+            html += '<td>' + escapeHtml( p.first_name ) + '</td>';
+            html += '<td>' + escapeHtml( p.last_name ) + '</td>';
+            html += '<td>' + statusBadge + '</td>';
+            html += '</tr>';
+        }
+
+        if ( participants.length > 50 ) {
+            html += '<tr><td colspan="5" class="preview-more">... y ' + ( participants.length - 50 ) + ' más</td></tr>';
+        }
+
+        $( '#csv-preview-tbody' ).html( html );
+    }
+
+    function importCsvParticipants() {
+        if ( ! csvValidationResults || ! csvValidationResults.participants || ! currentStudyId ) {
+            showCsvError( 'No hay participantes para importar' );
+            return;
+        }
+
+        // Filtrar solo participantes válidos
+        const validParticipants = csvValidationResults.participants.filter( function ( p ) {
+            return p.status === 'valid';
+        } );
+
+        if ( validParticipants.length === 0 ) {
+            showCsvError( 'No hay participantes válidos para importar' );
+            return;
+        }
+
+        if ( ! confirm( '¿Importar ' + validParticipants.length + ' participantes y enviar invitaciones por email?' ) ) {
+            return;
+        }
+
+        showCsvStep( 3 );
+        $( '#csv-cancel-btn, #csv-import-btn' ).hide();
+
+        const total = validParticipants.length;
+        let processed = 0;
+        let imported = 0;
+        let failed = 0;
+        let emailsSent = 0;
+
+        // Procesar en lotes de 10 para mostrar progreso
+        const batchSize = 10;
+        const batches = [];
+
+        for ( let i = 0; i < validParticipants.length; i += batchSize ) {
+            batches.push( validParticipants.slice( i, i + batchSize ) );
+        }
+
+        function processBatch( batchIndex ) {
+            if ( batchIndex >= batches.length ) {
+                // Finalizar
+                showImportResults( imported, failed, emailsSent );
+                return;
+            }
+
+            const batch = batches[ batchIndex ];
+
+            $.ajax( {
+                url:
+                    eipsiStudyDash.ajaxUrl ||
+                    ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+                type: 'POST',
+                data: {
+                    action: 'eipsi_import_csv_participants',
+                    nonce: eipsiStudyDash.nonce,
+                    study_id: currentStudyId,
+                    participants: batch,
+                },
+                success( response ) {
+                    if ( response.success && response.data ) {
+                        imported += response.data.results.imported;
+                        failed += response.data.results.failed;
+                        emailsSent += response.data.results.emails_sent;
+                    } else {
+                        failed += batch.length;
+                    }
+                },
+                error() {
+                    failed += batch.length;
+                },
+                complete() {
+                    processed += batch.length;
+                    updateProgress( processed, total, imported, failed, emailsSent );
+                    processBatch( batchIndex + 1 );
+                },
+            } );
+        }
+
+        function updateProgress( current, total, imported, failed, emailsSent ) {
+            const pct = Math.round( ( current / total ) * 100 );
+            $( '#csv-import-progress-bar' ).css( 'width', pct + '%' );
+            $( '#csv-import-counter' ).text( current + ' / ' + total );
+            $( '#csv-progress-details' ).html(
+                'Importados: ' + imported + ' | Emails enviados: ' + emailsSent + ' | Fallidos: ' + failed
+            );
+        }
+
+        function showImportResults( imported, failed, emailsSent ) {
+            showCsvStep( 4 );
+
+            let resultsHtml = '<div class="csv-results-inner">';
+
+            if ( imported > 0 ) {
+                resultsHtml += '<div class="result-item success">';
+                resultsHtml += '<span class="result-icon">✓</span>';
+                resultsHtml += '<span class="result-text">' + imported + ' participantes importados exitosamente</span>';
+                resultsHtml += '</div>';
+            }
+
+            if ( emailsSent > 0 ) {
+                resultsHtml += '<div class="result-item success">';
+                resultsHtml += '<span class="result-icon">✉️</span>';
+                resultsHtml += '<span class="result-text">' + emailsSent + ' invitaciones enviadas</span>';
+                resultsHtml += '</div>';
+            }
+
+            if ( failed > 0 ) {
+                resultsHtml += '<div class="result-item error">';
+                resultsHtml += '<span class="result-icon">✗</span>';
+                resultsHtml += '<span class="result-text">' + failed + ' participantes no pudieron ser importados</span>';
+                resultsHtml += '</div>';
+            }
+
+            resultsHtml += '</div>';
+
+            $( '#csv-results' ).html( resultsHtml );
+            $( '#csv-done-btn' ).show();
+        }
+
+        // Iniciar procesamiento
+        processBatch( 0 );
+    }
+
+    // ===========================
+    // DATA LOADING
+    // ===========================
+
+    function loadStudyOverview( studyId ) {
+        if ( isLoading ) return;
+        isLoading = true;
+
+        $( '#eipsi-dashboard-loading' ).show();
+        $( '#eipsi-dashboard-content' ).hide();
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'GET',
+            data: {
+                action: 'eipsi_get_study_overview',
+                nonce: eipsiStudyDash.nonce,
+                study_id: studyId,
+            },
+            success( response ) {
+                if ( response.success && response.data ) {
+                    renderDashboard( response.data );
+                } else {
+                    showError(
+                        response.data || 'Error al cargar los datos del estudio'
+                    );
+                }
+            },
+            error() {
+                showError( 'Error de conexión al cargar los datos' );
+            },
+            complete() {
+                isLoading = false;
+                $( '#eipsi-dashboard-loading' ).hide();
+            },
+        } );
+    }
+
+    function renderDashboard( data ) {
+        // Update Modal Title
+        if ( data.general && data.general.study_name ) {
+            $( '#study-modal-title' ).text(
+                'Detalles: ' + escapeHtml( data.general.study_name )
+            );
+        }
+
+        // General Status Card
+        if ( data.general ) {
+            const statusBadge = getStatusBadge( data.general.status );
+            $( '#study-status-badge' ).html( statusBadge );
+            $( '#study-created-at' ).text( formatDate( data.general.created_at ) );
+            $( '#study-estimated-end' ).text(
+                data.general.estimated_end_date
+                    ? formatDate( data.general.estimated_end_date )
+                    : 'No definida'
+            );
+            $( '#study-id-display' ).text( data.general.study_code );
+        }
+
+        // Participants Card
+        if ( data.participants ) {
+            const total = data.participants.total || 0;
+            const completed = data.participants.completed || 0;
+            const inProgress = data.participants.in_progress || 0;
+            const inactive = data.participants.inactive || 0;
+
+            $( '#total-participants' ).text( total );
+
+            // Progress bars
+            const completedPct = total > 0 ? Math.round( ( completed / total ) * 100 ) : 0;
+            const inProgressPct = total > 0 ? Math.round( ( inProgress / total ) * 100 ) : 0;
+            const inactivePct = total > 0 ? Math.round( ( inactive / total ) * 100 ) : 0;
+
+            $( '#bar-completed' ).css( 'width', completedPct + '%' );
+            $( '#percent-completed' ).text( completedPct + '%' );
+            $( '#bar-in-progress' ).css( 'width', inProgressPct + '%' );
+            $( '#percent-in-progress' ).text( inProgressPct + '%' );
+            $( '#bar-inactive' ).css( 'width', inactivePct + '%' );
+            $( '#percent-inactive' ).text( inactivePct + '%' );
+        }
+
+        // Waves Card
+        if ( data.waves && data.waves.length > 0 ) {
+            renderWaves( data.waves );
+        } else {
+            $( '#waves-container' ).html(
+                '<p style="text-align:center;color:#666;padding:20px;">No hay tomas configuradas</p>'
+            );
+        }
+
+        // Emails Card
+        if ( data.emails ) {
+            $( '#emails-sent-today' ).text( data.emails.sent_today || 0 );
+            $( '#emails-failed' ).text( data.emails.failed || 0 );
+            $( '#emails-last-sent' ).text(
+                data.emails.last_sent
+                    ? formatDateTime( data.emails.last_sent )
+                    : 'Nunca'
+            );
+        }
+
+        // Show content
+        $( '#eipsi-dashboard-content' ).fadeIn( 200 );
+    }
+
+    function renderWaves( waves ) {
+        let html = '';
+
+        waves.forEach( function ( wave ) {
+            const statusBadge = getStatusBadge( wave.status );
+            const progressColor =
+                wave.progress >= 75 ? 'green' : wave.progress >= 50 ? 'blue' : 'orange';
+
+            html +=
+                '<div class="wave-summary-card" data-wave-id="' +
+                wave.id +
+                '">' +
+                '<div class="wave-header">' +
+                '<h4>' +
+                escapeHtml( wave.wave_name ) +
+                '</h4>' +
+                statusBadge +
+                '</div>' +
+                '<div class="wave-progress-bar">' +
+                '<div class="progress-fill ' +
+                progressColor +
+                '" style="width:' +
+                wave.progress +
+                '%">' +
+                '</div>' +
+                '<span class="progress-text">' +
+                wave.progress +
+                '%</span>' +
+                '</div>' +
+                '<div class="wave-stats-row">' +
+                '<span><strong>' +
+                wave.completed +
+                '</strong>/' +
+                wave.total +
+                ' completados</span>' +
+                '<span class="deadline">Vence: ' +
+                ( wave.deadline ? formatDate( wave.deadline ) : 'Sin fecha' ) +
+                '</span>' +
+                '</div>' +
+                '<div class="wave-actions-row">' +
+                '<button class="button button-small extend-deadline" data-wave-id="' +
+                wave.id +
+                '">📅 Extender</button>' +
+                '<button class="button button-small send-reminder" data-wave-id="' +
+                wave.id +
+                '">📧 Recordatorio</button>' +
+                '</div>' +
+                '</div>';
+        } );
+
+        $( '#waves-container' ).html( html );
+
+        // Bind wave action buttons
+        $( '.extend-deadline' ).on( 'click', function () {
+            const waveId = $( this ).data( 'wave-id' );
+            $( '#extend-wave-id' ).val( waveId );
+            $( '#eipsi-extend-deadline-modal' ).fadeIn( 200 );
+        } );
+
+        $( '.send-reminder' ).on( 'click', function () {
+            const waveId = $( this ).data( 'wave-id' );
+            sendWaveReminder( waveId );
+        } );
+    }
+
+    function loadEmailLogs( studyId ) {
+        const $tbody = $( '#email-logs-tbody' );
+        $tbody.html(
+            '<tr><td colspan="4" style="text-align:center;padding:20px;"><span class="spinner is-active"></span> Cargando...</td></tr>'
+        );
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'GET',
+            data: {
+                action: 'eipsi_get_study_email_logs',
+                nonce: eipsiStudyDash.nonce,
+                study_id: studyId,
+            },
+            success( response ) {
+                if ( response.success && response.data ) {
+                    renderEmailLogs( response.data );
+                } else {
+                    $tbody.html(
+                        '<tr><td colspan="4" style="text-align:center;color:#666;">No hay logs de emails</td></tr>'
+                    );
+                }
+            },
+            error() {
+                $tbody.html(
+                    '<tr><td colspan="4" style="text-align:center;color:#d63638;">Error al cargar logs</td></tr>'
+                );
+            },
+        } );
+    }
+
+    function renderEmailLogs( logs ) {
+        const $tbody = $( '#email-logs-tbody' );
+
+        if ( logs.length === 0 ) {
+            $tbody.html(
+                '<tr><td colspan="4" style="text-align:center;color:#666;">No hay emails registrados</td></tr>'
+            );
+            return;
+        }
+
+        let html = '';
+        logs.forEach( function ( log ) {
+            const statusBadge =
+                log.status === 'sent'
+                    ? '<span style="color:#27ae60;">✓ Enviado</span>'
+                    : '<span style="color:#d63638;">✗ Fallido</span>';
+
+            html +=
+                '<tr>' +
+                '<td>' +
+                formatDateTime( log.sent_at ) +
+                '</td>' +
+                '<td>' +
+                escapeHtml( log.recipient_email ) +
+                '</td>' +
+                '<td>' +
+                escapeHtml( log.subject || 'Sin asunto' ) +
+                '</td>' +
+                '<td>' +
+                statusBadge +
+                '</td>' +
+                '</tr>';
+        } );
+
+        $tbody.html( html );
+    }
+
+    // ===========================
+    // ACTIONS
+    // ===========================
+
+    function extendWaveDeadline( waveId, newDeadline ) {
+        const $btn = $( '#extend-deadline-form button[type="submit"]' );
+        const originalText = $btn.text();
+        $btn.text( 'Guardando...' ).prop( 'disabled', true );
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_extend_wave_deadline',
+                nonce: eipsiStudyDash.nonce,
+                wave_id: waveId,
+                new_deadline: newDeadline + ' 23:59:59', // Add time to date
+            },
+            success( response ) {
+                if ( response.success ) {
+                    showNotification( 'Plazo extendido exitosamente', 'success' );
+                    $( '#eipsi-extend-deadline-modal' ).fadeOut( 200 );
+                    // Refresh dashboard
+                    loadStudyOverview( currentStudyId );
+                } else {
+                    showNotification(
+                        response.data || 'Error al extender plazo',
+                        'error'
+                    );
+                }
+            },
+            error() {
+                showNotification( 'Error de conexión', 'error' );
+            },
+            complete() {
+                $btn.text( originalText ).prop( 'disabled', false );
+            },
+        } );
+    }
+
+    function sendWaveReminder( waveId ) {
+        if (
+            ! confirm(
+                '¿Enviar recordatorios a todos los participantes pendientes de esta toma?'
+            )
+        ) {
+            return;
+        }
+
+        const $btn = $( '.send-reminder[data-wave-id="' + waveId + '"]' );
+        const originalText = $btn.text();
+        $btn.text( 'Enviando...' ).prop( 'disabled', true );
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_send_wave_reminder_manual',
+                nonce: eipsiStudyDash.nonce,
+                wave_id: waveId,
+            },
+            success( response ) {
+                if ( response.success ) {
+                    showNotification( response.data.message || 'Recordatorios enviados', 'success' );
+                } else {
+                    showNotification(
+                        response.data || 'Error al enviar recordatorios',
+                        'error'
+                    );
+                }
+            },
+            error() {
+                showNotification( 'Error de conexión', 'error' );
+            },
+            complete() {
+                $btn.text( originalText ).prop( 'disabled', false );
+            },
+        } );
+    }
+
+    // ===========================
+    // HELPERS
+    // ===========================
+
+    function getStatusBadge( status ) {
+        const badges = {
+            active: '<span class="eipsi-badge badge-active">Activo</span>',
+            completed: '<span class="eipsi-badge badge-completed">Completado</span>',
+            paused: '<span class="eipsi-badge badge-paused">En Pausa</span>',
+            draft: '<span class="eipsi-badge badge-draft">Borrador</span>',
+        };
+        return badges[ status ] || '<span class="eipsi-badge">' + status + '</span>';
+    }
+
+    function formatDate( dateStr ) {
+        if ( ! dateStr ) return 'N/A';
+        const date = new Date( dateStr );
+        return date.toLocaleDateString( 'es-ES', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        } );
+    }
+
+    function formatDateTime( dateStr ) {
+        if ( ! dateStr ) return 'N/A';
+        const date = new Date( dateStr );
+        return date.toLocaleDateString( 'es-ES', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        } );
+    }
+
+    function showNotification( message, type ) {
+        $( '.eipsi-notification' ).remove();
+
+        const cssClass = type === 'success' ? 'notice-success' : 'notice-error';
+        const icon = type === 'success' ? '✓' : '✗';
+
+        const $notification = $(
+            '<div class="eipsi-notification ' +
+                cssClass +
+                '" style="position:fixed;top:50px;right:20px;z-index:999999;padding:12px 20px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">' +
+                '<strong>' +
+                icon +
+                '</strong> ' +
+                message +
+                '</div>'
+        );
+
+        $( 'body' ).append( $notification );
+
+        setTimeout( function () {
+            $notification.fadeOut( function () {
+                $( this ).remove();
+            } );
+        }, 4000 );
+    }
+
+    function showError( message ) {
+        $( '#waves-container' ).html(
+            '<div style="color:#d63638;padding:20px;text-align:center;"><strong>Error:</strong> ' +
+                message +
+                '</div>'
+        );
+        $( '#eipsi-dashboard-content' ).show();
+    }
+
+    function escapeHtml( unsafe ) {
+        if ( ! unsafe ) return '';
+        return unsafe
+            .replace( /&/g, '&amp;' )
+            .replace( /</g, '&lt;' )
+            .replace( />/g, '&gt;' )
+            .replace( /"/g, '&quot;' )
+            .replace( /'/g, '&#039;' );
+    }
 } )( window.jQuery );

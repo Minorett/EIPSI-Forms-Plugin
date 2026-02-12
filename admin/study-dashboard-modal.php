@@ -88,7 +88,8 @@ if (!defined('ABSPATH')) {
                     <div class="dashboard-card actions-card">
                         <h3>⚙️ <?php esc_html_e('Acciones Rápidas', 'eipsi-forms'); ?></h3>
                         <div class="card-body quick-actions">
-                            <button class="button button-primary" id="action-add-participant">👥 <?php esc_html_e('Agregar Participante', 'eipsi-forms'); ?></button>
+                            <button class="button button-primary" id="action-add-participant">👤 <?php esc_html_e('Agregar Participante', 'eipsi-forms'); ?></button>
+                            <button class="button button-secondary" id="action-import-csv">📄 <?php esc_html_e('Importar CSV', 'eipsi-forms'); ?></button>
                             <button class="button button-secondary" id="action-edit-study"><?php esc_html_e('Editar Configuración', 'eipsi-forms'); ?></button>
                             <button class="button button-secondary" id="action-download-data"><?php esc_html_e('Descargar Datos', 'eipsi-forms'); ?></button>
                             <button class="button button-secondary" id="action-view-participants"><?php esc_html_e('Ver Lista de Participantes', 'eipsi-forms'); ?></button>
@@ -191,6 +192,105 @@ if (!defined('ABSPATH')) {
                     ✉️ <?php esc_html_e('Crear y Enviar Invitación', 'eipsi-forms'); ?>
                 </button>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for CSV Import -->
+<div id="eipsi-import-csv-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content medium-modal">
+        <div class="eipsi-modal-header">
+            <h2>📄 <?php esc_html_e('Importar Participantes desde CSV', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <!-- Paso 1: Subir archivo -->
+            <div id="csv-step-1" class="csv-import-step">
+                <div class="csv-upload-area" id="csv-upload-area">
+                    <div class="csv-upload-icon">📁</div>
+                    <p class="csv-upload-text"><?php esc_html_e('Arrastra tu archivo CSV aquí o haz clic para seleccionar', 'eipsi-forms'); ?></p>
+                    <p class="csv-upload-hint"><?php esc_html_e('Formato: email, first_name, last_name (máx. 500 participantes)', 'eipsi-forms'); ?></p>
+                    <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none;">
+                </div>
+                <div class="csv-template-download">
+                    <a href="#" id="download-csv-template" class="button button-link"><?php esc_html_e('📥 Descargar plantilla CSV', 'eipsi-forms'); ?></a>
+                </div>
+            </div>
+
+            <!-- Paso 2: Vista previa -->
+            <div id="csv-step-2" class="csv-import-step" style="display:none;">
+                <div class="csv-preview-header">
+                    <h4><?php esc_html_e('Vista previa de participantes', 'eipsi-forms'); ?></h4>
+                    <span id="csv-preview-count" class="csv-count-badge"></span>
+                </div>
+                
+                <div class="csv-validation-summary" id="csv-validation-summary">
+                    <!-- Resumen de validaciones -->
+                </div>
+
+                <div class="csv-preview-table-wrapper">
+                    <table class="wp-list-table widefat fixed striped csv-preview-table">
+                        <thead>
+                            <tr>
+                                <th><?php esc_html_e('#', 'eipsi-forms'); ?></th>
+                                <th><?php esc_html_e('Email', 'eipsi-forms'); ?></th>
+                                <th><?php esc_html_e('Nombre', 'eipsi-forms'); ?></th>
+                                <th><?php esc_html_e('Apellido', 'eipsi-forms'); ?></th>
+                                <th><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody id="csv-preview-tbody">
+                            <!-- Filas generadas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="csv-preview-note">
+                    <p class="description">
+                        ⚠️ <?php esc_html_e('Los participantes existentes serán omitidos. Se generarán contraseñas automáticas.', 'eipsi-forms'); ?>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Paso 3: Progreso -->
+            <div id="csv-step-3" class="csv-import-step" style="display:none;">
+                <div class="csv-import-progress">
+                    <div class="progress-info">
+                        <span id="csv-import-status"><?php esc_html_e('Importando participantes...', 'eipsi-forms'); ?></span>
+                        <span id="csv-import-counter">0 / 0</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="csv-import-progress-bar" class="progress-bar-fill blue" style="width:0%"></div>
+                    </div>
+                    <div class="progress-details" id="csv-progress-details">
+                        <!-- Detalles del progreso -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 4: Resultados -->
+            <div id="csv-step-4" class="csv-import-step" style="display:none;">
+                <div class="csv-results" id="csv-results">
+                    <!-- Resultados de la importación -->
+                </div>
+            </div>
+
+            <!-- Mensajes de error/éxito -->
+            <div id="csv-import-error" class="notice notice-error" style="display:none; margin: 10px 0;"></div>
+            <div id="csv-import-success" class="notice notice-success" style="display:none; margin: 10px 0;"></div>
+        </div>
+
+        <div class="eipsi-modal-footer csv-modal-footer">
+            <button type="button" class="button button-secondary" id="csv-cancel-btn"><?php esc_html_e('Cancelar', 'eipsi-forms'); ?></button>
+            <button type="button" class="button button-primary" id="csv-validate-btn" style="display:none;">
+                <?php esc_html_e('Validar Datos', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="button button-primary" id="csv-import-btn" style="display:none;" disabled>
+                📧 <?php esc_html_e('Importar y Enviar Invitaciones', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="button button-primary" id="csv-done-btn" style="display:none;">
+                <?php esc_html_e('Finalizar', 'eipsi-forms'); ?>
+            </button>
         </div>
     </div>
 </div>
