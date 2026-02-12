@@ -936,6 +936,7 @@
             $( '#participant_id' ).val( '' );
             $( '#password-field-container' ).show();
             $( '#active-field-container' ).hide();
+            $( '#save-participant-btn' ).text( '✉️ Crear y Enviar Invitación' );
             $( '#eipsi-participant-modal' ).fadeIn( 200 );
         } );
 
@@ -1057,6 +1058,7 @@
                     $( '#participant-modal-title' ).text( 'Editar Participante' );
                     $( '#password-field-container' ).hide();
                     $( '#active-field-container' ).show();
+                    $( '#save-participant-btn' ).text( 'Guardar Cambios' );
                     $( '#eipsi-participant-modal' ).fadeIn( 200 );
                 } else {
                     showNotification( response.data || 'Error al cargar participante', 'error' );
@@ -1116,15 +1118,19 @@
             data: formData,
             success( response ) {
                 if ( response.success ) {
-                    const message = isEdit
+                    let message = isEdit
                         ? ( eipsiWavesManagerData.strings.participantUpdated || 'Participante actualizado' )
-                        : ( eipsiWavesManagerData.strings.participantAdded || 'Participante agregado' );
+                        : 'Participante creado e invitación enviada.';
+
+                    if ( ! isEdit && response.data && response.data.email_sent === false ) {
+                        message = 'Participante creado, pero la invitación no pudo enviarse.';
+                    }
+
                     showNotification( message, 'success' );
                     $( '#eipsi-participant-modal' ).fadeOut( 200 );
                     loadParticipants(); // Refresh list
 
-                    // Show temporary password if new participant
-                    if ( ! isEdit && response.data.temporary_password ) {
+                    if ( ! isEdit && response.data && response.data.temporary_password && response.data.email_sent === false ) {
                         setTimeout( function () {
                             alert( 'Contraseña temporal generada: ' + response.data.temporary_password + '\n\nGuarde esta contraseña, solo se mostrará una vez.' );
                         }, 300 );

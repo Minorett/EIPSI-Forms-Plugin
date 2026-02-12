@@ -176,6 +176,24 @@
             }
         } );
 
+        // Quick Action: Add Participant
+        $( document ).on( 'click', '#action-add-participant', function () {
+            if ( currentStudyId ) {
+                openAddParticipantModal();
+            }
+        } );
+
+        // Add Participant Modal Close
+        $( document ).on( 'click', '#eipsi-add-participant-modal .eipsi-modal-close', function () {
+            closeAddParticipantModal();
+        } );
+
+        // Add Participant Form Submit
+        $( document ).on( 'submit', '#add-participant-form', function ( e ) {
+            e.preventDefault();
+            submitAddParticipant();
+        } );
+
         // Quick Action: Close Study
         $( document ).on( 'click', '#action-close-study', function () {
             if ( currentStudyId ) {
@@ -294,6 +312,94 @@
         // Redirect to waves manager where anonymize button is available
         window.location.href =
             '?page=eipsi-results&tab=waves-manager&study_id=' + currentStudyId;
+    }
+
+    function openAddParticipantModal() {
+        resetAddParticipantForm();
+        $( '#add-participant-study-id' ).val( currentStudyId );
+        $( '#eipsi-add-participant-modal' ).fadeIn( 200 );
+        $( '#participant-email' ).trigger( 'focus' );
+    }
+
+    function closeAddParticipantModal() {
+        $( '#eipsi-add-participant-modal' ).fadeOut( 200 );
+    }
+
+    function resetAddParticipantForm() {
+        const form = $( '#add-participant-form' )[ 0 ];
+        if ( form ) {
+            form.reset();
+        }
+        $( '#add-participant-error' ).hide().empty();
+        $( '#add-participant-success' ).hide().empty();
+    }
+
+    function submitAddParticipant() {
+        const $btn = $( '#submit-add-participant' );
+        const originalText = $btn.text();
+        $btn.text( 'Enviando...' ).prop( 'disabled', true );
+
+        $( '#add-participant-error' ).hide().empty();
+        $( '#add-participant-success' ).hide().empty();
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_add_participant',
+                nonce: eipsiStudyDash.nonce,
+                study_id: currentStudyId,
+                email: $( '#participant-email' ).val(),
+                first_name: $( '#participant-first-name' ).val(),
+                last_name: $( '#participant-last-name' ).val(),
+                password: $( '#participant-password' ).val(),
+            },
+            success( response ) {
+                if ( response.success ) {
+                    let message = response.data && response.data.message
+                        ? response.data.message
+                        : 'Participante creado e invitación enviada.';
+
+                    if ( response.data && response.data.email_sent === false ) {
+                        message = 'Participante creado, pero la invitación no pudo enviarse.';
+                    }
+
+                    if ( response.data && response.data.temporary_password && response.data.email_sent === false ) {
+                        message +=
+                            '<br><strong>Contraseña temporal:</strong> ' +
+                            escapeHtml( response.data.temporary_password ) +
+                            '<br><small>Guárdala ahora; solo se mostrará una vez.</small>';
+                    }
+
+                    $( '#add-participant-success' ).html( '<p>' + message + '</p>' ).show();
+                    $( '#participant-password' ).val( '' );
+
+                    if ( currentStudyId ) {
+                        loadStudyOverview( currentStudyId );
+                    }
+
+                    if ( $( '#eipsi-participants-list-modal' ).is( ':visible' ) ) {
+                        loadParticipantsList( currentPage );
+                    }
+                } else {
+                    showAddParticipantError( response.data || 'Error al crear participante' );
+                }
+            },
+            error() {
+                showAddParticipantError( 'Error de conexión' );
+            },
+            complete() {
+                $btn.text( originalText ).prop( 'disabled', false );
+            },
+        } );
+    }
+
+    function showAddParticipantError( message ) {
+        $( '#add-participant-error' )
+            .html( '<p>' + escapeHtml( message ) + '</p>' )
+            .show();
     }
 
     // ===========================

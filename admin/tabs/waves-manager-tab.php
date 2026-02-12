@@ -524,7 +524,9 @@ if (class_exists('EIPSI_Anonymize_Service') && $current_study_id) {
             </div>
 
             <div class="modal-footer">
-                <button type="submit" class="button button-primary" id="save-participant-btn"><?php esc_html_e('Guardar Participante', 'eipsi-forms'); ?></button>
+                <button type="submit" class="button button-primary" id="save-participant-btn">
+                    ✉️ <?php esc_html_e('Crear y Enviar Invitación', 'eipsi-forms'); ?>
+                </button>
                 <button type="button" class="button eipsi-close-modal-btn"><?php esc_html_e('Cancelar', 'eipsi-forms'); ?></button>
             </div>
         </form>
