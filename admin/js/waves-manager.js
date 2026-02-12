@@ -161,6 +161,12 @@
                 sendReminders( waveId );
             }
         } );
+
+        // Send Manual Reminders
+        $( document ).on( 'click', '.eipsi-send-manual-reminder-btn', function () {
+            const waveId = $( this ).data( 'wave-id' );
+            openManualReminderModal( waveId );
+        } );
     }
 
     // ===========================
@@ -1188,5 +1194,167 @@
             .replace( />/g, '&gt;' )
             .replace( /"/g, '&quot;' )
             .replace( /'/g, '&#039;' );
+    }
+
+    // ===========================
+    // MANUAL REMINDER MODAL
+    // ===========================
+
+    function openManualReminderModal( waveId ) {
+        $( '#reminder-wave-id' ).val( waveId );
+        $( '#reminder-custom-message' ).val( '' );
+        $( '#eipsi-manual-reminder-modal' ).fadeIn( 200 );
+        loadPendingParticipants( waveId );
+    }
+
+    function loadPendingParticipants( waveId ) {
+        const $tbody = $( '#pending-participants-tbody' );
+        $tbody.html(
+            '<tr><td colspan="4" style="text-align:center;padding:20px;"><span class="spinner is-active"></span> ' +
+                ( eipsiWavesManagerData.strings.loadingPending || 'Cargando participantes pendientes...' ) +
+                '</td></tr>'
+        );
+
+        $.ajax( {
+            url:
+                eipsiWavesManagerData.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'GET',
+            data: {
+                action: 'eipsi_get_pending_participants',
+                nonce: eipsiWavesManagerData.wavesNonce,
+                study_id: eipsiWavesManagerData.studyId,
+                wave_id: waveId,
+            },
+            success( response ) {
+                if ( response.success && response.data ) {
+                    renderPendingParticipantsList( response.data );
+                } else {
+                    $tbody.html(
+                        '<tr><td colspan="4" style="text-align:center;padding:20px;color:#666;">' +
+                            ( eipsiWavesManagerData.strings.noPendingParticipants ||
+                                'No hay participantes pendientes para esta onda' ) +
+                            '</td></tr>'
+                    );
+                }
+            },
+            error() {
+                $tbody.html(
+                    '<tr><td colspan="4" style="text-align:center;padding:20px;color:#d63638;">Error al cargar participantes</td></tr>'
+                );
+            },
+        } );
+    }
+
+    function renderPendingParticipantsList( participants ) {
+        const $tbody = $( '#pending-participants-tbody' );
+
+        if ( participants.length === 0 ) {
+            $tbody.html(
+                '<tr><td colspan="4" style="text-align:center;padding:20px;color:#666;">' +
+                    ( eipsiWavesManagerData.strings.noPendingParticipants ||
+                        'No hay participantes pendientes para esta onda' ) +
+                    '</td></tr>'
+            );
+            return;
+        }
+
+        let html = '';
+        participants.forEach( function ( p ) {
+            html +=
+                '<tr>' +
+                '<td class="check-column"><input type="checkbox" class="pending-participant-checkbox" value="' +
+                p.id +
+                '"></td>' +
+                '<td>' +
+                    escapeHtml( ( p.first_name || '' ) + ' ' + ( p.last_name || '' ) ).trim() +
+                    '</td>' +
+                '<td>' +
+                    escapeHtml( p.email ) +
+                    '</td>' +
+                '<td><span class="status-pending">Pendiente</span></td>' +
+                '</tr>';
+        } );
+        $tbody.html( html );
+    }
+
+    // Manual Reminder Modal Events
+    $( document ).on( 'change', '#master-pending-participant-check', function () {
+        $( '.pending-participant-checkbox' ).prop( 'checked', $( this ).is( ':checked' ) );
+    } );
+
+    $( document ).on( 'click', '#select-all-pending-participants', function () {
+        $( '.pending-participant-checkbox' ).prop( 'checked', true );
+    } );
+
+    $( document ).on( 'click', '#deselect-all-pending-participants', function () {
+        $( '.pending-participant-checkbox' ).prop( 'checked', false );
+    } );
+
+    $( document ).on( 'click', '#confirm-send-reminder-btn', function () {
+        const selectedIds = [];
+        $( '.pending-participant-checkbox:checked' ).each( function () {
+            selectedIds.push( $( this ).val() );
+        } );
+
+        if ( selectedIds.length === 0 ) {
+            alert(
+                eipsiWavesManagerData.strings.noParticipantsSelected ||
+                    'Por favor selecciona al menos un participante.'
+            );
+            return;
+        }
+
+        if (
+            confirm(
+                eipsiWavesManagerData.strings.confirmSendReminders ||
+                    '¿Enviar recordatorios a los participantes seleccionados?'
+            )
+        ) {
+            sendManualReminders( selectedIds );
+        }
+    } );
+
+    function sendManualReminders( participantIds ) {
+        const waveId = $( '#reminder-wave-id' ).val();
+        const studyId = $( '#reminder-study-id' ).val();
+        const customMessage = $( '#reminder-custom-message' ).val();
+
+        const $btn = $( '#confirm-send-reminder-btn' );
+        const originalText = $btn.text();
+        $btn.text( 'Enviando...' ).prop( 'disabled', true );
+
+        $.ajax( {
+            url:
+                eipsiWavesManagerData.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_send_reminder',
+                nonce: eipsiWavesManagerData.wavesNonce,
+                wave_id: waveId,
+                study_id: studyId,
+                participant_ids: participantIds,
+                custom_message: customMessage,
+            },
+            success( response ) {
+                if ( response.success ) {
+                    const message = response.data.message || 'Recordatorios enviados';
+                    showNotification( message, 'success' );
+                    $( '#eipsi-manual-reminder-modal' ).fadeOut( 200 );
+                } else {
+                    showNotification(
+                        response.data || 'Error al enviar recordatorios',
+                        'error'
+                    );
+                }
+            },
+            error() {
+                showNotification( 'Error de conexión', 'error' );
+            },
+            complete() {
+                $btn.text( originalText ).prop( 'disabled', false );
+            },
+        } );
     }
 } )( window.jQuery );

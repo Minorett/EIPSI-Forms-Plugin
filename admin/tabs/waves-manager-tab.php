@@ -45,6 +45,11 @@ wp_localize_script('eipsi-waves-manager', 'eipsiWavesManagerData', array(
         'participantAdded' => __('Participante agregado exitosamente.', 'eipsi-forms'),
         'participantUpdated' => __('Participante actualizado exitosamente.', 'eipsi-forms'),
         'participantDeleted' => __('Participante eliminado exitosamente.', 'eipsi-forms'),
+        'confirmSendReminders' => __('¿Enviar recordatorios a los participantes seleccionados?', 'eipsi-forms'),
+        'remindersSentSuccess' => __('recordatorios enviados exitosamente.', 'eipsi-forms'),
+        'noParticipantsSelected' => __('Por favor selecciona al menos un participante.', 'eipsi-forms'),
+        'loadingPending' => __('Cargando participantes pendientes...', 'eipsi-forms'),
+        'noPendingParticipants' => __('No hay participantes pendientes para esta onda.', 'eipsi-forms'),
     ),
 ));
 
@@ -176,6 +181,9 @@ $available_forms = get_posts(array(
                                 </button>
                                 <button type="button" class="button eipsi-send-reminder-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
                                     <?php esc_html_e('Recordatorio', 'eipsi-forms'); ?>
+                                </button>
+                                <button type="button" class="button button-secondary eipsi-send-manual-reminder-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
+                                    <?php esc_html_e('Recordatorio Manual', 'eipsi-forms'); ?>
                                 </button>
                                 <button type="button" class="button button-link-delete eipsi-delete-wave-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
                                     <?php esc_html_e('Eliminar', 'eipsi-forms'); ?>
@@ -520,6 +528,60 @@ if (class_exists('EIPSI_Anonymize_Service') && $current_study_id) {
                 <button type="button" class="button eipsi-close-modal-btn"><?php esc_html_e('Cancelar', 'eipsi-forms'); ?></button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal: Enviar Recordatorio Manual -->
+<div id="eipsi-manual-reminder-modal" class="eipsi-modal" style="display:none;">
+    <div class="eipsi-modal-content modal-large">
+        <span class="eipsi-close-modal">&times;</span>
+        <h3><?php esc_html_e('Enviar Recordatorio Manual', 'eipsi-forms'); ?></h3>
+        <p class="description">
+            <?php esc_html_e('Selecciona los participantes a los que deseas enviar un recordatorio personalizado.', 'eipsi-forms'); ?>
+        </p>
+        
+        <input type="hidden" id="reminder-wave-id" value="">
+        <input type="hidden" id="reminder-study-id" value="<?php echo esc_attr($current_study_id); ?>">
+        
+        <div class="form-group">
+            <label for="reminder-custom-message"><?php esc_html_e('Mensaje personalizado (opcional):', 'eipsi-forms'); ?></label>
+            <textarea id="reminder-custom-message" rows="3" placeholder="<?php esc_attr_e('Agrega un mensaje personalizado para los participantes...', 'eipsi-forms'); ?>"></textarea>
+            <small class="form-help"><?php esc_html_e('Este mensaje se incluirá en el correo electrónico de recordatorio.', 'eipsi-forms'); ?></small>
+        </div>
+        
+        <div class="reminder-participants-section">
+            <div class="selection-actions" style="margin-bottom: 10px;">
+                <button type="button" class="button button-small" id="select-all-pending-participants"><?php esc_html_e('Seleccionar Todos', 'eipsi-forms'); ?></button>
+                <button type="button" class="button button-small" id="deselect-all-pending-participants"><?php esc_html_e('Deseleccionar Todos', 'eipsi-forms'); ?></button>
+            </div>
+            
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th class="check-column"><input type="checkbox" id="master-pending-participant-check"></th>
+                        <th><?php esc_html_e('Nombre Completo', 'eipsi-forms'); ?></th>
+                        <th><?php esc_html_e('Email', 'eipsi-forms'); ?></th>
+                        <th><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
+                    </tr>
+                </thead>
+                <tbody id="pending-participants-tbody">
+                    <tr>
+                        <td colspan="4" style="text-align:center;">
+                            <span class="spinner is-active"></span> <?php esc_html_e('Cargando participantes pendientes...', 'eipsi-forms'); ?>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="button button-primary" id="confirm-send-reminder-btn">
+                <?php esc_html_e('Enviar Recordatorios', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="button eipsi-close-modal-btn">
+                <?php esc_html_e('Cancelar', 'eipsi-forms'); ?>
+            </button>
+        </div>
     </div>
 </div>
 <?php endif; ?>
