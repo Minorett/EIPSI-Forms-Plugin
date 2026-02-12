@@ -21,6 +21,7 @@ add_action('wp_ajax_eipsi_get_study_participants', 'wp_ajax_eipsi_get_study_part
 add_action('wp_ajax_eipsi_assign_participants', 'wp_ajax_eipsi_assign_participants_handler');
 add_action('wp_ajax_eipsi_extend_deadline', 'wp_ajax_eipsi_extend_deadline_handler');
 add_action('wp_ajax_eipsi_send_reminder', 'wp_ajax_eipsi_send_reminder_handler');
+add_action('wp_ajax_eipsi_get_pending_participants', 'wp_ajax_eipsi_get_pending_participants_handler');
 
 // Participant Management Handlers
 add_action('wp_ajax_eipsi_add_participant', 'wp_ajax_eipsi_add_participant_handler');
@@ -237,19 +238,98 @@ function wp_ajax_eipsi_send_reminder_handler() {
     }
 
     $wave_id = isset($_POST['wave_id']) ? absint($_POST['wave_id']) : 0;
+    $participant_ids = isset($_POST['participant_ids']) ? array_map('absint', $_POST['participant_ids']) : array();
+    $custom_message = isset($_POST['custom_message']) ? sanitize_textarea_field($_POST['custom_message']) : null;
+    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
+
     if (!$wave_id) {
         wp_send_json_error('Missing wave_id');
     }
 
-    $sent_count = 0;
+    // If no participants specified, get pending participants for this wave
+    if (empty($participant_ids)) {
+        if (!$study_id) {
+            // Get study_id from wave
+            global $wpdb;
+            $wave = $wpdb->get_row($wpdb->prepare(
+                "SELECT study_id FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                $wave_id
+            ));
+            $study_id = $wave ? absint($wave->study_id) : 0;
+        }
+
+        if ($study_id && class_exists('EIPSI_Email_Service')) {
+            $pending = EIPSI_Email_Service::get_pending_participants($study_id, $wave_id);
+            $participant_ids = array_map(function($p) { return $p->id; }, $pending);
+        }
+    }
+
+    if (empty($participant_ids)) {
+        wp_send_json_error('No participants to send reminders to');
+    }
+
+    $result = array(
+        'sent_count' => 0,
+        'failed_count' => 0,
+        'total_count' => 0,
+        'errors' => array()
+    );
+
     if (class_exists('EIPSI_Email_Service') && method_exists('EIPSI_Email_Service', 'send_manual_reminders')) {
-        $sent_count = EIPSI_Email_Service::send_manual_reminders($wave_id);
+        $result = EIPSI_Email_Service::send_manual_reminders($study_id, $participant_ids, $wave_id, $custom_message);
+    }
+
+    $message = '';
+    if ($result['sent_count'] > 0) {
+        $message = sprintf('✅ Se enviaron %d de %d recordatorios.', $result['sent_count'], $result['total_count']);
+    } else {
+        $message = 'No se pudieron enviar los recordatorios.';
+    }
+
+    if (!empty($result['errors'])) {
+        $message .= ' Errores: ' . implode(', ', $result['errors']);
     }
 
     wp_send_json_success(array(
-        'message' => sprintf('Se han enviado %d recordatorios.', $sent_count),
-        'sent' => $sent_count
+        'message' => $message,
+        'sent' => $result['sent_count'],
+        'failed' => $result['failed_count'],
+        'total' => $result['total_count']
     ));
+}
+
+/**
+ * Get pending participants for a wave (AJAX)
+ */
+function wp_ajax_eipsi_get_pending_participants_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $wave_id = isset($_GET['wave_id']) ? absint($_GET['wave_id']) : 0;
+    $study_id = isset($_GET['study_id']) ? absint($_GET['study_id']) : 0;
+
+    if (!$wave_id) {
+        wp_send_json_error('Missing wave_id');
+    }
+
+    if (!$study_id) {
+        global $wpdb;
+        $wave = $wpdb->get_row($wpdb->prepare(
+            "SELECT study_id FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+            $wave_id
+        ));
+        $study_id = $wave ? absint($wave->study_id) : 0;
+    }
+
+    $participants = array();
+    if ($study_id && class_exists('EIPSI_Email_Service') && method_exists('EIPSI_Email_Service', 'get_pending_participants')) {
+        $participants = EIPSI_Email_Service::get_pending_participants($study_id, $wave_id);
+    }
+
+    wp_send_json_success($participants);
 }
 
 /**

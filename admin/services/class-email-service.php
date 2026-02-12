@@ -584,6 +584,139 @@ class EIPSI_Email_Service {
     }
 
     /**
+     * Send manual reminders to participants.
+     *
+     * @param int   $survey_id Survey ID.
+     * @param array $participant_ids Array of participant IDs.
+     * @param int   $wave_id Wave ID (optional).
+     * @param string $custom_message Custom message (optional).
+     * @return array {sent_count, failed_count, total_count, errors}
+     * @since 1.4.4
+     * @access public
+     */
+    public static function send_manual_reminders($survey_id, $participant_ids, $wave_id = null, $custom_message = null) {
+        global $wpdb;
+        
+        if (empty($participant_ids)) {
+            return array(
+                'sent_count' => 0,
+                'failed_count' => 0,
+                'total_count' => 0,
+                'errors' => array('No participants specified')
+            );
+        }
+        
+        $survey_id = absint($survey_id);
+        $wave_obj = null;
+        $errors = array();
+        $sent_count = 0;
+        $failed_count = 0;
+        
+        // Get wave info if provided
+        if ($wave_id) {
+            if (class_exists('EIPSI_Wave_Service')) {
+                $wave_obj = EIPSI_Wave_Service::get_wave($wave_id);
+            } else {
+                $wave_obj = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                    $wave_id
+                ));
+            }
+        }
+        
+        foreach ($participant_ids as $participant_id) {
+            $participant_id = absint($participant_id);
+            $result = self::send_manual_reminder_email($survey_id, $participant_id, $wave_obj, $custom_message);
+            
+            if ($result) {
+                $sent_count++;
+            } else {
+                $failed_count++;
+                $errors[] = "Failed to send reminder to participant ID: $participant_id";
+            }
+        }
+        
+        return array(
+            'sent_count' => $sent_count,
+            'failed_count' => $failed_count,
+            'total_count' => count($participant_ids),
+            'errors' => $errors
+        );
+    }
+
+    /**
+     * Send single manual reminder email.
+     *
+     * @param int        $survey_id Survey ID.
+     * @param int        $participant_id Participant ID.
+     * @param object|null $wave Wave object.
+     * @param string|null $custom_message Custom message.
+     * @return bool True if sent.
+     * @since 1.4.4
+     * @access private
+     */
+    private static function send_manual_reminder_email($survey_id, $participant_id, $wave = null, $custom_message = null) {
+        $participant = self::get_participant($participant_id);
+        if (!$participant) {
+            self::log_email($survey_id, $participant_id, 'manual_reminder', 'failed', 'Participant not found');
+            return false;
+        }
+
+        $survey_name = get_the_title($survey_id);
+        $magic_link = self::generate_magic_link_url($survey_id, $participant_id);
+
+        if (!$magic_link) {
+            self::log_email($survey_id, $participant_id, 'manual_reminder', 'failed', 'Could not generate magic link');
+            return false;
+        }
+
+        $placeholders = array(
+            'first_name' => $participant->first_name,
+            'survey_name' => $survey_name,
+            'wave_index' => $wave ? (isset($wave->wave_index) ? "Toma " . $wave->wave_index : $wave->name) : 'Tu próxima toma',
+            'due_date' => $wave && !empty($wave->due_date) ? date_i18n(get_option('date_format'), strtotime($wave->due_date)) : 'Pronto',
+            'custom_message' => !empty($custom_message) ? $custom_message : '',
+            'magic_link' => $magic_link,
+            'investigator_name' => get_option('eipsi_investigator_name', 'Equipo de Investigación'),
+            'investigator_email' => get_option('eipsi_investigator_email', get_option('admin_email')),
+        );
+
+        $subject = $wave ? "Recordatorio: Toma {$wave->wave_index} en {$survey_name}" : "Recordatorio: {$survey_name}";
+        $content = self::render_template('manual-reminder', $placeholders);
+
+        return self::send_email($survey_id, $participant_id, $participant->email, 'manual_reminder', $subject, $content);
+    }
+
+    /**
+     * Get participants who haven't completed a wave.
+     *
+     * @param int $survey_id Survey ID.
+     * @param int $wave_id Wave ID.
+     * @return array Participant IDs who haven't submitted.
+     * @since 1.4.4
+     * @access public
+     */
+    public static function get_pending_participants($survey_id, $wave_id) {
+        global $wpdb;
+        
+        $participant_table = $wpdb->prefix . 'survey_participants';
+        $wave_assignments_table = $wpdb->prefix . 'survey_wave_assignments';
+        $submissions_table = $wpdb->prefix . 'survey_submissions';
+        
+        // Get participants assigned to wave but haven't submitted
+        $query = "SELECT DISTINCT p.id, p.first_name, p.last_name, p.email
+                  FROM {$participant_table} p
+                  INNER JOIN {$wave_assignments_table} wa ON p.id = wa.participant_id
+                  LEFT JOIN {$submissions_table} s ON p.id = s.participant_id AND wa.wave_id = s.wave_id
+                  WHERE wa.wave_id = %d 
+                    AND p.is_active = 1 
+                    AND (s.id IS NULL OR s.status != 'completed')
+                  ORDER BY p.last_name, p.first_name";
+        
+        return $wpdb->get_results($wpdb->prepare($query, $wave_id));
+    }
+
+    /**
      * Get email deliverability stats.
      *
      * @param int $survey_id ID del estudio.
