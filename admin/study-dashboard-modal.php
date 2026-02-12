@@ -354,6 +354,107 @@ if (!defined('ABSPATH')) {
     </div>
 </div>
 
+<!-- Modal for Editing Study -->
+<div id="eipsi-edit-study-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content medium-modal">
+        <style>
+        #eipsi-edit-study-modal .form-group {
+            margin-bottom: 15px;
+        }
+        #eipsi-edit-study-modal label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        #eipsi-edit-study-modal .widefat {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #eipsi-edit-study-modal textarea.widefat {
+            min-height: 100px;
+            resize: vertical;
+        }
+        #eipsi-edit-study-modal .date-range-group {
+            display: flex;
+            gap: 15px;
+        }
+        #eipsi-edit-study-modal .date-field {
+            flex: 1;
+        }
+        #eipsi-edit-study-modal .notice {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        #eipsi-edit-study-modal .notice-error {
+            background-color: #ffebe8;
+            border-left: 4px solid #c0392b;
+            color: #c0392b;
+        }
+        #eipsi-edit-study-modal .notice-success {
+            background-color: #e8f5e9;
+            border-left: 4px solid #27ae60;
+            color: #27ae60;
+        }
+        </style>
+        <div class="eipsi-modal-header">
+            <h2>⚙️ <?php esc_html_e('Editar Configuración del Estudio', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <form id="edit-study-form">
+                <input type="hidden" id="edit-study-id" value="">
+                
+                <div class="form-group">
+                    <label for="edit-study-name"><?php esc_html_e('Nombre del Estudio *', 'eipsi-forms'); ?></label>
+                    <input type="text" id="edit-study-name" class="widefat" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-study-description"><?php esc_html_e('Descripción', 'eipsi-forms'); ?></label>
+                    <textarea id="edit-study-description" class="widefat" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-study-time-config"><?php esc_html_e('Configuración de Tiempo', 'eipsi-forms'); ?></label>
+                    <select id="edit-study-time-config" class="widefat">
+                        <option value="limited"><?php esc_html_e('Tiempo Limitado', 'eipsi-forms'); ?></option>
+                        <option value="unlimited"><?php esc_html_e('Tiempo Ilimitado', 'eipsi-forms'); ?></option>
+                    </select>
+                </div>
+                
+                <div id="edit-study-dates-container" class="form-group">
+                    <div class="date-range-group">
+                        <div class="date-field">
+                            <label for="edit-study-start-date"><?php esc_html_e('Fecha de Inicio', 'eipsi-forms'); ?></label>
+                            <input type="date" id="edit-study-start-date" class="widefat">
+                        </div>
+                        <div class="date-field">
+                            <label for="edit-study-end-date"><?php esc_html_e('Fecha de Finalización Estimada', 'eipsi-forms'); ?></label>
+                            <input type="date" id="edit-study-end-date" class="widefat">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label><?php esc_html_e('Configuración de Waves', 'eipsi-forms'); ?></label>
+                    <div id="edit-study-waves-container">
+                        <!-- Waves will be loaded dynamically -->
+                    </div>
+                </div>
+                
+                <div id="edit-study-error" class="notice notice-error" style="display:none; margin: 10px 0;"></div>
+                <div id="edit-study-success" class="notice notice-success" style="display:none; margin: 10px 0;"></div>
+                
+                <button type="submit" class="button button-primary">
+                    💾 <?php esc_html_e('Guardar Cambios', 'eipsi-forms'); ?></button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Modal for Cron Jobs Configuration -->
 <div id="eipsi-cron-jobs-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content medium-modal">
