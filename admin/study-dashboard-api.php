@@ -254,9 +254,21 @@ function wp_ajax_eipsi_get_study_email_logs_handler() {
 
 /**
  * POST add participant and send invitation
+ * This handler accepts both 'eipsi_study_dashboard_nonce' and 'eipsi_waves_nonce' for compatibility
  */
 function wp_ajax_eipsi_add_participant_handler() {
-    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+    // Check nonce - accept both nonces for compatibility with different contexts
+    $nonce_valid = false;
+
+    // Try study dashboard nonce first
+    if (isset($_POST['nonce'])) {
+        $nonce_valid = wp_verify_nonce($_POST['nonce'], 'eipsi_study_dashboard_nonce') ||
+                      wp_verify_nonce($_POST['nonce'], 'eipsi_waves_nonce');
+    }
+
+    if (!$nonce_valid) {
+        wp_send_json_error('Invalid nonce');
+    }
 
     if (!current_user_can('manage_options')) {
         wp_send_json_error('Unauthorized');
@@ -330,13 +342,15 @@ function wp_ajax_eipsi_add_participant_handler() {
         wp_send_json_success(array(
             'message' => 'Participante creado exitosamente e invitación enviada',
             'participant_id' => $participant_id,
-            'email_sent' => true
+            'email_sent' => true,
+            'temporary_password' => $password // Include for backward compatibility
         ));
     } else {
         wp_send_json_success(array(
             'message' => 'Participante creado exitosamente, pero hubo un problema enviando el email',
             'participant_id' => $participant_id,
-            'email_sent' => false
+            'email_sent' => false,
+            'temporary_password' => $password // Include for backward compatibility
         ));
     }
 }
