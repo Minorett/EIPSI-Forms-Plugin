@@ -61,6 +61,17 @@
                 self.saveExtendedDeadline();
             });
 
+            // Add participant button
+            $('#action-add-participant').on('click', function() {
+                self.openAddParticipant();
+            });
+
+            // Add participant form submit
+            $('#add-participant-form').on('submit', function(e) {
+                e.preventDefault();
+                self.addParticipant();
+            });
+
             // Action buttons (placeholders for now)
             $('#action-edit-study').on('click', function() {
                 window.location.href = `?page=eipsi-new-study&study_id=${self.currentStudyId}`;
@@ -249,6 +260,84 @@
                     } else {
                         alert('Error: ' + response.data);
                     }
+                }
+            });
+        },
+
+        openAddParticipant: function() {
+            // Reset form
+            $('#add-participant-form')[0].reset();
+            $('#add-participant-study-id').val(this.currentStudyId);
+            $('#add-participant-error').hide();
+            $('#add-participant-success').hide();
+            
+            // Open modal
+            $('#eipsi-add-participant-modal').fadeIn();
+        },
+
+        addParticipant: function() {
+            const self = this;
+            const $form = $('#add-participant-form');
+            const $submitButton = $('#submit-add-participant');
+            const $error = $('#add-participant-error');
+            const $success = $('#add-participant-success');
+
+            // Reset messages
+            $error.hide();
+            $success.hide();
+
+            // Disable submit button
+            $submitButton.prop('disabled', true).text('⏳ Procesando...');
+
+            // Collect form data
+            const formData = {
+                action: 'eipsi_add_participant',
+                study_id: $('#add-participant-study-id').val(),
+                email: $('#participant-email').val(),
+                first_name: $('#participant-first-name').val(),
+                last_name: $('#participant-last-name').val(),
+                password: $('#participant-password').val(),
+                nonce: eipsiStudyDash.nonce
+            };
+
+            // Validate email format
+            if (!formData.email || !formData.email.includes('@')) {
+                $error.text('Por favor ingrese un email válido').show();
+                $submitButton.prop('disabled', false).text('✉️ Crear y Enviar Invitación');
+                return;
+            }
+
+            // Send AJAX request
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        // Show success message
+                        $success.html(
+                            '<strong>✅ ¡Éxito!</strong><br>' + 
+                            (response.data.email_sent ? 
+                                'Participante creado e invitación enviada por email.' : 
+                                'Participante creado, pero hubo un problema enviando el email.')
+                        ).show();
+
+                        // Close modal after 3 seconds and refresh
+                        setTimeout(function() {
+                            $('#eipsi-add-participant-modal').fadeOut();
+                            self.loadStudyData(self.currentStudyId);
+                        }, 3000);
+                    } else {
+                        // Show error
+                        $error.text('Error: ' + (response.data || 'Ocurrió un error inesperado')).show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $error.text('Error de conexión: ' + error).show();
+                },
+                complete: function() {
+                    // Re-enable submit button
+                    $submitButton.prop('disabled', false).text('✉️ Crear y Enviar Invitación');
                 }
             });
         },

@@ -88,6 +88,7 @@ if (!defined('ABSPATH')) {
                     <div class="dashboard-card actions-card">
                         <h3>⚙️ <?php esc_html_e('Acciones Rápidas', 'eipsi-forms'); ?></h3>
                         <div class="card-body quick-actions">
+                            <button class="button button-primary" id="action-add-participant">👥 <?php esc_html_e('Agregar Participante', 'eipsi-forms'); ?></button>
                             <button class="button button-secondary" id="action-edit-study"><?php esc_html_e('Editar Configuración', 'eipsi-forms'); ?></button>
                             <button class="button button-secondary" id="action-download-data"><?php esc_html_e('Descargar Datos', 'eipsi-forms'); ?></button>
                             <button class="button button-secondary" id="action-view-participants"><?php esc_html_e('Ver Lista de Participantes', 'eipsi-forms'); ?></button>
@@ -146,6 +147,49 @@ if (!defined('ABSPATH')) {
                     <input type="date" id="new-deadline-date" class="widefat" required>
                 </p>
                 <button type="submit" class="button button-primary"><?php esc_html_e('Guardar Cambios', 'eipsi-forms'); ?></button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Adding Participant -->
+<div id="eipsi-add-participant-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content small-modal">
+        <div class="eipsi-modal-header">
+            <h2>👥 <?php esc_html_e('Agregar Participante', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <form id="add-participant-form">
+                <input type="hidden" id="add-participant-study-id" value="">
+                
+                <p>
+                    <label for="participant-email"><?php esc_html_e('Email *', 'eipsi-forms'); ?></label>
+                    <input type="email" id="participant-email" class="widefat" required placeholder="participante@email.com">
+                </p>
+                
+                <p>
+                    <label for="participant-first-name"><?php esc_html_e('Nombre', 'eipsi-forms'); ?></label>
+                    <input type="text" id="participant-first-name" class="widefat" placeholder="<?php esc_attr_e('Opcional', 'eipsi-forms'); ?>">
+                </p>
+                
+                <p>
+                    <label for="participant-last-name"><?php esc_html_e('Apellido', 'eipsi-forms'); ?></label>
+                    <input type="text" id="participant-last-name" class="widefat" placeholder="<?php esc_attr_e('Opcional', 'eipsi-forms'); ?>">
+                </p>
+                
+                <p>
+                    <label for="participant-password"><?php esc_html_e('Contraseña Temporal', 'eipsi-forms'); ?></label>
+                    <input type="text" id="participant-password" class="widefat" placeholder="<?php esc_attr_e('Dejar vacío para generar automáticamente', 'eipsi-forms'); ?>">
+                    <small style="color: #666; display: block; margin-top: 4px;"><?php esc_html_e('Mínimo 8 caracteres', 'eipsi-forms'); ?></small>
+                </p>
+                
+                <div id="add-participant-error" class="notice notice-error" style="display:none; margin: 10px 0;"></div>
+                <div id="add-participant-success" class="notice notice-success" style="display:none; margin: 10px 0;"></div>
+                
+                <button type="submit" class="button button-primary" id="submit-add-participant">
+                    ✉️ <?php esc_html_e('Crear y Enviar Invitación', 'eipsi-forms'); ?>
+                </button>
             </form>
         </div>
     </div>

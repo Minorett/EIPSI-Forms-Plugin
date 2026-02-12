@@ -17,6 +17,7 @@ add_action('wp_ajax_eipsi_get_wave_details', 'wp_ajax_eipsi_get_wave_details_han
 add_action('wp_ajax_eipsi_send_wave_reminder_manual', 'wp_ajax_eipsi_send_wave_reminder_manual_handler');
 add_action('wp_ajax_eipsi_extend_wave_deadline', 'wp_ajax_eipsi_extend_wave_deadline_handler');
 add_action('wp_ajax_eipsi_get_study_email_logs', 'wp_ajax_eipsi_get_study_email_logs_handler');
+add_action('wp_ajax_eipsi_add_participant', 'wp_ajax_eipsi_add_participant_handler');
 
 /**
  * GET consolidated study data
@@ -242,4 +243,93 @@ function wp_ajax_eipsi_get_study_email_logs_handler() {
     ));
 
     wp_send_json_success($logs);
+}
+
+/**
+ * POST add participant and send invitation
+ */
+function wp_ajax_eipsi_add_participant_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    if (empty($study_id)) {
+        wp_send_json_error('Missing study ID');
+    }
+
+    // Sanitizar y validar datos
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+    $first_name = isset($_POST['first_name']) ? sanitize_text_field($_POST['first_name']) : '';
+    $last_name = isset($_POST['last_name']) ? sanitize_text_field($_POST['last_name']) : '';
+    $password = isset($_POST['password']) ? sanitize_text_field($_POST['password']) : '';
+
+    // Validaciones
+    if (empty($email) || !is_email($email)) {
+        wp_send_json_error('Email inválido');
+    }
+
+    // Generar contraseña automática si no se proporcionó
+    if (empty($password)) {
+        $password = wp_generate_password(12, false);
+    }
+
+    // Validar longitud mínima de contraseña
+    if (strlen($password) < 8) {
+        wp_send_json_error('La contraseña debe tener al menos 8 caracteres');
+    }
+
+    // Cargar servicios necesarios
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    // Crear participante
+    $metadata = array();
+    if (!empty($first_name)) {
+        $metadata['first_name'] = $first_name;
+    }
+    if (!empty($last_name)) {
+        $metadata['last_name'] = $last_name;
+    }
+
+    $participant_result = EIPSI_Participant_Service::create_participant($study_id, $email, $password, $metadata);
+
+    if (!$participant_result['success']) {
+        switch ($participant_result['error']) {
+            case 'invalid_email':
+                wp_send_json_error('Formato de email inválido');
+            case 'short_password':
+                wp_send_json_error('La contraseña debe tener al menos 8 caracteres');
+            case 'email_exists':
+                wp_send_json_error('Este email ya existe en el estudio');
+            default:
+                wp_send_json_error('Error al crear el participante');
+        }
+    }
+
+    $participant_id = $participant_result['participant_id'];
+
+    // Enviar invitación por email
+    $email_sent = EIPSI_Email_Service::send_welcome_email($study_id, $participant_id);
+
+    if ($email_sent) {
+        wp_send_json_success(array(
+            'message' => 'Participante creado exitosamente e invitación enviada',
+            'participant_id' => $participant_id,
+            'email_sent' => true
+        ));
+    } else {
+        wp_send_json_success(array(
+            'message' => 'Participante creado exitosamente, pero hubo un problema enviando el email',
+            'participant_id' => $participant_id,
+            'email_sent' => false
+        ));
+    }
 }
