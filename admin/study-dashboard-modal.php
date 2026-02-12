@@ -93,6 +93,7 @@ if (!defined('ABSPATH')) {
                             <button class="button button-secondary" id="action-edit-study"><?php esc_html_e('Editar Configuración', 'eipsi-forms'); ?></button>
                             <button class="button button-secondary" id="action-download-data"><?php esc_html_e('Descargar Datos', 'eipsi-forms'); ?></button>
                             <button class="button button-secondary" id="action-view-participants"><?php esc_html_e('Ver Lista de Participantes', 'eipsi-forms'); ?></button>
+                            <button class="button button-secondary" id="action-cron-jobs">⏰ <?php esc_html_e('Tareas Programadas', 'eipsi-forms'); ?></button>
                             <button class="button button-link-delete" id="action-close-study"><?php esc_html_e('Cerrar Estudio', 'eipsi-forms'); ?></button>
                         </div>
                     </div>
@@ -349,6 +350,23 @@ if (!defined('ABSPATH')) {
             <button type="button" class="button button-primary" id="csv-done-btn" style="display:none;">
                 <?php esc_html_e('Finalizar', 'eipsi-forms'); ?>
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Cron Jobs Configuration -->
+<div id="eipsi-cron-jobs-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content medium-modal">
+        <div class="eipsi-modal-header">
+            <h2>⏰ <?php esc_html_e('Configuración de Tareas Programadas', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <div id="cron-jobs-loading" class="eipsi-loading-overlay">
+                <div class="spinner is-active"></div>
+                <p><?php esc_html_e('Cargando configuración...', 'eipsi-forms'); ?></p>
+            </div>
+            <div id="cron-jobs-content" style="display:none;"></div>
         </div>
     </div>
 </div>

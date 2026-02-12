@@ -479,6 +479,29 @@ add_filter('cron_schedules', function($schedules) {
             'display' => __('Once Weekly', 'eipsi-forms'),
         );
     }
+    
+    // Add custom intervals for study cron jobs
+    if (!isset($schedules['eipsi_daily'])) {
+        $schedules['eipsi_daily'] = array(
+            'interval' => DAY_IN_SECONDS,
+            'display' => __('Once Daily (EIPSI)', 'eipsi-forms'),
+        );
+    }
+    
+    if (!isset($schedules['eipsi_weekly'])) {
+        $schedules['eipsi_weekly'] = array(
+            'interval' => WEEK_IN_SECONDS,
+            'display' => __('Once Weekly (EIPSI)', 'eipsi-forms'),
+        );
+    }
+    
+    if (!isset($schedules['eipsi_monthly'])) {
+        $schedules['eipsi_monthly'] = array(
+            'interval' => 30 * DAY_IN_SECONDS,
+            'display' => __('Once Monthly (EIPSI)', 'eipsi-forms'),
+        );
+    }
+    
     return $schedules;
 });
 
@@ -493,6 +516,9 @@ function eipsi_forms_deactivate() {
     // Task 4.2 cron jobs (longitudinal)
     wp_clear_scheduled_hook('eipsi_send_wave_reminders_hourly');
     wp_clear_scheduled_hook('eipsi_send_dropout_recovery_hourly');
+
+    // Study cron jobs (v1.5.3)
+    wp_clear_scheduled_hook('eipsi_study_cron_job');
 }
 
 // Handle unsubscribe link from emails (Fase 2)

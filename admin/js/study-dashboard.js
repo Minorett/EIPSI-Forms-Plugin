@@ -188,6 +188,19 @@
             }
         } );
 
+        // Quick Action: Cron Jobs
+        $( document ).on( 'click', '#action-cron-jobs', function () {
+            if ( currentStudyId ) {
+                loadCronJobsConfig( currentStudyId );
+                $( '#eipsi-cron-jobs-modal' ).fadeIn( 200 );
+            }
+        } );
+
+        // Close Cron Jobs Modal
+        $( document ).on( 'click', '#eipsi-cron-jobs-modal .eipsi-modal-close', function () {
+            $( '#eipsi-cron-jobs-modal' ).fadeOut( 200 );
+        } );
+
         // Close CSV Import Modal
         $( document ).on( 'click', '#eipsi-import-csv-modal .eipsi-modal-close, #csv-cancel-btn', function () {
             closeCsvImportModal();
@@ -799,6 +812,48 @@
 
         // Iniciar procesamiento
         processBatch( 0 );
+    }
+
+    // ===========================
+    // CRON JOBS MODAL
+    // ===========================
+
+    function loadCronJobsConfig( studyId ) {
+        $( '#cron-jobs-loading' ).show();
+        $( '#cron-jobs-content' ).hide();
+
+        // Load the cron jobs tab content via AJAX
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'GET',
+            data: {
+                action: 'eipsi_get_study_cron_config',
+                nonce: eipsiStudyDash.nonce,
+                study_id: studyId,
+            },
+            success( response ) {
+                if ( response.success && response.data ) {
+                    $( '#cron-jobs-content' ).html( response.data.html );
+                    $( '#cron-jobs-content' ).fadeIn( 200 );
+                } else {
+                    $( '#cron-jobs-content' ).html(
+                        '<div class="notice notice-error"><p>Error al cargar la configuración de cron jobs</p></div>'
+                    );
+                    $( '#cron-jobs-content' ).show();
+                }
+            },
+            error() {
+                $( '#cron-jobs-content' ).html(
+                    '<div class="notice notice-error"><p>Error de conexión al cargar la configuración</p></div>'
+                );
+                $( '#cron-jobs-content' ).show();
+            },
+            complete() {
+                $( '#cron-jobs-loading' ).hide();
+            },
+        } );
     }
 
     // ===========================

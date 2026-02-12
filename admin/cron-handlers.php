@@ -21,6 +21,9 @@ add_action('eipsi_send_manual_reminder', 'eipsi_send_manual_reminder_handler', 1
 add_action('eipsi_send_wave_reminders_hourly', 'eipsi_run_send_wave_reminders');
 add_action('eipsi_send_dropout_recovery_hourly', 'eipsi_run_send_dropout_recovery');
 
+// === STUDY CRON JOBS (v1.5.3) ===
+add_action('eipsi_study_cron_job', 'eipsi_run_study_cron_job', 10, 1);
+
 /**
  * Procesa recordatorios diarios
  * 
@@ -710,4 +713,209 @@ function eipsi_send_investigator_alert($survey_id, $stats) {
     wp_mail($investigator_email, $subject, $message, $headers);
 
     error_log("[EIPSI Cron] Investigator alert sent to {$investigator_email} for survey {$survey_id}");
+}
+
+/**
+ * Ejecuta las tareas programadas para un estudio
+ * 
+ * @param int $study_id ID del estudio
+ * @since 1.5.3
+ */
+function eipsi_run_study_cron_job($study_id) {
+    error_log("[EIPSI Cron] Study cron job started for study {$study_id} at " . current_time('mysql'));
+
+    // Verificar que el estudio existe
+    if (!get_post($study_id)) {
+        error_log("[EIPSI Cron] Study {$study_id} not found. Aborting.");
+        return;
+    }
+
+    // Obtener configuración
+    $cron_enabled = get_post_meta($study_id, '_eipsi_study_cron_enabled', true);
+    $cron_actions = get_post_meta($study_id, '_eipsi_study_cron_actions', true);
+
+    if (!$cron_enabled || empty($cron_actions)) {
+        error_log("[EIPSI Cron] Study {$study_id} cron is not enabled or no actions configured.");
+        return;
+    }
+
+    // Actualizar última ejecución
+    update_post_meta($study_id, '_eipsi_study_cron_last_run', current_time('mysql'));
+
+    $results = array(
+        'study_id' => $study_id,
+        'actions_executed' => 0,
+        'actions_failed' => 0,
+        'details' => array()
+    );
+
+    // Ejecutar cada acción configurada
+    foreach ($cron_actions as $action) {
+        try {
+            switch ($action) {
+                case 'send_reminders':
+                    $result = eipsi_cron_action_send_reminders($study_id);
+                    $results['details']['send_reminders'] = $result;
+                    $results['actions_executed']++;
+                    break;
+
+                case 'sync_data':
+                    $result = eipsi_cron_action_sync_data($study_id);
+                    $results['details']['sync_data'] = $result;
+                    $results['actions_executed']++;
+                    break;
+
+                case 'generate_reports':
+                    $result = eipsi_cron_action_generate_reports($study_id);
+                    $results['details']['generate_reports'] = $result;
+                    $results['actions_executed']++;
+                    break;
+
+                default:
+                    error_log("[EIPSI Cron] Unknown action: {$action}");
+                    $results['actions_failed']++;
+                    break;
+            }
+        } catch (Exception $e) {
+            error_log("[EIPSI Cron] Error executing action {$action}: " . $e->getMessage());
+            $results['details'][$action] = array(
+                'success' => false,
+                'error' => $e->getMessage()
+            );
+            $results['actions_failed']++;
+        }
+    }
+
+    // Programar próxima ejecución
+    $cron_frequency = get_post_meta($study_id, '_eipsi_study_cron_frequency', true);
+    $timestamp = current_time('timestamp');
+
+    switch ($cron_frequency) {
+        case 'daily':
+            $next_run = strtotime('tomorrow', $timestamp);
+            break;
+        case 'weekly':
+            $next_run = strtotime('next monday', $timestamp);
+            break;
+        case 'monthly':
+            $next_run = strtotime('first day of next month', $timestamp);
+            break;
+        default:
+            $next_run = strtotime('tomorrow', $timestamp);
+    }
+
+    // Programar próxima ejecución
+    wp_schedule_event($next_run, 'eipsi_' . $cron_frequency, 'eipsi_study_cron_job', array($study_id));
+    update_post_meta($study_id, '_eipsi_study_cron_next_run', date('Y-m-d H:i:s', $next_run));
+
+    error_log("[EIPSI Cron] Study cron job completed for study {$study_id}. Actions: " . $results['actions_executed'] . ", Failed: " . $results['actions_failed']);
+    error_log("[EIPSI Cron] Next run scheduled for: " . date('Y-m-d H:i:s', $next_run));
+}
+
+/**
+ * Acción: Enviar recordatorios de waves pendientes
+ * 
+ * @param int $study_id ID del estudio
+ * @return array Resultado de la ejecución
+ */
+function eipsi_cron_action_send_reminders($study_id) {
+    global $wpdb;
+
+    // Obtener waves pendientes
+    $pending_waves = $wpdb->get_results($wpdb->prepare(
+        "SELECT w.* 
+        FROM {$wpdb->prefix}survey_waves w
+        WHERE w.study_id = %d
+        AND w.status = 'active'
+        AND w.due_date > CURDATE()",
+        $study_id
+    ));
+
+    $sent_count = 0;
+    $failed_count = 0;
+
+    foreach ($pending_waves as $wave) {
+        // Obtener participantes pendientes
+        $participants = $wpdb->get_col($wpdb->prepare(
+            "SELECT p.id
+            FROM {$wpdb->prefix}survey_participants p
+            INNER JOIN {$wpdb->prefix}survey_assignments a ON p.id = a.participant_id
+            WHERE p.survey_id = %d
+            AND a.wave_id = %d
+            AND a.status = 'pending'
+            AND p.is_active = 1",
+            $study_id,
+            $wave->id
+        ));
+
+        foreach ($participants as $participant_id) {
+            // Verificar si ya se envió recordatorio hoy
+            $already_sent = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*)
+                FROM {$wpdb->prefix}survey_email_log
+                WHERE survey_id = %d
+                AND participant_id = %d
+                AND email_type = 'reminder'
+                AND sent_at >= CURDATE()",
+                $study_id,
+                $participant_id
+            ));
+
+            if ($already_sent > 0) {
+                continue;
+            }
+
+            // Enviar recordatorio
+            if (!class_exists('EIPSI_Email_Service')) {
+                require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+            }
+
+            $sent = EIPSI_Email_Service::send_wave_reminder_email($study_id, $participant_id, $wave);
+
+            if ($sent) {
+                $sent_count++;
+            } else {
+                $failed_count++;
+            }
+        }
+    }
+
+    return array(
+        'success' => true,
+        'sent' => $sent_count,
+        'failed' => $failed_count,
+        'message' => sprintf('Sent %d reminders, %d failed', $sent_count, $failed_count)
+    );
+}
+
+/**
+ * Acción: Sincronizar datos con servidores externos
+ * 
+ * @param int $study_id ID del estudio
+ * @return array Resultado de la ejecución
+ */
+function eipsi_cron_action_sync_data($study_id) {
+    // Implementación futura para sincronización con servidores externos
+    error_log("[EIPSI Cron] Sync data action called for study {$study_id} - Not yet implemented");
+
+    return array(
+        'success' => true,
+        'message' => 'Data sync action completed (not yet implemented)'
+    );
+}
+
+/**
+ * Acción: Generar reportes automáticos
+ * 
+ * @param int $study_id ID del estudio
+ * @return array Resultado de la ejecución
+ */
+function eipsi_cron_action_generate_reports($study_id) {
+    // Implementación futura para generación de reportes
+    error_log("[EIPSI Cron] Generate reports action called for study {$study_id} - Not yet implemented");
+
+    return array(
+        'success' => true,
+        'message' => 'Report generation action completed (not yet implemented)'
+    );
 }
