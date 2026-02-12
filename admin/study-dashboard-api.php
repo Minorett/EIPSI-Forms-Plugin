@@ -22,6 +22,8 @@ add_action('wp_ajax_eipsi_validate_csv_participants', 'wp_ajax_eipsi_validate_cs
 add_action('wp_ajax_eipsi_import_csv_participants', 'wp_ajax_eipsi_import_csv_participants_handler');
 add_action('wp_ajax_eipsi_get_participants_list', 'wp_ajax_eipsi_get_participants_list_handler');
 add_action('wp_ajax_eipsi_toggle_participant_status', 'wp_ajax_eipsi_toggle_participant_status_handler');
+add_action('wp_ajax_eipsi_save_study_cron_config', 'wp_ajax_eipsi_save_study_cron_config_handler');
+add_action('wp_ajax_eipsi_get_study_cron_config', 'wp_ajax_eipsi_get_study_cron_config_handler');
 
 /**
  * GET consolidated study data
@@ -690,4 +692,119 @@ function wp_ajax_eipsi_toggle_participant_status_handler() {
     } else {
         wp_send_json_error('Error al cambiar el estado del participante');
     }
+}
+
+/**
+ * POST save study cron configuration
+ */
+function wp_ajax_eipsi_save_study_cron_config_handler() {
+    check_ajax_referer('eipsi_study_cron_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    if (empty($study_id)) {
+        wp_send_json_error('Missing study ID');
+    }
+
+    // Validar y sanitizar datos
+    $cron_enabled = isset($_POST['cron_enabled']) ? filter_var($_POST['cron_enabled'], FILTER_VALIDATE_BOOLEAN) : false;
+    $cron_frequency = isset($_POST['cron_frequency']) ? sanitize_text_field($_POST['cron_frequency']) : '';
+    $cron_actions = isset($_POST['cron_actions']) ? array_map('sanitize_text_field', (array)$_POST['cron_actions']) : array();
+
+    // Validaciones
+    $errors = array();
+
+    if ($cron_enabled) {
+        if (empty($cron_frequency)) {
+            $errors[] = 'La frecuencia es requerida cuando los cron jobs están activados.';
+        } elseif (!in_array($cron_frequency, array('daily', 'weekly', 'monthly'))) {
+            $errors[] = 'Frecuencia inválida.';
+        }
+
+        if (empty($cron_actions)) {
+            $errors[] = 'Debes seleccionar al menos una acción.';
+        }
+    }
+
+    if (!empty($errors)) {
+        wp_send_json_error(array(
+            'message' => implode(' ', $errors)
+        ));
+    }
+
+    // Guardar configuración
+    update_post_meta($study_id, '_eipsi_study_cron_enabled', $cron_enabled);
+    update_post_meta($study_id, '_eipsi_study_cron_frequency', $cron_frequency);
+    update_post_meta($study_id, '_eipsi_study_cron_actions', $cron_actions);
+
+    // Programar cron job si está activado
+    if ($cron_enabled) {
+        // Desprogramar cualquier cron job existente
+        wp_clear_scheduled_hook('eipsi_study_cron_job', array($study_id));
+
+        // Programar nuevo cron job según la frecuencia
+        $timestamp = current_time('timestamp');
+        
+        switch ($cron_frequency) {
+            case 'daily':
+                $next_run = strtotime('tomorrow', $timestamp);
+                break;
+            case 'weekly':
+                $next_run = strtotime('next monday', $timestamp);
+                break;
+            case 'monthly':
+                $next_run = strtotime('first day of next month', $timestamp);
+                break;
+            default:
+                $next_run = strtotime('tomorrow', $timestamp);
+        }
+
+        // Programar el evento
+        wp_schedule_event($next_run, 'eipsi_' . $cron_frequency, 'eipsi_study_cron_job', array($study_id));
+
+        // Guardar información de ejecución
+        update_post_meta($study_id, '_eipsi_study_cron_next_run', date('Y-m-d H:i:s', $next_run));
+    } else {
+        // Desprogramar cron job si se desactiva
+        wp_clear_scheduled_hook('eipsi_study_cron_job', array($study_id));
+        delete_post_meta($study_id, '_eipsi_study_cron_next_run');
+    }
+
+    // Obtener información actualizada
+    $last_run = get_post_meta($study_id, '_eipsi_study_cron_last_run', true);
+    $next_run = get_post_meta($study_id, '_eipsi_study_cron_next_run', true);
+
+    wp_send_json_success(array(
+        'message' => 'Configuración de cron jobs guardada exitosamente.',
+        'last_run' => $last_run ? date('Y-m-d H:i:s', strtotime($last_run)) : 'Nunca',
+        'next_run' => $next_run ? date('Y-m-d H:i:s', strtotime($next_run)) : 'No programada'
+    ));
+}
+
+/**
+ * GET study cron configuration HTML
+ */
+function wp_ajax_eipsi_get_study_cron_config_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
+    if (empty($study_id)) {
+        wp_send_json_error('Missing study ID');
+    }
+
+    // Load the cron jobs tab content
+    ob_start();
+    include plugin_dir_path(__FILE__) . 'tabs/study-cron-jobs-tab.php';
+    $html = ob_get_clean();
+
+    wp_send_json_success(array(
+        'html' => $html
+    ));
 }
