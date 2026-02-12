@@ -24,6 +24,7 @@ add_action('wp_ajax_eipsi_get_participants_list', 'wp_ajax_eipsi_get_participant
 add_action('wp_ajax_eipsi_toggle_participant_status', 'wp_ajax_eipsi_toggle_participant_status_handler');
 add_action('wp_ajax_eipsi_save_study_cron_config', 'wp_ajax_eipsi_save_study_cron_config_handler');
 add_action('wp_ajax_eipsi_get_study_cron_config', 'wp_ajax_eipsi_get_study_cron_config_handler');
+add_action('wp_ajax_eipsi_save_study_settings', 'wp_ajax_eipsi_save_study_settings_handler');
 
 /**
  * GET consolidated study data
@@ -806,5 +807,104 @@ function wp_ajax_eipsi_get_study_cron_config_handler() {
 
     wp_send_json_success(array(
         'html' => $html
+    ));
+}
+
+/**
+ * POST save study settings
+ */
+function wp_ajax_eipsi_save_study_settings_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    if (empty($study_id)) {
+        wp_send_json_error('Missing study ID');
+    }
+
+    global $wpdb;
+
+    // Verify study exists and is in draft status
+    $study = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $study_id
+    ));
+
+    if (!$study) {
+        wp_send_json_error('Study not found');
+    }
+
+    if ($study->status !== 'draft') {
+        wp_send_json_error('Only draft studies can be edited');
+    }
+
+    // Sanitize and validate input
+    $study_name = isset($_POST['study_name']) ? sanitize_text_field($_POST['study_name']) : '';
+    $study_description = isset($_POST['study_description']) ? sanitize_textarea_field($_POST['study_description']) : '';
+    $time_config = isset($_POST['time_config']) ? sanitize_text_field($_POST['time_config']) : 'limited';
+    $start_date = isset($_POST['start_date']) ? sanitize_text_field($_POST['start_date']) : '';
+    $end_date = isset($_POST['end_date']) ? sanitize_text_field($_POST['end_date']) : '';
+
+    // Validations
+    $errors = array();
+
+    if (empty($study_name)) {
+        $errors[] = 'El nombre del estudio es requerido.';
+    }
+
+    if ($time_config === 'limited') {
+        if (empty($start_date)) {
+            $errors[] = 'La fecha de inicio es requerida cuando el tiempo es limitado.';
+        }
+
+        if (empty($end_date)) {
+            $errors[] = 'La fecha de finalización es requerida cuando el tiempo es limitado.';
+        }
+
+        if (!empty($start_date) && !empty($end_date) && strtotime($end_date) <= strtotime($start_date)) {
+            $errors[] = 'La fecha de finalización debe ser posterior a la fecha de inicio.';
+        }
+    }
+
+    if (!empty($errors)) {
+        wp_send_json_error(array(
+            'message' => implode(' ', $errors)
+        ));
+    }
+
+    // Prepare update data
+    $update_data = array(
+        'name' => $study_name,
+        'description' => $study_description,
+        'status' => 'draft'
+    );
+
+    if ($time_config === 'limited') {
+        $update_data['start_date'] = $start_date;
+        $update_data['end_date'] = $end_date;
+    } else {
+        $update_data['start_date'] = null;
+        $update_data['end_date'] = null;
+    }
+
+    // Update study in database
+    $updated = $wpdb->update(
+        "{$wpdb->prefix}survey_studies",
+        $update_data,
+        array('id' => $study_id),
+        array('%s', '%s', '%s'),
+        array('%d')
+    );
+
+    if ($updated === false) {
+        wp_send_json_error('Failed to update study settings');
+    }
+
+    wp_send_json_success(array(
+        'message' => 'Configuración del estudio guardada exitosamente.',
+        'study_id' => $study_id
     ));
 }

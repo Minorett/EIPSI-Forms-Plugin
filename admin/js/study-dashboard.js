@@ -148,8 +148,16 @@
         // Quick Action: Edit Study
         $( document ).on( 'click', '#action-edit-study', function () {
             if ( currentStudyId ) {
-                window.location.href =
-                    '?page=eipsi-results&tab=waves-manager&study_id=' + currentStudyId;
+                // Check if study is in draft status
+                const statusBadge = $( '#study-status-badge' ).text();
+                if ( statusBadge.includes( 'Borrador' ) ) {
+                    // Open edit modal
+                    openEditStudyModal( currentStudyId );
+                } else {
+                    // Redirect to waves manager for non-draft studies
+                    window.location.href =
+                        '?page=eipsi-results&tab=waves-manager&study_id=' + currentStudyId;
+                }
             }
         } );
 
@@ -1181,6 +1189,136 @@
             },
         } );
     }
+
+    // ===========================
+    // EDIT STUDY MODAL
+    // ===========================
+
+    function openEditStudyModal( studyId ) {
+        // Load study data
+        loadStudyDataForEditing( studyId );
+        
+        // Show modal
+        $( '#eipsi-edit-study-modal' ).fadeIn( 200 );
+    }
+
+    function closeEditStudyModal() {
+        $( '#eipsi-edit-study-modal' ).fadeOut( 200 );
+    }
+
+    function loadStudyDataForEditing( studyId ) {
+        // Show loading state
+        $( '#edit-study-error, #edit-study-success' ).hide();
+
+        // Get study data from dashboard
+        const studyName = $( '#study-modal-title' ).text().replace( 'Detalles: ', '' );
+        const statusBadge = $( '#study-status-badge' ).text();
+        const createdAt = $( '#study-created-at' ).text();
+        const estimatedEnd = $( '#study-estimated-end' ).text();
+
+        // Set form values
+        $( '#edit-study-id' ).val( studyId );
+        $( '#edit-study-name' ).val( studyName );
+        
+        // Check if time is unlimited
+        if ( estimatedEnd === 'No definida' ) {
+            $( '#edit-study-time-config' ).val( 'unlimited' );
+            $( '#edit-study-dates-container' ).hide();
+        } else {
+            $( '#edit-study-time-config' ).val( 'limited' );
+            $( '#edit-study-dates-container' ).show();
+        }
+
+        // Set dates if available
+        if ( createdAt && createdAt !== 'N/A' ) {
+            const startDate = new Date( createdAt );
+            $( '#edit-study-start-date' ).val( formatDateForInput( startDate ) );
+        }
+
+        if ( estimatedEnd && estimatedEnd !== 'No definida' ) {
+            const endDate = new Date( estimatedEnd );
+            $( '#edit-study-end-date' ).val( formatDateForInput( endDate ) );
+        }
+    }
+
+    function formatDateForInput( date ) {
+        const year = date.getFullYear();
+        const month = String( date.getMonth() + 1 ).padStart( 2, '0' );
+        const day = String( date.getDate() ).padStart( 2, '0' );
+        return year + '-' + month + '-' + day;
+    }
+
+    // Handle time config change
+    $( document ).on( 'change', '#edit-study-time-config', function () {
+        const config = $( this ).val();
+        if ( config === 'unlimited' ) {
+            $( '#edit-study-dates-container' ).hide();
+        } else {
+            $( '#edit-study-dates-container' ).show();
+        }
+    } );
+
+    // Handle form submission
+    $( document ).on( 'submit', '#edit-study-form', function ( e ) {
+        e.preventDefault();
+
+        const studyId = $( '#edit-study-id' ).val();
+        const studyName = $( '#edit-study-name' ).val();
+        const studyDescription = $( '#edit-study-description' ).val();
+        const timeConfig = $( '#edit-study-time-config' ).val();
+        const startDate = $( '#edit-study-start-date' ).val();
+        const endDate = $( '#edit-study-end-date' ).val();
+
+        const $btn = $( '#edit-study-form button[type="submit"]' );
+        const originalText = $btn.text();
+        $btn.text( 'Guardando...' ).prop( 'disabled', true );
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_save_study_settings',
+                nonce: eipsiStudyDash.nonce,
+                study_id: studyId,
+                study_name: studyName,
+                study_description: studyDescription,
+                time_config: timeConfig,
+                start_date: startDate,
+                end_date: endDate
+            },
+            success( response ) {
+                if ( response.success ) {
+                    $( '#edit-study-success' ).text( response.data.message ).show();
+                    $( '#edit-study-error' ).hide();
+                    
+                    // Refresh dashboard
+                    loadStudyOverview( currentStudyId );
+                    
+                    // Close modal after 2 seconds
+                    setTimeout( function () {
+                        closeEditStudyModal();
+                    }, 2000 );
+                } else {
+                    $( '#edit-study-error' ).text( response.data ? response.data.message : 'Error al guardar cambios' ).show();
+                    $( '#edit-study-success' ).hide();
+                }
+            },
+            error() {
+                $( '#edit-study-error' ).text( 'Error de conexión al guardar cambios' ).show();
+                $( '#edit-study-success' ).hide();
+            },
+            complete() {
+                $btn.text( originalText ).prop( 'disabled', false );
+            },
+        } );
+    } );
+
+    // Close edit study modal
+    $( document ).on( 'click', '#eipsi-edit-study-modal .eipsi-modal-close', function () {
+        closeEditStudyModal();
+    } );
 
     // ===========================
     // HELPERS
