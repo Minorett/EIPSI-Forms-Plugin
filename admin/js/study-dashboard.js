@@ -17,6 +17,8 @@
 
     let currentStudyId = 0;
     let isLoading = false;
+    let currentPage = 1;
+    let participantsPerPage = 20;
 
     // ===========================
     // INITIALIZATION
@@ -88,6 +90,61 @@
             }
         } );
 
+        // Close Participants Modal
+        $( document ).on( 'click', '#eipsi-participants-list-modal .eipsi-modal-close', function () {
+            $( '#eipsi-participants-list-modal' ).fadeOut( 200 );
+        } );
+
+        // Filter Participants
+        $( document ).on( 'change', '#participant-status-filter', function () {
+            loadParticipantsList( 1 );
+        } );
+
+        $( document ).on( 'input', '#participant-search', function () {
+            // Debounce search
+            clearTimeout( window.participantSearchTimeout );
+            window.participantSearchTimeout = setTimeout( function () {
+                loadParticipantsList( 1 );
+            }, 500 );
+        } );
+
+        // Toggle Participant Status
+        $( document ).on( 'click', '.toggle-participant-status', function () {
+            const participantId = $( this ).data( 'participant-id' );
+            const currentStatus = $( this ).data( 'is-active' );
+            const newStatus = ! currentStatus;
+            const participantEmail = $( this ).data( 'participant-email' );
+
+            if ( ! newStatus ) {
+                // Desactivar - requiere confirmación
+                if (
+                    ! confirm(
+                        '¿Estás seguro de desactivar a este participante?\n\n' +
+                        '• No recibirá más emails de recordatorio\n' +
+                        '• No podrá acceder al estudio\n\n' +
+                        'Email: ' + participantEmail
+                    )
+                ) {
+                    return;
+                }
+            } else {
+                // Reactivar - confirmación
+                if ( ! confirm( '¿Reactivar a este participante? Volverá a recibir emails de recordatorio.' ) ) {
+                    return;
+                }
+            }
+
+            toggleParticipantStatus( participantId, newStatus );
+        } );
+
+        // Pagination
+        $( document ).on( 'click', '.participants-pagination button', function () {
+            const page = $( this ).data( 'page' );
+            if ( page && page !== currentPage ) {
+                loadParticipantsList( page );
+            }
+        } );
+
         // Quick Action: Edit Study
         $( document ).on( 'click', '#action-edit-study', function () {
             if ( currentStudyId ) {
@@ -107,9 +164,7 @@
         // Quick Action: View Participants
         $( document ).on( 'click', '#action-view-participants', function () {
             if ( currentStudyId ) {
-                alert(
-                    'Funcionalidad de gestión de participantes disponible en la pestaña Waves Manager'
-                );
+                openParticipantsModal();
             }
         } );
 
@@ -218,6 +273,205 @@
         // Redirect to waves manager where anonymize button is available
         window.location.href =
             '?page=eipsi-results&tab=waves-manager&study_id=' + currentStudyId;
+    }
+
+    // ===========================
+    // PARTICIPANTS LIST MODAL
+    // ===========================
+
+    function openParticipantsModal() {
+        $( '#eipsi-participants-list-modal' ).fadeIn( 200 );
+        $( '#participants-loading' ).show();
+        $( '#participants-content' ).hide();
+        loadParticipantsList( 1 );
+    }
+
+    function loadParticipantsList( page ) {
+        if ( ! currentStudyId ) return;
+
+        const statusFilter = $( '#participant-status-filter' ).val();
+        const searchTerm = $( '#participant-search' ).val();
+
+        $( '#participants-loading' ).show();
+        $( '#participants-content' ).hide();
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'GET',
+            data: {
+                action: 'eipsi_get_participants_list',
+                nonce: eipsiStudyDash.nonce,
+                study_id: currentStudyId,
+                page: page,
+                per_page: participantsPerPage,
+                status: statusFilter,
+                search: searchTerm,
+            },
+            success( response ) {
+                if ( response.success && response.data ) {
+                    renderParticipantsList( response.data );
+                } else {
+                    showErrorParticipants( response.data || 'Error al cargar participantes' );
+                }
+            },
+            error() {
+                showErrorParticipants( 'Error de conexión' );
+            },
+            complete() {
+                $( '#participants-loading' ).hide();
+                $( '#participants-content' ).fadeIn( 200 );
+            },
+        } );
+    }
+
+    function renderParticipantsList( data ) {
+        const participants = data.participants || [];
+        const total = data.total || 0;
+        const page = data.page || 1;
+        const pages = data.pages || 1;
+
+        currentPage = page;
+
+        // Update count badge
+        $( '#participants-count' ).text( total + ' participantes' );
+
+        const $tbody = $( '#participants-tbody' );
+
+        if ( participants.length === 0 ) {
+            $tbody.html(
+                '<tr><td colspan="6" style="text-align:center;padding:30px;color:#666;">No se encontraron participantes</td></tr>'
+            );
+            $( '#participants-pagination' ).empty();
+            return;
+        }
+
+        // Render rows
+        let html = '';
+        participants.forEach( function ( p ) {
+            const statusBadge = p.is_active
+                ? '<span class="status-badge active">● Activo</span>'
+                : '<span class="status-badge inactive">● Inactivo</span>';
+
+            const statusIcon = p.is_active
+                ? '<span class="dashicons dashicons-yes-alt" style="color:#27ae60;"></span>'
+                : '<span class="dashicons dashicons-no-alt" style="color:#d63638;"></span>';
+
+            const toggleButton = p.is_active
+                ? '<button class="button button-small toggle-participant-status" data-participant-id="' +
+                  p.id +
+                  '" data-is-active="true" data-participant-email="' +
+                  escapeHtml( p.email ) +
+                  '" title="Desactivar participante">🔴 Desactivar</button>'
+                : '<button class="button button-small button-primary toggle-participant-status" data-participant-id="' +
+                  p.id +
+                  '" data-is-active="false" data-participant-email="' +
+                  escapeHtml( p.email ) +
+                  '" title="Reactivar participante">🟢 Reactivar</button>';
+
+            html += '<tr class="participant-row">';
+            html += '<td><strong>' + escapeHtml( p.email ) + '</strong></td>';
+            html +=
+                '<td>' +
+                escapeHtml( p.first_name ) +
+                ' ' +
+                escapeHtml( p.last_name ) +
+                '</td>';
+            html += '<td>' + statusBadge + '</td>';
+            html += '<td>' + formatDate( p.created_at ) + '</td>';
+            html +=
+                '<td>' +
+                ( p.last_login_at ? formatDateTime( p.last_login_at ) : 'Nunca' ) +
+                '</td>';
+            html += '<td>' + toggleButton + '</td>';
+            html += '</tr>';
+        } );
+
+        $tbody.html( html );
+
+        // Render pagination
+        renderParticipantsPagination( page, pages );
+    }
+
+    function renderParticipantsPagination( currentPage, totalPages ) {
+        if ( totalPages <= 1 ) {
+            $( '#participants-pagination' ).empty();
+            return;
+        }
+
+        let html = '<div class="tablenav-pages">';
+
+        if ( currentPage > 1 ) {
+            html +=
+                '<button class="button button-small" data-page="' +
+                ( currentPage - 1 ) +
+                '">« Anterior</button>';
+        }
+
+        html += '<span class="paging-input">';
+        html += currentPage + ' de ' + totalPages;
+        html += '</span>';
+
+        if ( currentPage < totalPages ) {
+            html +=
+                '<button class="button button-small" data-page="' +
+                ( currentPage + 1 ) +
+                '">Siguiente »</button>';
+        }
+
+        html += '</div>';
+
+        $( '#participants-pagination' ).html( html );
+    }
+
+    function toggleParticipantStatus( participantId, isActive ) {
+        const $btn = $(
+            '.toggle-participant-status[data-participant-id="' + participantId + '"]'
+        );
+        const originalText = $btn.text();
+        $btn.text( 'Procesando...' ).prop( 'disabled', true );
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_toggle_participant_status',
+                nonce: eipsiStudyDash.nonce,
+                participant_id: participantId,
+                is_active: isActive ? 1 : 0,
+            },
+            success( response ) {
+                if ( response.success ) {
+                    showNotification( response.data.message, 'success' );
+                    // Refresh list
+                    loadParticipantsList( currentPage );
+                } else {
+                    showNotification(
+                        response.data || 'Error al cambiar el estado',
+                        'error'
+                    );
+                }
+            },
+            error() {
+                showNotification( 'Error de conexión', 'error' );
+            },
+            complete() {
+                $btn.text( originalText ).prop( 'disabled', false );
+            },
+        } );
+    }
+
+    function showErrorParticipants( message ) {
+        const $tbody = $( '#participants-tbody' );
+        $tbody.html(
+            '<tr><td colspan="6" style="text-align:center;color:#d63638;padding:30px;"><strong>Error:</strong> ' +
+                message +
+                '</td></tr>'
+        );
+        $( '#participants-content' ).show();
     }
 
     // ===========================
