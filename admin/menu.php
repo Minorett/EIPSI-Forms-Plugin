@@ -38,7 +38,7 @@ function eipsi_forms_menu() {
     add_submenu_page(
         'eipsi-results',
         __('Create New Longitudinal Study', 'eipsi-forms'),
-        __('➕ New Study', 'eipsi-forms'),
+        __('Longitudinal Study', 'eipsi-forms'),
         'manage_options',
         'eipsi-new-study',
         'eipsi_display_setup_wizard_page'

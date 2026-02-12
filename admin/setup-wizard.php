@@ -53,8 +53,8 @@ function eipsi_display_setup_wizard_page() {
     // Get admin users for investigator selection
     $admin_users = eipsi_get_admin_users();
     
-    // Load the wizard template
-    include EIPSI_FORMS_PLUGIN_DIR . 'admin/templates/setup-wizard.php';
+    // Load the modern wizard template
+    include EIPSI_FORMS_PLUGIN_DIR . 'admin/templates/longitudinal-study-wizard.php';
 }
 
 /**

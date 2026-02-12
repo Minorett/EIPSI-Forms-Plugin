@@ -204,7 +204,15 @@ add_action('admin_enqueue_scripts', 'eipsi_enqueue_setup_wizard_assets');
 function eipsi_enqueue_setup_wizard_assets($hook) {
     // Solo cargar en la página del Setup Wizard
     if ($hook === 'eipsi_page_eipsi-new-study') {
-        // Enqueue CSS
+        // Enqueue modern UI CSS
+        wp_enqueue_style(
+            'eipsi-longitudinal-studies-ui-css',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/css/longitudinal-studies-ui.css',
+            array(),
+            EIPSI_FORMS_VERSION
+        );
+
+        // Enqueue original setup wizard CSS for compatibility
         wp_enqueue_style(
             'eipsi-setup-wizard-css',
             EIPSI_FORMS_PLUGIN_URL . 'assets/css/setup-wizard.css',
