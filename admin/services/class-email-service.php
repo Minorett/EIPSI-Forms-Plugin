@@ -59,9 +59,15 @@ class EIPSI_Email_Service {
         $participant = self::get_participant($participant_id);
         if (!$participant) return false;
 
+        // Verificar que el participante esté activo
+        if (!$participant->is_active) {
+            error_log("[EIPSI Email] Cannot send welcome email to inactive participant: $participant_id");
+            return false;
+        }
+
         $survey_name = get_the_title($survey_id);
         $magic_link = self::generate_magic_link_url($survey_id, $participant_id);
-        
+
         if (!$magic_link) {
             self::log_email($survey_id, $participant_id, 'welcome', 'failed', 'Could not generate magic link');
             return false;
@@ -97,6 +103,12 @@ class EIPSI_Email_Service {
     public static function send_wave_reminder_email($survey_id, $participant_id, $wave) {
         $participant = self::get_participant($participant_id);
         if (!$participant) return false;
+
+        // Verificar que el participante esté activo
+        if (!$participant->is_active) {
+            error_log("[EIPSI Email] Cannot send reminder email to inactive participant: $participant_id");
+            return false;
+        }
 
         // Ensure we have the wave object
         if (is_numeric($wave)) {
@@ -159,8 +171,14 @@ class EIPSI_Email_Service {
         $participant = self::get_participant($participant_id);
         if (!$participant) return false;
 
+        // Verificar que el participante esté activo
+        if (!$participant->is_active) {
+            error_log("[EIPSI Email] Cannot send confirmation email to inactive participant: $participant_id");
+            return false;
+        }
+
         $survey_name = get_the_title($survey_id);
-        
+
         // Handle Wave Object/ID
         if (is_numeric($wave) && class_exists('EIPSI_Wave_Service')) {
             $wave = EIPSI_Wave_Service::get_wave($wave);
@@ -218,8 +236,14 @@ class EIPSI_Email_Service {
         $participant = self::get_participant($participant_id);
         if (!$participant) return false;
 
+        // Verificar que el participante esté activo
+        if (!$participant->is_active) {
+            error_log("[EIPSI Email] Cannot send recovery email to inactive participant: $participant_id");
+            return false;
+        }
+
         $survey_name = get_the_title($survey_id);
-        
+
         if (is_numeric($wave) && class_exists('EIPSI_Wave_Service')) {
             $wave = EIPSI_Wave_Service::get_wave($wave);
         } else if (is_numeric($wave)) {

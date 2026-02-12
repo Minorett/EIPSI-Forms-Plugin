@@ -196,6 +196,64 @@ if (!defined('ABSPATH')) {
     </div>
 </div>
 
+<!-- Modal for Participants List -->
+<div id="eipsi-participants-list-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content participants-modal">
+        <div class="eipsi-modal-header">
+            <h2>👥 <?php esc_html_e('Gestión de Participantes', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <div id="participants-loading" class="eipsi-loading-overlay">
+                <div class="spinner is-active"></div>
+                <p><?php esc_html_e('Cargando participantes...', 'eipsi-forms'); ?></p>
+            </div>
+
+            <div id="participants-content" style="display:none;">
+                <div class="participants-filter-bar">
+                    <div class="filter-group">
+                        <label for="participant-status-filter"><?php esc_html_e('Estado:', 'eipsi-forms'); ?></label>
+                        <select id="participant-status-filter" class="regular-text">
+                            <option value="all"><?php esc_html_e('Todos', 'eipsi-forms'); ?></option>
+                            <option value="active"><?php esc_html_e('Activos', 'eipsi-forms'); ?></option>
+                            <option value="inactive"><?php esc_html_e('Inactivos', 'eipsi-forms'); ?></option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="participant-search"><?php esc_html_e('Buscar:', 'eipsi-forms'); ?></label>
+                        <input type="text" id="participant-search" class="regular-text" placeholder="<?php esc_attr_e('Email o nombre...', 'eipsi-forms'); ?>">
+                    </div>
+                    <div class="filter-actions">
+                        <span id="participants-count" class="participants-count-badge"></span>
+                    </div>
+                </div>
+
+                <div class="participants-table-wrapper">
+                    <table class="wp-list-table widefat fixed striped participants-table">
+                        <thead>
+                            <tr>
+                                <th><?php esc_html_e('Email', 'eipsi-forms'); ?></th>
+                                <th><?php esc_html_e('Nombre', 'eipsi-forms'); ?></th>
+                                <th><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
+                                <th><?php esc_html_e('Fecha Registro', 'eipsi-forms'); ?></th>
+                                <th><?php esc_html_e('Último Acceso', 'eipsi-forms'); ?></th>
+                                <th><?php esc_html_e('Acciones', 'eipsi-forms'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody id="participants-tbody">
+                            <!-- Filas generadas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="participants-pagination" class="participants-pagination">
+                    <!-- Paginación generada dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal for CSV Import -->
 <div id="eipsi-import-csv-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content medium-modal">

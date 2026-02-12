@@ -20,6 +20,8 @@ add_action('wp_ajax_eipsi_get_study_email_logs', 'wp_ajax_eipsi_get_study_email_
 add_action('wp_ajax_eipsi_add_participant', 'wp_ajax_eipsi_add_participant_handler');
 add_action('wp_ajax_eipsi_validate_csv_participants', 'wp_ajax_eipsi_validate_csv_participants_handler');
 add_action('wp_ajax_eipsi_import_csv_participants', 'wp_ajax_eipsi_import_csv_participants_handler');
+add_action('wp_ajax_eipsi_get_participants_list', 'wp_ajax_eipsi_get_participants_list_handler');
+add_action('wp_ajax_eipsi_toggle_participant_status', 'wp_ajax_eipsi_toggle_participant_status_handler');
 
 /**
  * GET consolidated study data
@@ -615,4 +617,77 @@ function eipsi_parse_csv_line($line) {
     $fields[] = $field;
 
     return $fields;
+}
+
+/**
+ * GET participants list with pagination and filters
+ */
+function wp_ajax_eipsi_get_participants_list_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
+    if (empty($study_id)) {
+        wp_send_json_error('Missing study ID');
+    }
+
+    // Parámetros de paginación
+    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $per_page = isset($_GET['per_page']) ? max(1, min(100, intval($_GET['per_page']))) : 20;
+
+    // Filtros
+    $filters = array();
+    if (isset($_GET['status']) && in_array($_GET['status'], array('active', 'inactive'))) {
+        $filters['status'] = $_GET['status'];
+    }
+    if (isset($_GET['search']) && !empty($_GET['search'])) {
+        $filters['search'] = sanitize_text_field($_GET['search']);
+    }
+
+    // Cargar servicio de participantes
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    $result = EIPSI_Participant_Service::list_participants($study_id, $page, $per_page, $filters);
+
+    wp_send_json_success($result);
+}
+
+/**
+ * POST toggle participant active status
+ */
+function wp_ajax_eipsi_toggle_participant_status_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+    $is_active = isset($_POST['is_active']) ? filter_var($_POST['is_active'], FILTER_VALIDATE_BOOLEAN) : true;
+
+    if (empty($participant_id)) {
+        wp_send_json_error('Missing participant ID');
+    }
+
+    // Cargar servicio de participantes
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    $success = EIPSI_Participant_Service::set_active($participant_id, $is_active);
+
+    if ($success) {
+        $status_text = $is_active ? 'activado' : 'desactivado';
+        wp_send_json_success(array(
+            'message' => sprintf('Participante %s exitosamente', $status_text),
+            'is_active' => $is_active
+        ));
+    } else {
+        wp_send_json_error('Error al cambiar el estado del participante');
+    }
 }
