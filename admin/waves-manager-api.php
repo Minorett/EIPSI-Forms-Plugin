@@ -24,7 +24,7 @@ add_action('wp_ajax_eipsi_send_reminder', 'wp_ajax_eipsi_send_reminder_handler')
 add_action('wp_ajax_eipsi_get_pending_participants', 'wp_ajax_eipsi_get_pending_participants_handler');
 
 // Participant Management Handlers
-add_action('wp_ajax_eipsi_add_participant', 'wp_ajax_eipsi_add_participant_handler');
+// Note: wp_ajax_eipsi_add_participant is defined in study-dashboard-api.php to avoid duplication
 add_action('wp_ajax_eipsi_edit_participant', 'wp_ajax_eipsi_edit_participant_handler');
 add_action('wp_ajax_eipsi_delete_participant', 'wp_ajax_eipsi_delete_participant_handler');
 add_action('wp_ajax_eipsi_get_participant', 'wp_ajax_eipsi_get_participant_handler');
@@ -359,57 +359,6 @@ function wp_ajax_eipsi_get_study_participants_handler() {
     ));
 
     wp_send_json_success($participants);
-}
-
-/**
- * Add new participant to study
- */
-function wp_ajax_eipsi_add_participant_handler() {
-    check_ajax_referer('eipsi_waves_nonce', 'nonce');
-
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error('Unauthorized');
-    }
-
-    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
-    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
-    $first_name = isset($_POST['first_name']) ? sanitize_text_field($_POST['first_name']) : '';
-    $last_name = isset($_POST['last_name']) ? sanitize_text_field($_POST['last_name']) : '';
-    $password = isset($_POST['password']) ? $_POST['password'] : '';
-
-    if (!$study_id || empty($email)) {
-        wp_send_json_error('Missing required fields');
-    }
-
-    if (!is_email($email)) {
-        wp_send_json_error('Invalid email address');
-    }
-
-    // Generate password if not provided
-    if (empty($password)) {
-        $password = wp_generate_password(12, true, true);
-    }
-
-    $result = EIPSI_Participant_Service::create_participant($study_id, $email, $password, array(
-        'first_name' => $first_name,
-        'last_name' => $last_name
-    ));
-
-    if (!$result['success']) {
-        $error_messages = array(
-            'invalid_email' => 'Invalid email address',
-            'short_password' => 'Password must be at least 8 characters',
-            'email_exists' => 'This email is already registered in this study',
-            'db_error' => 'Database error. Please try again.'
-        );
-        wp_send_json_error($error_messages[$result['error']] ?? 'Unknown error');
-    }
-
-    wp_send_json_success(array(
-        'message' => 'Participant added successfully',
-        'participant_id' => $result['participant_id'],
-        'temporary_password' => $password // Only shown once
-    ));
 }
 
 /**
