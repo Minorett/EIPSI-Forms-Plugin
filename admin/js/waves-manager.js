@@ -261,6 +261,8 @@
                 due_date: $( '#due_date' ).val(),
                 description: $( '#wave_description' ).val(),
                 is_mandatory: $( 'input[name="is_mandatory"]:checked' ).val() || 0,
+                has_time_limit: $( '#has_time_limit' ).is( ':checked' ) ? 1 : 0,
+                completion_time_limit: $( '#has_time_limit' ).is( ':checked' ) ? $( '#completion_time_limit' ).val() : null,
             },
             success( response ) {
                 if ( response.success ) {

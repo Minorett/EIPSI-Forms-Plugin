@@ -248,7 +248,7 @@ $available_forms = get_posts(array(
                         <input type="number" id="completion_time_limit" name="completion_time_limit" value="30" min="1" max="180" style="width: 100px;">
                         <span class="input-suffix"><?php esc_html_e('minutos', 'eipsi-forms'); ?></span>
                     </div>
-                    <small class="form-help"><?php esc_html_e('El participante debe completar el formulario dentro de este tiempo límite.', 'eipsi-forms'); ?></small>
+                    <small class="form-help"><?php esc_html_e('El participante debe completar el formulario dentro de este tiempo límite. Si no se selecciona esta opción, el tiempo será ilimitado.', 'eipsi-forms'); ?></small>
                 </div>
             </div>
 
