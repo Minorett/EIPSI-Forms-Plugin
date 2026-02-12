@@ -46,6 +46,63 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ## [Unreleased] – Próxima versión clínica
 
+### ✅ Nuevas Funcionalidades
+
+#### 📋 Gestión de Participantes en Study Dashboard
+
+**Feature**: Agregar participantes individualmente desde el Study Dashboard con envío automático de invitaciones por email.
+
+**Archivos modificados:**
+- `admin/study-dashboard-modal.php`: Agregado botón "Agregar Participante" y modal de formulario
+- `admin/study-dashboard-api.php`: Agregado handler AJAX `wp_ajax_eipsi_add_participant_handler`
+- `assets/js/study-dashboard.js`: Agregados event handlers y funciones para modal y formulario
+
+**Funcionalidades implementadas:**
+
+1. **Botón "Agregar Participante"**:
+   - Ubicado en el Quick Actions Card del Study Dashboard
+   - Abre modal con formulario completo
+
+2. **Formulario de registro**:
+   - **Email** (obligatorio, validación de formato y unicidad por estudio)
+   - **Nombre** (opcional)
+   - **Apellido** (opcional)
+   - **Contraseña temporal** (automática o personalizada, mínimo 8 caracteres)
+
+3. **Validaciones implementadas**:
+   - Email único por estudio (UNIQUE constraint)
+   - Formato de email válido (PHP `is_email()`)
+   - Longitud mínima de contraseña (8 caracteres)
+   - Sanitización de todos los campos
+
+4. **Proceso de creación**:
+   - Guardado en tabla `wp_survey_participants` usando `EIPSI_Participant_Service`
+   - Generación automática de contraseña segura si no se proporciona
+   - Hash de contraseña con `wp_hash_password()`
+   - Manejo de errores y mensajes informativos
+
+5. **Envío de invitación**:
+   - Email automático usando `EIPSI_Email_Service::send_welcome_email()`
+   - Template HTML con magic link seguro
+   - Logging completo en `wp_survey_email_log`
+   - Manejo diferenciado de errores (email vs BD)
+
+**Technical Details:**
+- **Seguridad**: Nonce validation, capability checks (`manage_options`)
+- **UX**: Loading states, success/error messages, auto-refresh después de creación
+- **Escalabilidad**: Reutiliza servicios existentes (`EIPSI_Participant_Service`, `EIPSI_Email_Service`)
+- **Error handling**: Múltiples tipos de error (email duplicado, email inválido, BD error, email failed)
+- **No breaking changes**: 100% backward compatible
+
+**Criterios de aceptación cumplidos:**
+- ✅ Los participantes pueden agregarse individualmente desde el Study Dashboard
+- ✅ Las invitaciones se envían correctamente al agregar participantes
+- ✅ No hay errores en la consola al realizar estas acciones
+- ✅ Validaciones robustas implementadas
+- ✅ Manejo de errores exhaustivo
+
+---
+
 ### Planning
 - Integrated completion page (misma URL forever)
 - Save & Continue Later + 30s autosave + IndexedDB drafts
