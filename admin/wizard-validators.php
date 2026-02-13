@@ -180,10 +180,7 @@ function eipsi_validate_waves_config($data) {
                 $errors[] = "La duración estimada para la toma " . ($index + 1) . " no puede exceder 120 minutos.";
             }
             
-            // Required validation
-            if (!isset($wave['is_required'])) {
-                $errors[] = "Debes especificar si la toma " . ($index + 1) . " es obligatoria o no.";
-            }
+            // Unchecked checkbox means optional by default.
         }
         
         // At least one wave should be required

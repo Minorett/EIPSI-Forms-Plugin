@@ -183,8 +183,8 @@ document.addEventListener('DOMContentLoaded', function() {
     text-align: center;
     margin-bottom: 2rem;
     padding: 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--eipsi-primary-dark);
+    color: #ffffff;
     border-radius: 12px;
 }
 
@@ -192,12 +192,14 @@ document.addEventListener('DOMContentLoaded', function() {
     margin: 0 0 0.5rem 0;
     font-size: 1.5rem;
     font-weight: 600;
+    color: #ffffff;
 }
 
 .step-header p {
     margin: 0;
     opacity: 0.9;
     font-size: 1rem;
+    color: #ffffff;
 }
 
 .form-grid {

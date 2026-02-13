@@ -111,6 +111,13 @@ wp_enqueue_style(
 - Diseño responsive para diferentes dispositivos
 - Soporte para dark mode
 
+### 5. Ajustes UI Minimalista (Febrero 2025)
+- Título principal simplificado a "📊 Estudio Longitudinal" y menú lateral con nombres concisos.
+- Headers y textos descriptivos con tipografía blanca sobre fondos clínicos consistentes.
+- Campos en fondos azul marino con texto blanco para legibilidad.
+- Validación de tomas opcionales corregida (checkbox desmarcado = no obligatorio).
+- Activación bloqueada hasta confirmar el checkbox final y código del estudio con contraste negro sobre blanco.
+
 ## Criterios de Aceptación Cumplidos
 
 ✅ **El botón para crear un nuevo estudio longitudinal se llama "Longitudinal Study"**

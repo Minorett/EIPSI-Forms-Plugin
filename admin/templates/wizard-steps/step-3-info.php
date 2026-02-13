@@ -50,7 +50,7 @@ while (count($timing_intervals) < ($number_of_waves - 1)) {
         <input type="hidden" name="step_number" value="3">
         
         <div class="step-header">
-            <h2>⏱️ TIMING ENTRE TOMAS</h2>
+            <h2>⏰ Programación Temporal</h2>
             <p>Configura cuándo deben realizarse las evaluaciones y cómo manejar los recordatorios.</p>
         </div>
         
@@ -270,24 +270,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .timing-section,
 .reminders-section {
-    background: white;
+    background: var(--eipsi-primary-dark);
     padding: 2rem;
     border-radius: 12px;
-    border: 2px solid #e9ecef;
+    border: 2px solid #1f314a;
+    color: #ffffff;
 }
 
 .timing-section h3,
 .reminders-section h3 {
     margin: 0 0 0.5rem 0;
-    color: #495057;
+    color: #ffffff;
     font-size: 1.2rem;
     font-weight: 600;
 }
 
 .section-description {
     margin: 0 0 1.5rem 0;
-    color: #6c757d;
+    color: #ffffff;
     font-size: 0.95rem;
+    opacity: 0.85;
+}
+
+.timing-section .form-label,
+.reminders-section .form-label {
+    color: #ffffff;
+}
+
+.timing-section .form-help,
+.reminders-section .form-help {
+    color: #ffffff;
+    opacity: 0.8;
 }
 
 .intervals-list {
@@ -302,9 +315,10 @@ document.addEventListener('DOMContentLoaded', function() {
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: #f8f9fa;
+    background: #1f314a;
     border-radius: 8px;
-    border: 1px solid #dee2e6;
+    border: 1px solid #2c4a71;
+    color: #ffffff;
 }
 
 .interval-header {
@@ -316,12 +330,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .interval-label {
     font-weight: 600;
-    color: #495057;
+    color: #ffffff;
     font-size: 0.9rem;
 }
 
 .interval-arrow {
-    color: #667eea;
+    color: #ffffff;
     font-weight: bold;
     font-size: 1.1rem;
 }
@@ -335,25 +349,27 @@ document.addEventListener('DOMContentLoaded', function() {
 .interval-days-input {
     width: 80px;
     padding: 0.5rem;
-    border: 2px solid #e9ecef;
+    border: 2px solid #2c4a71;
     border-radius: 6px;
     text-align: center;
     font-weight: 600;
+    background: #1f314a;
+    color: #ffffff;
 }
 
 .days-label {
-    color: #6c757d;
+    color: #ffffff;
     font-size: 0.9rem;
 }
 
 .quick-templates {
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid #2c4a71;
     padding-top: 1.5rem;
 }
 
 .quick-templates h4 {
     margin: 0 0 1rem 0;
-    color: #495057;
+    color: #ffffff;
     font-size: 1rem;
 }
 
@@ -365,19 +381,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .template-btn {
     padding: 0.5rem 1rem;
-    background: #f8f9fa;
-    border: 2px solid #e9ecef;
+    background: #1f314a;
+    border: 2px solid #2c4a71;
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
     transition: all 0.2s ease;
     white-space: nowrap;
+    color: #ffffff;
 }
 
 .template-btn:hover {
-    background: #667eea;
+    background: #4a6fa5;
     color: white;
-    border-color: #667eea;
+    border-color: #4a6fa5;
 }
 
 .reminder-config {
@@ -400,14 +417,16 @@ document.addEventListener('DOMContentLoaded', function() {
 .config-input {
     width: 100px;
     padding: 0.5rem;
-    border: 2px solid #e9ecef;
+    border: 2px solid #2c4a71;
     border-radius: 6px;
     text-align: center;
     font-weight: 600;
+    background: #1f314a;
+    color: #ffffff;
 }
 
 .input-suffix {
-    color: #6c757d;
+    color: #ffffff;
     font-size: 0.9rem;
 }
 
@@ -435,53 +454,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .checkbox-text {
     font-weight: 500;
-    color: #495057;
+    color: #ffffff;
 }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
     .timing-section,
     .reminders-section {
-        background: #2c3e50;
-        border-color: #34495e;
+        background: var(--eipsi-primary-dark);
+        border-color: #1f314a;
     }
     
     .interval-item {
-        background: #34495e;
-        border-color: #4a5f7a;
+        background: #1f314a;
+        border-color: #2c4a71;
     }
     
-    .interval-label {
-        color: #ecf0f1;
+    .interval-label,
+    .section-description,
+    .days-label,
+    .input-suffix,
+    .checkbox-text {
+        color: #ffffff;
     }
     
     .interval-days-input,
     .config-input {
-        background: #34495e;
-        border-color: #4a5f7a;
-        color: #ecf0f1;
+        background: #1f314a;
+        border-color: #2c4a71;
+        color: #ffffff;
     }
     
     .template-btn {
-        background: #34495e;
-        border-color: #4a5f7a;
-        color: #ecf0f1;
+        background: #1f314a;
+        border-color: #2c4a71;
+        color: #ffffff;
     }
     
     .template-btn:hover {
-        background: #667eea;
-        border-color: #667eea;
+        background: #4a6fa5;
+        border-color: #4a6fa5;
         color: white;
-    }
-    
-    .section-description,
-    .days-label,
-    .input-suffix {
-        color: #95a5a6;
-    }
-    
-    .checkbox-text {
-        color: #ecf0f1;
     }
 }
 </style>

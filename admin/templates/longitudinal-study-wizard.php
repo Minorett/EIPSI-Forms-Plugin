@@ -25,27 +25,22 @@ $success_message = isset($message) ? $message : '';
 $steps = array(
     1 => array(
         'name' => 'Información Básica',
-        'description' => 'Configura los detalles fundamentales de tu estudio',
         'icon' => '📋'
     ),
     2 => array(
-        'name' => 'Configuración de Tomas',
-        'description' => 'Define las ondas/tomas y sus formularios',
+        'name' => 'Configuración de Waves',
         'icon' => '📊'
     ),
     3 => array(
         'name' => 'Programación Temporal',
-        'description' => 'Establece fechas y recordatorios',
         'icon' => '⏰'
     ),
     4 => array(
         'name' => 'Participantes',
-        'description' => 'Agrega o importa participantes',
         'icon' => '👥'
     ),
     5 => array(
         'name' => 'Revisión y Activación',
-        'description' => 'Revisa y activa tu estudio',
         'icon' => '✅'
     )
 );
@@ -55,12 +50,7 @@ $steps = array(
 <div class="wrap eipsi-longitudinal-study fade-in">
     <!-- Header with clear title -->
     <div class="study-header">
-        <h1>
-            <?php echo $current_step === 5 ? '✅ Revisión Final' : '📊 Estudio Longitudinal'; ?>
-        </h1>
-        <p class="eipsi-step-indicator">
-            Paso <?php echo $current_step; ?> de 5: <?php echo esc_html($steps[$current_step]['description']); ?>
-        </p>
+        <h1>📊 Estudio Longitudinal</h1>
     </div>
 
     <!-- Error and success messages -->
@@ -99,9 +89,6 @@ $steps = array(
                     <div class="step-number"><?php echo $step_info['icon']; ?></div>
                     <div class="step-name">
                         <strong><?php echo esc_html($step_info['name']); ?></strong>
-                        <small style="display: block; font-size: 0.7rem; opacity: 0.8;">
-                            <?php echo esc_html($step_info['description']); ?>
-                        </small>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -142,7 +129,7 @@ $steps = array(
             </button>
         <?php else: ?>
             <button type="button" class="button button-primary" 
-                    onclick="eipsiActivateStudy()">
+                    onclick="eipsiActivateStudy()" disabled>
                 🎉 Activar Estudio
             </button>
         <?php endif; ?>
