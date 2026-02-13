@@ -3409,3 +3409,180 @@ function eipsi_export_to_csv_handler() {
     
     wp_send_json_success(array("filename" => $filename));
 }
+
+/**
+ * ========================================
+ * WAVE MANAGER - ADD PARTICIPANT HANDLERS
+ * ========================================
+ * @since 1.4.5
+ */
+
+// AJAX: Add participant with Magic Link (individual)
+add_action('wp_ajax_eipsi_add_participant_magic_link', 'eipsi_add_participant_magic_link_handler');
+
+function eipsi_add_participant_magic_link_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+    
+    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+    $first_name = isset($_POST['first_name']) ? sanitize_text_field($_POST['first_name']) : '';
+    $last_name = isset($_POST['last_name']) ? sanitize_text_field($_POST['last_name']) : '';
+    
+    if (!$study_id || !$email) {
+        wp_send_json_error(array('message' => 'Datos incompletos'));
+    }
+    
+    // Validar email
+    if (!is_email($email)) {
+        wp_send_json_error(array('message' => 'Email inválido'));
+    }
+    
+    // Cargar servicios
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-service.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
+    
+    // Generar password automático seguro
+    $password = wp_generate_password(16, true, true);
+    
+    // Crear participante
+    $result = EIPSI_Participant_Service::create_participant($study_id, $email, $password, array(
+        'first_name' => $first_name,
+        'last_name' => $last_name
+    ));
+    
+    if (!$result['success']) {
+        $error_messages = array(
+            'invalid_email' => 'El email es inválido',
+            'email_exists' => 'Este email ya está registrado en el estudio',
+            'short_password' => 'Error al generar contraseña',
+            'db_error' => 'Error al guardar el participante'
+        );
+        
+        $message = isset($error_messages[$result['error']]) ? $error_messages[$result['error']] : 'Error desconocido';
+        wp_send_json_error(array('message' => $message));
+    }
+    
+    // Enviar welcome email con Magic Link
+    $email_sent = EIPSI_Email_Service::send_welcome_email($study_id, $result['participant_id']);
+    
+    wp_send_json_success(array(
+        'message' => 'Participante agregado exitosamente',
+        'participant_id' => $result['participant_id'],
+        'email_sent' => $email_sent
+    ));
+}
+
+// AJAX: Bulk add participants from CSV or manual list
+add_action('wp_ajax_eipsi_add_participants_bulk', 'eipsi_add_participants_bulk_handler');
+
+function eipsi_add_participants_bulk_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+    
+    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
+    $emails_raw = isset($_POST['emails']) ? $_POST['emails'] : '';
+    
+    if (!$study_id || !$emails_raw) {
+        wp_send_json_error(array('message' => 'Datos incompletos'));
+    }
+    
+    // Parse emails (comma or newline separated)
+    $emails_array = preg_split('/[\r\n,;]+/', $emails_raw);
+    $emails_array = array_map('trim', $emails_array);
+    $emails_array = array_filter($emails_array); // Remove empty
+    $emails_array = array_unique($emails_array); // Remove duplicates
+    
+    if (empty($emails_array)) {
+        wp_send_json_error(array('message' => 'No se encontraron emails válidos'));
+    }
+    
+    // Cargar servicios
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-service.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
+    
+    $success_count = 0;
+    $failed_count = 0;
+    $errors = array();
+    
+    foreach ($emails_array as $email) {
+        $email = sanitize_email($email);
+        
+        if (!is_email($email)) {
+            $errors[] = "$email - Email inválido";
+            $failed_count++;
+            continue;
+        }
+        
+        // Generar password automático
+        $password = wp_generate_password(16, true, true);
+        
+        // Crear participante
+        $result = EIPSI_Participant_Service::create_participant($study_id, $email, $password, array(
+            'first_name' => '',
+            'last_name' => ''
+        ));
+        
+        if ($result['success']) {
+            // Enviar welcome email con Magic Link
+            EIPSI_Email_Service::send_welcome_email($study_id, $result['participant_id']);
+            $success_count++;
+        } else {
+            if ($result['error'] === 'email_exists') {
+                $errors[] = "$email - Ya registrado";
+            } else {
+                $errors[] = "$email - Error al crear";
+            }
+            $failed_count++;
+        }
+    }
+    
+    wp_send_json_success(array(
+        'message' => "Proceso completado: $success_count agregados, $failed_count fallaron",
+        'success_count' => $success_count,
+        'failed_count' => $failed_count,
+        'errors' => $errors
+    ));
+}
+
+// AJAX: Get public registration link for study
+add_action('wp_ajax_eipsi_get_public_registration_link', 'eipsi_get_public_registration_link_handler');
+
+function eipsi_get_public_registration_link_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+    
+    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
+    
+    if (!$study_id) {
+        wp_send_json_error(array('message' => 'Study ID requerido'));
+    }
+    
+    global $wpdb;
+    $study = $wpdb->get_row($wpdb->prepare(
+        "SELECT study_code FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $study_id
+    ));
+    
+    if (!$study) {
+        wp_send_json_error(array('message' => 'Estudio no encontrado'));
+    }
+    
+    // Generate public registration URL
+    // Format: site_url/?eipsi_register=STUDY_CODE
+    $registration_url = add_query_arg('eipsi_register', $study->study_code, site_url('/'));
+    
+    wp_send_json_success(array(
+        'registration_url' => $registration_url,
+        'study_code' => $study->study_code
+    ));
+}

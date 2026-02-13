@@ -1366,3 +1366,209 @@
         } );
     }
 } )( window.jQuery );
+
+    // ===========================
+    // ADD PARTICIPANT MULTI-METHOD MODAL
+    // ===========================
+
+    // Open Multi-Method Add Participant Modal
+    $(document).on('click', '#eipsi-add-participant-btn', function() {
+        $('#eipsi-add-participant-multi-modal').fadeIn(200);
+        // Reset forms
+        $('#eipsi-form-magic-link')[0].reset();
+        $('#eipsi-form-bulk')[0].reset();
+        $('#bulk-results').hide();
+        $('#public-registration-url').val('');
+        // Show first tab by default
+        $('.eipsi-tab-btn').removeClass('active');
+        $('.eipsi-tab-content').removeClass('active');
+        $('.eipsi-tab-btn[data-tab="magic-link"]').addClass('active');
+        $('#tab-magic-link').addClass('active');
+    });
+
+    // Tab Switching
+    $(document).on('click', '.eipsi-tab-btn', function() {
+        const targetTab = $(this).data('tab');
+        
+        // Update tab buttons
+        $('.eipsi-tab-btn').removeClass('active');
+        $(this).addClass('active');
+        
+        // Update tab content
+        $('.eipsi-tab-content').removeClass('active');
+        $('#tab-' + targetTab).addClass('active');
+    });
+
+    // Form Submit: Magic Link Individual
+    $(document).on('submit', '#eipsi-form-magic-link', function(e) {
+        e.preventDefault();
+        
+        const $btn = $('#btn-send-magic-link');
+        const originalText = $btn.html();
+        $btn.html('⏳ Enviando...').prop('disabled', true);
+        
+        $.ajax({
+            url: eipsiWavesManagerData.ajaxUrl || ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_add_participant_magic_link',
+                nonce: eipsiWavesManagerData.anonymizeNonce || eipsiWavesManagerData.wavesNonce,
+                study_id: $('#add-participant-study-id').val(),
+                email: $('#ml-email').val(),
+                first_name: $('#ml-first-name').val(),
+                last_name: $('#ml-last-name').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.data.message || 'Participante agregado y email enviado', 'success');
+                    $('#eipsi-form-magic-link')[0].reset();
+                    // Reload participants table if visible
+                    if (typeof loadParticipants === 'function') {
+                        loadParticipants();
+                    }
+                    // Close modal after 1.5s
+                    setTimeout(function() {
+                        $('#eipsi-add-participant-multi-modal').fadeOut(200);
+                    }, 1500);
+                } else {
+                    showNotification(response.data.message || 'Error al agregar participante', 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error de conexión', 'error');
+            },
+            complete: function() {
+                $btn.html(originalText).prop('disabled', false);
+            }
+        });
+    });
+
+    // Form Submit: Bulk Add
+    $(document).on('submit', '#eipsi-form-bulk', function(e) {
+        e.preventDefault();
+        
+        const $btn = $('#btn-send-bulk');
+        const originalText = $btn.html();
+        $btn.html('⏳ Procesando...').prop('disabled', true);
+        
+        $('#bulk-results').hide();
+        
+        $.ajax({
+            url: eipsiWavesManagerData.ajaxUrl || ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_add_participants_bulk',
+                nonce: eipsiWavesManagerData.anonymizeNonce || eipsiWavesManagerData.wavesNonce,
+                study_id: $('#add-participant-study-id').val(),
+                emails: $('#bulk-emails').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    const data = response.data;
+                    let resultsHtml = '<p><strong>Resumen:</strong></p>';
+                    resultsHtml += '<ul>';
+                    resultsHtml += '<li class="success">✓ ' + data.success_count + ' participantes agregados exitosamente</li>';
+                    if (data.failed_count > 0) {
+                        resultsHtml += '<li class="error">✗ ' + data.failed_count + ' fallaron</li>';
+                    }
+                    resultsHtml += '</ul>';
+                    
+                    if (data.errors && data.errors.length > 0) {
+                        resultsHtml += '<p><strong>Detalles de errores:</strong></p><ul>';
+                        data.errors.forEach(function(error) {
+                            resultsHtml += '<li class="error">' + escapeHtml(error) + '</li>';
+                        });
+                        resultsHtml += '</ul>';
+                    }
+                    
+                    $('#bulk-results-content').html(resultsHtml);
+                    $('#bulk-results').fadeIn(300);
+                    
+                    showNotification(data.message, data.failed_count > 0 ? 'warning' : 'success');
+                    
+                    // Reload participants table if visible
+                    if (typeof loadParticipants === 'function') {
+                        loadParticipants();
+                    }
+                } else {
+                    showNotification(response.data.message || 'Error al procesar emails', 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error de conexión', 'error');
+            },
+            complete: function() {
+                $btn.html(originalText).prop('disabled', false);
+            }
+        });
+    });
+
+    // Load Public Registration Link
+    $(document).on('click', '#btn-load-public-link', function() {
+        const $btn = $(this);
+        const originalText = $btn.html();
+        $btn.html('⏳ Generando...').prop('disabled', true);
+        
+        $.ajax({
+            url: eipsiWavesManagerData.ajaxUrl || ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_get_public_registration_link',
+                nonce: eipsiWavesManagerData.anonymizeNonce || eipsiWavesManagerData.wavesNonce,
+                study_id: $('#add-participant-study-id').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#public-registration-url').val(response.data.registration_url);
+                    showNotification('Enlace generado exitosamente', 'success');
+                } else {
+                    showNotification(response.data.message || 'Error al generar enlace', 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error de conexión', 'error');
+            },
+            complete: function() {
+                $btn.html(originalText).prop('disabled', false);
+            }
+        });
+    });
+
+    // Copy Public Link to Clipboard
+    $(document).on('click', '#btn-copy-public-link', function() {
+        const $input = $('#public-registration-url');
+        const url = $input.val();
+        
+        if (!url) {
+            showNotification('Primero genera el enlace público', 'warning');
+            return;
+        }
+        
+        // Copy to clipboard
+        $input.select();
+        document.execCommand('copy');
+        
+        // Visual feedback
+        const $btn = $(this);
+        const originalText = $btn.html();
+        $btn.html('✓ Copiado').css('background', '#10b981');
+        
+        setTimeout(function() {
+            $btn.html(originalText).css('background', '');
+        }, 2000);
+        
+        showNotification('Enlace copiado al portapapeles', 'success');
+    });
+
+    // Helper: Escape HTML
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
