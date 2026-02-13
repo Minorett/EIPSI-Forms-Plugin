@@ -241,12 +241,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function eipsiUpdateMethodCard(card, isSelected) {
     if (isSelected) {
         card.classList.add('selected');
-        card.style.borderColor = '#667eea';
-        card.style.backgroundColor = '#f8f9ff';
+        card.style.borderColor = '#4a6fa5';
+        card.style.backgroundColor = '#243a57';
     } else {
         card.classList.remove('selected');
-        card.style.borderColor = '#e9ecef';
-        card.style.backgroundColor = 'white';
+        card.style.borderColor = '#2c4a71';
+        card.style.backgroundColor = '#1f314a';
     }
 }
 </script>
@@ -261,24 +261,26 @@ function eipsiUpdateMethodCard(card, isSelected) {
 
 .invitation-section,
 .consent-section {
-    background: white;
+    background: var(--eipsi-primary-dark);
     padding: 2rem;
     border-radius: 12px;
-    border: 2px solid #e9ecef;
+    border: 2px solid #1f314a;
+    color: #ffffff;
 }
 
 .invitation-section h3,
 .consent-section h3 {
     margin: 0 0 0.5rem 0;
-    color: #495057;
+    color: #ffffff;
     font-size: 1.2rem;
     font-weight: 600;
 }
 
 .section-description {
     margin: 0 0 1.5rem 0;
-    color: #6c757d;
+    color: #ffffff;
     font-size: 0.95rem;
+    opacity: 0.85;
 }
 
 .invitation-methods {
@@ -287,22 +289,23 @@ function eipsiUpdateMethodCard(card, isSelected) {
 }
 
 .method-card {
-    border: 2px solid #e9ecef;
+    border: 2px solid #2c4a71;
     border-radius: 12px;
     padding: 1.5rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: white;
+    background: #1f314a;
+    color: #ffffff;
 }
 
 .method-card:hover {
-    border-color: #667eea;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+    border-color: #4a6fa5;
+    box-shadow: 0 4px 12px rgba(31, 49, 74, 0.4);
 }
 
 .method-card.selected {
-    border-color: #667eea;
-    background: #f8f9ff;
+    border-color: #4a6fa5;
+    background: #243a57;
 }
 
 .method-header {
@@ -319,19 +322,20 @@ function eipsiUpdateMethodCard(card, isSelected) {
 .method-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #495057;
+    color: #ffffff;
     cursor: pointer;
 }
 
 .method-description {
-    color: #6c757d;
+    color: #ffffff;
     line-height: 1.5;
+    opacity: 0.9;
 }
 
 .method-features {
     margin-top: 0.5rem;
     font-size: 0.9rem;
-    color: #667eea;
+    color: #ffffff;
     font-weight: 500;
 }
 
@@ -342,9 +346,9 @@ function eipsiUpdateMethodCard(card, isSelected) {
 .config-item {
     margin-bottom: 1rem;
     padding: 1rem;
-    background: #f8f9fa;
+    background: #1f314a;
     border-radius: 8px;
-    border: 1px solid #e9ecef;
+    border: 1px solid #2c4a71;
 }
 
 .checkbox-label {
@@ -361,19 +365,34 @@ function eipsiUpdateMethodCard(card, isSelected) {
 
 .checkbox-text {
     line-height: 1.4;
-    color: #495057;
+    color: #ffffff;
 }
 
 .consent-message-editor {
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid #2c4a71;
     padding-top: 1.5rem;
 }
 
 .consent-message-editor .form-label {
     font-weight: 600;
     margin-bottom: 0.5rem;
-    color: #495057;
+    color: #ffffff;
     display: block;
+}
+
+.consent-message-editor .form-textarea {
+    background: #1f314a;
+    border-color: #2c4a71;
+    color: #ffffff;
+}
+
+.consent-message-editor .form-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.consent-section .form-help {
+    color: #ffffff;
+    opacity: 0.8;
 }
 
 .consent-templates {
@@ -382,7 +401,7 @@ function eipsiUpdateMethodCard(card, isSelected) {
 
 .consent-templates h4 {
     margin: 0 0 1rem 0;
-    color: #495057;
+    color: #ffffff;
     font-size: 1rem;
 }
 
@@ -394,72 +413,67 @@ function eipsiUpdateMethodCard(card, isSelected) {
 
 .template-btn {
     padding: 0.5rem 1rem;
-    background: #f8f9fa;
-    border: 2px solid #e9ecef;
+    background: #1f314a;
+    border: 2px solid #2c4a71;
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
     transition: all 0.2s ease;
     white-space: nowrap;
+    color: #ffffff;
 }
 
 .template-btn:hover {
-    background: #667eea;
+    background: #4a6fa5;
     color: white;
-    border-color: #667eea;
+    border-color: #4a6fa5;
 }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
     .invitation-section,
     .consent-section {
-        background: #2c3e50;
-        border-color: #34495e;
+        background: var(--eipsi-primary-dark);
+        border-color: #1f314a;
     }
     
     .method-card {
-        background: #34495e;
-        border-color: #4a5f7a;
-        color: #ecf0f1;
+        background: #1f314a;
+        border-color: #2c4a71;
+        color: #ffffff;
     }
     
     .method-card.selected {
-        background: #2c3e50;
-        border-color: #667eea;
+        background: #243a57;
+        border-color: #4a6fa5;
     }
     
     .method-card:hover {
-        border-color: #667eea;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        border-color: #4a6fa5;
+        box-shadow: 0 4px 12px rgba(31, 49, 74, 0.4);
     }
     
-    .method-title {
-        color: #ecf0f1;
-    }
-    
+    .method-title,
     .method-description,
-    .method-features {
-        color: #95a5a6;
+    .method-features,
+    .checkbox-text {
+        color: #ffffff;
     }
     
     .config-item {
-        background: #34495e;
-        border-color: #4a5f7a;
-    }
-    
-    .checkbox-text {
-        color: #ecf0f1;
+        background: #1f314a;
+        border-color: #2c4a71;
     }
     
     .template-btn {
-        background: #34495e;
-        border-color: #4a5f7a;
-        color: #ecf0f1;
+        background: #1f314a;
+        border-color: #2c4a71;
+        color: #ffffff;
     }
     
     .template-btn:hover {
-        background: #667eea;
-        border-color: #667eea;
+        background: #4a6fa5;
+        border-color: #4a6fa5;
         color: white;
     }
 }

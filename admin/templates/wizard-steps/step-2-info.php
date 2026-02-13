@@ -43,7 +43,7 @@ for ($i = 0; $i < count($waves_config); $i++) {
         <input type="hidden" name="step_number" value="2">
         
         <div class="step-header">
-            <h2>📊 CONFIGURACIÓN DE TOMAS</h2>
+            <h2>📊 Configuración de Waves</h2>
             <p>Define cuántas evaluaciones realizarás y qué formularios usarás para cada una.</p>
         </div>
         

@@ -98,7 +98,7 @@ if (!empty($step_3['timing_intervals'])) {
             
             <!-- Waves Configuration -->
             <div class="summary-section">
-                <h3>📊 CONFIGURACIÓN DE TOMAS</h3>
+                <h3>📊 Configuración de Waves</h3>
                 <div class="waves-summary">
                     <div class="waves-count">
                         <strong><?php echo intval($step_2['number_of_waves'] ?? 0); ?> Tomas configuradas</strong>
@@ -133,7 +133,7 @@ if (!empty($step_3['timing_intervals'])) {
             
             <!-- Timing Configuration -->
             <div class="summary-section">
-                <h3>⏱️ TIMING ENTRE TOMAS</h3>
+                <h3>⏰ Programación Temporal</h3>
                 <div class="timing-summary">
                     <?php if (!empty($timing_summary)): ?>
                         <div class="intervals-list">
@@ -236,24 +236,17 @@ if (!empty($step_3['timing_intervals'])) {
 // Disable/enable activation button based on confirmation
 document.addEventListener('DOMContentLoaded', function() {
     const confirmationCheckbox = document.getElementById('activation_confirmed');
-    const activationButton = document.querySelector('.eipsi-wizard-navigation .button-primary');
+    const activationButton = document.querySelector('.study-navigation .button-primary');
     
     if (confirmationCheckbox && activationButton) {
-        // Initial state
-        activationButton.disabled = !confirmationCheckbox.checked;
-        activationButton.style.opacity = '0.5';
-        
-        confirmationCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                activationButton.disabled = false;
-                activationButton.style.opacity = '1';
-                activationButton.textContent = '🚀 Activar Estudio';
-            } else {
-                activationButton.disabled = true;
-                activationButton.style.opacity = '0.5';
-                activationButton.textContent = 'Confirmar Activación';
-            }
-        });
+        const updateActivationState = () => {
+            const isChecked = confirmationCheckbox.checked;
+            activationButton.disabled = !isChecked;
+            activationButton.style.opacity = isChecked ? '1' : '0.5';
+        };
+
+        updateActivationState();
+        confirmationCheckbox.addEventListener('change', updateActivationState);
     }
 });
 
@@ -319,7 +312,8 @@ function eipsiDownloadSummary() {
 
 .summary-item .value.code {
     font-family: 'Courier New', monospace;
-    background: #f8f9fa;
+    background: #ffffff;
+    color: #000000;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     font-size: 0.9rem;

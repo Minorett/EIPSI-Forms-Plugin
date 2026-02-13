@@ -82,23 +82,34 @@
 
 .study-header h1 {
     font-size: 2rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
 }
 
-.study-header h1::before {
-    content: "📊";
-    font-size: 1.5em;
+.step-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--eipsi-primary-dark);
+    color: #ffffff;
+    border-radius: 12px;
 }
 
-.study-header p {
-    color: var(--eipsi-text-light);
-    font-size: 1.1rem;
-    max-width: 800px;
-    margin: 0 auto;
+.step-header h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.step-header p {
+    margin: 0;
+    color: #ffffff;
+    opacity: 0.9;
+    font-size: 1rem;
 }
 
 /* ==========================================================================
