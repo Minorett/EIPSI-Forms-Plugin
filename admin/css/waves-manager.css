@@ -938,3 +938,258 @@
         color: #95a5a6;
     }
 }
+
+/* ===========================
+   ADD PARTICIPANT MULTI-METHOD MODAL
+   =========================== */
+
+/* Tabs Navigation */
+.eipsi-tabs-nav {
+    display: flex;
+    border-bottom: 2px solid #4a5568;
+    margin-bottom: 20px;
+    gap: 5px;
+}
+
+.eipsi-tab-btn {
+    background: transparent;
+    border: none;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+    position: relative;
+}
+
+.eipsi-tab-btn:hover {
+    color: #ffffff;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.eipsi-tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+/* Tab Content */
+.eipsi-tab-content {
+    display: none;
+}
+
+.eipsi-tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Form Styles dentro de tabs */
+.eipsi-tab-content .form-group {
+    margin-bottom: 20px;
+}
+
+.eipsi-tab-content .form-group label {
+    display: block;
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.eipsi-tab-content .form-group label .required {
+    color: #ef4444;
+}
+
+.eipsi-tab-content .form-group input[type="email"],
+.eipsi-tab-content .form-group input[type="text"],
+.eipsi-tab-content .form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #4a5568;
+    background: #374151;
+    color: #ffffff;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.eipsi-tab-content .form-group input:focus,
+.eipsi-tab-content .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.eipsi-tab-content .form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.6;
+}
+
+.eipsi-tab-content .form-group small.form-help {
+    display: block;
+    margin-top: 6px;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* Form Row (2 columns) */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Input Group (text + button) */
+.input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.input-group input {
+    flex: 1;
+}
+
+/* Bulk Results Container */
+.bulk-results-container {
+    background: #1e3a8a;
+    border: 2px solid #3b82f6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.bulk-results-container h4 {
+    margin: 0 0 12px 0;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.bulk-results-container ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.bulk-results-container li {
+    color: #e2e8f0;
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+.bulk-results-container li.error {
+    color: #fca5a5;
+}
+
+.bulk-results-container li.success {
+    color: #86efac;
+}
+
+/* Notice Inline */
+.notice.inline {
+    padding: 12px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.notice.notice-info {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 4px solid #3b82f6;
+    color: #e2e8f0;
+}
+
+.notice.notice-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-left: 4px solid #f59e0b;
+    color: #e2e8f0;
+}
+
+.notice.notice-success {
+    background: rgba(16, 185, 129, 0.1);
+    border-left: 4px solid #10b981;
+    color: #e2e8f0;
+}
+
+.notice.notice-error {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 4px solid #ef4444;
+    color: #e2e8f0;
+}
+
+.notice p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Public Registration Content */
+.public-registration-content {
+    padding: 10px 0;
+}
+
+.public-registration-content p {
+    color: #e2e8f0;
+    margin-bottom: 20px;
+}
+
+#public-registration-url {
+    background: #1f2937 !important;
+    cursor: text;
+}
+
+#public-registration-url:focus {
+    background: #111827 !important;
+}
+
+/* Button Copy */
+#btn-copy-public-link {
+    white-space: nowrap;
+}
+
+/* Modal Footer within tabs */
+.eipsi-tab-content .modal-footer {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 2px solid #4a5568;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Responsive Tabs */
+@media (max-width: 640px) {
+    .eipsi-tabs-nav {
+        flex-direction: column;
+        border-bottom: none;
+        gap: 0;
+    }
+
+    .eipsi-tab-btn {
+        border-bottom: 1px solid #4a5568;
+        border-left: 3px solid transparent;
+        text-align: left;
+    }
+
+    .eipsi-tab-btn.active {
+        border-bottom-color: #4a5568;
+        border-left-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+    }
+}

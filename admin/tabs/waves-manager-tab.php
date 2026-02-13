@@ -533,6 +533,123 @@ if (class_exists('EIPSI_Anonymize_Service') && $current_study_id) {
     </div>
 </div>
 
+<!-- Modal: Agregar Participante (Multi-Method) -->
+<div id="eipsi-add-participant-multi-modal" class="eipsi-modal" style="display:none;">
+    <div class="eipsi-modal-content modal-large">
+        <span class="eipsi-close-modal">&times;</span>
+        <h3><?php esc_html_e('➕ Agregar Participantes al Estudio', 'eipsi-forms'); ?></h3>
+        <p class="description">
+            <?php esc_html_e('Selecciona el método de invitación para agregar participantes a tu estudio.', 'eipsi-forms'); ?>
+        </p>
+        
+        <input type="hidden" id="add-participant-study-id" value="<?php echo esc_attr($current_study_id); ?>">
+        
+        <!-- Tabs Navigation -->
+        <div class="eipsi-tabs-nav" style="display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px;">
+            <button type="button" class="eipsi-tab-btn active" data-tab="magic-link">
+                ✉️ <?php esc_html_e('Magic Link Individual', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="eipsi-tab-btn" data-tab="bulk">
+                📋 <?php esc_html_e('Lista CSV / Manual', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="eipsi-tab-btn" data-tab="public">
+                🌐 <?php esc_html_e('Registro Público', 'eipsi-forms'); ?>
+            </button>
+        </div>
+        
+        <!-- Tab 1: Magic Link Individual -->
+        <div class="eipsi-tab-content active" id="tab-magic-link">
+            <form id="eipsi-form-magic-link">
+                <div class="form-group">
+                    <label for="ml-email"><?php esc_html_e('Email del Participante:', 'eipsi-forms'); ?> <span class="required">*</span></label>
+                    <input type="email" id="ml-email" name="email" required placeholder="participante@ejemplo.com">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ml-first-name"><?php esc_html_e('Nombre (opcional):', 'eipsi-forms'); ?></label>
+                        <input type="text" id="ml-first-name" name="first_name" placeholder="Juan">
+                    </div>
+                    <div class="form-group">
+                        <label for="ml-last-name"><?php esc_html_e('Apellido (opcional):', 'eipsi-forms'); ?></label>
+                        <input type="text" id="ml-last-name" name="last_name" placeholder="Pérez">
+                    </div>
+                </div>
+                
+                <div class="notice notice-info inline" style="margin-top: 15px;">
+                    <p><?php esc_html_e('Se generará un Magic Link único y se enviará automáticamente por email al participante. El enlace será válido por 48 horas.', 'eipsi-forms'); ?></p>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="submit" class="button button-primary" id="btn-send-magic-link">
+                        ✉️ <?php esc_html_e('Crear y Enviar Magic Link', 'eipsi-forms'); ?>
+                    </button>
+                    <button type="button" class="button eipsi-close-modal-btn"><?php esc_html_e('Cancelar', 'eipsi-forms'); ?></button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Tab 2: Bulk CSV / Manual -->
+        <div class="eipsi-tab-content" id="tab-bulk">
+            <form id="eipsi-form-bulk">
+                <div class="form-group">
+                    <label for="bulk-emails"><?php esc_html_e('Lista de Emails:', 'eipsi-forms'); ?> <span class="required">*</span></label>
+                    <textarea id="bulk-emails" name="emails" rows="8" required placeholder="<?php esc_attr_e('Ingresa emails separados por comas, punto y coma o línea nueva:
+
+participante1@ejemplo.com
+participante2@ejemplo.com, participante3@ejemplo.com
+participante4@ejemplo.com; participante5@ejemplo.com', 'eipsi-forms'); ?>"></textarea>
+                    <small class="form-help"><?php esc_html_e('Formatos aceptados: separados por comas, punto y coma o línea nueva. Se eliminarán duplicados automáticamente.', 'eipsi-forms'); ?></small>
+                </div>
+                
+                <div class="notice notice-info inline">
+                    <p><?php esc_html_e('Se enviará un Magic Link único a cada email válido. Los emails duplicados o inválidos serán ignorados.', 'eipsi-forms'); ?></p>
+                </div>
+                
+                <div id="bulk-results" class="bulk-results-container" style="display: none; margin-top: 15px; padding: 15px; background: #f0f9ff; border-radius: 4px;">
+                    <h4><?php esc_html_e('Resultados del Envío:', 'eipsi-forms'); ?></h4>
+                    <div id="bulk-results-content"></div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="submit" class="button button-primary" id="btn-send-bulk">
+                        ✉️ <?php esc_html_e('Enviar Invitaciones Masivas', 'eipsi-forms'); ?>
+                    </button>
+                    <button type="button" class="button eipsi-close-modal-btn"><?php esc_html_e('Cancelar', 'eipsi-forms'); ?></button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Tab 3: Public Registration -->
+        <div class="eipsi-tab-content" id="tab-public">
+            <div class="public-registration-content">
+                <p><?php esc_html_e('Utiliza este enlace público para que los participantes se registren por su cuenta.', 'eipsi-forms'); ?></p>
+                
+                <div class="form-group">
+                    <label><?php esc_html_e('Enlace de Registro Público:', 'eipsi-forms'); ?></label>
+                    <div class="input-group" style="display: flex; gap: 10px;">
+                        <input type="text" id="public-registration-url" readonly style="flex: 1; background: #f5f5f5;">
+                        <button type="button" class="button" id="btn-copy-public-link">
+                            📋 <?php esc_html_e('Copiar Enlace', 'eipsi-forms'); ?>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="notice notice-warning inline" style="margin-top: 15px;">
+                    <p><strong><?php esc_html_e('Nota:', 'eipsi-forms'); ?></strong> <?php esc_html_e('Este enlace es público y cualquier persona puede registrarse. Compártelo solo con tus participantes.', 'eipsi-forms'); ?></p>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="button button-primary" id="btn-load-public-link">
+                        🔗 <?php esc_html_e('Generar Enlace Público', 'eipsi-forms'); ?>
+                    </button>
+                    <button type="button" class="button eipsi-close-modal-btn"><?php esc_html_e('Cerrar', 'eipsi-forms'); ?></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Enviar Recordatorio Manual -->
 <div id="eipsi-manual-reminder-modal" class="eipsi-modal" style="display:none;">
     <div class="eipsi-modal-content modal-large">
