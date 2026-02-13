@@ -4,6 +4,7 @@ if (!defined('ABSPATH')) {
 }
 
 function eipsi_forms_menu() {
+    // Menu Principal: EIPSI Forms
     add_menu_page(
         __('EIPSI Forms', 'eipsi-forms'),
         __('EIPSI Forms', 'eipsi-forms'),
@@ -13,18 +14,19 @@ function eipsi_forms_menu() {
         plugin_dir_url(__FILE__) . '../assets/eipsi-icon-menu.svg',
         25
     );
-    
-    // Add submenu for Results & Experience (consolidated admin panel)
+
+    // Submenú: Longitudinal Study (REORGANIZADO - v1.5.0)
+    // Este es ahora el punto central para todas las funcionalidades longitudinales
     add_submenu_page(
         'eipsi-results',
-        __('Results & Experience', 'eipsi-forms'),
-        __('Results & Experience', 'eipsi-forms'),
+        __('Longitudinal Study Dashboard', 'eipsi-forms'),
+        __('Longitudinal Study', 'eipsi-forms'),
         'manage_options',
         'eipsi-results',
         'eipsi_display_form_responses'
     );
-    
-    // Add submenu for Configuration
+
+    // Submenú: Configuration (mantenido separado)
     add_submenu_page(
         'eipsi-results',
         __('Database Configuration', 'eipsi-forms'),
@@ -33,12 +35,12 @@ function eipsi_forms_menu() {
         'eipsi-db-config',
         'eipsi_display_configuration_page'
     );
-    
-    // Add submenu for Setup Wizard
+
+    // Submenú: Create New Study (redirige al Setup Wizard)
     add_submenu_page(
         'eipsi-results',
         __('Create New Longitudinal Study', 'eipsi-forms'),
-        __('Longitudinal Study', 'eipsi-forms'),
+        __('Create Study', 'eipsi-forms'),
         'manage_options',
         'eipsi-new-study',
         'eipsi_display_setup_wizard_page'

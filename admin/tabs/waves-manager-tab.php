@@ -82,11 +82,11 @@ $available_forms = get_posts(array(
 ?>
 
 <div class="eipsi-waves-manager-wrap" data-study-id="<?php echo esc_attr($current_study_id); ?>">
-    
+
     <!-- Header with Study Selector -->
     <div class="eipsi-waves-header">
         <div class="study-selector-wrap">
-            <label for="eipsi-study-selector"><strong><?php esc_html_e('Seleccionar Estudio:', 'eipsi-forms'); ?></strong></label>
+            <label for="eipsi-study-selector"><strong>📚 <?php esc_html_e('Seleccionar Estudio:', 'eipsi-forms'); ?></strong></label>
             <select id="eipsi-study-selector" onchange="window.location.href='?page=eipsi-results&tab=waves-manager&study_id=' + this.value">
                 <?php if (empty($studies)): ?>
                     <option value=""><?php esc_html_e('No hay estudios creados', 'eipsi-forms'); ?></option>
@@ -99,7 +99,7 @@ $available_forms = get_posts(array(
                 <?php endif; ?>
             </select>
         </div>
-        
+
         <div class="header-actions">
             <?php if ($current_study_id): ?>
                 <button type="button" class="button button-primary" id="eipsi-create-wave-btn" data-next-index="<?php echo esc_attr($next_wave_index); ?>">
@@ -107,45 +107,73 @@ $available_forms = get_posts(array(
                 </button>
             <?php endif; ?>
         </div>
+    </div>
 
 
     <?php if (!$current_study_id): ?>
-        <div class="notice notice-warning">
+        <div class="notice notice-warning" style="padding: 15px; border-left: 4px solid #f59e0b;">
             <p><?php esc_html_e('Por favor, selecciona o crea un estudio primero para gestionar sus ondas.', 'eipsi-forms'); ?></p>
+            <p>
+                <a href="?page=eipsi-new-study" class="button button-primary">
+                    ➕ <?php esc_html_e('Crear Nuevo Estudio', 'eipsi-forms'); ?>
+                </a>
+            </p>
         </div>
     <?php else: ?>
-        
+
         <!-- Waves List -->
         <div class="eipsi-waves-list">
             <?php if (empty($waves)): ?>
-                <div class="eipsi-empty-state">
-                    <p><?php esc_html_e('No hay ondas configuradas para este estudio.', 'eipsi-forms'); ?></p>
+                <div class="eipsi-waves-empty">
+                    <h3>🌊 <?php esc_html_e('Sin Ondas Configuradas', 'eipsi-forms'); ?></h3>
+                    <p><?php esc_html_e('No hay ondas configuradas para este estudio. Crea tu primera onda para comenzar.', 'eipsi-forms'); ?></p>
                 </div>
             <?php else: ?>
                 <div class="eipsi-waves-grid">
                     <?php foreach ($waves as $wave): ?>
-                        <?php 
+                        <?php
                         $stats = EIPSI_Wave_Service::get_wave_stats($wave['id']);
                         $progress = ($stats['total'] > 0) ? round(($stats['submitted'] / $stats['total']) * 100) : 0;
                         $form_post = get_post($wave['form_id']);
                         $form_name = $form_post ? $form_post->post_title : __('Formulario no encontrado', 'eipsi-forms');
                         ?>
-                        <div class="eipsi-wave-card" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
+                        <div class="wave-card wave-<?php echo esc_attr($wave['status']); ?>" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
                             <div class="wave-card-header">
-                                <span class="wave-index">T<?php echo esc_html($wave['wave_index']); ?></span>
-                                <h3 class="wave-name"><?php echo esc_html($wave['name']); ?></h3>
-                                <span class="wave-status status-<?php echo esc_attr($wave['status']); ?>">
-                                    <?php echo esc_html(ucfirst($wave['status'])); ?>
-                                </span>
-                            </div>
-                            
-                            <div class="wave-card-body">
-                                <p class="wave-description"><?php echo esc_html($wave['description'] ?? ''); ?></p>
-                                <div class="wave-meta">
-                                    <span><strong><?php esc_html_e('Formulario:', 'eipsi-forms'); ?></strong> <?php echo esc_html($form_name); ?></span>
-                                    <span><strong><?php esc_html_e('Vence:', 'eipsi-forms'); ?></strong> <?php echo esc_html($wave['due_date'] ? date_i18n(get_option('date_format') . ' H:i', strtotime($wave['due_date'])) : __('Sin fecha', 'eipsi-forms')); ?></span>
+                                <div class="wave-identifier">
+                                    <span class="wave-index">T<?php echo esc_html($wave['wave_index']); ?></span>
                                 </div>
-                                
+                                <div class="wave-title-section">
+                                    <h3 class="wave-title"><?php echo esc_html($wave['name']); ?></h3>
+                                    <span class="wave-badge <?php echo esc_attr($wave['status']); ?>">
+                                        <?php echo esc_html(ucfirst($wave['status'])); ?>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="wave-card-body">
+                                <?php if (!empty($wave['description'])): ?>
+                                    <p class="wave-description"><?php echo esc_html($wave['description']); ?></p>
+                                <?php endif; ?>
+
+                                <div class="wave-info">
+                                    <div class="wave-info-row">
+                                        <span class="wave-info-label">📋 <?php esc_html_e('Formulario:', 'eipsi-forms'); ?></span>
+                                        <span class="wave-info-value"><?php echo esc_html($form_name); ?></span>
+                                    </div>
+                                    <div class="wave-info-row">
+                                        <span class="wave-info-label">📅 <?php esc_html_e('Vence:', 'eipsi-forms'); ?></span>
+                                        <span class="wave-info-value">
+                                            <?php echo esc_html($wave['due_date'] ? date_i18n(get_option('date_format') . ' H:i', strtotime($wave['due_date'])) : __('Sin fecha', 'eipsi-forms')); ?>
+                                        </span>
+                                    </div>
+                                    <div class="wave-info-row">
+                                        <span class="wave-info-label">⏱️ <?php esc_html_e('Tiempo Límite:', 'eipsi-forms'); ?></span>
+                                        <span class="wave-info-value">
+                                            <?php echo !empty($wave['completion_time_limit']) ? esc_html($wave['completion_time_limit'] . ' min') : __('Ilimitado', 'eipsi-forms'); ?>
+                                        </span>
+                                    </div>
+                                </div>
+
                                 <div class="wave-stats">
                                     <div class="stat-item">
                                         <span class="stat-value"><?php echo (int)$stats['total']; ?></span>
@@ -153,14 +181,14 @@ $available_forms = get_posts(array(
                                     </div>
                                     <div class="stat-item">
                                         <span class="stat-value"><?php echo (int)$stats['submitted']; ?></span>
-                                        <span class="stat-label"><?php esc_html_e('Respondidos', 'eipsi-forms'); ?></span>
+                                        <span class="stat-label"><?php esc_html_e('Completados', 'eipsi-forms'); ?></span>
                                     </div>
                                     <div class="stat-item">
                                         <span class="stat-value"><?php echo (int)$stats['pending']; ?></span>
                                         <span class="stat-label"><?php esc_html_e('Pendientes', 'eipsi-forms'); ?></span>
                                     </div>
                                 </div>
-                                
+
                                 <div class="wave-progress">
                                     <div class="progress-bar">
                                         <div class="progress-fill" style="width: <?php echo (int)$progress; ?>%"></div>
@@ -168,25 +196,25 @@ $available_forms = get_posts(array(
                                     <span class="progress-text"><?php echo (int)$progress; ?>%</span>
                                 </div>
                             </div>
-                            
+
                             <div class="wave-card-actions">
-                                <button type="button" class="button eipsi-edit-wave-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
-                                    <?php esc_html_e('Editar', 'eipsi-forms'); ?>
+                                <button type="button" class="button button-secondary eipsi-edit-wave-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
+                                    ✏️ <?php esc_html_e('Editar', 'eipsi-forms'); ?>
                                 </button>
-                                <button type="button" class="button eipsi-assign-participants-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
-                                    <?php esc_html_e('Asignar', 'eipsi-forms'); ?>
+                                <button type="button" class="button button-secondary eipsi-assign-participants-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
+                                    👥 <?php esc_html_e('Asignar', 'eipsi-forms'); ?>
                                 </button>
-                                <button type="button" class="button eipsi-extend-deadline-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
-                                    <?php esc_html_e('Extender', 'eipsi-forms'); ?>
+                                <button type="button" class="button button-secondary eipsi-extend-deadline-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
+                                    📅 <?php esc_html_e('Extender', 'eipsi-forms'); ?>
                                 </button>
-                                <button type="button" class="button eipsi-send-reminder-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
-                                    <?php esc_html_e('Recordatorio', 'eipsi-forms'); ?>
+                                <button type="button" class="button button-secondary eipsi-send-reminder-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
+                                    📧 <?php esc_html_e('Recordatorio', 'eipsi-forms'); ?>
                                 </button>
                                 <button type="button" class="button button-secondary eipsi-send-manual-reminder-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
-                                    <?php esc_html_e('Recordatorio Manual', 'eipsi-forms'); ?>
+                                    ✉️ <?php esc_html_e('Manual', 'eipsi-forms'); ?>
                                 </button>
                                 <button type="button" class="button button-link-delete eipsi-delete-wave-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
-                                    <?php esc_html_e('Eliminar', 'eipsi-forms'); ?>
+                                    🗑️ <?php esc_html_e('Eliminar', 'eipsi-forms'); ?>
                                 </button>
                             </div>
                         </div>
@@ -201,47 +229,71 @@ $available_forms = get_posts(array(
 <div id="eipsi-wave-modal" class="eipsi-modal" style="display:none;">
     <div class="eipsi-modal-content">
         <span class="eipsi-close-modal">&times;</span>
-        <h3 id="wave-modal-title"><?php esc_html_e('Crear Nueva Onda', 'eipsi-forms'); ?></h3>
+        <h3 id="wave-modal-title">🌊 <?php esc_html_e('Crear Nueva Onda', 'eipsi-forms'); ?></h3>
         <form id="eipsi-wave-form">
             <input type="hidden" name="wave_id" id="wave_id" value="">
             <input type="hidden" name="study_id" value="<?php echo esc_attr($current_study_id); ?>">
-            
-            <div class="form-group">
-                <label for="wave_name"><?php esc_html_e('Nombre de la Onda:', 'eipsi-forms'); ?></label>
-                <input type="text" id="wave_name" name="name" required placeholder="Ej: Evaluación Inicial">
-            </div>
-            
-            <div class="form-row">
+
+            <div class="eipsi-form-row">
                 <div class="form-group">
-                    <label for="wave_index"><?php esc_html_e('Índice (T1, T2...):', 'eipsi-forms'); ?></label>
-                    <input type="number" id="wave_index" name="wave_index" min="1" step="1" required>
+                    <label for="wave_name" class="eipsi-form-label required">
+                        📝 <?php esc_html_e('Nombre de la Onda:', 'eipsi-forms'); ?>
+                    </label>
+                    <input type="text" id="wave_name" name="name" class="eipsi-form-input" required placeholder="Ej: Evaluación Inicial">
                 </div>
+
                 <div class="form-group">
-                    <label for="form_id"><?php esc_html_e('Formulario Asociado:', 'eipsi-forms'); ?></label>
-                    <select id="form_id" name="form_id" required>
-                        <option value=""><?php esc_html_e('Seleccionar formulario...', 'eipsi-forms'); ?></option>
-                        <?php foreach ($available_forms as $form): ?>
-                            <option value="<?php echo esc_attr($form->ID); ?>"><?php echo esc_html($form->post_title); ?></option>
-                        <?php endforeach; ?>
+                    <label for="wave_index" class="eipsi-form-label required">
+                        🔢 <?php esc_html_e('Índice (T1, T2...):', 'eipsi-forms'); ?>
+                    </label>
+                    <input type="number" id="wave_index" name="wave_index" class="eipsi-form-input" min="1" step="1" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="form_id" class="eipsi-form-label required">
+                    📋 <?php esc_html_e('Formulario Asociado:', 'eipsi-forms'); ?>
+                </label>
+                <select id="form_id" name="form_id" class="eipsi-form-select" required>
+                    <option value=""><?php esc_html_e('Seleccionar formulario...', 'eipsi-forms'); ?></option>
+                    <?php foreach ($available_forms as $form): ?>
+                        <option value="<?php echo esc_attr($form->ID); ?>"><?php echo esc_html($form->post_title); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="eipsi-form-row">
+                <div class="form-group">
+                    <label for="due_date" class="eipsi-form-label">
+                        📅 <?php esc_html_e('Fecha de Vencimiento:', 'eipsi-forms'); ?>
+                    </label>
+                    <input type="datetime-local" id="due_date" name="due_date" class="eipsi-form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="wave_status" class="eipsi-form-label">
+                        📊 <?php esc_html_e('Estado:', 'eipsi-forms'); ?>
+                    </label>
+                    <select id="wave_status" name="status" class="eipsi-form-select">
+                        <option value="pending"><?php esc_html_e('Pendiente', 'eipsi-forms'); ?></option>
+                        <option value="active"><?php esc_html_e('Activa', 'eipsi-forms'); ?></option>
+                        <option value="completed"><?php esc_html_e('Completada', 'eipsi-forms'); ?></option>
                     </select>
                 </div>
             </div>
-            
+
             <div class="form-group">
-                <label for="due_date"><?php esc_html_e('Fecha de Vencimiento:', 'eipsi-forms'); ?></label>
-                <input type="datetime-local" id="due_date" name="due_date">
-            </div>
-            
-            <div class="form-group">
-                <label for="wave_description"><?php esc_html_e('Descripción:', 'eipsi-forms'); ?></label>
-                <textarea id="wave_description" name="description" rows="3"></textarea>
+                <label for="wave_description" class="eipsi-form-label">
+                    📄 <?php esc_html_e('Descripción:', 'eipsi-forms'); ?>
+                </label>
+                <textarea id="wave_description" name="description" class="eipsi-form-textarea" rows="3" placeholder="Describe el propósito de esta onda..."></textarea>
             </div>
 
             <!-- Time Limit Configuration -->
             <div class="form-group time-limit-section">
                 <label class="time-limit-header">
                     <input type="checkbox" name="has_time_limit" id="has_time_limit" value="1">
-                    <?php esc_html_e('Limitar tiempo para completar el formulario', 'eipsi-forms'); ?>
+                    ⏱️ <?php esc_html_e('Limitar tiempo para completar el formulario', 'eipsi-forms'); ?>
                 </label>
                 <div class="time-limit-input" id="time-limit-input-container" style="display: none; margin-top: 10px; padding-left: 20px;">
                     <div class="input-group">
@@ -255,13 +307,17 @@ $available_forms = get_posts(array(
             <div class="form-group">
                 <label>
                     <input type="checkbox" name="is_mandatory" value="1" checked>
-                    <?php esc_html_e('Esta onda es obligatoria', 'eipsi-forms'); ?>
+                    ⭐ <?php esc_html_e('Esta onda es obligatoria', 'eipsi-forms'); ?>
                 </label>
             </div>
 
             <div class="modal-footer">
-                <button type="submit" class="button button-primary" id="save-wave-btn"><?php esc_html_e('Guardar Onda', 'eipsi-forms'); ?></button>
-                <button type="button" class="button eipsi-close-modal-btn"><?php esc_html_e('Cancelar', 'eipsi-forms'); ?></button>
+                <button type="submit" class="button button-primary" id="save-wave-btn">
+                    💾 <?php esc_html_e('Guardar Onda', 'eipsi-forms'); ?>
+                </button>
+                <button type="button" class="button eipsi-close-modal-btn">
+                    ❌ <?php esc_html_e('Cancelar', 'eipsi-forms'); ?>
+                </button>
             </div>
         </form>
     </div>
@@ -450,33 +506,35 @@ if (class_exists('EIPSI_Anonymize_Service') && $current_study_id) {
 
 <?php if ($current_study_id): ?>
 <!-- Participants Management Section -->
-<div class="eipsi-participants-section" style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2><?php esc_html_e('👥 Gestión de Participantes', 'eipsi-forms'); ?></h2>
+<div class="eipsi-participants-section" style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h2 style="margin: 0 0 5px 0;">👥 <?php esc_html_e('Gestión de Participantes', 'eipsi-forms'); ?></h2>
+            <p style="margin: 0; color: #6c757d; font-size: 0.9rem;">
+                <?php esc_html_e('Administra los participantes del estudio. Puedes agregar nuevos, editar información o eliminar participantes.', 'eipsi-forms'); ?>
+            </p>
+        </div>
         <button type="button" class="button button-primary" id="eipsi-add-participant-btn">
             ➕ <?php esc_html_e('Agregar Participante', 'eipsi-forms'); ?>
         </button>
     </div>
-    <p class="description" style="margin-bottom: 20px;">
-        <?php esc_html_e('Administra los participantes del estudio. Puedes agregar nuevos, editar información o eliminar participantes.', 'eipsi-forms'); ?>
-    </p>
 
     <!-- Participants Table -->
     <div class="participants-table-container">
         <table class="wp-list-table widefat fixed striped" id="participants-table">
             <thead>
                 <tr>
-                    <th><?php esc_html_e('ID', 'eipsi-forms'); ?></th>
+                    <th style="width: 80px;"><?php esc_html_e('ID', 'eipsi-forms'); ?></th>
                     <th><?php esc_html_e('Nombre', 'eipsi-forms'); ?></th>
                     <th><?php esc_html_e('Email', 'eipsi-forms'); ?></th>
                     <th><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
                     <th><?php esc_html_e('Registrado', 'eipsi-forms'); ?></th>
-                    <th><?php esc_html_e('Acciones', 'eipsi-forms'); ?></th>
+                    <th style="width: 200px;"><?php esc_html_e('Acciones', 'eipsi-forms'); ?></th>
                 </tr>
             </thead>
             <tbody id="participants-tbody">
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 20px;">
+                    <td colspan="6" style="text-align: center; padding: 40px;">
                         <span class="spinner is-active"></span> <?php esc_html_e('Cargando participantes...', 'eipsi-forms'); ?>
                     </td>
                 </tr>
@@ -489,37 +547,45 @@ if (class_exists('EIPSI_Anonymize_Service') && $current_study_id) {
 <div id="eipsi-participant-modal" class="eipsi-modal" style="display:none;">
     <div class="eipsi-modal-content">
         <span class="eipsi-close-modal">&times;</span>
-        <h3 id="participant-modal-title"><?php esc_html_e('Agregar Participante', 'eipsi-forms'); ?></h3>
+        <h3 id="participant-modal-title">👤 <?php esc_html_e('Agregar Participante', 'eipsi-forms'); ?></h3>
         <form id="eipsi-participant-form">
             <input type="hidden" name="participant_id" id="participant_id" value="">
             <input type="hidden" name="study_id" value="<?php echo esc_attr($current_study_id); ?>">
 
             <div class="form-group">
-                <label for="participant_email"><?php esc_html_e('Email:', 'eipsi-forms'); ?> <span class="required">*</span></label>
-                <input type="email" id="participant_email" name="email" required placeholder="participante@ejemplo.com">
+                <label for="participant_email" class="eipsi-form-label required">
+                    📧 <?php esc_html_e('Email:', 'eipsi-forms'); ?>
+                </label>
+                <input type="email" id="participant_email" name="email" class="eipsi-form-input" required placeholder="participante@ejemplo.com">
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="participant_first_name"><?php esc_html_e('Nombre:', 'eipsi-forms'); ?></label>
-                    <input type="text" id="participant_first_name" name="first_name" placeholder="Juan">
+                    <label for="participant_first_name" class="eipsi-form-label">
+                        👤 <?php esc_html_e('Nombre:', 'eipsi-forms'); ?>
+                    </label>
+                    <input type="text" id="participant_first_name" name="first_name" class="eipsi-form-input" placeholder="Juan">
                 </div>
                 <div class="form-group">
-                    <label for="participant_last_name"><?php esc_html_e('Apellido:', 'eipsi-forms'); ?></label>
-                    <input type="text" id="participant_last_name" name="last_name" placeholder="Pérez">
+                    <label for="participant_last_name" class="eipsi-form-label">
+                        👤 <?php esc_html_e('Apellido:', 'eipsi-forms'); ?>
+                    </label>
+                    <input type="text" id="participant_last_name" name="last_name" class="eipsi-form-input" placeholder="Pérez">
                 </div>
             </div>
 
             <div class="form-group" id="password-field-container">
-                <label for="participant_password"><?php esc_html_e('Contraseña:', 'eipsi-forms'); ?></label>
-                <input type="password" id="participant_password" name="password" placeholder="<?php esc_attr_e('Dejar en blanco para generar automáticamente', 'eipsi-forms'); ?>">
+                <label for="participant_password" class="eipsi-form-label">
+                    🔐 <?php esc_html_e('Contraseña:', 'eipsi-forms'); ?>
+                </label>
+                <input type="password" id="participant_password" name="password" class="eipsi-form-input" placeholder="<?php esc_attr_e('Dejar en blanco para generar automáticamente', 'eipsi-forms'); ?>">
                 <small class="form-help"><?php esc_html_e('Mínimo 8 caracteres. Se generará automáticamente si se deja en blanco.', 'eipsi-forms'); ?></small>
             </div>
 
             <div class="form-group" id="active-field-container" style="display: none;">
                 <label>
                     <input type="checkbox" name="is_active" id="participant_is_active" value="1" checked>
-                    <?php esc_html_e('Participante activo', 'eipsi-forms'); ?>
+                    ✅ <?php esc_html_e('Participante activo', 'eipsi-forms'); ?>
                 </label>
             </div>
 
@@ -527,7 +593,9 @@ if (class_exists('EIPSI_Anonymize_Service') && $current_study_id) {
                 <button type="submit" class="button button-primary" id="save-participant-btn">
                     ✉️ <?php esc_html_e('Crear y Enviar Invitación', 'eipsi-forms'); ?>
                 </button>
-                <button type="button" class="button eipsi-close-modal-btn"><?php esc_html_e('Cancelar', 'eipsi-forms'); ?></button>
+                <button type="button" class="button eipsi-close-modal-btn">
+                    ❌ <?php esc_html_e('Cancelar', 'eipsi-forms'); ?>
+                </button>
             </div>
         </form>
     </div>
