@@ -76,6 +76,7 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-service.
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-wave-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-smtp-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-anonymize-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/class-survey-access-handler.php';
@@ -706,7 +707,21 @@ function eipsi_forms_enqueue_admin_assets($hook) {
             'confirmDeleteYes' => __('Yes, delete all data', 'eipsi-forms'),
             'confirmDeleteNo' => __('Cancel', 'eipsi-forms'),
             'deleteSuccess' => __('All clinical data has been successfully deleted.', 'eipsi-forms'),
-            'deleteError' => __('Failed to delete data. Please check the error logs.', 'eipsi-forms')
+            'deleteError' => __('Failed to delete data. Please check the error logs.', 'eipsi-forms'),
+            'smtpFillAllFields' => __('Completa servidor, puerto y usuario SMTP.', 'eipsi-forms'),
+            'smtpTestError' => __('Error al probar SMTP. Verificá las credenciales.', 'eipsi-forms'),
+            'smtpTestFirst' => __('Probá el SMTP antes de guardar.', 'eipsi-forms'),
+            'smtpSaveError' => __('No se pudo guardar la configuración SMTP.', 'eipsi-forms'),
+            'smtpDisableError' => __('No se pudo desactivar el SMTP.', 'eipsi-forms'),
+            'smtpConfirmDisable' => __('¿Seguro que querés desactivar el SMTP? Se usará wp_mail().', 'eipsi-forms'),
+            'smtpDisableLabel' => __('Desactivar SMTP', 'eipsi-forms'),
+            'smtpActive' => __('SMTP activo', 'eipsi-forms'),
+            'smtpInactive' => __('SMTP inactivo', 'eipsi-forms'),
+            'smtpNoConfig' => __('No hay configuración SMTP activa. Los correos se enviarán con wp_mail().', 'eipsi-forms'),
+            'smtpHostLabel' => __('Servidor:', 'eipsi-forms'),
+            'smtpPortLabel' => __('Puerto:', 'eipsi-forms'),
+            'smtpUserLabel' => __('Usuario:', 'eipsi-forms'),
+            'smtpEncryptionLabel' => __('Seguridad:', 'eipsi-forms')
         ));
     }
 

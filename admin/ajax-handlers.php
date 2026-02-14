@@ -141,6 +141,11 @@ add_action('wp_ajax_eipsi_check_table_status', 'eipsi_check_table_status_handler
 add_action('wp_ajax_eipsi_check_local_table_status', 'eipsi_check_local_table_status_handler');
 add_action('wp_ajax_eipsi_delete_all_data', 'eipsi_delete_all_data_handler');
 
+// SMTP configuration handlers
+add_action('wp_ajax_eipsi_test_smtp_connection', 'eipsi_test_smtp_connection_handler');
+add_action('wp_ajax_eipsi_save_smtp_config', 'eipsi_save_smtp_config_handler');
+add_action('wp_ajax_eipsi_disable_smtp', 'eipsi_disable_smtp_handler');
+
 // Thank-you page handlers
 add_action('wp_ajax_nopriv_eipsi_get_completion_config', 'eipsi_get_completion_config_handler');
 add_action('wp_ajax_eipsi_get_completion_config', 'eipsi_get_completion_config_handler');
@@ -242,6 +247,146 @@ function eipsi_export_monitoring_report_handler() {
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     echo wp_json_encode($data, JSON_PRETTY_PRINT);
     exit;
+}
+
+/**
+ * AJAX Handler: Test SMTP configuration
+ */
+function eipsi_test_smtp_connection_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Unauthorized', 'eipsi-forms')));
+    }
+
+    if (!class_exists('EIPSI_SMTP_Service')) {
+        wp_send_json_error(array('message' => __('SMTP service not available.', 'eipsi-forms')));
+    }
+
+    $smtp_service = new EIPSI_SMTP_Service();
+    $host = isset($_POST['host']) ? sanitize_text_field(wp_unslash($_POST['host'])) : '';
+    $port = isset($_POST['port']) ? absint($_POST['port']) : 0;
+    $user = isset($_POST['user']) ? sanitize_email(wp_unslash($_POST['user'])) : '';
+    $password = isset($_POST['password']) ? wp_unslash($_POST['password']) : '';
+    $encryption = isset($_POST['encryption']) ? sanitize_key(wp_unslash($_POST['encryption'])) : 'tls';
+
+    $existing_config = $smtp_service->get_config();
+    if (empty($password) && $existing_config && !empty($existing_config['password'])) {
+        $password = $existing_config['password'];
+    }
+
+    $validation = $smtp_service->validate_config($host, $port, $user, $password, $encryption);
+    if (empty($validation['valid'])) {
+        wp_send_json_error(array('message' => $validation['message'] ?? __('Configuración SMTP inválida.', 'eipsi-forms')));
+    }
+
+    $config = array(
+        'host' => $host,
+        'port' => $port,
+        'user' => $user,
+        'password' => $password,
+        'encryption' => $encryption,
+        'enabled' => true
+    );
+
+    $test_email = get_option('eipsi_investigator_email', get_option('admin_email'));
+    $result = $smtp_service->send_test_email($config, $test_email);
+
+    if (!empty($result['success'])) {
+        $labels = array(
+            'tls' => __('TLS (recomendado)', 'eipsi-forms'),
+            'ssl' => __('SSL', 'eipsi-forms'),
+            'none' => __('Sin cifrado', 'eipsi-forms')
+        );
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Correo de prueba enviado a %s', 'eipsi-forms'), $test_email),
+            'status' => array(
+                'host' => $host,
+                'port' => $port,
+                'user' => $user,
+                'encryption' => $encryption,
+                'encryption_label' => $labels[$encryption] ?? $encryption
+            )
+        ));
+    }
+
+    wp_send_json_error(array(
+        'message' => $result['error'] ?? __('No se pudo enviar el correo de prueba.', 'eipsi-forms')
+    ));
+}
+
+/**
+ * AJAX Handler: Save SMTP configuration
+ */
+function eipsi_save_smtp_config_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Unauthorized', 'eipsi-forms')));
+    }
+
+    if (!class_exists('EIPSI_SMTP_Service')) {
+        wp_send_json_error(array('message' => __('SMTP service not available.', 'eipsi-forms')));
+    }
+
+    $smtp_service = new EIPSI_SMTP_Service();
+    $host = isset($_POST['host']) ? sanitize_text_field(wp_unslash($_POST['host'])) : '';
+    $port = isset($_POST['port']) ? absint($_POST['port']) : 0;
+    $user = isset($_POST['user']) ? sanitize_email(wp_unslash($_POST['user'])) : '';
+    $password = isset($_POST['password']) ? wp_unslash($_POST['password']) : '';
+    $encryption = isset($_POST['encryption']) ? sanitize_key(wp_unslash($_POST['encryption'])) : 'tls';
+
+    $existing_config = $smtp_service->get_config();
+    if (empty($password) && $existing_config && !empty($existing_config['password'])) {
+        $password = $existing_config['password'];
+    }
+
+    $validation = $smtp_service->validate_config($host, $port, $user, $password, $encryption);
+    if (empty($validation['valid'])) {
+        wp_send_json_error(array('message' => $validation['message'] ?? __('Configuración SMTP inválida.', 'eipsi-forms')));
+    }
+
+    $smtp_service->save_config($host, $port, $user, $password, $encryption);
+
+    $labels = array(
+        'tls' => __('TLS (recomendado)', 'eipsi-forms'),
+        'ssl' => __('SSL', 'eipsi-forms'),
+        'none' => __('Sin cifrado', 'eipsi-forms')
+    );
+
+    wp_send_json_success(array(
+        'message' => __('Configuración SMTP guardada correctamente.', 'eipsi-forms'),
+        'status' => array(
+            'host' => $host,
+            'port' => $port,
+            'user' => $user,
+            'encryption' => $encryption,
+            'encryption_label' => $labels[$encryption] ?? $encryption
+        )
+    ));
+}
+
+/**
+ * AJAX Handler: Disable SMTP configuration
+ */
+function eipsi_disable_smtp_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Unauthorized', 'eipsi-forms')));
+    }
+
+    if (!class_exists('EIPSI_SMTP_Service')) {
+        wp_send_json_error(array('message' => __('SMTP service not available.', 'eipsi-forms')));
+    }
+
+    $smtp_service = new EIPSI_SMTP_Service();
+    $smtp_service->disable_config();
+
+    wp_send_json_success(array(
+        'message' => __('Configuración SMTP desactivada.', 'eipsi-forms')
+    ));
 }
 
 /**
