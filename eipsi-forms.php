@@ -1121,12 +1121,14 @@ function eipsi_forms_render_form_block($attributes) {
 add_action('admin_post_eipsi_forms_export_excel', 'eipsi_export_to_excel');
 // Deletion and editing of results are handled via admin_init in admin/handlers.php and admin/results-page.php
 
-// Puedes comentar o eliminar esto:
-// function eipsi_forms_load_textdomain() {
-//     load_plugin_textdomain(
-//         'eipsi-forms',
-//         false,
-//         dirname(plugin_basename(__FILE__)) . '/languages'
-//     );
-// }
-// add_action('plugins_loaded', 'eipsi_forms_load_textdomain');
+/**
+ * Load plugin text domain for translations
+ */
+function eipsi_forms_load_textdomain() {
+    load_plugin_textdomain(
+        'eipsi-forms',
+        false,
+        dirname(plugin_basename(__FILE__)) . '/languages'
+    );
+}
+add_action('plugins_loaded', 'eipsi_forms_load_textdomain');
