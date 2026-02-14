@@ -207,6 +207,26 @@
             }
         } );
 
+        // Quick Action: Delete Study
+        $( document ).on( 'click', '#action-delete-study', function () {
+            if ( currentStudyId ) {
+                // Double confirmation for delete
+                if (
+                    confirm(
+                        '⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️\n\n' +
+                        '¿Estás seguro de ELIMINAR este estudio?\n\n' +
+                        '• Se eliminarán TODOS los participantes\n' +
+                        '• Se eliminarán TODAS las respuestas\n' +
+                        '• Se eliminarán TODOS los waves\n' +
+                        '• Se eliminarán TODOS los emails\n\n' +
+                        'Esta acción NO se puede deshacer.'
+                    )
+                ) {
+                    deleteStudy( currentStudyId );
+                }
+            }
+        } );
+
         // Quick Action: Import CSV
         $( document ).on( 'click', '#action-import-csv', function () {
             if ( currentStudyId ) {
@@ -312,6 +332,37 @@
         // Redirect to waves manager where anonymize button is available
         window.location.href =
             '?page=eipsi-results&tab=waves-manager&study_id=' + currentStudyId;
+    }
+
+    function deleteStudy( studyId ) {
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_delete_study',
+                nonce: eipsiStudyDash.nonce,
+                study_id: studyId,
+            },
+            success( response ) {
+                if ( response.success ) {
+                    showNotification( response.data.message, 'success' );
+                    // Redirect to studies list after 2 seconds
+                    setTimeout( function () {
+                        window.location.href = '?page=eipsi-longitudinal-study&tab=dashboard-study';
+                    }, 2000 );
+                } else {
+                    showNotification(
+                        response.data || 'Error al eliminar el estudio',
+                        'error'
+                    );
+                }
+            },
+            error() {
+                showNotification( 'Error de conexión', 'error' );
+            },
+        } );
     }
 
     function openAddParticipantModal() {

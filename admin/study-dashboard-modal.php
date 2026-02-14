@@ -95,6 +95,7 @@ if (!defined('ABSPATH')) {
                             <button class="button button-secondary" id="action-view-participants"><?php esc_html_e('Ver Lista de Participantes', 'eipsi-forms'); ?></button>
                             <button class="button button-secondary" id="action-cron-jobs">⏰ <?php esc_html_e('Tareas Programadas', 'eipsi-forms'); ?></button>
                             <button class="button button-link-delete" id="action-close-study"><?php esc_html_e('Cerrar Estudio', 'eipsi-forms'); ?></button>
+                            <button class="button button-link-delete" id="action-delete-study" style="color: #d63638; margin-top: 10px;">🗑️ <?php esc_html_e('Eliminar Estudio', 'eipsi-forms'); ?></button>
                         </div>
                     </div>
 

@@ -11,31 +11,41 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Get available surveys
-$surveys = get_posts(array(
-    'post_type' => 'eipsi_form',
-    'post_status' => 'publish',
-    'posts_per_page' => -1,
-    'orderby' => 'title',
-    'order' => 'ASC',
+// Get available studies from wp_survey_studies table
+global $wpdb;
+$studies = $wpdb->get_results($wpdb->prepare(
+    "SELECT id, study_name, study_code, status
+    FROM {$wpdb->prefix}survey_studies
+    WHERE status IN ('active', 'paused', 'completed')
+    ORDER BY created_at DESC"
 ));
 
-// Get selected survey from URL
-$selected_survey_id = isset($_GET['survey_id']) ? intval($_GET['survey_id']) : 0;
+// Get selected study from URL
+$selected_study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
 
-// Get configuration for selected survey
+// Get configuration for selected study from study config JSON
 $config = array();
-if ($selected_survey_id) {
-    $config = array(
-        'reminders_enabled' => get_post_meta($selected_survey_id, '_eipsi_reminders_enabled', true),
-        'reminder_days_before' => get_post_meta($selected_survey_id, '_eipsi_reminder_days_before', true),
-        'max_reminder_emails' => get_post_meta($selected_survey_id, '_eipsi_max_reminder_emails_per_run', true),
-        'dropout_recovery_enabled' => get_post_meta($selected_survey_id, '_eipsi_dropout_recovery_enabled', true),
-        'dropout_recovery_days' => get_post_meta($selected_survey_id, '_eipsi_dropout_recovery_days_overdue', true),
-        'max_recovery_emails' => get_post_meta($selected_survey_id, '_eipsi_max_recovery_emails_per_run', true),
-        'investigator_alert_enabled' => get_post_meta($selected_survey_id, '_eipsi_investigator_alert_enabled', true),
-        'investigator_alert_email' => get_post_meta($selected_survey_id, '_eipsi_investigator_alert_email', true),
-    );
+if ($selected_study_id) {
+    $study_config = $wpdb->get_var($wpdb->prepare(
+        "SELECT config FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $selected_study_id
+    ));
+
+    if ($study_config) {
+        $config_data = json_decode($study_config, true);
+        if (is_array($config_data)) {
+            $config = array(
+                'reminders_enabled' => $config_data['reminders_enabled'] ?? false,
+                'reminder_days_before' => $config_data['reminder_days_before'] ?? 3,
+                'max_reminder_emails' => $config_data['max_reminder_emails'] ?? 100,
+                'dropout_recovery_enabled' => $config_data['dropout_recovery_enabled'] ?? false,
+                'dropout_recovery_days' => $config_data['dropout_recovery_days'] ?? 7,
+                'max_recovery_emails' => $config_data['max_recovery_emails'] ?? 50,
+                'investigator_alert_enabled' => $config_data['investigator_alert_enabled'] ?? false,
+                'investigator_alert_email' => $config_data['investigator_alert_email'] ?? get_option('admin_email'),
+            );
+        }
+    }
 }
 ?>
 
@@ -50,30 +60,30 @@ if ($selected_survey_id) {
     </div>
 
     <!-- Survey Selector -->
-    <?php if (empty($surveys)): ?>
+    <?php if (empty($studies)): ?>
         <div class="notice notice-warning inline">
-            <p><?php _e('No hay estudios (surveys) disponibles. Primero crea un estudio longitudinal.', 'eipsi-forms'); ?></p>
+            <p><?php _e('No hay estudios disponibles. Primero crea un estudio longitudinal.', 'eipsi-forms'); ?></p>
         </div>
     <?php else: ?>
         <div style="margin: 20px 0;">
-            <label for="survey_selector" style="display: block; margin-bottom: 8px; font-weight: 600;">
+            <label for="study_selector" style="display: block; margin-bottom: 8px; font-weight: 600;">
                 <?php _e('Seleccionar Estudio', 'eipsi-forms'); ?>
             </label>
-            <select id="survey_selector" style="width: 100%; max-width: 600px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <select id="study_selector" style="width: 100%; max-width: 600px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                 <option value=""><?php _e('-- Seleccionar --', 'eipsi-forms'); ?></option>
-                <?php foreach ($surveys as $survey): ?>
-                    <option value="<?php echo esc_attr($survey->ID); ?>" <?php selected($selected_survey_id, $survey->ID); ?>>
-                        <?php echo esc_html($survey->post_title); ?>
+                <?php foreach ($studies as $study): ?>
+                    <option value="<?php echo esc_attr($study->id); ?>" <?php selected($selected_study_id, $study->id); ?>>
+                        <?php echo esc_html($study->study_name); ?> (<?php echo esc_html($study->study_code); ?>)
                     </option>
                 <?php endforeach; ?>
             </select>
         </div>
 
-        <!-- Configuration Form (hidden until survey is selected) -->
-        <div id="cron_config_form_wrapper" style="<?php echo $selected_survey_id ? '' : 'display: none;'; ?>">
+        <!-- Configuration Form (hidden until study is selected) -->
+        <div id="cron_config_form_wrapper" style="<?php echo $selected_study_id ? '' : 'display: none;'; ?>">
             <form id="eipsi_cron_reminders_form" method="post">
                 <?php wp_nonce_field('eipsi_admin_nonce', 'eipsi_admin_nonce'); ?>
-                <input type="hidden" id="selected_survey_id" name="survey_id" value="<?php echo esc_attr($selected_survey_id); ?>">
+                <input type="hidden" id="selected_study_id" name="study_id" value="<?php echo esc_attr($selected_study_id); ?>">
 
                 <!-- Section: Wave Reminders -->
                 <div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px;">
@@ -227,15 +237,15 @@ if ($selected_survey_id) {
 </div>
 
 <script>
-// Survey selector change handler
-document.getElementById('survey_selector').addEventListener('change', function() {
-    const surveyId = this.value;
-    if (surveyId) {
-        // Redirect with selected survey
-        window.location.href = '?page=eipsi-results&tab=cron-reminders&survey_id=' + surveyId;
+// Study selector change handler
+document.getElementById('study_selector').addEventListener('change', function() {
+    const studyId = this.value;
+    if (studyId) {
+        // Redirect with selected study
+        window.location.href = '?page=eipsi-longitudinal-study&tab=reminders&study_id=' + studyId;
     } else {
         // Clear selection
-        window.location.href = '?page=eipsi-results&tab=cron-reminders';
+        window.location.href = '?page=eipsi-longitudinal-study&tab=reminders';
     }
 });
 
