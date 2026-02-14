@@ -259,12 +259,14 @@
         let distributionHtml = '';
         if ( rct.distribution && rct.distribution.length > 0 ) {
             rct.distribution.forEach( function ( dist ) {
-                const percentage =
-                    dist.count > 0
-                        ? Math.round(
-                                ( dist.count / rct.total_assigned ) * 100
-                          )
-                        : 0;
+                // Usar el percentage calculado en el backend (real o teórico)
+                const percentage = dist.percentage || 0;
+
+                // Mostrar etiqueta diferente según si hay datos reales o teóricos
+                const label = rct.total_assigned > 0
+                    ? `${ dist.count } (${ percentage }%)`
+                    : `Esperado: ${ percentage }%`;
+
                 distributionHtml += `
                     <div class="distribution-item">
                         <div class="distribution-label">${ escapeHtml(
@@ -273,9 +275,7 @@
                         <div class="progress-bar">
                             <div class="progress-fill" style="width: ${ percentage }%"></div>
                         </div>
-                        <div class="distribution-value">${
-                            dist.count
-                        } (${ percentage }%)</div>
+                        <div class="distribution-value">${ label }</div>
                     </div>
                 `;
             } );
@@ -442,25 +442,35 @@
         if ( data.distribution && data.distribution.length > 0 ) {
             distributionHtml = data.distribution
                 .map(
-                    ( dist ) => `
+                    ( dist ) => {
+                        const percentage = dist.percentage || 0;
+                        const theoretical = dist.theoretical_probability || 0;
+
+                        // Mostrar información diferente según si hay datos reales
+                        const infoText = data.total_assigned > 0
+                            ? `Asignados: ${ dist.total_assigned } | Real: ${ percentage }% | Teórico: ${ theoretical }%`
+                            : `Teórico: ${ theoretical }% | (Sin asignaciones aún)`;
+
+                        return `
                 <div class="detail-item">
                     <div class="detail-label">${ escapeHtml(
                         dist.form_title
                     ) }</div>
                     <div class="detail-value">
-                        Asignados: ${ dist.total_assigned } | 
-                        Completados: ${ dist.completed_count } (${
-                            dist.completion_rate
-                        }%) | 
-                        Dropout: ${ dist.dropout_count }
+                        ${ infoText }${
+                            dist.total_assigned > 0
+                                ? ` | Completados: ${ dist.completed_count } (${ dist.completion_rate }%) | Dropout: ${ dist.dropout_count }`
+                                : ''
+                        }
                     </div>
                 </div>
-            `
+            `;
+                    }
                 )
                 .join( '' );
         } else {
             distributionHtml =
-                '<p style="color: #64748b; font-style: italic;">Sin asignaciones</p>';
+                '<p style="color: #64748b; font-style: italic;">No hay formularios definidos</p>';
         }
 
         return `

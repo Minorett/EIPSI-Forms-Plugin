@@ -1,0 +1,32 @@
+fix: mostrar todos los grupos en pestaña Randomization incluso sin participantes
+
+Resuelve el problema donde la pestaña de Randomization no mostraba
+los grupos definidos cuando no había participantes asignados (count = 0).
+
+Cambios en backend (randomization-api.php):
+- eipsi_get_randomizations(): Ahora itera sobre TODOS los formularios
+  definidos en la configuración, no solo los con asignaciones
+- Agrega campos "percentage" (real o teórico) y
+  "theoretical_probability" a la respuesta JSON
+- Maneja caso count = 0 con valores por defecto apropiados
+- eipsi_get_randomization_details(): Aplicada misma lógica para
+  consistencia
+
+Cambios en frontend (randomization.js):
+- renderRCtCard(): Usa campo "percentage" del backend en lugar de
+  recalcularlo (evita división por cero)
+- Muestra etiqueta "Esperado: X%" cuando no hay datos reales
+- renderDetailsView(): Muestra distinción entre datos reales y teóricos
+
+Criterios de aceptación cumplidos:
+✅ Muestra todos los grupos definidos, incluso si count = 0
+✅ Muestra datos desde el momento en que se crea la randomización
+✅ Botón de actualizar funciona correctamente
+✅ No hay errores en la consola
+
+Archivos modificados:
+- admin/randomization-api.php (backend)
+- assets/js/randomization.js (frontend)
+
+Version: 1.5.3
+Refs: Tarea - "Implementar pestaña simplificada de Randomization"
