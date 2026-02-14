@@ -1060,18 +1060,6 @@ function eipsi_forms_submit_form_handler() {
     
     // ✅ v1.4.0 - Capturar user fingerprint desde POST
     $user_fingerprint = isset($_POST['eipsi_user_fingerprint']) ? sanitize_text_field($_POST['eipsi_user_fingerprint']) : '';
-
-    // ✅ v1.5.4 - Capturar detalles crudos del fingerprint
-    $fingerprint_raw = isset($_POST['eipsi_fingerprint_raw']) ? wp_unslash($_POST['eipsi_fingerprint_raw']) : '';
-    $fingerprint_raw_array = null;
-
-    if (!empty($fingerprint_raw)) {
-        $fingerprint_raw_decoded = json_decode($fingerprint_raw, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            $fingerprint_raw_array = $fingerprint_raw_decoded;
-        }
-    }
-
     
     // Obtener IDs universales del frontend
     $frontend_participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
@@ -1089,7 +1077,7 @@ function eipsi_forms_submit_form_handler() {
     }
     
     $form_responses = array();
-    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action', 'participant_id', 'session_id', 'metadata', 'end_timestamp_ms', 'eipsi_user_fingerprint', 'eipsi_fingerprint_raw');  // ✅ v1.5.4 - Agregar fingerprint fields
+    $exclude_fields = array('form_id', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'form_start_time', 'form_end_time', 'current_page', 'nonce', 'action', 'participant_id', 'session_id', 'metadata', 'end_timestamp_ms');
     
     $user_data = array(
         'email' => '',
@@ -1224,12 +1212,7 @@ function eipsi_forms_submit_form_handler() {
     if (!empty($device_info)) {
         $metadata['device_info'] = $device_info;
     }
-
-    // ✅ v1.5.4 - FINGERPRINT RAW DETAILS (según fingerprint_enabled)
-    if (($privacy_config['fingerprint_enabled'] ?? true) && $fingerprint_raw_array) {
-        $metadata['fingerprint_raw'] = $fingerprint_raw_array;
-    }
-
+    
     // NETWORK INFO (según privacy config)
     if ($ip_address !== null) {
         $metadata['network_info'] = array(
