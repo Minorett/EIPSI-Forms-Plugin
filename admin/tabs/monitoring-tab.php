@@ -47,7 +47,7 @@ if (!defined('ABSPATH')) {
             </div>
         </div>
         <div class="card-footer">
-            <a href="<?php echo esc_url(admin_url('admin.php?page=eipsi-results&tab=email-log')); ?>">View Email Log →</a>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=eipsi-longitudinal-study&tab=email-log')); ?>">View Email Log →</a>
         </div>
     </div>
 

@@ -63,7 +63,7 @@ function eipsi_save_wizard_step_handler() {
     wp_send_json_success(array(
         'message' => 'Paso guardado correctamente.',
         'step' => $current_step,
-        'redirect_url' => admin_url('admin.php?page=eipsi-new-study&step=' . min($current_step + 1, 5))
+        'redirect_url' => admin_url('admin.php?page=eipsi-longitudinal-study&tab=create-study&step=' . min($current_step + 1, 5))
     ));
 }
 
@@ -153,7 +153,7 @@ function eipsi_activate_study_handler() {
     wp_send_json_success(array(
         'message' => 'Estudio creado exitosamente.',
         'study_id' => $study_id,
-        'redirect_url' => admin_url('admin.php?page=eipsi-results&study_id=' . $study_id)
+        'redirect_url' => admin_url('admin.php?page=eipsi-longitudinal-study&tab=dashboard-study&study_id=' . $study_id)
     ));
 }
 

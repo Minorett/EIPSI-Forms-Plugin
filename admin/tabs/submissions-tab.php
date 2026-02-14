@@ -130,7 +130,7 @@ $colspan = $show_form_column ? 8 : 7;
     <?php if (!empty($current_form)): ?>
     <div class="notice notice-info" style="margin: 20px 0;">
         <p><strong><?php _e('Active Filter:', 'eipsi-forms'); ?></strong> <?php echo esc_html($current_form); ?> | 
-        <a href="<?php echo esc_url(admin_url('admin.php?page=eipsi-results&tab=submissions')); ?>"><?php _e('View All Forms', 'eipsi-forms'); ?></a></p>
+        <a href="<?php echo esc_url(admin_url('admin.php?page=eipsi-results-experience&tab=submissions')); ?>"><?php _e('View All Forms', 'eipsi-forms'); ?></a></p>
     </div>
     <?php endif; ?>
     
@@ -144,7 +144,7 @@ $colspan = $show_form_column ? 8 : 7;
         <div class="vas-form-filter" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 5px;">
             <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <form method="get" style="flex: 1; min-width: 300px;">
-                    <input type="hidden" name="page" value="eipsi-results">
+                    <input type="hidden" name="page" value="eipsi-results-experience">
                     <input type="hidden" name="tab" value="submissions">
                     <label for="form_filter" style="font-weight: bold; margin-right: 10px;"><?php _e('Filter by Form ID:', 'eipsi-forms'); ?></label>
                     <select name="form_filter" id="form_filter" onchange="this.form.submit()" style="padding: 8px; min-width: 200px;">

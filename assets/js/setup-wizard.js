@@ -521,10 +521,10 @@
         // Save current step first if dirty
         if (wizardState.isDirty) {
             eipsiSaveCurrentStep(wizardState.currentStep, function() {
-                window.location.href = eipsiWizard.ajaxUrl.replace('admin-ajax.php', `admin.php?page=eipsi-new-study&step=${step}`);
+                window.location.href = eipsiWizard.ajaxUrl.replace('admin-ajax.php', `admin.php?page=eipsi-longitudinal-study&tab=create-study&step=${step}`);
             });
         } else {
-            window.location.href = eipsiWizard.ajaxUrl.replace('admin-ajax.php', `admin.php?page=eipsi-new-study&step=${step}`);
+            window.location.href = eipsiWizard.ajaxUrl.replace('admin-ajax.php', `admin.php?page=eipsi-longitudinal-study&tab=create-study&step=${step}`);
         }
     }
 

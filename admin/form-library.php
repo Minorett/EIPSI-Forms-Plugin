@@ -62,19 +62,7 @@ function eipsi_register_form_template_cpt() {
 }
 add_action('init', 'eipsi_register_form_template_cpt');
 
-/**
- * Add Form Library submenu to EIPSI Forms menu
- */
-function eipsi_add_form_library_menu() {
-    add_submenu_page(
-        'eipsi-results',
-        __('Form Library', 'eipsi-forms'),
-        __('Form Library', 'eipsi-forms'),
-        'manage_options',
-        'edit.php?post_type=eipsi_form_template'
-    );
-}
-add_action('admin_menu', 'eipsi_add_form_library_menu', 11);
+
 
 /**
  * Customize columns in Form Library list table

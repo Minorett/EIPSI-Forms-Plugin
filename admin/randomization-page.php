@@ -34,7 +34,7 @@ function eipsi_display_randomization() {
     }
 
     // URL para volver al listado de Results & Experience (mantiene el tab randomization)
-    $back_to_results_url = admin_url('admin.php?page=eipsi-results&tab=randomization');
+    $back_to_results_url = admin_url('admin.php?page=eipsi-results-experience&tab=randomization');
     ?>
     
     <div class="wrap eipsi-randomization">
