@@ -1,0 +1,1897 @@
+# Copyright (C) 2025 EIPSI Forms
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: EIPSI Forms 1.5.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/eipsi-forms\n"
+"Last-Translator: EIPSI Team <team@eipsi-forms.com>\n"
+"Language-Team: English\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-02-14T00:00:00+00:00\n"
+"PO-Revision-Date: 2025-02-14T00:00:00+00:00\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: eipsi-forms\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Plugin Name of the plugin
+msgid "EIPSI Forms"
+msgstr "EIPSI Forms"
+
+#. Plugin URI of the plugin
+msgid "https://enmediodelcontexto.com.ar"
+msgstr "https://enmediodelcontexto.com.ar"
+
+#. Description of the plugin
+msgid "Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities."
+msgstr "Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities."
+
+#. Author of the plugin
+msgid "Mathias N. Rojas de la Fuente"
+msgstr "Mathias N. Rojas de la Fuente"
+
+#. Author URI of the plugin
+msgid "https://www.instagram.com/enmediodel.contexto/"
+msgstr "https://www.instagram.com/enmediodel.contexto/"
+
+#: admin/menu.php:16 admin/menu.php:17
+msgid "EIPSI Forms"
+msgstr "EIPSI Forms"
+
+#: admin/menu.php:27 admin/menu.php:28 admin/menu.php:32
+msgid "Results & Experience"
+msgstr "Results & Experience"
+
+#: admin/menu.php:37 admin/menu.php:38 admin/menu.php:42
+msgid "Configuration"
+msgstr "Configuration"
+
+#: admin/menu.php:47 admin/menu.php:48 admin/menu.php:52
+msgid "Longitudinal Study"
+msgstr "Longitudinal Study"
+
+#: admin/menu.php:57 admin/menu.php:58
+msgid "Form Library"
+msgstr "Form Library"
+
+#: admin/results-page.php:36
+msgid "EIPSI Forms - Results & Experience"
+msgstr "EIPSI Forms - Results & Experience"
+
+#: admin/results-page.php:42
+msgid "Submissions"
+msgstr "Submissions"
+
+#: admin/results-page.php:47
+msgid "Finalización"
+msgstr "Completion"
+
+#: admin/results-page.php:52
+msgid "Privacy & Metadata"
+msgstr "Privacy & Metadata"
+
+#: admin/results-page.php:57
+msgid "Randomization"
+msgstr "Randomization"
+
+#: admin/results-page.php:88
+msgid "Error: Randomization no disponible"
+msgstr "Error: Randomization not available"
+
+#: admin/longitudinal-study-page.php:36
+msgid "EIPSI Forms - Longitudinal Study"
+msgstr "EIPSI Forms - Longitudinal Study"
+
+#: admin/longitudinal-study-page.php:42
+msgid "Create Study"
+msgstr "Create Study"
+
+#: admin/longitudinal-study-page.php:47
+msgid "Dashboard Study"
+msgstr "Study Dashboard"
+
+#: admin/longitudinal-study-page.php:52
+msgid "Waves Manager"
+msgstr "Waves Manager"
+
+#: admin/longitudinal-study-page.php:57
+msgid "Recordatorios"
+msgstr "Reminders"
+
+#: admin/longitudinal-study-page.php:62
+msgid "Email Log & Dropout"
+msgstr "Email Log & Dropout"
+
+#: admin/longitudinal-study-page.php:72
+msgid "El wizard de creación no está disponible."
+msgstr "The creation wizard is not available."
+
+#: admin/configuration.php:69
+msgid "EIPSI Forms - Configuration"
+msgstr "EIPSI Forms - Configuration"
+
+#: admin/configuration.php:74
+msgid "Database & Storage"
+msgstr "Database & Storage"
+
+#: admin/configuration.php:78
+msgid "SMTP"
+msgstr "SMTP"
+
+#: admin/configuration.php:82
+msgid "Privacidad & Seguridad"
+msgstr "Privacy & Security"
+
+#: admin/configuration.php:86
+msgid "Notificaciones Globales"
+msgstr "Global Notifications"
+
+#: admin/configuration.php:92
+msgid "Configure an external MySQL database to store form submission data. If no external database is configured, data will be stored in the default WordPress database."
+msgstr "Configure an external MySQL database to store form submission data. If no external database is configured, data will be stored in the default WordPress database."
+
+#: admin/configuration.php:102
+msgid "Current Storage Location:"
+msgstr "Current Storage Location:"
+
+#: admin/configuration.php:107
+msgid "External Database"
+msgstr "External Database"
+
+#: admin/configuration.php:113
+msgid "WordPress Database"
+msgstr "WordPress Database"
+
+#: admin/configuration.php:122 admin/configuration.php:263
+msgid "Connected"
+msgstr "Connected"
+
+#: admin/configuration.php:131
+msgid "Database Connection Settings"
+msgstr "Database Connection Settings"
+
+#: admin/configuration.php:141
+msgid "Host"
+msgstr "Host"
+
+#: admin/configuration.php:155
+msgid "Database server hostname or IP address (e.g., localhost, 192.168.1.100)"
+msgstr "Database server hostname or IP address (e.g., localhost, 192.168.1.100)"
+
+#: admin/configuration.php:163
+msgid "Username"
+msgstr "Username"
+
+#: admin/configuration.php:173
+msgid "MySQL username"
+msgstr "MySQL username"
+
+#: admin/configuration.php:177
+msgid "MySQL user with access to the database"
+msgstr "MySQL user with access to the database"
+
+#: admin/configuration.php:185
+msgid "Password"
+msgstr "Password"
+
+#: admin/configuration.php:194
+msgid "MySQL password"
+msgstr "MySQL password"
+
+#: admin/configuration.php:200
+msgid "Leave blank to keep existing password"
+msgstr "Leave blank to keep existing password"
+
+#: admin/configuration.php:202
+msgid "MySQL user password (will be encrypted)"
+msgstr "MySQL user password (will be encrypted)"
+
+#: admin/configuration.php:212
+msgid "Database Name"
+msgstr "Database Name"
+
+#: admin/configuration.php:226
+msgid "Name of the database to store form submissions"
+msgstr "Name of the database to store form submissions"
+
+#: admin/configuration.php:236
+msgid "Test Connection"
+msgstr "Test Connection"
+
+#: admin/configuration.php:241
+msgid "Save Configuration"
+msgstr "Save Configuration"
+
+#: admin/configuration.php:246
+msgid "Disable External Database"
+msgstr "Disable External Database"
+
+#: admin/configuration.php:257
+msgid "Connection Status"
+msgstr "Connection Status"
+
+#: admin/configuration.php:266
+msgid "Disconnected"
+msgstr "Disconnected"
+
+#: admin/configuration.php:273
+msgid "Current Database:"
+msgstr "Current Database:"
+
+#: admin/configuration.php:277
+msgid "Records:"
+msgstr "Records:"
+
+#: admin/configuration.php:282
+msgid "Last Updated:"
+msgstr "Last Updated:"
+
+#: admin/configuration.php:294
+msgid "Base de datos:"
+msgstr "Database:"
+
+#: admin/configuration.php:298
+msgid "Registros totales:"
+msgstr "Total records:"
+
+#: admin/configuration.php:303
+msgid "Última verificación:"
+msgstr "Last verified:"
+
+#: admin/configuration.php:313
+msgid "Estado de tablas locales"
+msgstr "Local Tables Status"
+
+#: admin/configuration.php:319
+msgid "RCT Configs:"
+msgstr "RCT Configs:"
+
+#: admin/configuration.php:324 admin/configuration.php:343
+msgid "Existe"
+msgstr "Exists"
+
+#: admin/configuration.php:326
+msgid "configs"
+msgstr "configs"
+
+#: admin/configuration.php:330 admin/configuration.php:349
+msgid "No existe"
+msgstr "Does not exist"
+
+#: admin/configuration.php:338
+msgid "RCT Assignments:"
+msgstr "RCT Assignments:"
+
+#: admin/configuration.php:345
+msgid "asignaciones"
+msgstr "assignments"
+
+#: admin/configuration.php:358
+msgid "Tablas longitudinales (v1.4.0+)"
+msgstr "Longitudinal Tables (v1.4.0+)"
+
+#: admin/configuration.php:398
+msgid "Fallback Mode Active"
+msgstr "Fallback Mode Active"
+
+#: admin/configuration.php:401
+msgid "Recent submissions were saved to the WordPress database because the external database was unavailable."
+msgstr "Recent submissions were saved to the WordPress database because the external database was unavailable."
+
+#: admin/configuration.php:404
+msgid "Last Error:"
+msgstr "Last Error:"
+
+#: admin/configuration.php:409
+msgid "Error Code:"
+msgstr "Error Code:"
+
+#: admin/configuration.php:415
+msgid "Occurred:"
+msgstr "Occurred:"
+
+#: admin/configuration.php:427
+msgid "Database Schema Status"
+msgstr "Database Schema Status"
+
+#: admin/configuration.php:436
+msgid "Last Verified:"
+msgstr "Last Verified:"
+
+#: admin/configuration.php:444
+msgid "Results Table:"
+msgstr "Results Table:"
+
+#: admin/configuration.php:448 admin/configuration.php:463 admin/configuration.php:478 admin/configuration.php:493
+msgid "Exists"
+msgstr "Exists"
+
+#: admin/configuration.php:450 admin/configuration.php:465 admin/configuration.php:480 admin/configuration.php:495
+msgid "created during last sync"
+msgstr "created during last sync"
+
+#: admin/configuration.php:454 admin/configuration.php:469 admin/configuration.php:484 admin/configuration.php:499
+msgid "Missing"
+msgstr "Missing"
+
+#: admin/configuration.php:459
+msgid "Events Table:"
+msgstr "Events Table:"
+
+#: admin/configuration.php:474
+msgid "RCT Configs Table:"
+msgstr "RCT Configs Table:"
+
+#: admin/configuration.php:489
+msgid "RCT Assignments Table:"
+msgstr "RCT Assignments Table:"
+
+#: admin/configuration.php:505
+msgid "Columns Added:"
+msgstr "Columns Added:"
+
+#: admin/configuration.php:516
+msgid "🔧 CRITICAL FIX APPLIED:"
+msgstr "🔧 CRITICAL FIX APPLIED:"
+
+#: admin/configuration.php:518
+msgid "config_id column added to RCT Assignments table - randomization queries now functional"
+msgstr "config_id column added to RCT Assignments table - randomization queries now functional"
+
+#: admin/configuration.php:528
+msgid "Base de datos externa:"
+msgstr "External database:"
+
+#: admin/configuration.php:532
+msgid "Verify & Repair Schema"
+msgstr "Verify & Repair Schema"
+
+#: admin/configuration.php:535
+msgid "Manually verify database schema and create any missing tables or columns."
+msgstr "Manually verify database schema and create any missing tables or columns."
+
+#: admin/configuration.php:543
+msgid "Base de datos local de WordPress:"
+msgstr "WordPress local database:"
+
+#: admin/configuration.php:547
+msgid "Verificar y reparar esquema local"
+msgstr "Verify and repair local schema"
+
+#: admin/configuration.php:550
+msgid "Verifica el esquema de la base de datos de WordPress y crea las tablas o columnas que falten."
+msgstr "Verify the WordPress database schema and create any missing tables or columns."
+
+#: admin/configuration.php:555
+msgid "Resultados de verificación"
+msgstr "Verification results"
+
+#: admin/configuration.php:64
+msgid "Configuración de recordatorios globales guardada."
+msgstr "Global reminder settings saved."
+
+#: admin/configuration.php:25
+msgid "TLS (recomendado)"
+msgstr "TLS (recommended)"
+
+#: admin/configuration.php:26
+msgid "SSL"
+msgstr "SSL"
+
+#: admin/configuration.php:27
+msgid "Sin cifrado"
+msgstr "No encryption"
+
+#: eipsi-forms.php:126
+msgid "Cargando datos..."
+msgstr "Loading data..."
+
+#: eipsi-forms.php:127
+msgid "Error al cargar datos"
+msgstr "Error loading data"
+
+#: eipsi-forms.php:128
+msgid "Actualizado correctamente"
+msgstr "Updated successfully"
+
+#: eipsi-forms.php:129
+msgid "¿Estás seguro de que quieres eliminar esta aleatorización?"
+msgstr "Are you sure you want to delete this randomization?"
+
+#: eipsi-forms.php:130
+msgid "ID copiado al portapapeles"
+msgstr "ID copied to clipboard"
+
+#: eipsi-forms.php:161
+msgid "Cargando..."
+msgstr "Loading..."
+
+#: eipsi-forms.php:162
+msgid "Ha ocurrido un error"
+msgstr "An error has occurred"
+
+#: eipsi-forms.php:163
+msgid "Operación exitosa"
+msgstr "Operation successful"
+
+#: eipsi-forms.php:164
+msgid "¿Estás seguro de que quieres eliminar esta onda? Esta acción es irreversible."
+msgstr "Are you sure you want to delete this wave? This action cannot be undone."
+
+#: eipsi-forms.php:165
+msgid "¿Estás seguro de asignar los participantes seleccionados?"
+msgstr "Are you sure you want to assign the selected participants?"
+
+#: eipsi-forms.php:166
+msgid "Por favor, selecciona al menos un participante."
+msgstr "Please select at least one participant."
+
+#: eipsi-forms.php:191
+msgid "¿Estás seguro de enviar recordatorios manuales?"
+msgstr "Are you sure you want to send manual reminders?"
+
+#: eipsi-forms.php:192
+msgid "¿Estás seguro de que quieres cerrar este estudio? Esta acción es irreversible."
+msgstr "Are you sure you want to close this study? This action cannot be undone."
+
+#: eipsi-forms.php:241
+msgid "Guardando..."
+msgstr "Saving..."
+
+#: eipsi-forms.php:242
+msgid "Error al guardar"
+msgstr "Error saving"
+
+#: eipsi-forms.php:243
+msgid "Guardado correctamente"
+msgstr "Saved successfully"
+
+#: eipsi-forms.php:244
+msgid "¿Estás seguro de activar este estudio?"
+msgstr "Are you sure you want to activate this study?"
+
+#: eipsi-forms.php:245
+msgid "Por favor, revisa los campos requeridos"
+msgstr "Please review the required fields"
+
+#: eipsi-forms.php:275
+msgid "Registrando..."
+msgstr "Registering..."
+
+#: eipsi-forms.php:276
+msgid "Ingresando..."
+msgstr "Logging in..."
+
+#: eipsi-forms.php:277
+msgid "Éxito!"
+msgstr "Success!"
+
+#: eipsi-forms.php:278
+msgid "Error"
+msgstr "Error"
+
+#: eipsi-forms.php:279
+msgid "¿Estás seguro de que quieres cerrar sesión?"
+msgstr "Are you sure you want to log out?"
+
+#: admin/tabs/submissions-tab.php:94
+msgid "Response deleted successfully."
+msgstr "Response deleted successfully."
+
+#: admin/tabs/submissions-tab.php:108
+msgid "You do not have sufficient permissions to perform this action."
+msgstr "You do not have sufficient permissions to perform this action."
+
+#: admin/tabs/submissions-tab.php:111
+msgid "Invalid request. Please try again."
+msgstr "Invalid request. Please try again."
+
+#: admin/tabs/submissions-tab.php:114
+msgid "Security check failed. Please refresh the page and try again."
+msgstr "Security check failed. Please refresh the page and try again."
+
+#: admin/tabs/submissions-tab.php:117
+msgid "Failed to delete response. The record may not exist."
+msgstr "Failed to delete response. The record may not exist."
+
+#: admin/tabs/submissions-tab.php:132
+msgid "Active Filter:"
+msgstr "Active Filter:"
+
+#: admin/tabs/submissions-tab.php:133
+msgid "View All Forms"
+msgstr "View All Forms"
+
+#: admin/tabs/submissions-tab.php:137
+msgid "Privacy Notice:"
+msgstr "Privacy Notice:"
+
+#: admin/tabs/submissions-tab.php:137
+msgid "This table displays session metadata only. Complete responses with questionnaire answers are available via CSV/Excel export below. Configure what data is captured in the \"Privacy & Metadata\" tab."
+msgstr "This table displays session metadata only. Complete responses with questionnaire answers are available via CSV/Excel export below. Configure what data is captured in the \"Privacy & Metadata\" tab."
+
+#: admin/tabs/submissions-tab.php:149
+msgid "Filter by Form ID:"
+msgstr "Filter by Form ID:"
+
+#: admin/tabs/submissions-tab.php:151
+msgid "All Forms"
+msgstr "All Forms"
+
+#: admin/tabs/submissions-tab.php:164
+msgid "Sync form list with database"
+msgstr "Sync form list with database"
+
+#: admin/tabs/submissions-tab.php:165
+msgid "Sync"
+msgstr "Sync"
+
+#: admin/tabs/submissions-tab.php:178
+msgid "Download CSV"
+msgstr "Download CSV"
+
+#: admin/tabs/submissions-tab.php:181
+msgid "Download Excel"
+msgstr "Download Excel"
+
+#: admin/tabs/submissions-tab.php:191
+msgid "Form ID"
+msgstr "Form ID"
+
+#: admin/tabs/submissions-tab.php:193
+msgid "Participant ID"
+msgstr "Participant ID"
+
+#: admin/tabs/submissions-tab.php:194
+msgid "Date"
+msgstr "Date"
+
+#: admin/tabs/submissions-tab.php:195
+msgid "Time"
+msgstr "Time"
+
+#: admin/tabs/submissions-tab.php:196
+msgid "Total Time"
+msgstr "Total Time"
+
+#: admin/tabs/submissions-tab.php:197
+msgid "Device"
+msgstr "Device"
+
+#: admin/tabs/submissions-tab.php:198
+msgid "Browser"
+msgstr "Browser"
+
+#: admin/tabs/submissions-tab.php:199
+msgid "Actions"
+msgstr "Actions"
+
+#: admin/longitudinal-study-page.php:106
+msgid "Cargando..."
+msgstr "Loading..."
+
+#: admin/longitudinal-study-page.php:107
+msgid "Error al cargar"
+msgstr "Error loading"
+
+#: admin/longitudinal-study-page.php:108
+msgid "Error de conexión"
+msgstr "Connection error"
+
+#: admin/longitudinal-study-page.php:109
+msgid "Ver"
+msgstr "View"
+
+#: admin/longitudinal-study-page.php:110
+msgid "Reenviar"
+msgstr "Resend"
+
+#: admin/longitudinal-study-page.php:111
+msgid "Página"
+msgstr "Page"
+
+#: admin/longitudinal-study-page.php:112
+msgid "de"
+msgstr "of"
+
+#: admin/longitudinal-study-page.php:113
+msgid "No se encontraron emails"
+msgstr "No emails found"
+
+#: admin/longitudinal-study-page.php:114
+msgid "No hay participantes en riesgo"
+msgstr "No participants at risk"
+
+#: admin/longitudinal-study-page.php:115
+msgid "Por favor selecciona al menos un participante"
+msgstr "Please select at least one participant"
+
+#: admin/longitudinal-study-page.php:116
+msgid "¿Deseas reenviar este email?"
+msgstr "Do you want to resend this email?"
+
+#: admin/longitudinal-study-page.php:117
+msgid "Email enviado exitosamente"
+msgstr "Email sent successfully"
+
+#: admin/longitudinal-study-page.php:118
+msgid "Error al enviar email"
+msgstr "Error sending email"
+
+#: admin/longitudinal-study-page.php:119
+msgid "Recordatorio"
+msgstr "Reminder"
+
+#: admin/longitudinal-study-page.php:120
+msgid "Extender"
+msgstr "Extend"
+
+#: admin/longitudinal-study-page.php:121
+msgid "Completada"
+msgstr "Completed"
+
+#: admin/longitudinal-study-page.php:122
+msgid "Desactivar"
+msgstr "Deactivate"
+
+#: admin/longitudinal-study-page.php:123
+msgid "¿Deseas enviar un recordatorio a este participante?"
+msgstr "Do you want to send a reminder to this participant?"
+
+#: admin/longitudinal-study-page.php:124
+msgid "Recordatorio enviado exitosamente"
+msgstr "Reminder sent successfully"
+
+#: admin/longitudinal-study-page.php:125
+msgid "Vencimiento extendido"
+msgstr "Deadline extended"
+
+#: admin/longitudinal-study-page.php:126
+msgid "días"
+msgstr "days"
+
+#: admin/longitudinal-study-page.php:127
+msgid "¿Deseas marcar esta toma como completada?"
+msgstr "Do you want to mark this take as completed?"
+
+#: admin/longitudinal-study-page.php:128
+msgid "Toma marcada como completada"
+msgstr "Take marked as completed"
+
+#: admin/longitudinal-study-page.php:129
+msgid "¿Deseas desactivar este participante?"
+msgstr "Do you want to deactivate this participant?"
+
+#: admin/longitudinal-study-page.php:130
+msgid "Participante desactivado"
+msgstr "Participant deactivated"
+
+#: admin/longitudinal-study-page.php:131
+msgid "Acción completada exitosamente"
+msgstr "Action completed successfully"
+
+#: admin/longitudinal-study-page.php:133
+msgid "Tipo"
+msgstr "Type"
+
+#: admin/longitudinal-study-page.php:134
+msgid "Para"
+msgstr "To"
+
+#: admin/longitudinal-study-page.php:135
+msgid "Estado"
+msgstr "Status"
+
+#: admin/longitudinal-study-page.php:136
+msgid "Enviado"
+msgstr "Sent"
+
+#: admin/longitudinal-study-page.php:137
+msgid "Asunto"
+msgstr "Subject"
+
+#: admin/longitudinal-study-page.php:138
+msgid "Contenido"
+msgstr "Content"
+
+#: admin/ajax-handlers.php:938
+msgid "Desuscrito exitosamente"
+msgstr "Unsubscribed successfully"
+
+#: admin/ajax-handlers.php:939
+msgid "Ya no recibirás más recordatorios de este estudio."
+msgstr "You will no longer receive reminders from this study."
+
+#: admin/ajax-handlers.php:940
+msgid "Si necesitas volver a participar, contacta al equipo de investigación."
+msgstr "If you need to participate again, contact the research team."
+
+#: admin/ajax-email-log-handlers.php
+msgid "Error de seguridad"
+msgstr "Security error"
+
+#: admin/ajax-email-log-handlers.php
+msgid "Error al enviar recordatorio"
+msgstr "Error sending reminder"
+
+#: admin/ajax-handlers-wizard.php
+msgid "Error de seguridad. Por favor, recarga la página."
+msgstr "Security error. Please reload the page."
+
+#: admin/ajax-handlers-wizard.php
+msgid "Error de seguridad."
+msgstr "Security error."
+
+#: admin/ajax-handlers-wizard.php
+msgid "Error al crear el estudio. Por favor, intenta nuevamente."
+msgstr "Error creating study. Please try again."
+
+#: admin/ajax-handlers.php
+msgid "Error al enviar el email."
+msgstr "Error sending email."
+
+#: admin/ajax-handlers.php
+msgid "Error al guardar la configuración."
+msgstr "Error saving configuration."
+
+#: admin/ajax-handlers.php
+msgid "Error al guardar la configuración global."
+msgstr "Error saving global configuration."
+
+#: admin/ajax-handlers.php
+msgid "Error al persistir asignación"
+msgstr "Error persisting assignment"
+
+#: admin/ajax-handlers.php
+msgid "Error de base de datos. Intenta nuevamente."
+msgstr "Database error. Please try again."
+
+#: admin/ajax-handlers.php
+msgid "Error desconocido."
+msgstr "Unknown error."
+
+#: admin/ajax-handlers.php
+msgid "Error al cerrar sesión de aleatorización"
+msgstr "Error closing randomization session"
+
+#: admin/ajax-handlers.php
+msgid "Error desconocido al anonimizar"
+msgstr "Unknown error while anonymizing"
+
+#: admin/ajax-handlers.php
+msgid "Error al generar contraseña"
+msgstr "Error generating password"
+
+#: admin/ajax-handlers.php
+msgid "Error al guardar el participante"
+msgstr "Error saving participant"
+
+#: admin/demo-templates.php
+msgid "Plantilla demo no encontrada."
+msgstr "Demo template not found."
+
+#: admin/form-library-tools.php
+msgid "El formulario no existe o no es válido."
+msgstr "The form does not exist or is not valid."
+
+#: admin/form-library-tools.php
+msgid "El archivo JSON no tiene un esquema válido."
+msgstr "The JSON file does not have a valid schema."
+
+#: admin/form-library-tools.php
+msgid "El archivo JSON no tiene la estructura requerida (falta form.title)."
+msgstr "The JSON file does not have the required structure (missing form.title)."
+
+#: admin/form-library-tools.php
+msgid "El archivo JSON no tiene bloques válidos (falta form.blocks)."
+msgstr "The JSON file does not have valid blocks (missing form.blocks)."
+
+#: admin/form-library-tools.php
+msgid "Error al leer el JSON: %s"
+msgstr "Error reading JSON: %s"
+
+#: admin/form-library-tools.php
+msgid "Error al exportar el formulario"
+msgstr "Error exporting form"
+
+#: admin/form-library-tools.php
+msgid "Error al duplicar el formulario"
+msgstr "Error duplicating form"
+
+#: admin/form-library-tools.php
+msgid "Error al importar el formulario"
+msgstr "Error importing form"
+
+#: admin/form-library-tools.php
+msgid "El archivo JSON está incompleto o corrupto."
+msgstr "The JSON file is incomplete or corrupt."
+
+#: admin/form-library-tools.php
+msgid "No pudimos convertir el JSON simplificado. Revisá que todos los bloques tengan \"blockName\" y \"attrs\"."
+msgstr "We could not convert the simplified JSON. Please check that all blocks have \"blockName\" and \"attrs\"."
+
+#: admin/form-library-tools.php
+msgid "WordPress todavía no cargó el motor de bloques. Recargá la página e intentá nuevamente."
+msgstr "WordPress has not yet loaded the block engine. Please reload the page and try again."
+
+#: admin/form-library-tools.php
+msgid "No pudimos crear la plantilla. Reintentá en unos segundos."
+msgstr "We could not create the template. Please try again in a few seconds."
+
+#: admin/form-library.php
+msgid "Error al copiar. Por favor, copie manualmente:"
+msgstr "Error copying. Please copy manually:"
+
+#: admin/tabs/submissions-tab.php
+msgid "No hay respuestas para exportar."
+msgstr "No responses to export."
+
+#: admin/tabs/submissions-tab.php
+msgid "Access denied"
+msgstr "Access denied"
+
+#: admin/export.php
+msgid "Formulario no especificado."
+msgstr "Form not specified."
+
+#: admin/export.php
+msgid "No hay respuestas para este formulario."
+msgstr "No responses for this form."
+
+#: admin/export.php
+msgid "Respuesta #"
+msgstr "Response #"
+
+#: admin/export.php
+msgid "Fecha"
+msgstr "Date"
+
+#: admin/export.php
+msgid "Formulario"
+msgstr "Form"
+
+#: admin/export.php
+msgid "Form Responses"
+msgstr "Form Responses"
+
+#: admin/tabs/completion-message-tab.php
+msgid "Mensaje de Finalización"
+msgstr "Completion Message"
+
+#: admin/tabs/completion-message-tab.php
+msgid "Personaliza el mensaje que ven los participantes al completar un formulario."
+msgstr "Customize the message that participants see when completing a form."
+
+#: admin/tabs/completion-message-tab.php
+msgid "Título de Agradecimiento"
+msgstr "Thank You Title"
+
+#: admin/tabs/completion-message-tab.php
+msgid "¡Gracias por tu participación!"
+msgstr "Thank you for your participation!"
+
+#: admin/tabs/completion-message-tab.php
+msgid "Mensaje Principal"
+msgstr "Main Message"
+
+#: admin/tabs/completion-message-tab.php
+msgid "Tu respuesta ha sido registrada exitosamente."
+msgstr "Your response has been registered successfully."
+
+#: admin/tabs/completion-message-tab.php
+msgid "Mostrar información adicional"
+msgstr "Show additional information"
+
+#: admin/tabs/completion-message-tab.php
+msgid "Guardar Mensaje"
+msgstr "Save Message"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Privacy & Metadata Settings"
+msgstr "Privacy & Metadata Settings"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Control what data is collected and stored when participants complete forms."
+msgstr "Control what data is collected and stored when participants complete forms."
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Data Collection"
+msgstr "Data Collection"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Enable IP Address Storage"
+msgstr "Enable IP Address Storage"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Store participant IP addresses (hashed for privacy)"
+msgstr "Store participant IP addresses (hashed for privacy)"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Browser Information"
+msgstr "Browser Information"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Store browser type and version"
+msgstr "Store browser type and version"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Operating System"
+msgstr "Operating System"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Store operating system information"
+msgstr "Store operating system information"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Screen Dimensions"
+msgstr "Screen Dimensions"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Store screen width and height"
+msgstr "Store screen width and height"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "Save Privacy Settings"
+msgstr "Save Privacy Settings"
+
+#: admin/tabs/privacy-metadata-tab.php
+msgid "These settings apply to all forms using EIPSI Forms."
+msgstr "These settings apply to all forms using EIPSI Forms."
+
+#: admin/setup-wizard.php
+msgid "Study Setup Wizard"
+msgstr "Study Setup Wizard"
+
+#: admin/setup-wizard.php
+msgid "Step"
+msgstr "Step"
+
+#: admin/setup-wizard.php
+msgid "of"
+msgstr "of"
+
+#: admin/setup-wizard.php
+msgid "Previous"
+msgstr "Previous"
+
+#: admin/setup-wizard.php
+msgid "Next"
+msgstr "Next"
+
+#: admin/setup-wizard.php
+msgid "Study Name"
+msgstr "Study Name"
+
+#: admin/setup-wizard.php
+msgid "Enter a descriptive name for your study"
+msgstr "Enter a descriptive name for your study"
+
+#: admin/setup-wizard.php
+msgid "Study Description"
+msgstr "Study Description"
+
+#: admin/setup-wizard.php
+msgid "Brief description of the study purpose"
+msgstr "Brief description of the study purpose"
+
+#: admin/setup-wizard.php
+msgid "Principal Investigator"
+msgstr "Principal Investigator"
+
+#: admin/setup-wizard.php
+msgid "Name of the lead researcher"
+msgstr "Name of the lead researcher"
+
+#: admin/setup-wizard.php
+msgid "Contact Email"
+msgstr "Contact Email"
+
+#: admin/setup-wizard.php
+msgid "Email for participant inquiries"
+msgstr "Email for participant inquiries"
+
+#: admin/setup-wizard.php
+msgid "Institution"
+msgstr "Institution"
+
+#: admin/setup-wizard.php
+msgid "University or research institution"
+msgstr "University or research institution"
+
+#: admin/setup-wizard.php
+msgid "Ethics Approval Number"
+msgstr "Ethics Approval Number"
+
+#: admin/setup-wizard.php
+msgid "IRB/Ethics committee approval number"
+msgstr "IRB/Ethics committee approval number"
+
+#: admin/setup-wizard.php
+msgid "Study Type"
+msgstr "Study Type"
+
+#: admin/setup-wizard.php
+msgid "Observational"
+msgstr "Observational"
+
+#: admin/setup-wizard.php
+msgid "Interventional"
+msgstr "Interventional"
+
+#: admin/setup-wizard.php
+msgid "Longitudinal"
+msgstr "Longitudinal"
+
+#: admin/setup-wizard.php
+msgid "Cross-sectional"
+msgstr "Cross-sectional"
+
+#: admin/setup-wizard.php
+msgid "Estimated Duration"
+msgstr "Estimated Duration"
+
+#: admin/setup-wizard.php
+msgid "How long will the study run?"
+msgstr "How long will the study run?"
+
+#: admin/setup-wizard.php
+msgid "Target Sample Size"
+msgstr "Target Sample Size"
+
+#: admin/setup-wizard.php
+msgid "Expected number of participants"
+msgstr "Expected number of participants"
+
+#: admin/setup-wizard.php
+msgid "Create Study"
+msgstr "Create Study"
+
+#: admin/setup-wizard.php
+msgid "Creating..."
+msgstr "Creating..."
+
+#: admin/setup-wizard.php
+msgid "Study created successfully!"
+msgstr "Study created successfully!"
+
+#: admin/setup-wizard.php
+msgid "Error creating study"
+msgstr "Error creating study"
+
+#: admin/setup-wizard.php
+msgid "Basic Information"
+msgstr "Basic Information"
+
+#: admin/setup-wizard.php
+msgid "Study Design"
+msgstr "Study Design"
+
+#: admin/setup-wizard.php
+msgid "Participants"
+msgstr "Participants"
+
+#: admin/setup-wizard.php
+msgid "Forms"
+msgstr "Forms"
+
+#: admin/setup-wizard.php
+msgid "Review"
+msgstr "Review"
+
+#: admin/randomization-page.php
+msgid "Randomization Configuration"
+msgstr "Randomization Configuration"
+
+#: admin/randomization-page.php
+msgid "Study"
+msgstr "Study"
+
+#: admin/randomization-page.php
+msgid "Select Study"
+msgstr "Select Study"
+
+#: admin/randomization-page.php
+msgid "Allocation Ratio"
+msgstr "Allocation Ratio"
+
+#: admin/randomization-page.php
+msgid "Stratification Variables"
+msgstr "Stratification Variables"
+
+#: admin/randomization-page.php
+msgid "Block Size"
+msgstr "Block Size"
+
+#: admin/randomization-page.php
+msgid "Save Configuration"
+msgstr "Save Configuration"
+
+#: admin/randomization-page.php
+msgid "Randomization List"
+msgstr "Randomization List"
+
+#: admin/randomization-page.php
+msgid "Participant ID"
+msgstr "Participant ID"
+
+#: admin/randomization-page.php
+msgid "Group"
+msgstr "Group"
+
+#: admin/randomization-page.php
+msgid "Date Assigned"
+msgstr "Date Assigned"
+
+#: admin/randomization-page.php
+msgid "Status"
+msgstr "Status"
+
+#: admin/randomization-page.php
+msgid "Actions"
+msgstr "Actions"
+
+#: admin/randomization-page.php
+msgid "No randomizations found"
+msgstr "No randomizations found"
+
+#: admin/waves-manager-tab.php
+msgid "Waves Manager"
+msgstr "Waves Manager"
+
+#: admin/waves-manager-tab.php
+msgid "Manage data collection waves for your longitudinal study."
+msgstr "Manage data collection waves for your longitudinal study."
+
+#: admin/waves-manager-tab.php
+msgid "Create New Wave"
+msgstr "Create New Wave"
+
+#: admin/waves-manager-tab.php
+msgid "Wave Name"
+msgstr "Wave Name"
+
+#: admin/waves-manager-tab.php
+msgid "Description"
+msgstr "Description"
+
+#: admin/waves-manager-tab.php
+msgid "Start Date"
+msgstr "Start Date"
+
+#: admin/waves-manager-tab.php
+msgid "End Date"
+msgstr "End Date"
+
+#: admin/waves-manager-tab.php
+msgid "Add Wave"
+msgstr "Add Wave"
+
+#: admin/waves-manager-tab.php
+msgid "Existing Waves"
+msgstr "Existing Waves"
+
+#: admin/waves-manager-tab.php
+msgid "Wave"
+msgstr "Wave"
+
+#: admin/waves-manager-tab.php
+msgid "Period"
+msgstr "Period"
+
+#: admin/waves-manager-tab.php
+msgid "Participants"
+msgstr "Participants"
+
+#: admin/waves-manager-tab.php
+msgid "Progress"
+msgstr "Progress"
+
+#: admin/waves-manager-tab.php
+msgid "No waves created yet"
+msgstr "No waves created yet"
+
+#: admin/waves-manager-tab.php
+msgid "Assign Participants"
+msgstr "Assign Participants"
+
+#: admin/waves-manager-tab.php
+msgid "¿Asignar los participantes seleccionados a esta onda?"
+msgstr "Assign selected participants to this wave?"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Active Studies"
+msgstr "Active Studies"
+
+#: admin/longitudinal-studies-tab.php
+msgid "No active studies found"
+msgstr "No active studies found"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Create your first longitudinal study"
+msgstr "Create your first longitudinal study"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Study Name"
+msgstr "Study Name"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Participants"
+msgstr "Participants"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Waves"
+msgstr "Waves"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Created"
+msgstr "Created"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Status"
+msgstr "Status"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Actions"
+msgstr "Actions"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Active"
+msgstr "Active"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Paused"
+msgstr "Paused"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Completed"
+msgstr "Completed"
+
+#: admin/longitudinal-studies-tab.php
+msgid "View"
+msgstr "View"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Edit"
+msgstr "Edit"
+
+#: admin/longitudinal-studies-tab.php
+msgid "Close"
+msgstr "Close"
+
+#: admin/longitudinal-studies-tab.php
+msgid "¿Estás seguro de cerrar este estudio?"
+msgstr "Are you sure you want to close this study?"
+
+#: admin/longitudinal-studies-tab.php
+msgid "This will mark the study as completed and archive all data."
+msgstr "This will mark the study as completed and archive all data."
+
+#: admin/email-log-tab.php
+msgid "Email Log"
+msgstr "Email Log"
+
+#: admin/email-log-tab.php
+msgid "View all emails sent to participants"
+msgstr "View all emails sent to participants"
+
+#: admin/email-log-tab.php
+msgid "Filter by Status"
+msgstr "Filter by Status"
+
+#: admin/email-log-tab.php
+msgid "All"
+msgstr "All"
+
+#: admin/email-log-tab.php
+msgid "Sent"
+msgstr "Sent"
+
+#: admin/email-log-tab.php
+msgid "Failed"
+msgstr "Failed"
+
+#: admin/email-log-tab.php
+msgid "Pending"
+msgstr "Pending"
+
+#: admin/email-log-tab.php
+msgid "Filter by Type"
+msgstr "Filter by Type"
+
+#: admin/email-log-tab.php
+msgid "Welcome"
+msgstr "Welcome"
+
+#: admin/email-log-tab.php
+msgid "Reminder"
+msgstr "Reminder"
+
+#: admin/email-log-tab.php
+msgid "Confirmation"
+msgstr "Confirmation"
+
+#: admin/email-log-tab.php
+msgid "Recovery"
+msgstr "Recovery"
+
+#: admin/email-log-tab.php
+msgid "Search"
+msgstr "Search"
+
+#: admin/email-log-tab.php
+msgid "Search by email or participant..."
+msgstr "Search by email or participant..."
+
+#: admin/email-log-tab.php
+msgid "Date Range"
+msgstr "Date Range"
+
+#: admin/email-log-tab.php
+msgid "From"
+msgstr "From"
+
+#: admin/email-log-tab.php
+msgid "To"
+msgstr "To"
+
+#: admin/email-log-tab.php
+msgid "Apply Filters"
+msgstr "Apply Filters"
+
+#: admin/email-log-tab.php
+msgid "Clear Filters"
+msgstr "Clear Filters"
+
+#: admin/email-log-tab.php
+msgid "Participant"
+msgstr "Participant"
+
+#: admin/email-log-tab.php
+msgid "Email Type"
+msgstr "Email Type"
+
+#: admin/email-log-tab.php
+msgid "Subject"
+msgstr "Subject"
+
+#: admin/email-log-tab.php
+msgid "Sent Date"
+msgstr "Sent Date"
+
+#: admin/email-log-tab.php
+msgid "Opened"
+msgstr "Opened"
+
+#: admin/email-log-tab.php
+msgid "Yes"
+msgstr "Yes"
+
+#: admin/email-log-tab.php
+msgid "No"
+msgstr "No"
+
+#: admin/email-log-tab.php
+msgid "No emails found"
+msgstr "No emails found"
+
+#: admin/email-log-tab.php
+msgid "Previous"
+msgstr "Previous"
+
+#: admin/email-log-tab.php
+msgid "Next"
+msgstr "Next"
+
+#: admin/email-log-tab.php
+msgid "Page"
+msgstr "Page"
+
+#: admin/email-log-tab.php
+msgid "of"
+msgstr "of"
+
+#: admin/cron-reminders-tab.php
+msgid "Automated Reminders"
+msgstr "Automated Reminders"
+
+#: admin/cron-reminders-tab.php
+msgid "Configure automatic reminders for participants"
+msgstr "Configure automatic reminders for participants"
+
+#: admin/cron-reminders-tab.php
+msgid "Enable Automated Reminders"
+msgstr "Enable Automated Reminders"
+
+#: admin/cron-reminders-tab.php
+msgid "Send reminders automatically"
+msgstr "Send reminders automatically"
+
+#: admin/cron-reminders-tab.php
+msgid "Reminder Schedule"
+msgstr "Reminder Schedule"
+
+#: admin/cron-reminders-tab.php
+msgid "Days before due date"
+msgstr "Days before due date"
+
+#: admin/cron-reminders-tab.php
+msgid "Frequency"
+msgstr "Frequency"
+
+#: admin/cron-reminders-tab.php
+msgid "Daily"
+msgstr "Daily"
+
+#: admin/cron-reminders-tab.php
+msgid "Weekly"
+msgstr "Weekly"
+
+#: admin/cron-reminders-tab.php
+msgid "Send Time"
+msgstr "Send Time"
+
+#: admin/cron-reminders-tab.php
+msgid "Hour to send reminders (24h format)"
+msgstr "Hour to send reminders (24h format)"
+
+#: admin/cron-reminders-tab.php
+msgid "Max Reminders"
+msgstr "Max Reminders"
+
+#: admin/cron-reminders-tab.php
+msgid "Maximum reminders per participant"
+msgstr "Maximum reminders per participant"
+
+#: admin/cron-reminders-tab.php
+msgid "Save Settings"
+msgstr "Save Settings"
+
+#: admin/cron-reminders-tab.php
+msgid "Send Test Reminder"
+msgstr "Send Test Reminder"
+
+#: admin/cron-reminders-tab.php
+msgid "Manual Reminders"
+msgstr "Manual Reminders"
+
+#: admin/cron-reminders-tab.php
+msgid "Send reminders to selected participants"
+msgstr "Send reminders to selected participants"
+
+#: admin/cron-reminders-tab.php
+msgid "Select Participants"
+msgstr "Select Participants"
+
+#: admin/cron-reminders-tab.php
+msgid "Search participants..."
+msgstr "Search participants..."
+
+#: admin/cron-reminders-tab.php
+msgid "All Participants"
+msgstr "All Participants"
+
+#: admin/cron-reminders-tab.php
+msgid "Pending Only"
+msgstr "Pending Only"
+
+#: admin/cron-reminders-tab.php
+msgid "Overdue Only"
+msgstr "Overdue Only"
+
+#: admin/cron-reminders-tab.php
+msgid "Selected"
+msgstr "Selected"
+
+#: admin/cron-reminders-tab.php
+msgid "participants"
+msgstr "participants"
+
+#: admin/cron-reminders-tab.php
+msgid "Send Reminders Now"
+msgstr "Send Reminders Now"
+
+#: admin/cron-reminders-tab.php
+msgid "¿Enviar recordatorios a los participantes seleccionados?"
+msgstr "Send reminders to selected participants?"
+
+#: admin/form-library.php
+msgid "EIPSI Forms - Form Library"
+msgstr "EIPSI Forms - Form Library"
+
+#: admin/form-library.php
+msgid "Create New Form"
+msgstr "Create New Form"
+
+#: admin/form-library.php
+msgid "Import Form"
+msgstr "Import Form"
+
+#: admin/form-library.php
+msgid "Clinical Templates"
+msgstr "Clinical Templates"
+
+#: admin/form-library.php
+msgid "My Forms"
+msgstr "My Forms"
+
+#: admin/form-library.php
+msgid "All Forms"
+msgstr "All Forms"
+
+#: admin/form-library.php
+msgid "Search forms..."
+msgstr "Search forms..."
+
+#: admin/form-library.php
+msgid "Filter by type"
+msgstr "Filter by type"
+
+#: admin/form-library.php
+msgid "Filter by status"
+msgstr "Filter by status"
+
+#: admin/form-library.php
+msgid "No forms found"
+msgstr "No forms found"
+
+#: admin/form-library.php
+msgid "Create your first form"
+msgstr "Create your first form"
+
+#: admin/form-library.php
+msgid "Form Title"
+msgstr "Form Title"
+
+#: admin/form-library.php
+msgid "Shortcode"
+msgstr "Shortcode"
+
+#: admin/form-library.php
+msgid "Created"
+msgstr "Created"
+
+#: admin/form-library.php
+msgid "Modified"
+msgstr "Modified"
+
+#: admin/form-library.php
+msgid "Published"
+msgstr "Published"
+
+#: admin/form-library.php
+msgid "Draft"
+msgstr "Draft"
+
+#: admin/form-library.php
+msgid "Preview"
+msgstr "Preview"
+
+#: admin/form-library.php
+msgid "Edit"
+msgstr "Edit"
+
+#: admin/form-library.php
+msgid "Duplicate"
+msgstr "Duplicate"
+
+#: admin/form-library.php
+msgid "Export"
+msgstr "Export"
+
+#: admin/form-library.php
+msgid "Delete"
+msgstr "Delete"
+
+#: admin/form-library.php
+msgid "¿Duplicar este formulario?"
+msgstr "Duplicate this form?"
+
+#: admin/form-library.php
+msgid "This will create a copy of the form with all its settings."
+msgstr "This will create a copy of the form with all its settings."
+
+#: admin/form-library.php
+msgid "Copy shortcode"
+msgstr "Copy shortcode"
+
+#: admin/form-library.php
+msgid "Shortcode copied!"
+msgstr "Shortcode copied!"
+
+#: admin/handlers.php
+msgid "Security check failed."
+msgstr "Security check failed."
+
+#: admin/handlers.php
+msgid "You do not have sufficient permissions to perform this action."
+msgstr "You do not have sufficient permissions to perform this action."
+
+#: includes/form-template-render.php
+msgid "Form not found"
+msgstr "Form not found"
+
+#: includes/form-template-render.php
+msgid "This form is currently unavailable."
+msgstr "This form is currently unavailable."
+
+#: includes/form-template-render.php
+msgid "Loading form..."
+msgstr "Loading form..."
+
+#: includes/form-template-render.php
+msgid "Previous"
+msgstr "Previous"
+
+#: includes/form-template-render.php
+msgid "Next"
+msgstr "Next"
+
+#: includes/form-template-render.php
+msgid "Submit"
+msgstr "Submit"
+
+#: includes/form-template-render.php
+msgid "Saving..."
+msgstr "Saving..."
+
+#: includes/form-template-render.php
+msgid "Please complete all required fields"
+msgstr "Please complete all required fields"
+
+#: includes/form-template-render.php
+msgid "This field is required"
+msgstr "This field is required"
+
+#: includes/form-template-render.php
+msgid "Please enter a valid email address"
+msgstr "Please enter a valid email address"
+
+#: includes/form-template-render.php
+msgid "Please enter a valid number"
+msgstr "Please enter a valid number"
+
+#: includes/form-template-render.php
+msgid "Form submitted successfully!"
+msgstr "Form submitted successfully!"
+
+#: includes/form-template-render.php
+msgid "Thank you for your submission"
+msgstr "Thank you for your submission"
+
+#: includes/form-template-render.php
+msgid "An error occurred. Please try again."
+msgstr "An error occurred. Please try again."
+
+#: includes/form-template-render.php
+msgid "Session expired. Please refresh the page."
+msgstr "Session expired. Please refresh the page."
+
+#: includes/form-template-render.php
+msgid "Page"
+msgstr "Page"
+
+#: includes/form-template-render.php
+msgid "of"
+msgstr "of"
+
+#: includes/form-template-render.php
+msgid "Progress"
+msgstr "Progress"
+
+#: includes/form-template-render.php
+msgid "Your progress has been saved"
+msgstr "Your progress has been saved"
+
+#: includes/form-template-render.php
+msgid "Continue later"
+msgstr "Continue later"
+
+#: includes/form-template-render.php
+msgid "Save progress"
+msgstr "Save progress"
+
+#: includes/form-template-render.php
+msgid "Unsaved changes"
+msgstr "Unsaved changes"
+
+#: includes/form-template-render.php
+msgid "You have unsaved changes. Are you sure you want to leave?"
+msgstr "You have unsaved changes. Are you sure you want to leave?"
+
+#: includes/class-survey-access-handler.php
+msgid "Invalid access token"
+msgstr "Invalid access token"
+
+#: includes/class-survey-access-handler.php
+msgid "This survey link has expired"
+msgstr "This survey link has expired"
+
+#: includes/class-survey-access-handler.php
+msgid "Survey not found"
+msgstr "Survey not found"
+
+#: includes/class-survey-access-handler.php
+msgid "This survey is currently closed"
+msgstr "This survey is currently closed"
+
+#: includes/class-survey-access-handler.php
+msgid "You have already completed this survey"
+msgstr "You have already completed this survey"
+
+#: includes/class-survey-access-handler.php
+msgid "Authentication required"
+msgstr "Authentication required"
+
+#: includes/class-survey-access-handler.php
+msgid "Please log in to access this survey"
+msgstr "Please log in to access this survey"
+
+#: includes/shortcodes.php
+msgid "Survey Login"
+msgstr "Survey Login"
+
+#: includes/shortcodes.php
+msgid "Email address"
+msgstr "Email address"
+
+#: includes/shortcodes.php
+msgid "Password"
+msgstr "Password"
+
+#: includes/shortcodes.php
+msgid "Login"
+msgstr "Login"
+
+#: includes/shortcodes.php
+msgid "Forgot password?"
+msgstr "Forgot password?"
+
+#: includes/shortcodes.php
+msgid "Don't have an account?"
+msgstr "Don't have an account?"
+
+#: includes/shortcodes.php
+msgid "Register"
+msgstr "Register"
+
+#: includes/shortcodes.php
+msgid "Invalid credentials"
+msgstr "Invalid credentials"
+
+#: includes/shortcodes.php
+msgid "Welcome back"
+msgstr "Welcome back"
+
+#: includes/shortcodes.php
+msgid "Logout"
+msgstr "Logout"
+
+#: admin/services/class-email-service.php
+msgid "Welcome to the Study"
+msgstr "Welcome to the Study"
+
+#: admin/services/class-email-service.php
+msgid "Reminder: Pending Survey"
+msgstr "Reminder: Pending Survey"
+
+#: admin/services/class-email-service.php
+msgid "Survey Completed"
+msgstr "Survey Completed"
+
+#: admin/services/class-email-service.php
+msgid "We Miss You"
+msgstr "We Miss You"
+
+#: admin/services/class-email-service.php
+msgid "Sent"
+msgstr "Sent"
+
+#: admin/services/class-email-service.php
+msgid "Failed"
+msgstr "Failed"
+
+#: admin/services/class-email-service.php
+msgid "Pending"
+msgstr "Pending"
+
+#: admin/randomization-shortcode-handler.php
+msgid "Randomized Form Access"
+msgstr "Randomized Form Access"
+
+#: admin/randomization-shortcode-handler.php
+msgid "You have been assigned to:"
+msgstr "You have been assigned to:"
+
+#: admin/randomization-shortcode-handler.php
+msgid "Control Group"
+msgstr "Control Group"
+
+#: admin/randomization-shortcode-handler.php
+msgid "Intervention Group"
+msgstr "Intervention Group"
+
+#: admin/randomization-shortcode-handler.php
+msgid "Treatment A"
+msgstr "Treatment A"
+
+#: admin/randomization-shortcode-handler.php
+msgid "Treatment B"
+msgstr "Treatment B"
+
+#: admin/randomization-shortcode-handler.php
+msgid "Continue to Form"
+msgstr "Continue to Form"
+
+#: admin/randomization-shortcode-handler.php
+msgid "Error: Randomization not configured"
+msgstr "Error: Randomization not configured"
+
+#: admin/study-close-handler.php
+msgid "Study closed successfully"
+msgstr "Study closed successfully"
+
+#: admin/study-close-handler.php
+msgid "Error closing study"
+msgstr "Error closing study"
+
+#: admin/study-close-handler.php
+msgid "Study already closed"
+msgstr "Study already closed"
+
+#: admin/study-dashboard-api.php
+msgid "Study dashboard data retrieved successfully"
+msgstr "Study dashboard data retrieved successfully"
+
+#: admin/study-dashboard-api.php
+msgid "Study not found"
+msgstr "Study not found"
+
+#: admin/study-dashboard-modal.php
+msgid "Study Overview"
+msgstr "Study Overview"
+
+#: admin/study-dashboard-modal.php
+msgid "Enrollment Progress"
+msgstr "Enrollment Progress"
+
+#: admin/study-dashboard-modal.php
+msgid "Completion Rate"
+msgstr "Completion Rate"
+
+#: admin/study-dashboard-modal.php
+msgid "Average Time"
+msgstr "Average Time"
+
+#: admin/study-dashboard-modal.php
+msgid "Dropout Rate"
+msgstr "Dropout Rate"
+
+#: admin/study-dashboard-modal.php
+msgid "View Details"
+msgstr "View Details"
+
+#: admin/study-dashboard-modal.php
+msgid "Close"
+msgstr "Close"
+
+#: eipsi-forms.php:336
+msgid "Estudio Aleatorizado"
+msgstr "Randomized Study"
+
+#: admin/export.php
+msgid "Unauthorized"
+msgstr "Unauthorized"
+
+#: admin/tabs/submissions-tab.php
+msgid "Esto reemplazará el contenido actual del formulario. ¿Continuar?"
+msgstr "This will replace the current form content. Continue?"
+
+#: admin/tabs/submissions-tab.php
+msgid "This action will PERMANENTLY delete all form responses, session data, and event logs from EIPSI Forms.\n\nThis CANNOT be undone.\n\nAre you absolutely sure?"
+msgstr "This action will PERMANENTLY delete all form responses, session data, and event logs from EIPSI Forms.\n\nThis CANNOT be undone.\n\nAre you absolutely sure?"
+
+#: admin/tabs/submissions-tab.php
+msgid "⚠️ Delete All Clinical Data?"
+msgstr "⚠️ Delete All Clinical Data?"
