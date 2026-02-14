@@ -1,0 +1,1121 @@
+/**
+ * EIPSI Forms - High Contrast & Accessibility Improvements
+ * WCAG 2.1 AA Compliant - Minimum 4.5:1 contrast ratio for text
+ *
+ * @package EIPSI_Forms
+ * @since 1.5.4
+ * @description Mejora el contraste en todas las secciones del plugin
+ */
+
+/* ==========================================================================
+   CSS CUSTOM PROPERTIES - Paleta de Colores Accesible
+   ========================================================================== */
+
+:root {
+    /* Primary Colors - Alto Contraste */
+    --eipsi-hc-primary: #2563eb;
+    --eipsi-hc-primary-dark: #1d4ed8;
+    --eipsi-hc-primary-darker: #1e40af;
+    --eipsi-hc-primary-light: #3b82f6;
+
+    /* Success - Verde oscuro para mejor contraste */
+    --eipsi-hc-success: #15803d;
+    --eipsi-hc-success-dark: #166534;
+    --eipsi-hc-success-light: #22c55e;
+    --eipsi-hc-success-bg: #dcfce7;
+    --eipsi-hc-success-text: #14532d;
+
+    /* Warning - Ámbar oscuro para mejor contraste */
+    --eipsi-hc-warning: #b45309;
+    --eipsi-hc-warning-dark: #92400e;
+    --eipsi-hc-warning-bg: #fef3c7;
+    --eipsi-hc-warning-text: #78350f;
+
+    /* Error - Rojo oscuro para mejor contraste */
+    --eipsi-hc-error: #dc2626;
+    --eipsi-hc-error-dark: #b91c1c;
+    --eipsi-hc-error-bg: #fee2e2;
+    --eipsi-hc-error-text: #7f1d1d;
+
+    /* Info - Azul para información */
+    --eipsi-hc-info: #0369a1;
+    --eipsi-hc-info-bg: #e0f2fe;
+    --eipsi-hc-info-text: #0c4a6e;
+
+    /* Neutral Colors - Texto legible */
+    --eipsi-hc-text-primary: #111827;
+    --eipsi-hc-text-secondary: #374151;
+    --eipsi-hc-text-muted: #4b5563;
+    --eipsi-hc-text-light: #6b7280;
+
+    /* Background Colors */
+    --eipsi-hc-bg-white: #ffffff;
+    --eipsi-hc-bg-gray-50: #f9fafb;
+    --eipsi-hc-bg-gray-100: #f3f4f6;
+    --eipsi-hc-bg-gray-200: #e5e7eb;
+    --eipsi-hc-bg-gray-300: #d1d5db;
+    --eipsi-hc-bg-gray-800: #1f2937;
+    --eipsi-hc-bg-gray-900: #111827;
+
+    /* Border Colors */
+    --eipsi-hc-border: #d1d5db;
+    --eipsi-hc-border-dark: #9ca3af;
+    --eipsi-hc-border-light: #e5e7eb;
+
+    /* Dark Theme Colors */
+    --eipsi-hc-dark-bg: #0f172a;
+    --eipsi-hc-dark-surface: #1e293b;
+    --eipsi-hc-dark-surface-elevated: #334155;
+    --eipsi-hc-dark-text: #f1f5f9;
+    --eipsi-hc-dark-text-secondary: #cbd5e1;
+    --eipsi-hc-dark-text-muted: #94a3b8;
+    --eipsi-hc-dark-border: #475569;
+}
+
+/* ==========================================================================
+   WAVES MANAGER - Mejoras de Contraste
+   ========================================================================== */
+
+/* Contenedor principal - Mantener consistencia */
+.eipsi-waves-manager-wrap {
+    background: var(--eipsi-hc-dark-bg);
+    color: var(--eipsi-hc-dark-text);
+}
+
+/* Header con mejor contraste */
+.eipsi-waves-header {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.study-selector-wrap label {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 600;
+}
+
+.study-selector-wrap select {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+/* Wave Cards - Mejorar contraste de textos */
+.wave-card {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.wave-card:hover {
+    border-color: var(--eipsi-hc-primary-light);
+}
+
+.wave-title {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 700;
+}
+
+/* BADGES - WCAG AA Compliant */
+.wave-badge {
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    border-width: 2px;
+}
+
+/* Active Badge - Alto contraste */
+.wave-badge.active {
+    background: #1e3a8a;
+    color: #ffffff;
+    border-color: #3b82f6;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Completed Badge - Alto contraste */
+.wave-badge.completed {
+    background: #065f46;
+    color: #ffffff;
+    border-color: #10b981;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Pending Badge - Alto contraste */
+.wave-badge.pending {
+    background: #92400e;
+    color: #ffffff;
+    border-color: #f59e0b;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Draft Badge */
+.wave-badge.draft {
+    background: #374151;
+    color: #ffffff;
+    border-color: #6b7280;
+}
+
+/* Wave Info Rows */
+.wave-info-row {
+    color: var(--eipsi-hc-dark-text-secondary);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.wave-info-label {
+    color: var(--eipsi-hc-dark-text-muted);
+    font-weight: 500;
+}
+
+.wave-info-value {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 600;
+}
+
+/* Stats Section */
+.wave-stats .stat-item .stat-value {
+    color: var(--eipsi-hc-primary-light);
+    font-weight: 700;
+    font-size: 24px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.wave-stats .stat-item .stat-label {
+    color: var(--eipsi-hc-dark-text-muted);
+    font-weight: 500;
+}
+
+/* Progress Bar */
+.wave-progress .progress-bar {
+    background: var(--eipsi-hc-dark-surface-elevated);
+}
+
+.wave-progress .progress-fill {
+    background: linear-gradient(90deg, var(--eipsi-hc-primary), var(--eipsi-hc-primary-light));
+}
+
+.wave-progress .progress-text {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 600;
+}
+
+/* Botones de Acción */
+.wave-card-actions .button {
+    font-weight: 600;
+}
+
+.wave-card-actions .button-secondary {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.wave-card-actions .button-secondary:hover {
+    background: var(--eipsi-hc-primary);
+    border-color: var(--eipsi-hc-primary);
+    color: #ffffff;
+}
+
+.wave-card-actions .button-link-delete {
+    color: #fca5a5;
+    font-weight: 600;
+}
+
+.wave-card-actions .button-link-delete:hover {
+    color: #fecaca;
+    background: rgba(220, 38, 38, 0.2);
+}
+
+/* Wave Index (T1, T2, etc.) */
+.wave-index {
+    background: var(--eipsi-hc-primary);
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 18px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Empty State */
+.eipsi-waves-empty {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-waves-empty h3 {
+    color: var(--eipsi-hc-dark-text);
+}
+
+.eipsi-waves-empty p {
+    color: var(--eipsi-hc-dark-text-secondary);
+}
+
+/* ==========================================================================
+   DASHBOARD STUDY - Mejoras de Contraste
+   ========================================================================== */
+
+/* Contenedor principal */
+.eipsi-longitudinal-studies-wrap {
+    background: var(--eipsi-hc-dark-bg);
+    color: var(--eipsi-hc-dark-text);
+}
+
+/* Summary Cards */
+.eipsi-card-stat {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-card-stat:hover {
+    border-color: var(--eipsi-hc-primary);
+}
+
+.eipsi-card-stat .stat-label {
+    color: var(--eipsi-hc-dark-text-secondary);
+    font-weight: 600;
+}
+
+.eipsi-card-stat .stat-value {
+    color: #60a5fa;
+    font-weight: 800;
+    font-size: 36px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Filters */
+.eipsi-list-filters {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-list-filters input[type="text"] {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-list-filters input[type="text"]::placeholder {
+    color: var(--eipsi-hc-dark-text-muted);
+}
+
+/* Tabla de Estudios */
+.eipsi-longitudinal-studies-wrap table.wp-list-table {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table thead {
+    background: var(--eipsi-hc-dark-surface-elevated);
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table thead th {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 700;
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody td {
+    color: var(--eipsi-hc-dark-text-secondary);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody td strong {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 600;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody tr:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* Badges en Tabla - Alto Contraste */
+.eipsi-badge {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-width: 2px;
+}
+
+.eipsi-badge.badge-active {
+    background: #065f46;
+    color: #ffffff;
+    border-color: #10b981;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.eipsi-badge.badge-completed {
+    background: #1e40af;
+    color: #ffffff;
+    border-color: #3b82f6;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.eipsi-badge.badge-paused {
+    background: #92400e;
+    color: #ffffff;
+    border-color: #f59e0b;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.eipsi-badge.badge-closed {
+    background: #374151;
+    color: #ffffff;
+    border-color: #6b7280;
+}
+
+/* Code elements */
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody td code {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: #60a5fa;
+    border-color: var(--eipsi-hc-dark-border);
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   EMAIL LOG & DROPOUT - Mejoras de Contraste
+   ========================================================================== */
+
+/* Stats Cards */
+.eipsi-email-stats-cards {
+    gap: 20px;
+}
+
+.eipsi-stat-card {
+    background: var(--eipsi-hc-dark-surface);
+    border: 2px solid var(--eipsi-hc-dark-border);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.eipsi-stat-card.eipsi-stat-success {
+    border-left: 4px solid var(--eipsi-hc-success-light);
+}
+
+.eipsi-stat-card.eipsi-stat-error {
+    border-left: 4px solid var(--eipsi-hc-error);
+}
+
+.eipsi-stat-card.eipsi-stat-total {
+    border-left: 4px solid var(--eipsi-hc-primary-light);
+}
+
+.eipsi-stat-card .stat-label {
+    color: var(--eipsi-hc-dark-text-secondary);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.eipsi-stat-card .stat-value {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 800;
+    font-size: 36px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.eipsi-stat-card.eipsi-stat-success .stat-value {
+    color: #4ade80;
+}
+
+.eipsi-stat-card.eipsi-stat-error .stat-value {
+    color: #f87171;
+}
+
+.eipsi-stat-card.eipsi-stat-total .stat-value {
+    color: #60a5fa;
+}
+
+.eipsi-stat-card .stat-sublabel {
+    color: var(--eipsi-hc-dark-text-muted);
+    font-weight: 500;
+}
+
+/* Sub Tabs */
+.eipsi-sub-tabs {
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-sub-tab-button {
+    color: var(--eipsi-hc-dark-text-muted);
+    font-weight: 600;
+}
+
+.eipsi-sub-tab-button:hover {
+    background: var(--eipsi-hc-dark-surface);
+    color: var(--eipsi-hc-dark-text);
+}
+
+.eipsi-sub-tab-button.active {
+    color: var(--eipsi-hc-primary-light);
+    font-weight: 700;
+}
+
+.eipsi-sub-tab-button.active::after {
+    background: var(--eipsi-hc-primary);
+}
+
+/* Filters Toolbar */
+.eipsi-filters-toolbar {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-filter-group label {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 600;
+}
+
+.eipsi-filter-select,
+.eipsi-filter-input {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+/* Tablas */
+.eipsi-email-log-table-wrapper,
+.eipsi-dropout-table-wrapper {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-email-log-table thead th,
+.eipsi-dropout-table thead th {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 700;
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-email-log-table tbody td,
+.eipsi-dropout-table tbody td {
+    color: var(--eipsi-hc-dark-text-secondary);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+/* Email Status Badges */
+.eipsi-email-status {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.eipsi-email-status.sent {
+    background: #065f46;
+    color: #ffffff;
+    border: 1px solid #10b981;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.eipsi-email-status.failed {
+    background: #991b1b;
+    color: #ffffff;
+    border: 1px solid #ef4444;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Email Type Badges */
+.eipsi-email-type {
+    font-weight: 700;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid;
+}
+
+.eipsi-email-type.welcome {
+    background: #1e3a8a;
+    color: #ffffff;
+    border-color: #3b82f6;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.eipsi-email-type.reminder {
+    background: #92400e;
+    color: #ffffff;
+    border-color: #f59e0b;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.eipsi-email-type.confirmation {
+    background: #065f46;
+    color: #ffffff;
+    border-color: #10b981;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.eipsi-email-type.recovery {
+    background: #991b1b;
+    color: #ffffff;
+    border-color: #ef4444;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Dropout Stats */
+.eipsi-dropout-stat {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-dropout-stat .stat-label {
+    color: var(--eipsi-hc-dark-text-secondary);
+    font-weight: 600;
+}
+
+.eipsi-dropout-stat .stat-value {
+    color: #f87171;
+    font-weight: 800;
+    font-size: 28px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* At Risk / Safe Badges */
+.eipsi-at-risk-badge {
+    background: #991b1b;
+    color: #ffffff;
+    font-weight: 700;
+    border: 1px solid #ef4444;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.eipsi-safe-badge {
+    background: #065f46;
+    color: #ffffff;
+    font-weight: 700;
+    border: 1px solid #10b981;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   CREATE STUDY (WIZARD) - Mejoras de Contraste
+   ========================================================================== */
+
+/* Contenedor principal */
+.eipsi-longitudinal-study,
+.eipsi-setup-wizard {
+    background: var(--eipsi-hc-dark-bg);
+    color: var(--eipsi-hc-dark-text);
+}
+
+/* Progress Steps */
+.study-progress,
+.eipsi-wizard-progress {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.progress-step .step-name {
+    color: var(--eipsi-hc-dark-text-secondary);
+    font-weight: 600;
+}
+
+.progress-step.active .step-name {
+    color: #60a5fa;
+    font-weight: 700;
+}
+
+.progress-step.completed .step-name {
+    color: #4ade80;
+    font-weight: 700;
+}
+
+.progress-step .step-number {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text-muted);
+    border-color: var(--eipsi-hc-dark-border);
+    font-weight: 700;
+}
+
+.progress-step.active .step-number {
+    background: var(--eipsi-hc-primary);
+    color: #ffffff;
+    border-color: var(--eipsi-hc-primary-light);
+}
+
+.progress-step.completed .step-number {
+    background: var(--eipsi-hc-success);
+    color: #ffffff;
+    border-color: var(--eipsi-hc-success-light);
+}
+
+.progress-bar-container {
+    background: var(--eipsi-hc-dark-surface-elevated);
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--eipsi-hc-primary), var(--eipsi-hc-primary-light));
+}
+
+/* Step Header */
+.step-header {
+    background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%);
+    color: #ffffff;
+}
+
+.step-header h2 {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.step-header p {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* Form Container */
+.study-form,
+.eipsi-wizard-step {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+/* Form Labels */
+.form-label,
+.eipsi-form-label {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 700;
+}
+
+.form-label.required::after,
+.eipsi-form-label.required::after {
+    color: #f87171;
+    font-weight: 800;
+}
+
+/* Form Inputs */
+.form-input,
+.form-select,
+.form-textarea,
+.eipsi-form-input,
+.eipsi-form-select,
+.eipsi-form-textarea {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus,
+.eipsi-form-input:focus,
+.eipsi-form-select:focus,
+.eipsi-form-textarea:focus {
+    border-color: var(--eipsi-hc-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    background: var(--eipsi-hc-dark-surface-elevated);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder,
+.eipsi-form-input::placeholder,
+.eipsi-form-textarea::placeholder {
+    color: var(--eipsi-hc-dark-text-muted);
+}
+
+/* Form Help Text */
+.form-help {
+    color: var(--eipsi-hc-dark-text-muted);
+    font-weight: 500;
+}
+
+/* Navigation */
+.study-navigation,
+.eipsi-wizard-navigation {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+/* ==========================================================================
+   MODALES - Mejoras de Contraste
+   ========================================================================== */
+
+.eipsi-modal-content {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-modal-header {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-modal-header h2,
+.eipsi-modal-header h3 {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 700;
+}
+
+.eipsi-modal-body {
+    color: var(--eipsi-hc-dark-text-secondary);
+}
+
+.eipsi-modal-footer {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-modal-close {
+    color: var(--eipsi-hc-dark-text-muted);
+}
+
+.eipsi-modal-close:hover {
+    color: var(--eipsi-hc-dark-text);
+    background: var(--eipsi-hc-dark-surface-elevated);
+}
+
+/* ==========================================================================
+   ALERTS & NOTICES - WCAG AA Compliant
+   ========================================================================== */
+
+.alert {
+    font-weight: 600;
+    border-left-width: 4px;
+}
+
+.alert-success {
+    background: #065f46;
+    color: #ffffff;
+    border-color: #10b981;
+}
+
+.alert-error {
+    background: #991b1b;
+    color: #ffffff;
+    border-color: #ef4444;
+}
+
+.alert-info {
+    background: #1e3a8a;
+    color: #ffffff;
+    border-color: #3b82f6;
+}
+
+.alert-warning {
+    background: #92400e;
+    color: #ffffff;
+    border-color: #f59e0b;
+}
+
+/* Notices inline */
+.notice.notice-info {
+    background: rgba(59, 130, 246, 0.15);
+    border-left-color: #3b82f6;
+    color: #bfdbfe;
+}
+
+.notice.notice-warning {
+    background: rgba(245, 158, 11, 0.15);
+    border-left-color: #f59e0b;
+    color: #fde68a;
+}
+
+.notice.notice-success {
+    background: rgba(16, 185, 129, 0.15);
+    border-left-color: #10b981;
+    color: #a7f3d0;
+}
+
+.notice.notice-error {
+    background: rgba(239, 68, 68, 0.15);
+    border-left-color: #ef4444;
+    color: #fecaca;
+}
+
+/* ==========================================================================
+   BOTONES - Alto Contraste
+   ========================================================================== */
+
+/* Primary Button */
+.button-primary {
+    background: var(--eipsi-hc-primary);
+    color: #ffffff;
+    border-color: var(--eipsi-hc-primary);
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.button-primary:hover {
+    background: var(--eipsi-hc-primary-dark);
+    border-color: var(--eipsi-hc-primary-dark);
+}
+
+.button-primary:disabled {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text-muted);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+/* Secondary Button */
+.button-secondary {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text);
+    border-color: var(--eipsi-hc-dark-border);
+    font-weight: 600;
+}
+
+.button-secondary:hover {
+    background: var(--eipsi-hc-primary);
+    border-color: var(--eipsi-hc-primary);
+    color: #ffffff;
+}
+
+/* Danger Button */
+.button-danger {
+    background: var(--eipsi-hc-error);
+    color: #ffffff;
+    border-color: var(--eipsi-hc-error);
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.button-danger:hover {
+    background: var(--eipsi-hc-error-dark);
+    border-color: var(--eipsi-hc-error-dark);
+}
+
+/* Link Button */
+.button-link {
+    color: #60a5fa;
+    font-weight: 600;
+}
+
+.button-link:hover {
+    color: #93c5fd;
+}
+
+/* ==========================================================================
+   PARTICIPANTS SECTION - Mejoras de Contraste
+   ========================================================================== */
+
+.eipsi-participants-section {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-participants-section h2 {
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 700;
+}
+
+.eipsi-participants-section .description {
+    color: var(--eipsi-hc-dark-text-secondary);
+}
+
+.participants-table-container {
+    background: var(--eipsi-hc-dark-surface-elevated);
+}
+
+#participants-table th {
+    background: var(--eipsi-hc-dark-surface);
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 700;
+}
+
+#participants-table td {
+    color: var(--eipsi-hc-dark-text-secondary);
+}
+
+/* Participant Status Badges */
+.participant-status {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid;
+}
+
+.participant-status.status-active {
+    background: #065f46;
+    color: #ffffff;
+    border-color: #10b981;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.participant-status.status-inactive {
+    background: #7f1d1d;
+    color: #ffffff;
+    border-color: #ef4444;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   TABS - Mejoras de Contraste
+   ========================================================================== */
+
+.eipsi-tabs-nav {
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.eipsi-tab-btn {
+    color: var(--eipsi-hc-dark-text-muted);
+    font-weight: 600;
+}
+
+.eipsi-tab-btn:hover {
+    color: var(--eipsi-hc-dark-text);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.eipsi-tab-btn.active {
+    color: #60a5fa;
+    border-bottom-color: #3b82f6;
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   TABLAS GENERALES - Mejoras de Contraste
+   ========================================================================== */
+
+.wp-list-table {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.wp-list-table thead th {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text);
+    font-weight: 700;
+}
+
+.wp-list-table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.wp-list-table tbody tr:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.wp-list-table tbody td {
+    color: var(--eipsi-hc-dark-text-secondary);
+}
+
+/* ==========================================================================
+   PAGINACIÓN - Mejoras de Contraste
+   ========================================================================== */
+
+.tablenav {
+    background: var(--eipsi-hc-dark-surface);
+    border-color: var(--eipsi-hc-dark-border);
+}
+
+.tablenav .tablenav-pages a,
+.tablenav .tablenav-pages span {
+    background: var(--eipsi-hc-dark-surface-elevated);
+    color: var(--eipsi-hc-dark-text-secondary);
+    border-color: var(--eipsi-hc-dark-border);
+    font-weight: 600;
+}
+
+.tablenav .tablenav-pages a:hover {
+    background: var(--eipsi-hc-primary);
+    border-color: var(--eipsi-hc-primary);
+    color: #ffffff;
+}
+
+.tablenav .tablenav-pages .current {
+    background: var(--eipsi-hc-primary);
+    border-color: var(--eipsi-hc-primary);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   RESPONSIVE - Mantener contraste en móviles
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .eipsi-card-stat .stat-value {
+        font-size: 28px;
+    }
+
+    .eipsi-stat-card .stat-value {
+        font-size: 28px;
+    }
+
+    .wave-stats .stat-item .stat-value {
+        font-size: 20px;
+    }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY - Focus visible
+   ========================================================================== */
+
+/* Focus styles para navegación por teclado */
+.button:focus-visible,
+.eipsi-tab-btn:focus-visible,
+.eipsi-sub-tab-button:focus-visible,
+.eipsi-filter-select:focus-visible,
+.eipsi-filter-input:focus-visible,
+.form-input:focus-visible,
+.form-select:focus-visible,
+.form-textarea:focus-visible {
+    outline: 3px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    :root {
+        --eipsi-hc-primary: #0066ff;
+        --eipsi-hc-success: #008800;
+        --eipsi-hc-error: #cc0000;
+        --eipsi-hc-warning: #cc6600;
+    }
+
+    .eipsi-badge,
+    .wave-badge,
+    .eipsi-email-status,
+    .eipsi-email-type,
+    .participant-status {
+        border-width: 2px;
+    }
+
+    .button-primary,
+    .button-secondary {
+        border-width: 2px;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==========================================================================
+   PRINT STYLES - Mantener legibilidad
+   ========================================================================== */
+
+@media print {
+    .eipsi-waves-manager-wrap,
+    .eipsi-longitudinal-studies-wrap,
+    .eipsi-email-log-wrap,
+    .eipsi-longitudinal-study,
+    .eipsi-setup-wizard {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .wave-card,
+    .eipsi-card-stat,
+    .eipsi-stat-card,
+    .eipsi-list-filters,
+    .eipsi-filters-toolbar {
+        background: #f5f5f5 !important;
+        border: 1px solid #cccccc !important;
+    }
+
+    .wave-badge,
+    .eipsi-badge,
+    .eipsi-email-status,
+    .eipsi-email-type {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+}

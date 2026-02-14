@@ -371,7 +371,9 @@ window.addEventListener('load', function() {
 });
 </script>
 
-<style>
-/* Ensure the new CSS is loaded */
-@import url('<?php echo plugins_url('assets/css/longitudinal-studies-ui.css', EIPSI_FORMS_PLUGIN_FILE); ?>');
-</style>
+<?php
+// Enqueue styles for the wizard
+wp_enqueue_style('eipsi-longitudinal-studies-ui', EIPSI_FORMS_PLUGIN_URL . 'assets/css/longitudinal-studies-ui.css', array(), EIPSI_FORMS_VERSION);
+wp_enqueue_style('eipsi-setup-wizard', EIPSI_FORMS_PLUGIN_URL . 'assets/css/setup-wizard.css', array(), EIPSI_FORMS_VERSION);
+wp_enqueue_style('eipsi-high-contrast', EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-high-contrast.css', array('eipsi-longitudinal-studies-ui', 'eipsi-setup-wizard'), EIPSI_FORMS_VERSION);
+?>

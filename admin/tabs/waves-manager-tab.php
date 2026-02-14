@@ -19,6 +19,7 @@ $current_study_id = isset($_GET['study_id']) ? absint($_GET['study_id']) : (isse
 
 // Enqueue styles y scripts para waves manager
 wp_enqueue_style('eipsi-waves-manager', EIPSI_FORMS_PLUGIN_URL . 'admin/css/waves-manager.css', array(), EIPSI_FORMS_VERSION);
+wp_enqueue_style('eipsi-high-contrast', EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-high-contrast.css', array('eipsi-waves-manager'), EIPSI_FORMS_VERSION);
 wp_enqueue_script('eipsi-waves-manager', EIPSI_FORMS_PLUGIN_URL . 'admin/js/waves-manager.js', array('jquery'), EIPSI_FORMS_VERSION, true);
 
 // Pasar datos al JS - Nonces y configuración para AJAX

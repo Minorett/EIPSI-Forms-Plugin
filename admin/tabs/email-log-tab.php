@@ -50,6 +50,10 @@ if ($survey_id > 0) {
 }
 
 $success_rate = $total_emails > 0 ? round(($sent_count / $total_emails) * 100, 1) : 0;
+
+// Enqueue high contrast styles
+wp_enqueue_style('eipsi-email-log', EIPSI_FORMS_PLUGIN_URL . 'admin/css/email-log.css', array(), EIPSI_FORMS_VERSION);
+wp_enqueue_style('eipsi-high-contrast', EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-high-contrast.css', array('eipsi-email-log'), EIPSI_FORMS_VERSION);
 ?>
 
 <div class="eipsi-email-log-wrap">
