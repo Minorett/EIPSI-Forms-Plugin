@@ -3696,34 +3696,6 @@
                     page.inert = true;
                 }
             } );
-// ✅ FIX v1.5.2: Hide entire form content for non-paginated forms
-// If there are no regular pages, this is a single-page form without pagination
-if ( pages.length === 0 ) {
-    const formContent = form.querySelector( '.eipsi-form-content' );
-    if ( formContent ) {
-        // Hide all direct children except thank-you page
-        Array.from( formContent.children ).forEach( ( child ) => {
-            if ( child !== thankYouPageElement && !child.classList.contains( 'eipsi-thank-you-page-block' ) ) {
-                child.style.display = 'none';
-                child.setAttribute( 'aria-hidden', 'true' );
-                if ( 'inert' in child ) {
-                    child.inert = true;
-                }
-            }
-        } );
-    } else {
-        // Fallback: hide form content using direct child elements
-        Array.from( form.children ).forEach( ( child ) => {
-            if ( child !== thankYouPageElement && !child.classList.contains( 'eipsi-thank-you-page-block' ) ) {
-                child.style.display = 'none';
-                child.setAttribute( 'aria-hidden', 'true' );
-                if ( 'inert' in child ) {
-                    child.inert = true;
-                }
-            }
-        } );
-    }
-}
 
             // Hide navigation buttons
             const navigation = form.querySelector( '.form-navigation' );
@@ -3778,34 +3750,6 @@ if ( pages.length === 0 ) {
             } );
 
             // Hide navigation buttons
-// ✅ FIX v1.5.2: Hide entire form content for non-paginated forms
-// If there are no regular pages, hide all form content except newly created thank-you page will be added
-if ( pages.length === 0 ) {
-    const formContent = form.querySelector( '.eipsi-form-content' );
-    if ( formContent ) {
-        // Hide all direct children - thank-you page will be appended later
-        Array.from( formContent.children ).forEach( ( child ) => {
-            child.style.display = 'none';
-            child.setAttribute( 'aria-hidden', 'true' );
-            if ( 'inert' in child ) {
-                child.inert = true;
-            }
-        } );
-    } else {
-        // Fallback: hide all direct children of form
-        Array.from( form.children ).forEach( ( child ) => {
-            // Keep essential elements like navigation/progress
-            if ( !child.classList.contains( 'form-navigation' ) && 
-                 !child.classList.contains( 'form-progress' ) ) {
-                child.style.display = 'none';
-                child.setAttribute( 'aria-hidden', 'true' );
-                if ( 'inert' in child ) {
-                    child.inert = true;
-                }
-            }
-        } );
-    }
-}
             const navigation = form.querySelector( '.form-navigation' );
             if ( navigation ) {
                 navigation.style.display = 'none';
