@@ -57,8 +57,12 @@ wp_localize_script('eipsi-waves-manager', 'eipsiWavesManagerData', array(
 // 3. Get waves for active study
 $waves = array();
 $next_wave_index = 1;
+$wave_count = 0;
+$wave_columns = 1;
 if ($current_study_id) {
     $waves = EIPSI_Wave_Service::get_study_waves($current_study_id);
+    $wave_count = count($waves);
+    $wave_columns = $wave_count > 0 ? min(3, $wave_count) : 1;
     if (!empty($waves)) {
         $last_wave = end($waves);
         $next_wave_index = (int)$last_wave['wave_index'] + 1;
@@ -130,7 +134,7 @@ $available_forms = get_posts(array(
                     <p><?php esc_html_e('No hay ondas configuradas para este estudio. Crea tu primera onda para comenzar.', 'eipsi-forms'); ?></p>
                 </div>
             <?php else: ?>
-                <div class="eipsi-waves-grid">
+                <div class="eipsi-waves-grid columns-<?php echo esc_attr($wave_columns); ?>" data-wave-count="<?php echo esc_attr($wave_count); ?>">
                     <?php foreach ($waves as $wave): ?>
                         <?php
                         $stats = EIPSI_Wave_Service::get_wave_stats($wave['id']);
