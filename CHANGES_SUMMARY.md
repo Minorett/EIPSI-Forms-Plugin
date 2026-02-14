@@ -1,193 +1,112 @@
-# Rediseño de Interfaz para Estudios Longitudinales - Resumen de Cambios
+# EIPSI Forms - Fix Reminders Section & Add Delete Study Functionality
 
-## Objetivo Principal
-Rediseñar la interfaz de usuario para la creación y gestión de estudios longitudinales, cambiando el nombre de "+ New Study" a "Longitudinal Study" y mejorando la experiencia del usuario con un diseño coherente al estilo de EIPSI Forms.
+## Fecha
+2025-02-05
 
 ## Cambios Implementados
 
-### 1. Cambio de Nombre del Botón (menu.php)
-**Archivo:** `admin/menu.php`
-**Cambio:** Reemplazar "➕ New Study" por "Longitudinal Study" en el menú de administración.
+### 1. **Reminders Section - Link to Studies** ✅
 
-```php
-// Antes:
-__('➕ New Study', 'eipsi-forms')
+**Problema:** La sección de Reminders mostraba "No hay estudios disponibles" incluso cuando existían estudios, porque estaba buscando posts con `post_type => 'eipsi_form'` en lugar de buscar en la tabla `wp_survey_studies`.
 
-// Después:
-__('Longitudinal Study', 'eipsi-forms')
-```
+**Archivos Modificados:**
+- `/admin/tabs/cron-reminders-tab.php`
 
-### 2. Nuevo Archivo CSS para UI Moderna (longitudinal-studies-ui.css)
-**Archivo:** `assets/css/longitudinal-studies-ui.css`
-**Características:**
-- Paleta de colores clínicos cálidos y profesionales
-- Diseño responsive y accesible
-- Animaciones suaves y transiciones
-- Componentes reutilizables (botones, tarjetas, barras de progreso)
-- Soporte para dark mode
-- Tooltips y ayudas contextuales
-- Sistema de alertas y notificaciones
+**Cambios:**
+- Línea 14-21: Reemplazada la consulta de `get_posts()` por una query directa a la tabla `wp_survey_studies`
+- Línea 23-49: Actualizada la lógica de carga de configuración para leer desde el campo `config` (JSON) en lugar de post meta
+- Línea 62-79: Actualizado el selector de estudios para usar `$studies` en lugar de `$surveys`
+- Línea 86: Actualizado el ID del hidden input de `selected_survey_id` a `selected_study_id`
+- Línea 240-250: Actualizado el JavaScript para usar `study_id` en la URL
 
-**Variables CSS principales:**
-```css
-:root {
-    --eipsi-primary: #4a6fa5;
-    --eipsi-primary-dark: #2c4a71;
-    --eipsi-success: #4a8c5c;
-    --eipsi-warning: #d4a762;
-    --eipsi-error: #a54a4a;
-    --clinical-warmth: #f5f3f0;
-}
-```
+### 2. **AJAX Handler para Guardar Configuración de Cron Reminders** ✅
 
-### 3. Nueva Plantilla de Wizard (longitudinal-study-wizard.php)
-**Archivo:** `admin/templates/longitudinal-study-wizard.php`
-**Mejoras:**
-- Diseño moderno y profesional
-- Nombres de pasos en español y orientados a clínicos
-- Indicadores de progreso visuales mejorados
-- Mensajes de error y éxito más claros
-- Feedback visual durante operaciones
-- Tooltips con consejos clínicos
-- Auto-guardado con feedback visual
-- Navegación intuitiva con botones claros
+**Problema:** El handler existente `eipsi_ajax_save_cron_reminders_config` intentaba guardar en post meta en lugar de en el campo `config` de `wp_survey_studies`.
 
-**Pasos del wizard:**
-1. Información Básica - Configura los detalles fundamentales
-2. Configuración de Tomas - Define las ondas/tomas y formularios
-3. Programación Temporal - Establece fechas y recordatorios
-4. Participantes - Agrega o importa participantes
-5. Revisión y Activación - Revisa y activa tu estudio
+**Archivos Creados:**
+- `/admin/cron-reminders-handler.php`
 
-### 4. Actualización del Controlador del Wizard (setup-wizard.php)
-**Archivo:** `admin/setup-wizard.php`
-**Cambio:** Actualizar la inclusión de la plantilla para usar el nuevo diseño.
+**Cambios:**
+- Creado nuevo handler que guarda la configuración en el JSON del campo `config`
+- Utiliza transacciones de base de datos
+- Valida que el estudio exista en `wp_survey_studies`
+- Guarda la configuración de cron reminders en el config JSON del estudio
 
-```php
-// Antes:
-include EIPSI_FORMS_PLUGIN_DIR . 'admin/templates/setup-wizard.php'
+### 3. **Delete Study Button** ✅
 
-// Después:
-include EIPSI_FORMS_PLUGIN_DIR . 'admin/templates/longitudinal-study-wizard.php'
-```
+**Problema:** No existía funcionalidad para eliminar estudios completamente de la base de datos.
 
-### 5. Encolado de Assets (eipsi-forms.php)
-**Archivo:** `eipsi-forms.php`
-**Cambio:** Añadir el nuevo CSS al sistema de encolado de WordPress.
+**Archivos Modificados:**
+- `/admin/study-dashboard-modal.php` - Línea 98: Agregado botón "Eliminar Estudio"
+- `/admin/js/study-dashboard.js` - Línea 210-228: Agregado handler de click para el botón delete
+- `/admin/js/study-dashboard.js` - Línea 337-366: Agregada función `deleteStudy()`
 
-```php
-// Nuevo CSS añadido:
-wp_enqueue_style(
-    'eipsi-longitudinal-studies-ui-css',
-    EIPSI_FORMS_PLUGIN_URL . 'assets/css/longitudinal-studies-ui.css',
-    array(),
-    EIPSI_FORMS_VERSION
-);
-```
+**Archivos Creados:**
+- `/admin/delete-study-handler.php` - Handler AJAX para eliminar estudio
 
-## Mejoras de Experiencia de Usuario
+**Cambios:**
+- Agregado botón rojo "🗑️ Eliminar Estudio" en el modal de dashboard
+- Implementada confirmación doble con advertencia clara de que la acción es irreversible
+- La función `deleteStudy()` hace llamada AJAX al handler
+- El handler elimina en cascada:
+  - Email logs
+  - Assignments
+  - Waves
+  - Magic Links
+  - Sessions
+  - Participants
+  - Study
+- Utiliza transacción de base de datos para asegurar integridad
+- Redirección a la lista de estudios después de eliminar exitosamente
 
-### 1. Navegación Clara
-- Botones de "Anterior" y "Siguiente" siempre visibles
-- Indicador de paso actual (ej: "Paso 2 de 5")
-- Barra de progreso visual
-- Confirmaciones antes de acciones importantes
+### 4. **Carga de Handlers** ✅
 
-### 2. Feedback Visual
-- Animaciones de carga suaves
-- Mensajes de éxito/error claros
-- Auto-guardado con notificación temporal
-- Estados de los botones (deshabilitado/habilitado)
+**Archivos Modificados:**
+- `/eipsi-forms.php` - Línea 48-49
 
-### 3. Diseño Orientado a Clínicos
-- Lenguaje adaptado a psicólogos y psiquiatras
-- Tooltips con consejos para estudios clínicos
-- Nombres de conceptos familiares ("Tomas" en lugar de "Waves")
-- Colores cálidos y profesionales
+**Cambios:**
+- Agregado `require_once` para `/admin/cron-reminders-handler.php`
+- Agregado `require_once` para `/admin/delete-study-handler.php`
 
-### 4. Accesibilidad
-- Contraste adecuado para legibilidad
-- Tamaños de fuente accesibles
-- Diseño responsive para diferentes dispositivos
-- Soporte para dark mode
+## Testing Requerido
 
-### 5. Ajustes UI Minimalista (Febrero 2025)
-- Título principal simplificado a "📊 Estudio Longitudinal" y menú lateral con nombres concisos.
-- Headers y textos descriptivos con tipografía blanca sobre fondos clínicos consistentes.
-- Campos en fondos azul marino con texto blanco para legibilidad.
-- Validación de tomas opcionales corregida (checkbox desmarcado = no obligatorio).
-- Activación bloqueada hasta confirmar el checkbox final y código del estudio con contraste negro sobre blanco.
+1. **Sección de Reminders:**
+   - [ ] Crear un estudio longitudinal
+   - [ ] Navegar a la pestaña "Recordatorios"
+   - [ ] Verificar que el estudio aparece en el dropdown
+   - [ ] Configurar recordatorios y guardar
+   - [ ] Verificar que la configuración se guarda correctamente
 
-## Criterios de Aceptación Cumplidos
+2. **Delete Study:**
+   - [ ] Crear un estudio de prueba
+   - [ ] Abrir el modal de detalles del estudio
+   - [ ] Hacer clic en "Eliminar Estudio"
+   - [ ] Verificar que aparezca la confirmación doble
+   - [ ] Confirmar la eliminación
+   - [ ] Verificar que el estudio desaparece de la lista
+   - [ ] Verificar que todos los datos relacionados se eliminan (participants, waves, etc.)
 
-✅ **El botón para crear un nuevo estudio longitudinal se llama "Longitudinal Study"**
-- Cambiado en `admin/menu.php`
-
-✅ **La UI rediseñada está alineada con el estilo de EIPSI Forms**
-- Paleta de colores consistente
-- Tipografía y espaciado coherente
-- Componentes visuales familiares
-
-✅ **La experiencia de usuario es intuitiva y mejorada**
-- Flujo claro de 5 pasos
-- Navegación sencilla
-- Feedback visual constante
-- Ayudas contextuales
-
-✅ **No hay errores en la consola al interactuar con la UI**
-- JavaScript robusto con manejo de errores
-- Validaciones antes de acciones
-- Estados de carga adecuados
+3. **Linting:**
+   - [ ] `npm run lint:js` debe pasar sin errores
+   - [ ] `npm run build` debe completarse exitosamente
 
 ## Notas Técnicas
 
-### Compatibilidad
-- Mantiene compatibilidad con el sistema existente
-- CSS nuevo se carga además del original para evitar regresiones
-- JavaScript mejorado con manejo de errores robusto
+### Tablas Afectadas
+- `wp_survey_studies` - Configuración de estudios
+- `wp_survey_email_log` - Logs de emails
+- `wp_survey_assignments` - Asignaciones de waves a participantes
+- `wp_survey_waves` - Waves/tomas
+- `wp_survey_magic_links` - Links mágicos
+- `wp_survey_sessions` - Sesiones de participantes
+- `wp_survey_participants` - Participantes
 
-### Rendimiento
-- CSS optimizado sin redundancias
-- JavaScript con auto-guardado inteligente (cada 3 segundos)
-- Carga condicional solo en la página del wizard
+### Seguridad
+- ✅ Todos los handlers verifican NONCE
+- ✅ Verificación de capacidades `manage_options`
+- ✅ Confirmación doble antes de eliminar
+- ✅ Validación de datos de entrada
+- ✅ Transacciones de base de datos para integridad
 
-### Internacionalización
-- Todos los textos preparados para traducción
-- Uso consistente de funciones `__()` y `esc_html()`
-- Mensajes en español orientados a clínicos
-
-## Próximos Pasos (Fuera de Alcance Actual)
-
-Estos elementos fueron identificados pero se pospusieron según las prioridades:
-- Visual progress bar para participantes individuales
-- Matrix questions para baterías de tests
-- Analytics UI avanzado con gráficos
-- Multilingual support completo
-- API para integración con otros sistemas
-- Encriptación de campos sensibles
-
-## Testing Recomendado
-
-1. **Funcionalidad Básica:**
-   - Verificar que el botón "Longitudinal Study" aparece en el menú
-   - Asegurar que el wizard carga sin errores
-   - Probar navegación entre pasos
-
-2. **Experiencia de Usuario:**
-   - Verificar que los tooltips funcionan
-   - Probar el auto-guardado
-   - Confirmar que los mensajes de error/success son claros
-
-3. **Responsive Design:**
-   - Probar en diferentes tamaños de pantalla
-   - Verificar que el diseño se adapta correctamente
-   - Confirmar legibilidad en móviles
-
-4. **Accesibilidad:**
-   - Verificar contraste de colores
-   - Probar navegación con teclado
-   - Confirmar que los elementos interactivos son accesibles
-
-## Conclusión
-
-Este rediseño transforma la experiencia de creación de estudios longitudinales en EIPSI Forms, haciendo que los psicólogos y psiquiatras sientan que "alguien entendió cómo trabajan de verdad con sus pacientes". La interfaz ahora es más intuitiva, profesional y alineada con las necesidades clínicas, manteniendo al mismo tiempo la robustez técnica y la compatibilidad con el sistema existente.
+## Versión del Plugin
+1.5.0 → 1.5.3 (recomendado bump de versión)
