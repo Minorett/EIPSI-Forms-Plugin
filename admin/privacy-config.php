@@ -24,6 +24,9 @@ function get_privacy_defaults() {
         'ip_storage' => 'plain_text',
         'ip_retention_days' => 90,
 
+        // ✅ v1.5.4 - FINGERPRINT COMPLETO - ON por default
+        'fingerprint_enabled' => true,
+
         // DISPOSITIVO - OFF por default (opcional)
         'browser' => false,
         'os' => false,
@@ -54,7 +57,8 @@ function get_global_privacy_defaults() {
             'browser' => false,
             'os' => false,
             'screen_width' => false,
-            'device_type' => true
+            'device_type' => true,
+            'fingerprint_enabled' => true  // ✅ v1.5.4 - ON por default
         );
     }
 
@@ -76,7 +80,8 @@ function save_global_privacy_defaults($config) {
         'browser',
         'os',
         'screen_width',
-        'ip_address'
+        'ip_address',
+        'fingerprint_enabled'  // ✅ v1.5.4 - Toggle de fingerprint completo
     );
 
     foreach ($config as $key => $value) {
@@ -130,7 +135,8 @@ function save_privacy_config($form_id, $config) {
         'browser',
         'os',
         'screen_width',
-        'ip_address'
+        'ip_address',
+        'fingerprint_enabled'  // ✅ v1.5.4 - Toggle de fingerprint completo
     );
 
     foreach ($config as $key => $value) {

@@ -178,14 +178,19 @@ function eipsi_export_to_excel() {
     // Encabezados: nuevo formato con IDs + metadatos + timestamps + preguntas dinámicas
     // ONLY include metadata columns if privacy config allows
     $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)');
-    
+
+    // ✅ v1.5.4 - Fingerprint ID (si fingerprint_enabled está activado)
+    if ($privacy_config['fingerprint_enabled'] ?? true) {
+        $headers[] = 'Fingerprint ID';
+    }
+
     // === Columnas de Aleatorización (Fase 1) - Solo si hay datos reales ===
     if ($has_randomization) {
         $headers[] = 'Assignment Form';
         $headers[] = 'Seed';
         $headers[] = 'Type (Random/Manual)';
     }
-    
+
     if ($privacy_config['ip_address']) {
         $headers[] = 'IP Address';
     }
@@ -260,7 +265,10 @@ function eipsi_export_to_excel() {
         if (!empty($row->end_timestamp_ms)) {
             $end_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->end_timestamp_ms / 1000));
         }
-        
+
+        // ✅ v1.5.4 - Obtener fingerprint_id
+        $fingerprint_id = !empty($row->user_fingerprint) ? $row->user_fingerprint : '';
+
         // === Obtener datos de aleatorización (solo si hay randomización real) ===
         $row_data = array(
             $form_id,
@@ -272,7 +280,12 @@ function eipsi_export_to_excel() {
             $start_time_utc,
             $end_time_utc,
         );
-        
+
+        // ✅ v1.5.4 - Agregar fingerprint_id a la fila (si fingerprint_enabled está activado)
+        if ($privacy_config['fingerprint_enabled'] ?? true) {
+            $row_data[] = $fingerprint_id;
+        }
+
         // Solo agregar datos de aleatorización si hay randomización real
         if ($has_randomization) {
             $metadata = !empty($row->metadata) ? json_decode($row->metadata, true) : [];
@@ -556,7 +569,10 @@ function eipsi_export_to_csv() {
         if (!empty($row->end_timestamp_ms)) {
             $end_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->end_timestamp_ms / 1000));
         }
-        
+
+        // ✅ v1.5.4 - Obtener fingerprint_id
+        $fingerprint_id = !empty($row->user_fingerprint) ? $row->user_fingerprint : '';
+
         // === Obtener datos de aleatorización (solo si hay randomización real) ===
         $row_data = array(
             $form_id,
@@ -568,7 +584,12 @@ function eipsi_export_to_csv() {
             $start_time_utc,
             $end_time_utc,
         );
-        
+
+        // ✅ v1.5.4 - Agregar fingerprint_id a la fila (si fingerprint_enabled está activado)
+        if ($privacy_config['fingerprint_enabled'] ?? true) {
+            $row_data[] = $fingerprint_id;
+        }
+
         // Solo agregar datos de aleatorización si hay randomización real
         if ($has_randomization) {
             $metadata = !empty($row->metadata) ? json_decode($row->metadata, true) : [];
