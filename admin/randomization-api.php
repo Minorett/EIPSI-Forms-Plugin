@@ -39,6 +39,155 @@ function eipsi_check_config_exists($config_id) {
 
 
 /**
+ * Normalizar configuración de aleatorización desde post meta
+ *
+ * @param array  $config Config raw desde post meta.
+ * @param string $meta_key Meta key para fallback de config_id.
+ * @return array|null
+ */
+function eipsi_normalize_randomization_config( $config, $meta_key ) {
+    if ( ! is_array( $config ) || empty( $config ) ) {
+        return null;
+    }
+
+    $config_id = $config['config_id'] ?? '';
+    if ( empty( $config_id ) && ! empty( $meta_key ) ) {
+        $config_id = str_replace( '_randomization_config_', '', $meta_key );
+    }
+
+    if ( empty( $config_id ) ) {
+        return null;
+    }
+
+    $formularios_raw = $config['formularios'] ?? array();
+    $formularios = array();
+
+    foreach ( (array) $formularios_raw as $formulario ) {
+        if ( is_array( $formulario ) ) {
+            $form_id = $formulario['id'] ?? $formulario['form_id'] ?? $formulario['formId'] ?? null;
+            if ( $form_id ) {
+                $formulario['id'] = intval( $form_id );
+                $formularios[] = $formulario;
+            }
+        } else {
+            $form_id = intval( $formulario );
+            if ( $form_id ) {
+                $formularios[] = array( 'id' => $form_id );
+            }
+        }
+    }
+
+    $probabilidades_raw = $config['probabilidades'] ?? array();
+    $probabilidades = is_array( $probabilidades_raw ) ? $probabilidades_raw : array();
+
+    if ( array_values( $probabilidades ) === $probabilidades && ! empty( $formularios ) ) {
+        $probabilidades_mapeadas = array();
+        foreach ( $formularios as $index => $formulario ) {
+            if ( isset( $probabilidades[ $index ] ) ) {
+                $probabilidades_mapeadas[ $formulario['id'] ] = floatval( $probabilidades[ $index ] );
+            }
+        }
+        $probabilidades = $probabilidades_mapeadas;
+    }
+
+    return array(
+        'randomization_id' => $config_id,
+        'formularios' => $formularios,
+        'probabilidades' => $probabilidades,
+        'method' => $config['method'] ?? $config['metodo'] ?? 'pure-random',
+        'manual_assignments' => $config['manualAssignments'] ?? $config['manualAssigns'] ?? array(),
+        'show_instructions' => ! empty( $config['showInstructions'] ) || ! empty( $config['show_instructions'] ),
+        'created_at' => $config['created_at'] ?? null,
+        'updated_at' => $config['updated_at'] ?? null,
+    );
+}
+
+/**
+ * Obtener configuraciones de aleatorización guardadas en post meta.
+ *
+ * @return array
+ */
+function eipsi_get_randomization_configs_from_post_meta() {
+    global $wpdb;
+
+    $meta_key_like = $wpdb->esc_like( '_randomization_config_' ) . '%';
+    $post_types = array( 'eipsi_form_template', 'eipsi_form' );
+    $placeholders = implode( ',', array_fill( 0, count( $post_types ), '%s' ) );
+
+    $query = $wpdb->prepare(
+        "SELECT pm.post_id, pm.meta_key, pm.meta_value, p.post_date, p.post_modified
+         FROM {$wpdb->postmeta} pm
+         INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
+         WHERE pm.meta_key LIKE %s
+           AND p.post_type IN ($placeholders)
+           AND p.post_status != 'trash'",
+        array_merge( array( $meta_key_like ), $post_types )
+    );
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $rows = $wpdb->get_results( $query );
+
+    if ( empty( $rows ) ) {
+        return array();
+    }
+
+    $configs = array();
+
+    foreach ( $rows as $row ) {
+        $config = maybe_unserialize( $row->meta_value );
+        $normalized = eipsi_normalize_randomization_config( $config, $row->meta_key );
+
+        if ( ! $normalized ) {
+            continue;
+        }
+
+        if ( empty( $normalized['created_at'] ) ) {
+            $normalized['created_at'] = $row->post_date;
+        }
+
+        if ( empty( $normalized['updated_at'] ) ) {
+            $normalized['updated_at'] = $row->post_modified;
+        }
+
+        $configs[] = $normalized;
+    }
+
+    return $configs;
+}
+
+/**
+ * Obtener estadísticas agregadas de asignaciones para una aleatorización
+ *
+ * @param string $randomization_id Config ID.
+ * @return object
+ */
+function eipsi_get_randomization_assignment_stats( $randomization_id ) {
+    global $wpdb;
+
+    $query = "
+        SELECT
+            COUNT(DISTINCT user_fingerprint) as total_assigned,
+            COUNT(CASE WHEN last_access IS NOT NULL THEN 1 END) as completed_count,
+            MAX(assigned_at) as last_assignment,
+            AVG(access_count) as avg_access_count,
+            AVG(DATEDIFF(CURDATE(), DATE(assigned_at))) as avg_days
+        FROM {$wpdb->prefix}eipsi_randomization_assignments
+        WHERE randomization_id = %s
+    ";
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $stats = $wpdb->get_row( $wpdb->prepare( $query, $randomization_id ) );
+
+    return $stats ?: (object) array(
+        'total_assigned' => 0,
+        'completed_count' => 0,
+        'last_assignment' => null,
+        'avg_access_count' => 0,
+        'avg_days' => 0,
+    );
+}
+
+/**
  * Registrar los endpoints AJAX
  */
 function eipsi_register_randomization_endpoints() {
@@ -101,6 +250,57 @@ function eipsi_get_randomizations() {
 
         $randomizations = array();
 
+        $configs_from_meta = eipsi_get_randomization_configs_from_post_meta();
+        $results_map = array();
+
+        foreach ( $results as $row ) {
+            $results_map[ $row->randomization_id ] = $row;
+        }
+
+        foreach ( $configs_from_meta as $meta_config ) {
+            if ( isset( $results_map[ $meta_config['randomization_id'] ] ) ) {
+                continue;
+            }
+
+            $row = (object) array(
+                'randomization_id' => $meta_config['randomization_id'],
+                'formularios' => wp_json_encode( $meta_config['formularios'] ),
+                'probabilidades' => wp_json_encode( $meta_config['probabilidades'] ),
+                'method' => $meta_config['method'],
+                'created_at' => $meta_config['created_at'] ?: current_time( 'mysql' ),
+                'updated_at' => $meta_config['updated_at'] ?: current_time( 'mysql' ),
+                'show_instructions' => $meta_config['show_instructions'] ? 1 : 0,
+                'total_assigned' => null,
+                'completed_count' => null,
+                'last_assignment' => null,
+                'avg_access_count' => null,
+                'avg_days' => null,
+            );
+
+            $results[] = $row;
+            $results_map[ $row->randomization_id ] = $row;
+
+            if ( function_exists( 'eipsi_save_randomization_config_to_db' ) ) {
+                eipsi_save_randomization_config_to_db(
+                    $row->randomization_id,
+                    array(
+                        'formularios' => $meta_config['formularios'],
+                        'probabilidades' => $meta_config['probabilidades'],
+                        'method' => $meta_config['method'],
+                        'manualAssignments' => $meta_config['manual_assignments'],
+                        'showInstructions' => $meta_config['show_instructions'],
+                    )
+                );
+            }
+        }
+
+        usort(
+            $results,
+            function ( $a, $b ) {
+                return strtotime( $b->created_at ?? '' ) <=> strtotime( $a->created_at ?? '' );
+            }
+        );
+
         foreach ($results as $row) {
             // Decodificar JSON de formularios
             $formularios = json_decode($row->formularios, true);
@@ -109,6 +309,16 @@ function eipsi_get_randomizations() {
             // Decodificar JSON de probabilidades
             $probabilidades = json_decode($row->probabilidades, true);
             if (!$probabilidades) $probabilidades = array();
+
+            $stats = $row->total_assigned === null
+                ? eipsi_get_randomization_assignment_stats( $row->randomization_id )
+                : (object) array(
+                    'total_assigned' => $row->total_assigned,
+                    'completed_count' => $row->completed_count,
+                    'last_assignment' => $row->last_assignment,
+                    'avg_access_count' => $row->avg_access_count,
+                    'avg_days' => $row->avg_days,
+                );
 
             // Obtener distribución real por formulario (solo formularios con asignaciones)
             $distribution_query = "
@@ -140,7 +350,7 @@ function eipsi_get_randomizations() {
             // CREAR DISTRIBUCIÓN COMPLETA: Incluir TODOS los formularios definidos
             // incluso si no tienen asignaciones (count = 0)
             $formatted_distribution = array();
-            $total_assigned = intval($row->total_assigned);
+            $total_assigned = intval( $stats->total_assigned );
 
             foreach ($formularios as $form_config) {
                 $form_id = $form_config['id'];
@@ -183,15 +393,15 @@ function eipsi_get_randomizations() {
 
             // Determinar si está activa (tiene asignaciones recientes)
             $is_active = false;
-            if ($row->last_assignment) {
-                $days_since_last = (time() - strtotime($row->last_assignment)) / (60 * 60 * 24);
+            if ($stats->last_assignment) {
+                $days_since_last = (time() - strtotime($stats->last_assignment)) / (60 * 60 * 24);
                 $is_active = $days_since_last <= 30; // Activa si hay actividad en los últimos 30 días
             }
 
             // Formatear fechas
             $created_formatted = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($row->created_at));
-            $last_assignment_formatted = $row->last_assignment ? 
-                human_time_diff(strtotime($row->last_assignment)) . ' ago' : 
+            $last_assignment_formatted = $stats->last_assignment ? 
+                human_time_diff(strtotime($stats->last_assignment)) . ' ago' : 
                 'Nunca';
 
             $randomizations[] = array(
@@ -200,12 +410,12 @@ function eipsi_get_randomizations() {
                 'is_active' => $is_active,
                 'created_at' => $row->created_at,
                 'created_formatted' => $created_formatted,
-                'last_assignment' => $row->last_assignment,
+                'last_assignment' => $stats->last_assignment,
                 'last_assignment_formatted' => $last_assignment_formatted,
-                'total_assigned' => intval($row->total_assigned),
-                'completed_count' => intval($row->completed_count),
-                'avg_access_count' => round($row->avg_access_count, 1),
-                'avg_days' => round($row->avg_days, 1),
+                'total_assigned' => intval( $stats->total_assigned ),
+                'completed_count' => intval( $stats->completed_count ),
+                'avg_access_count' => round( $stats->avg_access_count, 1 ),
+                'avg_days' => round( $stats->avg_days, 1 ),
                 'distribution' => $formatted_distribution,
                 'formularios' => $formularios,
                 'probabilidades' => $probabilidades
@@ -263,8 +473,71 @@ function eipsi_get_randomization_details() {
         $config = $wpdb->get_row($wpdb->prepare($config_query, $randomization_id));
 
         if (!$config) {
+            $configs_from_meta = eipsi_get_randomization_configs_from_post_meta();
+            foreach ( $configs_from_meta as $meta_config ) {
+                if ( $meta_config['randomization_id'] === $randomization_id ) {
+                    $config = (object) array(
+                        'randomization_id' => $meta_config['randomization_id'],
+                        'formularios' => wp_json_encode( $meta_config['formularios'] ),
+                        'probabilidades' => wp_json_encode( $meta_config['probabilidades'] ),
+                        'method' => $meta_config['method'],
+                        'created_at' => $meta_config['created_at'],
+                        'updated_at' => $meta_config['updated_at'],
+                        'show_instructions' => $meta_config['show_instructions'] ? 1 : 0,
+                        'total_assigned' => null,
+                        'completed_count' => null,
+                        'last_assignment' => null,
+                        'first_assignment' => null,
+                        'avg_access_count' => null,
+                        'avg_days' => null,
+                    );
+
+                    if ( function_exists( 'eipsi_save_randomization_config_to_db' ) ) {
+                        eipsi_save_randomization_config_to_db(
+                            $meta_config['randomization_id'],
+                            array(
+                                'formularios' => $meta_config['formularios'],
+                                'probabilidades' => $meta_config['probabilidades'],
+                                'method' => $meta_config['method'],
+                                'manualAssignments' => $meta_config['manual_assignments'],
+                                'showInstructions' => $meta_config['show_instructions'],
+                            )
+                        );
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (!$config) {
             wp_send_json_error('Aleatorización no encontrada');
             return;
+        }
+
+        if ( $config->total_assigned === null ) {
+            $stats_query = "
+                SELECT 
+                    COUNT(DISTINCT user_fingerprint) as total_assigned,
+                    COUNT(CASE WHEN last_access IS NOT NULL THEN 1 END) as completed_count,
+                    MAX(assigned_at) as last_assignment,
+                    MIN(assigned_at) as first_assignment,
+                    AVG(access_count) as avg_access_count,
+                    AVG(DATEDIFF(CURDATE(), DATE(assigned_at))) as avg_days
+                FROM {$wpdb->prefix}eipsi_randomization_assignments
+                WHERE randomization_id = %s
+            ";
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $stats = $wpdb->get_row( $wpdb->prepare( $stats_query, $randomization_id ) );
+
+            if ( $stats ) {
+                $config->total_assigned = $stats->total_assigned;
+                $config->completed_count = $stats->completed_count;
+                $config->last_assignment = $stats->last_assignment;
+                $config->first_assignment = $stats->first_assignment;
+                $config->avg_access_count = $stats->avg_access_count;
+                $config->avg_days = $stats->avg_days;
+            }
         }
 
         // Decodificar configuración

@@ -125,6 +125,19 @@ function eipsi_save_randomization_config() {
         wp_send_json_error( array( 'message' => 'Error guardando configuración en la base de datos' ) );
     }
 
+    if ( function_exists( 'eipsi_save_randomization_config_to_db' ) ) {
+        eipsi_save_randomization_config_to_db(
+            $config_id,
+            array(
+                'formularios' => $formularios,
+                'probabilidades' => $probabilidades,
+                'method' => $metodo,
+                'manualAssignments' => array(),
+                'showInstructions' => false,
+            )
+        );
+    }
+
     // ✅ v1.3.19 - Shortcode NUNCA cambia (generado UNA SOLA VEZ basado en config_id estable)
     $shortcode = sprintf( '[eipsi_randomization template="%d" config="%s"]', $post_id, $config_id );
 
@@ -306,6 +319,19 @@ function eipsi_randomization_config_rest_handler( $request ) {
             'success' => false,
             'message' => 'Error guardando configuración en la base de datos'
         ), 500 );
+    }
+
+    if ( function_exists( 'eipsi_save_randomization_config_to_db' ) ) {
+        eipsi_save_randomization_config_to_db(
+            $config_id,
+            array(
+                'formularios' => $formularios,
+                'probabilidades' => $probabilidades,
+                'method' => $metodo,
+                'manualAssignments' => array(),
+                'showInstructions' => false,
+            )
+        );
     }
 
     // ✅ v1.3.19 - Shortcode NUNCA cambia (generado UNA SOLA VEZ basado en config_id estable)
