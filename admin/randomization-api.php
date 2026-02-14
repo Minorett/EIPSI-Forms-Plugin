@@ -110,7 +110,7 @@ function eipsi_get_randomizations() {
             $probabilidades = json_decode($row->probabilidades, true);
             if (!$probabilidades) $probabilidades = array();
 
-            // Obtener distribución por formulario
+            // Obtener distribución real por formulario (solo formularios con asignaciones)
             $distribution_query = "
                 SELECT 
                     ra.assigned_form_id,
@@ -124,23 +124,60 @@ function eipsi_get_randomizations() {
             ";
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $distribution = $wpdb->get_results($wpdb->prepare($distribution_query, $row->randomization_id));
+            $distribution_raw = $wpdb->get_results($wpdb->prepare($distribution_query, $row->randomization_id));
 
-            $formatted_distribution = array();
-            foreach ($distribution as $dist) {
-                // Obtener título del formulario
-                $form_title = get_the_title($dist->assigned_form_id);
-                if (!$form_title) {
-                    $form_title = "Formulario ID: {$dist->assigned_form_id}";
-                }
-
-                $formatted_distribution[] = array(
-                    'form_id' => $dist->assigned_form_id,
-                    'form_title' => $form_title,
+            // Crear mapa de distribución para lookup rápido
+            $distribution_map = array();
+            foreach ($distribution_raw as $dist) {
+                $distribution_map[$dist->assigned_form_id] = array(
                     'count' => intval($dist->count),
                     'completed_count' => intval($dist->completed_count),
                     'avg_access_count' => round($dist->avg_access_count, 1),
                     'avg_days' => round($dist->avg_days, 1)
+                );
+            }
+
+            // CREAR DISTRIBUCIÓN COMPLETA: Incluir TODOS los formularios definidos
+            // incluso si no tienen asignaciones (count = 0)
+            $formatted_distribution = array();
+            $total_assigned = intval($row->total_assigned);
+
+            foreach ($formularios as $form_config) {
+                $form_id = $form_config['id'];
+
+                // Obtener datos reales o defaults si no hay asignaciones
+                $dist_data = isset($distribution_map[$form_id]) 
+                    ? $distribution_map[$form_id] 
+                    : array('count' => 0, 'completed_count' => 0, 'avg_access_count' => 0, 'avg_days' => 0);
+
+                // Obtener probabilidad teórica
+                $theoretical_probability = isset($probabilidades[$form_id]) 
+                    ? floatval($probabilidades[$form_id]) 
+                    : 0;
+
+                // Calcular porcentaje: usar real si hay datos, teórico si no
+                $percentage = 0;
+                if ($total_assigned > 0) {
+                    $percentage = round(($dist_data['count'] / $total_assigned) * 100, 1);
+                } else {
+                    $percentage = $theoretical_probability;
+                }
+
+                // Obtener título del formulario
+                $form_title = get_the_title($form_id);
+                if (!$form_title) {
+                    $form_title = "Formulario ID: {$form_id}";
+                }
+
+                $formatted_distribution[] = array(
+                    'form_id' => $form_id,
+                    'form_title' => $form_title,
+                    'count' => $dist_data['count'],
+                    'completed_count' => $dist_data['completed_count'],
+                    'avg_access_count' => $dist_data['avg_access_count'],
+                    'avg_days' => $dist_data['avg_days'],
+                    'percentage' => $percentage,
+                    'theoretical_probability' => $theoretical_probability
                 );
             }
 
@@ -234,7 +271,7 @@ function eipsi_get_randomization_details() {
         $formularios = json_decode($config->formularios, true) ?: array();
         $probabilidades = json_decode($config->probabilidades, true) ?: array();
 
-        // Obtener distribución detallada por formulario
+        // Obtener distribución real por formulario (solo formularios con asignaciones)
         $distribution_query = "
             SELECT 
                 ra.assigned_form_id,
@@ -253,24 +290,70 @@ function eipsi_get_randomization_details() {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $distribution_raw = $wpdb->get_results($wpdb->prepare($distribution_query, $randomization_id));
 
-        $distribution = array();
+        // Crear mapa de distribución para lookup rápido
+        $distribution_map = array();
         foreach ($distribution_raw as $dist) {
-            $form_title = get_the_title($dist->assigned_form_id) ?: "Formulario ID: {$dist->assigned_form_id}";
-            
-            $completion_rate = $dist->total_assigned > 0 ? 
-                round(($dist->completed_count / $dist->total_assigned) * 100, 1) : 0;
-
-            $distribution[] = array(
-                'form_id' => $dist->assigned_form_id,
-                'form_title' => $form_title,
+            $distribution_map[$dist->assigned_form_id] = array(
                 'total_assigned' => intval($dist->total_assigned),
                 'completed_count' => intval($dist->completed_count),
                 'dropout_count' => intval($dist->dropout_count),
-                'completion_rate' => $completion_rate,
                 'avg_access_count' => round($dist->avg_access_count, 1),
                 'avg_days' => round($dist->avg_days, 1),
                 'first_assignment' => $dist->first_assignment,
                 'last_assignment' => $dist->last_assignment
+            );
+        }
+
+        // CREAR DISTRIBUCIÓN COMPLETA: Incluir TODOS los formularios definidos
+        $distribution = array();
+        foreach ($formularios as $form_config) {
+            $form_id = $form_config['id'];
+
+            // Obtener datos reales o defaults si no hay asignaciones
+            $dist_data = isset($distribution_map[$form_id]) 
+                ? $distribution_map[$form_id] 
+                : array(
+                    'total_assigned' => 0, 
+                    'completed_count' => 0, 
+                    'dropout_count' => 0,
+                    'avg_access_count' => 0, 
+                    'avg_days' => 0,
+                    'first_assignment' => null,
+                    'last_assignment' => null
+                );
+
+            $form_title = get_the_title($form_id) ?: "Formulario ID: {$form_id}";
+
+            // Calcular tasas
+            $completion_rate = $dist_data['total_assigned'] > 0 ? 
+                round(($dist_data['completed_count'] / $dist_data['total_assigned']) * 100, 1) : 0;
+
+            // Calcular porcentaje: usar real si hay datos, teórico si no
+            $total_assigned_global = intval($config->total_assigned);
+            $theoretical_probability = isset($probabilidades[$form_id]) 
+                ? floatval($probabilidades[$form_id]) 
+                : 0;
+
+            $percentage = 0;
+            if ($total_assigned_global > 0) {
+                $percentage = round(($dist_data['total_assigned'] / $total_assigned_global) * 100, 1);
+            } else {
+                $percentage = $theoretical_probability;
+            }
+
+            $distribution[] = array(
+                'form_id' => $form_id,
+                'form_title' => $form_title,
+                'total_assigned' => $dist_data['total_assigned'],
+                'completed_count' => $dist_data['completed_count'],
+                'dropout_count' => $dist_data['dropout_count'],
+                'completion_rate' => $completion_rate,
+                'avg_access_count' => $dist_data['avg_access_count'],
+                'avg_days' => $dist_data['avg_days'],
+                'first_assignment' => $dist_data['first_assignment'],
+                'last_assignment' => $dist_data['last_assignment'],
+                'percentage' => $percentage,
+                'theoretical_probability' => $theoretical_probability
             );
         }
 
