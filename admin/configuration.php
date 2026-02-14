@@ -15,7 +15,19 @@ function eipsi_display_configuration_page() {
     
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
     $db_helper = new EIPSI_External_Database();
-    
+
+    $smtp_service = class_exists('EIPSI_SMTP_Service') ? new EIPSI_SMTP_Service() : null;
+    $smtp_config = $smtp_service ? $smtp_service->get_config() : null;
+    $smtp_host = $smtp_config ? $smtp_config['host'] : '';
+    $smtp_port = $smtp_config ? $smtp_config['port'] : 587;
+    $smtp_user = $smtp_config ? $smtp_config['user'] : '';
+    $smtp_encryption = $smtp_config ? $smtp_config['encryption'] : 'tls';
+    $smtp_encryption_labels = array(
+        'tls' => __('TLS (recomendado)', 'eipsi-forms'),
+        'ssl' => __('SSL', 'eipsi-forms'),
+        'none' => __('Sin cifrado', 'eipsi-forms')
+    );
+
     // Get current credentials for display (without password)
     $credentials = $db_helper->get_credentials();
     $current_host = $credentials ? $credentials['host'] : '';
@@ -561,6 +573,201 @@ function eipsi_display_configuration_page() {
                         <li><?php echo esc_html__('Admin notifications will alert you when fallback mode is active so you can investigate the issue', 'eipsi-forms'); ?></li>
                         <li><?php echo esc_html__('Enable WP_DEBUG to see detailed error logs for troubleshooting database issues', 'eipsi-forms'); ?></li>
                     </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SMTP Configuration Section -->
+        <div class="eipsi-config-container" style="margin-top: 30px;">
+            <div class="eipsi-config-form-section">
+                <h2><?php echo esc_html__('Configuración SMTP', 'eipsi-forms'); ?></h2>
+                <p class="description">
+                    <?php echo esc_html__('Configura tu servidor de correo para que los recordatorios clínicos salgan desde tu cuenta sin depender de plugins externos.', 'eipsi-forms'); ?>
+                </p>
+
+                <form id="eipsi-smtp-config-form" class="eipsi-db-form">
+                    <input type="hidden" id="eipsi_smtp_config_nonce" value="<?php echo esc_attr(wp_create_nonce('eipsi_admin_nonce')); ?>">
+
+                    <table class="form-table" role="presentation">
+                        <tbody>
+                            <tr>
+                                <th scope="row">
+                                    <label for="smtp_host">
+                                        <?php echo esc_html__('Servidor SMTP', 'eipsi-forms'); ?>
+                                        <span class="required">*</span>
+                                    </label>
+                                </th>
+                                <td>
+                                    <input type="text"
+                                        id="smtp_host"
+                                        name="smtp_host"
+                                        class="regular-text"
+                                        value="<?php echo esc_attr($smtp_host); ?>"
+                                        placeholder="smtp.gmail.com"
+                                        required>
+                                    <p class="description">
+                                        <?php echo esc_html__('Dominio o IP del servidor SMTP.', 'eipsi-forms'); ?>
+                                    </p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="smtp_port">
+                                        <?php echo esc_html__('Puerto SMTP', 'eipsi-forms'); ?>
+                                        <span class="required">*</span>
+                                    </label>
+                                </th>
+                                <td>
+                                    <input type="number"
+                                        id="smtp_port"
+                                        name="smtp_port"
+                                        class="regular-text"
+                                        value="<?php echo esc_attr($smtp_port); ?>"
+                                        placeholder="587"
+                                        min="1"
+                                        max="65535"
+                                        required>
+                                    <p class="description">
+                                        <?php echo esc_html__('Puerto habitual: 587 (TLS) o 465 (SSL).', 'eipsi-forms'); ?>
+                                    </p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="smtp_user">
+                                        <?php echo esc_html__('Usuario SMTP', 'eipsi-forms'); ?>
+                                        <span class="required">*</span>
+                                    </label>
+                                </th>
+                                <td>
+                                    <input type="email"
+                                        id="smtp_user"
+                                        name="smtp_user"
+                                        class="regular-text"
+                                        value="<?php echo esc_attr($smtp_user); ?>"
+                                        placeholder="tu-correo@dominio.com"
+                                        required>
+                                    <p class="description">
+                                        <?php echo esc_html__('Correo completo usado para autenticar en el servidor.', 'eipsi-forms'); ?>
+                                    </p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="smtp_password">
+                                        <?php echo esc_html__('Contraseña SMTP', 'eipsi-forms'); ?>
+                                        <span class="required">*</span>
+                                    </label>
+                                </th>
+                                <td>
+                                    <input type="password"
+                                        id="smtp_password"
+                                        name="smtp_password"
+                                        class="regular-text"
+                                        placeholder="<?php echo esc_attr__('Contraseña de aplicación o SMTP', 'eipsi-forms'); ?>"
+                                        <?php echo $smtp_config ? '' : 'required'; ?>>
+                                    <p class="description">
+                                        <?php
+                                        if ($smtp_config) {
+                                            echo esc_html__('Deja en blanco para mantener la contraseña actual.', 'eipsi-forms');
+                                        } else {
+                                            echo esc_html__('Usa una contraseña de aplicación si tu proveedor lo requiere.', 'eipsi-forms');
+                                        }
+                                        ?>
+                                    </p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="smtp_encryption">
+                                        <?php echo esc_html__('Seguridad', 'eipsi-forms'); ?>
+                                        <span class="required">*</span>
+                                    </label>
+                                </th>
+                                <td>
+                                    <select id="smtp_encryption" name="smtp_encryption" class="regular-text">
+                                        <?php foreach ($smtp_encryption_labels as $value => $label) : ?>
+                                            <option value="<?php echo esc_attr($value); ?>" <?php selected($smtp_encryption, $value); ?>>
+                                                <?php echo esc_html($label); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description">
+                                        <?php echo esc_html__('Selecciona el tipo de cifrado que requiere tu servidor.', 'eipsi-forms'); ?>
+                                    </p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="eipsi-form-actions">
+                        <button type="button" id="eipsi-test-smtp" class="button button-secondary">
+                            <span class="dashicons dashicons-email"></span>
+                            <?php echo esc_html__('Probar SMTP', 'eipsi-forms'); ?>
+                        </button>
+
+                        <button type="submit" id="eipsi-save-smtp-config" class="button button-primary" disabled>
+                            <span class="dashicons dashicons-yes"></span>
+                            <?php echo esc_html__('Guardar configuración', 'eipsi-forms'); ?>
+                        </button>
+
+                        <?php if ($smtp_config): ?>
+                        <button type="button" id="eipsi-disable-smtp" class="button button-link-delete">
+                            <?php echo esc_html__('Desactivar SMTP', 'eipsi-forms'); ?>
+                        </button>
+                        <?php endif; ?>
+                    </div>
+
+                    <p class="description" style="margin-top: 12px;">
+                        <?php echo esc_html__('El correo de prueba se envía al email del investigador o al email del administrador del sitio.', 'eipsi-forms'); ?>
+                    </p>
+
+                    <div id="eipsi-smtp-message-container" role="alert" aria-live="polite" style="display: none;"></div>
+                </form>
+            </div>
+
+            <div class="eipsi-status-section">
+                <h2><?php echo esc_html__('Estado de correo', 'eipsi-forms'); ?></h2>
+
+                <div id="eipsi-smtp-status-box" class="eipsi-status-box">
+                    <div class="eipsi-status-indicator">
+                        <?php if ($smtp_config): ?>
+                            <span class="status-icon status-connected"></span>
+                            <span class="status-text"><?php echo esc_html__('SMTP activo', 'eipsi-forms'); ?></span>
+                        <?php else: ?>
+                            <span class="status-icon status-disconnected"></span>
+                            <span class="status-text"><?php echo esc_html__('SMTP inactivo', 'eipsi-forms'); ?></span>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if ($smtp_config): ?>
+                    <div class="eipsi-status-details">
+                        <div class="status-detail-row">
+                            <span class="detail-label"><?php echo esc_html__('Servidor:', 'eipsi-forms'); ?></span>
+                            <span class="detail-value"><?php echo esc_html($smtp_config['host']); ?></span>
+                        </div>
+                        <div class="status-detail-row">
+                            <span class="detail-label"><?php echo esc_html__('Puerto:', 'eipsi-forms'); ?></span>
+                            <span class="detail-value"><?php echo esc_html($smtp_config['port']); ?></span>
+                        </div>
+                        <div class="status-detail-row">
+                            <span class="detail-label"><?php echo esc_html__('Usuario:', 'eipsi-forms'); ?></span>
+                            <span class="detail-value"><?php echo esc_html($smtp_config['user']); ?></span>
+                        </div>
+                        <div class="status-detail-row">
+                            <span class="detail-label"><?php echo esc_html__('Seguridad:', 'eipsi-forms'); ?></span>
+                            <span class="detail-value"><?php echo esc_html($smtp_encryption_labels[$smtp_config['encryption']] ?? $smtp_config['encryption']); ?></span>
+                        </div>
+                    </div>
+                    <?php else: ?>
+                    <div class="eipsi-status-message">
+                        <p><?php echo esc_html__('No hay configuración SMTP activa. Los correos se enviarán con wp_mail().', 'eipsi-forms'); ?></p>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

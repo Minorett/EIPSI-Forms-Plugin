@@ -350,19 +350,35 @@ class EIPSI_Email_Service {
      */
     private static function send_email($survey_id, $participant_id, $to, $type, $subject, $content) {
         $headers = array('Content-Type: text/html; charset=UTF-8');
-        
+
         try {
-            $sent = wp_mail($to, $subject, $content, $headers);
-            
-            if ($sent) {
-                self::log_email($survey_id, $participant_id, $type, 'sent', null);
-                return true;
-            } else {
-                self::log_email($survey_id, $participant_id, $type, 'failed', 'wp_mail returned false');
+            $smtp_service = class_exists('EIPSI_SMTP_Service') ? new EIPSI_SMTP_Service() : null;
+            $smtp_config = $smtp_service ? $smtp_service->get_config() : null;
+
+            if ($smtp_config) {
+                $result = $smtp_service->send_message($to, $subject, $content, $smtp_config);
+
+                if (!empty($result['success'])) {
+                    self::log_email($survey_id, $participant_id, $type, 'sent', null, $subject);
+                    return true;
+                }
+
+                $error = $result['error'] ?? 'SMTP send failed';
+                self::log_email($survey_id, $participant_id, $type, 'failed', $error, $subject);
                 return false;
             }
+
+            $sent = wp_mail($to, $subject, $content, $headers);
+
+            if ($sent) {
+                self::log_email($survey_id, $participant_id, $type, 'sent', null, $subject);
+                return true;
+            }
+
+            self::log_email($survey_id, $participant_id, $type, 'failed', 'wp_mail returned false', $subject);
+            return false;
         } catch (Exception $e) {
-            self::log_email($survey_id, $participant_id, $type, 'failed', $e->getMessage());
+            self::log_email($survey_id, $participant_id, $type, 'failed', $e->getMessage(), $subject);
             return false;
         }
     }
@@ -379,9 +395,10 @@ class EIPSI_Email_Service {
      * @since 1.4.1
      * @access public
      */
-    public static function log_email($survey_id, $participant_id, $type, $status, $error_message = null) {
+    public static function log_email($survey_id, $participant_id, $type, $status, $error_message = null, $subject = '') {
         global $wpdb;
         $table_name = $wpdb->prefix . 'survey_email_log';
+        $subject = sanitize_text_field($subject);
         
         $wpdb->insert(
             $table_name,
@@ -390,7 +407,7 @@ class EIPSI_Email_Service {
                 'participant_id' => $participant_id,
                 'email_type' => $type,
                 'recipient_email' => self::get_participant_email($participant_id),
-                'subject' => '', // Optional to fill if passed
+                'subject' => $subject,
                 'status' => $status,
                 'error_message' => $error_message,
                 'sent_at' => current_time('mysql'),

@@ -65,7 +65,10 @@
 }
 
 .eipsi-db-form .form-table input[type="text"],
-.eipsi-db-form .form-table input[type="password"] {
+.eipsi-db-form .form-table input[type="password"],
+.eipsi-db-form .form-table input[type="number"],
+.eipsi-db-form .form-table input[type="email"],
+.eipsi-db-form .form-table select {
     width: 100%;
     max-width: 400px;
     padding: 0.75rem 1rem;
@@ -76,13 +79,18 @@
 }
 
 .eipsi-db-form .form-table input[type="text"]::placeholder,
-.eipsi-db-form .form-table input[type="password"]::placeholder {
+.eipsi-db-form .form-table input[type="password"]::placeholder,
+.eipsi-db-form .form-table input[type="number"]::placeholder,
+.eipsi-db-form .form-table input[type="email"]::placeholder {
     color: var(--eipsi-color-placeholder, #64748b);
     opacity: 0.7;
 }
 
 .eipsi-db-form .form-table input[type="text"]:focus,
-.eipsi-db-form .form-table input[type="password"]:focus {
+.eipsi-db-form .form-table input[type="password"]:focus,
+.eipsi-db-form .form-table input[type="number"]:focus,
+.eipsi-db-form .form-table input[type="email"]:focus,
+.eipsi-db-form .form-table select:focus {
     border-color: var(--eipsi-color-primary, #3B6CAA);
     outline: none;
     box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.1);
@@ -185,6 +193,31 @@
 }
 
 #eipsi-message-container.warning {
+    background: var(--eipsi-color-background-warning, #fff3e0);
+    border: 1px solid var(--eipsi-color-warning, #b35900);
+    color: var(--eipsi-color-warning-text, #e65100);
+}
+
+#eipsi-smtp-message-container {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+#eipsi-smtp-message-container.success {
+    background: var(--eipsi-color-background-success, #e8f5e9);
+    border: 1px solid var(--eipsi-color-success, #008080);
+    color: var(--eipsi-color-success-text, #1b5e20);
+}
+
+#eipsi-smtp-message-container.error {
+    background: var(--eipsi-color-background-error, #ffebee);
+    border: 1px solid var(--eipsi-color-error, #d32f2f);
+    color: var(--eipsi-color-error-text, #c62828);
+}
+
+#eipsi-smtp-message-container.warning {
     background: var(--eipsi-color-background-warning, #fff3e0);
     border: 1px solid var(--eipsi-color-warning, #b35900);
     color: var(--eipsi-color-warning-text, #e65100);

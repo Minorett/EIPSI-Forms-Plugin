@@ -972,10 +972,314 @@
         },
     };
 
+    const EIPSISmtpConfig = {
+        smtpTested: false,
+
+        init() {
+            this.bindEvents();
+        },
+
+        bindEvents() {
+            $( '#eipsi-test-smtp' ).on(
+                'click',
+                this.testSmtp.bind( this )
+            );
+            $( '#eipsi-smtp-config-form' ).on(
+                'submit',
+                this.saveSmtpConfig.bind( this )
+            );
+            $( '#eipsi-disable-smtp' ).on(
+                'click',
+                this.disableSmtp.bind( this )
+            );
+
+            $( '#eipsi-smtp-config-form input, #eipsi-smtp-config-form select' ).on(
+                'input change',
+                function () {
+                    EIPSISmtpConfig.smtpTested = false;
+                    $( '#eipsi-save-smtp-config' ).prop( 'disabled', true );
+                }
+            );
+        },
+
+        testSmtp( e ) {
+            e.preventDefault();
+
+            const data = {
+                action: 'eipsi_test_smtp_connection',
+                nonce: $( '#eipsi_smtp_config_nonce' ).val(),
+                host: $( '#smtp_host' ).val(),
+                port: $( '#smtp_port' ).val(),
+                user: $( '#smtp_user' ).val(),
+                password: $( '#smtp_password' ).val(),
+                encryption: $( '#smtp_encryption' ).val(),
+            };
+
+            if ( ! data.host || ! data.port || ! data.user ) {
+                this.showMessage( 'warning', eipsiConfigL10n.smtpFillAllFields );
+                return;
+            }
+
+            const $button = $( '#eipsi-test-smtp' );
+            $button.prop( 'disabled', true ).addClass( 'eipsi-loading' );
+            this.hideMessage();
+
+            $.ajax( {
+                url: ajaxurl,
+                type: 'POST',
+                data,
+                success( response ) {
+                    if ( response.success ) {
+                        EIPSISmtpConfig.showMessage(
+                            'success',
+                            response.data.message
+                        );
+                        EIPSISmtpConfig.updateStatusBox(
+                            true,
+                            response.data.status
+                        );
+                        EIPSISmtpConfig.smtpTested = true;
+                        $( '#eipsi-save-smtp-config' ).prop(
+                            'disabled',
+                            false
+                        );
+                    } else {
+                        EIPSISmtpConfig.showMessage(
+                            'error',
+                            response.data.message
+                        );
+                    }
+                },
+                error() {
+                    EIPSISmtpConfig.showMessage(
+                        'error',
+                        eipsiConfigL10n.smtpTestError
+                    );
+                },
+                complete() {
+                    $button
+                        .prop( 'disabled', false )
+                        .removeClass( 'eipsi-loading' );
+                },
+            } );
+        },
+
+        saveSmtpConfig( e ) {
+            e.preventDefault();
+
+            if ( ! this.smtpTested ) {
+                this.showMessage( 'warning', eipsiConfigL10n.smtpTestFirst );
+                return;
+            }
+
+            const $button = $( '#eipsi-save-smtp-config' );
+            const data = {
+                action: 'eipsi_save_smtp_config',
+                nonce: $( '#eipsi_smtp_config_nonce' ).val(),
+                host: $( '#smtp_host' ).val(),
+                port: $( '#smtp_port' ).val(),
+                user: $( '#smtp_user' ).val(),
+                password: $( '#smtp_password' ).val(),
+                encryption: $( '#smtp_encryption' ).val(),
+            };
+
+            $button.prop( 'disabled', true ).addClass( 'eipsi-loading' );
+            this.hideMessage();
+
+            $.ajax( {
+                url: ajaxurl,
+                type: 'POST',
+                data,
+                success( response ) {
+                    if ( response.success ) {
+                        EIPSISmtpConfig.showMessage(
+                            'success',
+                            response.data.message
+                        );
+                        EIPSISmtpConfig.updateStatusBox(
+                            true,
+                            response.data.status
+                        );
+                        $( '#smtp_password' ).val( '' );
+
+                        if ( $( '#eipsi-disable-smtp' ).length === 0 ) {
+                            $( '#eipsi-save-smtp-config' )
+                                .closest( '.eipsi-form-actions' )
+                                .append(
+                                    '<button type="button" id="eipsi-disable-smtp" class="button button-link-delete">' +
+                                        eipsiConfigL10n.smtpDisableLabel +
+                                        '</button>'
+                                );
+                            $( '#eipsi-disable-smtp' ).on(
+                                'click',
+                                EIPSISmtpConfig.disableSmtp.bind(
+                                    EIPSISmtpConfig
+                                )
+                            );
+                        }
+                    } else {
+                        EIPSISmtpConfig.showMessage(
+                            'error',
+                            response.data.message
+                        );
+                    }
+                },
+                error() {
+                    EIPSISmtpConfig.showMessage(
+                        'error',
+                        eipsiConfigL10n.smtpSaveError
+                    );
+                },
+                complete() {
+                    $button
+                        .prop( 'disabled', false )
+                        .removeClass( 'eipsi-loading' );
+                },
+            } );
+        },
+
+        disableSmtp( e ) {
+            e.preventDefault();
+
+            // eslint-disable-next-line no-alert
+            if ( ! confirm( eipsiConfigL10n.smtpConfirmDisable ) ) {
+                return;
+            }
+
+            const $button = $( e.currentTarget );
+            $button.prop( 'disabled', true );
+
+            $.ajax( {
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_disable_smtp',
+                    nonce: $( '#eipsi_smtp_config_nonce' ).val(),
+                },
+                success( response ) {
+                    if ( response.success ) {
+                        EIPSISmtpConfig.showMessage(
+                            'success',
+                            response.data.message
+                        );
+                        EIPSISmtpConfig.updateStatusBox( false, {} );
+                        $button.remove();
+                        EIPSISmtpConfig.smtpTested = false;
+                        $( '#eipsi-save-smtp-config' ).prop(
+                            'disabled',
+                            true
+                        );
+                    } else {
+                        EIPSISmtpConfig.showMessage(
+                            'error',
+                            response.data.message
+                        );
+                    }
+                },
+                error() {
+                    EIPSISmtpConfig.showMessage(
+                        'error',
+                        eipsiConfigL10n.smtpDisableError
+                    );
+                },
+                complete() {
+                    $button.prop( 'disabled', false );
+                },
+            } );
+        },
+
+        updateStatusBox( enabled, data ) {
+            const $statusBox = $( '#eipsi-smtp-status-box' );
+
+            if ( enabled ) {
+                $statusBox.html(
+                    '<div class="eipsi-status-indicator">' +
+                        '<span class="status-icon status-connected"></span>' +
+                        '<span class="status-text">' +
+                        eipsiConfigL10n.smtpActive +
+                        '</span>' +
+                        '</div>' +
+                        '<div class="eipsi-status-details">' +
+                        '<div class="status-detail-row">' +
+                        '<span class="detail-label">' +
+                        eipsiConfigL10n.smtpHostLabel +
+                        '</span>' +
+                        '<span class="detail-value">' +
+                        ( data.host || '' ) +
+                        '</span>' +
+                        '</div>' +
+                        '<div class="status-detail-row">' +
+                        '<span class="detail-label">' +
+                        eipsiConfigL10n.smtpPortLabel +
+                        '</span>' +
+                        '<span class="detail-value">' +
+                        ( data.port || '' ) +
+                        '</span>' +
+                        '</div>' +
+                        '<div class="status-detail-row">' +
+                        '<span class="detail-label">' +
+                        eipsiConfigL10n.smtpUserLabel +
+                        '</span>' +
+                        '<span class="detail-value">' +
+                        ( data.user || '' ) +
+                        '</span>' +
+                        '</div>' +
+                        '<div class="status-detail-row">' +
+                        '<span class="detail-label">' +
+                        eipsiConfigL10n.smtpEncryptionLabel +
+                        '</span>' +
+                        '<span class="detail-value">' +
+                        ( data.encryption_label || data.encryption || '' ) +
+                        '</span>' +
+                        '</div>' +
+                        '</div>'
+                );
+                return;
+            }
+
+            $statusBox.html(
+                '<div class="eipsi-status-indicator">' +
+                    '<span class="status-icon status-disconnected"></span>' +
+                    '<span class="status-text">' +
+                    eipsiConfigL10n.smtpInactive +
+                    '</span>' +
+                    '</div>' +
+                    '<div class="eipsi-status-message">' +
+                    '<p>' +
+                    eipsiConfigL10n.smtpNoConfig +
+                    '</p>' +
+                    '</div>'
+            );
+        },
+
+        showMessage( type, message ) {
+            const $container = $( '#eipsi-smtp-message-container' );
+            $container
+                .removeClass( 'success error warning' )
+                .addClass( type )
+                .text( message )
+                .show();
+
+            if ( type === 'success' ) {
+                setTimeout( function () {
+                    $container.fadeOut();
+                }, 5000 );
+            }
+        },
+
+        hideMessage() {
+            $( '#eipsi-smtp-message-container' ).hide();
+        },
+    };
+
     // Initialize on document ready
     $( document ).ready( function () {
         if ( $( '#eipsi-db-config-form' ).length ) {
             EIPSIConfig.init();
+        }
+
+        if ( $( '#eipsi-smtp-config-form' ).length ) {
+            EIPSISmtpConfig.init();
         }
     } );
 } )( jQuery );
