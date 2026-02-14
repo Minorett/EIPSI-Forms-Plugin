@@ -34,6 +34,7 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/config/longitudinal-config.php';
 
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/menu.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/results-page.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/longitudinal-study-page.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/export.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
@@ -95,15 +96,13 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/study-dashboard-api.php';
  * Enqueue Randomization assets en admin
  */
 function eipsi_enqueue_randomization_assets($hook) {
-    // Solo cargar en la página de Results & Experience
-    if ($hook === 'eipsi_page_eipsi-results') {
-        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'submissions';
+    $page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
+    $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : '';
 
-        // Enqueue generic styles for all tabs in results page
-        // ...
+    if ($page === 'eipsi-results-experience') {
+        $active_tab = $active_tab ?: 'submissions';
 
         if ($active_tab === 'randomization') {
-            // Enqueue CSS
             wp_enqueue_style(
                 'eipsi-randomization-css',
                 EIPSI_FORMS_PLUGIN_URL . 'assets/css/randomization.css',
@@ -111,7 +110,6 @@ function eipsi_enqueue_randomization_assets($hook) {
                 EIPSI_FORMS_VERSION
             );
 
-            // Enqueue JS
             wp_enqueue_script(
                 'eipsi-randomization-js',
                 EIPSI_FORMS_PLUGIN_URL . 'assets/js/randomization.js',
@@ -120,7 +118,6 @@ function eipsi_enqueue_randomization_assets($hook) {
                 true
             );
 
-            // Localizar script con datos necesarios
             wp_localize_script('eipsi-randomization-js', 'eipsiRandomization', array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('eipsi_randomization_nonce'),
@@ -135,7 +132,12 @@ function eipsi_enqueue_randomization_assets($hook) {
             ));
         }
 
-        // Enqueue Waves Manager assets (v1.4.0)
+        return;
+    }
+
+    if ($page === 'eipsi-longitudinal-study') {
+        $active_tab = $active_tab ?: 'dashboard-study';
+
         if ($active_tab === 'waves-manager') {
             wp_enqueue_style(
                 'eipsi-waves-manager-css',
@@ -166,8 +168,7 @@ function eipsi_enqueue_randomization_assets($hook) {
             ));
         }
 
-        // Enqueue Longitudinal Dashboard assets (v1.5.2)
-        if ($active_tab === 'longitudinal-studies') {
+        if ($active_tab === 'dashboard-study') {
             wp_enqueue_style(
                 'eipsi-study-dashboard-css',
                 EIPSI_FORMS_PLUGIN_URL . 'assets/css/study-dashboard.css',
@@ -203,9 +204,10 @@ add_action('admin_enqueue_scripts', 'eipsi_enqueue_randomization_assets');
  */
 add_action('admin_enqueue_scripts', 'eipsi_enqueue_setup_wizard_assets');
 function eipsi_enqueue_setup_wizard_assets($hook) {
-    // Solo cargar en la página del Setup Wizard
-    if ($hook === 'eipsi_page_eipsi-new-study') {
-        // Enqueue modern UI CSS
+    $page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
+    $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : '';
+
+    if ($page === 'eipsi-longitudinal-study' && $active_tab === 'create-study') {
         wp_enqueue_style(
             'eipsi-longitudinal-studies-ui-css',
             EIPSI_FORMS_PLUGIN_URL . 'assets/css/longitudinal-studies-ui.css',
@@ -213,7 +215,6 @@ function eipsi_enqueue_setup_wizard_assets($hook) {
             EIPSI_FORMS_VERSION
         );
 
-        // Enqueue original setup wizard CSS for compatibility
         wp_enqueue_style(
             'eipsi-setup-wizard-css',
             EIPSI_FORMS_PLUGIN_URL . 'assets/css/setup-wizard.css',
@@ -221,7 +222,6 @@ function eipsi_enqueue_setup_wizard_assets($hook) {
             EIPSI_FORMS_VERSION
         );
 
-        // Enqueue JS
         wp_enqueue_script(
             'eipsi-setup-wizard-js',
             EIPSI_FORMS_PLUGIN_URL . 'assets/js/setup-wizard.js',
@@ -230,10 +230,8 @@ function eipsi_enqueue_setup_wizard_assets($hook) {
             true
         );
 
-        // Get available forms for dropdowns
         $available_forms = eipsi_get_available_forms_for_wizard();
-        
-        // Localizar script con datos necesarios
+
         wp_localize_script('eipsi-setup-wizard-js', 'eipsiWizard', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('eipsi_wizard_action'),

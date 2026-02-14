@@ -180,7 +180,7 @@ function eipsi_save_step_submission($step_number) {
     $next_step = min($step_number + 1, 5);
     
     // Redirect to next step
-    $redirect_url = admin_url('admin.php?page=eipsi-new-study&step=' . $next_step);
+    $redirect_url = admin_url('admin.php?page=eipsi-longitudinal-study&tab=create-study&step=' . $next_step);
     
     return array(
         'success' => true,
@@ -228,7 +228,7 @@ function eipsi_activate_study_submission() {
     delete_transient($transient_key);
     
     // Redirect to study dashboard (to be implemented in Task 1.5.2)
-    $redirect_url = admin_url('admin.php?page=eipsi-results&study_id=' . $study_id);
+    $redirect_url = admin_url('admin.php?page=eipsi-longitudinal-study&tab=dashboard-study&study_id=' . $study_id);
     
     return array(
         'success' => true,

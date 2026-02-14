@@ -85,15 +85,15 @@ $paused_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}survey_studi
     <!-- Search and Filters -->
     <div class="eipsi-list-filters">
         <form method="get" action="">
-            <input type="hidden" name="page" value="eipsi-results">
-            <input type="hidden" name="tab" value="longitudinal-studies">
+            <input type="hidden" name="page" value="eipsi-longitudinal-study">
+            <input type="hidden" name="tab" value="dashboard-study">
             <input type="text" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php esc_attr_e('Buscar por nombre o ID...', 'eipsi-forms'); ?>">
             <button type="submit" class="button button-secondary"><?php esc_html_e('Buscar', 'eipsi-forms'); ?></button>
             <?php if (!empty($search)): ?>
-                <a href="?page=eipsi-results&tab=longitudinal-studies" class="button button-link"><?php esc_html_e('Limpiar', 'eipsi-forms'); ?></a>
+                <a href="?page=eipsi-longitudinal-study&tab=dashboard-study" class="button button-link"><?php esc_html_e('Limpiar', 'eipsi-forms'); ?></a>
             <?php endif; ?>
         </form>
-        <a href="?page=eipsi-new-study" class="button button-primary">➕ <?php esc_html_e('Nuevo Estudio', 'eipsi-forms'); ?></a>
+        <a href="?page=eipsi-longitudinal-study&tab=create-study" class="button button-primary">➕ <?php esc_html_e('Nuevo Estudio', 'eipsi-forms'); ?></a>
     </div>
 
     <!-- Studies Table -->

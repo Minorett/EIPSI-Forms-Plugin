@@ -74,7 +74,7 @@
 
             // Action buttons (placeholders for now)
             $('#action-edit-study').on('click', function() {
-                window.location.href = `?page=eipsi-new-study&study_id=${self.currentStudyId}`;
+                window.location.href = `?page=eipsi-longitudinal-study&tab=create-study&study_id=${self.currentStudyId}`;
             });
 
             $('#action-close-study').on('click', function() {
