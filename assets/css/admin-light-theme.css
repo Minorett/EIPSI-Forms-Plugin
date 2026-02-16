@@ -1,0 +1,711 @@
+/**
+ * EIPSI Forms - Admin Light Mode Theme
+ * Unified light mode color palette for all admin sections
+ *
+ * Color Palette:
+ * Primary: #3B6CAA
+ * Primary Hover: #1E3A5F
+ * Secondary BG: #AED6F1
+ * Secondary Hover: #d6edff
+ * Background: #FFFFFF
+ * Background Subtle: #f8f9fa
+ * Text Primary: #2c3e50
+ * Text Muted: #64748b
+ * Border Standard: #e2e8f0
+ * Border Dark: #cbd5e0
+ * Success: #008080
+ * Success BG: #e8f5e9
+ * Error: #800000
+ * Error BG: #fff5f5
+ * Warning: #ffc107
+ * Warning BG: #fff8e5
+ *
+ * @version 1.0.0
+ * @package EIPSI_Forms
+ */
+
+/* ==========================================================================
+   CSS VARIABLES - Light Mode Theme
+   ========================================================================== */
+:root {
+    /* Primary Colors */
+    --eipsi-primary: #3B6CAA;
+    --eipsi-primary-hover: #1E3A5F;
+    --eipsi-primary-light: #AED6F1;
+    --eipsi-primary-lighter: #d6edff;
+
+    /* Background Colors */
+    --eipsi-bg: #FFFFFF;
+    --eipsi-bg-subtle: #f8f9fa;
+    --eipsi-bg-muted: #f1f5f9;
+
+    /* Text Colors */
+    --eipsi-text: #2c3e50;
+    --eipsi-text-muted: #64748b;
+    --eipsi-text-light: #94a3b8;
+
+    /* Border Colors */
+    --eipsi-border: #e2e8f0;
+    --eipsi-border-dark: #cbd5e0;
+    --eipsi-border-light: #f1f5f9;
+
+    /* Status Colors */
+    --eipsi-success: #008080;
+    --eipsi-success-bg: #e8f5e9;
+    --eipsi-success-text: #006666;
+    --eipsi-error: #800000;
+    --eipsi-error-bg: #fff5f5;
+    --eipsi-error-text: #660000;
+    --eipsi-warning: #ffc107;
+    --eipsi-warning-bg: #fff8e5;
+    --eipsi-warning-text: #856404;
+    --eipsi-info: #3B6CAA;
+    --eipsi-info-bg: #f0f6fc;
+    --eipsi-info-text: #1E3A5F;
+
+    /* Shadows */
+    --eipsi-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --eipsi-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --eipsi-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+    /* Spacing */
+    --eipsi-space-xs: 0.25rem;
+    --eipsi-space-sm: 0.5rem;
+    --eipsi-space-md: 1rem;
+    --eipsi-space-lg: 1.5rem;
+    --eipsi-space-xl: 2rem;
+
+    /* Border Radius */
+    --eipsi-radius-sm: 4px;
+    --eipsi-radius: 8px;
+    --eipsi-radius-lg: 12px;
+
+    /* Typography */
+    --eipsi-font-size-sm: 0.875rem;
+    --eipsi-font-size: 1rem;
+    --eipsi-font-size-lg: 1.125rem;
+    --eipsi-font-size-xl: 1.25rem;
+
+    /* Transitions */
+    --eipsi-transition: all 0.2s ease;
+}
+
+/* ==========================================================================
+   BASE WRAPPER STYLES
+   ========================================================================== */
+.eipsi-results-page,
+.eipsi-config-wrap,
+.eipsi-longitudinal-page {
+    background: var(--eipsi-bg);
+    padding: var(--eipsi-space-xl);
+    border-radius: var(--eipsi-radius);
+    color: var(--eipsi-text);
+}
+
+.eipsi-results-page h1,
+.eipsi-config-wrap h1,
+.eipsi-longitudinal-page h1 {
+    color: var(--eipsi-text);
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: var(--eipsi-space-lg);
+    padding-bottom: var(--eipsi-space-md);
+    border-bottom: 2px solid var(--eipsi-border);
+}
+
+/* ==========================================================================
+   NAVIGATION TABS
+   ========================================================================== */
+.eipsi-results-page .nav-tab-wrapper,
+.eipsi-config-wrap .nav-tab-wrapper,
+.eipsi-longitudinal-page .nav-tab-wrapper {
+    border-bottom: 2px solid var(--eipsi-border);
+    margin: var(--eipsi-space-lg) 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    background: transparent;
+}
+
+.eipsi-results-page .nav-tab,
+.eipsi-config-wrap .nav-tab,
+.eipsi-longitudinal-page .nav-tab {
+    padding: 12px 20px;
+    text-decoration: none;
+    color: var(--eipsi-text-muted);
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    display: inline-block;
+    transition: var(--eipsi-transition);
+    white-space: nowrap;
+    font-weight: 500;
+    background: transparent;
+    margin-left: 0;
+}
+
+.eipsi-results-page .nav-tab:hover,
+.eipsi-config-wrap .nav-tab:hover,
+.eipsi-longitudinal-page .nav-tab:hover {
+    color: var(--eipsi-primary);
+    background-color: var(--eipsi-bg-subtle);
+    border-bottom-color: var(--eipsi-primary-light);
+}
+
+.eipsi-results-page .nav-tab-active,
+.eipsi-config-wrap .nav-tab-active,
+.eipsi-longitudinal-page .nav-tab-active {
+    color: var(--eipsi-primary);
+    border-bottom-color: var(--eipsi-primary);
+    font-weight: 600;
+    background-color: var(--eipsi-bg);
+}
+
+.eipsi-results-page .nav-tab:focus,
+.eipsi-config-wrap .nav-tab:focus,
+.eipsi-longitudinal-page .nav-tab:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.2);
+    border-radius: var(--eipsi-radius-sm) var(--eipsi-radius-sm) 0 0;
+}
+
+/* ==========================================================================
+   TAB CONTENT
+   ========================================================================== */
+.eipsi-results-page .tab-content,
+.eipsi-config-wrap .tab-content,
+.eipsi-longitudinal-page .tab-content {
+    margin-top: var(--eipsi-space-lg);
+    animation: eipsiFadeIn 0.3s ease-out;
+}
+
+@keyframes eipsiFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================================================
+   BUTTONS - Light Mode
+   ========================================================================== */
+.wp-core-ui .button-primary {
+    background: var(--eipsi-primary);
+    border-color: var(--eipsi-primary);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--eipsi-radius-sm);
+    transition: var(--eipsi-transition);
+    text-shadow: none;
+    box-shadow: var(--eipsi-shadow-sm);
+}
+
+.wp-core-ui .button-primary:hover,
+.wp-core-ui .button-primary:focus {
+    background: var(--eipsi-primary-hover);
+    border-color: var(--eipsi-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--eipsi-shadow);
+}
+
+.wp-core-ui .button-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.3);
+}
+
+.wp-core-ui .button-secondary {
+    background: var(--eipsi-bg);
+    border-color: var(--eipsi-border);
+    color: var(--eipsi-text);
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--eipsi-radius-sm);
+    transition: var(--eipsi-transition);
+}
+
+.wp-core-ui .button-secondary:hover,
+.wp-core-ui .button-secondary:focus {
+    background: var(--eipsi-bg-subtle);
+    border-color: var(--eipsi-border-dark);
+    color: var(--eipsi-primary);
+}
+
+.button-link-delete {
+    color: var(--eipsi-error) !important;
+    border: 1px solid var(--eipsi-error) !important;
+    background: var(--eipsi-bg) !important;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--eipsi-radius-sm);
+    transition: var(--eipsi-transition);
+}
+
+.button-link-delete:hover,
+.button-link-delete:focus {
+    background: var(--eipsi-error) !important;
+    color: #ffffff !important;
+    border-color: var(--eipsi-error) !important;
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   TABLES - Light Mode
+   ========================================================================== */
+.wp-list-table {
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
+    overflow: hidden;
+    box-shadow: var(--eipsi-shadow);
+    background: var(--eipsi-bg);
+}
+
+.wp-list-table thead th,
+.wp-list-table thead td {
+    background: var(--eipsi-primary);
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: var(--eipsi-font-size-sm);
+    border-bottom: none;
+    padding: 14px 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wp-list-table tbody th,
+.wp-list-table tbody td {
+    padding: 12px;
+    border-bottom: 1px solid var(--eipsi-border);
+    color: var(--eipsi-text);
+    font-weight: 400;
+    background: var(--eipsi-bg);
+    vertical-align: middle;
+}
+
+.wp-list-table tbody tr:hover th,
+.wp-list-table tbody tr:hover td {
+    background: var(--eipsi-bg-subtle) !important;
+}
+
+.wp-list-table tbody tr:nth-child(even) {
+    background: var(--eipsi-bg-subtle);
+}
+
+.wp-list-table tbody tr:nth-child(even):hover {
+    background: var(--eipsi-primary-lighter) !important;
+}
+
+.wp-list-table th a,
+.wp-list-table th a:hover {
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   NOTICES - Light Mode
+   ========================================================================== */
+.notice {
+    margin: var(--eipsi-space-md) 0;
+    border: 1px solid;
+    border-radius: var(--eipsi-radius);
+    padding: var(--eipsi-space-md) var(--eipsi-space-lg);
+    font-weight: 500;
+    box-shadow: var(--eipsi-shadow-sm);
+}
+
+.notice-success {
+    border-color: var(--eipsi-success);
+    background: var(--eipsi-success-bg);
+    color: var(--eipsi-success-text);
+}
+
+.notice-error {
+    border-color: var(--eipsi-error);
+    background: var(--eipsi-error-bg);
+    color: var(--eipsi-error-text);
+}
+
+.notice-warning {
+    border-color: var(--eipsi-warning);
+    background: var(--eipsi-warning-bg);
+    color: var(--eipsi-warning-text);
+}
+
+.notice-info {
+    border-color: var(--eipsi-info);
+    background: var(--eipsi-info-bg);
+    color: var(--eipsi-info-text);
+}
+
+/* ==========================================================================
+   CARDS & PANELS
+   ========================================================================== */
+.eipsi-card {
+    background: var(--eipsi-bg);
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
+    padding: var(--eipsi-space-lg);
+    box-shadow: var(--eipsi-shadow);
+    margin-bottom: var(--eipsi-space-lg);
+}
+
+.eipsi-card-header {
+    padding-bottom: var(--eipsi-space-md);
+    margin-bottom: var(--eipsi-space-md);
+    border-bottom: 1px solid var(--eipsi-border);
+}
+
+.eipsi-card-header h2,
+.eipsi-card-header h3 {
+    color: var(--eipsi-text);
+    margin: 0;
+    font-size: var(--eipsi-font-size-lg);
+    font-weight: 600;
+}
+
+.eipsi-card-body {
+    color: var(--eipsi-text);
+}
+
+/* ==========================================================================
+   FORM ELEMENTS - Light Mode
+   ========================================================================== */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+input[type="tel"],
+input[type="search"],
+textarea,
+select {
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius-sm);
+    padding: 0.625rem 0.875rem;
+    font-size: var(--eipsi-font-size);
+    color: var(--eipsi-text);
+    background: var(--eipsi-bg);
+    transition: var(--eipsi-transition);
+    max-width: 100%;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="url"]:focus,
+input[type="tel"]:focus,
+input[type="search"]:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--eipsi-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.15);
+    background: var(--eipsi-bg);
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+textarea::placeholder {
+    color: var(--eipsi-text-light);
+}
+
+/* ==========================================================================
+   STATUS INDICATORS
+   ========================================================================== */
+.eipsi-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: var(--eipsi-font-size-sm);
+    font-weight: 500;
+}
+
+.eipsi-status-badge--success {
+    background: var(--eipsi-success-bg);
+    color: var(--eipsi-success);
+    border: 1px solid var(--eipsi-success);
+}
+
+.eipsi-status-badge--error {
+    background: var(--eipsi-error-bg);
+    color: var(--eipsi-error);
+    border: 1px solid var(--eipsi-error);
+}
+
+.eipsi-status-badge--warning {
+    background: var(--eipsi-warning-bg);
+    color: var(--eipsi-warning-text);
+    border: 1px solid var(--eipsi-warning);
+}
+
+.eipsi-status-badge--info {
+    background: var(--eipsi-info-bg);
+    color: var(--eipsi-info);
+    border: 1px solid var(--eipsi-info);
+}
+
+/* Status dots */
+.eipsi-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.eipsi-status-dot--connected,
+.eipsi-status-dot--active {
+    background: var(--eipsi-success);
+    box-shadow: 0 0 0 2px var(--eipsi-success-bg);
+}
+
+.eipsi-status-dot--disconnected,
+.eipsi-status-dot--inactive {
+    background: var(--eipsi-error);
+    box-shadow: 0 0 0 2px var(--eipsi-error-bg);
+}
+
+.eipsi-status-dot--pending {
+    background: var(--eipsi-warning);
+    box-shadow: 0 0 0 2px var(--eipsi-warning-bg);
+}
+
+/* ==========================================================================
+   TOOLBAR & FILTERS
+   ========================================================================== */
+.eipsi-toolbar {
+    background: var(--eipsi-bg-subtle);
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
+    padding: var(--eipsi-space-md);
+    margin-bottom: var(--eipsi-space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--eipsi-space-md);
+    flex-wrap: wrap;
+}
+
+.eipsi-filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--eipsi-space-sm);
+}
+
+.eipsi-filter-group label {
+    font-weight: 600;
+    color: var(--eipsi-text);
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   PAGINATION
+   ========================================================================== */
+.tablenav {
+    margin-top: var(--eipsi-space-lg);
+    padding: var(--eipsi-space-md);
+    background: var(--eipsi-bg-subtle);
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
+}
+
+.tablenav-pages {
+    display: flex;
+    align-items: center;
+    gap: var(--eipsi-space-md);
+    font-weight: 500;
+}
+
+.tablenav-pages .pagination-links a,
+.tablenav-pages .pagination-links span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius-sm);
+    text-decoration: none;
+    font-weight: 500;
+    min-width: 40px;
+    transition: var(--eipsi-transition);
+    background: var(--eipsi-bg);
+    color: var(--eipsi-text);
+}
+
+.tablenav-pages .pagination-links a:hover {
+    background: var(--eipsi-primary);
+    color: #ffffff;
+    border-color: var(--eipsi-primary);
+}
+
+.tablenav-pages .pagination-links .current {
+    background: var(--eipsi-primary);
+    color: #ffffff;
+    border-color: var(--eipsi-primary);
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   MODALS - Light Mode
+   ========================================================================== */
+.eipsi-modal-overlay {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.eipsi-modal-content {
+    background: var(--eipsi-bg);
+    border-radius: var(--eipsi-radius-lg);
+    box-shadow: var(--eipsi-shadow-lg);
+    border: 1px solid var(--eipsi-border);
+}
+
+.eipsi-modal-header {
+    background: var(--eipsi-bg-subtle);
+    border-bottom: 1px solid var(--eipsi-border);
+    padding: var(--eipsi-space-lg);
+}
+
+.eipsi-modal-header h2,
+.eipsi-modal-header h3 {
+    color: var(--eipsi-text);
+    margin: 0;
+}
+
+.eipsi-modal-body {
+    padding: var(--eipsi-space-lg);
+    color: var(--eipsi-text);
+}
+
+.eipsi-modal-footer {
+    background: var(--eipsi-bg-subtle);
+    border-top: 1px solid var(--eipsi-border);
+    padding: var(--eipsi-space-md) var(--eipsi-space-lg);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--eipsi-space-sm);
+}
+
+.eipsi-modal-close {
+    color: var(--eipsi-text-muted);
+    transition: var(--eipsi-transition);
+}
+
+.eipsi-modal-close:hover {
+    color: var(--eipsi-error);
+    background: var(--eipsi-error-bg);
+}
+
+/* ==========================================================================
+   PROGRESS BARS
+   ========================================================================== */
+.eipsi-progress-bar {
+    background: var(--eipsi-border);
+    border-radius: var(--eipsi-radius-sm);
+    height: 8px;
+    overflow: hidden;
+}
+
+.eipsi-progress-fill {
+    background: linear-gradient(90deg, var(--eipsi-primary) 0%, var(--eipsi-primary-light) 100%);
+    height: 100%;
+    border-radius: var(--eipsi-radius-sm);
+    transition: width 0.3s ease;
+}
+
+/* ==========================================================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+@media screen and (max-width: 1200px) {
+    .eipsi-results-page,
+    .eipsi-config-wrap,
+    .eipsi-longitudinal-page {
+        padding: var(--eipsi-space-md);
+    }
+
+    .eipsi-results-page .nav-tab-wrapper,
+    .eipsi-config-wrap .nav-tab-wrapper,
+    .eipsi-longitudinal-page .nav-tab-wrapper {
+        gap: 4px;
+    }
+
+    .eipsi-results-page .nav-tab,
+    .eipsi-config-wrap .nav-tab,
+    .eipsi-longitudinal-page .nav-tab {
+        padding: 10px 14px;
+        font-size: var(--eipsi-font-size-sm);
+    }
+}
+
+@media screen and (max-width: 782px) {
+    .wp-list-table {
+        font-size: var(--eipsi-font-size-sm);
+    }
+
+    .wp-list-table th,
+    .wp-list-table td {
+        padding: 10px 8px;
+    }
+
+    .eipsi-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .eipsi-filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY ENHANCEMENTS
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus visible styles for keyboard navigation */
+*:focus-visible {
+    outline: 3px solid var(--eipsi-primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --eipsi-border: #000000;
+        --eipsi-text: #000000;
+        --eipsi-primary: #0047AB;
+    }
+}
+
+/* ==========================================================================
+   PRINT STYLES
+   ========================================================================== */
+@media print {
+    .eipsi-results-page,
+    .eipsi-config-wrap,
+    .eipsi-longitudinal-page {
+        background: white;
+        box-shadow: none;
+    }
+
+    .nav-tab-wrapper,
+    .button,
+    .eipsi-toolbar {
+        display: none;
+    }
+}

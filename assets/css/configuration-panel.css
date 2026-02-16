@@ -1,28 +1,63 @@
 /**
  * EIPSI Forms - Database Configuration Panel Styles
- * Professional styling for external database management
+ * Light Mode Theme
+ *
+ * @package EIPSI_Forms
+ * @version 1.5.0
  */
 
+/* ==========================================================================
+   CSS VARIABLES
+   ========================================================================== */
+:root {
+    --eipsi-primary: #3B6CAA;
+    --eipsi-primary-hover: #1E3A5F;
+    --eipsi-primary-light: #AED6F1;
+    --eipsi-primary-lighter: #d6edff;
+    --eipsi-bg: #FFFFFF;
+    --eipsi-bg-subtle: #f8f9fa;
+    --eipsi-bg-muted: #f1f5f9;
+    --eipsi-text: #2c3e50;
+    --eipsi-text-muted: #64748b;
+    --eipsi-text-light: #94a3b8;
+    --eipsi-border: #e2e8f0;
+    --eipsi-border-dark: #cbd5e0;
+    --eipsi-success: #008080;
+    --eipsi-success-bg: #e8f5e9;
+    --eipsi-error: #800000;
+    --eipsi-error-bg: #fff5f5;
+    --eipsi-warning: #ffc107;
+    --eipsi-warning-bg: #fff8e5;
+    --eipsi-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --eipsi-radius: 8px;
+}
+
+/* ==========================================================================
+   MAIN WRAPPER
+   ========================================================================== */
 .eipsi-config-wrap {
     max-width: 1200px;
     margin: 20px auto;
 }
 
 .eipsi-config-wrap h1 {
-    color: #1d2327;
-    font-size: 23px;
-    font-weight: 400;
+    color: var(--eipsi-text);
+    font-size: 1.75rem;
+    font-weight: 600;
     margin: 0 0 0.5rem 0;
     padding: 0;
     line-height: 1.3;
 }
 
-.eipsi-config-wrap .description {
-    color: var(--eipsi-color-text-muted, #64748b);
+.eipsi-config-wrap > .description {
+    color: var(--eipsi-text-muted);
     font-size: 1rem;
     margin-bottom: 2rem;
 }
 
+/* ==========================================================================
+   GRID LAYOUT
+   ========================================================================== */
 .eipsi-config-container {
     display: grid;
     grid-template-columns: 1fr 400px;
@@ -36,32 +71,41 @@
     }
 }
 
-/* Configuration Form Section */
+/* ==========================================================================
+   CONFIGURATION FORM SECTION
+   ========================================================================== */
 .eipsi-config-form-section {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    background: var(--eipsi-bg);
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
     padding: 2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--eipsi-shadow);
 }
 
 .eipsi-config-form-section h2 {
-    color: var(--eipsi-color-text, #2c3e50);
-    font-size: 1.5rem;
+    color: var(--eipsi-text);
+    font-size: 1.375rem;
     margin: 0 0 1.5rem 0;
     padding-bottom: 1rem;
-    border-bottom: 2px solid var(--eipsi-color-primary, #3B6CAA);
+    border-bottom: 2px solid var(--eipsi-primary);
+    font-weight: 600;
+}
+
+/* Form Table Styles */
+.eipsi-db-form .form-table {
+    margin-top: 0;
 }
 
 .eipsi-db-form .form-table th {
-    padding: 1rem 1rem 1rem 0;
+    padding: 1.25rem 1rem 1.25rem 0;
     vertical-align: top;
     font-weight: 600;
-    color: var(--eipsi-color-text, #2c3e50);
+    color: var(--eipsi-text);
+    width: 200px;
 }
 
 .eipsi-db-form .form-table td {
-    padding: 1rem 0;
+    padding: 1.25rem 0;
 }
 
 .eipsi-db-form .form-table input[type="text"],
@@ -72,9 +116,11 @@
     width: 100%;
     max-width: 400px;
     padding: 0.75rem 1rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--eipsi-border);
     border-radius: 6px;
     font-size: 1rem;
+    color: var(--eipsi-text);
+    background: var(--eipsi-bg);
     transition: all 0.2s ease;
 }
 
@@ -82,8 +128,8 @@
 .eipsi-db-form .form-table input[type="password"]::placeholder,
 .eipsi-db-form .form-table input[type="number"]::placeholder,
 .eipsi-db-form .form-table input[type="email"]::placeholder {
-    color: var(--eipsi-color-placeholder, #64748b);
-    opacity: 0.7;
+    color: var(--eipsi-text-light);
+    opacity: 0.8;
 }
 
 .eipsi-db-form .form-table input[type="text"]:focus,
@@ -91,31 +137,34 @@
 .eipsi-db-form .form-table input[type="number"]:focus,
 .eipsi-db-form .form-table input[type="email"]:focus,
 .eipsi-db-form .form-table select:focus {
-    border-color: var(--eipsi-color-primary, #3B6CAA);
+    border-color: var(--eipsi-primary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.1);
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.15);
 }
 
 .eipsi-db-form .required {
-    color: var(--eipsi-color-error, #d32f2f);
+    color: var(--eipsi-error);
     margin-left: 0.25rem;
 }
 
 .eipsi-db-form .description {
-    color: var(--eipsi-color-text-muted, #64748b);
+    color: var(--eipsi-text-muted);
     font-size: 0.875rem;
     margin-top: 0.5rem;
     line-height: 1.5;
 }
 
-/* Form Actions */
+/* ==========================================================================
+   FORM ACTIONS
+   ========================================================================== */
 .eipsi-form-actions {
     display: flex;
     gap: 1rem;
     align-items: center;
     padding-top: 1.5rem;
     margin-top: 1.5rem;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--eipsi-border);
+    flex-wrap: wrap;
 }
 
 .eipsi-form-actions .button {
@@ -126,21 +175,27 @@
     font-size: 1rem;
     border-radius: 6px;
     transition: all 0.2s ease;
+    font-weight: 600;
 }
 
 .eipsi-form-actions .button .dashicons {
-    margin-top: 2px;
+    margin-top: 0;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
 }
 
 .eipsi-form-actions .button-primary {
-    background: var(--eipsi-color-primary, #3B6CAA);
-    border-color: var(--eipsi-color-primary, #3B6CAA);
+    background: var(--eipsi-primary);
+    border-color: var(--eipsi-primary);
     color: #ffffff;
 }
 
 .eipsi-form-actions .button-primary:hover:not(:disabled) {
-    background: var(--eipsi-color-primary-hover, #1E3A5F);
-    border-color: var(--eipsi-color-primary-hover, #1E3A5F);
+    background: var(--eipsi-primary-hover);
+    border-color: var(--eipsi-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 108, 170, 0.25);
 }
 
 .eipsi-form-actions .button-primary:disabled {
@@ -149,81 +204,68 @@
 }
 
 .eipsi-form-actions .button-secondary {
-    background: #ffffff;
-    border-color: #e2e8f0;
-    color: var(--eipsi-color-text, #2c3e50);
+    background: var(--eipsi-bg);
+    border-color: var(--eipsi-border);
+    color: var(--eipsi-text);
 }
 
 .eipsi-form-actions .button-secondary:hover {
-    background: #f8f9fa;
-    border-color: #cbd5e0;
+    background: var(--eipsi-bg-subtle);
+    border-color: var(--eipsi-border-dark);
+    color: var(--eipsi-primary);
 }
 
 .eipsi-form-actions .button-link-delete {
-    color: #d32f2f;
+    color: var(--eipsi-error);
     text-decoration: none;
     background: transparent;
-    border: none;
-    padding: 0.5rem 1rem;
+    border: 1px solid var(--eipsi-error);
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
 }
 
 .eipsi-form-actions .button-link-delete:hover {
-    color: #b71c1c;
-    text-decoration: underline;
+    background: var(--eipsi-error);
+    color: #ffffff;
+    text-decoration: none;
 }
 
-/* Message Container */
-#eipsi-message-container {
-    margin-top: 1.5rem;
-    padding: 1rem;
-    border-radius: 6px;
-    font-size: 1rem;
-}
-
-#eipsi-message-container.success {
-    background: var(--eipsi-color-background-success, #e8f5e9);
-    border: 1px solid var(--eipsi-color-success, #008080);
-    color: var(--eipsi-color-success-text, #1b5e20);
-}
-
-#eipsi-message-container.error {
-    background: var(--eipsi-color-background-error, #ffebee);
-    border: 1px solid var(--eipsi-color-error, #d32f2f);
-    color: var(--eipsi-color-error-text, #c62828);
-}
-
-#eipsi-message-container.warning {
-    background: var(--eipsi-color-background-warning, #fff3e0);
-    border: 1px solid var(--eipsi-color-warning, #b35900);
-    color: var(--eipsi-color-warning-text, #e65100);
-}
-
+/* ==========================================================================
+   MESSAGE CONTAINERS
+   ========================================================================== */
+#eipsi-message-container,
 #eipsi-smtp-message-container {
     margin-top: 1.5rem;
-    padding: 1rem;
+    padding: 1rem 1.25rem;
     border-radius: 6px;
     font-size: 1rem;
+    font-weight: 500;
 }
 
+#eipsi-message-container.success,
 #eipsi-smtp-message-container.success {
-    background: var(--eipsi-color-background-success, #e8f5e9);
-    border: 1px solid var(--eipsi-color-success, #008080);
-    color: var(--eipsi-color-success-text, #1b5e20);
+    background: var(--eipsi-success-bg);
+    border: 1px solid var(--eipsi-success);
+    color: #006666;
 }
 
+#eipsi-message-container.error,
 #eipsi-smtp-message-container.error {
-    background: var(--eipsi-color-background-error, #ffebee);
-    border: 1px solid var(--eipsi-color-error, #d32f2f);
-    color: var(--eipsi-color-error-text, #c62828);
+    background: var(--eipsi-error-bg);
+    border: 1px solid var(--eipsi-error);
+    color: #660000;
 }
 
+#eipsi-message-container.warning,
 #eipsi-smtp-message-container.warning {
-    background: var(--eipsi-color-background-warning, #fff3e0);
-    border: 1px solid var(--eipsi-color-warning, #b35900);
-    color: var(--eipsi-color-warning-text, #e65100);
+    background: var(--eipsi-warning-bg);
+    border: 1px solid var(--eipsi-warning);
+    color: #856404;
 }
 
-/* Status Section */
+/* ==========================================================================
+   STATUS SECTION
+   ========================================================================== */
 .eipsi-status-section {
     display: flex;
     flex-direction: column;
@@ -231,18 +273,19 @@
 }
 
 .eipsi-status-section h2 {
-    color: var(--eipsi-color-text, #2c3e50);
-    font-size: 1.5rem;
+    color: var(--eipsi-text);
+    font-size: 1.375rem;
     margin: 0;
+    font-weight: 600;
 }
 
 /* Status Box */
 .eipsi-status-box {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    background: var(--eipsi-bg);
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
     padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--eipsi-shadow);
 }
 
 .eipsi-status-indicator {
@@ -251,30 +294,30 @@
     gap: 0.75rem;
     padding-bottom: 1rem;
     margin-bottom: 1rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--eipsi-border);
 }
 
 .status-icon {
-    width: 20px;
-    height: 20px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     flex-shrink: 0;
 }
 
 .status-icon.status-connected {
-    background-color: var(--eipsi-color-success, #008080);
-    box-shadow: 0 0 8px rgba(25, 135, 84, 0.5);
+    background-color: var(--eipsi-success);
+    box-shadow: 0 0 0 3px var(--eipsi-success-bg);
 }
 
 .status-icon.status-disconnected {
-    background-color: var(--eipsi-color-error, #d32f2f);
-    box-shadow: 0 0 8px rgba(211, 47, 47, 0.5);
+    background-color: var(--eipsi-error);
+    box-shadow: 0 0 0 3px var(--eipsi-error-bg);
 }
 
 .status-text {
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--eipsi-color-text, #2c3e50);
+    color: var(--eipsi-text);
 }
 
 .eipsi-status-details {
@@ -286,8 +329,8 @@
 .status-detail-row {
     display: flex;
     justify-content: space-between;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #f8f9fa;
+    padding: 0.625rem 0;
+    border-bottom: 1px solid var(--eipsi-border);
 }
 
 .status-detail-row:last-child {
@@ -295,157 +338,246 @@
 }
 
 .detail-label {
-    font-weight: 600;
-    color: var(--eipsi-color-text-muted, #64748b);
+    font-weight: 500;
+    color: var(--eipsi-text-muted);
     font-size: 0.875rem;
 }
 
 .detail-value {
-    font-weight: 500;
-    color: var(--eipsi-color-text, #2c3e50);
-    font-size: 0.875rem;
-}
-
-.eipsi-status-message {
-    color: var(--eipsi-color-text-muted, #64748b);
-    font-size: 0.875rem;
-    line-height: 1.6;
-}
-
-/* Help Box */
-.eipsi-help-box {
-    background: #f8f9fa;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 1.5rem;
-}
-
-.eipsi-help-box h3 {
-    color: var(--eipsi-color-text, #2c3e50);
-    font-size: 1rem;
+    color: var(--eipsi-text);
     font-weight: 600;
-    margin: 0 0 0.75rem 0;
+    font-size: 0.875rem;
 }
 
+/* ==========================================================================
+   SCHEMA STATUS BOX
+   ========================================================================== */
+.eipsi-schema-status-box,
+.eipsi-table-status-box,
+.eipsi-help-box {
+    background: var(--eipsi-bg);
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
+    padding: 1.5rem;
+    box-shadow: var(--eipsi-shadow);
+    margin-top: 1.5rem;
+}
+
+.eipsi-schema-status-box h3,
+.eipsi-table-status-box h3,
+.eipsi-help-box h3 {
+    color: var(--eipsi-text);
+    font-size: 1.125rem;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--eipsi-border);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.eipsi-schema-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.eipsi-local-table-status {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--eipsi-bg-subtle);
+    border-radius: 6px;
+    border: 1px solid var(--eipsi-border);
+}
+
+/* ==========================================================================
+   ERROR BOX
+   ========================================================================== */
+.eipsi-error-box {
+    margin-top: 15px;
+    padding: 1rem 1.25rem;
+    background: var(--eipsi-warning-bg);
+    border-left: 4px solid var(--eipsi-warning);
+    border-radius: 6px;
+}
+
+.eipsi-error-box h4 {
+    margin: 0 0 8px 0;
+    color: var(--eipsi-warning-text);
+    font-weight: 600;
+}
+
+.eipsi-error-box p {
+    margin: 0 0 8px 0;
+    color: var(--eipsi-warning-text);
+}
+
+/* ==========================================================================
+   HELP BOX
+   ========================================================================== */
 .eipsi-help-box ol,
 .eipsi-help-box ul {
-    margin: 0 0 1.5rem 0;
+    margin: 0.75rem 0;
     padding-left: 1.5rem;
-    color: var(--eipsi-color-text-muted, #64748b);
-    font-size: 0.875rem;
-    line-height: 1.6;
 }
 
-.eipsi-help-box ol li,
-.eipsi-help-box ul li {
+.eipsi-help-box li {
     margin-bottom: 0.5rem;
+    color: var(--eipsi-text);
+    line-height: 1.5;
 }
 
-.eipsi-help-box h3:last-of-type {
-    margin-top: 1rem;
+.eipsi-help-box strong {
+    color: var(--eipsi-primary);
 }
 
-.eipsi-help-box ul:last-child {
-    margin-bottom: 0;
+/* ==========================================================================
+   DANGER ZONE SECTION
+   ========================================================================== */
+.eipsi-danger-zone-section {
+    border: 2px solid var(--eipsi-error) !important;
+    border-radius: var(--eipsi-radius);
+    padding: 1.5rem;
+    background: var(--eipsi-bg);
+    box-shadow: var(--eipsi-shadow);
 }
 
-/* Loading State */
-.eipsi-loading {
-    position: relative;
-    pointer-events: none;
-    opacity: 0.6;
+.eipsi-danger-zone-section h2 {
+    color: var(--eipsi-error);
+    margin-top: 0;
+    font-weight: 600;
 }
 
-.eipsi-loading::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
+/* ==========================================================================
+   DATABASE INDICATOR BANNER
+   ========================================================================== */
+.eipsi-db-indicator-banner {
+    background: var(--eipsi-bg-subtle);
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+    box-shadow: var(--eipsi-shadow);
+}
+
+.eipsi-db-indicator-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.eipsi-db-indicator-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--eipsi-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.eipsi-db-indicator-icon .dashicons {
+    color: #ffffff;
+    font-size: 24px;
     width: 24px;
     height: 24px;
-    margin: -12px 0 0 -12px;
-    border: 3px solid var(--eipsi-color-primary, #3B6CAA);
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: eipsi-spin 0.8s linear infinite;
 }
 
-@keyframes eipsi-spin {
-    to {
-        transform: rotate(360deg);
-    }
+.eipsi-db-indicator-info {
+    flex: 1;
 }
 
-/* Mobile Responsive - Small Phones (320px-374px) */
-@media (max-width: 374px) {
+.eipsi-db-indicator-label {
+    color: var(--eipsi-text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.eipsi-db-indicator-value {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.eipsi-db-name {
+    color: var(--eipsi-text-muted);
+    font-size: 0.875rem;
+}
+
+.eipsi-db-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.eipsi-db-badge--external {
+    background: var(--eipsi-success-bg);
+    color: var(--eipsi-success);
+}
+
+.eipsi-db-badge--wordpress {
+    background: var(--eipsi-primary-lighter);
+    color: var(--eipsi-primary);
+}
+
+.eipsi-db-indicator-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.eipsi-status-text {
+    color: var(--eipsi-success);
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   LOCAL SCHEMA RESULTS
+   ========================================================================== */
+#eipsi-local-schema-results {
+    margin-top: 15px;
+    padding: 1rem 1.25rem;
+    background: var(--eipsi-primary-lighter);
+    border-radius: 6px;
+    border-left: 4px solid var(--eipsi-primary);
+}
+
+#eipsi-local-schema-results h4 {
+    margin: 0 0 10px 0;
+    color: var(--eipsi-text);
+}
+
+/* ==========================================================================
+   TABLE STATUS RESULTS
+   ========================================================================== */
+#eipsi-table-status-results {
+    margin-top: 15px;
+    padding: 1rem;
+    background: var(--eipsi-bg-subtle);
+    border: 1px solid var(--eipsi-border);
+    border-radius: 6px;
+}
+
+/* ==========================================================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+@media (max-width: 782px) {
     .eipsi-config-wrap {
-        margin: 5px;
-    }
-
-    .eipsi-config-wrap h1 {
-        font-size: 20px;
+        padding: 0 10px;
     }
 
     .eipsi-config-form-section,
     .eipsi-status-box,
-    .eipsi-help-box,
+    .eipsi-schema-status-box,
     .eipsi-table-status-box {
-        padding: 0.75rem;
-        border-radius: 6px;
-    }
-
-    .eipsi-config-form-section h2,
-    .eipsi-status-section h2 {
-        font-size: 1.25rem;
-    }
-
-    .eipsi-form-actions .button {
-        padding: 0.75rem 1rem;
-        font-size: 0.9375rem;
-    }
-
-    .eipsi-help-box h3,
-    .eipsi-table-status-box h3,
-    .eipsi-table-detail h4,
-    .eipsi-table-guidance h4 {
-        font-size: 0.9375rem;
-    }
-
-    .eipsi-table-detail {
-        padding: 0.75rem;
-    }
-
-    .eipsi-table-guidance {
-        padding: 0.75rem;
-    }
-}
-
-/* Mobile Responsive - Medium Phones & Tablets (375px-768px) */
-@media (max-width: 768px) {
-    .eipsi-config-wrap {
-        margin: 10px;
-    }
-
-    .eipsi-config-form-section,
-    .eipsi-status-box,
-    .eipsi-help-box,
-    .eipsi-table-status-box {
-        padding: 1rem;
-    }
-
-    .eipsi-db-form .form-table th,
-    .eipsi-db-form .form-table td {
-        display: block;
-        padding: 0.5rem 0;
-    }
-
-    .eipsi-db-form .form-table th {
-        padding-bottom: 0.25rem;
-    }
-
-    .eipsi-db-form .form-table input[type="text"],
-    .eipsi-db-form .form-table input[type="password"] {
-        max-width: 100%;
+        padding: 1.25rem;
     }
 
     .eipsi-form-actions {
@@ -456,7 +588,15 @@
     .eipsi-form-actions .button {
         width: 100%;
         justify-content: center;
-        min-height: 44px;
+    }
+
+    .eipsi-db-indicator-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .eipsi-db-indicator-value {
+        justify-content: center;
     }
 
     .status-detail-row {
@@ -465,315 +605,20 @@
     }
 }
 
-/* Table Status Section */
-.eipsi-table-status-box {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+/* ==========================================================================
+   ACCESSIBILITY
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
-.eipsi-table-status-box h3 {
-    color: var(--eipsi-color-text, #2c3e50);
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0 0 0.75rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.eipsi-table-status-box h3 .dashicons {
-    font-size: 1.25rem;
-    width: 1.25rem;
-    height: 1.25rem;
-}
-
-.eipsi-table-status-box .description {
-    color: var(--eipsi-color-text-muted, #64748b);
-    font-size: 0.875rem;
-    margin: 0.5rem 0;
-    line-height: 1.6;
-}
-
-#eipsi-table-status-results {
-    border-top: 1px solid #e2e8f0;
-    padding-top: 1rem;
-    margin-top: 1rem;
-}
-
-.eipsi-table-status-success,
-.eipsi-table-status-warning,
-.eipsi-table-status-error {
-    padding: 1rem;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.eipsi-table-status-success {
-    background: var(--eipsi-color-background-success, #e8f5e9);
-    border: 1px solid var(--eipsi-color-success, #008080);
-    color: var(--eipsi-color-success-text, #1b5e20);
-}
-
-.eipsi-table-status-warning {
-    background: var(--eipsi-color-background-warning, #fff3e0);
-    border: 1px solid var(--eipsi-color-warning, #b35900);
-    color: var(--eipsi-color-warning-text, #e65100);
-}
-
-.eipsi-table-status-error {
-    background: var(--eipsi-color-background-error, #ffebee);
-    border: 1px solid var(--eipsi-color-error, #d32f2f);
-    color: var(--eipsi-color-error-text, #c62828);
-}
-
-.eipsi-table-detail {
-    background: #f8f9fa;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-}
-
-.eipsi-table-detail h4 {
-    color: var(--eipsi-color-text, #2c3e50);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    margin: 0 0 0.75rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.eipsi-table-exists,
-.eipsi-table-missing,
-.eipsi-table-info,
-.eipsi-table-warning {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0.5rem 0;
-    font-size: 0.875rem;
-}
-
-.eipsi-table-exists {
-    color: var(--eipsi-color-success, #008080);
-}
-
-.eipsi-table-missing {
-    color: var(--eipsi-color-error, #d32f2f);
-}
-
-.eipsi-table-info {
-    color: var(--eipsi-color-text-muted, #64748b);
-}
-
-.eipsi-table-info .detail-label {
-    font-weight: 600;
-}
-
-.eipsi-table-info .detail-value {
-    color: var(--eipsi-color-text, #2c3e50);
-    font-weight: 500;
-}
-
-.eipsi-table-warning {
-    color: var(--eipsi-color-warning-text, #e65100);
-    background: var(--eipsi-color-background-warning, #fff3e0);
-    padding: 0.5rem;
-    border-radius: 4px;
-    margin-top: 0.5rem;
-}
-
-.eipsi-table-guidance {
-    background: #e3f2fd;
-    border: 1px solid #2271b1;
-    border-radius: 6px;
-    padding: 1rem;
-    margin-top: 1rem;
-}
-
-.eipsi-table-guidance h4 {
-    color: var(--eipsi-color-primary, #3B6CAA);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    margin: 0 0 0.75rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.eipsi-table-guidance p {
-    color: var(--eipsi-color-text, #2c3e50);
-    font-size: 0.875rem;
-    margin: 0.5rem 0;
-    line-height: 1.6;
-}
-
-.eipsi-table-guidance ol,
-.eipsi-table-guidance ul {
-    margin: 0.5rem 0 0.5rem 1.5rem;
-    padding: 0;
-    color: var(--eipsi-color-text, #2c3e50);
-    font-size: 0.875rem;
-    line-height: 1.6;
-}
-
-.eipsi-table-guidance li {
-    margin-bottom: 0.375rem;
-}
-
-.eipsi-table-guidance strong {
-    color: var(--eipsi-color-primary, #3B6CAA);
-}
-
-/* Accessibility - Focus Indicators */
-.eipsi-config-wrap *:focus-visible {
-    outline: 2px solid var(--eipsi-color-primary, #3B6CAA);
+*:focus-visible {
+    outline: 2px solid var(--eipsi-primary);
     outline-offset: 2px;
-}
-
-/* Enhanced focus for mobile/tablet (includes tablets with keyboards) */
-@media (max-width: 768px) {
-    .eipsi-config-wrap *:focus-visible {
-        outline-width: 3px;
-        outline-offset: 3px;
-    }
-
-    .eipsi-config-wrap button:focus-visible,
-    .eipsi-config-wrap input:focus-visible,
-    .eipsi-config-wrap select:focus-visible,
-    .eipsi-config-wrap textarea:focus-visible {
-        outline-width: 3px;
-        outline-offset: 3px;
-    }
-}
-
-/* ============================================================
-   EIPSI PRIVACY DASHBOARD - SMART SAVE BUTTON STYLES
-   ============================================================ */
-
-.eipsi-privacy-dashboard button[type="submit"] {
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-height: 44px; /* WCAG 2.1 AA touch target */
-}
-
-.eipsi-privacy-dashboard button[type="submit"]:disabled,
-.eipsi-privacy-dashboard button[type="submit"].is-disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: #6c757d !important;
-    border-color: #6c757d !important;
-    color: #ffffff !important;
-}
-
-.eipsi-privacy-dashboard button[type="submit"]:not(:disabled):hover,
-.eipsi-privacy-dashboard button[type="submit"]:not(.is-disabled):hover {
-    background-color: #004a73 !important;
-    border-color: #004a73 !important;
-}
-
-.eipsi-privacy-dashboard button[type="submit"]:not(:disabled):focus-visible,
-.eipsi-privacy-dashboard button[type="submit"]:not(.is-disabled):focus-visible {
-    outline: 2px solid var(--eipsi-color-primary, #3B6CAA);
-    outline-offset: 2px;
-}
-
-/* Privacy Dashboard Notices */
-.eipsi-privacy-dashboard .eipsi-message {
-    animation: slideInDown 0.3s ease;
-}
-
-@keyframes slideInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Privacy Dashboard Toggle Groups */
-.eipsi-privacy-dashboard .eipsi-toggle-group {
-    margin: 20px 0;
-    padding: 15px;
-    background: #f8f9fa;
-    border-left: 4px solid var(--eipsi-color-primary, #3B6CAA);
-    border-radius: 4px;
-}
-
-.eipsi-privacy-dashboard .eipsi-toggle-group h3 {
-    margin-top: 0;
-    color: var(--eipsi-color-primary, #3B6CAA);
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.eipsi-privacy-dashboard .eipsi-toggle-group label {
-    display: block;
-    margin: 10px 0;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 4px;
-    transition: background 0.2s;
-}
-
-.eipsi-privacy-dashboard .eipsi-toggle-group label:hover {
-    background: rgba(59, 108, 170, 0.05);
-}
-
-.eipsi-privacy-dashboard .eipsi-toggle-group input[type="checkbox"] {
-    margin-right: 8px;
-    cursor: pointer;
-}
-
-.eipsi-privacy-dashboard .eipsi-toggle-group input[type="checkbox"]:disabled {
-    cursor: not-allowed;
-    opacity: 0.8;
-}
-
-.eipsi-privacy-dashboard .eipsi-tooltip {
-    font-size: 11px;
-    color: #64748b;
-    margin-left: 8px;
-    font-style: italic;
-}
-
-.eipsi-privacy-dashboard .eipsi-section-description {
-    margin: 10px 0;
-    padding: 8px;
-    background: #fff3cd;
-    border-left: 3px solid #ffc107;
-    color: #856404;
-    font-size: 12px;
-    border-radius: 3px;
-}
-
-.eipsi-privacy-dashboard .eipsi-info-box {
-    margin-top: 20px;
-    padding: 12px;
-    background: #e3f2fd;
-    border-left: 4px solid var(--eipsi-color-primary, #3B6CAA);
-    border-radius: 4px;
-    color: var(--eipsi-color-primary, #3B6CAA);
-    font-size: 12px;
-}
-
-.eipsi-privacy-dashboard .eipsi-info-box ul {
-    margin: 8px 0;
-    padding-left: 20px;
-}
-
-.eipsi-privacy-dashboard .eipsi-info-box li {
-    margin: 6px 0;
 }
