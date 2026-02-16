@@ -13,12 +13,12 @@ if (!defined('ABSPATH')) {
 
 // Get available studies from wp_survey_studies table
 global $wpdb;
-$studies = $wpdb->get_results($wpdb->prepare(
+$studies = $wpdb->get_results(
     "SELECT id, study_name, study_code, status
     FROM {$wpdb->prefix}survey_studies
     WHERE status IN ('active', 'paused', 'completed')
     ORDER BY created_at DESC"
-));
+);
 
 // Get selected study from URL
 $selected_study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
@@ -49,6 +49,12 @@ if ($selected_study_id) {
         }
     }
 }
+
+$investigator_email = $config['investigator_alert_email'] ?? '';
+if (empty($investigator_email)) {
+    $investigator_email = get_option('admin_email');
+}
+$config['investigator_alert_email'] = $investigator_email;
 ?>
 
 <div class="eipsi-cron-reminders-tab">
@@ -76,7 +82,7 @@ if ($selected_study_id) {
             <label for="study_selector" style="display: block; margin-bottom: 10px; font-weight: 600; color: #3B6CAA; font-size: 14px;">
                 📊 <?php _e('Seleccionar Estudio Longitudinal', 'eipsi-forms'); ?>
             </label>
-            <select id="study_selector" style="width: 100%; max-width: 600px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
+            <select id="study_selector" aria-describedby="study_selector_help" style="width: 100%; max-width: 600px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;">
                 <option value=""><?php _e('-- Seleccionar un estudio --', 'eipsi-forms'); ?></option>
                 <?php foreach ($studies as $study): ?>
                     <option value="<?php echo esc_attr($study->id); ?>" <?php selected($selected_study_id, $study->id); ?>>
@@ -84,7 +90,7 @@ if ($selected_study_id) {
                     </option>
                 <?php endforeach; ?>
             </select>
-            <p style="margin: 8px 0 0 0; font-size: 13px; color: #666;">
+            <p id="study_selector_help" style="margin: 8px 0 0 0; font-size: 13px; color: #666;">
                 <?php _e('Selecciona un estudio para ver y configurar sus recordatorios automáticos.', 'eipsi-forms'); ?>
             </p>
         </div>
@@ -126,12 +132,13 @@ if ($selected_study_id) {
                                    value="<?php echo esc_attr(intval($config['reminder_days_before'])); ?>"
                                    min="1"
                                    max="30"
+                                   aria-describedby="reminder_days_before_help"
                                    style="width: 120px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 500;">
                             <span style="color: #666; font-size: 13px; background: #e8ecef; padding: 4px 10px; border-radius: 12px;">
                                 <?php _e('Rango: 1-30 días', 'eipsi-forms'); ?>
                             </span>
                         </div>
-                        <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                        <p id="reminder_days_before_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
                             <?php _e('¿Con cuánta anticipación quieres que se envíen los recordatorios?', 'eipsi-forms'); ?>
                         </p>
                     </div>
@@ -147,12 +154,13 @@ if ($selected_study_id) {
                                    value="<?php echo esc_attr(intval($config['max_reminder_emails'])); ?>"
                                    min="1"
                                    max="500"
+                                   aria-describedby="max_reminder_emails_help"
                                    style="width: 120px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 500;">
                             <span style="color: #666; font-size: 13px; background: #e8ecef; padding: 4px 10px; border-radius: 12px;">
                                 <?php _e('Rango: 1-500 emails', 'eipsi-forms'); ?>
                             </span>
                         </div>
-                        <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                        <p id="max_reminder_emails_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
                             <?php _e('Limita la carga del servidor evitando enviar demasiados emails en una sola ejecución.', 'eipsi-forms'); ?>
                         </p>
                     </div>
@@ -189,12 +197,13 @@ if ($selected_study_id) {
                                    value="<?php echo esc_attr(intval($config['dropout_recovery_days'])); ?>"
                                    min="1"
                                    max="90"
+                                   aria-describedby="dropout_recovery_days_help"
                                    style="width: 120px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 500;">
                             <span style="color: #666; font-size: 13px; background: #fff3cd; padding: 4px 10px; border-radius: 12px;">
                                 <?php _e('Rango: 1-90 días', 'eipsi-forms'); ?>
                             </span>
                         </div>
-                        <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                        <p id="dropout_recovery_days_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
                             <?php _e('¿Cuántos días después del vencimiento quieres que se envíe el mensaje de recuperación?', 'eipsi-forms'); ?>
                         </p>
                     </div>
@@ -210,12 +219,13 @@ if ($selected_study_id) {
                                    value="<?php echo esc_attr(intval($config['max_recovery_emails'])); ?>"
                                    min="1"
                                    max="500"
+                                   aria-describedby="max_recovery_emails_help"
                                    style="width: 120px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 500;">
                             <span style="color: #666; font-size: 13px; background: #fff3cd; padding: 4px 10px; border-radius: 12px;">
                                 <?php _e('Rango: 1-500 emails', 'eipsi-forms'); ?>
                             </span>
                         </div>
-                        <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                        <p id="max_recovery_emails_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
                             <?php _e('Limita cuántos emails de recuperación se envían en una ejecución para evitar sobrecarga.', 'eipsi-forms'); ?>
                         </p>
                     </div>
@@ -250,6 +260,7 @@ if ($selected_study_id) {
                                name="investigator_alert_email"
                                value="<?php echo esc_attr($config['investigator_alert_email']); ?>"
                                placeholder="investigador@ejemplo.com"
+                               aria-describedby="investigator_alert_email_help"
                                style="width: 100%; max-width: 450px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
                         <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap;">
                             <span style="color: #666; font-size: 13px; background: #e8f5e9; padding: 4px 10px; border-radius: 12px;">
@@ -259,7 +270,7 @@ if ($selected_study_id) {
                                 <?php _e('Default: ' . esc_html(get_option('admin_email')), 'eipsi-forms'); ?>
                             </span>
                         </div>
-                        <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                        <p id="investigator_alert_email_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
                             <?php _e('Email donde recibirás los resúmenes de actividad del cron job.', 'eipsi-forms'); ?>
                         </p>
                     </div>
