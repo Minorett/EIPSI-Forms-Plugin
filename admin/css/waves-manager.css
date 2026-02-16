@@ -1,16 +1,55 @@
 /**
  * EIPSI Forms - Waves Manager Styles
- * Includes Close & Anonymize Study Modal
- * High Contrast Dark Theme
- * 
+ * Light Mode Theme
+ *
  * @package EIPSI_Forms
- * @since 1.5.0
+ * @version 1.5.0
  */
 
-/* ===========================
-   MODAL CONTAINER & OVERLAY
-   =========================== */
+/* ==========================================================================
+   CSS VARIABLES
+   ========================================================================== */
+:root {
+    /* Primary Colors */
+    --eipsi-primary: #3B6CAA;
+    --eipsi-primary-hover: #1E3A5F;
+    --eipsi-primary-light: #AED6F1;
+    --eipsi-primary-lighter: #d6edff;
 
+    /* Background Colors */
+    --eipsi-bg: #FFFFFF;
+    --eipsi-bg-subtle: #f8f9fa;
+    --eipsi-bg-muted: #f1f5f9;
+
+    /* Text Colors */
+    --eipsi-text: #2c3e50;
+    --eipsi-text-muted: #64748b;
+    --eipsi-text-light: #94a3b8;
+
+    /* Border Colors */
+    --eipsi-border: #e2e8f0;
+    --eipsi-border-dark: #cbd5e0;
+
+    /* Status Colors */
+    --eipsi-success: #008080;
+    --eipsi-success-bg: #e8f5e9;
+    --eipsi-error: #800000;
+    --eipsi-error-bg: #fff5f5;
+    --eipsi-warning: #ffc107;
+    --eipsi-warning-bg: #fff8e5;
+
+    /* Shadows */
+    --eipsi-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --eipsi-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+    /* Border Radius */
+    --eipsi-radius: 8px;
+    --eipsi-radius-lg: 12px;
+}
+
+/* ==========================================================================
+   MODAL CONTAINER & OVERLAY
+   ========================================================================== */
 .eipsi-modal {
     position: fixed;
     top: 0;
@@ -27,7 +66,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.5);
     cursor: pointer;
 }
 
@@ -36,9 +75,9 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #1a1a1a;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    background: var(--eipsi-bg);
+    border-radius: var(--eipsi-radius-lg);
+    box-shadow: var(--eipsi-shadow-lg);
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
@@ -46,7 +85,7 @@
     flex-direction: column;
     overflow: hidden;
     animation: eipsiSlideIn 0.3s ease-out;
-    border: 2px solid #333;
+    border: 1px solid var(--eipsi-border);
 }
 
 @keyframes eipsiSlideIn {
@@ -60,14 +99,13 @@
     }
 }
 
-/* ===========================
+/* ==========================================================================
    MODAL HEADER
-   =========================== */
-
+   ========================================================================== */
 .eipsi-modal-header {
     padding: 20px;
-    background: #2d3748;
-    border-bottom: 2px solid #4a5568;
+    background: var(--eipsi-bg-subtle);
+    border-bottom: 1px solid var(--eipsi-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -77,8 +115,8 @@
     margin: 0;
     padding: 0;
     font-size: 18px;
-    font-weight: 700;
-    color: #ffffff;
+    font-weight: 600;
+    color: var(--eipsi-text);
     line-height: 1.4;
 }
 
@@ -86,7 +124,7 @@
     background: none;
     border: none;
     font-size: 28px;
-    color: #9ca3af;
+    color: var(--eipsi-text-muted);
     cursor: pointer;
     line-height: 1;
     padding: 0;
@@ -95,124 +133,117 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 6px;
     transition: all 0.2s ease;
 }
 
 .eipsi-modal-close:hover {
-    background: #4a5568;
-    color: #ffffff;
+    background: var(--eipsi-error-bg);
+    color: var(--eipsi-error);
 }
 
-/* ===========================
+/* ==========================================================================
    MODAL BODY
-   =========================== */
-
+   ========================================================================== */
 .eipsi-modal-body {
     padding: 20px;
     overflow-y: auto;
     flex: 1;
-    color: #e2e8f0;
+    color: var(--eipsi-text);
 }
 
-/* ===========================
+/* ==========================================================================
    MODAL FOOTER
-   =========================== */
-
+   ========================================================================== */
 .eipsi-modal-footer {
     padding: 20px;
-    background: #2d3748;
-    border-top: 2px solid #4a5568;
+    background: var(--eipsi-bg-subtle);
+    border-top: 1px solid var(--eipsi-border);
     display: flex;
     justify-content: flex-end;
     gap: 12px;
 }
 
-/* ===========================
+/* ==========================================================================
    BUTTONS
-   =========================== */
-
+   ========================================================================== */
 .eipsi-modal-footer .button {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
+    padding: 0.625rem 1.25rem;
+    border-radius: 6px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    border: 2px solid transparent;
+    border: 1px solid transparent;
 }
 
 .eipsi-modal-footer .button-primary {
-    background: #3b82f6;
+    background: var(--eipsi-primary);
     color: white;
-    border-color: #3b82f6;
+    border-color: var(--eipsi-primary);
 }
 
 .eipsi-modal-footer .button-primary:hover {
-    background: #2563eb;
-    border-color: #2563eb;
+    background: var(--eipsi-primary-hover);
+    border-color: var(--eipsi-primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(59, 108, 170, 0.3);
 }
 
 .eipsi-modal-footer .button-secondary {
-    background: #4a5568;
-    color: #e2e8f0;
-    border-color: #718096;
+    background: var(--eipsi-bg);
+    color: var(--eipsi-text);
+    border-color: var(--eipsi-border);
 }
 
 .eipsi-modal-footer .button-secondary:hover {
-    background: #374151;
-    border-color: #3b82f6;
+    background: var(--eipsi-bg-subtle);
+    border-color: var(--eipsi-border-dark);
 }
 
 .eipsi-modal-footer .button-danger {
-    background: #dc2626;
+    background: var(--eipsi-error);
     color: white;
-    border-color: #dc2626;
+    border-color: var(--eipsi-error);
 }
 
 .eipsi-modal-footer .button-danger:hover {
-    background: #b91c1c;
-    border-color: #b91c1c;
+    background: #660000;
+    border-color: #660000;
 }
 
 .eipsi-modal-footer .button-link-delete {
     background: transparent;
-    color: #f87171;
+    color: var(--eipsi-error);
     border: none;
     text-decoration: underline;
 }
 
 .eipsi-modal-footer .button-link-delete:hover {
-    color: #ef4444;
+    color: #660000;
 }
 
-/* ===========================
+/* ==========================================================================
    WAVES MANAGER WRAPPER
-   =========================== */
-
+   ========================================================================== */
 .eipsi-waves-manager-wrap {
-    background: #1a1a1a;
+    background: var(--eipsi-bg);
     padding: 2rem;
-    border-radius: 12px;
-    border: 2px solid #333;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border-radius: var(--eipsi-radius);
+    border: 1px solid var(--eipsi-border);
+    box-shadow: var(--eipsi-shadow);
 }
 
-/* ===========================
-   WAVES HEADER
-   =========================== */
-
+/* ==========================================================================
+   HEADER WITH STUDY SELECTOR
+   ========================================================================== */
 .eipsi-waves-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: #2d3748;
-    border-radius: 12px;
-    border: 2px solid #4a5568;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--eipsi-border);
     flex-wrap: wrap;
     gap: 1rem;
 }
@@ -220,177 +251,213 @@
 .study-selector-wrap {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    flex: 1;
-    min-width: 200px;
+    gap: 0.75rem;
 }
 
 .study-selector-wrap label {
-    color: #ffffff;
     font-weight: 600;
-    font-size: 14px;
+    color: var(--eipsi-text);
 }
 
-.study-selector-wrap select {
-    padding: 0.75rem 2.5rem 0.75rem 1rem;
-    border-radius: 8px;
-    border: 2px solid #4a5568;
-    background: #374151;
-    color: #ffffff;
+#eipsi-study-selector {
+    min-width: 300px;
+    padding: 0.625rem 2rem 0.625rem 0.875rem;
+    border: 1px solid var(--eipsi-border);
+    border-radius: 6px;
     font-size: 14px;
+    color: var(--eipsi-text);
+    background-color: var(--eipsi-bg);
     cursor: pointer;
     transition: all 0.2s ease;
-    appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, #3b82f6 50%),
-                      linear-gradient(135deg, #3b82f6 50%, transparent 50%);
-    background-position: calc(100% - 1rem) center,
-                         calc(100% - 0.625rem) center;
-    background-size: 0.375rem 0.375rem,
-                     0.375rem 0.375rem;
-    background-repeat: no-repeat;
 }
 
-.study-selector-wrap select:focus {
+#eipsi-study-selector:focus {
+    border-color: var(--eipsi-primary);
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.15);
 }
 
 .header-actions {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
-.header-actions .button-primary {
-    background: #3b82f6;
-    color: white;
-    border: 2px solid #3b82f6;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.header-actions .button-primary:hover {
-    background: #2563eb;
-    border-color: #2563eb;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-/* ===========================
-   WAVES LIST
-   =========================== */
-
+/* ==========================================================================
+   WAVES GRID
+   ========================================================================== */
 .eipsi-waves-list {
-    margin-top: 1rem;
+    margin-top: 1.5rem;
 }
 
 .eipsi-waves-grid {
     display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 1.5rem;
-    align-items: stretch;
 }
 
 .eipsi-waves-grid.columns-1 {
     grid-template-columns: 1fr;
+    max-width: 500px;
 }
 
 .eipsi-waves-grid.columns-2 {
-    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
 }
 
 .eipsi-waves-grid.columns-3 {
-    grid-template-columns: repeat(3, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
 }
 
+@media (max-width: 1200px) {
+    .eipsi-waves-grid.columns-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .eipsi-waves-grid.columns-2,
+    .eipsi-waves-grid.columns-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================================================
+   WAVE CARDS
+   ========================================================================== */
 .wave-card {
-    background: #2d3748;
-    border: 2px solid #4a5568;
-    border-radius: 12px;
+    background: var(--eipsi-bg);
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
     padding: 1.5rem;
+    box-shadow: var(--eipsi-shadow);
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
 
 .wave-card:hover {
-    transform: translateY(-4px);
-    border-color: #3b82f6;
-    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+    box-shadow: var(--eipsi-shadow-lg);
+    transform: translateY(-2px);
+    border-color: var(--eipsi-primary-light);
 }
 
-.wave-card.wave-completed {
-    border-left: 4px solid #10b981;
+.wave-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--eipsi-primary);
 }
 
-.wave-card.wave-active {
-    border-left: 4px solid #3b82f6;
+.wave-card.wave-draft::before {
+    background: var(--eipsi-text-light);
 }
 
-.wave-card.wave-pending {
-    border-left: 4px solid #f59e0b;
+.wave-card.wave-active::before {
+    background: var(--eipsi-success);
 }
 
+.wave-card.wave-completed::before {
+    background: var(--eipsi-warning);
+}
+
+.wave-card.wave-closed::before {
+    background: var(--eipsi-error);
+}
+
+/* Card Header */
 .wave-card-header {
     display: flex;
-    justify-content: space-between;
     align-items: flex-start;
+    gap: 0.75rem;
     margin-bottom: 1rem;
 }
 
-.wave-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #ffffff;
-    margin: 0;
+.wave-identifier {
+    flex-shrink: 0;
 }
 
-.wave-subtitle {
-    font-size: 13px;
-    color: #9ca3af;
-    margin-top: 0.25rem;
+.wave-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--eipsi-primary);
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 8px;
+}
+
+.wave-title-section {
+    flex: 1;
+    min-width: 0;
+}
+
+.wave-title {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--eipsi-text);
+    line-height: 1.3;
 }
 
 .wave-badge {
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
+.wave-badge.draft {
+    background: var(--eipsi-bg-muted);
+    color: var(--eipsi-text-muted);
+}
+
 .wave-badge.active {
-    background: #1e3a8a;
-    color: #bfdbfe;
-    border: 1px solid #3b82f6;
+    background: var(--eipsi-success-bg);
+    color: var(--eipsi-success);
 }
 
 .wave-badge.completed {
-    background: #064e3b;
-    color: #a7f3d0;
-    border: 1px solid #10b981;
+    background: var(--eipsi-warning-bg);
+    color: var(--eipsi-warning-text);
 }
 
-.wave-badge.pending {
-    background: #78350f;
-    color: #fde68a;
-    border: 1px solid #d97706;
+.wave-badge.closed {
+    background: var(--eipsi-error-bg);
+    color: var(--eipsi-error);
 }
 
+/* Card Body */
 .wave-card-body {
-    margin: 1rem 0;
+    margin-bottom: 1rem;
+}
+
+.wave-description {
+    color: var(--eipsi-text-muted);
+    font-size: 0.875rem;
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
+}
+
+/* Wave Info */
+.wave-info {
+    margin-bottom: 1rem;
 }
 
 .wave-info-row {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 0.5rem 0;
-    border-bottom: 1px solid #4a5568;
-    color: #e2e8f0;
-    font-size: 14px;
+    border-bottom: 1px solid var(--eipsi-border);
 }
 
 .wave-info-row:last-child {
@@ -398,383 +465,313 @@
 }
 
 .wave-info-label {
-    color: #9ca3af;
-    font-weight: 500;
+    color: var(--eipsi-text-muted);
+    font-size: 0.875rem;
 }
 
 .wave-info-value {
-    color: #ffffff;
-    font-weight: 600;
-    text-align: right;
+    color: var(--eipsi-text);
+    font-weight: 500;
+    font-size: 0.875rem;
 }
 
+/* Wave Stats */
+.wave-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--eipsi-bg-subtle);
+    border-radius: 6px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--eipsi-primary);
+    line-height: 1.2;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--eipsi-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+/* Progress Bar */
+.wave-progress {
+    margin-bottom: 1rem;
+}
+
+.progress-bar {
+    height: 8px;
+    background: var(--eipsi-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--eipsi-primary) 0%, var(--eipsi-primary-light) 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--eipsi-text-muted);
+    margin-top: 0.5rem;
+}
+
+/* Card Actions */
 .wave-card-actions {
     display: flex;
-    gap: 0.75rem;
-    margin-top: 1rem;
+    gap: 0.5rem;
     flex-wrap: wrap;
 }
 
 .wave-card-actions .button {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 2px solid;
+    flex: 1;
+    min-width: 80px;
+    justify-content: center;
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
 }
 
-.wave-card-actions .button-secondary {
-    background: #4a5568;
-    color: #e2e8f0;
-    border-color: #718096;
-}
-
-.wave-card-actions .button-secondary:hover {
-    background: #374151;
-    border-color: #3b82f6;
-}
-
-.wave-card-actions .button-link {
-    background: none;
-    border: none;
-    color: #60a5fa;
-    cursor: pointer;
-    text-decoration: underline;
-    padding: 0.5rem;
-}
-
-.wave-card-actions .button-link:hover {
-    color: #3b82f6;
-}
-
-.wave-card-actions .button-delete {
-    background: transparent;
-    border: none;
-    color: #f87171;
-    cursor: pointer;
-    padding: 0.5rem;
-    transition: color 0.2s ease;
-}
-
-.wave-card-actions .button-delete:hover {
-    color: #ef4444;
-}
-
-/* ===========================
+/* ==========================================================================
    EMPTY STATE
-   =========================== */
-
+   ========================================================================== */
 .eipsi-waves-empty {
     text-align: center;
-    padding: 4rem 2rem;
-    background: #2d3748;
-    border-radius: 12px;
-    border: 2px dashed #4a5568;
+    padding: 3rem 2rem;
+    background: var(--eipsi-bg-subtle);
+    border: 2px dashed var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
 }
 
 .eipsi-waves-empty h3 {
-    color: #ffffff;
+    color: var(--eipsi-text);
+    margin: 0 0 0.5rem 0;
     font-size: 1.25rem;
-    margin-bottom: 0.5rem;
 }
 
 .eipsi-waves-empty p {
-    color: #9ca3af;
+    color: var(--eipsi-text-muted);
     margin: 0;
 }
 
-/* ===========================
-   WAVES FORM
-   =========================== */
-
-.eipsi-wave-form {
-    background: #2d3748;
-    border-radius: 12px;
-    border: 2px solid #4a5568;
-    padding: 2rem;
-    margin-bottom: 2rem;
+/* ==========================================================================
+   FORM STYLES IN MODALS
+   ========================================================================== */
+.eipsi-form-group {
+    margin-bottom: 1.25rem;
 }
 
-.eipsi-wave-form h3 {
-    color: #ffffff;
-    font-size: 1.25rem;
-    margin: 0 0 1.5rem 0;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #4a5568;
-}
-
-.eipsi-form-row {
-    margin-bottom: 1.5rem;
-}
-
-.eipsi-form-label {
+.eipsi-form-group label {
     display: block;
-    color: #ffffff;
-    font-weight: 600;
     margin-bottom: 0.5rem;
-    font-size: 14px;
+    font-weight: 600;
+    color: var(--eipsi-text);
 }
 
-.eipsi-form-label.required::after {
-    content: ' *';
-    color: #ef4444;
-}
-
-.eipsi-form-input,
-.eipsi-form-select,
-.eipsi-form-textarea {
+.eipsi-form-group input[type="text"],
+.eipsi-form-group input[type="email"],
+.eipsi-form-group input[type="number"],
+.eipsi-form-group input[type="date"],
+.eipsi-form-group input[type="datetime-local"],
+.eipsi-form-group textarea,
+.eipsi-form-group select {
     width: 100%;
-    padding: 0.75rem;
-    border-radius: 8px;
-    border: 2px solid #4a5568;
-    background: #374151;
-    color: #ffffff;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--eipsi-border);
+    border-radius: 6px;
     font-size: 14px;
+    color: var(--eipsi-text);
+    background: var(--eipsi-bg);
     transition: all 0.2s ease;
-    font-family: inherit;
 }
 
-.eipsi-form-input:focus,
-.eipsi-form-select:focus,
-.eipsi-form-textarea:focus {
+.eipsi-form-group input:focus,
+.eipsi-form-group textarea:focus,
+.eipsi-form-group select:focus {
+    border-color: var(--eipsi-primary);
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    background: #1f2937;
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.15);
 }
 
-.eipsi-form-input::placeholder,
-.eipsi-form-textarea::placeholder {
-    color: #9ca3af;
+.eipsi-form-group .description {
+    font-size: 0.8125rem;
+    color: var(--eipsi-text-muted);
+    margin-top: 0.375rem;
 }
 
-.eipsi-form-textarea {
-    resize: vertical;
-    min-height: 100px;
-    line-height: 1.5;
+/* ==========================================================================
+   PARTICIPANTS SECTION
+   ========================================================================== */
+.participants-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--eipsi-border);
 }
 
-.eipsi-form-select {
-    appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, #3b82f6 50%),
-                      linear-gradient(135deg, #3b82f6 50%, transparent 50%);
-    background-position: calc(100% - 1rem) center,
-                         calc(100% - 0.625rem) center;
-    background-size: 0.375rem 0.375rem,
-                     0.375rem 0.375rem;
-    background-repeat: no-repeat;
-}
-
-.eipsi-form-help {
-    margin-top: 0.25rem;
-    font-size: 13px;
-    color: #9ca3af;
-}
-
-/* ===========================
-   REMINDERS SECTION
-   =========================== */
-
-.eipsi-reminders-section {
-    background: #374151;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-top: 1.5rem;
-    border: 2px solid #4a5568;
-}
-
-.eipsi-reminders-section h4 {
-    color: #ffffff;
+.participants-section h3 {
+    color: var(--eipsi-text);
     margin: 0 0 1rem 0;
-    font-size: 16px;
+    font-size: 1.125rem;
 }
 
-.reminder-row {
+.participants-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.participants-count {
+    color: var(--eipsi-text-muted);
+    font-size: 0.875rem;
+}
+
+/* ==========================================================================
+   PARTICIPANTS TABLE
+   ========================================================================== */
+.participants-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--eipsi-border);
+    border-radius: var(--eipsi-radius);
+}
+
+.participants-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.participants-table th,
+.participants-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--eipsi-border);
+}
+
+.participants-table th {
+    background: var(--eipsi-bg-subtle);
+    font-weight: 600;
+    color: var(--eipsi-text);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.participants-table tbody tr:hover {
+    background: var(--eipsi-primary-lighter);
+}
+
+.participants-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status cell */
+.participants-table .status-cell {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background: #1f2937;
-    border-radius: 8px;
-    border: 1px solid #4a5568;
+    gap: 0.5rem;
 }
 
-.reminder-row:last-child {
-    margin-bottom: 0;
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
 }
 
-.reminder-row input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #3b82f6;
-    cursor: pointer;
+.status-dot.pending {
+    background: var(--eipsi-warning);
 }
 
-.reminder-row label {
-    color: #e2e8f0;
-    font-size: 14px;
-    cursor: pointer;
-    flex: 1;
+.status-dot.submitted {
+    background: var(--eipsi-success);
 }
 
-.reminder-row input[type="number"] {
-    width: 80px;
-    padding: 0.5rem;
-    border-radius: 6px;
-    border: 2px solid #4a5568;
-    background: #374151;
-    color: #ffffff;
-    text-align: center;
+.status-dot.expired {
+    background: var(--eipsi-error);
 }
 
-/* ===========================
-   TIMING SECTION
-   =========================== */
-
-.eipsi-timing-section {
-    background: #374151;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-top: 1.5rem;
-    border: 2px solid #4a5568;
-}
-
-.eipsi-timing-section h4 {
-    color: #ffffff;
-    margin: 0 0 1rem 0;
-    font-size: 16px;
-}
-
-.timing-options {
+/* ==========================================================================
+   LOADING STATES
+   ========================================================================== */
+.eipsi-loading {
     display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.timing-option {
-    flex: 1;
-    min-width: 150px;
-    padding: 1rem;
-    background: #1f2937;
-    border: 2px solid #4a5568;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.timing-option:hover {
-    border-color: #3b82f6;
-}
-
-.timing-option.selected {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.1);
-}
-
-.timing-option input[type="radio"] {
-    display: none;
-}
-
-.timing-option-title {
-    color: #ffffff;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-
-.timing-option-desc {
-    color: #9ca3af;
-    font-size: 13px;
-}
-
-/* ===========================
-   TEMPLATE BUTTONS
-   =========================== */
-
-.eipsi-template-buttons {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.5rem;
-}
-
-.eipsi-template-btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: #4a5568;
-    color: #e2e8f0;
-    border: 2px solid #718096;
-}
-
-.eipsi-template-btn:hover {
-    background: #3b82f6;
-    border-color: #3b82f6;
-    color: #ffffff;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-/* ===========================
-   LOADING STATE
-   =========================== */
-
-.eipsi-loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(26, 26, 26, 0.9);
-    display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 10;
+    padding: 2rem;
+    color: var(--eipsi-text-muted);
 }
 
-.eipsi-loading-overlay .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #4a5568;
-    border-top: 4px solid #3b82f6;
+.eipsi-loading::after {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--eipsi-border);
+    border-top-color: var(--eipsi-primary);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    margin-left: 0.75rem;
+    animation: eipsiSpin 0.8s linear infinite;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+@keyframes eipsiSpin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.eipsi-loading-overlay p {
-    color: #e2e8f0;
-    margin-top: 1rem;
+/* ==========================================================================
+   ALERTS & MESSAGES
+   ========================================================================== */
+.eipsi-alert {
+    padding: 1rem 1.25rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-weight: 500;
 }
 
-/* ===========================
+.eipsi-alert-success {
+    background: var(--eipsi-success-bg);
+    color: var(--eipsi-success);
+    border: 1px solid var(--eipsi-success);
+}
+
+.eipsi-alert-error {
+    background: var(--eipsi-error-bg);
+    color: var(--eipsi-error);
+    border: 1px solid var(--eipsi-error);
+}
+
+.eipsi-alert-warning {
+    background: var(--eipsi-warning-bg);
+    color: var(--eipsi-warning-text);
+    border: 1px solid var(--eipsi-warning);
+}
+
+/* ==========================================================================
    RESPONSIVE
-   =========================== */
-
-@media (max-width: 1200px) {
-    .eipsi-waves-grid.columns-3 {
-        grid-template-columns: repeat(2, minmax(260px, 1fr));
+   ========================================================================== */
+@media (max-width: 782px) {
+    .eipsi-waves-manager-wrap {
+        padding: 1rem;
     }
-}
 
-@media (max-width: 900px) {
-    .eipsi-waves-grid.columns-2,
-    .eipsi-waves-grid.columns-3 {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 768px) {
     .eipsi-waves-header {
         flex-direction: column;
         align-items: stretch;
@@ -785,12 +782,16 @@
         align-items: stretch;
     }
 
-    .header-actions {
-        width: 100%;
+    #eipsi-study-selector {
+        min-width: 100%;
     }
 
-    .header-actions .button-primary {
-        width: 100%;
+    .header-actions {
+        justify-content: stretch;
+    }
+
+    .header-actions .button {
+        flex: 1;
         justify-content: center;
     }
 
@@ -800,420 +801,10 @@
 
     .wave-card-actions .button {
         width: 100%;
-        text-align: center;
-    }
-}
-
-/* ===========================
-   PARTICIPANTS MANAGEMENT
-   =========================== */
-
-.eipsi-participants-section {
-    margin-top: 40px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-
-.eipsi-participants-section .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.eipsi-participants-section h2 {
-    margin: 0;
-    color: #495057;
-    font-size: 1.4rem;
-}
-
-.participants-table-container {
-    overflow-x: auto;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-#participants-table {
-    margin: 0;
-    border: none;
-}
-
-#participants-table th {
-    background: #f8f9fa;
-    font-weight: 600;
-    color: #495057;
-    padding: 12px 15px;
-}
-
-#participants-table td {
-    padding: 12px 15px;
-    vertical-align: middle;
-}
-
-.participant-status {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
-}
-
-.participant-status.status-active {
-    background: #d4edda;
-    color: #155724;
-}
-
-.participant-status.status-inactive {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.eipsi-edit-participant-btn,
-.eipsi-delete-participant-btn {
-    padding: 4px 12px !important;
-    font-size: 12px !important;
-}
-
-/* Time Limit Section */
-.time-limit-section {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 6px;
-    border: 1px solid #e9ecef;
-}
-
-.time-limit-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    margin: 0;
-}
-
-.time-limit-header input[type="checkbox"] {
-    margin: 0;
-}
-
-.time-limit-input .input-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.time-limit-input .input-suffix {
-    color: #6c757d;
-    font-size: 0.9rem;
-}
-
-.form-help {
-    display: block;
-    margin-top: 5px;
-    color: #6c757d;
-    font-size: 0.85rem;
-}
-
-/* Dark mode support for participants */
-@media (prefers-color-scheme: dark) {
-    .eipsi-participants-section {
-        background: #2c3e50;
-        border-color: #34495e;
     }
 
-    .eipsi-participants-section h2 {
-        color: #ecf0f1;
-    }
-
-    .participants-table-container {
-        background: #34495e;
-    }
-
-    #participants-table th {
-        background: #2c3e50;
-        color: #ecf0f1;
-    }
-
-    #participants-table td {
-        color: #ecf0f1;
-    }
-
-    .participant-status.status-active {
-        background: #27ae60;
-        color: white;
-    }
-
-    .participant-status.status-inactive {
-        background: #e74c3c;
-        color: white;
-    }
-
-    .time-limit-section {
-        background: #34495e;
-        border-color: #4a5f7a;
-    }
-
-    .time-limit-input .input-suffix,
-    .form-help {
-        color: #95a5a6;
-    }
-}
-
-/* ===========================
-   ADD PARTICIPANT MULTI-METHOD MODAL
-   =========================== */
-
-/* Tabs Navigation */
-.eipsi-tabs-nav {
-    display: flex;
-    border-bottom: 2px solid #4a5568;
-    margin-bottom: 20px;
-    gap: 5px;
-}
-
-.eipsi-tab-btn {
-    background: transparent;
-    border: none;
-    padding: 12px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #9ca3af;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-bottom: 3px solid transparent;
-    position: relative;
-}
-
-.eipsi-tab-btn:hover {
-    color: #ffffff;
-    background: rgba(59, 130, 246, 0.1);
-}
-
-.eipsi-tab-btn.active {
-    color: #3b82f6;
-    border-bottom-color: #3b82f6;
-}
-
-/* Tab Content */
-.eipsi-tab-content {
-    display: none;
-}
-
-.eipsi-tab-content.active {
-    display: block;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Form Styles dentro de tabs */
-.eipsi-tab-content .form-group {
-    margin-bottom: 20px;
-}
-
-.eipsi-tab-content .form-group label {
-    display: block;
-    color: #ffffff;
-    font-weight: 600;
-    margin-bottom: 8px;
-    font-size: 14px;
-}
-
-.eipsi-tab-content .form-group label .required {
-    color: #ef4444;
-}
-
-.eipsi-tab-content .form-group input[type="email"],
-.eipsi-tab-content .form-group input[type="text"],
-.eipsi-tab-content .form-group textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    border: 2px solid #4a5568;
-    background: #374151;
-    color: #ffffff;
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-
-.eipsi-tab-content .form-group input:focus,
-.eipsi-tab-content .form-group textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
-.eipsi-tab-content .form-group textarea {
-    resize: vertical;
-    min-height: 120px;
-    line-height: 1.6;
-}
-
-.eipsi-tab-content .form-group small.form-help {
-    display: block;
-    margin-top: 6px;
-    color: #9ca3af;
-    font-size: 13px;
-}
-
-/* Form Row (2 columns) */
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-@media (max-width: 768px) {
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Input Group (text + button) */
-.input-group {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.input-group input {
-    flex: 1;
-}
-
-/* Bulk Results Container */
-.bulk-results-container {
-    background: #1e3a8a;
-    border: 2px solid #3b82f6;
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 15px;
-}
-
-.bulk-results-container h4 {
-    margin: 0 0 12px 0;
-    color: #ffffff;
-    font-size: 16px;
-}
-
-.bulk-results-container ul {
-    margin: 0;
-    padding-left: 20px;
-}
-
-.bulk-results-container li {
-    color: #e2e8f0;
-    font-size: 14px;
-    margin-bottom: 6px;
-}
-
-.bulk-results-container li.error {
-    color: #fca5a5;
-}
-
-.bulk-results-container li.success {
-    color: #86efac;
-}
-
-/* Notice Inline */
-.notice.inline {
-    padding: 12px;
-    border-radius: 8px;
-    margin: 15px 0;
-}
-
-.notice.notice-info {
-    background: rgba(59, 130, 246, 0.1);
-    border-left: 4px solid #3b82f6;
-    color: #e2e8f0;
-}
-
-.notice.notice-warning {
-    background: rgba(245, 158, 11, 0.1);
-    border-left: 4px solid #f59e0b;
-    color: #e2e8f0;
-}
-
-.notice.notice-success {
-    background: rgba(16, 185, 129, 0.1);
-    border-left: 4px solid #10b981;
-    color: #e2e8f0;
-}
-
-.notice.notice-error {
-    background: rgba(239, 68, 68, 0.1);
-    border-left: 4px solid #ef4444;
-    color: #e2e8f0;
-}
-
-.notice p {
-    margin: 0;
-    font-size: 14px;
-}
-
-/* Public Registration Content */
-.public-registration-content {
-    padding: 10px 0;
-}
-
-.public-registration-content p {
-    color: #e2e8f0;
-    margin-bottom: 20px;
-}
-
-#public-registration-url {
-    background: #1f2937 !important;
-    cursor: text;
-}
-
-#public-registration-url:focus {
-    background: #111827 !important;
-}
-
-/* Button Copy */
-#btn-copy-public-link {
-    white-space: nowrap;
-}
-
-/* Modal Footer within tabs */
-.eipsi-tab-content .modal-footer {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 2px solid #4a5568;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-}
-
-/* Responsive Tabs */
-@media (max-width: 640px) {
-    .eipsi-tabs-nav {
+    .participants-toolbar {
         flex-direction: column;
-        border-bottom: none;
-        gap: 0;
-    }
-
-    .eipsi-tab-btn {
-        border-bottom: 1px solid #4a5568;
-        border-left: 3px solid transparent;
-        text-align: left;
-    }
-
-    .eipsi-tab-btn.active {
-        border-bottom-color: #4a5568;
-        border-left-color: #3b82f6;
-        background: rgba(59, 130, 246, 0.1);
+        align-items: stretch;
     }
 }

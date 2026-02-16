@@ -255,6 +255,51 @@ function eipsi_enqueue_randomization_assets($hook) {
 add_action('admin_enqueue_scripts', 'eipsi_enqueue_randomization_assets');
 
 /**
+ * Enqueue Admin Light Theme CSS for all EIPSI admin pages
+ *
+ * @since 1.5.0
+ */
+add_action('admin_enqueue_scripts', 'eipsi_enqueue_admin_light_theme');
+function eipsi_enqueue_admin_light_theme($hook) {
+    $page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
+
+    // List of EIPSI admin pages
+    $eipsi_pages = array(
+        'eipsi-results-experience',
+        'eipsi-configuration',
+        'eipsi-longitudinal-study'
+    );
+
+    if (in_array($page, $eipsi_pages, true)) {
+        // Enqueue the unified admin light theme
+        wp_enqueue_style(
+            'eipsi-admin-light-theme',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/css/admin-light-theme.css',
+            array(),
+            EIPSI_FORMS_VERSION
+        );
+
+        // Also enqueue the existing admin styles as dependencies
+        wp_enqueue_style(
+            'eipsi-admin-style',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/css/admin-style.css',
+            array('eipsi-admin-light-theme'),
+            EIPSI_FORMS_VERSION
+        );
+
+        // Configuration panel styles for the configuration page
+        if ($page === 'eipsi-configuration') {
+            wp_enqueue_style(
+                'eipsi-configuration-panel',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/css/configuration-panel.css',
+                array('eipsi-admin-light-theme'),
+                EIPSI_FORMS_VERSION
+            );
+        }
+    }
+}
+
+/**
  * Enqueue Setup Wizard assets en admin (v1.5.1)
  */
 add_action('admin_enqueue_scripts', 'eipsi_enqueue_setup_wizard_assets');
