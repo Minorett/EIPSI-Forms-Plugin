@@ -268,6 +268,9 @@ function eipsi_shortcode_help_callback($post) {
         </code>
         
         <?php
+        // Allow other shortcodes to add their help content
+        do_action('eipsi_shortcode_help_metabox_content', $post);
+        
         // Get available form templates
         $templates = get_posts(array(
             'post_type' => 'eipsi_form_template',
@@ -353,3 +356,268 @@ function eipsi_shortcode_indicator_column_content($column, $post_id) {
 }
 add_action('manage_posts_custom_column', 'eipsi_shortcode_indicator_column_content', 10, 2);
 add_action('manage_pages_custom_column', 'eipsi_shortcode_indicator_column_content', 10, 2);
+
+/**
+ * Shortcode: [eipsi_longitudinal_study id="123" wave="1" time_limit="30"]
+ * 
+ * Display a longitudinal study configuration with waves, time limits, and settings.
+ * The shortcode remains persistent regardless of study configuration changes.
+ * 
+ * @param array $atts Shortcode attributes
+ * @return string Rendered HTML
+ * 
+ * @since 1.5.0
+ */
+function eipsi_longitudinal_study_shortcode($atts) {
+    // Parse attributes with defaults
+    $atts = shortcode_atts(array(
+        'id' => 0,              // Study ID (required)
+        'wave' => 0,            // Specific wave to display (optional, 0 = all waves)
+        'time_limit' => 0,      // Override time limit in minutes (optional, 0 = use study default)
+        'show_config' => 'yes', // Show study configuration details (yes/no)
+        'show_waves' => 'yes',  // Show waves list (yes/no)
+        'theme' => 'default',   // Theme: default, compact, card
+    ), $atts, 'eipsi_longitudinal_study');
+    
+    $study_id = absint($atts['id']);
+    $wave_index = absint($atts['wave']);
+    $time_limit_override = absint($atts['time_limit']);
+    $show_config = strtolower($atts['show_config']) === 'yes';
+    $show_waves = strtolower($atts['show_waves']) === 'yes';
+    $theme = sanitize_key($atts['theme']);
+    
+    // Validate study ID
+    if ($study_id === 0) {
+        return eipsi_longitudinal_study_error(
+            __('⚠️ Error: Se requiere el ID del estudio longitudinal.', 'eipsi-forms'),
+            __('Ejemplo: [eipsi_longitudinal_study id="123"]', 'eipsi-forms')
+        );
+    }
+    
+    // Get study data from database
+    global $wpdb;
+    $study = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $study_id
+    ));
+    
+    if (!$study) {
+        return eipsi_longitudinal_study_error(
+            sprintf(__('⚠️ Error: No se encontró el estudio con ID %d.', 'eipsi-forms'), $study_id)
+        );
+    }
+    
+    // Check if study is active
+    if ($study->status !== 'active' && $study->status !== 'paused') {
+        return eipsi_longitudinal_study_error(
+            sprintf(__('ℹ️ El estudio "%s" no está activo actualmente.', 'eipsi-forms'), esc_html($study->study_name))
+        );
+    }
+    
+    // Enqueue required assets
+    wp_enqueue_style(
+        'eipsi-longitudinal-study-css',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/longitudinal-study-shortcode.css',
+        array('eipsi-theme-toggle-css'),
+        EIPSI_FORMS_VERSION
+    );
+    
+    wp_enqueue_script(
+        'eipsi-longitudinal-study-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/longitudinal-study-shortcode.js',
+        array('jquery'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+    
+    wp_localize_script('eipsi-longitudinal-study-js', 'eipsiLongitudinalStudyL10n', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('eipsi_longitudinal_study_nonce'),
+        'strings' => array(
+            'copied' => __('¡Shortcode copiado!', 'eipsi-forms'),
+            'linkCopied' => __('¡Enlace copiado!', 'eipsi-forms'),
+            'copyError' => __('Error al copiar', 'eipsi-forms'),
+            'shareTitle' => __('Compartir Estudio', 'eipsi-forms'),
+            'shareDescription' => __('Copia el shortcode o el enlace para compartir este estudio.', 'eipsi-forms')
+        )
+    ));
+    
+    // Get waves for the study
+    $waves = array();
+    if ($show_waves) {
+        if ($wave_index > 0) {
+            // Get specific wave
+            $waves = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}survey_waves 
+                 WHERE study_id = %d AND wave_index = %d 
+                 ORDER BY wave_index ASC",
+                $study_id,
+                $wave_index
+            ), ARRAY_A);
+        } else {
+            // Get all waves
+            $waves = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}survey_waves 
+                 WHERE study_id = %d 
+                 ORDER BY wave_index ASC",
+                $study_id
+            ), ARRAY_A);
+        }
+    }
+    
+    // Get participant count
+    $participant_count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants WHERE survey_id = %d",
+        $study_id
+    ));
+    
+    // Get study configuration from JSON
+    $study_config = !empty($study->config) ? json_decode($study->config, true) : array();
+    
+    // Get principal investigator
+    $pi_name = '';
+    if (!empty($study->principal_investigator_id)) {
+        $pi_user = get_userdata($study->principal_investigator_id);
+        if ($pi_user) {
+            $pi_name = $pi_user->display_name;
+        }
+    }
+    
+    // Build shareable URL
+    $current_url = get_permalink();
+    $shareable_url = add_query_arg(array(
+        'eipsi_study' => $study_id,
+        'wave' => $wave_index > 0 ? $wave_index : '',
+    ), $current_url);
+    
+    // Generate the shortcode string for copying
+    $shortcode_string = '[eipsi_longitudinal_study id="' . $study_id . '"';
+    if ($wave_index > 0) {
+        $shortcode_string .= ' wave="' . $wave_index . '"';
+    }
+    if ($time_limit_override > 0) {
+        $shortcode_string .= ' time_limit="' . $time_limit_override . '"';
+    }
+    $shortcode_string .= ']';
+    
+    // Render the template
+    ob_start();
+    include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/longitudinal-study-display.php';
+    return ob_get_clean();
+}
+add_shortcode('eipsi_longitudinal_study', 'eipsi_longitudinal_study_shortcode');
+
+/**
+ * Generate error notice for longitudinal study shortcode
+ * 
+ * @param string $message Error message
+ * @param string $help Optional help text
+ * @return string HTML error notice
+ */
+function eipsi_longitudinal_study_error($message, $help = '') {
+    $output = '<div class="eipsi-longitudinal-study-error" style="background: #ffebee; border-left: 4px solid #f44336; padding: 1rem; margin: 1rem 0; border-radius: 4px;">';
+    $output .= '<p style="margin: 0; color: #c62828; font-weight: 500;">' . esc_html($message) . '</p>';
+    if (!empty($help)) {
+        $output .= '<p style="margin: 0.5rem 0 0 0; color: #d32f2f; font-size: 0.9rem;">' . esc_html($help) . '</p>';
+    }
+    $output .= '</div>';
+    return $output;
+}
+
+/**
+ * Helper function to get form title by ID
+ * 
+ * @param int $form_id Form post ID
+ * @return string Form title or fallback
+ */
+function eipsi_get_form_title($form_id) {
+    $form_post = get_post($form_id);
+    if ($form_post) {
+        return $form_post->post_title;
+    }
+    return __('Formulario no disponible', 'eipsi-forms');
+}
+
+/**
+ * Helper function to format time limit
+ * 
+ * @param int $minutes Time limit in minutes
+ * @return string Formatted time string
+ */
+function eipsi_format_time_limit($minutes) {
+    if ($minutes <= 0) {
+        return __('Ilimitado', 'eipsi-forms');
+    }
+    if ($minutes < 60) {
+        return sprintf(__('%d minutos', 'eipsi-forms'), $minutes);
+    }
+    $hours = floor($minutes / 60);
+    $mins = $minutes % 60;
+    if ($mins === 0) {
+        return sprintf(__('%d horas', 'eipsi-forms'), $hours);
+    }
+    return sprintf(__('%d horas %d minutos', 'eipsi-forms'), $hours, $mins);
+}
+
+/**
+ * Helper function to get wave status label
+ * 
+ * @param string $status Wave status
+ * @return string Status label
+ */
+function eipsi_get_wave_status_label($status) {
+    $labels = array(
+        'draft' => __('Borrador', 'eipsi-forms'),
+        'active' => __('Activa', 'eipsi-forms'),
+        'completed' => __('Completada', 'eipsi-forms'),
+        'paused' => __('Pausada', 'eipsi-forms'),
+    );
+    return isset($labels[$status]) ? $labels[$status] : ucfirst($status);
+}
+
+/**
+ * Add longitudinal study shortcode help to metabox
+ * 
+ * @since 1.5.0
+ */
+function eipsi_add_longitudinal_study_to_metabox($post) {
+    global $wpdb;
+    
+    // Get available longitudinal studies
+    $studies = $wpdb->get_results(
+        "SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies 
+         WHERE status IN ('active', 'paused') 
+         ORDER BY created_at DESC"
+    );
+    
+    if (!empty($studies)) {
+        ?>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+        
+        <p style="font-size: 13px; margin: 0 0 12px; font-weight: 600;">
+            <?php esc_html_e('Estudios Longitudinales disponibles:', 'eipsi-forms'); ?>
+        </p>
+        
+        <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 3px;">
+            <?php foreach ($studies as $study) : ?>
+                <div style="padding: 8px; border-bottom: 1px solid #f0f0f1; font-size: 12px;">
+                    <div style="font-weight: 600; margin-bottom: 4px;">
+                        <?php echo esc_html($study->study_name); ?>
+                        <span style="color: #666; font-weight: normal;">(<?php echo esc_html($study->study_code); ?>)</span>
+                    </div>
+                    <code style="background: #f0f0f1; padding: 2px 6px; border-radius: 2px; font-size: 11px; cursor: pointer;" 
+                          onclick="navigator.clipboard.writeText('[eipsi_longitudinal_study id=&quot;<?php echo esc_attr($study->id); ?>&quot;]'); this.style.background='#00a32a'; this.style.color='white'; setTimeout(() => { this.style.background='#f0f0f1'; this.style.color=''; }, 1000);" 
+                          title="<?php esc_attr_e('Clic para copiar', 'eipsi-forms'); ?>">
+                        [eipsi_longitudinal_study id="<?php echo esc_attr($study->id); ?>"]
+                    </code>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        
+        <p style="font-size: 11px; color: #666; margin: 8px 0 0;">
+            <em><?php esc_html_e('💡 Atributos opcionales: wave="1", time_limit="30", show_config="no"', 'eipsi-forms'); ?></em>
+        </p>
+        <?php
+    }
+}
+add_action('eipsi_shortcode_help_metabox_content', 'eipsi_add_longitudinal_study_to_metabox', 10, 1);
