@@ -68,22 +68,22 @@ function eipsi_validate_study_info($data) {
     
     // Study name validation
     if (empty($data['study_name'])) {
-        $errors[] = 'El nombre del estudio es obligatorio.';
+        $errors[] = '❌ El nombre del estudio es obligatorio. Usa un nombre descriptivo que identifique claramente tu investigación (ej: "Efectos de la Terapia Cognitiva en Ansiedad 2025").';
     } elseif (strlen($data['study_name']) < 3) {
-        $errors[] = 'El nombre del estudio debe tener al menos 3 caracteres.';
+        $errors[] = '❌ El nombre del estudio es muy corto. Usa al menos 3 caracteres para que sea identificable.';
     } elseif (strlen($data['study_name']) > 100) {
-        $errors[] = 'El nombre del estudio no puede exceder 100 caracteres.';
+        $errors[] = '❌ El nombre del estudio es muy largo. Usa máximo 100 caracteres. Si necesitas más detalle, agrégalo en la descripción.';
     }
     
     // Study code validation
     if (empty($data['study_code'])) {
-        $errors[] = 'El código del estudio es obligatorio.';
+        $errors[] = '❌ El código del estudio es obligatorio. Este código sirve para identificar tu estudio en exportaciones y reportes. Usa mayúsculas, números y guiones bajos (ej: ANSIEDAD_TCC_2025).';
     } elseif (!preg_match('/^[A-Z0-9_]+$/', $data['study_code'])) {
-        $errors[] = 'El código del estudio solo puede contener letras mayúsculas, números y guiones bajos.';
+        $errors[] = '❌ El código del estudio contiene caracteres no válidos. Solo puedes usar: letras MAYÚSCULAS (A-Z), números (0-9) y guiones bajos (_). No uses espacios ni caracteres especiales.';
     } elseif (strlen($data['study_code']) < 3) {
-        $errors[] = 'El código del estudio debe tener al menos 3 caracteres.';
+        $errors[] = '❌ El código del estudio es muy corto. Usa al menos 3 caracteres para asegurar que sea único.';
     } elseif (strlen($data['study_code']) > 50) {
-        $errors[] = 'El código del estudio no puede exceder 50 caracteres.';
+        $errors[] = '❌ El código del estudio es muy largo. Usa máximo 50 caracteres para mantenerlo manejable en reportes.';
     }
     
     // Check for unique study code
@@ -96,20 +96,20 @@ function eipsi_validate_study_info($data) {
         ));
         
         if ($existing) {
-            $errors[] = 'Ya existe un estudio con este código. Por favor, elige otro.';
+            $errors[] = '❌ El código "' . esc_html($data['study_code']) . '" ya está en uso por otro estudio. Por favor elige un código único (puedes agregar el año o tus iniciales).';
         }
     }
     
     // Principal investigator validation
     if (empty($data['principal_investigator_id'])) {
-        $errors[] = 'Debes seleccionar un investigador principal.';
+        $errors[] = '❌ Debes seleccionar un investigador principal. Esta persona será el contacto principal del estudio y recibirá notificaciones importantes.';
     } elseif (!get_userdata($data['principal_investigator_id'])) {
-        $errors[] = 'El investigador seleccionado no es válido.';
+        $errors[] = '❌ El investigador seleccionado no existe en el sistema. Por favor selecciona un usuario válido de la lista.';
     }
     
     // Description validation (optional)
     if (!empty($data['description']) && strlen($data['description']) > 1000) {
-        $errors[] = 'La descripción no puede exceder 1000 caracteres.';
+        $errors[] = '❌ La descripción es muy larga. Usa máximo 1000 caracteres. Sé conciso pero informativo sobre los objetivos del estudio.';
     }
     
     return array(
@@ -138,11 +138,11 @@ function eipsi_validate_waves_config($data) {
     
     // Number of waves validation
     if (empty($data['number_of_waves'])) {
-        $errors[] = 'Debes especificar el número de tomas.';
+        $errors[] = '❌ Debes especificar cuántas tomas tendrá tu estudio. Este número determina cuántas veces evaluarás a los participantes (por ejemplo: pre, post, seguimiento).';
     } elseif (!is_numeric($data['number_of_waves']) || intval($data['number_of_waves']) < 1) {
-        $errors[] = 'El número de tomas debe ser un número positivo.';
+        $errors[] = '❌ El número de tomas debe ser al menos 1. La mayoría de estudios longitudinales tienen entre 2 y 4 tomas.';
     } elseif (intval($data['number_of_waves']) > 10) {
-        $errors[] = 'No se pueden configurar más de 10 tomas.';
+        $errors[] = '❌ No se pueden configurar más de 10 tomas. Si necesitas más, considera dividir tu estudio en fases.';
     }
     
     // Waves configuration validation
@@ -150,37 +150,42 @@ function eipsi_validate_waves_config($data) {
         $wave_names = array();
         
         foreach ($data['waves_config'] as $index => $wave) {
+            $wave_number = $index + 1;
+            
             // Wave name validation
             if (empty($wave['name'])) {
-                $errors[] = "El nombre de la toma " . ($index + 1) . " es obligatorio.";
+                $errors[] = "❌ La Toma {$wave_number} necesita un nombre descriptivo. Por ejemplo: 'Evaluación inicial', 'Post-tratamiento' o 'Seguimiento 3 meses'.";
             } elseif (strlen($wave['name']) > 100) {
-                $errors[] = "El nombre de la toma " . ($index + 1) . " no puede exceder 100 caracteres.";
+                $errors[] = "❌ El nombre de la Toma {$wave_number} es demasiado largo. Usa máximo 100 caracteres para que sea fácil de identificar.";
             }
             
             // Check for duplicate wave names
             $wave_name = trim($wave['name']);
-            if (in_array(strtolower($wave_name), $wave_names)) {
-                $errors[] = "No puede haber nombres duplicados en las tomas. Revisa la toma " . ($index + 1) . ".";
+            if (!empty($wave_name) && in_array(strtolower($wave_name), $wave_names)) {
+                $errors[] = "❌ El nombre '{$wave_name}' está repetido. Cada toma debe tener un nombre único para poder identificarlas correctamente.";
             }
-            $wave_names[] = strtolower($wave_name);
+            if (!empty($wave_name)) {
+                $wave_names[] = strtolower($wave_name);
+            }
             
             // Form template validation
             if (empty($wave['form_template_id'])) {
-                $errors[] = "Debes seleccionar un formulario para la toma " . ($index + 1) . ".";
+                $errors[] = "❌ La Toma {$wave_number} necesita un formulario asociado. Selecciona qué cuestionario usarás para esta evaluación.";
             } elseif (!get_post($wave['form_template_id'])) {
-                $errors[] = "El formulario seleccionado para la toma " . ($index + 1) . " no es válido.";
+                $errors[] = "❌ El formulario seleccionado para la Toma {$wave_number} no existe o fue eliminado. Por favor selecciona otro formulario.";
             }
             
-            // Duration validation
-            if (empty($wave['estimated_duration'])) {
-                $errors[] = "La duración estimada para la toma " . ($index + 1) . " es obligatoria.";
-            } elseif (!is_numeric($wave['estimated_duration']) || intval($wave['estimated_duration']) < 1) {
-                $errors[] = "La duración estimada para la toma " . ($index + 1) . " debe ser un número positivo.";
-            } elseif (intval($wave['estimated_duration']) > 120) {
-                $errors[] = "La duración estimada para la toma " . ($index + 1) . " no puede exceder 120 minutos.";
+            // Duration validation - now optional with "Infinite" as default
+            // If empty, null, or 0, it means "Infinite" (no time limit)
+            if (!empty($wave['estimated_duration'])) {
+                // Only validate if a value was provided (not infinite)
+                if (!is_numeric($wave['estimated_duration']) || intval($wave['estimated_duration']) < 1) {
+                    $errors[] = "❌ La duración estimada para la Toma {$wave_number} debe ser un número positivo mayor a 0, o déjala en blanco para tiempo ilimitado.";
+                } elseif (intval($wave['estimated_duration']) > 180) {
+                    $errors[] = "❌ La duración estimada para la Toma {$wave_number} no puede exceder 180 minutos (3 horas). Considera dividir el formulario en sesiones más cortas.";
+                }
             }
-            
-            // Unchecked checkbox means optional by default.
+            // Note: Empty/null duration means "Infinite" - no validation error
         }
         
         // At least one wave should be required
@@ -192,8 +197,10 @@ function eipsi_validate_waves_config($data) {
         }
         
         if ($required_waves == 0) {
-            $errors[] = 'Al menos una toma debe ser obligatoria.';
+            $errors[] = '❌ Debes marcar al menos una toma como "Obligatoria". Recomendamos que la primera toma (baseline) sea obligatoria para asegurar datos iniciales.';
         }
+    } else {
+        $errors[] = '❌ No se encontró la configuración de las tomas. Por favor recarga la página e intenta nuevamente.';
     }
     
     return array(
@@ -213,10 +220,15 @@ function eipsi_sanitize_waves_config($data) {
     
     if (!empty($data['waves_config']) && is_array($data['waves_config'])) {
         foreach ($data['waves_config'] as $index => $wave) {
+            // Handle duration: empty/null/0 means "Infinite" (no time limit)
+            $duration = isset($wave['estimated_duration']) && $wave['estimated_duration'] !== '' 
+                ? intval($wave['estimated_duration']) 
+                : null; // null represents "Infinite"
+            
             $sanitized['waves_config'][] = array(
                 'name' => sanitize_text_field($wave['name']),
                 'form_template_id' => intval($wave['form_template_id']),
-                'estimated_duration' => intval($wave['estimated_duration']),
+                'estimated_duration' => $duration,
                 'is_required' => !empty($wave['is_required'])
             );
         }
@@ -234,12 +246,13 @@ function eipsi_validate_timing_config($data) {
     // Timing intervals validation
     if (!empty($data['timing_intervals']) && is_array($data['timing_intervals'])) {
         foreach ($data['timing_intervals'] as $index => $interval) {
+            $interval_num = $index + 1;
             if (empty($interval['days_after'])) {
-                $errors[] = "Los días después para el intervalo " . ($index + 1) . " son obligatorios.";
+                $errors[] = "❌ El intervalo {$interval_num} necesita especificar cuántos días después de la toma anterior debe ocurrir.";
             } elseif (!is_numeric($interval['days_after']) || intval($interval['days_after']) < 1) {
-                $errors[] = "Los días después para el intervalo " . ($index + 1) . " debe ser un número positivo.";
+                $errors[] = "❌ El intervalo {$interval_num} debe tener un número positivo de días (mínimo 1 día).";
             } elseif (intval($interval['days_after']) > 365) {
-                $errors[] = "Los días después para el intervalo " . ($index + 1) . " no pueden exceder 365.";
+                $errors[] = "❌ El intervalo {$interval_num} no puede exceder 365 días (1 año). Para estudios con intervalos más largos, considera crear ondas manualmente.";
             }
         }
     }
@@ -247,37 +260,37 @@ function eipsi_validate_timing_config($data) {
     // Reminder days validation
     if (!empty($data['reminder_days_before'])) {
         if (!is_numeric($data['reminder_days_before']) || intval($data['reminder_days_before']) < 0) {
-            $errors[] = 'Los días de recordatorio deben ser un número positivo.';
+            $errors[] = '❌ Los días de recordatorio deben ser 0 (mismo día) o un número positivo.';
         } elseif (intval($data['reminder_days_before']) > 30) {
-            $errors[] = 'Los días de recordatorio no pueden exceder 30.';
+            $errors[] = '❌ Los días de recordatorio no pueden exceder 30. Los recordatorios con más de un mes de anticipación suelen ser poco efectivos.';
         }
     }
     
     // Retry configuration validation
     if (!empty($data['enable_retries'])) {
         if (empty($data['retry_after_days'])) {
-            $errors[] = 'Si activas los reintentos, debes especificar después de cuántos días.';
+            $errors[] = '❌ Has activado los reintentos pero no especificaste después de cuántos días. Configura este valor para indicar cuándo se debe enviar una nueva invitación si el participante no completó la toma.';
         } elseif (!is_numeric($data['retry_after_days']) || intval($data['retry_after_days']) < 1) {
-            $errors[] = 'Los días para reintentos deben ser un número positivo.';
+            $errors[] = '❌ Los días para reintentos deben ser al menos 1. Dale al participante tiempo suficiente para responder.';
         } elseif (intval($data['retry_after_days']) > 60) {
-            $errors[] = 'Los días para reintentos no pueden exceder 60.';
+            $errors[] = '❌ Los días para reintentos no pueden exceder 60 (2 meses). Si necesitas más tiempo, considera crear una nueva onda en lugar de un reintento.';
         }
         
-        if (empty($data['max_retries'])) {
-            $errors[] = 'Debes especificar el número máximo de reintentos.';
+        if (empty($data['max_retries']) && $data['max_retries'] !== '0' && $data['max_retries'] !== 0) {
+            $errors[] = '❌ Debes especificar el número máximo de reintentos. Puedes usar 0 para reintentos ilimitados, o un número específico (1-10) para limitarlos.';
         } elseif (!is_numeric($data['max_retries']) || intval($data['max_retries']) < 0) {
-            $errors[] = 'El número máximo de reintentos debe ser un número positivo.';
+            $errors[] = '❌ El número máximo de reintentos debe ser 0 (ilimitado) o un número positivo.';
         } elseif (intval($data['max_retries']) > 10) {
-            $errors[] = 'El número máximo de reintentos no puede exceder 10.';
+            $errors[] = '❌ El número máximo de reintentos no puede exceder 10. Demasiados reintentos pueden molestar a los participantes.';
         }
     }
     
     // Investigator notification validation
     if (!empty($data['investigator_notification_days'])) {
         if (!is_numeric($data['investigator_notification_days']) || intval($data['investigator_notification_days']) < 1) {
-            $errors[] = 'Los días para notificar al investigador deben ser un número positivo.';
+            $errors[] = '❌ Los días para notificar al investigador deben ser un número positivo.';
         } elseif (intval($data['investigator_notification_days']) > 90) {
-            $errors[] = 'Los días para notificar al investigador no pueden exceder 90.';
+            $errors[] = '❌ Los días para notificar al investigador no pueden exceder 90 (3 meses). Para seguimientos más largos, configura recordatorios manuales.';
         }
     }
     
@@ -323,21 +336,21 @@ function eipsi_validate_participants_config($data) {
     
     // Invitation methods validation
     if (empty($data['invitation_methods']) || !is_array($data['invitation_methods'])) {
-        $errors[] = 'Debes seleccionar al menos un método de invitación.';
+        $errors[] = '❌ Debes seleccionar al menos un método de invitación. Elige entre: Magic Links (email individual), CSV (carga masiva), o Registro Público (enlace abierto).';
     } else {
         $valid_methods = array('magic_links', 'csv_upload', 'public_registration');
         foreach ($data['invitation_methods'] as $method) {
             if (!in_array($method, $valid_methods)) {
-                $errors[] = "Método de invitación no válido: " . $method;
+                $errors[] = "❌ Método de invitación no reconocido: {$method}. Usa solo las opciones disponibles en el formulario.";
             }
         }
     }
     
     // Consent message validation
     if (!empty($data['require_consent']) && empty($data['consent_message'])) {
-        $errors[] = 'Si requieres consentimiento, debes proporcionar el mensaje.';
+        $errors[] = '❌ Has marcado que requieres consentimiento informado, pero no proporcionaste el texto del consentimiento. Escribe el mensaje que los participantes deben aceptar, o desmarca la opción de consentimiento.';
     } elseif (!empty($data['consent_message']) && strlen($data['consent_message']) > 2000) {
-        $errors[] = 'El mensaje de consentimiento no puede exceder 2000 caracteres.';
+        $errors[] = '❌ El mensaje de consentimiento es muy largo (máximo 2000 caracteres). Sé claro y conciso. Recuerda que los participantes deben poder leer y entender fácilmente el consentimiento.';
     }
     
     return array(
@@ -381,7 +394,7 @@ function eipsi_validate_summary_activation($data) {
     
     // Activation confirmation validation
     if (empty($data['activation_confirmed'])) {
-        $errors[] = 'Debes confirmar la activación del estudio.';
+        $errors[] = '❌ Debes confirmar la activación del estudio. Marca la casilla de confirmación para indicar que has revisado toda la configuración y estás listo para activar el estudio.';
     }
     
     // Additional validation can be added here for step dependencies
