@@ -115,114 +115,6 @@ function eipsi_display_randomization() {
                 </div>
             </div>
         </div>
-
-        <!-- Modal para Asignaciones Manuales -->
-        <div id="manual-overrides-modal" class="eipsi-modal" style="display: none;">
-            <div class="eipsi-modal-content modal-medium">
-                <div class="eipsi-modal-header">
-                    <h3>✏️ Asignaciones Manuales</h3>
-                    <button type="button" class="eipsi-modal-close manual-overrides-close">&times;</button>
-                </div>
-                <div class="eipsi-modal-body">
-                    <input type="hidden" id="manual-overrides-randomization-id" value="">
-
-                    <div class="manual-overrides-header">
-                        <h4>Lista de Asignaciones</h4>
-                        <button type="button" class="rct-button rct-button-primary" onclick="openAddOverrideModal()">
-                            ➕ Agregar Asignación
-                        </button>
-                    </div>
-
-                    <table class="manual-overrides-table">
-                        <thead>
-                            <tr>
-                                <th>Estado</th>
-                                <th>Fingerprint</th>
-                                <th>Formulario</th>
-                                <th>Razón</th>
-                                <th>Por</th>
-                                <th>Fecha</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="manual-overrides-table-body">
-                            <tr>
-                                <td colspan="7" style="text-align: center; color: #64748b;">
-                                    Selecciona una configuración para ver sus asignaciones manuales
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal para agregar asignación manual -->
-        <div id="add-override-modal" class="eipsi-modal" style="display: none;">
-            <div class="eipsi-modal-content modal-medium">
-                <div class="eipsi-modal-header">
-                    <h3>➕ Nueva Asignación Manual</h3>
-                    <button type="button" class="eipsi-modal-close add-override-close">&times;</button>
-                </div>
-                <div class="eipsi-modal-body">
-                    <form id="add-override-form">
-                        <div class="form-group">
-                            <label for="override-fingerprint">Fingerprint del Usuario *</label>
-                            <input
-                                type="text"
-                                id="override-fingerprint"
-                                class="form-control"
-                                placeholder="fp_xxxxxx... o email_xxxxxx..."
-                                required
-                            >
-                            <small class="form-text">
-                                Copia el fingerprint desde la pestaña "Lista de Usuarios" en los detalles.
-                            </small>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="override-form-id">Formulario Asignado *</label>
-                            <select id="override-form-id" class="form-control" required>
-                                <option value="">Cargando formularios...</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="override-reason">Razón (opcional)</label>
-                            <textarea
-                                id="override-reason"
-                                class="form-control"
-                                rows="3"
-                                placeholder="Ej: Participante del grupo control necesita intervención específica..."
-                            ></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="override-expires-days">Expira en (días)</label>
-                            <select id="override-expires-days" class="form-control">
-                                <option value="0">Nunca expira</option>
-                                <option value="7">7 días</option>
-                                <option value="30">30 días</option>
-                                <option value="90">90 días</option>
-                                <option value="365">1 año</option>
-                            </select>
-                            <small class="form-text">
-                                Después de este período, el usuario volverá a la aleatorización normal.
-                            </small>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="button" id="save-override-btn" class="rct-button rct-button-primary">
-                                💾 Guardar Asignación
-                            </button>
-                            <button type="button" class="rct-button add-override-close">
-                                Cancelar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
     </div>
 
     <style>
@@ -604,194 +496,6 @@ function eipsi_display_randomization() {
                 margin: 2% auto;
             }
         }
-
-        /* ========================================
-           ASIGNACIONES MANUALES (Estilos)
-           ======================================== */
-
-        /* Modal medium para overrides */
-        .modal-medium .eipsi-modal-content {
-            max-width: 700px;
-        }
-
-        /* Panel de overrides */
-        .manual-overrides-panel {
-            background: white;
-        }
-
-        .manual-overrides-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e5e7eb;
-        }
-
-        .manual-overrides-header h4 {
-            margin: 0;
-            color: #1f2937;
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        /* Tabla de overrides */
-        .manual-overrides-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            background: white;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .manual-overrides-table th,
-        .manual-overrides-table td {
-            padding: 12px 10px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 13px;
-        }
-
-        .manual-overrides-table th {
-            background: #f9fafb;
-            font-weight: 600;
-            color: #374151;
-            text-transform: uppercase;
-            font-size: 11px;
-            letter-spacing: 0.5px;
-        }
-
-        .manual-overrides-table tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        .manual-overrides-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        /* Filas con colores por estado */
-        .row-active {
-            background: #f0fdf4a !important;
-        }
-
-        .row-active:hover {
-            background: #dcfce7 !important;
-        }
-
-        .row-revoked {
-            background: #fef2f2 !important;
-        }
-
-        .row-revoked:hover {
-            background: #fee2e2 !important;
-        }
-
-        .row-expired {
-            background: #fef9c3 !important;
-            opacity: 0.7;
-        }
-
-        /* Botones de acción en tabla */
-        .btn-revoke,
-        .btn-delete {
-            padding: 6px 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-revoke {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .btn-revoke:hover {
-            background: #fde68a;
-        }
-
-        .btn-delete {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .btn-delete:hover {
-            background: #fecaca;
-        }
-
-        /* Formulario de override */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #374151;
-            font-size: 14px;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.2s ease;
-            box-sizing: border-box;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .form-text {
-            display: block;
-            margin-top: 6px;
-            color: #64748b;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        /* Responsive para overrides */
-        @media (max-width: 600px) {
-            .manual-overrides-table {
-                font-size: 11px;
-            }
-
-            .manual-overrides-table th,
-            .manual-overrides-table td {
-                padding: 8px 6px;
-            }
-
-            .manual-overrides-table th:nth-child(n+4),
-            .manual-overrides-table td:nth-child(n+4) {
-                display: none;
-            }
-
-            .form-actions {
-                flex-direction: column;
-            }
-
-            .form-actions .rct-button {
-                width: 100%;
-            }
-        }
     </style>
 
     <script>
@@ -815,7 +519,7 @@ function eipsi_display_randomization() {
             // Eventos
             $(document).on('click', '#refresh-rct-data', function(e) {
                 e.preventDefault();
-                loadRCTData();
+                loadRCTData(true); // Force refresh when user clicks the button
             });
 
             $(document).on('click', '.rct-view-details', function(e) {
@@ -831,7 +535,7 @@ function eipsi_display_randomization() {
             });
 
             // Funciones principales
-            function loadRCTData() {
+            function loadRCTData(forceRefresh = false) {
                 showLoading();
                 
                 $.ajax({
@@ -839,12 +543,17 @@ function eipsi_display_randomization() {
                     type: 'POST',
                     data: {
                         action: 'eipsi_get_randomizations',
-                        nonce: RCT_ANALYTICS.nonce
+                        nonce: RCT_ANALYTICS.nonce,
+                        force_refresh: forceRefresh ? '1' : '0',
+                        timestamp: Date.now() // Cache busting parameter
                     },
                     success: function(response) {
                         if (response.success) {
                             renderRCTDashboard(response.data);
                             updateLastUpdatedTime();
+                            if (forceRefresh) {
+                                showMessage('Dashboard sincronizado correctamente', 'success');
+                            }
                         } else {
                             showError('Error al cargar datos: ' + (response.data || 'Error desconocido'));
                         }
@@ -943,9 +652,6 @@ function eipsi_display_randomization() {
                             </button>
                             <button type="button" class="rct-button rct-button-analysis" onclick="showDistributionAnalysis('${escapeHtml(rct.randomization_id)}')">
                                 📊 Análisis Distribución
-                            </button>
-                            <button type="button" class="rct-button" onclick="showManualOverrides('${escapeHtml(rct.randomization_id)}')">
-                                ✏️ Asignaciones Manuales
                             </button>
                             <button type="button" class="rct-button rct-button-export" onclick="downloadAssignmentsCSV('${escapeHtml(rct.randomization_id)}')">
                                 📥 Exportar CSV
@@ -1150,243 +856,6 @@ function eipsi_display_randomization() {
                     $('#rct-message-container').empty();
                 }, 3000);
             }
-
-            // ========================================
-            // ASIGNACIONES MANUALES (OVERRIDES)
-            // ========================================
-
-            // Función global para mostrar modal de asignaciones manuales
-            window.showManualOverrides = function(randomizationId) {
-                $('#manual-overrides-randomization-id').val(randomizationId);
-                loadManualOverrides(randomizationId);
-                $('#manual-overrides-modal').show();
-            };
-
-            function loadManualOverrides(randomizationId) {
-                const container = $('#manual-overrides-table-body');
-                container.html('<tr><td colspan="7" style="text-align: center;"><div class="spinner" style="margin: 20px auto;"></div></td></tr>');
-
-                $.ajax({
-                    url: RCT_ANALYTICS.ajaxUrl,
-                    type: 'POST',
-                    data: {
-                        action: 'eipsi_get_manual_overrides',
-                        randomization_id: randomizationId,
-                        nonce: RCT_ANALYTICS.nonce
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            renderManualOverridesTable(response.data.overrides);
-                        } else {
-                            container.html('<tr><td colspan="7" style="text-align: center; color: #dc2626;">Error al cargar asignaciones: ' + (response.data || 'Error desconocido') + '</td></tr>');
-                        }
-                    },
-                    error: function() {
-                        container.html('<tr><td colspan="7" style="text-align: center; color: #dc2626;">Error de conexión</td></tr>');
-                    }
-                });
-            }
-
-            function renderManualOverridesTable(overrides) {
-                const container = $('#manual-overrides-table-body');
-
-                if (!overrides || overrides.length === 0) {
-                    container.html('<tr><td colspan="7" style="text-align: center; color: #64748b;">No hay asignaciones manuales configuradas</td></tr>');
-                    return;
-                }
-
-                let html = '';
-                overrides.forEach(function(override) {
-                    const statusIcon = override.status === 'active' && !override.is_expired ? '✅' :
-                                  override.status === 'revoked' ? '❌' :
-                                  override.is_expired ? '⏰' : '❓';
-
-                    const rowClass = override.status === 'active' && !override.is_expired ? 'row-active' :
-                                   override.status === 'revoked' ? 'row-revoked' : 'row-expired';
-
-                    html += `
-                        <tr class="${rowClass}">
-                            <td>${statusIcon} ${override.status}</td>
-                            <td><code style="font-size: 11px; background: #f1f5f9; padding: 2px 6px; border-radius: 3px;">${escapeHtml(override.fingerprint)}</code></td>
-                            <td><strong>${escapeHtml(override.form_title)}</strong></td>
-                            <td>${escapeHtml(override.reason || '-')}</td>
-                            <td>${escapeHtml(override.creator_name)}</td>
-                            <td>${escapeHtml(override.created_formatted)}</td>
-                            <td>
-                                ${override.status === 'active' && !override.is_expired ? `
-                                    <button type="button" class="btn-revoke" onclick="revokeManualOverride(${override.id})" title="Revocar asignación">
-                                        ↩️
-                                    </button>
-                                ` : `
-                                    <button type="button" class="btn-delete" onclick="deleteManualOverride(${override.id})" title="Eliminar permanentemente">
-                                        🗑️
-                                    </button>
-                                `}
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                container.html(html);
-            }
-
-            function openAddOverrideModal() {
-                $('#add-override-modal').show();
-                loadFormsList();
-            }
-
-            function loadFormsList() {
-                // Usar los formularios de la configuración actual
-                const randomizationId = $('#manual-overrides-randomization-id').val();
-
-                // Obtener los formularios desde la data actual del dashboard
-                const currentConfigData = RCT_STATE.data.find(function(rct) {
-                    return rct.randomization_id === randomizationId;
-                });
-
-                const select = $('#override-form-id');
-                select.empty();
-
-                if (currentConfigData && currentConfigData.formularios) {
-                    currentConfigData.formularios.forEach(function(form) {
-                        select.append(`<option value="${form.id}">${escapeHtml(form.name || 'Formulario ' + form.id)}</option>`);
-                    });
-                } else {
-                    select.append('<option value="">No hay formularios disponibles</option>');
-                }
-            }
-
-            function saveOverride() {
-                const randomizationId = $('#manual-overrides-randomization-id').val();
-                const fingerprint = $('#override-fingerprint').val().trim();
-                const formId = $('#override-form-id').val();
-                const reason = $('#override-reason').val().trim();
-                const expiresDays = $('#override-expires-days').val();
-
-                // Validaciones
-                if (!fingerprint) {
-                    alert('El fingerprint es requerido');
-                    return;
-                }
-                if (!formId) {
-                    alert('Debes seleccionar un formulario');
-                    return;
-                }
-
-                // Deshabilitar botón
-                const btn = $('#save-override-btn');
-                btn.prop('disabled', true).text('Guardando...');
-
-                $.ajax({
-                    url: RCT_ANALYTICS.ajaxUrl,
-                    type: 'POST',
-                    data: {
-                        action: 'eipsi_create_manual_override',
-                        randomization_id: randomizationId,
-                        user_fingerprint: fingerprint,
-                        assigned_form_id: formId,
-                        reason: reason,
-                        expires_days: expiresDays,
-                        nonce: RCT_ANALYTICS.nonce
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            showMessage('Asignación manual guardada correctamente', 'success');
-                            $('#add-override-modal').hide();
-                            // Limpiar formulario
-                            $('#override-fingerprint').val('');
-                            $('#override-reason').val('');
-                            // Recargar tabla
-                            loadManualOverrides(randomizationId);
-                        } else {
-                            alert('Error: ' + (response.data || 'Error desconocido'));
-                        }
-                    },
-                    error: function() {
-                        alert('Error de conexión al guardar asignación');
-                    },
-                    complete: function() {
-                        btn.prop('disabled', false).text('Guardar Asignación');
-                    }
-                });
-            }
-
-            function revokeManualOverride(overrideId) {
-                if (!confirm('¿Estás seguro de revocar esta asignación manual?\n\nEl usuario volverá a la aleatorización normal.')) {
-                    return;
-                }
-
-                $.ajax({
-                    url: RCT_ANALYTICS.ajaxUrl,
-                    type: 'POST',
-                    data: {
-                        action: 'eipsi_revoke_manual_override',
-                        override_id: overrideId,
-                        nonce: RCT_ANALYTICS.nonce
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            showMessage('Asignación revocada correctamente', 'success');
-                            // Recargar tabla
-                            const randomizationId = $('#manual-overrides-randomization-id').val();
-                            loadManualOverrides(randomizationId);
-                        } else {
-                            alert('Error: ' + (response.data || 'Error desconocido'));
-                        }
-                    },
-                    error: function() {
-                        alert('Error de conexión al revocar asignación');
-                    }
-                });
-            }
-
-            function deleteManualOverride(overrideId) {
-                if (!confirm('¿Estás seguro de ELIMINAR permanentemente esta asignación?\n\nEsta acción no se puede deshacer.')) {
-                    return;
-                }
-
-                $.ajax({
-                    url: RCT_ANALYTICS.ajaxUrl,
-                    type: 'POST',
-                    data: {
-                        action: 'eipsi_delete_manual_override',
-                        override_id: overrideId,
-                        nonce: RCT_ANALYTICS.nonce
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            showMessage('Asignación eliminada correctamente', 'success');
-                            // Recargar tabla
-                            const randomizationId = $('#manual-overrides-randomization-id').val();
-                            loadManualOverrides(randomizationId);
-                        } else {
-                            alert('Error: ' + (response.data || 'Error desconocido'));
-                        }
-                    },
-                    error: function() {
-                        alert('Error de conexión al eliminar asignación');
-                    }
-                });
-            }
-
-            // Event listeners para modales
-            $(document).on('click', '.manual-overrides-close, #manual-overrides-modal', function(e) {
-                if (e.target === this) {
-                    $('#manual-overrides-modal').hide();
-                }
-            });
-
-            $(document).on('click', '.add-override-close, #add-override-modal', function(e) {
-                if (e.target === this) {
-                    $('#add-override-modal').hide();
-                }
-            });
-
-            // Event listener para guardar override
-            $(document).on('click', '#save-override-btn', function(e) {
-                e.preventDefault();
-                saveOverride();
-            });
         });
     </script>
     <?php
