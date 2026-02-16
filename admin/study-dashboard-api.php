@@ -26,6 +26,8 @@ add_action('wp_ajax_eipsi_save_study_cron_config', 'wp_ajax_eipsi_save_study_cro
 add_action('wp_ajax_eipsi_get_study_cron_config', 'wp_ajax_eipsi_get_study_cron_config_handler');
 add_action('wp_ajax_eipsi_save_study_settings', 'wp_ajax_eipsi_save_study_settings_handler');
 add_action('wp_ajax_eipsi_close_study', 'wp_ajax_eipsi_close_study_handler');
+add_action('wp_ajax_eipsi_generate_magic_link', 'wp_ajax_eipsi_generate_magic_link_handler');
+add_action('wp_ajax_eipsi_send_magic_link', 'wp_ajax_eipsi_send_magic_link_handler');
 
 /**
  * GET consolidated study data
@@ -298,6 +300,111 @@ function wp_ajax_eipsi_get_study_email_logs_handler() {
     ));
 
     wp_send_json_success($logs);
+}
+
+/**
+ * POST generate magic link
+ */
+function wp_ajax_eipsi_generate_magic_link_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+
+    if (empty($study_id)) {
+        wp_send_json_error('Missing study ID');
+    }
+
+    if (empty($email) || !is_email($email)) {
+        wp_send_json_error('Email inválido');
+    }
+
+    $participant = eipsi_get_magic_link_participant($study_id, $email);
+    if (isset($participant['error'])) {
+        wp_send_json_error($participant['error']);
+    }
+
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    $magic_link = EIPSI_Email_Service::generate_magic_link_url($study_id, $participant['participant']->id);
+
+    if (!$magic_link) {
+        wp_send_json_error('No se pudo generar el Magic Link.');
+    }
+
+    wp_send_json_success(array(
+        'magic_link' => $magic_link,
+        'message' => sprintf(__('Magic Link generado para %s.', 'eipsi-forms'), $email)
+    ));
+}
+
+/**
+ * POST send magic link email
+ */
+function wp_ajax_eipsi_send_magic_link_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+
+    if (empty($study_id)) {
+        wp_send_json_error('Missing study ID');
+    }
+
+    if (empty($email) || !is_email($email)) {
+        wp_send_json_error('Email inválido');
+    }
+
+    $participant = eipsi_get_magic_link_participant($study_id, $email);
+    if (isset($participant['error'])) {
+        wp_send_json_error($participant['error']);
+    }
+
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    $send_result = EIPSI_Email_Service::send_magic_link_email($study_id, $participant['participant']->id);
+
+    if (empty($send_result['success'])) {
+        wp_send_json_error(!empty($send_result['error']) ? $send_result['error'] : 'No se pudo enviar el Magic Link.');
+    }
+
+    wp_send_json_success(array(
+        'magic_link' => $send_result['magic_link'],
+        'message' => sprintf(__('Magic Link enviado a %s.', 'eipsi-forms'), $email)
+    ));
+}
+
+/**
+ * Get participant record for magic link actions.
+ */
+function eipsi_get_magic_link_participant($study_id, $email) {
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    $participant = EIPSI_Participant_Service::get_by_email($study_id, $email);
+
+    if (!$participant) {
+        return array('error' => 'No encontramos un participante con ese email.');
+    }
+
+    if (empty($participant->is_active)) {
+        return array('error' => 'Este participante está inactivo. Reactivalo para enviar un Magic Link.');
+    }
+
+    return array('participant' => $participant);
 }
 
 /**

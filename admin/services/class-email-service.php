@@ -43,6 +43,60 @@ class EIPSI_Email_Service {
         // URL structure: site_url/?eipsi_magic=TOKEN
         return add_query_arg('eipsi_magic', $token, site_url('/'));
     }
+
+    /**
+     * Send magic link email on demand.
+     *
+     * Template: includes/emails/magic-link.php
+     *
+     * @param int    $survey_id Survey ID.
+     * @param int    $participant_id Participant ID.
+     * @param string $custom_message Optional custom message.
+     * @return array {success: bool, magic_link: string|null, error: string|null}
+     * @since 1.5.3
+     * @access public
+     */
+    public static function send_magic_link_email($survey_id, $participant_id, $custom_message = '') {
+        $participant = self::get_participant($participant_id);
+        if (!$participant) {
+            return array('success' => false, 'magic_link' => null, 'error' => 'Participante no encontrado');
+        }
+
+        // Verificar que el participante esté activo
+        if (!$participant->is_active) {
+            error_log("[EIPSI Email] Cannot send magic link to inactive participant: $participant_id");
+            return array('success' => false, 'magic_link' => null, 'error' => 'El participante está inactivo');
+        }
+
+        $survey_name = get_the_title($survey_id);
+        $magic_link = self::generate_magic_link_url($survey_id, $participant_id);
+
+        if (!$magic_link) {
+            self::log_email($survey_id, $participant_id, 'magic_link', 'failed', 'Could not generate magic link');
+            return array('success' => false, 'magic_link' => null, 'error' => 'No se pudo generar el Magic Link');
+        }
+
+        $placeholders = array(
+            'first_name' => $participant->first_name,
+            'last_name' => $participant->last_name,
+            'survey_name' => $survey_name,
+            'magic_link' => $magic_link,
+            'custom_message' => $custom_message,
+            'investigator_name' => get_option('eipsi_investigator_name', 'Equipo de Investigación'),
+            'investigator_email' => get_option('eipsi_investigator_email', get_option('admin_email')),
+        );
+
+        $subject = "Acceso rápido a {$survey_name}";
+        $content = self::render_template('magic-link', $placeholders);
+
+        $sent = self::send_email($survey_id, $participant_id, $participant->email, 'magic_link', $subject, $content);
+
+        if (!$sent) {
+            return array('success' => false, 'magic_link' => $magic_link, 'error' => 'No se pudo enviar el email');
+        }
+
+        return array('success' => true, 'magic_link' => $magic_link, 'error' => null);
+    }
     
     /**
      * Send welcome email con magic link.
