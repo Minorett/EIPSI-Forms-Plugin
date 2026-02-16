@@ -820,6 +820,47 @@ function eipsi_display_configuration_page() {
                     </div>
                     <?php endif; ?>
                 </div>
+
+                <!-- Default Email Test Section -->
+                <div class="eipsi-email-test-section" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <h3><?php echo esc_html__('🧪 Probar Sistema de Email', 'eipsi-forms'); ?></h3>
+                    <p class="description">
+                        <?php echo esc_html__('Envía un email de prueba para verificar que el sistema funciona correctamente.', 'eipsi-forms'); ?>
+                    </p>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label for="test-email-address">
+                            <?php echo esc_html__('Email de prueba (opcional):', 'eipsi-forms'); ?>
+                        </label>
+                        <input type="email" 
+                               id="test-email-address" 
+                               class="regular-text" 
+                               placeholder="<?php echo esc_attr(get_option('eipsi_investigator_email', get_option('admin_email'))); ?>">
+                        <p class="description">
+                            <?php echo esc_html__('Deja en blanco para usar el email del investigador.', 'eipsi-forms'); ?>
+                        </p>
+                    </div>
+
+                    <button type="button" id="eipsi-test-default-email" class="button button-secondary">
+                        <span class="dashicons dashicons-email"></span>
+                        <?php echo esc_html__('Probar Email Default', 'eipsi-forms'); ?>
+                    </button>
+
+                    <button type="button" id="eipsi-get-email-diagnostic" class="button button-secondary" style="margin-left: 10px;">
+                        <span class="dashicons dashicons-admin-tools"></span>
+                        <?php echo esc_html__('Ver Diagnóstico', 'eipsi-forms'); ?>
+                    </button>
+
+                    <div id="eipsi-email-test-results" style="display: none; margin-top: 15px; padding: 12px; background: #fff; border-radius: 4px; border-left: 4px solid #2271b1;">
+                        <p class="message" style="font-weight: bold; margin: 0 0 10px 0;"></p>
+                        <p class="details" style="font-size: 13px; color: #666; margin: 0;"></p>
+                    </div>
+
+                    <div id="eipsi-email-diagnostic" style="display: none; margin-top: 15px; padding: 15px; background: #fff; border-radius: 4px;">
+                        <div class="diagnostic-content"></div>
+                        <div class="stats-content" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;"></div>
+                    </div>
+                </div>
             </div>
         </div>
         
