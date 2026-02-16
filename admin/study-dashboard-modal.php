@@ -103,6 +103,39 @@ if (!defined('ABSPATH')) {
                         </div>
                     </div>
 
+                    <!-- Magic Links Card -->
+                    <div class="dashboard-card magic-links-card">
+                        <h3>✨ <?php esc_html_e('Magic Links', 'eipsi-forms'); ?></h3>
+                        <div class="card-body">
+                            <p class="description">
+                                <?php esc_html_e('Generá un enlace seguro para que cada participante entre sin contraseña. Cada Magic Link dura 48 horas y reemplaza el anterior.', 'eipsi-forms'); ?>
+                            </p>
+                            <form id="magic-link-form">
+                                <label for="magic-link-email"><?php esc_html_e('Email del participante', 'eipsi-forms'); ?></label>
+                                <input type="email" id="magic-link-email" class="widefat" required placeholder="participante@email.com">
+
+                                <div class="magic-link-actions">
+                                    <button type="button" class="button button-secondary" id="generate-magic-link">🔐 <?php esc_html_e('Generar enlace', 'eipsi-forms'); ?></button>
+                                    <button type="submit" class="button button-primary" id="send-magic-link">📨 <?php esc_html_e('Enviar por email', 'eipsi-forms'); ?></button>
+                                </div>
+
+                                <div id="magic-link-output" class="magic-link-output" style="display:none;">
+                                    <label for="magic-link-url"><?php esc_html_e('Enlace generado', 'eipsi-forms'); ?></label>
+                                    <div class="magic-link-field">
+                                        <input type="text" id="magic-link-url" class="widefat" readonly>
+                                        <button type="button" class="button button-secondary button-small" id="copy-magic-link">📋 <?php esc_html_e('Copiar', 'eipsi-forms'); ?></button>
+                                    </div>
+                                    <p class="description magic-link-note">
+                                        <?php esc_html_e('Este enlace es único para esta persona y expira en 48 horas.', 'eipsi-forms'); ?>
+                                    </p>
+                                </div>
+
+                                <div id="magic-link-error" class="notice notice-error" style="display:none; margin-top: 10px;"></div>
+                                <div id="magic-link-success" class="notice notice-success" style="display:none; margin-top: 10px;"></div>
+                            </form>
+                        </div>
+                    </div>
+
                     <!-- Quick Actions Card -->
                     <div class="dashboard-card actions-card">
                         <h3>⚙️ <?php esc_html_e('Acciones Rápidas', 'eipsi-forms'); ?></h3>

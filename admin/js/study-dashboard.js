@@ -67,6 +67,24 @@
             copyStudyShortcode();
         } );
 
+        // Magic Links
+        $( document ).on( 'click', '#generate-magic-link', function () {
+            generateMagicLink();
+        } );
+
+        $( document ).on( 'submit', '#magic-link-form', function ( e ) {
+            e.preventDefault();
+            sendMagicLink();
+        } );
+
+        $( document ).on( 'click', '#copy-magic-link', function () {
+            copyMagicLink();
+        } );
+
+        $( document ).on( 'input', '#magic-link-email', function () {
+            clearMagicLinkMessages();
+        } );
+
         // View Email Logs
         $( document ).on( 'click', '#view-email-logs', function () {
             if ( currentStudyId ) {
@@ -329,6 +347,7 @@
         $( '#eipsi-study-dashboard-modal' ).fadeIn( 200 );
         $( '#eipsi-dashboard-loading' ).show();
         $( '#eipsi-dashboard-content' ).hide();
+        resetMagicLinkForm();
     }
 
     function closeDashboardModal() {
@@ -481,6 +500,169 @@
         $( '#add-participant-error' )
             .html( '<p>' + escapeHtml( message ) + '</p>' )
             .show();
+    }
+
+    // ===========================
+    // MAGIC LINKS
+    // ===========================
+
+    function resetMagicLinkForm() {
+        const form = $( '#magic-link-form' )[ 0 ];
+        if ( form ) {
+            form.reset();
+        }
+        $( '#magic-link-output' ).hide();
+        $( '#magic-link-url' ).val( '' );
+        clearMagicLinkMessages();
+    }
+
+    function clearMagicLinkMessages() {
+        $( '#magic-link-error' ).hide().empty();
+        $( '#magic-link-success' ).hide().empty();
+    }
+
+    function getMagicLinkEmail() {
+        return $( '#magic-link-email' ).val().trim();
+    }
+
+    function setMagicLinkOutput( magicLink ) {
+        if ( ! magicLink ) {
+            return;
+        }
+        $( '#magic-link-url' ).val( magicLink );
+        $( '#magic-link-output' ).show();
+    }
+
+    function showMagicLinkError( message ) {
+        $( '#magic-link-error' ).html( '<p>' + escapeHtml( message ) + '</p>' ).show();
+        $( '#magic-link-success' ).hide().empty();
+    }
+
+    function showMagicLinkSuccess( message ) {
+        $( '#magic-link-success' ).html( '<p>' + escapeHtml( message ) + '</p>' ).show();
+        $( '#magic-link-error' ).hide().empty();
+    }
+
+    function generateMagicLink() {
+        if ( ! currentStudyId ) {
+            showMagicLinkError( 'No hay estudio seleccionado.' );
+            return;
+        }
+
+        const email = getMagicLinkEmail();
+        if ( ! email ) {
+            showMagicLinkError( 'Ingresá el email del participante para generar el enlace.' );
+            return;
+        }
+
+        const $btn = $( '#generate-magic-link' );
+        const originalText = $btn.text();
+        $btn.text( 'Generando...' ).prop( 'disabled', true );
+        clearMagicLinkMessages();
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_generate_magic_link',
+                nonce: eipsiStudyDash.nonce,
+                study_id: currentStudyId,
+                email: email,
+            },
+            success( response ) {
+                if ( response.success && response.data ) {
+                    setMagicLinkOutput( response.data.magic_link );
+                    showMagicLinkSuccess( response.data.message || 'Magic Link generado correctamente.' );
+                } else {
+                    showMagicLinkError( response.data || 'No pudimos generar el Magic Link.' );
+                }
+            },
+            error() {
+                showMagicLinkError( 'Error de conexión al generar el Magic Link.' );
+            },
+            complete() {
+                $btn.text( originalText ).prop( 'disabled', false );
+            },
+        } );
+    }
+
+    function sendMagicLink() {
+        if ( ! currentStudyId ) {
+            showMagicLinkError( 'No hay estudio seleccionado.' );
+            return;
+        }
+
+        const email = getMagicLinkEmail();
+        if ( ! email ) {
+            showMagicLinkError( 'Ingresá el email del participante para enviar el enlace.' );
+            return;
+        }
+
+        const $btn = $( '#send-magic-link' );
+        const originalText = $btn.text();
+        $btn.text( 'Enviando...' ).prop( 'disabled', true );
+        clearMagicLinkMessages();
+
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_send_magic_link',
+                nonce: eipsiStudyDash.nonce,
+                study_id: currentStudyId,
+                email: email,
+            },
+            success( response ) {
+                if ( response.success && response.data ) {
+                    setMagicLinkOutput( response.data.magic_link );
+                    showMagicLinkSuccess( response.data.message || 'Magic Link enviado correctamente.' );
+                } else {
+                    showMagicLinkError( response.data || 'No pudimos enviar el Magic Link.' );
+                }
+            },
+            error() {
+                showMagicLinkError( 'Error de conexión al enviar el Magic Link.' );
+            },
+            complete() {
+                $btn.text( originalText ).prop( 'disabled', false );
+            },
+        } );
+    }
+
+    function copyMagicLink() {
+        const magicLink = $( '#magic-link-url' ).val();
+        if ( ! magicLink ) {
+            showNotification( 'No hay Magic Link para copiar.', 'error' );
+            return;
+        }
+
+        if ( navigator.clipboard && navigator.clipboard.writeText ) {
+            navigator.clipboard.writeText( magicLink ).then( function () {
+                showNotification( 'Magic Link copiado al portapapeles.', 'success' );
+            } ).catch( function () {
+                fallbackCopyMagicLink( magicLink );
+            } );
+            return;
+        }
+
+        fallbackCopyMagicLink( magicLink );
+    }
+
+    function fallbackCopyMagicLink( magicLink ) {
+        const textarea = document.createElement( 'textarea' );
+        textarea.value = magicLink;
+        textarea.setAttribute( 'readonly', '' );
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild( textarea );
+        textarea.select();
+        document.execCommand( 'copy' );
+        document.body.removeChild( textarea );
+        showNotification( 'Magic Link copiado al portapapeles.', 'success' );
     }
 
     // ===========================

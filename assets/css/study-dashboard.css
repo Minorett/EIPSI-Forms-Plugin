@@ -255,6 +255,40 @@
     justify-content: flex-start;
 }
 
+/* Magic Links */
+.magic-links-card label {
+    display: block;
+    margin-top: 10px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.magic-links-card .magic-link-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.magic-links-card .magic-link-output {
+    margin-top: 14px;
+}
+
+.magic-links-card .magic-link-field {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.magic-links-card .magic-link-field input {
+    flex: 1;
+}
+
+.magic-links-card .magic-link-note {
+    margin-top: 8px;
+    color: #666;
+}
+
 /* ===========================
    PARTICIPANTS LIST MODAL
    =========================== */
