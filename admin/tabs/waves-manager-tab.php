@@ -174,7 +174,13 @@ $available_forms = get_posts(array(
                                     <div class="wave-info-row">
                                         <span class="wave-info-label">⏱️ <?php esc_html_e('Tiempo Límite:', 'eipsi-forms'); ?></span>
                                         <span class="wave-info-value">
-                                            <?php echo !empty($wave['completion_time_limit']) ? esc_html($wave['completion_time_limit'] . ' min') : __('Ilimitado', 'eipsi-forms'); ?>
+                                            <?php 
+                                            if (!empty($wave['has_time_limit']) && !empty($wave['completion_time_limit'])) {
+                                                echo esc_html($wave['completion_time_limit'] . ' min');
+                                            } else {
+                                                echo '<span style="color: #28a745; font-weight: 500;">∞ ' . __('Ilimitado', 'eipsi-forms') . '</span>';
+                                            }
+                                            ?>
                                         </span>
                                     </div>
                                 </div>
@@ -305,7 +311,9 @@ $available_forms = get_posts(array(
                         <input type="number" id="completion_time_limit" name="completion_time_limit" value="30" min="1" max="180" style="width: 100px;">
                         <span class="input-suffix"><?php esc_html_e('minutos', 'eipsi-forms'); ?></span>
                     </div>
-                    <small class="form-help"><?php esc_html_e('El participante debe completar el formulario dentro de este tiempo límite. Si no se selecciona esta opción, el tiempo será ilimitado.', 'eipsi-forms'); ?></small>
+                    <small class="form-help">
+                        <?php esc_html_e('El participante debe completar el formulario dentro de este tiempo límite. Si no seleccionas esta opción, el tiempo será ilimitado (∞).', 'eipsi-forms'); ?>
+                    </small>
                 </div>
             </div>
 

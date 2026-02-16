@@ -23,7 +23,7 @@ while (count($waves_config) < $number_of_waves) {
     $waves_config[] = array(
         'name' => '',
         'form_template_id' => '',
-        'estimated_duration' => 15,
+        'estimated_duration' => '', // Empty = Infinite (no time limit)
         'is_required' => true
     );
 }
@@ -110,16 +110,18 @@ for ($i = 0; $i < count($waves_config); $i++) {
                             <div class="field-group-inline">
                                 <div class="field-group">
                                     <label for="wave_duration_<?php echo $i; ?>" class="form-label">
-                                        Duración estimada (min)
+                                        ⏱️ Duración estimada
                                     </label>
                                     <input type="number" 
                                            id="wave_duration_<?php echo $i; ?>"
                                            name="waves_config[<?php echo $i; ?>][estimated_duration]" 
-                                           class="form-input" 
+                                           class="form-input duration-input" 
                                            value="<?php echo esc_attr($waves_config[$i]['estimated_duration']); ?>"
                                            min="1" 
-                                           max="120"
-                                           placeholder="15">
+                                           max="180"
+                                           placeholder="∞ Ilimitado"
+                                           title="Deja este campo en blanco para tiempo ilimitado, o ingresa los minutos estimados (1-180)">
+                                    <small class="field-help">En minutos. Déjalo en blanco para tiempo ilimitado.</small>
                                 </div>
                                 
                                 <div class="field-group">
@@ -223,16 +225,18 @@ function eipsiGenerateWaveItem(index) {
             <div class="field-group-inline">
                 <div class="field-group">
                     <label for="wave_duration_${index}" class="form-label">
-                        Duración estimada (min)
+                        ⏱️ Duración estimada
                     </label>
                     <input type="number" 
                            id="wave_duration_${index}"
                            name="waves_config[${index}][estimated_duration]" 
-                           class="form-input" 
-                           value="15"
+                           class="form-input duration-input" 
+                           value=""
                            min="1" 
-                           max="120"
-                           placeholder="15">
+                           max="180"
+                           placeholder="∞ Ilimitado"
+                           title="Deja este campo en blanco para tiempo ilimitado, o ingresa los minutos estimados (1-180)">
+                    <small class="field-help">En minutos. Déjalo en blanco para tiempo ilimitado.</small>
                 </div>
                 
                 <div class="field-group">
@@ -410,6 +414,26 @@ document.addEventListener('DOMContentLoaded', function() {
 .checkbox-text {
     font-weight: 500;
     color: #495057;
+}
+
+.field-help {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.duration-input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 6v6l4 2'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 35px;
+}
+
+.duration-input::placeholder {
+    color: #28a745;
+    font-weight: 500;
 }
 
 /* Dark mode support */
