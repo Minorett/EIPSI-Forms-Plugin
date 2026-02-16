@@ -13,7 +13,7 @@ add_action('wp_ajax_eipsi_delete_study', 'eipsi_ajax_delete_study');
 function eipsi_ajax_delete_study() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error(__('Permisos insuficientes', 'eipsi-forms'));
     }
 

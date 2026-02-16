@@ -23,7 +23,7 @@ add_action('wp_ajax_eipsi_close_study', 'eipsi_close_study_handler');
 function eipsi_close_study_handler() {
     check_ajax_referer('eipsi_admin_nonce', 'nonce');
     
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error(array('message' => __('Sin permisos.', 'eipsi-forms')));
     }
     

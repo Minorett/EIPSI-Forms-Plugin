@@ -62,6 +62,11 @@
             }
         } );
 
+        // Copy Study Shortcode
+        $( document ).on( 'click', '#copy-study-shortcode', function () {
+            copyStudyShortcode();
+        } );
+
         // View Email Logs
         $( document ).on( 'click', '#view-email-logs', function () {
             if ( currentStudyId ) {
@@ -199,10 +204,13 @@
             if ( currentStudyId ) {
                 if (
                     confirm(
-                        '¿Estás seguro de cerrar este estudio? Esta acción requiere confirmación adicional.'
+                        '¿Estás seguro de cerrar este estudio?\n\n' +
+                            '• Se bloquearán nuevas respuestas\n' +
+                            '• El shortcode seguirá disponible para consulta\n\n' +
+                            'Esta acción no se puede deshacer.'
                     )
                 ) {
-                    closeStudyModal();
+                    closeStudy( currentStudyId );
                 }
             }
         } );
@@ -328,10 +336,32 @@
         currentStudyId = 0;
     }
 
-    function closeStudyModal() {
-        // Redirect to waves manager where anonymize button is available
-        window.location.href =
-            '?page=eipsi-results&tab=waves-manager&study_id=' + currentStudyId;
+    function closeStudy( studyId ) {
+        $.ajax( {
+            url:
+                eipsiStudyDash.ajaxUrl ||
+                ( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+            type: 'POST',
+            data: {
+                action: 'eipsi_close_study',
+                nonce: eipsiStudyDash.nonce,
+                study_id: studyId,
+            },
+            success( response ) {
+                if ( response.success ) {
+                    showNotification( response.data.message, 'success' );
+                    loadStudyOverview( studyId );
+                } else {
+                    showNotification(
+                        response.data || 'Error al cerrar el estudio',
+                        'error'
+                    );
+                }
+            },
+            error() {
+                showNotification( 'Error de conexión', 'error' );
+            },
+        } );
     }
 
     function deleteStudy( studyId ) {
@@ -1080,6 +1110,16 @@
                     : 'No definida'
             );
             $( '#study-id-display' ).text( data.general.study_code );
+
+            const shortcode = buildStudyShortcode( data.general.id || currentStudyId );
+            $( '#study-shortcode-display' ).text( shortcode );
+
+            const isCompleted = data.general.status === 'completed';
+            const $closeBtn = $( '#action-close-study' );
+            const originalLabel = $closeBtn.data( 'label' ) || $closeBtn.text();
+            $closeBtn.data( 'label', originalLabel );
+            $closeBtn.prop( 'disabled', isCompleted );
+            $closeBtn.text( isCompleted ? '🔒 Estudio cerrado' : originalLabel );
         }
 
         // Participants Card
@@ -1480,6 +1520,43 @@
     // ===========================
     // HELPERS
     // ===========================
+
+    function buildStudyShortcode( studyId ) {
+        if ( ! studyId ) return '';
+        return '[eipsi_longitudinal_study id="' + studyId + '"]';
+    }
+
+    function copyStudyShortcode() {
+        const shortcode = $( '#study-shortcode-display' ).text();
+        if ( ! shortcode ) {
+            showNotification( 'No hay shortcode disponible', 'error' );
+            return;
+        }
+
+        if ( navigator.clipboard && navigator.clipboard.writeText ) {
+            navigator.clipboard.writeText( shortcode ).then( function () {
+                showNotification( 'Shortcode copiado al portapapeles', 'success' );
+            } ).catch( function () {
+                fallbackCopyShortcode( shortcode );
+            } );
+            return;
+        }
+
+        fallbackCopyShortcode( shortcode );
+    }
+
+    function fallbackCopyShortcode( shortcode ) {
+        const textarea = document.createElement( 'textarea' );
+        textarea.value = shortcode;
+        textarea.setAttribute( 'readonly', '' );
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild( textarea );
+        textarea.select();
+        document.execCommand( 'copy' );
+        document.body.removeChild( textarea );
+        showNotification( 'Shortcode copiado al portapapeles', 'success' );
+    }
 
     function getStatusBadge( status ) {
         const badges = {

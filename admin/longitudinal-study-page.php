@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 function eipsi_display_longitudinal_study_page() {
-    if (!current_user_can('manage_options')) {
+    if (!function_exists('eipsi_user_can_manage_longitudinal') || !eipsi_user_can_manage_longitudinal()) {
         wp_die(__('Unauthorized', 'eipsi-forms'));
     }
 

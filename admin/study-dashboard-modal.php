@@ -37,6 +37,25 @@ if (!defined('ABSPATH')) {
                         </div>
                     </div>
 
+                    <!-- Shortcode Card -->
+                    <div class="dashboard-card shortcode-card">
+                        <h3>🔗 <?php esc_html_e('Shortcode del Estudio', 'eipsi-forms'); ?></h3>
+                        <div class="card-body">
+                            <p class="description">
+                                <?php esc_html_e('Usá este shortcode en cualquier página para mostrar el estudio y sus tomas.', 'eipsi-forms'); ?>
+                            </p>
+                            <div class="eipsi-shortcode-field">
+                                <code id="study-shortcode-display"></code>
+                                <button type="button" class="button button-secondary button-small" id="copy-study-shortcode">
+                                    📋 <?php esc_html_e('Copiar', 'eipsi-forms'); ?>
+                                </button>
+                            </div>
+                            <p class="description eipsi-shortcode-note">
+                                <?php esc_html_e('El shortcode siempre apunta al último estado del estudio.', 'eipsi-forms'); ?>
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Participant Stats Card -->
                     <div class="dashboard-card participants-card">
                         <h3>👥 <?php esc_html_e('Participantes', 'eipsi-forms'); ?></h3>

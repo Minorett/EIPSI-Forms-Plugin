@@ -4,13 +4,15 @@ if (!defined('ABSPATH')) {
 }
 
 function eipsi_forms_menu() {
-    $capabilities = apply_filters('eipsi_forms_menu_capabilities', array(
-        'main' => 'edit_posts',
-        'results' => 'manage_options',
-        'configuration' => 'manage_options',
-        'longitudinal' => 'manage_options',
-        'form_library' => 'edit_posts'
-    ));
+    $capabilities = function_exists('eipsi_get_menu_capabilities')
+        ? eipsi_get_menu_capabilities()
+        : apply_filters('eipsi_forms_menu_capabilities', array(
+            'main' => 'edit_posts',
+            'results' => 'manage_options',
+            'configuration' => 'manage_options',
+            'longitudinal' => 'edit_posts',
+            'form_library' => 'edit_posts'
+        ));
 
     // Menu Principal: EIPSI Forms
     add_menu_page(
