@@ -3367,16 +3367,22 @@ function eipsi_ajax_save_cron_reminders_config() {
         wp_send_json_error(__('Permisos insuficientes', 'eipsi-forms'));
     }
 
-    // Get survey ID
-    $survey_id = isset($_POST['survey_id']) ? intval($_POST['survey_id']) : 0;
+    global $wpdb;
 
-    if (!$survey_id) {
+    // Get study ID (form sends study_id, not survey_id)
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+
+    if (!$study_id) {
         wp_send_json_error(__('ID de estudio inválido', 'eipsi-forms'));
     }
 
-    // Verify survey exists
-    $survey = get_post($survey_id);
-    if (!$survey || $survey->post_type !== 'eipsi_form') {
+    // Verify study exists in wp_survey_studies table
+    $study = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, study_name, config FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $study_id
+    ));
+
+    if (!$study) {
         wp_send_json_error(__('Estudio no encontrado', 'eipsi-forms'));
     }
 
@@ -3411,20 +3417,42 @@ function eipsi_ajax_save_cron_reminders_config() {
         wp_send_json_error(__('Email del investigador inválido', 'eipsi-forms'));
     }
 
-    // Save configuration
-    update_post_meta($survey_id, '_eipsi_reminders_enabled', $reminders_enabled);
-    update_post_meta($survey_id, '_eipsi_reminder_days_before', $reminder_days_before);
-    update_post_meta($survey_id, '_eipsi_max_reminder_emails_per_run', $max_reminder_emails);
-    update_post_meta($survey_id, '_eipsi_dropout_recovery_enabled', $dropout_recovery_enabled);
-    update_post_meta($survey_id, '_eipsi_dropout_recovery_days_overdue', $dropout_recovery_days);
-    update_post_meta($survey_id, '_eipsi_max_recovery_emails_per_run', $max_recovery_emails);
-    update_post_meta($survey_id, '_eipsi_investigator_alert_enabled', $investigator_alert_enabled);
-    update_post_meta($survey_id, '_eipsi_investigator_alert_email', $investigator_alert_email);
+    // Get existing config
+    $existing_config = json_decode($study->config, true);
+    if (!is_array($existing_config)) {
+        $existing_config = array();
+    }
+
+    // Update cron reminders configuration
+    $existing_config['reminders_enabled'] = $reminders_enabled;
+    $existing_config['reminder_days_before'] = $reminder_days_before;
+    $existing_config['max_reminder_emails'] = $max_reminder_emails;
+    $existing_config['dropout_recovery_enabled'] = $dropout_recovery_enabled;
+    $existing_config['dropout_recovery_days'] = $dropout_recovery_days;
+    $existing_config['max_recovery_emails'] = $max_recovery_emails;
+    $existing_config['investigator_alert_enabled'] = $investigator_alert_enabled;
+    $existing_config['investigator_alert_email'] = $investigator_alert_email;
+
+    // Save to config JSON
+    $updated = $wpdb->update(
+        $wpdb->prefix . 'survey_studies',
+        array(
+            'config' => json_encode($existing_config),
+            'updated_at' => current_time('mysql')
+        ),
+        array('id' => $study_id),
+        array('%s', '%s'),
+        array('%d')
+    );
+
+    if ($updated === false) {
+        wp_send_json_error(__('Error al guardar la configuración', 'eipsi-forms'));
+    }
 
     // Log
     error_log(sprintf(
-        '[EIPSI Forms] Cron reminders config saved for survey %d: reminders=%s, recovery=%s',
-        $survey_id,
+        '[EIPSI Forms] Cron reminders config saved for study %d: reminders=%s, recovery=%s',
+        $study_id,
         $reminders_enabled ? 'enabled' : 'disabled',
         $dropout_recovery_enabled ? 'enabled' : 'disabled'
     ));
