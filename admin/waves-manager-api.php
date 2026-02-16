@@ -35,7 +35,7 @@ add_action('wp_ajax_eipsi_get_participant', 'wp_ajax_eipsi_get_participant_handl
 function wp_ajax_eipsi_save_wave_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -88,7 +88,7 @@ function wp_ajax_eipsi_save_wave_handler() {
 function wp_ajax_eipsi_delete_wave_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -112,7 +112,7 @@ function wp_ajax_eipsi_delete_wave_handler() {
 function wp_ajax_eipsi_get_wave_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -136,7 +136,7 @@ function wp_ajax_eipsi_get_wave_handler() {
 function wp_ajax_eipsi_get_available_participants_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -175,7 +175,7 @@ function wp_ajax_eipsi_get_available_participants_handler() {
 function wp_ajax_eipsi_assign_participants_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -207,7 +207,7 @@ function wp_ajax_eipsi_assign_participants_handler() {
 function wp_ajax_eipsi_extend_deadline_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -233,7 +233,7 @@ function wp_ajax_eipsi_extend_deadline_handler() {
 function wp_ajax_eipsi_send_reminder_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -304,7 +304,7 @@ function wp_ajax_eipsi_send_reminder_handler() {
 function wp_ajax_eipsi_get_pending_participants_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -338,7 +338,7 @@ function wp_ajax_eipsi_get_pending_participants_handler() {
 function wp_ajax_eipsi_get_study_participants_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -367,7 +367,7 @@ function wp_ajax_eipsi_get_study_participants_handler() {
 function wp_ajax_eipsi_get_participant_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -394,7 +394,7 @@ function wp_ajax_eipsi_get_participant_handler() {
 function wp_ajax_eipsi_edit_participant_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -466,7 +466,7 @@ function wp_ajax_eipsi_edit_participant_handler() {
 function wp_ajax_eipsi_delete_participant_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 

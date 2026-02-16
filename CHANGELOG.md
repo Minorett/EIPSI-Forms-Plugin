@@ -46,6 +46,11 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ## [Unreleased] – Próxima versión clínica
 
+### ✅ Correcciones
+- ✅ **Permisos longitudinales coherentes:** accesos y AJAX usan la misma capacidad configurable para administradores e investigadores.
+- ✅ **Cierre de estudios funcional:** botón "Cerrar estudio" actualiza el estado a completado con confirmación.
+- ✅ **Shortcode visible y copiable:** el dashboard muestra el shortcode persistente del estudio.
+
 ### ✅ Nuevas Funcionalidades
 
 #### 📋 Gestión de Participantes en Study Dashboard

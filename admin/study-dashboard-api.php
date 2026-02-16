@@ -25,6 +25,7 @@ add_action('wp_ajax_eipsi_toggle_participant_status', 'wp_ajax_eipsi_toggle_part
 add_action('wp_ajax_eipsi_save_study_cron_config', 'wp_ajax_eipsi_save_study_cron_config_handler');
 add_action('wp_ajax_eipsi_get_study_cron_config', 'wp_ajax_eipsi_get_study_cron_config_handler');
 add_action('wp_ajax_eipsi_save_study_settings', 'wp_ajax_eipsi_save_study_settings_handler');
+add_action('wp_ajax_eipsi_close_study', 'wp_ajax_eipsi_close_study_handler');
 
 /**
  * GET consolidated study data
@@ -32,7 +33,7 @@ add_action('wp_ajax_eipsi_save_study_settings', 'wp_ajax_eipsi_save_study_settin
 function wp_ajax_eipsi_get_study_overview_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -137,12 +138,59 @@ function wp_ajax_eipsi_get_study_overview_handler() {
 }
 
 /**
+ * POST close study
+ */
+function wp_ajax_eipsi_close_study_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => __('Unauthorized', 'eipsi-forms')));
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    if (empty($study_id)) {
+        wp_send_json_error(array('message' => __('Missing study ID', 'eipsi-forms')));
+    }
+
+    global $wpdb;
+
+    $study = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, study_name, status FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $study_id
+    ));
+
+    if (!$study) {
+        wp_send_json_error(array('message' => __('Study not found', 'eipsi-forms')));
+    }
+
+    $updated = $wpdb->update(
+        "{$wpdb->prefix}survey_studies",
+        array(
+            'status' => 'completed',
+            'updated_at' => current_time('mysql')
+        ),
+        array('id' => $study_id),
+        array('%s', '%s'),
+        array('%d')
+    );
+
+    if ($updated === false) {
+        wp_send_json_error(array('message' => __('No se pudo cerrar el estudio.', 'eipsi-forms')));
+    }
+
+    wp_send_json_success(array(
+        'message' => sprintf(__('Estudio "%s" cerrado correctamente.', 'eipsi-forms'), $study->study_name),
+        'status' => 'completed'
+    ));
+}
+
+/**
  * GET specific wave details
  */
 function wp_ajax_eipsi_get_wave_details_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -170,7 +218,7 @@ function wp_ajax_eipsi_get_wave_details_handler() {
 function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -198,7 +246,7 @@ function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
 function wp_ajax_eipsi_extend_wave_deadline_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -231,7 +279,7 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
 function wp_ajax_eipsi_get_study_email_logs_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -270,7 +318,7 @@ function wp_ajax_eipsi_add_participant_handler() {
         wp_send_json_error('Invalid nonce');
     }
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -361,7 +409,7 @@ function wp_ajax_eipsi_add_participant_handler() {
 function wp_ajax_eipsi_validate_csv_participants_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -459,7 +507,7 @@ function wp_ajax_eipsi_validate_csv_participants_handler() {
 function wp_ajax_eipsi_import_csv_participants_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -642,7 +690,7 @@ function eipsi_parse_csv_line($line) {
 function wp_ajax_eipsi_get_participants_list_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -680,7 +728,7 @@ function wp_ajax_eipsi_get_participants_list_handler() {
 function wp_ajax_eipsi_toggle_participant_status_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -715,7 +763,7 @@ function wp_ajax_eipsi_toggle_participant_status_handler() {
 function wp_ajax_eipsi_save_study_cron_config_handler() {
     check_ajax_referer('eipsi_study_cron_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -805,7 +853,7 @@ function wp_ajax_eipsi_save_study_cron_config_handler() {
 function wp_ajax_eipsi_get_study_cron_config_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 
@@ -830,7 +878,7 @@ function wp_ajax_eipsi_get_study_cron_config_handler() {
 function wp_ajax_eipsi_save_study_settings_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
-    if (!current_user_can('manage_options')) {
+    if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error('Unauthorized');
     }
 

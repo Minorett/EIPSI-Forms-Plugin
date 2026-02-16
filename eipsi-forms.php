@@ -29,6 +29,59 @@ define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
 define('EIPSI_FORMS_SLUG', 'eipsi-forms');
 
+/**
+ * Get default menu capabilities for EIPSI Forms.
+ *
+ * @since 1.5.4
+ *
+ * @return array
+ */
+function eipsi_get_default_menu_capabilities() {
+    return array(
+        'main' => 'edit_posts',
+        'results' => 'manage_options',
+        'configuration' => 'manage_options',
+        'longitudinal' => 'edit_posts',
+        'form_library' => 'edit_posts'
+    );
+}
+
+/**
+ * Get filtered menu capabilities.
+ *
+ * @since 1.5.4
+ *
+ * @return array
+ */
+function eipsi_get_menu_capabilities() {
+    return apply_filters('eipsi_forms_menu_capabilities', eipsi_get_default_menu_capabilities());
+}
+
+/**
+ * Get capability required for longitudinal studies.
+ *
+ * @since 1.5.4
+ *
+ * @return string
+ */
+function eipsi_get_longitudinal_capability() {
+    $capabilities = eipsi_get_menu_capabilities();
+    $capability = isset($capabilities['longitudinal']) ? $capabilities['longitudinal'] : 'edit_posts';
+
+    return apply_filters('eipsi_forms_longitudinal_capability', $capability);
+}
+
+/**
+ * Check if current user can manage longitudinal studies.
+ *
+ * @since 1.5.4
+ *
+ * @return bool
+ */
+function eipsi_user_can_manage_longitudinal() {
+    return current_user_can(eipsi_get_longitudinal_capability());
+}
+
 // Configuración longitudinal (v1.4.0+)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/config/longitudinal-config.php';
 

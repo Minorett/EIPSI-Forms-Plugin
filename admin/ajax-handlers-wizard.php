@@ -29,7 +29,7 @@ function eipsi_save_wizard_step_handler() {
     }
     
     // Check permissions
-    if (!current_user_can('manage_options')) {
+    if (!function_exists('eipsi_user_can_manage_longitudinal') || !eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error(array('message' => 'No tienes permisos para realizar esta acción.'));
     }
     
@@ -77,7 +77,7 @@ function eipsi_auto_save_wizard_step_handler() {
     }
     
     // Check permissions
-    if (!current_user_can('manage_options')) {
+    if (!function_exists('eipsi_user_can_manage_longitudinal') || !eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error(array('message' => 'Sin permisos.'));
     }
     
@@ -116,7 +116,7 @@ function eipsi_activate_study_handler() {
     }
     
     // Check permissions
-    if (!current_user_can('manage_options')) {
+    if (!function_exists('eipsi_user_can_manage_longitudinal') || !eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error(array('message' => 'No tienes permisos para realizar esta acción.'));
     }
     
@@ -167,7 +167,7 @@ function eipsi_get_available_forms_handler() {
     }
     
     // Check permissions
-    if (!current_user_can('manage_options')) {
+    if (!function_exists('eipsi_user_can_manage_longitudinal') || !eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error(array('message' => 'Sin permisos.'));
     }
     
@@ -188,7 +188,7 @@ function eipsi_get_wizard_data_handler() {
     }
     
     // Check permissions
-    if (!current_user_can('manage_options')) {
+    if (!function_exists('eipsi_user_can_manage_longitudinal') || !eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error(array('message' => 'Sin permisos.'));
     }
     
