@@ -215,6 +215,9 @@ function eipsi_get_randomizations() {
         return;
     }
 
+    // Verificar si es un refresh forzado (desde el botón Actualizar)
+    $force_refresh = isset($_POST['force_refresh']) && $_POST['force_refresh'] === '1';
+
     global $wpdb;
 
     try {
