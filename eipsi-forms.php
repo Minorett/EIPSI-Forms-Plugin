@@ -147,6 +147,86 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/setup-wizard.php';
 // Study Dashboard (v1.5.2)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/study-dashboard-api.php';
 
+// Email System Handlers (v1.5.4)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-email-handlers.php';
+
+// ============================================================================
+// EMAIL SYSTEM CONFIGURATION (v1.5.4 - Default Email Fix)
+// ============================================================================
+
+/**
+ * Configure default email sender for EIPSI Forms
+ * Uses investigator email if set, otherwise falls back to WordPress admin email
+ * 
+ * @since 1.5.4
+ */
+function eipsi_mail_from($from_email) {
+    // If SMTP is configured, it will handle the sender
+    if (class_exists('EIPSI_SMTP_Service')) {
+        $smtp_service = new EIPSI_SMTP_Service();
+        if ($smtp_service->is_enabled()) {
+            return $from_email;
+        }
+    }
+    
+    // Use investigator email or fall back to admin email
+    $investigator_email = get_option('eipsi_investigator_email', '');
+    if (!empty($investigator_email) && is_email($investigator_email)) {
+        return $investigator_email;
+    }
+    
+    return $from_email;
+}
+add_filter('wp_mail_from', 'eipsi_mail_from', 99);
+
+/**
+ * Configure default email sender name for EIPSI Forms
+ * Uses investigator name if set, otherwise falls back to site name
+ * 
+ * @since 1.5.4
+ */
+function eipsi_mail_from_name($from_name) {
+    // If SMTP is configured, it will handle the sender name
+    if (class_exists('EIPSI_SMTP_Service')) {
+        $smtp_service = new EIPSI_SMTP_Service();
+        if ($smtp_service->is_enabled()) {
+            return $from_name;
+        }
+    }
+    
+    // Use investigator name or fall back to site name
+    $investigator_name = get_option('eipsi_investigator_name', '');
+    if (!empty($investigator_name)) {
+        return $investigator_name;
+    }
+    
+    return $from_name;
+}
+add_filter('wp_mail_from_name', 'eipsi_mail_from_name', 99);
+
+/**
+ * Enable HTML emails by default
+ * 
+ * @since 1.5.4
+ */
+function eipsi_set_html_content_type() {
+    return 'text/html';
+}
+add_filter('wp_mail_content_type', 'eipsi_set_html_content_type', 99);
+
+/**
+ * Log email errors for debugging
+ * 
+ * @since 1.5.4
+ */
+function eipsi_log_mail_error($wp_error) {
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('[EIPSI Forms] Email Error: ' . $wp_error->get_error_message());
+    }
+    return $wp_error;
+}
+add_action('wp_mail_failed', 'eipsi_log_mail_error');
+
 /**
  * Enqueue Randomization assets en admin
  */
@@ -782,6 +862,15 @@ function eipsi_forms_enqueue_admin_assets($hook) {
         wp_enqueue_script(
             'eipsi-config-panel-script',
             EIPSI_FORMS_PLUGIN_URL . 'assets/js/configuration-panel.js',
+            array('jquery'),
+            EIPSI_FORMS_VERSION,
+            true
+        );
+
+        // Enqueue email test script
+        wp_enqueue_script(
+            'eipsi-email-test-script',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/js/email-test.js',
             array('jquery'),
             EIPSI_FORMS_VERSION,
             true

@@ -406,33 +406,73 @@ class EIPSI_Email_Service {
         $headers = array('Content-Type: text/html; charset=UTF-8');
 
         try {
+            // Check if SMTP is configured
             $smtp_service = class_exists('EIPSI_SMTP_Service') ? new EIPSI_SMTP_Service() : null;
             $smtp_config = $smtp_service ? $smtp_service->get_config() : null;
 
             if ($smtp_config) {
+                // Use SMTP service
+                error_log("[EIPSI Email] Sending via SMTP to: $to");
                 $result = $smtp_service->send_message($to, $subject, $content, $smtp_config);
 
                 if (!empty($result['success'])) {
                     self::log_email($survey_id, $participant_id, $type, 'sent', null, $subject);
+                    error_log("[EIPSI Email] SMTP send successful to: $to");
                     return true;
                 }
 
                 $error = $result['error'] ?? 'SMTP send failed';
+                error_log("[EIPSI Email] SMTP send failed: $error");
                 self::log_email($survey_id, $participant_id, $type, 'failed', $error, $subject);
                 return false;
             }
 
+            // Use wp_mail with enhanced error handling
+            error_log("[EIPSI Email] Sending via wp_mail to: $to");
+            
+            // Set default From name and email if not already set
+            add_filter('wp_mail_from_name', function($name) {
+                $investigator_name = get_option('eipsi_investigator_name', '');
+                return !empty($investigator_name) ? $investigator_name : $name;
+            }, 99);
+            
+            add_filter('wp_mail_from', function($email) {
+                $investigator_email = get_option('eipsi_investigator_email', '');
+                return !empty($investigator_email) && is_email($investigator_email) 
+                    ? $investigator_email 
+                    : $email;
+            }, 99);
+
+            // Try to send the email
             $sent = wp_mail($to, $subject, $content, $headers);
 
             if ($sent) {
                 self::log_email($survey_id, $participant_id, $type, 'sent', null, $subject);
+                error_log("[EIPSI Email] wp_mail successful to: $to");
                 return true;
             }
 
-            self::log_email($survey_id, $participant_id, $type, 'failed', 'wp_mail returned false', $subject);
+            // Get the last error from WordPress
+            global $wp_mail_error;
+            $error_msg = 'wp_mail returned false';
+            if ($wp_mail_error instanceof WP_Error) {
+                $error_msg = $wp_mail_error->get_error_message();
+            }
+            
+            // Log detailed error information
+            error_log("[EIPSI Email] wp_mail failed: $error_msg");
+            self::log_email($survey_id, $participant_id, $type, 'failed', $error_msg, $subject);
             return false;
+            
         } catch (Exception $e) {
-            self::log_email($survey_id, $participant_id, $type, 'failed', $e->getMessage(), $subject);
+            $error_msg = 'Exception: ' . $e->getMessage();
+            error_log("[EIPSI Email] Exception during send: $error_msg");
+            self::log_email($survey_id, $participant_id, $type, 'failed', $error_msg, $subject);
+            return false;
+        } catch (Error $e) {
+            $error_msg = 'Fatal Error: ' . $e->getMessage();
+            error_log("[EIPSI Email] Fatal error during send: $error_msg");
+            self::log_email($survey_id, $participant_id, $type, 'failed', $error_msg, $subject);
             return false;
         }
     }
@@ -834,6 +874,132 @@ class EIPSI_Email_Service {
             'sent' => $sent,
             'failed' => $failed,
             'success_rate' => $total > 0 ? round(($sent / $total) * 100, 1) : 0
+        );
+    }
+    
+    /**
+     * Send test email to admin to verify email system is working
+     *
+     * @param string|null $test_email Optional specific email address to test
+     * @return array {success: bool, message: string, details: string}
+     * @since 1.5.4
+     * @access public
+     */
+    public static function send_test_email($test_email = null) {
+        $smtp_service = class_exists('EIPSI_SMTP_Service') ? new EIPSI_SMTP_Service() : null;
+        $smtp_config = $smtp_service ? $smtp_service->get_config() : null;
+        
+        $use_smtp = !empty($smtp_config);
+        $method = $use_smtp ? 'SMTP' : 'wp_mail()';
+        
+        // Use provided email or default to investigator/admin email
+        $recipient = $test_email ?: get_option('eipsi_investigator_email', get_option('admin_email', 'admin@example.com'));
+        
+        if (!is_email($recipient)) {
+            return array(
+                'success' => false,
+                'message' => 'Email inválido',
+                'details' => "No se puede enviar: email inválido ($recipient)"
+            );
+        }
+        
+        $subject = 'Prueba de correo EIPSI Forms - ' . date('Y-m-d H:i:s');
+        $investigator_name = get_option('eipsi_investigator_name', get_bloginfo('name'));
+        
+        $content = '<h2>✅ Prueba de correo exitosa</h2>';
+        $content .= '<p><strong>Destinatario:</strong> ' . esc_html($recipient) . '</p>';
+        $content .= '<p><strong>Método de envío:</strong> ' . esc_html($method) . '</p>';
+        $content .= '<p><strong>Fecha y hora:</strong> ' . date_i18n(get_option('date_format') . ' ' . get_option('time_format')) . '</p>';
+        $content .= '<p><strong>Configuración SMTP:</strong> ' . ($use_smtp ? '✅ Activo' : '❌ Inactivo') . '</p>';
+        
+        if ($use_smtp && isset($smtp_config['host'])) {
+            $content .= '<p><strong>Servidor SMTP:</strong> ' . esc_html($smtp_config['host'] . ':' . $smtp_config['port']) . '</p>';
+        }
+        
+        $content .= '<p><strong>Investigador:</strong> ' . esc_html($investigator_name) . '</p>';
+        $content .= '<hr>';
+        $content .= '<p style="font-size: 14px; color: #666;">';
+        $content .= 'Si recibes este mensaje, tu sistema de correo de EIPSI Forms está configurado correctamente. ';
+        $content .= 'El sistema puede enviar recordatorios clínicos y notificaciones automáticas.';
+        $content .= '</p>';
+        
+        try {
+            $result = self::send_email(0, 0, $recipient, 'test', $subject, $content);
+            
+            if ($result) {
+                return array(
+                    'success' => true,
+                    'message' => 'Email de prueba enviado exitosamente',
+                    'details' => "Método: $method | Destinatario: $recipient"
+                );
+            } else {
+                return array(
+                    'success' => false,
+                    'message' => 'Error al enviar email de prueba',
+                    'details' => "El sistema no pudo enviar el email de prueba. Revisa los logs de error."
+                );
+            }
+        } catch (Exception $e) {
+            return array(
+                'success' => false,
+                'message' => 'Excepción durante el envío',
+                'details' => 'Error: ' . $e->getMessage()
+            );
+        }
+    }
+    
+    /**
+     * Diagnóstico básico del sistema de email
+     *
+     * @return array {status: string, issues: array, recommendations: array}
+     * @since 1.5.4
+     * @access public
+     */
+    public static function diagnose_email_system() {
+        $issues = array();
+        $recommendations = array();
+        
+        // Check SMTP configuration
+        $smtp_service = class_exists('EIPSI_SMTP_Service') ? new EIPSI_SMTP_Service() : null;
+        $smtp_config = $smtp_service ? $smtp_service->get_config() : null;
+        
+        if (empty($smtp_config)) {
+            $issues[] = 'SMTP no configurado - usando wp_mail()';
+            $recommendations[] = 'Para mejor entregabilidad, configura SMTP en Configuración > SMTP';
+        }
+        
+        // Check investigator email
+        $investigator_email = get_option('eipsi_investigator_email', '');
+        if (empty($investigator_email)) {
+            $issues[] = 'Email del investigador no configurado';
+            $recommendations[] = 'Configura el email del investigador en Configuración > SMTP';
+        } elseif (!is_email($investigator_email)) {
+            $issues[] = 'Email del investigador inválido';
+            $recommendations[] = 'Corrige el formato del email del investigador';
+        }
+        
+        // Check admin email
+        $admin_email = get_option('admin_email', '');
+        if (!is_email($admin_email)) {
+            $issues[] = 'Email de administrador inválido';
+            $recommendations[] = 'Corrige el email de administrador en WordPress';
+        }
+        
+        // Check WordPress mail settings
+        if (!function_exists('wp_mail')) {
+            $issues[] = 'wp_mail() no disponible';
+            $recommendations[] = 'Verifica que WordPress esté correctamente instalado';
+        }
+        
+        $status = empty($issues) ? 'okay' : 'warning';
+        
+        return array(
+            'status' => $status,
+            'issues' => $issues,
+            'recommendations' => $recommendations,
+            'smtp_configured' => !empty($smtp_config),
+            'investigator_email' => $investigator_email,
+            'admin_email' => $admin_email
         );
     }
 }
