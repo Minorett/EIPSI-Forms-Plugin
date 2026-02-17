@@ -87,6 +87,19 @@ phpunit --configuration phpunit.xml
 # Expected: 32/32 tests pass
 ```
 
+### Linting
+```bash
+# JavaScript lint
+npm run lint:js
+
+# Auto-fix (cuando aplica)
+npm run lint:js -- --fix
+```
+
+Notas:
+- ESLint usa `eslint.config.js` (flat config) y ya no requiere `ESLINT_USE_FLAT_CONFIG`.
+- Si necesitás ajustar ignores, editá la sección `ignores` dentro de `eslint.config.js`.
+
 ### Monitoring
 Dashboard accesible en:
 ```

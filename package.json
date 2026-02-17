@@ -6,7 +6,7 @@
     "scripts": {
         "build": "wp-scripts build && node scripts/fix-block-json-css-references.js",
         "start": "wp-scripts start",
-        "lint:js": "ESLINT_USE_FLAT_CONFIG=false wp-scripts lint-js",
+        "lint:js": "wp-scripts lint-js",
         "lint:scss": "wp-scripts lint-style",
         "format": "wp-scripts format",
         "lint:duplicates": "node scripts/check-duplicate-functions.js"
