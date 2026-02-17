@@ -6,6 +6,7 @@
  * 
  * @package EIPSI_Forms
  * @since 1.5.0
+ * @updated 1.5.5 - Enhanced statistics with trends and detailed error info
  */
 
 if (!defined('ABSPATH')) {
@@ -17,9 +18,12 @@ global $wpdb;
 // Obtener survey_id actual (si está en contexto de un estudio específico)
 $survey_id = isset($_GET['survey_id']) ? absint($_GET['survey_id']) : 0;
 
+// Base WHERE clause
+$where_clause = $survey_id > 0 ? "WHERE survey_id = %d" : "";
+$params = $survey_id > 0 ? array($survey_id) : array();
+
 // Stats resumen iniciales
 if ($survey_id > 0) {
-    // Con filtro de survey_id
     $sent_count = $wpdb->get_var($wpdb->prepare(
         "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = %s AND survey_id = %d",
         'sent',
@@ -35,7 +39,6 @@ if ($survey_id > 0) {
         $survey_id
     ));
 } else {
-    // Sin filtro de survey_id
     $sent_count = $wpdb->get_var($wpdb->prepare(
         "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = %s",
         'sent'
@@ -50,6 +53,53 @@ if ($survey_id > 0) {
 }
 
 $success_rate = $total_emails > 0 ? round(($sent_count / $total_emails) * 100, 1) : 0;
+
+// Calculate trend (compare last 7 days vs previous 7 days)
+$last_7_days_start = date('Y-m-d', strtotime('-7 days'));
+$last_7_days_end = date('Y-m-d');
+$prev_7_days_start = date('Y-m-d', strtotime('-14 days'));
+$prev_7_days_end = date('Y-m-d', strtotime('-7 days'));
+
+if ($survey_id > 0) {
+    $last_7_sent = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = 'sent' AND survey_id = %d AND DATE(sent_at) BETWEEN %s AND %s",
+        $survey_id, $last_7_days_start, $last_7_days_end
+    ));
+    $prev_7_sent = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = 'sent' AND survey_id = %d AND DATE(sent_at) BETWEEN %s AND %s",
+        $survey_id, $prev_7_days_start, $prev_7_days_end
+    ));
+} else {
+    $last_7_sent = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = 'sent' AND DATE(sent_at) BETWEEN %s AND %s",
+        $last_7_days_start, $last_7_days_end
+    ));
+    $prev_7_sent = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_email_log WHERE status = 'sent' AND DATE(sent_at) BETWEEN %s AND %s",
+        $prev_7_days_start, $prev_7_days_end
+    ));
+}
+
+$trend_percentage = $prev_7_sent > 0 ? round((($last_7_sent - $prev_7_sent) / $prev_7_sent) * 100, 1) : 0;
+$trend_direction = $trend_percentage >= 0 ? 'up' : 'down';
+$trend_class = $trend_percentage >= 0 ? 'trend-up' : 'trend-down';
+$trend_icon = $trend_percentage >= 0 ? '↑' : '↓';
+
+// Get common error types for failed emails
+$error_types = array();
+if ($failed_count > 0) {
+    $error_query = $survey_id > 0 
+        ? $wpdb->prepare(
+            "SELECT error_message, COUNT(*) as count FROM {$wpdb->prefix}survey_email_log 
+             WHERE status = 'failed' AND survey_id = %d AND error_message IS NOT NULL 
+             GROUP BY error_message ORDER BY count DESC LIMIT 5",
+            $survey_id
+        )
+        : "SELECT error_message, COUNT(*) as count FROM {$wpdb->prefix}survey_email_log 
+           WHERE status = 'failed' AND error_message IS NOT NULL 
+           GROUP BY error_message ORDER BY count DESC LIMIT 5";
+    $error_types = $wpdb->get_results($error_query);
+}
 
 // Enqueue high contrast styles
 wp_enqueue_style('eipsi-email-log', EIPSI_FORMS_PLUGIN_URL . 'admin/css/email-log.css', array(), EIPSI_FORMS_VERSION);
@@ -66,22 +116,62 @@ wp_enqueue_style('eipsi-high-contrast', EIPSI_FORMS_PLUGIN_URL . 'assets/css/eip
         </p>
     </div>
 
-    <!-- Cards de estadísticas -->
+    <!-- Cards de estadísticas mejoradas -->
     <div class="eipsi-email-stats-cards">
         <div class="eipsi-stat-card eipsi-stat-success">
             <span class="stat-label">✅ <?php esc_html_e('Enviados Exitosamente', 'eipsi-forms'); ?></span>
             <span class="stat-value"><?php echo (int)$sent_count; ?></span>
-            <span class="stat-sublabel"><?php printf(__('%s%% tasa de entrega', 'eipsi-forms'), $success_rate); ?></span>
+            <span class="stat-sublabel">
+                <?php printf(__('%s%% tasa de entrega', 'eipsi-forms'), $success_rate); ?>
+                <?php if ($success_rate >= 95): ?>
+                    <span class="eipsi-badge eipsi-badge-success"><?php esc_html_e('Excelente', 'eipsi-forms'); ?></span>
+                <?php elseif ($success_rate >= 85): ?>
+                    <span class="eipsi-badge eipsi-badge-warning"><?php esc_html_e('Buena', 'eipsi-forms'); ?></span>
+                <?php elseif ($total_emails > 0): ?>
+                    <span class="eipsi-badge eipsi-badge-error"><?php esc_html_e('Revisar', 'eipsi-forms'); ?></span>
+                <?php endif; ?>
+            </span>
         </div>
         <div class="eipsi-stat-card eipsi-stat-error">
             <span class="stat-label">❌ <?php esc_html_e('Fallidos', 'eipsi-forms'); ?></span>
             <span class="stat-value"><?php echo (int)$failed_count; ?></span>
+            <span class="stat-sublabel">
+                <?php if ($failed_count > 0 && $total_emails > 0): ?>
+                    <?php printf(__('%s%% del total', 'eipsi-forms'), round(($failed_count / $total_emails) * 100, 1)); ?>
+                <?php else: ?>
+                    <?php esc_html_e('Sin fallos', 'eipsi-forms'); ?>
+                <?php endif; ?>
+            </span>
         </div>
         <div class="eipsi-stat-card eipsi-stat-total">
             <span class="stat-label">📊 <?php esc_html_e('Total Emails', 'eipsi-forms'); ?></span>
             <span class="stat-value"><?php echo (int)$total_emails; ?></span>
+            <span class="stat-sublabel <?php echo esc_attr($trend_class); ?>">
+                <?php echo esc_html($trend_icon); ?> 
+                <?php printf(__('%s%% vs semana anterior', 'eipsi-forms'), abs($trend_percentage)); ?>
+                <small>(<?php echo (int)$last_7_sent; ?> <?php esc_html_e('últimos 7 días', 'eipsi-forms'); ?>)</small>
+            </span>
         </div>
     </div>
+
+    <?php if (!empty($error_types) && $failed_count > 0): ?>
+    <!-- Sección de análisis de errores -->
+    <div class="eipsi-error-analysis" style="margin: 20px 0; padding: 20px; background: #fff8f0; border-left: 4px solid #ff9800; border-radius: 4px;">
+        <h4 style="margin-top: 0; color: #e65100;">⚠️ <?php esc_html_e('Análisis de Errores Comunes', 'eipsi-forms'); ?></h4>
+        <p style="margin-bottom: 10px; color: #666;"><?php esc_html_e('Los siguientes errores se han detectado en los emails fallidos:', 'eipsi-forms'); ?></p>
+        <ul style="margin: 0; padding-left: 20px;">
+            <?php foreach ($error_types as $error): ?>
+                <li style="margin-bottom: 5px;">
+                    <strong><?php echo (int)$error->count; ?> <?php esc_html_e('veces:', 'eipsi-forms'); ?></strong>
+                    <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 12px;"><?php echo esc_html(substr($error->error_message, 0, 100)); ?><?php echo strlen($error->error_message) > 100 ? '...' : ''; ?></code>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <p style="margin-top: 10px; font-size: 12px; color: #666;">
+            💡 <?php esc_html_e('Consejo: Revisa la configuración SMTP en la pestaña "Configuración > SMTP" si ves errores de conexión.', 'eipsi-forms'); ?>
+        </p>
+    </div>
+    <?php endif; ?>
 
     <!-- Tabs para Email Log y Dropout Management -->
     <div class="eipsi-sub-tabs">

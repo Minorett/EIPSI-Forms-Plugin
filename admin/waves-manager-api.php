@@ -36,24 +36,46 @@ function wp_ajax_eipsi_save_wave_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
     if (!eipsi_user_can_manage_longitudinal()) {
-        wp_send_json_error('Unauthorized');
+        wp_send_json_error(array('message' => __('No tienes permisos para realizar esta acción.', 'eipsi-forms')));
     }
 
     $wave_id = isset($_POST['wave_id']) ? absint($_POST['wave_id']) : 0;
     $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
 
     if (!$study_id) {
-        wp_send_json_error('Missing study_id');
+        wp_send_json_error(array('message' => __('ID de estudio no proporcionado. Por favor, selecciona un estudio válido.', 'eipsi-forms')));
+    }
+
+    // Validate required fields with detailed error messages
+    $name = isset($_POST['name']) ? sanitize_text_field($_POST['name']) : '';
+    $form_id = isset($_POST['form_id']) ? absint($_POST['form_id']) : 0;
+    $wave_index = isset($_POST['wave_index']) ? absint($_POST['wave_index']) : 0;
+
+    if (empty($name)) {
+        wp_send_json_error(array('message' => __('El nombre de la onda es obligatorio. Por favor, ingresa un nombre descriptivo.', 'eipsi-forms')));
+    }
+
+    if (!$form_id) {
+        wp_send_json_error(array('message' => __('Debes seleccionar un formulario asociado para esta onda.', 'eipsi-forms')));
+    }
+
+    if ($wave_index < 1) {
+        wp_send_json_error(array('message' => __('El índice de la onda debe ser un número positivo (1, 2, 3, etc.).', 'eipsi-forms')));
     }
 
     // Handle unlimited time option
     $has_time_limit = isset($_POST['has_time_limit']) ? 1 : 0;
     $completion_time_limit = isset($_POST['completion_time_limit']) ? absint($_POST['completion_time_limit']) : 0;
 
+    // Validate time limit if enabled
+    if ($has_time_limit && ($completion_time_limit < 1 || $completion_time_limit > 180)) {
+        wp_send_json_error(array('message' => __('El tiempo límite debe estar entre 1 y 180 minutos.', 'eipsi-forms')));
+    }
+
     $wave_data = array(
-        'name' => sanitize_text_field($_POST['name'] ?? ''),
-        'wave_index' => absint($_POST['wave_index'] ?? 1),
-        'form_id' => absint($_POST['form_id'] ?? 0),
+        'name' => $name,
+        'wave_index' => $wave_index,
+        'form_id' => $form_id,
         'due_date' => sanitize_text_field($_POST['due_date'] ?? ''),
         'description' => sanitize_textarea_field($_POST['description'] ?? ''),
         'is_mandatory' => isset($_POST['is_mandatory']) ? 1 : 0,
@@ -62,10 +84,6 @@ function wp_ajax_eipsi_save_wave_handler() {
         'status' => 'active' // Default to active for now
     );
 
-    if (empty($wave_data['name']) || !$wave_data['form_id']) {
-        wp_send_json_error('Missing required fields');
-    }
-
     if ($wave_id) {
         $result = EIPSI_Wave_Service::update_wave($wave_id, $wave_data);
     } else {
@@ -73,11 +91,22 @@ function wp_ajax_eipsi_save_wave_handler() {
     }
 
     if (is_wp_error($result)) {
-        wp_send_json_error($result->get_error_message());
+        wp_send_json_error(array('message' => $result->get_error_message()));
+    }
+
+    $success_message = $wave_id 
+        ? __('Onda actualizada exitosamente.', 'eipsi-forms')
+        : __('Onda creada exitosamente.', 'eipsi-forms');
+
+    // Add context about mandatory/optional status
+    if ($wave_data['is_mandatory']) {
+        $success_message .= ' ' . __('Esta onda es obligatoria para los participantes.', 'eipsi-forms');
+    } else {
+        $success_message .= ' ' . __('Esta onda es opcional para los participantes.', 'eipsi-forms');
     }
 
     wp_send_json_success(array(
-        'message' => $wave_id ? 'Onda actualizada' : 'Onda creada',
+        'message' => $success_message,
         'wave_id' => $wave_id ? $wave_id : $result
     ));
 }
