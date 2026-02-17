@@ -10,6 +10,12 @@
 
     // DOM ready
     $( document ).ready( function () {
+        // Test SMTP button
+        $( '#eipsi-test-smtp' ).on( 'click', function ( e ) {
+            e.preventDefault();
+            testSmtp();
+        } );
+
         // Test default email button (no SMTP needed)
         $( '#eipsi-test-default-email' ).on( 'click', function ( e ) {
             e.preventDefault();
@@ -22,6 +28,46 @@
             getEmailDiagnostic();
         } );
     } );
+
+    /**
+     * Test SMTP configuration
+     */
+    function testSmtp() {
+        const $button = $( '#eipsi-test-smtp' );
+        const $messageContainer = $( '#eipsi-smtp-message-container' );
+
+        // Get test email if provided
+        const testEmail = $( '#test-email-address' ).val() || '';
+
+        // Show loading
+        $button.prop( 'disabled', true ).text( 'Probando...' );
+        hideMessage( $messageContainer );
+
+        $.ajax( {
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_test_smtp',
+                nonce: $( '#eipsi_smtp_config_nonce' ).val(),
+                test_email: testEmail
+            },
+            success( response ) {
+                if ( response.success ) {
+                    // Show success message
+                    showMessage( 'success', response.data.message, $messageContainer );
+                } else {
+                    // Show error
+                    showMessage( 'error', response.data.message, $messageContainer );
+                }
+            },
+            error() {
+                showMessage( 'error', 'Error de conexión al probar SMTP.', $messageContainer );
+            },
+            complete() {
+                $button.prop( 'disabled', false ).text( 'Probar SMTP' );
+            }
+        } );
+    }
 
     /**
      * Test default email system (wp_mail)
@@ -188,11 +234,23 @@
     function showMessage( type, message, $container ) {
         const className = type === 'success' ? 'success' : 'error';
         const icon = type === 'success' ? '✅' : '❌';
-        
-        $container.find( '.message' )
-            .removeClass( 'success error' )
-            .addClass( className )
-            .html( icon + ' ' + message );
+
+        if ( $container.find( '.message' ).length ) {
+            $container.find( '.message' )
+                .removeClass( 'success error' )
+                .addClass( className )
+                .html( icon + ' ' + message );
+        } else {
+            $container.html( '<p class="message ' + className + '">' + icon + ' ' + message + '</p>' );
+        }
+        $container.show();
+    }
+
+    /**
+     * Hide message container
+     */
+    function hideMessage( $container ) {
+        $container.hide();
     }
 
 } )( jQuery );

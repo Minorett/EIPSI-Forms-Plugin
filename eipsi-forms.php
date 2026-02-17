@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.5.0
+ * Version: 1.5.4
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization, longitudinal, studies
- * Stable tag: 1.5.0
+ * Stable tag: 1.5.4
  *
  * @package EIPSI_Forms
  */
@@ -23,7 +23,7 @@
     exit;
  }
 
- define('EIPSI_FORMS_VERSION', '1.5.0');
+ define('EIPSI_FORMS_VERSION', '1.5.4');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -375,6 +375,39 @@ function eipsi_enqueue_admin_light_theme($hook) {
                 array('eipsi-admin-light-theme'),
                 EIPSI_FORMS_VERSION
             );
+
+            // Enqueue configuration panel JavaScript
+            wp_enqueue_script(
+                'eipsi-configuration-panel',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/js/configuration-panel.js',
+                array('jquery'),
+                EIPSI_FORMS_VERSION,
+                true
+            );
+
+            // Localize configuration panel script
+            wp_localize_script('eipsi-configuration-panel', 'eipsiConfigL10n', array(
+                'fillAllFields' => __('Por favor completa todos los campos requeridos.', 'eipsi-forms'),
+                'connectionError' => __('Error de conexión al probar la conexión.', 'eipsi-forms'),
+                'testFirst' => __('Por favor prueba la conexión primero.', 'eipsi-forms'),
+                'saveError' => __('Error al guardar la configuración.', 'eipsi-forms'),
+                'disableExternal' => __('Deshabilitar Base de Datos Externa', 'eipsi-forms'),
+                'loading' => __('Cargando...', 'eipsi-forms')
+            ));
+
+            // Get active tab
+            $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'database';
+
+            // Enqueue email test JavaScript for SMTP tab
+            if ($active_tab === 'smtp') {
+                wp_enqueue_script(
+                    'eipsi-email-test',
+                    EIPSI_FORMS_PLUGIN_URL . 'assets/js/email-test.js',
+                    array('jquery'),
+                    EIPSI_FORMS_VERSION,
+                    true
+                );
+            }
         }
     }
 }

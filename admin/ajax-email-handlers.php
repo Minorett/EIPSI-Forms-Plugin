@@ -75,3 +75,67 @@ function eipsi_get_email_diagnostic_handler() {
         'stats' => $stats
     ));
 }
+
+/**
+ * AJAX Handler: Test SMTP configuration
+ * @since 1.5.4
+ */
+add_action('wp_ajax_eipsi_test_smtp', 'eipsi_test_smtp_handler');
+
+function eipsi_test_smtp_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Unauthorized', 'eipsi-forms')));
+    }
+
+    if (!class_exists('EIPSI_SMTP_Service')) {
+        wp_send_json_error(array('message' => __('SMTP Service not available', 'eipsi-forms')));
+    }
+
+    $smtp_service = new EIPSI_SMTP_Service();
+
+    // Get test email from request or use default
+    $test_email = isset($_POST['test_email']) ? sanitize_email(wp_unslash($_POST['test_email'])) : '';
+    if (empty($test_email)) {
+        $test_email = get_option('eipsi_investigator_email', get_option('admin_email'));
+    }
+
+    if (!is_email($test_email)) {
+        wp_send_json_error(array(
+            'message' => __('Email inválido', 'eipsi-forms'),
+            'details' => "El email especificado no es válido: $test_email"
+        ));
+    }
+
+    // Get current SMTP config
+    $config = $smtp_service->get_config();
+
+    if (!$config) {
+        wp_send_json_error(array(
+            'message' => __('SMTP no configurado', 'eipsi-forms'),
+            'details' => __('Primero debes configurar y guardar los datos SMTP antes de probar.', 'eipsi-forms')
+        ));
+    }
+
+    // Send test email
+    $result = $smtp_service->send_test_email($config, $test_email);
+
+    if ($result['success']) {
+        wp_send_json_success(array(
+            'message' => __('Email de prueba SMTP enviado exitosamente', 'eipsi-forms'),
+            'details' => sprintf(
+                __('Método: SMTP | Servidor: %s:%d | Destinatario: %s', 'eipsi-forms'),
+                $config['host'],
+                $config['port'],
+                $test_email
+            )
+        ));
+    } else {
+        $error_message = $result['error'] ?? 'Error desconocido';
+        wp_send_json_error(array(
+            'message' => __('Error al enviar email de prueba SMTP', 'eipsi-forms'),
+            'details' => $error_message
+        ));
+    }
+}
