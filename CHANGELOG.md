@@ -48,6 +48,11 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ### ✅ Correcciones
 - ✅ **Permisos longitudinales coherentes:** accesos y AJAX usan la misma capacidad configurable para administradores e investigadores.
+- ✅ **Export buttons fixed:** Botones "Download CSV" y "Download Excel" en la sección 📊 Submissions ahora funcionan correctamente.
+  - **Root cause:** El handler verificaba `page === 'eipsi-results'` pero la página real es `'eipsi-results-experience'`, y los botones no incluían el parámetro `page`.
+  - **Fixed:** `admin/export.php` actualizado para verificar el page slug correcto, `admin/tabs/submissions-tab.php` ahora genera URLs completas con parámetro `page`.
+  - **Error handling:** Agregado try-catch en ambas funciones de exportación con logging a `error_log` y mensajes de error amigables para el usuario.
+  - **Impact:** Los clínicos pueden ahora exportar datos de pacientes sin errores.
 - ✅ **Cierre de estudios funcional:** botón "Cerrar estudio" actualiza el estado a completado con confirmación.
 - ✅ **Shortcode visible y copiable:** el dashboard muestra el shortcode persistente del estudio.
 
