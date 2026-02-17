@@ -1002,4 +1002,173 @@ class EIPSI_Email_Service {
             'admin_email' => $admin_email
         );
     }
+
+    /**
+     * Send a test email to verify the email system is working.
+     *
+     * @param string $to Email address to send test to.
+     * @return array {success, message, details}
+     * @since 1.5.5
+     * @access public
+     */
+    public static function send_test_email($to) {
+        $to = sanitize_email($to);
+        
+        if (empty($to) || !is_email($to)) {
+            return array(
+                'success' => false,
+                'message' => __('Email de destino inválido', 'eipsi-forms'),
+                'details' => __('Por favor proporciona un email válido para el test.', 'eipsi-forms')
+            );
+        }
+
+        $subject = sprintf(
+            __('🧪 Test de Email - %s', 'eipsi-forms'),
+            get_bloginfo('name')
+        );
+
+        $site_name = get_bloginfo('name');
+        $site_url = home_url();
+        $date = date_i18n(get_option('date_format') . ' ' . get_option('time_format'));
+
+        $message = sprintf(
+            "<h2>🧪 Test de Sistema de Email - EIPSI Forms</h2>
+            <p>Este es un email de prueba generado automáticamente.</p>
+            <hr>
+            <p><strong>Sitio:</strong> %s</p>
+            <p><strong>URL:</strong> %s</p>
+            <p><strong>Fecha/Hora:</strong> %s</p>
+            <p><strong>Destinatario:</strong> %s</p>
+            <hr>
+            <p>✅ Si estás viendo este mensaje, el sistema de email está funcionando correctamente.</p>
+            <p><small>Este email fue enviado usando %s</small></p>",
+            esc_html($site_name),
+            esc_url($site_url),
+            esc_html($date),
+            esc_html($to),
+            self::get_email_method_label()
+        );
+
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+
+        // Use the same filters as regular emails
+        add_filter('wp_mail_from_name', function($name) {
+            $investigator_name = get_option('eipsi_investigator_name', '');
+            return !empty($investigator_name) ? $investigator_name : $name;
+        }, 99);
+        
+        add_filter('wp_mail_from', function($email) {
+            $investigator_email = get_option('eipsi_investigator_email', '');
+            return !empty($investigator_email) && is_email($investigator_email) 
+                ? $investigator_email 
+                : $email;
+        }, 99);
+
+        $sent = wp_mail($to, $subject, $message, $headers);
+
+        if ($sent) {
+            return array(
+                'success' => true,
+                'message' => __('Email de prueba enviado exitosamente', 'eipsi-forms'),
+                'details' => sprintf(
+                    __('Método: %s | Destinatario: %s | Fecha: %s', 'eipsi-forms'),
+                    self::get_email_method_label(),
+                    $to,
+                    $date
+                )
+            );
+        }
+
+        // Try to get error info
+        global $wp_mail_error;
+        $error_msg = '';
+        if ($wp_mail_error instanceof WP_Error) {
+            $error_msg = $wp_mail_error->get_error_message();
+        }
+
+        return array(
+            'success' => false,
+            'message' => __('Error al enviar el email de prueba', 'eipsi-forms'),
+            'details' => $error_msg ?: __('wp_mail() retornó false sin mensaje de error específico. Revisa los logs del servidor.', 'eipsi-forms')
+        );
+    }
+
+    /**
+     * Get the label for the current email method being used.
+     *
+     * @return string Method label.
+     * @since 1.5.5
+     * @access private
+     */
+    private static function get_email_method_label() {
+        $smtp_service = class_exists('EIPSI_SMTP_Service') ? new EIPSI_SMTP_Service() : null;
+        $smtp_config = $smtp_service ? $smtp_service->get_config() : null;
+        
+        if ($smtp_config) {
+            return sprintf('SMTP (%s:%d)', $smtp_config['host'], $smtp_config['port']);
+        }
+        
+        return 'wp_mail() (WordPress default)';
+    }
+
+    /**
+     * Get email deliverability statistics.
+     *
+     * @return array Statistics about email delivery.
+     * @since 1.5.5
+     * @access public
+     */
+    public static function get_email_deliverability_stats() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'survey_email_log';
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
+        
+        if (!$table_exists) {
+            return array(
+                'has_data' => false,
+                'message' => __('No hay datos de email disponibles aún.', 'eipsi-forms')
+            );
+        }
+
+        // Overall stats
+        $total = $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}");
+        $sent = $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} WHERE status = 'sent'");
+        $failed = $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} WHERE status = 'failed'");
+        
+        // Last 7 days
+        $last_7_days = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table_name} WHERE sent_at >= DATE_SUB(NOW(), INTERVAL %d DAY)",
+            7
+        ));
+
+        // Last 30 days
+        $last_30_days = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table_name} WHERE sent_at >= DATE_SUB(NOW(), INTERVAL %d DAY)",
+            30
+        ));
+
+        // Success rate
+        $success_rate = $total > 0 ? round(($sent / $total) * 100, 1) : 0;
+
+        // Most common error
+        $common_error = $wpdb->get_var(
+            "SELECT error_message FROM {$table_name} 
+             WHERE status = 'failed' AND error_message IS NOT NULL 
+             GROUP BY error_message ORDER BY COUNT(*) DESC LIMIT 1"
+        );
+
+        return array(
+            'has_data' => $total > 0,
+            'total_emails' => (int) $total,
+            'sent' => (int) $sent,
+            'failed' => (int) $failed,
+            'success_rate' => $success_rate,
+            'last_7_days' => (int) $last_7_days,
+            'last_30_days' => (int) $last_30_days,
+            'common_error' => $common_error ?: null,
+            'health_status' => $success_rate >= 95 ? 'excellent' : ($success_rate >= 85 ? 'good' : 'needs_attention')
+        );
+    }
 }

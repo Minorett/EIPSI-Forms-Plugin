@@ -1,12 +1,13 @@
 {
     "name": "eipsi-forms",
-    "version": "1.4.3",
+    "version": "1.5.5",
     "description": "Professional form builder with Gutenberg blocks and Excel export capabilities.",
     "sideEffects": false,
     "scripts": {
         "build": "wp-scripts build && node scripts/fix-block-json-css-references.js",
         "start": "wp-scripts start",
         "lint:js": "wp-scripts lint-js",
+        "lint:js:fix": "wp-scripts lint-js --fix",
         "lint:scss": "wp-scripts lint-style",
         "format": "wp-scripts format",
         "lint:duplicates": "node scripts/check-duplicate-functions.js"
@@ -35,8 +36,6 @@
     },
     "overrides": {
         "webpack-dev-server": "^5.2.2",
-        "eslint": "9.26.0",
-        "@eslint/plugin-kit": "0.3.4",
         "lodash": "^4.17.21",
         "lodash-es": "^4.17.21"
     }
