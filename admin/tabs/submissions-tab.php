@@ -171,8 +171,8 @@ $colspan = $show_form_column ? 8 : 7;
         <div class="vas-export-buttons" style="margin: 20px 0;">
             <?php
             $export_params = $current_form ? ['form_id' => $current_form] : [];
-            $csv_url = add_query_arg(array_merge(['action' => 'export_csv'], $export_params));
-            $excel_url = add_query_arg(array_merge(['action' => 'export_excel'], $export_params));
+            $csv_url = add_query_arg(array_merge(['page' => 'eipsi-results-experience', 'action' => 'export_csv'], $export_params), admin_url('admin.php'));
+            $excel_url = add_query_arg(array_merge(['page' => 'eipsi-results-experience', 'action' => 'export_excel'], $export_params), admin_url('admin.php'));
             ?>
             <a href="<?php echo esc_url($csv_url); ?>" class="button" style="margin-right: 10px;">
                 📥 <?php _e('Download CSV', 'eipsi-forms'); ?>
