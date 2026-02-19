@@ -27,19 +27,243 @@
     --eipsi-gray-700: #374151;
     --eipsi-gray-800: #1f2937;
     --eipsi-gray-900: #111827;
-    
+
     --eipsi-border-radius: 8px;
     --eipsi-border-radius-sm: 4px;
     --eipsi-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
     --eipsi-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --eipsi-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    
+
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
     max-width: 900px;
     margin: 2rem auto;
     padding: 0 1rem;
     line-height: 1.6;
     color: var(--eipsi-gray-800);
+}
+
+/* ========================================
+   PARTICIPANT WELCOME SECTION (v1.6.0)
+   ======================================== */
+
+.eipsi-participant-welcome {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--eipsi-border-radius);
+    margin-bottom: 2rem;
+    box-shadow: var(--eipsi-shadow-lg);
+}
+
+.welcome-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.welcome-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.welcome-subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.progress-overview {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 1.5rem;
+    border-radius: var(--eipsi-border-radius);
+    margin-bottom: 1.5rem;
+}
+
+.progress-bar-container {
+    margin-bottom: 0.75rem;
+}
+
+.progress-bar {
+    background: rgba(255, 255, 255, 0.3);
+    height: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #00c853 0%, #69f0ae 100%);
+    height: 100%;
+    transition: width 0.5s ease;
+    border-radius: 12px;
+}
+
+.progress-text {
+    display: block;
+    text-align: center;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    font-size: 1.125rem;
+}
+
+.progress-stats {
+    text-align: center;
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.next-action {
+    background: white;
+    color: var(--eipsi-gray-800);
+    padding: 1.5rem;
+    border-radius: var(--eipsi-border-radius);
+    box-shadow: var(--eipsi-shadow);
+}
+
+.next-action-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    color: var(--eipsi-gray-700);
+}
+
+.next-action-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--eipsi-gray-100);
+    border-radius: var(--eipsi-border-radius);
+    border-left: 4px solid var(--eipsi-primary);
+}
+
+.next-action-card .wave-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.next-action-card .wave-badge {
+    background: var(--eipsi-primary);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.next-action-card .wave-name {
+    font-size: 1rem;
+    color: var(--eipsi-gray-800);
+}
+
+.next-action-card .button {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.completion-message {
+    background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--eipsi-border-radius);
+    text-align: center;
+    box-shadow: var(--eipsi-shadow);
+}
+
+.completion-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.completion-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.completion-text {
+    font-size: 1rem;
+    margin: 0;
+    opacity: 0.95;
+}
+
+/* ========================================
+   STUDY HERO SECTION
+   ======================================== */
+
+.eipsi-study-hero {
+    background: linear-gradient(135deg, var(--eipsi-primary) 0%, var(--eipsi-primary-dark) 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: var(--eipsi-border-radius);
+    text-align: center;
+    margin-bottom: 2rem;
+    box-shadow: var(--eipsi-shadow-lg);
+}
+
+.hero-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem 0;
+}
+
+.hero-subtitle {
+    font-size: 1.125rem;
+    margin: 0 0 2rem 0;
+    opacity: 0.95;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.hero-actions .button {
+    padding: 0.875rem 1.75rem;
+    font-size: 1rem;
+    border-radius: var(--eipsi-border-radius);
+    text-decoration: none;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.hero-actions .button:hover {
+    transform: translateY(-2px);
+}
+
+/* ========================================
+   STUDY DESCRIPTION SECTION
+   ======================================== */
+
+.eipsi-study-description-section {
+    background: white;
+    border: 1px solid var(--eipsi-gray-200);
+    border-radius: var(--eipsi-border-radius);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--eipsi-shadow-sm);
+}
+
+.eipsi-study-description-section .section-title {
+    margin-top: 0;
+}
+
+.description-content {
+    color: var(--eipsi-gray-700);
+    line-height: 1.8;
+}
+
+.description-content p {
+    margin-bottom: 1rem;
+}
+
+.description-content p:last-child {
+    margin-bottom: 0;
 }
 
 /* ========================================
@@ -319,11 +543,35 @@
 }
 
 .eipsi-share-option label {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--eipsi-gray-700);
     margin-bottom: 0.5rem;
+}
+
+.eipsi-share-option .label-icon {
+    font-size: 1rem;
+}
+
+.eipsi-share-option.secure-shortcode {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    padding: 1rem;
+    border-radius: var(--eipsi-border-radius);
+    border: 2px solid #2196f3;
+}
+
+.badge-recommended {
+    background: #00c853;
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: auto;
 }
 
 .eipsi-copy-field {
@@ -342,6 +590,13 @@
     border-radius: var(--eipsi-border-radius-sm);
     color: var(--eipsi-gray-700);
     word-break: break-all;
+}
+
+.secure-shortcode .eipsi-shortcode-display {
+    background: #f8f9fa;
+    border-color: #2196f3;
+    color: #0d47a1;
+    font-weight: 500;
 }
 
 .eipsi-url-display {
@@ -389,24 +644,88 @@
     margin-top: 0.375rem;
 }
 
-/* Magic Link Info */
+/* Magic Link Info (Enhanced) */
 .eipsi-magic-link-info {
-    margin-top: 1.25rem;
-    padding: 0.75rem 1rem;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
     background: white;
-    border-radius: var(--eipsi-border-radius-sm);
-    border-left: 3px solid var(--eipsi-info);
+    border-radius: var(--eipsi-border-radius);
+    border-left: 4px solid #2196f3;
+    box-shadow: var(--eipsi-shadow-sm);
 }
 
-.eipsi-magic-link-info p {
-    margin: 0;
+.magic-link-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    color: var(--eipsi-gray-800);
+}
+
+.magic-link-title .dashicons {
+    color: #2196f3;
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.magic-link-description {
     font-size: 0.875rem;
-    color: var(--eipsi-gray-600);
+    color: var(--eipsi-gray-700);
+    margin: 0 0 1rem 0;
+    line-height: 1.6;
 }
 
-.eipsi-magic-link-info .dashicons {
-    color: var(--eipsi-info);
-    margin-right: 0.25rem;
+.magic-link-features {
+    margin-bottom: 1.25rem;
+}
+
+.magic-link-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.magic-link-features li {
+    font-size: 0.875rem;
+    color: var(--eipsi-gray-700);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--eipsi-gray-200);
+}
+
+.magic-link-features li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.magic-link-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.magic-link-actions .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-radius: var(--eipsi-border-radius-sm);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.magic-link-actions .button:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--eipsi-shadow-sm);
+}
+
+.magic-link-actions .button .dashicons {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
 }
 
 /* ========================================

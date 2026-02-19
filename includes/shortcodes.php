@@ -394,59 +394,83 @@ add_action('manage_posts_custom_column', 'eipsi_shortcode_indicator_column_conte
 add_action('manage_pages_custom_column', 'eipsi_shortcode_indicator_column_content', 10, 2);
 
 /**
- * Shortcode: [eipsi_longitudinal_study id="123" wave="1" time_limit="30"]
+ * Shortcode: [eipsi_longitudinal_study study_code="STUDY_2025"] or [eipsi_longitudinal_study id="123"]
  * 
  * Display a longitudinal study configuration with waves, time limits, and settings.
  * The shortcode remains persistent regardless of study configuration changes.
+ * 
+ * SECURE: Use study_code instead of ID for better security.
+ * Example: [eipsi_longitudinal_study study_code="ANSIEDAD_TCC_2025"]
  * 
  * @param array $atts Shortcode attributes
  * @return string Rendered HTML
  * 
  * @since 1.5.0
+ * @since 1.6.0 - Added study_code support for secure shortcodes
  */
 function eipsi_longitudinal_study_shortcode($atts) {
     // Parse attributes with defaults
     $atts = shortcode_atts(array(
-        'id' => 0,              // Study ID (required)
-        'wave' => 0,            // Specific wave to display (optional, 0 = all waves)
-        'time_limit' => 0,      // Override time limit in minutes (optional, 0 = use study default)
-        'show_config' => 'yes', // Show study configuration details (yes/no)
-        'show_waves' => 'yes',  // Show waves list (yes/no)
-        'theme' => 'default',   // Theme: default, compact, card
+        'study_code' => '',      // Study code (preferred, secure)
+        'id' => 0,                // Study ID (deprecated, less secure)
+        'wave' => 0,              // Specific wave to display (optional, 0 = all waves)
+        'time_limit' => 0,        // Override time limit in minutes (optional, 0 = use study default)
+        'show_config' => 'yes',   // Show study configuration details (yes/no)
+        'show_waves' => 'yes',    // Show waves list (yes/no)
+        'theme' => 'default',     // Theme: default, compact, card
+        'view' => 'dashboard',    // View mode: dashboard, participant, public
     ), $atts, 'eipsi_longitudinal_study');
     
+    $study_code = sanitize_text_field($atts['study_code']);
     $study_id = absint($atts['id']);
     $wave_index = absint($atts['wave']);
     $time_limit_override = absint($atts['time_limit']);
     $show_config = strtolower($atts['show_config']) === 'yes';
     $show_waves = strtolower($atts['show_waves']) === 'yes';
     $theme = sanitize_key($atts['theme']);
+    $view_mode = sanitize_key($atts['view']);
     
-    // Validate study ID
-    if ($study_id === 0) {
-        return eipsi_longitudinal_study_error(
-            __('⚠️ Error: Se requiere el ID del estudio longitudinal.', 'eipsi-forms'),
-            __('Ejemplo: [eipsi_longitudinal_study id="123"]', 'eipsi-forms')
-        );
-    }
-    
-    // Get study data from database
+    // Get study data - prefer study_code for security
     global $wpdb;
-    $study = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM {$wpdb->prefix}survey_studies WHERE id = %d",
-        $study_id
-    ));
     
-    if (!$study) {
+    if (!empty($study_code)) {
+        // SECURE: Use study_code (prevents ID guessing)
+        $study = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}survey_studies WHERE study_code = %s",
+            $study_code
+        ));
+        
+        if (!$study) {
+            return eipsi_longitudinal_study_error(
+                __('⚠️ Error: No se encontró el estudio con ese código.', 'eipsi-forms'),
+                __('Verificá el código del estudio en el panel de administración.', 'eipsi-forms')
+            );
+        }
+    } elseif ($study_id > 0) {
+        // BACKWARD COMPATIBILITY: Use numeric ID (less secure)
+        $study = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+            $study_id
+        ));
+        
+        if (!$study) {
+            return eipsi_longitudinal_study_error(
+                __('⚠️ Error: No se encontró el estudio con ese ID.', 'eipsi-forms'),
+                __('Ejemplo: [eipsi_longitudinal_study study_code="ESTUDIO_2025"]', 'eipsi-forms')
+            );
+        }
+    } else {
         return eipsi_longitudinal_study_error(
-            sprintf(__('⚠️ Error: No se encontró el estudio con ID %d.', 'eipsi-forms'), $study_id)
+            __('⚠️ Error: Se requiere el código o ID del estudio.', 'eipsi-forms'),
+            __('Ejemplo: [eipsi_longitudinal_study study_code="ESTUDIO_2025"]', 'eipsi-forms')
         );
     }
     
-    // Check if study is active
-    if ($study->status !== 'active' && $study->status !== 'paused') {
+    // Check if study is active (or paused - allow viewing paused studies)
+    if (!in_array($study->status, array('active', 'paused'))) {
         return eipsi_longitudinal_study_error(
-            sprintf(__('ℹ️ El estudio "%s" no está activo actualmente.', 'eipsi-forms'), esc_html($study->study_name))
+            sprintf(__('ℹ️ El estudio "%s" no está disponible actualmente.', 'eipsi-forms'), esc_html($study->study_name)),
+            __('Estado: ' . ucfirst($study->status), 'eipsi-forms')
         );
     }
     
@@ -522,12 +546,12 @@ function eipsi_longitudinal_study_shortcode($atts) {
     // Build shareable URL
     $current_url = get_permalink();
     $shareable_url = add_query_arg(array(
-        'eipsi_study' => $study_id,
+        'eipsi_study' => $study->study_code, // Use study_code for security
         'wave' => $wave_index > 0 ? $wave_index : '',
     ), $current_url);
     
-    // Generate the shortcode string for copying
-    $shortcode_string = '[eipsi_longitudinal_study id="' . $study_id . '"';
+    // Generate the shortcode string for copying (PREFER study_code for security)
+    $shortcode_string = '[eipsi_longitudinal_study study_code="' . $study->study_code . '"';
     if ($wave_index > 0) {
         $shortcode_string .= ' wave="' . $wave_index . '"';
     }
@@ -615,43 +639,51 @@ function eipsi_get_wave_status_label($status) {
  * Add longitudinal study shortcode help to metabox
  * 
  * @since 1.5.0
+ * @since 1.6.0 - Updated to use study_code for security
  */
 function eipsi_add_longitudinal_study_to_metabox($post) {
     global $wpdb;
-    
+
     // Get available longitudinal studies
     $studies = $wpdb->get_results(
-        "SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies 
-         WHERE status IN ('active', 'paused') 
+        "SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies
+         WHERE status IN ('active', 'paused')
          ORDER BY created_at DESC"
     );
-    
+
     if (!empty($studies)) {
         ?>
         <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
-        
+
         <p style="font-size: 13px; margin: 0 0 12px; font-weight: 600;">
             <?php esc_html_e('Estudios Longitudinales disponibles:', 'eipsi-forms'); ?>
         </p>
-        
+
         <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 3px;">
-            <?php foreach ($studies as $study) : ?>
+            <?php foreach ($studies as $study) :
+                $secure_shortcode = '[eipsi_longitudinal_study study_code="' . esc_attr($study->study_code) . '"]';
+            ?>
                 <div style="padding: 8px; border-bottom: 1px solid #f0f0f1; font-size: 12px;">
                     <div style="font-weight: 600; margin-bottom: 4px;">
                         <?php echo esc_html($study->study_name); ?>
                         <span style="color: #666; font-weight: normal;">(<?php echo esc_html($study->study_code); ?>)</span>
                     </div>
-                    <code style="background: #f0f0f1; padding: 2px 6px; border-radius: 2px; font-size: 11px; cursor: pointer;" 
-                          onclick="navigator.clipboard.writeText('[eipsi_longitudinal_study id=&quot;<?php echo esc_attr($study->id); ?>&quot;]'); this.style.background='#00a32a'; this.style.color='white'; setTimeout(() => { this.style.background='#f0f0f1'; this.style.color=''; }, 1000);" 
-                          title="<?php esc_attr_e('Clic para copiar', 'eipsi-forms'); ?>">
-                        [eipsi_longitudinal_study id="<?php echo esc_attr($study->id); ?>"]
+                    <!-- SECURE SHORTCODE -->
+                    <code style="background: #e3f2fd; padding: 2px 6px; border-radius: 2px; font-size: 11px; cursor: pointer; border: 1px solid #2196f3; color: #1565c0;"
+                          onclick="navigator.clipboard.writeText(<?php echo wp_json_encode($secure_shortcode); ?>); this.style.background='#00a32a'; this.style.color='white'; this.style.borderColor='#00a32a'; setTimeout(() => { this.style.background='#e3f2fd'; this.style.color='#1565c0'; this.style.borderColor='#2196f3'; }, 1000);"
+                          title="<?php esc_attr_e('Clic para copiar shortcode seguro', 'eipsi-forms'); ?>">
+                        🔒 [eipsi_longitudinal_study study_code="<?php echo esc_html($study->study_code); ?>"]
                     </code>
                 </div>
             <?php endforeach; ?>
         </div>
-        
+
         <p style="font-size: 11px; color: #666; margin: 8px 0 0;">
-            <em><?php esc_html_e('💡 Atributos opcionales: wave="1", time_limit="30", show_config="no"', 'eipsi-forms'); ?></em>
+            <em>
+                <strong><?php esc_html_e('🔒 Nuevo formato seguro:', 'eipsi-forms'); ?></strong>
+                <?php esc_html_e('Usá study_code en lugar de ID para mayor seguridad.', 'eipsi-forms'); ?><br>
+                <?php esc_html_e('Atributos opcionales: wave="1", time_limit="30", show_config="no", view="participant"', 'eipsi-forms'); ?>
+            </em>
         </p>
         <?php
     }
