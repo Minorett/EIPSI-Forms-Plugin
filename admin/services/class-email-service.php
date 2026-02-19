@@ -878,76 +878,117 @@ class EIPSI_Email_Service {
     }
     
     /**
-     * Send test email to admin to verify email system is working
+     * Send a test email to verify the email system is working.
      *
-     * @param string|null $test_email Optional specific email address to test
+     * @param string|null $to Email address to send test to. If null, uses investigator or admin email.
      * @return array {success: bool, message: string, details: string}
-     * @since 1.5.4
+     * @since 1.5.5
      * @access public
      */
-    public static function send_test_email($test_email = null) {
-        $smtp_service = class_exists('EIPSI_SMTP_Service') ? new EIPSI_SMTP_Service() : null;
-        $smtp_config = $smtp_service ? $smtp_service->get_config() : null;
-        
-        $use_smtp = !empty($smtp_config);
-        $method = $use_smtp ? 'SMTP' : 'wp_mail()';
+    public static function send_test_email($to = null) {
+        // Sanitize and validate email
+        $recipient = sanitize_email($to);
         
         // Use provided email or default to investigator/admin email
-        $recipient = $test_email ?: get_option('eipsi_investigator_email', get_option('admin_email', 'admin@example.com'));
+        if (empty($recipient)) {
+            $recipient = get_option('eipsi_investigator_email', get_option('admin_email', ''));
+        }
         
-        if (!is_email($recipient)) {
+        if (empty($recipient) || !is_email($recipient)) {
             return array(
                 'success' => false,
-                'message' => 'Email inválido',
-                'details' => "No se puede enviar: email inválido ($recipient)"
+                'message' => __('Email de destino inválido', 'eipsi-forms'),
+                'details' => __('Por favor proporciona un email válido para el test o configura el email del investigador/administrador.', 'eipsi-forms')
             );
         }
-        
-        $subject = 'Prueba de correo EIPSI Forms - ' . date('Y-m-d H:i:s');
-        $investigator_name = get_option('eipsi_investigator_name', get_bloginfo('name'));
-        
-        $content = '<h2>✅ Prueba de correo exitosa</h2>';
-        $content .= '<p><strong>Destinatario:</strong> ' . esc_html($recipient) . '</p>';
-        $content .= '<p><strong>Método de envío:</strong> ' . esc_html($method) . '</p>';
-        $content .= '<p><strong>Fecha y hora:</strong> ' . date_i18n(get_option('date_format') . ' ' . get_option('time_format')) . '</p>';
-        $content .= '<p><strong>Configuración SMTP:</strong> ' . ($use_smtp ? '✅ Activo' : '❌ Inactivo') . '</p>';
-        
+
+        $smtp_service = class_exists('EIPSI_SMTP_Service') ? new EIPSI_SMTP_Service() : null;
+        $smtp_config = $smtp_service ? $smtp_service->get_config() : null;
+        $use_smtp = !empty($smtp_config);
+
+        $subject = sprintf(
+            __('🧪 Test de Email - %s', 'eipsi-forms'),
+            get_bloginfo('name')
+        );
+
+        $site_name = get_bloginfo('name');
+        $site_url = home_url();
+        $date = date_i18n(get_option('date_format') . ' ' . get_option('time_format'));
+        $investigator_name = get_option('eipsi_investigator_name', '');
+
+        // Build email content
+        $content = sprintf(
+            "<h2>🧪 Test de Sistema de Email - EIPSI Forms</h2>
+            <p>Este es un email de prueba generado automáticamente.</p>
+            <hr>
+            <p><strong>Sitio:</strong> %s</p>
+            <p><strong>URL:</strong> %s</p>
+            <p><strong>Fecha/Hora:</strong> %s</p>
+            <p><strong>Destinatario:</strong> %s</p>
+            <p><strong>Configuración SMTP:</strong> %s</p>",
+            esc_html($site_name),
+            esc_url($site_url),
+            esc_html($date),
+            esc_html($recipient),
+            $use_smtp ? '✅ ' . esc_html($smtp_config['host'] . ':' . $smtp_config['port']) : '❌ ' . __('Inactivo (usando wp_mail)', 'eipsi-forms')
+        );
+
         if ($use_smtp && isset($smtp_config['host'])) {
-            $content .= '<p><strong>Servidor SMTP:</strong> ' . esc_html($smtp_config['host'] . ':' . $smtp_config['port']) . '</p>';
+            $content .= sprintf(
+                '<p><strong>Servidor SMTP:</strong> %s</p>',
+                esc_html($smtp_config['host'] . ':' . $smtp_config['port'])
+            );
         }
-        
-        $content .= '<p><strong>Investigador:</strong> ' . esc_html($investigator_name) . '</p>';
+
+        if (!empty($investigator_name)) {
+            $content .= sprintf(
+                '<p><strong>Investigador:</strong> %s</p>',
+                esc_html($investigator_name)
+            );
+        }
+
         $content .= '<hr>';
-        $content .= '<p style="font-size: 14px; color: #666;">';
-        $content .= 'Si recibes este mensaje, tu sistema de correo de EIPSI Forms está configurado correctamente. ';
-        $content .= 'El sistema puede enviar recordatorios clínicos y notificaciones automáticas.';
-        $content .= '</p>';
-        
+        $content .= sprintf(
+            '<p>%s</p>',
+            __('✅ Si estás viendo este mensaje, el sistema de email está funcionando correctamente.', 'eipsi-forms')
+        );
+        $content .= sprintf(
+            '<p><small>%s %s</small></p>',
+            __('Este email fue enviado usando', 'eipsi-forms'),
+            self::get_email_method_label()
+        );
+
         try {
+            // Use the send_email method for consistency and logging
             $result = self::send_email(0, 0, $recipient, 'test', $subject, $content);
-            
+
             if ($result) {
                 return array(
                     'success' => true,
-                    'message' => 'Email de prueba enviado exitosamente',
-                    'details' => "Método: $method | Destinatario: $recipient"
+                    'message' => __('Email de prueba enviado exitosamente', 'eipsi-forms'),
+                    'details' => sprintf(
+                        __('Método: %s | Destinatario: %s | Fecha: %s', 'eipsi-forms'),
+                        self::get_email_method_label(),
+                        $recipient,
+                        $date
+                    )
                 );
             } else {
                 return array(
                     'success' => false,
-                    'message' => 'Error al enviar email de prueba',
-                    'details' => "El sistema no pudo enviar el email de prueba. Revisa los logs de error."
+                    'message' => __('Error al enviar el email de prueba', 'eipsi-forms'),
+                    'details' => __('El sistema no pudo enviar el email de prueba. Revisa los logs de error.', 'eipsi-forms')
                 );
             }
         } catch (Exception $e) {
             return array(
                 'success' => false,
-                'message' => 'Excepción durante el envío',
-                'details' => 'Error: ' . $e->getMessage()
+                'message' => __('Excepción durante el envío', 'eipsi-forms'),
+                'details' => __('Error: ', 'eipsi-forms') . $e->getMessage()
             );
         }
     }
-    
+
     /**
      * Diagnóstico básico del sistema de email
      *
@@ -1000,96 +1041,6 @@ class EIPSI_Email_Service {
             'smtp_configured' => !empty($smtp_config),
             'investigator_email' => $investigator_email,
             'admin_email' => $admin_email
-        );
-    }
-
-    /**
-     * Send a test email to verify the email system is working.
-     *
-     * @param string $to Email address to send test to.
-     * @return array {success, message, details}
-     * @since 1.5.5
-     * @access public
-     */
-    public static function send_test_email($to) {
-        $to = sanitize_email($to);
-        
-        if (empty($to) || !is_email($to)) {
-            return array(
-                'success' => false,
-                'message' => __('Email de destino inválido', 'eipsi-forms'),
-                'details' => __('Por favor proporciona un email válido para el test.', 'eipsi-forms')
-            );
-        }
-
-        $subject = sprintf(
-            __('🧪 Test de Email - %s', 'eipsi-forms'),
-            get_bloginfo('name')
-        );
-
-        $site_name = get_bloginfo('name');
-        $site_url = home_url();
-        $date = date_i18n(get_option('date_format') . ' ' . get_option('time_format'));
-
-        $message = sprintf(
-            "<h2>🧪 Test de Sistema de Email - EIPSI Forms</h2>
-            <p>Este es un email de prueba generado automáticamente.</p>
-            <hr>
-            <p><strong>Sitio:</strong> %s</p>
-            <p><strong>URL:</strong> %s</p>
-            <p><strong>Fecha/Hora:</strong> %s</p>
-            <p><strong>Destinatario:</strong> %s</p>
-            <hr>
-            <p>✅ Si estás viendo este mensaje, el sistema de email está funcionando correctamente.</p>
-            <p><small>Este email fue enviado usando %s</small></p>",
-            esc_html($site_name),
-            esc_url($site_url),
-            esc_html($date),
-            esc_html($to),
-            self::get_email_method_label()
-        );
-
-        $headers = array('Content-Type: text/html; charset=UTF-8');
-
-        // Use the same filters as regular emails
-        add_filter('wp_mail_from_name', function($name) {
-            $investigator_name = get_option('eipsi_investigator_name', '');
-            return !empty($investigator_name) ? $investigator_name : $name;
-        }, 99);
-        
-        add_filter('wp_mail_from', function($email) {
-            $investigator_email = get_option('eipsi_investigator_email', '');
-            return !empty($investigator_email) && is_email($investigator_email) 
-                ? $investigator_email 
-                : $email;
-        }, 99);
-
-        $sent = wp_mail($to, $subject, $message, $headers);
-
-        if ($sent) {
-            return array(
-                'success' => true,
-                'message' => __('Email de prueba enviado exitosamente', 'eipsi-forms'),
-                'details' => sprintf(
-                    __('Método: %s | Destinatario: %s | Fecha: %s', 'eipsi-forms'),
-                    self::get_email_method_label(),
-                    $to,
-                    $date
-                )
-            );
-        }
-
-        // Try to get error info
-        global $wp_mail_error;
-        $error_msg = '';
-        if ($wp_mail_error instanceof WP_Error) {
-            $error_msg = $wp_mail_error->get_error_message();
-        }
-
-        return array(
-            'success' => false,
-            'message' => __('Error al enviar el email de prueba', 'eipsi-forms'),
-            'details' => $error_msg ?: __('wp_mail() retornó false sin mensaje de error específico. Revisa los logs del servidor.', 'eipsi-forms')
         );
     }
 
