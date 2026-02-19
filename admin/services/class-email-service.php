@@ -852,28 +852,101 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Get email deliverability stats.
+     * Get email deliverability statistics.
      *
-     * @param int $survey_id ID del estudio.
-     * @return array {sent, failed, total, success_rate}
-     * @since 1.4.1
+     * Consolidated method (v1.5.5): supports optional survey-scoped filtering
+     * (v1.4.1 behaviour) while also returning enriched metrics used by the
+     * diagnostics dashboard (last_7_days, last_30_days, health_status, has_data).
+     *
+     * Backwards-compatible: callers that only used the basic keys
+     * (total, sent, failed, success_rate) continue to work unchanged.
+     *
+     * @param int $survey_id Optional survey ID to scope the query. 0 = all surveys.
+     * @return array {
+     *   has_data: bool,
+     *   total_emails: int,
+     *   total: int,        // alias of total_emails – kept for BC
+     *   sent: int,
+     *   failed: int,
+     *   success_rate: float,
+     *   last_7_days: int,
+     *   last_30_days: int,
+     *   health_status: string,  // 'excellent' | 'good' | 'needs_attention'
+     *   common_error: string|null,
+     *   message: string|null    // set only when table is missing
+     * }
+     * @since 1.4.1 (merged/enriched in 1.5.5)
      * @access public
      */
     public static function get_email_deliverability_stats($survey_id = 0) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'survey_email_log';
-        
-        $where = $survey_id > 0 ? $wpdb->prepare("WHERE survey_id = %d", $survey_id) : '';
-        
-        $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} {$where}");
-        $sent = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} {$where}" . ($where ? ' AND ' : 'WHERE ') . "status = 'sent'");
-        $failed = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} {$where}" . ($where ? ' AND ' : 'WHERE ') . "status = 'failed'");
-        
+
+        // Guard: table may not exist on fresh installs.
+        $table_exists = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name )
+        ) === $table_name;
+
+        if ( ! $table_exists ) {
+            return array(
+                'has_data'     => false,
+                'total_emails' => 0,
+                'total'        => 0,
+                'sent'         => 0,
+                'failed'       => 0,
+                'success_rate' => 0,
+                'last_7_days'  => 0,
+                'last_30_days' => 0,
+                'health_status' => 'needs_attention',
+                'common_error' => null,
+                'message'      => __( 'No hay datos de email disponibles aún.', 'eipsi-forms' ),
+            );
+        }
+
+        // Build optional survey-scope WHERE clause.
+        $survey_id = (int) $survey_id;
+        $where_scope = $survey_id > 0
+            ? $wpdb->prepare( 'WHERE survey_id = %d', $survey_id )
+            : '';
+
+        // Core counts — scoped when a survey_id is provided.
+        $total  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} {$where_scope}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
+        $sep    = $where_scope ? ' AND ' : 'WHERE ';
+        $sent   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} {$where_scope}{$sep}status = 'sent'" );   // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
+        $failed = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name} {$where_scope}{$sep}status = 'failed'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
+
+        $success_rate = $total > 0 ? round( ( $sent / $total ) * 100, 1 ) : 0;
+
+        // Time-windowed counts — always global (not scoped to survey_id) so the
+        // dashboard diagnostics panel always reflects overall system health.
+        $last_7_days = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table_name} WHERE sent_at >= DATE_SUB(NOW(), INTERVAL %d DAY)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            7
+        ) );
+        $last_30_days = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table_name} WHERE sent_at >= DATE_SUB(NOW(), INTERVAL %d DAY)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            30
+        ) );
+
+        // Most common delivery error for quick diagnostics.
+        $common_error = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            "SELECT error_message FROM {$table_name}
+             WHERE status = 'failed' AND error_message IS NOT NULL
+             GROUP BY error_message ORDER BY COUNT(*) DESC LIMIT 1"
+        );
+
         return array(
-            'total' => $total,
-            'sent' => $sent,
-            'failed' => $failed,
-            'success_rate' => $total > 0 ? round(($sent / $total) * 100, 1) : 0
+            'has_data'      => $total > 0,
+            'total_emails'  => $total,
+            'total'         => $total,       // backwards-compat alias
+            'sent'          => $sent,
+            'failed'        => $failed,
+            'success_rate'  => $success_rate,
+            'last_7_days'   => $last_7_days,
+            'last_30_days'  => $last_30_days,
+            'health_status' => $success_rate >= 95 ? 'excellent' : ( $success_rate >= 85 ? 'good' : 'needs_attention' ),
+            'common_error'  => $common_error ?: null,
+            'message'       => null,
         );
     }
     
@@ -1062,64 +1135,4 @@ class EIPSI_Email_Service {
         return 'wp_mail() (WordPress default)';
     }
 
-    /**
-     * Get email deliverability statistics.
-     *
-     * @return array Statistics about email delivery.
-     * @since 1.5.5
-     * @access public
-     */
-    public static function get_email_deliverability_stats() {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'survey_email_log';
-
-        // Check if table exists
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") === $table_name;
-        
-        if (!$table_exists) {
-            return array(
-                'has_data' => false,
-                'message' => __('No hay datos de email disponibles aún.', 'eipsi-forms')
-            );
-        }
-
-        // Overall stats
-        $total = $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}");
-        $sent = $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} WHERE status = 'sent'");
-        $failed = $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} WHERE status = 'failed'");
-        
-        // Last 7 days
-        $last_7_days = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$table_name} WHERE sent_at >= DATE_SUB(NOW(), INTERVAL %d DAY)",
-            7
-        ));
-
-        // Last 30 days
-        $last_30_days = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$table_name} WHERE sent_at >= DATE_SUB(NOW(), INTERVAL %d DAY)",
-            30
-        ));
-
-        // Success rate
-        $success_rate = $total > 0 ? round(($sent / $total) * 100, 1) : 0;
-
-        // Most common error
-        $common_error = $wpdb->get_var(
-            "SELECT error_message FROM {$table_name} 
-             WHERE status = 'failed' AND error_message IS NOT NULL 
-             GROUP BY error_message ORDER BY COUNT(*) DESC LIMIT 1"
-        );
-
-        return array(
-            'has_data' => $total > 0,
-            'total_emails' => (int) $total,
-            'sent' => (int) $sent,
-            'failed' => (int) $failed,
-            'success_rate' => $success_rate,
-            'last_7_days' => (int) $last_7_days,
-            'last_30_days' => (int) $last_30_days,
-            'common_error' => $common_error ?: null,
-            'health_status' => $success_rate >= 95 ? 'excellent' : ($success_rate >= 85 ? 'good' : 'needs_attention')
-        );
-    }
 }
