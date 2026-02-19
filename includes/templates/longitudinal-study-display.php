@@ -1,16 +1,18 @@
 <?php
 /**
  * Template: Longitudinal Study Display
- * 
+ *
  * Displays a longitudinal study configuration including:
  * - Study name and description
  * - Principal investigator
  * - Waves with forms and time limits
  * - Shareable link options
- * 
+ * - Participant-friendly welcome section
+ *
  * @package EIPSI_Forms
  * @since 1.5.0
- * 
+ * @since 1.6.0 - Enhanced participant experience
+ *
  * Variables available:
  * - $study: Study object from database
  * - $waves: Array of waves
@@ -23,37 +25,157 @@
  * - $show_waves: Whether to show waves list
  * - $theme: Theme style (default, compact, card)
  * - $time_limit_override: Override time limit if set
+ * - $view_mode: View mode (dashboard, participant, public)
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
+// Check if participant is logged in
+$is_participant_logged_in = function_exists('EIPSI_Auth_Service') && EIPSI_Auth_Service::is_authenticated();
+$current_participant_id = $is_participant_logged_in ? EIPSI_Auth_Service::get_current_participant() : 0;
+
+// Get participant's next wave if logged in
+$next_wave = null;
+$participant_progress = 0;
+$total_waves = count($waves);
+
+if ($is_participant_logged_in && $current_participant_id && $show_waves) {
+    global $wpdb;
+
+    // Get this participant's assignments
+    $assignments = $wpdb->get_results($wpdb->prepare(
+        "SELECT a.wave_id, a.status
+         FROM {$wpdb->prefix}survey_assignments a
+         INNER JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+         WHERE a.participant_id = %d AND w.study_id = %d
+         ORDER BY w.wave_index ASC",
+        $current_participant_id,
+        $study->id
+    ));
+
+    // Map wave_id to status
+    $wave_status = array();
+    foreach ($assignments as $assignment) {
+        $wave_status[$assignment->wave_id] = $assignment->status;
+    }
+
+    // Find next pending wave
+    foreach ($waves as $wave) {
+        if (!isset($wave_status[$wave['id']]) || $wave_status[$wave['id']] !== 'submitted') {
+            $next_wave = $wave;
+            break;
+        }
+    }
+
+    // Calculate progress
+    $completed_waves = 0;
+    foreach ($wave_status as $status) {
+        if ($status === 'submitted') {
+            $completed_waves++;
+        }
+    }
+    $participant_progress = $total_waves > 0 ? round(($completed_waves / $total_waves) * 100) : 0;
+}
+
 // Determine CSS classes based on theme
 $container_class = 'eipsi-longitudinal-study eipsi-theme-' . esc_attr($theme);
 $status_class = 'status-' . esc_attr($study->status);
+$view_class = 'view-' . esc_attr($view_mode);
 ?>
 
-<div class="<?php echo esc_attr($container_class); ?>" data-study-id="<?php echo esc_attr($study->id); ?>">
-    
-    <!-- Study Header -->
-    <div class="eipsi-study-header">
-        <div class="eipsi-study-title-section">
-            <span class="eipsi-study-badge <?php echo esc_attr($status_class); ?>">
-                <?php echo esc_html(ucfirst($study->status)); ?>
-            </span>
-            <h2 class="eipsi-study-name"><?php echo esc_html($study->study_name); ?></h2>
-            <?php if (!empty($study->study_code)): ?>
-                <span class="eipsi-study-code"><?php echo esc_html($study->study_code); ?></span>
-            <?php endif; ?>
-        </div>
-        
-        <?php if (!empty($study->description)): ?>
-            <div class="eipsi-study-description">
-                <?php echo wp_kses_post(wpautop($study->description)); ?>
+<div class="<?php echo esc_attr($container_class); ?> <?php echo esc_attr($view_class); ?>" data-study-id="<?php echo esc_attr($study->id); ?>" data-study-code="<?php echo esc_attr($study->study_code); ?>">
+
+    <!-- Participant Welcome Section (only for participant view) -->
+    <?php if ($view_mode === 'participant' || $view_mode === 'public'): ?>
+        <?php if ($is_participant_logged_in): ?>
+            <div class="eipsi-participant-welcome">
+                <div class="welcome-header">
+                    <h3 class="welcome-title">👋 ¡Hola de nuevo!</h3>
+                    <p class="welcome-subtitle">Tu progreso en este estudio</p>
+                </div>
+                <div class="progress-overview">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: <?php echo esc_attr($participant_progress); ?>%;"></div>
+                        </div>
+                        <span class="progress-text"><?php echo esc_html($participant_progress); ?>% completado</span>
+                    </div>
+                    <div class="progress-stats">
+                        <span class="stat-item">
+                            <strong><?php echo esc_html($participant_progress / 100 * $total_waves); ?></strong>
+                            de <?php echo esc_html($total_waves); ?> tomas
+                        </span>
+                    </div>
+                </div>
+
+                <?php if ($next_wave): ?>
+                    <div class="next-action">
+                        <h4 class="next-action-title">📝 Tu próxima toma</h4>
+                        <div class="next-action-card">
+                            <div class="wave-info">
+                                <span class="wave-badge">T<?php echo esc_html($next_wave['wave_index']); ?></span>
+                                <strong class="wave-name"><?php echo esc_html($next_wave['name']); ?></strong>
+                            </div>
+                            <form action="" method="get">
+                                <input type="hidden" name="form_id" value="<?php echo esc_attr($next_wave['form_id']); ?>">
+                                <button type="submit" class="button button-primary button-large">
+                                    Comenzar toma →
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="completion-message">
+                        <span class="completion-icon">🎉</span>
+                        <h4 class="completion-title">¡Felicidades!</h4>
+                        <p class="completion-text">Has completado todas las tomas de este estudio. ¡Gracias por tu participación!</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <div class="eipsi-study-hero">
+                <h2 class="hero-title">📊 <?php echo esc_html($study->study_name); ?></h2>
+                <p class="hero-subtitle">Ayudá a la ciencia clínica completando este estudio</p>
+                <div class="hero-actions">
+                    <a href="#login-section" class="button button-primary button-large">Iniciar Sesión</a>
+                    <a href="#study-info" class="button button-secondary button-large">Más Información</a>
+                </div>
             </div>
         <?php endif; ?>
-    </div>
+    <?php endif; ?>
+
+    <!-- Study Header (for dashboard view or if not participant welcome shown) -->
+    <?php if ($view_mode === 'dashboard' || ($view_mode !== 'participant' && $view_mode !== 'public')): ?>
+        <div class="eipsi-study-header">
+            <div class="eipsi-study-title-section">
+                <span class="eipsi-study-badge <?php echo esc_attr($status_class); ?>">
+                    <?php echo esc_html(ucfirst($study->status)); ?>
+                </span>
+                <h2 class="eipsi-study-name"><?php echo esc_html($study->study_name); ?></h2>
+                <?php if (!empty($study->study_code)): ?>
+                    <span class="eipsi-study-code"><?php echo esc_html($study->study_code); ?></span>
+                <?php endif; ?>
+            </div>
+
+            <?php if (!empty($study->description)): ?>
+                <div class="eipsi-study-description">
+                    <?php echo wp_kses_post(wpautop($study->description)); ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
+    <!-- Study Description (for participant view) -->
+    <?php if (($view_mode === 'participant' || $view_mode === 'public') && !empty($study->description)): ?>
+        <div class="eipsi-study-description-section" id="study-info">
+            <h3 class="section-title">📋 Sobre este estudio</h3>
+            <div class="description-content">
+                <?php echo wp_kses_post(wpautop($study->description)); ?>
+            </div>
+        </div>
+    <?php endif; ?>
     
     <!-- Study Configuration Summary -->
     <?php if ($show_config): ?>
@@ -187,24 +309,33 @@ $status_class = 'status-' . esc_attr($study->status);
     <!-- Share Section -->
     <div class="eipsi-share-section">
         <h3 class="eipsi-section-title">🔗 <?php esc_html_e('Compartir Estudio', 'eipsi-forms'); ?></h3>
-        
+
         <div class="eipsi-share-options">
-            <!-- Shortcode Copy -->
-            <div class="eipsi-share-option">
-                <label><?php esc_html_e('Shortcode:', 'eipsi-forms'); ?></label>
+            <!-- SECURE SHORTCODE -->
+            <div class="eipsi-share-option secure-shortcode">
+                <label>
+                    <span class="label-icon">🔒</span>
+                    <?php esc_html_e('Shortcode Seguro:', 'eipsi-forms'); ?>
+                    <span class="badge-recommended"><?php esc_html_e('Recomendado', 'eipsi-forms'); ?></span>
+                </label>
                 <div class="eipsi-copy-field">
                     <code class="eipsi-shortcode-display"><?php echo esc_html($shortcode_string); ?></code>
-                    <button type="button" class="eipsi-copy-btn" data-copy="<?php echo esc_attr($shortcode_string); ?>" title="<?php esc_attr_e('Copiar shortcode', 'eipsi-forms'); ?>">
+                    <button type="button" class="eipsi-copy-btn" data-copy="<?php echo esc_attr($shortcode_string); ?>" title="<?php esc_attr_e('Copiar shortcode seguro', 'eipsi-forms'); ?>">
                         <span class="dashicons dashicons-clipboard"></span>
                         <span class="copy-text"><?php esc_html_e('Copiar', 'eipsi-forms'); ?></span>
                     </button>
                 </div>
-                <small class="eipsi-help-text"><?php esc_html_e('Copia este shortcode y pégalo en cualquier página o post.', 'eipsi-forms'); ?></small>
+                <small class="eipsi-help-text">
+                    <?php esc_html_e('Usa study_code para mayor seguridad. Evita usar IDs numéricos.', 'eipsi-forms'); ?>
+                </small>
             </div>
-            
+
             <!-- Shareable URL -->
             <div class="eipsi-share-option">
-                <label><?php esc_html_e('Enlace Directo:', 'eipsi-forms'); ?></label>
+                <label>
+                    <span class="label-icon">🔗</span>
+                    <?php esc_html_e('Enlace Directo:', 'eipsi-forms'); ?>
+                </label>
                 <div class="eipsi-copy-field">
                     <input type="text" class="eipsi-url-display" value="<?php echo esc_url($shareable_url); ?>" readonly>
                     <button type="button" class="eipsi-copy-btn" data-copy="<?php echo esc_url($shareable_url); ?>" title="<?php esc_attr_e('Copiar enlace', 'eipsi-forms'); ?>">
@@ -212,16 +343,39 @@ $status_class = 'status-' . esc_attr($study->status);
                         <span class="copy-text"><?php esc_html_e('Copiar', 'eipsi-forms'); ?></span>
                     </button>
                 </div>
-                <small class="eipsi-help-text"><?php esc_html_e('Comparte este enlace para acceder directamente al estudio.', 'eipsi-forms'); ?></small>
+                <small class="eipsi-help-text">
+                    <?php esc_html_e('Comparte este enlace para acceder directamente al estudio.', 'eipsi-forms'); ?>
+                </small>
             </div>
         </div>
-        
-        <!-- Magic Link Info -->
+
+        <!-- Magic Link Integration -->
         <div class="eipsi-magic-link-info">
-            <p>
+            <h4 class="magic-link-title">
                 <span class="dashicons dashicons-email-alt"></span>
-                <?php esc_html_e('¿Necesitas invitar participantes? Usa los Magic Links desde el panel de administración del estudio.', 'eipsi-forms'); ?>
+                <?php esc_html_e('Invitar Participantes con Magic Links', 'eipsi-forms'); ?>
+            </h4>
+            <p class="magic-link-description">
+                <?php esc_html_e('Los Magic Links permiten a los participantes acceder al estudio con un solo clic, sin necesidad de recordar contraseñas.', 'eipsi-forms'); ?>
             </p>
+            <div class="magic-link-features">
+                <ul>
+                    <li>✅ <?php esc_html_e('Acceso seguro con tokens únicos', 'eipsi-forms'); ?></li>
+                    <li>✅ <?php esc_html_e('Válido por 7 días desde su generación', 'eipsi-forms'); ?></li>
+                    <li>✅ <?php esc_html_e('Revocable en cualquier momento', 'eipsi-forms'); ?></li>
+                    <li>✅ <?php esc_html_e('Ideal para estudios longitudinales', 'eipsi-forms'); ?></li>
+                </ul>
+            </div>
+            <div class="magic-link-actions">
+                <a href="<?php echo admin_url('admin.php?page=eipsi-longitudinal-study&tab=dashboard-study'); ?>" class="button button-primary">
+                    <span class="dashicons dashicons-admin-generic"></span>
+                    <?php esc_html_e('Ir al Panel de Administración', 'eipsi-forms'); ?>
+                </a>
+                <a href="https://docs.eipsi-forms.com/magic-links" target="_blank" class="button button-secondary">
+                    <span class="dashicons dashicons-external"></span>
+                    <?php esc_html_e('Ver Documentación', 'eipsi-forms'); ?>
+                </a>
+            </div>
         </div>
     </div>
     

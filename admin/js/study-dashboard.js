@@ -1290,7 +1290,10 @@
             );
             $( '#study-id-display' ).text( data.general.study_code );
 
-            const shortcode = buildStudyShortcode( data.general.id || currentStudyId );
+            const shortcode = buildStudyShortcode(
+                data.general.id || currentStudyId,
+                data.general.study_code // Use study_code for security
+            );
             $( '#study-shortcode-display' ).text( shortcode );
 
             const isCompleted = data.general.status === 'completed';
@@ -1700,8 +1703,15 @@
     // HELPERS
     // ===========================
 
-    function buildStudyShortcode( studyId ) {
-        if ( ! studyId ) return '';
+    function buildStudyShortcode( studyId, studyCode ) {
+        if ( ! studyId && ! studyCode ) return '';
+
+        // PREFER study_code for security (v1.6.0+)
+        if ( studyCode ) {
+            return '[eipsi_longitudinal_study study_code="' + studyCode + '"]';
+        }
+
+        // BACKWARD COMPATIBILITY: Use numeric ID (less secure)
         return '[eipsi_longitudinal_study id="' + studyId + '"]';
     }
 
