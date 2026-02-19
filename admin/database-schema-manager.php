@@ -2278,32 +2278,136 @@ function eipsi_longitudinal_fk_exists($table_name, $constraint_name) {
  * @param string $alter_sql SQL ALTER TABLE ... ADD CONSTRAINT ...
  * @return bool
  */
+/**
+ * Intenta agregar una FK (best effort, sin romper el sitio si falla).
+ *
+ * @param string $table_name Nombre real de la tabla (con prefix)
+ * @param string $constraint_name Nombre del constraint
+ * @param string $alter_sql SQL ALTER TABLE ... ADD CONSTRAINT ...
+ * @return bool
+ */
 function eipsi_longitudinal_ensure_foreign_key($table_name, $constraint_name, $alter_sql) {
     global $wpdb;
 
+    // Check if constraint already exists
     if (eipsi_longitudinal_fk_exists($table_name, $constraint_name)) {
         return true;
     }
 
+    // Suppress errors to prevent site breakage on FK failures
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-    $result = $wpdb->query($alter_sql);
+    $result = @$wpdb->query($alter_sql);
 
     if ($result === false) {
-        error_log('[EIPSI] Failed to add FK ' . $constraint_name . ' on ' . $table_name . ': ' . $wpdb->last_error);
+        // Log detailed error for debugging
+        $error_msg = $wpdb->last_error;
+        error_log('[EIPSI] Failed to add FK ' . $constraint_name . ' on ' . $table_name . ': ' . $error_msg);
+
+        // Common error patterns and their meanings:
+        // - "Can't create table" or "errno: 150": Referenced table doesn't exist or column type mismatch
+        // - "Duplicate key name": Constraint already exists (should have been caught above)
+        // - "Cannot add foreign key constraint": Referenced column is not indexed
+
+        if (strpos($error_msg, 'errno: 150') !== false || strpos($error_msg, 'Cannot add foreign key') !== false) {
+            error_log('[EIPSI] FK ' . $constraint_name . ' failed: Referenced table may not exist or column types mismatch');
+        }
+
         return false;
     }
 
+    error_log('[EIPSI] Successfully added FK ' . $constraint_name . ' on ' . $table_name);
     return true;
 }
+
+/**
+ * Verifica si una tabla existe en la base de datos.
+ *
+ * @param string $table_name Nombre de la tabla (con prefijo)
+ * @return bool
+ */
+function eipsi_table_exists($table_name) {
+    global $wpdb;
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $exists = $wpdb->get_var(
+        $wpdb->prepare(
+            "SHOW TABLES LIKE %s",
+            $table_name
+        )
+    );
+
+    return !empty($exists);
+}
+
+/**
+ * Verifica si una columna existe en una tabla.
+ *
+ * @param string $table_name Nombre de la tabla
+ * @param string $column_name Nombre de la columna
+ * @return bool
+ */
+function eipsi_column_exists_db($table_name, $column_name) {
+    global $wpdb;
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $exists = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+            DB_NAME,
+            $table_name,
+            $column_name
+        )
+    );
+
+    return !empty($exists);
+}
+
+/**
+ * Obtiene informacion sobre el tipo de datos de una columna.
+ *
+ * @param string $table_name Nombre de la tabla
+ * @param string $column_name Nombre de la columna
+ * @return array|null Informacion de la columna o null si no existe
+ */
+function eipsi_get_column_info($table_name, $column_name) {
+    global $wpdb;
+
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $info = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, COLUMN_KEY
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+            DB_NAME,
+            $table_name,
+            $column_name
+        ),
+        ARRAY_A
+    );
+
+    return $info ?: null;
+}
+
 
 /**
  * Sincronizar tabla wp_survey_waves
  * Crear si no existe, actualizar si es necesario
  */
+ * Funciones corregidas para sincronizacion de tablas longitudinales
+ * con verificacion de existencia de tablas referenciadas
+ */
+
+/**
+ * Sincronizar tabla wp_survey_waves
+ * Crear si no existe, actualizar si es necesario
+ * Corregido: Verifica existencia de tablas referenciadas antes de agregar FKs
+ */
 function eipsi_sync_survey_waves_table() {
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'survey_waves';
+    $studies_table = $wpdb->prefix . 'survey_studies';
     $charset_collate = $wpdb->get_charset_collate();
 
     $sql = "CREATE TABLE {$table_name} (
@@ -2342,13 +2446,18 @@ function eipsi_sync_survey_waves_table() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
 
-    // Foreign keys (best effort)
-    eipsi_longitudinal_ensure_foreign_key(
-        $table_name,
-        'fk_waves_study',
-        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_waves_study FOREIGN KEY (study_id) REFERENCES {$wpdb->prefix}survey_studies(id) ON DELETE CASCADE"
-    );
+    // Foreign keys (best effort) - only add if referenced tables exist
+    if (eipsi_table_exists($studies_table)) {
+        eipsi_longitudinal_ensure_foreign_key(
+            $table_name,
+            'fk_waves_study',
+            "ALTER TABLE {$table_name} ADD CONSTRAINT fk_waves_study FOREIGN KEY (study_id) REFERENCES {$studies_table}(id) ON DELETE CASCADE"
+        );
+    } else {
+        error_log('[EIPSI] Skipping FK fk_waves_study: Referenced table ' . $studies_table . ' does not exist yet');
+    }
 
+    // FK to wp_posts - WordPress posts table should always exist
     eipsi_longitudinal_ensure_foreign_key(
         $table_name,
         'fk_waves_form',
@@ -2360,11 +2469,15 @@ function eipsi_sync_survey_waves_table() {
 
 /**
  * Sincronizar tabla wp_survey_assignments
+ * Corregido: Verifica existencia de tablas referenciadas antes de agregar FKs
  */
 function eipsi_sync_survey_assignments_table() {
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'survey_assignments';
+    $studies_table = $wpdb->prefix . 'survey_studies';
+    $waves_table = $wpdb->prefix . 'survey_waves';
+    $participants_table = $wpdb->prefix . 'survey_participants';
     $charset_collate = $wpdb->get_charset_collate();
 
     $sql = "CREATE TABLE {$table_name} (
@@ -2401,24 +2514,36 @@ function eipsi_sync_survey_assignments_table() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
 
-    // Foreign keys (best effort)
-    eipsi_longitudinal_ensure_foreign_key(
-        $table_name,
-        'fk_assignments_study',
-        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_study FOREIGN KEY (study_id) REFERENCES {$wpdb->prefix}survey_studies(id) ON DELETE CASCADE"
-    );
+    // Foreign keys (best effort) - only add if referenced tables exist
+    if (eipsi_table_exists($studies_table)) {
+        eipsi_longitudinal_ensure_foreign_key(
+            $table_name,
+            'fk_assignments_study',
+            "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_study FOREIGN KEY (study_id) REFERENCES {$studies_table}(id) ON DELETE CASCADE"
+        );
+    } else {
+        error_log('[EIPSI] Skipping FK fk_assignments_study: Referenced table ' . $studies_table . ' does not exist yet');
+    }
 
-    eipsi_longitudinal_ensure_foreign_key(
-        $table_name,
-        'fk_assignments_wave',
-        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_wave FOREIGN KEY (wave_id) REFERENCES {$wpdb->prefix}survey_waves(id) ON DELETE CASCADE"
-    );
+    if (eipsi_table_exists($waves_table)) {
+        eipsi_longitudinal_ensure_foreign_key(
+            $table_name,
+            'fk_assignments_wave',
+            "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_wave FOREIGN KEY (wave_id) REFERENCES {$waves_table}(id) ON DELETE CASCADE"
+        );
+    } else {
+        error_log('[EIPSI] Skipping FK fk_assignments_wave: Referenced table ' . $waves_table . ' does not exist yet');
+    }
 
-    eipsi_longitudinal_ensure_foreign_key(
-        $table_name,
-        'fk_assignments_participant',
-        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE"
-    );
+    if (eipsi_table_exists($participants_table)) {
+        eipsi_longitudinal_ensure_foreign_key(
+            $table_name,
+            'fk_assignments_participant',
+            "ALTER TABLE {$table_name} ADD CONSTRAINT fk_assignments_participant FOREIGN KEY (participant_id) REFERENCES {$participants_table}(id) ON DELETE CASCADE"
+        );
+    } else {
+        error_log('[EIPSI] Skipping FK fk_assignments_participant: Referenced table ' . $participants_table . ' does not exist yet');
+    }
 
     error_log('[EIPSI] Synced survey_assignments table');
 }
@@ -2435,37 +2560,75 @@ function eipsi_sync_survey_participants_table() {
     }
 }
 
+
+/**
+ * Sincronizar tabla wp_survey_studies
+ * Tabla principal de estudios longitudinales - debe crearse PRIMERO
+ */
+function eipsi_sync_survey_studies_table() {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'survey_studies';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE {$table_name} (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        study_code VARCHAR(50) NOT NULL,
+        study_name VARCHAR(255) NOT NULL,
+        description TEXT,
+        principal_investigator_id BIGINT(20) UNSIGNED,
+        status ENUM('active', 'completed', 'paused', 'archived') DEFAULT 'active',
+        config JSON,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY unique_study_code (study_code),
+        KEY status (status),
+        KEY principal_investigator_id (principal_investigator_id),
+        KEY created_at (created_at)
+    ) {$charset_collate};";
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta($sql);
+
+    error_log('[EIPSI] Synced survey_studies table');
+}
+
 /**
  * Versioned table creation / migrations
+ * CORREGIDO: Crea tablas en orden correcto (padres antes que hijos)
  */
 function eipsi_maybe_create_tables() {
     $db_version = get_option('eipsi_longitudinal_db_version', '0');
 
     if (defined('EIPSI_LONGITUDINAL_DB_VERSION') && version_compare($db_version, EIPSI_LONGITUDINAL_DB_VERSION, '<')) {
-        // Crear tablas participantes (si aplica)
-        eipsi_sync_survey_participants_table();
+        // CORRECCION: Crear tablas en orden de dependencias
+        // 1. Primero las tablas PADRE (sin FKs o con FKs solo a wp_posts)
+        eipsi_sync_survey_studies_table();     // Tabla principal - no tiene FKs
+        eipsi_sync_survey_participants_table(); // FK a survey_studies (ya creada arriba)
 
-        // Crear tablas NUEVAS
-        eipsi_sync_survey_waves_table();
-        eipsi_sync_survey_assignments_table();
-        eipsi_sync_survey_magic_links_table(); // v1.4.1
-        eipsi_sync_survey_email_log_table();   // v1.4.1
-        eipsi_sync_survey_audit_log_table();   // v1.4.2 TASK 5.1
+        // 2. Luego las tablas HIJO nivel 1 (dependen de las anteriores)
+        eipsi_sync_survey_waves_table();        // FK a survey_studies
 
-        // Actualizar versión
+        // 3. Finalmente las tablas HIJO nivel 2 (dependen de las de nivel 1)
+        eipsi_sync_survey_assignments_table();  // FK a survey_studies, survey_waves, survey_participants
+        eipsi_sync_survey_magic_links_table();  // FK a survey_participants
+        eipsi_sync_survey_email_log_table();    // FK a survey_participants
+        eipsi_sync_survey_audit_log_table();    // v1.4.2 TASK 5.1
+
+        // Actualizar version
         update_option('eipsi_longitudinal_db_version', EIPSI_LONGITUDINAL_DB_VERSION);
         error_log('[EIPSI] Database schema updated to v' . EIPSI_LONGITUDINAL_DB_VERSION);
     }
-}
-
-/**
  * Sincronizar tabla wp_survey_magic_links
  * Magic links para Save & Continue Later
+ * CORREGIDO: Verifica existencia de tablas referenciadas antes de agregar FKs
  */
 function eipsi_sync_survey_magic_links_table() {
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'survey_magic_links';
+    $participants_table = $wpdb->prefix . 'survey_participants';
     $charset_collate = $wpdb->get_charset_collate();
 
     $sql = "CREATE TABLE {$table_name} (
@@ -2488,18 +2651,23 @@ function eipsi_sync_survey_magic_links_table() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
 
-    // Foreign keys (best effort)
+    // Foreign keys (best effort) - wp_posts should always exist
     eipsi_longitudinal_ensure_foreign_key(
         $table_name,
         'fk_magic_links_survey',
         "ALTER TABLE {$table_name} ADD CONSTRAINT fk_magic_links_survey FOREIGN KEY (survey_id) REFERENCES {$wpdb->posts}(ID) ON DELETE CASCADE"
     );
 
-    eipsi_longitudinal_ensure_foreign_key(
-        $table_name,
-        'fk_magic_links_participant',
-        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_magic_links_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE"
-    );
+    // Only add participant FK if table exists
+    if (eipsi_table_exists($participants_table)) {
+        eipsi_longitudinal_ensure_foreign_key(
+            $table_name,
+            'fk_magic_links_participant',
+            "ALTER TABLE {$table_name} ADD CONSTRAINT fk_magic_links_participant FOREIGN KEY (participant_id) REFERENCES {$participants_table}(id) ON DELETE CASCADE"
+        );
+    } else {
+        error_log('[EIPSI] Skipping FK fk_magic_links_participant: Referenced table ' . $participants_table . ' does not exist yet');
+    }
 
     error_log('[EIPSI] Synced survey_magic_links table');
 }
@@ -2507,11 +2675,13 @@ function eipsi_sync_survey_magic_links_table() {
 /**
  * Sincronizar tabla wp_survey_email_log
  * Log de emails enviados
+ * CORREGIDO: Verifica existencia de tablas referenciadas antes de agregar FKs
  */
 function eipsi_sync_survey_email_log_table() {
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'survey_email_log';
+    $participants_table = $wpdb->prefix . 'survey_participants';
     $charset_collate = $wpdb->get_charset_collate();
 
     $sql = "CREATE TABLE {$table_name} (
@@ -2541,14 +2711,18 @@ function eipsi_sync_survey_email_log_table() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
 
-    // Foreign key (best effort)
-    eipsi_longitudinal_ensure_foreign_key(
-        $table_name,
-        'fk_email_log_participant',
-        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_email_log_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE"
-    );
+    // Only add participant FK if table exists
+    if (eipsi_table_exists($participants_table)) {
+        eipsi_longitudinal_ensure_foreign_key(
+            $table_name,
+            'fk_email_log_participant',
+            "ALTER TABLE {$table_name} ADD CONSTRAINT fk_email_log_participant FOREIGN KEY (participant_id) REFERENCES {$participants_table}(id) ON DELETE CASCADE"
+        );
+    } else {
+        error_log('[EIPSI] Skipping FK fk_email_log_participant: Referenced table ' . $participants_table . ' does not exist yet');
+    }
 
-    // Add survey_id FK if possible
+    // Add survey_id FK if possible - wp_posts should always exist
     eipsi_longitudinal_ensure_foreign_key(
         $table_name,
         'fk_email_log_survey',
@@ -2557,11 +2731,6 @@ function eipsi_sync_survey_email_log_table() {
 
     error_log('[EIPSI] Synced survey_email_log table');
 }
-
-/**
- * Sincronizar tabla wp_survey_audit_log
- * Log de auditoría para acciones sensibles (v1.4.2 TASK 5.1)
- */
 function eipsi_sync_survey_audit_log_table() {
     global $wpdb;
 
