@@ -7,6 +7,7 @@
  */
 
 /* global eipsiWavesManagerData, ajaxurl */
+/* eslint-disable no-alert */
 
 ( function ( $ ) {
     'use strict';
@@ -20,7 +21,6 @@
     let modalNonce = '';
     let surveyId = 0;
     let currentWaveId = 0;
-    let currentWaveData = null;
 
     // ===========================
     // INITIALIZATION
@@ -1365,7 +1365,6 @@
             },
         } );
     }
-} )( window.jQuery );
 
     // ===========================
     // ADD PARTICIPANT MULTI-METHOD MODAL
@@ -1560,15 +1559,5 @@
         showNotification('Enlace copiado al portapapeles', 'success');
     });
 
-    // Helper: Escape HTML
-    function escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-    }
 
+} )( window.jQuery );
