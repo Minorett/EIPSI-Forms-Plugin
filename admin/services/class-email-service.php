@@ -852,32 +852,6 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Get email deliverability stats.
-     *
-     * @param int $survey_id ID del estudio.
-     * @return array {sent, failed, total, success_rate}
-     * @since 1.4.1
-     * @access public
-     */
-    public static function get_email_deliverability_stats($survey_id = 0) {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'survey_email_log';
-        
-        $where = $survey_id > 0 ? $wpdb->prepare("WHERE survey_id = %d", $survey_id) : '';
-        
-        $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} {$where}");
-        $sent = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} {$where}" . ($where ? ' AND ' : 'WHERE ') . "status = 'sent'");
-        $failed = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} {$where}" . ($where ? ' AND ' : 'WHERE ') . "status = 'failed'");
-        
-        return array(
-            'total' => $total,
-            'sent' => $sent,
-            'failed' => $failed,
-            'success_rate' => $total > 0 ? round(($sent / $total) * 100, 1) : 0
-        );
-    }
-    
-    /**
      * Send a test email to verify the email system is working.
      *
      * @param string|null $to Email address to send test to. If null, uses investigator or admin email.
