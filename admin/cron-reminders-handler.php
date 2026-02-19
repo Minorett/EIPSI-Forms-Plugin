@@ -248,50 +248,6 @@ function eipsi_send_take_reminders_weekly() {
 add_action('eipsi_send_take_reminders_weekly', 'eipsi_send_take_reminders_weekly');
 
 /**
- * Handle unsubscribe requests
- *
- * @since 1.4.2
- */
-function eipsi_unsubscribe_reminders_handler() {
-    if (!isset($_GET['eipsi_unsubscribe']) || $_GET['eipsi_unsubscribe'] !== '1') {
-        return;
-    }
-
-    $participant_id = isset($_GET['participant_id']) ? sanitize_text_field($_GET['participant_id']) : '';
-    $email = isset($_GET['email']) ? sanitize_email($_GET['email']) : '';
-
-    if (empty($participant_id) && empty($email)) {
-        wp_die(__('Invalid unsubscribe request.', 'eipsi-forms'));
-    }
-
-    global $wpdb;
-
-    // Update participant status to unsubscribed
-    if (!empty($participant_id)) {
-        $wpdb->update(
-            $wpdb->prefix . 'survey_participants',
-            array('status' => 'unsubscribed'),
-            array('participant_id' => $participant_id)
-        );
-    } elseif (!empty($email)) {
-        $wpdb->update(
-            $wpdb->prefix . 'survey_participants',
-            array('status' => 'unsubscribed'),
-            array('email' => $email)
-        );
-    }
-
-    // Show success message
-    wp_die(
-        '<h2>' . __('Unsubscribed Successfully', 'eipsi-forms') . '</h2>' .
-        '<p>' . __('You will no longer receive reminder emails from this study.', 'eipsi-forms') . '</p>' .
-        '<p><a href="' . home_url() . '">' . __('Return to Homepage', 'eipsi-forms') . '</a></p>',
-        __('Unsubscribed', 'eipsi-forms'),
-        array('response' => 200)
-    );
-}
-
-/**
  * AJAX handler to save cron reminders configuration
  *
  * @since 1.4.2
