@@ -63,6 +63,42 @@ add_shortcode('eipsi_survey_login', 'eipsi_survey_login_shortcode');
  * @return string Rendered HTML
  */
 function eipsi_render_survey_login_form($atts) {
+    // Enqueue required assets
+    wp_enqueue_style(
+        'eipsi-survey-login-css',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/survey-login.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+    
+    wp_enqueue_script(
+        'eipsi-survey-login-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/survey-login.js',
+        array('jquery'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+    
+    wp_enqueue_script(
+        'eipsi-participant-auth',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/participant-auth.js',
+        array('jquery'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+    
+    // Localize script with auth data
+    wp_localize_script('eipsi-participant-auth', 'eipsiAuth', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('eipsi_participant_auth'),
+        'strings' => array(
+            'registering' => __('Registrando...', 'eipsi-forms'),
+            'logging_in' => __('Ingresando...', 'eipsi-forms'),
+            'loading' => __('Cargando...', 'eipsi-forms'),
+            'confirm_logout' => __('¿Estás seguro de que quieres cerrar sesión?', 'eipsi-forms')
+        )
+    ));
+    
     ob_start();
     include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/survey-login-form.php';
     return ob_get_clean();

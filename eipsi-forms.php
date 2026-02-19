@@ -23,11 +23,14 @@
     exit;
  }
 
- define('EIPSI_FORMS_VERSION', '1.5.4');
+ define('EIPSI_FORMS_VERSION', '1.5.5');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
 define('EIPSI_FORMS_SLUG', 'eipsi-forms');
+
+// Session Cookie Name for Participant Authentication
+define('EIPSI_SESSION_COOKIE_NAME', 'eipsi_session_token');
 
 /**
  * Get default menu capabilities for EIPSI Forms.
@@ -149,6 +152,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/study-dashboard-api.php';
 
 // Email System Handlers (v1.5.4)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-email-handlers.php';
+
+// Participant Authentication Handlers (v1.5.5)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-participant-handlers.php';
 
 // ============================================================================
 // EMAIL SYSTEM CONFIGURATION (v1.5.4 - Default Email Fix)
