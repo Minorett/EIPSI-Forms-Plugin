@@ -6,7 +6,8 @@
  * @since 1.4.3
  */
 
-/* global eipsiStudyDash, ajaxurl */
+/* global eipsiStudyDash */
+/* eslint-disable no-alert */
 
 ( function ( $ ) {
     'use strict';
@@ -744,10 +745,6 @@
                 ? '<span class="status-badge active">● Activo</span>'
                 : '<span class="status-badge inactive">● Inactivo</span>';
 
-            const statusIcon = p.is_active
-                ? '<span class="dashicons dashicons-yes-alt" style="color:#27ae60;"></span>'
-                : '<span class="dashicons dashicons-no-alt" style="color:#d63638;"></span>';
-
             const toggleButton = p.is_active
                 ? '<button class="button button-small toggle-participant-status" data-participant-id="' +
                   p.id +
@@ -784,7 +781,7 @@
         renderParticipantsPagination( page, pages );
     }
 
-    function renderParticipantsPagination( currentPage, totalPages ) {
+    function renderParticipantsPagination( pageNum, totalPages ) {
         if ( totalPages <= 1 ) {
             $( '#participants-pagination' ).empty();
             return;
@@ -792,21 +789,21 @@
 
         let html = '<div class="tablenav-pages">';
 
-        if ( currentPage > 1 ) {
+        if ( pageNum > 1 ) {
             html +=
                 '<button class="button button-small" data-page="' +
-                ( currentPage - 1 ) +
+                ( pageNum - 1 ) +
                 '">« Anterior</button>';
         }
 
         html += '<span class="paging-input">';
-        html += currentPage + ' de ' + totalPages;
+        html += pageNum + ' de ' + totalPages;
         html += '</span>';
 
-        if ( currentPage < totalPages ) {
+        if ( pageNum < totalPages ) {
             html +=
                 '<button class="button button-small" data-page="' +
-                ( currentPage + 1 ) +
+                ( pageNum + 1 ) +
                 '">Siguiente »</button>';
         }
 
@@ -1146,38 +1143,38 @@
             } );
         }
 
-        function updateProgress( current, total, imported, failed, emailsSent ) {
+        function updateProgress( current, total, importCount, failCount, sentCount ) {
             const pct = Math.round( ( current / total ) * 100 );
             $( '#csv-import-progress-bar' ).css( 'width', pct + '%' );
             $( '#csv-import-counter' ).text( current + ' / ' + total );
             $( '#csv-progress-details' ).html(
-                'Importados: ' + imported + ' | Emails enviados: ' + emailsSent + ' | Fallidos: ' + failed
+                'Importados: ' + importCount + ' | Emails enviados: ' + sentCount + ' | Fallidos: ' + failCount
             );
         }
 
-        function showImportResults( imported, failed, emailsSent ) {
+        function showImportResults( importCount, failCount, sentCount ) {
             showCsvStep( 4 );
 
             let resultsHtml = '<div class="csv-results-inner">';
 
-            if ( imported > 0 ) {
+            if ( importCount > 0 ) {
                 resultsHtml += '<div class="result-item success">';
                 resultsHtml += '<span class="result-icon">✓</span>';
-                resultsHtml += '<span class="result-text">' + imported + ' participantes importados exitosamente</span>';
+                resultsHtml += '<span class="result-text">' + importCount + ' participantes importados exitosamente</span>';
                 resultsHtml += '</div>';
             }
 
-            if ( emailsSent > 0 ) {
+            if ( sentCount > 0 ) {
                 resultsHtml += '<div class="result-item success">';
                 resultsHtml += '<span class="result-icon">✉️</span>';
-                resultsHtml += '<span class="result-text">' + emailsSent + ' invitaciones enviadas</span>';
+                resultsHtml += '<span class="result-text">' + sentCount + ' invitaciones enviadas</span>';
                 resultsHtml += '</div>';
             }
 
-            if ( failed > 0 ) {
+            if ( failCount > 0 ) {
                 resultsHtml += '<div class="result-item error">';
                 resultsHtml += '<span class="result-icon">✗</span>';
-                resultsHtml += '<span class="result-text">' + failed + ' participantes no pudieron ser importados</span>';
+                resultsHtml += '<span class="result-text">' + failCount + ' participantes no pudieron ser importados</span>';
                 resultsHtml += '</div>';
             }
 
