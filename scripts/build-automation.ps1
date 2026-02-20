@@ -6,7 +6,7 @@
 # y validación de arquitectura modular para bloques individuales.
 #
 # Pasos:
-#   [1/9] Limpiar y clonar repositorio
+#   [1/9] Verificar y clonar repositorio (con pre-flight check)
 #   [2/9] Instalar dependencias
 #   [3/9] Verificar estructura del plugin
 #   [4/9] Lint: Verificar código JavaScript
@@ -24,6 +24,19 @@
 #   - npm >= 7.x
 #   - PowerShell 5.1 o superior
 #   - Git (para clonación del repositorio)
+#
+# CONFIGURACIÓN DE AUTENTICACIÓN (si el repositorio es privado):
+#   Opción 1 - Usar SSH (recomendado):
+#     $repoUrl = "git@github.com:usuario/repositorio.git"
+#     Asegúrate de tener configurada tu clave SSH en GitHub
+#
+#   Opción 2 - Personal Access Token:
+#     $repoUrl = "https://<TOKEN>@github.com/usuario/repositorio.git"
+#     Crea un token en: GitHub Settings -> Developer settings -> Personal access tokens
+#
+#   Opción 3 - Git Credential Manager:
+#     git config --global credential.helper manager
+#     El primer clone pedirá credenciales y las guardará en caché
 #
 # Parámetros opcionales:
 #   -NoExit    No cerrar la terminal al finalizar
@@ -133,12 +146,23 @@ Write-Info "git version: $gitVersion"
 Write-Info "npm version: $npmVersion"
 Write-Host ""
 
-# Configuración del repositorio
+# ============================================================================
+# CONFIGURACIÓN DEL REPOSITORIO
+# ============================================================================
+# NOTA: Si el repositorio es privado, configura una de estas opciones:
+#   1. Usa SSH: git@github.com:usuario/repositorio.git
+#   2. Configura Git Credential Manager
+#   3. Usa un Personal Access Token en la URL:
+#      https://<token>@github.com/usuario/repositorio.git
+#
 $repoUrl = "https://github.com/Minorett/EIPSI-Forms-Plugin.git"
-$targetPath = "C:\Users\Mathi\Downloads"
-$folderName = "EIPSI-Forms"
+
+# Directorio de trabajo para la clonación (relativo al directorio actual)
 $workDir = "eipsi-forms-work"
+
+# Configuración de paths
 $parentDir = Split-Path -Parent (Get-Location)
+$clonePath = Join-Path $parentDir $workDir
 
 # ============================================================================
 # [1/9] LIMPIAR Y CLONAR REPOSITORIO
@@ -146,33 +170,83 @@ $parentDir = Split-Path -Parent (Get-Location)
 
 Write-Step "Limpiando carpeta anterior y clonando repositorio" -Number 1 -Total 9
 
+# Pre-flight check: Verificar que el repositorio es accesible
+Write-Info "Verificando accesibilidad del repositorio..."
+$env:GIT_TERMINAL_PROMPT = "0"  # Prevenir prompts interactivos
+
+try {
+    # Intentar un ls-remote para verificar acceso sin clonar
+    $gitCheck = git ls-remote --exit-code --heads $repoUrl 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "No se puede acceder al repositorio: $repoUrl"
+        Write-Host ""
+        Write-Warning "Posibles causas y soluciones:"
+        Write-Info "1. El repositorio es privado - Configura autenticación:"
+        Write-Info "   • Usa SSH: git@github.com:Minorett/EIPSI-Forms-Plugin.git"
+        Write-Info "   • O usa Personal Access Token en la URL"
+        Write-Info "2. El repositorio no existe o fue movido"
+        Write-Info "3. No hay conexión a Internet"
+        Write-Host ""
+        Write-Info "Para configurar credenciales Git:"
+        Write-Info "   git config --global credential.helper manager"
+        Exit-Script 1
+    }
+    Write-Success "Repositorio accesible"
+} catch {
+    Write-Error "Error al verificar el repositorio: $_"
+    Exit-Script 1
+}
+
 # Cambiar al directorio padre
 Write-Info "Cambiando a directorio padre: $parentDir"
 Set-Location $parentDir
 
 # Limpiar carpeta de trabajo anterior si existe
-if (Test-Path $workDir) {
-    Write-Info "Eliminando carpeta de trabajo anterior: $workDir"
-    Remove-Item -Path $workDir -Recurse -Force -ErrorAction Stop
+if (Test-Path $clonePath) {
+    Write-Info "Eliminando carpeta de trabajo anterior: $clonePath"
+    try {
+        Remove-Item -Path $clonePath -Recurse -Force -ErrorAction Stop
+    } catch {
+        Write-Error "No se pudo eliminar la carpeta anterior: $_"
+        Write-Info "Intenta cerrar cualquier programa usando la carpeta y ejecuta de nuevo"
+        Exit-Script 1
+    }
 }
 
 # Clonar el repositorio
 Write-Info "Clonando repositorio desde: $repoUrl"
+Write-Info "Directorio destino: $clonePath"
+
 try {
-    git clone $repoUrl $workDir
+    # Usar --depth 1 para clonar solo el último commit (más rápido)
+    # y --single-branch para reducir datos transferidos
+    git clone --depth 1 --single-branch $repoUrl $workDir 2>&1
+    
     if ($LASTEXITCODE -ne 0) {
         throw "git clone falló con código de salida $LASTEXITCODE"
     }
+    
+    # Verificar que se clonó correctamente
+    if (-not (Test-Path $clonePath)) {
+        throw "El directorio de clonación no se creó: $clonePath"
+    }
+    
     Write-Success "Repositorio clonado exitosamente"
     Write-Host ""
 } catch {
     Write-Error "Error al clonar el repositorio: $_"
+    Write-Host ""
+    Write-Warning "Sugerencias:"
+    Write-Info "1. Verifica la URL del repositorio: $repoUrl"
+    Write-Info "2. Si es privado, configura SSH o Personal Access Token"
+    Write-Info "3. Verifica tu conexión a Internet"
+    Write-Info "4. Asegúrate de tener permisos de escritura en: $parentDir"
     Exit-Script 1
 }
 
 # Cambiar al directorio del repositorio
-Write-Info "Cambiando al directorio del repositorio: $workDir"
-Set-Location $workDir
+Write-Info "Cambiando al directorio del repositorio: $clonePath"
+Set-Location $clonePath
 
 # ============================================================================
 # [2/9] INSTALAR DEPENDENCIAS
