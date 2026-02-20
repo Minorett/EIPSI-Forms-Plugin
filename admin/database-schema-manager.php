@@ -2391,9 +2391,6 @@ function eipsi_get_column_info($table_name, $column_name) {
 
 
 /**
- * Sincronizar tabla wp_survey_waves
- * Crear si no existe, actualizar si es necesario
- */
  * Funciones corregidas para sincronizacion de tablas longitudinales
  * con verificacion de existencia de tablas referenciadas
  */
