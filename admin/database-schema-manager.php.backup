@@ -2617,9 +2617,6 @@ function eipsi_maybe_create_tables() {
         update_option('eipsi_longitudinal_db_version', EIPSI_LONGITUDINAL_DB_VERSION);
         error_log('[EIPSI] Database schema updated to v' . EIPSI_LONGITUDINAL_DB_VERSION);
     }
-}
-
-/**
  * Sincronizar tabla wp_survey_magic_links
  * Magic links para Save & Continue Later
  * CORREGIDO: Verifica existencia de tablas referenciadas antes de agregar FKs
