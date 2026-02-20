@@ -22,7 +22,8 @@
     "license": "GPL-2.0-or-later",
     "devDependencies": {
         "@wordpress/scripts": "^31.4.0",
-        "jsdom": "^27.2.0"
+        "jsdom": "^27.2.0",
+        "ajv": "^8.18.0"
     },
     "dependencies": {
         "@wordpress/api-fetch": "^7.37.0",
@@ -37,6 +38,10 @@
     "overrides": {
         "webpack-dev-server": "^5.2.2",
         "lodash": "^4.17.21",
-        "lodash-es": "^4.17.21"
+        "lodash-es": "^4.17.21",
+        "@wordpress/vips": "1.0.1-next.v.202602200903.0",
+        "ajv-keywords": {
+            "ajv": "^8.18.0"
+        }
     }
 }
