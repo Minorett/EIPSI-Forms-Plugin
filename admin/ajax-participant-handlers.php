@@ -486,19 +486,6 @@ function eipsi_get_participant_redirect_url($survey_id, $participant_id) {
 }
 
 /**
- * Helper function to check if a participant is logged in.
- * 
- * @return bool
- */
-function eipsi_is_participant_logged_in() {
-    if (!class_exists('EIPSI_Auth_Service')) {
-        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
-    }
-    
-    return EIPSI_Auth_Service::is_authenticated();
-}
-
-/**
  * Helper function to get the current participant ID.
  * 
  * @return int|null
