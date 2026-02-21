@@ -161,21 +161,32 @@ function eipsi_participant_login_handler() {
         ));
     }
     
+    // Rate limit check
+    if (!eipsi_check_login_rate_limit($email, $survey_id)) {
+        wp_send_json_error(array(
+            'message' => __('Demasiados intentos fallidos. Por favor espera 15 minutos e intenta nuevamente.', 'eipsi-forms'),
+            'code' => 'rate_limited'
+        ));
+    }
+
     // Ensure services are loaded
     if (!class_exists('EIPSI_Auth_Service')) {
         require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
     }
-    
+
     // Authenticate
     $auth_result = EIPSI_Auth_Service::authenticate($survey_id, $email, $password);
     
     if (!$auth_result['success']) {
+        // Record failed login attempt for rate limiting
+        eipsi_record_failed_login($email, $survey_id);
+
         $error_messages = array(
             'user_not_found' => __('Usuario no encontrado. Verifica tu email o regístrate.', 'eipsi-forms'),
             'user_inactive' => __('Tu cuenta está desactivada. Contacta al investigador.', 'eipsi-forms'),
             'invalid_credentials' => __('Email o contraseña incorrectos.', 'eipsi-forms')
         );
-        
+
         wp_send_json_error(array(
             'message' => isset($error_messages[$auth_result['error']]) ? $error_messages[$auth_result['error']] : __('Error de autenticación.', 'eipsi-forms'),
             'code' => $auth_result['error']
@@ -184,13 +195,16 @@ function eipsi_participant_login_handler() {
     
     // Create session
     $session_result = EIPSI_Auth_Service::create_session($auth_result['participant_id'], $survey_id);
-    
+
     if (!$session_result['success']) {
         wp_send_json_error(array(
             'message' => __('Error al crear la sesión. Intenta nuevamente.', 'eipsi-forms'),
             'code' => 'session_error'
         ));
     }
+
+    // Clear login rate limit on successful authentication
+    eipsi_clear_login_rate_limit($email, $survey_id);
     
     // Get redirect URL
     $redirect_url = eipsi_get_participant_redirect_url($survey_id, $auth_result['participant_id']);
