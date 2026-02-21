@@ -153,11 +153,13 @@ function eipsi_form_requires_login($template_id) {
  * 
  * @return bool
  */
-function eipsi_is_participant_logged_in() {
-    // Check if session cookie or session in DB exists
-    // Use same method as participant-auth.js
-    return isset($_COOKIE[EIPSI_SESSION_COOKIE_NAME]) || 
-           (isset($_SESSION['eipsi_participant_id']) && !empty($_SESSION['eipsi_participant_id']));
+if (!function_exists('eipsi_is_participant_logged_in')) {
+    function eipsi_is_participant_logged_in() {
+        // Check if session cookie or session in DB exists
+        // Use same method as participant-auth.js
+        return isset($_COOKIE[EIPSI_SESSION_COOKIE_NAME]) || 
+               (isset($_SESSION['eipsi_participant_id']) && !empty($_SESSION['eipsi_participant_id']));
+    }
 }
 
 /**
