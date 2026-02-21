@@ -155,10 +155,12 @@ function eipsi_form_requires_login($template_id) {
  */
 if (!function_exists('eipsi_is_participant_logged_in')) {
     function eipsi_is_participant_logged_in() {
-        // Check if session cookie or session in DB exists
-        // Use same method as participant-auth.js
-        return isset($_COOKIE[EIPSI_SESSION_COOKIE_NAME]) || 
-               (isset($_SESSION['eipsi_participant_id']) && !empty($_SESSION['eipsi_participant_id']));
+        // Use the official Auth Service for proper authentication check
+        if (!class_exists('EIPSI_Auth_Service')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
+        }
+        
+        return EIPSI_Auth_Service::is_authenticated();
     }
 }
 
