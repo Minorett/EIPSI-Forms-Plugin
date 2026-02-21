@@ -6,8 +6,6 @@
  * @since 1.4.3
  */
 
-/* eslint-disable no-alert */
-
 ( function ( $ ) {
     'use strict';
 
@@ -154,26 +152,31 @@
 
             if ( ! newStatus ) {
                 // Desactivar - requiere confirmación
-                if (
-                    ! confirm(
+                showConfirmationDialog( {
+                    title: 'Desactivar participante',
+                    message:
                         '¿Estás seguro de desactivar a este participante?\n\n' +
-                            '• No recibirá más emails de recordatorio\n' +
-                            '• No podrá acceder al estudio\n\n' +
-                            'Email: ' +
-                            participantEmail
-                    )
-                ) {
-                    return;
-                }
-            } else if (
-                ! confirm(
-                    '¿Reactivar a este participante? Volverá a recibir emails de recordatorio.'
-                )
-            ) {
+                        '• No recibirá más emails de recordatorio\n' +
+                        '• No podrá acceder al estudio\n\n' +
+                        'Email: ' +
+                        participantEmail,
+                    confirmText: 'Sí, desactivar',
+                    onConfirm: function () {
+                        toggleParticipantStatus( participantId, newStatus );
+                    },
+                } );
                 return;
             }
 
-            toggleParticipantStatus( participantId, newStatus );
+            showConfirmationDialog( {
+                title: 'Reactivar participante',
+                message:
+                    '¿Reactivar a este participante? Volverá a recibir emails de recordatorio.',
+                confirmText: 'Sí, reactivar',
+                onConfirm: function () {
+                    toggleParticipantStatus( participantId, newStatus );
+                },
+            } );
         } );
 
         // Pagination
@@ -244,38 +247,45 @@
 
         // Quick Action: Close Study
         $( document ).on( 'click', '#action-close-study', function () {
-            if ( currentStudyId ) {
-                if (
-                    confirm(
-                        '¿Estás seguro de cerrar este estudio?\n\n' +
-                            '• Se bloquearán nuevas respuestas\n' +
-                            '• El shortcode seguirá disponible para consulta\n\n' +
-                            'Esta acción no se puede deshacer.'
-                    )
-                ) {
-                    closeStudy( currentStudyId );
-                }
+            if ( ! currentStudyId ) {
+                return;
             }
+
+            showConfirmationDialog( {
+                title: 'Cerrar estudio',
+                message:
+                    '¿Estás seguro de cerrar este estudio?\n\n' +
+                    '• Se bloquearán nuevas respuestas\n' +
+                    '• El shortcode seguirá disponible para consulta\n\n' +
+                    'Esta acción no se puede deshacer.',
+                confirmText: 'Sí, cerrar',
+                onConfirm: function () {
+                    closeStudy( currentStudyId );
+                },
+            } );
         } );
 
         // Quick Action: Delete Study
         $( document ).on( 'click', '#action-delete-study', function () {
-            if ( currentStudyId ) {
-                // Double confirmation for delete
-                if (
-                    confirm(
-                        '⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️\n\n' +
-                            '¿Estás seguro de ELIMINAR este estudio?\n\n' +
-                            '• Se eliminarán TODOS los participantes\n' +
-                            '• Se eliminarán TODAS las respuestas\n' +
-                            '• Se eliminarán TODOS los waves\n' +
-                            '• Se eliminarán TODOS los emails\n\n' +
-                            'Esta acción NO se puede deshacer.'
-                    )
-                ) {
-                    deleteStudy( currentStudyId );
-                }
+            if ( ! currentStudyId ) {
+                return;
             }
+
+            showConfirmationDialog( {
+                title: 'Eliminar estudio',
+                message:
+                    '⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️\n\n' +
+                    '¿Estás seguro de ELIMINAR este estudio?\n\n' +
+                    '• Se eliminarán TODOS los participantes\n' +
+                    '• Se eliminarán TODAS las respuestas\n' +
+                    '• Se eliminarán TODOS los waves\n' +
+                    '• Se eliminarán TODOS los emails\n\n' +
+                    'Esta acción NO se puede deshacer.',
+                confirmText: 'Sí, eliminar',
+                onConfirm: function () {
+                    deleteStudy( currentStudyId );
+                },
+            } );
         } );
 
         // Quick Action: Import CSV
@@ -1216,16 +1226,22 @@
             return;
         }
 
-        if (
-            ! confirm(
+        showConfirmationDialog( {
+            title: 'Importar participantes',
+            message:
                 '¿Importar ' +
-                    validParticipants.length +
-                    ' participantes y enviar invitaciones por email?'
-            )
-        ) {
-            return;
-        }
+                validParticipants.length +
+                ' participantes y enviar invitaciones por email?',
+            confirmText: 'Sí, importar',
+            onConfirm: function () {
+                startCsvImportProcess( validParticipants );
+            },
+        } );
+        return;
 
+    }
+
+    function startCsvImportProcess( validParticipants ) {
         showCsvStep( 3 );
         $( '#csv-cancel-btn, #csv-import-btn' ).hide();
 
@@ -1720,14 +1736,19 @@
     }
 
     function sendWaveReminder( waveId ) {
-        if (
-            ! confirm(
-                '¿Enviar recordatorios a todos los participantes pendientes de esta toma?'
-            )
-        ) {
-            return;
-        }
+        showConfirmationDialog( {
+            title: 'Enviar recordatorios',
+            message:
+                '¿Enviar recordatorios a todos los participantes pendientes de esta toma?',
+            confirmText: 'Sí, enviar',
+            onConfirm: function () {
+                executeWaveReminderSend( waveId );
+            },
+        } );
+        return;
+    }
 
+    function executeWaveReminderSend( waveId ) {
         const $btn = $( '.send-reminder[data-wave-id="' + waveId + '"]' );
         const originalText = $btn.text();
         $btn.text( 'Enviando...' ).prop( 'disabled', true );
@@ -1918,6 +1939,106 @@
     // ===========================
     // HELPERS
     // ===========================
+
+    function showConfirmationDialog( options ) {
+        const settings = $.extend(
+            {
+                title: 'Confirmar acción',
+                message: '',
+                confirmText: 'Confirmar',
+                cancelText: 'Cancelar',
+                onConfirm: null,
+                onCancel: null,
+            },
+            options
+        );
+
+        createDialog( settings );
+    }
+
+    function createDialog( settings ) {
+        $( '.eipsi-dialog-overlay' ).remove();
+
+        const dialogId = 'eipsi-dialog-' + Date.now();
+        const safeTitle = escapeHtml( settings.title );
+        const safeMessage = formatDialogMessage( settings.message );
+
+        const $overlay = $(
+            '<div class="eipsi-dialog-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:1000000;"></div>'
+        );
+
+        const $dialog = $(
+            '<div class="eipsi-dialog" role="dialog" aria-modal="true" aria-labelledby="' +
+                dialogId +
+                '-title" style="background:#fff;border-radius:8px;max-width:480px;width:90%;box-shadow:0 10px 30px rgba(0,0,0,0.25);padding:20px;">' +
+                '<h3 id="' +
+                dialogId +
+                '-title" style="margin:0 0 12px;font-size:18px;">' +
+                safeTitle +
+                '</h3>' +
+                '<div class="eipsi-dialog-message" style="margin-bottom:20px;color:#333;line-height:1.5;">' +
+                safeMessage +
+                '</div>' +
+                '<div class="eipsi-dialog-actions" style="display:flex;gap:10px;justify-content:flex-end;">' +
+                '<button type="button" class="button eipsi-dialog-cancel">' +
+                escapeHtml( settings.cancelText ) +
+                '</button>' +
+                '<button type="button" class="button button-primary eipsi-dialog-confirm">' +
+                escapeHtml( settings.confirmText ) +
+                '</button>' +
+                '</div>' +
+                '</div>'
+        );
+
+        $overlay.append( $dialog );
+        $( 'body' ).append( $overlay );
+
+        const $confirmButton = $dialog.find( '.eipsi-dialog-confirm' );
+        const $cancelButton = $dialog.find( '.eipsi-dialog-cancel' );
+
+        function closeDialog() {
+            $overlay.remove();
+            $( document ).off( 'keydown', handleKeydown );
+        }
+
+        function handleConfirm() {
+            if ( typeof settings.onConfirm === 'function' ) {
+                settings.onConfirm();
+            }
+            closeDialog();
+        }
+
+        function handleCancel() {
+            if ( typeof settings.onCancel === 'function' ) {
+                settings.onCancel();
+            }
+            closeDialog();
+        }
+
+        function handleKeydown( event ) {
+            if ( event.key === 'Escape' ) {
+                handleCancel();
+            } else if ( event.key === 'Enter' ) {
+                handleConfirm();
+            }
+        }
+
+        $confirmButton.on( 'click', handleConfirm );
+        $cancelButton.on( 'click', handleCancel );
+        $overlay.on( 'click', function ( event ) {
+            if ( event.target === this ) {
+                handleCancel();
+            }
+        } );
+
+        $( document ).on( 'keydown', handleKeydown );
+        $confirmButton.trigger( 'focus' );
+    }
+
+    function formatDialogMessage( message ) {
+        const safeMessage = escapeHtml( message || '' );
+        return safeMessage.replace( /\n/g, '<br>' );
+    }
 
     function buildStudyShortcode( studyId, studyCode ) {
         if ( ! studyId && ! studyCode ) {

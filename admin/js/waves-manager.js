@@ -6,8 +6,6 @@
  * @since 1.4.3
  */
 
-/* eslint-disable no-alert */
-
 ( function ( $ ) {
     'use strict';
 
@@ -87,14 +85,16 @@
         // Delete Wave
         $( document ).on( 'click', '.eipsi-delete-wave-btn', function () {
             const waveId = $( this ).data( 'wave-id' );
-            if (
-                confirm(
+            showConfirmationDialog( {
+                title: 'Eliminar onda',
+                message:
                     eipsiWavesManagerData.strings.confirmDelete ||
-                        '¿Estás seguro de eliminar esta onda?'
-                )
-            ) {
-                deleteWave( waveId );
-            }
+                    '¿Estás seguro de eliminar esta onda?',
+                confirmText: 'Sí, eliminar',
+                onConfirm: function () {
+                    deleteWave( waveId );
+                },
+            } );
         } );
 
         // Open Assign Participants Modal
@@ -135,10 +135,12 @@
             } );
 
             if ( selectedIds.length === 0 ) {
-                alert(
-                    eipsiWavesManagerData.strings.selectParticipants ||
-                        'Por favor selecciona al menos un participante.'
-                );
+                showAlertDialog( {
+                    title: 'Selección requerida',
+                    message:
+                        eipsiWavesManagerData.strings.selectParticipants ||
+                        'Por favor selecciona al menos un participante.',
+                } );
                 return;
             }
 
@@ -149,25 +151,38 @@
         $( document ).on( 'click', '.eipsi-extend-deadline-btn', function () {
             const waveId = $( this ).data( 'wave-id' );
             currentWaveId = waveId;
-            const newDeadline = prompt(
-                'Ingresa la nueva fecha de vencimiento (YYYY-MM-DD HH:MM):',
-                new Date().toISOString().slice( 0, 16 ).replace( 'T', ' ' )
-            );
-            if ( newDeadline ) {
-                extendDeadline( waveId, newDeadline );
-            }
+            const defaultDeadline = new Date()
+                .toISOString()
+                .slice( 0, 16 )
+                .replace( 'T', ' ' );
+
+            showPromptDialog( {
+                title: 'Extender vencimiento',
+                message:
+                    'Ingresa la nueva fecha de vencimiento (YYYY-MM-DD HH:MM):',
+                inputValue: defaultDeadline,
+                inputPlaceholder: 'YYYY-MM-DD HH:MM',
+                confirmText: 'Guardar fecha',
+                onConfirm: function ( newDeadline ) {
+                    if ( newDeadline ) {
+                        extendDeadline( waveId, newDeadline );
+                    }
+                },
+            } );
         } );
 
         // Send Reminders
         $( document ).on( 'click', '.eipsi-send-reminder-btn', function () {
             const waveId = $( this ).data( 'wave-id' );
-            if (
-                confirm(
-                    '¿Enviar recordatorios a todos los participantes pendientes de esta onda?'
-                )
-            ) {
-                sendReminders( waveId );
-            }
+            showConfirmationDialog( {
+                title: 'Enviar recordatorios',
+                message:
+                    '¿Enviar recordatorios a todos los participantes pendientes de esta onda?',
+                confirmText: 'Sí, enviar',
+                onConfirm: function () {
+                    sendReminders( waveId );
+                },
+            } );
         } );
 
         // Send Manual Reminders
@@ -207,13 +222,14 @@
                     $( '#wave-modal-title' ).text( 'Editar Onda' );
                     $( '#eipsi-wave-modal' ).fadeIn( 200 );
                 } else {
-                    alert(
-                        response.data || 'Error al cargar los datos de la onda'
+                    showNotification(
+                        response.data || 'Error al cargar los datos de la onda',
+                        'error'
                     );
                 }
             },
             error() {
-                alert( 'Error de conexión al cargar los datos' );
+                showNotification( 'Error de conexión al cargar los datos', 'error' );
             },
             complete() {
                 $btn.text( originalText ).prop( 'disabled', false );
@@ -612,6 +628,209 @@
         }, 4000 );
     }
 
+    function showAlertDialog( options ) {
+        const settings = $.extend(
+            {
+                title: 'Aviso',
+                message: '',
+                confirmText: 'Aceptar',
+                onConfirm: null,
+            },
+            options
+        );
+
+        createDialog( {
+            title: settings.title,
+            message: settings.message,
+            confirmText: settings.confirmText,
+            showCancel: false,
+            onConfirm: settings.onConfirm,
+        } );
+    }
+
+    function showConfirmationDialog( options ) {
+        const settings = $.extend(
+            {
+                title: 'Confirmar acción',
+                message: '',
+                confirmText: 'Confirmar',
+                cancelText: 'Cancelar',
+                onConfirm: null,
+                onCancel: null,
+            },
+            options
+        );
+
+        createDialog( {
+            title: settings.title,
+            message: settings.message,
+            confirmText: settings.confirmText,
+            cancelText: settings.cancelText,
+            showCancel: true,
+            onConfirm: settings.onConfirm,
+            onCancel: settings.onCancel,
+        } );
+    }
+
+    function showPromptDialog( options ) {
+        const settings = $.extend(
+            {
+                title: 'Ingresar datos',
+                message: '',
+                confirmText: 'Guardar',
+                cancelText: 'Cancelar',
+                inputValue: '',
+                inputPlaceholder: '',
+                required: true,
+                requiredMessage: 'Por favor completa este campo.',
+                onConfirm: null,
+                onCancel: null,
+            },
+            options
+        );
+
+        createDialog( {
+            title: settings.title,
+            message: settings.message,
+            confirmText: settings.confirmText,
+            cancelText: settings.cancelText,
+            showCancel: true,
+            input: true,
+            inputValue: settings.inputValue,
+            inputPlaceholder: settings.inputPlaceholder,
+            required: settings.required,
+            requiredMessage: settings.requiredMessage,
+            onConfirm: settings.onConfirm,
+            onCancel: settings.onCancel,
+        } );
+    }
+
+    function createDialog( settings ) {
+        $( '.eipsi-dialog-overlay' ).remove();
+
+        const dialogId = 'eipsi-dialog-' + Date.now();
+        const safeTitle = escapeHtml( settings.title || '' );
+        const safeMessage = formatDialogMessage( settings.message );
+        const safeConfirmText = escapeHtml( settings.confirmText || 'Aceptar' );
+        const safeCancelText = escapeHtml( settings.cancelText || 'Cancelar' );
+
+        const $overlay = $(
+            '<div class="eipsi-dialog-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:1000000;"></div>'
+        );
+
+        const inputHtml = settings.input
+            ? '<input type="text" class="eipsi-dialog-input" style="width:100%;padding:8px 10px;border:1px solid #ccd0d4;border-radius:4px;margin-bottom:12px;" value="' +
+              escapeHtml( settings.inputValue || '' ) +
+              '" placeholder="' +
+              escapeHtml( settings.inputPlaceholder || '' ) +
+              '">'
+            : '';
+
+        const errorHtml =
+            '<div class="eipsi-dialog-error" style="display:none;color:#d63638;margin-bottom:12px;font-size:13px;"></div>';
+
+        const cancelButtonHtml = settings.showCancel
+            ? '<button type="button" class="button eipsi-dialog-cancel">' +
+              safeCancelText +
+              '</button>'
+            : '';
+
+        const $dialog = $(
+            '<div class="eipsi-dialog" role="dialog" aria-modal="true" aria-labelledby="' +
+                dialogId +
+                '-title" style="background:#fff;border-radius:8px;max-width:480px;width:90%;box-shadow:0 10px 30px rgba(0,0,0,0.25);padding:20px;">' +
+                '<h3 id="' +
+                dialogId +
+                '-title" style="margin:0 0 12px;font-size:18px;">' +
+                safeTitle +
+                '</h3>' +
+                '<div class="eipsi-dialog-message" style="margin-bottom:16px;color:#333;line-height:1.5;">' +
+                safeMessage +
+                '</div>' +
+                errorHtml +
+                inputHtml +
+                '<div class="eipsi-dialog-actions" style="display:flex;gap:10px;justify-content:flex-end;">' +
+                cancelButtonHtml +
+                '<button type="button" class="button button-primary eipsi-dialog-confirm">' +
+                safeConfirmText +
+                '</button>' +
+                '</div>' +
+                '</div>'
+        );
+
+        $overlay.append( $dialog );
+        $( 'body' ).append( $overlay );
+
+        const $confirmButton = $dialog.find( '.eipsi-dialog-confirm' );
+        const $cancelButton = $dialog.find( '.eipsi-dialog-cancel' );
+        const $input = $dialog.find( '.eipsi-dialog-input' );
+        const $error = $dialog.find( '.eipsi-dialog-error' );
+
+        function closeDialog() {
+            $overlay.remove();
+            $( document ).off( 'keydown', handleKeydown );
+        }
+
+        function handleConfirm() {
+            let value = null;
+            if ( settings.input ) {
+                value = $input.val().trim();
+                if ( settings.required && ! value ) {
+                    $error.text( settings.requiredMessage ).show();
+                    $input.trigger( 'focus' );
+                    return;
+                }
+            }
+
+            if ( typeof settings.onConfirm === 'function' ) {
+                settings.onConfirm( value );
+            }
+            closeDialog();
+        }
+
+        function handleCancel() {
+            if ( typeof settings.onCancel === 'function' ) {
+                settings.onCancel();
+            }
+            closeDialog();
+        }
+
+        function handleKeydown( event ) {
+            if ( event.key === 'Escape' ) {
+                handleCancel();
+            } else if ( event.key === 'Enter' ) {
+                handleConfirm();
+            }
+        }
+
+        $confirmButton.on( 'click', handleConfirm );
+        if ( $cancelButton.length ) {
+            $cancelButton.on( 'click', handleCancel );
+        }
+
+        $overlay.on( 'click', function ( event ) {
+            if ( event.target === this ) {
+                handleCancel();
+            }
+        } );
+
+        if ( $input.length ) {
+            $input.trigger( 'focus' );
+            $input.on( 'input', function () {
+                $error.hide();
+            } );
+        } else {
+            $confirmButton.trigger( 'focus' );
+        }
+
+        $( document ).on( 'keydown', handleKeydown );
+    }
+
+    function formatDialogMessage( message ) {
+        const safeMessage = escapeHtml( message || '' );
+        return safeMessage.replace( /\n/g, '<br>' );
+    }
+
     // ===========================
     // ANONYMIZE MODAL (EXISTING)
     // ===========================
@@ -997,9 +1216,16 @@
                         '\n\n⚠️ Este participante tiene respuestas registradas. Se desactivará en lugar de eliminarse.';
                 }
 
-                if ( confirm( confirmMessage ) ) {
-                    deleteParticipant( participantId, ! hasSubmissions );
-                }
+                showConfirmationDialog( {
+                    title: 'Eliminar participante',
+                    message: confirmMessage,
+                    confirmText: hasSubmissions
+                        ? 'Desactivar participante'
+                        : 'Sí, eliminar',
+                    onConfirm: function () {
+                        deleteParticipant( participantId, ! hasSubmissions );
+                    },
+                } );
             }
         );
 
@@ -1229,11 +1455,14 @@
                         response.data.email_sent === false
                     ) {
                         setTimeout( function () {
-                            alert(
-                                'Contraseña temporal generada: ' +
+                            showAlertDialog( {
+                                title: 'Contraseña temporal',
+                                message:
+                                    'Contraseña temporal generada: ' +
                                     response.data.temporary_password +
-                                    '\n\nGuarde esta contraseña, solo se mostrará una vez.'
-                            );
+                                    '\n\nGuarda esta contraseña, solo se mostrará una vez.',
+                                confirmText: 'Entendido',
+                            } );
                         }, 300 );
                     }
                 } else {
@@ -1438,21 +1667,25 @@
         } );
 
         if ( selectedIds.length === 0 ) {
-            alert(
-                eipsiWavesManagerData.strings.noParticipantsSelected ||
-                    'Por favor selecciona al menos un participante.'
-            );
+            showAlertDialog( {
+                title: 'Selección requerida',
+                message:
+                    eipsiWavesManagerData.strings.noParticipantsSelected ||
+                    'Por favor selecciona al menos un participante.',
+            } );
             return;
         }
 
-        if (
-            confirm(
+        showConfirmationDialog( {
+            title: 'Enviar recordatorios',
+            message:
                 eipsiWavesManagerData.strings.confirmSendReminders ||
-                    '¿Enviar recordatorios a los participantes seleccionados?'
-            )
-        ) {
-            sendManualReminders( selectedIds );
-        }
+                '¿Enviar recordatorios a los participantes seleccionados?',
+            confirmText: 'Sí, enviar',
+            onConfirm: function () {
+                sendManualReminders( selectedIds );
+            },
+        } );
     } );
 
     function sendManualReminders( participantIds ) {
