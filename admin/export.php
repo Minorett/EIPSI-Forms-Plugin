@@ -27,8 +27,13 @@ function export_generate_stable_form_id($form_name) {
 }
 
 function export_get_form_initials($form_name) {
+    // Handle null or non-string input safely
+    if (empty($form_name)) {
+        return '';
+    }
+    
     $stop_words = array('de', 'la', 'el', 'y', 'en', 'con', 'para', 'del', 'los', 'las');
-    $words = preg_split('/\s+/', strtolower($form_name));
+    $words = preg_split('/\s+/', strtolower((string) $form_name));
     $words = array_diff($words, $stop_words);
     $initials = '';
     foreach ($words as $word) {
