@@ -1156,7 +1156,10 @@ class EIPSI_Database_Schema_Manager {
         'start_timestamp_ms' => "bigint(20) DEFAULT NULL AFTER duration_seconds",  // ← NUEVO
         'end_timestamp_ms' => "bigint(20) DEFAULT NULL AFTER start_timestamp_ms",  // ← NUEVO
         'metadata' => "LONGTEXT DEFAULT NULL AFTER end_timestamp_ms",  // ← Cambiado: AFTER end_timestamp_ms
-        'status' => "varchar(20) DEFAULT 'submitted' AFTER metadata"  // ← NUEVO
+        'status' => "varchar(20) DEFAULT 'submitted' AFTER metadata",  // ← NUEVO
+        // v1.5.5 - RCT at submission time
+        'rct_assigned_variant' => "varchar(100) DEFAULT NULL AFTER status",
+        'rct_randomization_id' => "varchar(100) DEFAULT NULL AFTER rct_assigned_variant"
     );
         
         $columns_added = array();
@@ -1175,6 +1178,8 @@ class EIPSI_Database_Schema_Manager {
         self::ensure_local_index( $table_name, 'form_id' );
         self::ensure_local_index( $table_name, 'participant_id' );
         self::ensure_local_index( $table_name, 'session_id' );
+        self::ensure_local_index( $table_name, 'rct_assigned_variant' );
+        self::ensure_local_index( $table_name, 'rct_randomization_id' );
 
         // v1.4.0 - Composite index for faster lookups
         // Check if index exists first (IF NOT EXISTS is not valid for ADD KEY in MySQL/MariaDB)
@@ -1217,6 +1222,8 @@ class EIPSI_Database_Schema_Manager {
         // Ensure indices
         self::ensure_local_index( $table_name, 'form_id' );
         self::ensure_local_index( $table_name, 'session_id' );
+        self::ensure_local_index( $table_name, 'rct_assigned_variant' );
+        self::ensure_local_index( $table_name, 'rct_randomization_id' );
 
         self::ensure_local_index( $table_name, 'event_type' );
         

@@ -196,6 +196,19 @@ function eipsi_export_to_excel() {
         $headers[] = 'Seed';
         $headers[] = 'Type (Random/Manual)';
     }
+    
+    // v1.5.5 - RCT submission-based assignment columns
+    $has_rct_submission = false;
+    foreach ($results as $row) {
+        if (!empty($row->rct_assigned_variant)) {
+            $has_rct_submission = true;
+            break;
+        }
+    }
+    if ($has_rct_submission) {
+        $headers[] = 'RCT Assigned Variant';
+        $headers[] = 'RCT Randomization ID';
+    }
 
     if ($privacy_config['ip_address']) {
         $headers[] = 'IP Address';
@@ -302,6 +315,12 @@ function eipsi_export_to_excel() {
             $row_data[] = $assignment_form;
             $row_data[] = $assignment_seed;
             $row_data[] = $assignment_type;
+        }
+        
+        // v1.5.5 - RCT submission-based assignment data
+        if ($has_rct_submission) {
+            $row_data[] = $row->rct_assigned_variant ?? '-';
+            $row_data[] = $row->rct_randomization_id ?? '-';
         }
         
         // Add metadata fields only if privacy config allows
@@ -506,6 +525,19 @@ function eipsi_export_to_csv() {
         $headers[] = 'Type (Random/Manual)';
     }
     
+    // v1.5.5 - RCT submission-based assignment columns
+    $has_rct_submission = false;
+    foreach ($results as $row) {
+        if (!empty($row->rct_assigned_variant)) {
+            $has_rct_submission = true;
+            break;
+        }
+    }
+    if ($has_rct_submission) {
+        $headers[] = 'RCT Assigned Variant';
+        $headers[] = 'RCT Randomization ID';
+    }
+    
     if ($privacy_config['ip_address']) {
         $headers[] = 'IP Address';
     }
@@ -611,6 +643,12 @@ function eipsi_export_to_csv() {
             $row_data[] = $assignment_form;
             $row_data[] = $assignment_seed;
             $row_data[] = $assignment_type;
+        }
+        
+        // v1.5.5 - RCT submission-based assignment data
+        if ($has_rct_submission) {
+            $row_data[] = $row->rct_assigned_variant ?? '-';
+            $row_data[] = $row->rct_randomization_id ?? '-';
         }
         
         // Add metadata fields only if privacy config allows
