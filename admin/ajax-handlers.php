@@ -1285,6 +1285,50 @@ function eipsi_forms_submit_form_handler() {
         $metadata['random_assignment'] = $random_assignment;
     }
     
+    // v1.5.5 - RCT at submission time: Calculate assignment server-side
+    $rct_assigned_variant = null;
+    $rct_randomization_id = null;
+    
+    // Get the form post ID from form name to check for RCT config
+    $form_posts = get_posts(array(
+        'post_type' => array('eipsi_form', 'eipsi_form_template'),
+        'post_status' => 'publish',
+        'posts_per_page' => 1,
+        'fields' => 'ids',
+        'meta_query' => array(
+            array(
+                'key' => '_eipsi_form_name',
+                'value' => $form_name,
+                'compare' => '=',
+            )
+        ),
+    ));
+    
+    $form_post_id = !empty($form_posts) ? intval($form_posts[0]) : 0;
+    
+    // Calculate RCT assignment at submission time if RCT config exists for this form
+    if (!empty($user_fingerprint) && $form_post_id > 0) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-db-setup.php';
+        
+        $timestamp_for_seed = $end_timestamp_ms ?? round(microtime(true) * 1000);
+        $rct_assignment = eipsi_calculate_submission_assignment($user_fingerprint, $form_post_id, $timestamp_for_seed);
+        
+        if (!empty($rct_assignment)) {
+            $rct_assigned_variant = $rct_assignment['assigned_variant'];
+            $rct_randomization_id = $rct_assignment['randomization_id'];
+            
+            // Update metadata with server-calculated assignment
+            $metadata['random_assignment'] = array(
+                'form_id' => strval($rct_assignment['assigned_form_id']),
+                'seed' => $rct_assignment['seed'],
+                'type' => 'server-calculated',
+                'method' => $rct_assignment['method'] ?? 'seeded'
+            );
+            
+            error_log("[EIPSI Forms] RCT Assignment calculated at submission: {$rct_assigned_variant} for fingerprint {$user_fingerprint}");
+        }
+    }
+    
     // Prepare data for insertion
     $data = array(
         'form_id' => $stable_form_id,
@@ -1307,7 +1351,10 @@ function eipsi_forms_submit_form_handler() {
         'end_timestamp_ms' => $end_timestamp_ms,
         'metadata' => wp_json_encode($metadata),
         'status' => 'submitted',
-        'form_responses' => wp_json_encode($form_responses)
+        'form_responses' => wp_json_encode($form_responses),
+        // v1.5.5 - RCT at submission time
+        'rct_assigned_variant' => $rct_assigned_variant,
+        'rct_randomization_id' => $rct_randomization_id
     );
     
     // Check if external database is configured
