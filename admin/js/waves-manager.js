@@ -1453,7 +1453,9 @@
 					}
 
 					showNotification( message, 'success' );
-					$( '#eipsi-participant-modal' ).fadeOut( 200 );
+					$( '#eipsi-participant-modal' ).fadeOut( 200, function () {
+						resetParticipantForm(); // Clean form for next open
+					} );
 					loadParticipants(); // Refresh list
 
 					if (
