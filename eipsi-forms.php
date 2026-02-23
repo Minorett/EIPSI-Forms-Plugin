@@ -477,7 +477,15 @@ add_action('admin_enqueue_scripts', 'eipsi_enqueue_participant_auth_assets');
 
 function eipsi_enqueue_participant_auth_assets() {
     // Solo enqueue si hay autenticación de participantes en esta página
-    // TODO: Lógica futura para detectar si la página actual usa auth de participantes
+    global $post;
+    if (!is_a($post, 'WP_Post')) return;
+    
+    // Check if page has participant-related shortcodes
+    $has_participant_shortcode = has_shortcode($post->post_content, 'eipsi_survey_login') ||
+                                  has_shortcode($post->post_content, 'eipsi_participant_dashboard') ||
+                                  has_shortcode($post->post_content, 'eipsi_form');
+    
+    if (!$has_participant_shortcode) return;
     
     wp_enqueue_script(
         'eipsi-participant-auth',
@@ -489,11 +497,11 @@ function eipsi_enqueue_participant_auth_assets() {
     
     wp_localize_script('eipsi-participant-auth', 'eipsiAuth', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('eipsi_participant_nonce'),
+        'nonce' => wp_create_nonce('eipsi_participant_auth'),
         'strings' => array(
             'registering' => __('Registrando...', 'eipsi-forms'),
             'logging_in' => __('Ingresando...', 'eipsi-forms'),
-            'success' => __('Éxito!', 'eipsi-forms'),
+            'success' => __('¡Éxito!', 'eipsi-forms'),
             'error' => __('Error', 'eipsi-forms'),
             'confirm_logout' => __('¿Estás seguro de que quieres cerrar sesión?', 'eipsi-forms'),
             'loading' => __('Cargando...', 'eipsi-forms')
@@ -505,6 +513,7 @@ function eipsi_enqueue_participant_auth_assets() {
  * Enqueue Survey Login assets (frontend)
  * 
  * @since 1.4.0
+ * @since 1.6.0 - Enhanced with progress indicators and magic link support
  */
 add_action('wp_enqueue_scripts', 'eipsi_enqueue_survey_login_assets');
 function eipsi_enqueue_survey_login_assets() {
@@ -512,21 +521,54 @@ function eipsi_enqueue_survey_login_assets() {
     global $post;
     if (!is_a($post, 'WP_Post')) return;
     
-    if (has_shortcode($post->post_content, 'eipsi_survey_login')) {
+    if (has_shortcode($post->post_content, 'eipsi_survey_login') || 
+        has_shortcode($post->post_content, 'eipsi_participant_dashboard')) {
+        
+        // Enhanced login styles
         wp_enqueue_style(
             'eipsi-survey-login-css',
-            EIPSI_FORMS_PLUGIN_URL . 'assets/css/survey-login.css',
-            array(),
+            EIPSI_FORMS_PLUGIN_URL . 'assets/css/survey-login-enhanced.css',
+            array('eipsi-theme-toggle-css'),
             EIPSI_FORMS_VERSION
         );
         
+        // Enhanced login scripts
         wp_enqueue_script(
             'eipsi-survey-login-js',
-            EIPSI_FORMS_PLUGIN_URL . 'assets/js/survey-login.js',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/js/survey-login-enhanced.js',
             array('jquery', 'eipsi-participant-auth'),
             EIPSI_FORMS_VERSION,
             true
         );
+        
+        // Participant dashboard styles
+        wp_enqueue_style(
+            'eipsi-participant-dashboard-css',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/css/participant-dashboard.css',
+            array('eipsi-theme-toggle-css'),
+            EIPSI_FORMS_VERSION
+        );
+        
+        // Participant dashboard scripts
+        wp_enqueue_script(
+            'eipsi-participant-dashboard-js',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/js/participant-dashboard.js',
+            array('jquery', 'eipsi-participant-auth'),
+            EIPSI_FORMS_VERSION,
+            true
+        );
+        
+        // Localize dashboard script
+        wp_localize_script('eipsi-participant-dashboard-js', 'eipsiParticipantDashboardL10n', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('eipsi_participant_dashboard'),
+            'strings' => array(
+                'confirm_logout' => __('¿Estás seguro de que quieres cerrar sesión?', 'eipsi-forms'),
+                'logging_out' => __('Cerrando sesión...', 'eipsi-forms'),
+                'logout_success' => __('Sesión cerrada correctamente', 'eipsi-forms'),
+                'logout_error' => __('Error al cerrar sesión', 'eipsi-forms')
+            )
+        ));
     }
 }
 

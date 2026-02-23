@@ -113,37 +113,7 @@ function eipsi_render_survey_login_form($atts) {
  * @return string Rendered HTML
  */
 function eipsi_participant_dashboard_shortcode($atts) {
-    // Enqueue dashboard assets
-    wp_enqueue_style(
-        'eipsi-participant-dashboard-css',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/css/participant-dashboard.css',
-        array('eipsi-theme-toggle-css'),
-        EIPSI_FORMS_VERSION
-    );
-    
-    wp_enqueue_script(
-        'eipsi-participant-dashboard-js',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/js/participant-dashboard.js',
-        array('jquery', 'eipsi-participant-auth'),
-        EIPSI_FORMS_VERSION,
-        true
-    );
-    
-    wp_localize_script('eipsi-participant-dashboard-js', 'eipsiParticipantDashboardL10n', array(
-        'ajaxUrl' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('eipsi_participant_dashboard'),
-        'strings' => array(
-            'confirm_logout' => __('¿Estás seguro de que quieres cerrar sesión?', 'eipsi-forms'),
-            'logging_out' => __('Cerrando sesión...', 'eipsi-forms'),
-            'logout_success' => __('Sesión cerrada correctamente', 'eipsi-forms'),
-            'logout_error' => __('Error al cerrar sesión', 'eipsi-forms'),
-            'status_completed_tooltip' => __('Esta toma fue completada exitosamente', 'eipsi-forms'),
-            'status_pending_tooltip' => __('Esta toma está pendiente o en progreso', 'eipsi-forms'),
-            'status_not_started_tooltip' => __('Esta toma aún no ha sido iniciada', 'eipsi-forms')
-        )
-    ));
-    
-    // Parse attributes
+    // Parse attributes first to check survey_id
     $atts = shortcode_atts(array(
         'survey_id' => 0,
     ), $atts, 'eipsi_participant_dashboard');
