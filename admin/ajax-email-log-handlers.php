@@ -133,13 +133,19 @@ add_action('wp_ajax_eipsi_email_log_export', 'eipsi_ajax_email_log_export');
 add_action('wp_ajax_nopriv_eipsi_email_log_export', 'eipsi_ajax_email_log_export');
 
 function eipsi_ajax_email_log_export() {
+    // Verify nonce first - use wp_send_json_error for AJAX handlers
     $nonce = isset($_GET['nonce']) ? sanitize_text_field($_GET['nonce']) : '';
     if (!wp_verify_nonce($nonce, 'eipsi_admin_nonce')) {
-        wp_die(__('Error de seguridad', 'eipsi-forms'));
+        status_header(403);
+        echo wp_json_encode(array('success' => false, 'message' => __('Error de seguridad', 'eipsi-forms')));
+        exit;
     }
 
+    // Check permissions before any output
     if (!current_user_can('manage_options')) {
-        wp_die(__('Permisos insuficientes', 'eipsi-forms'));
+        status_header(403);
+        echo wp_json_encode(array('success' => false, 'message' => __('Permisos insuficientes', 'eipsi-forms')));
+        exit;
     }
 
     if (!class_exists('EIPSI_Email_Service')) {
@@ -153,13 +159,22 @@ function eipsi_ajax_email_log_export() {
     $result = EIPSI_Email_Service::get_email_log_entries($survey_id, $filters, 10000, 0);
 
     if (empty($result['logs'])) {
-        wp_die(__('No hay emails para exportar', 'eipsi-forms'));
+        status_header(400);
+        echo wp_json_encode(array('success' => false, 'message' => __('No hay emails para exportar', 'eipsi-forms')));
+        exit;
+    }
+
+    // Clear any existing output buffer to prevent header issues
+    while (ob_get_level() > 0) {
+        ob_end_clean();
     }
 
     // Generate CSV
     $filename = 'eipsi-email-log-' . date('Y-m-d') . '.csv';
-    header('Content-Type: text/csv');
+    header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: no-cache, must-revalidate');
+    header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
 
     $output = fopen('php://output', 'w');
 
