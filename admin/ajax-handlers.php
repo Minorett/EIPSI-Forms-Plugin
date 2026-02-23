@@ -31,7 +31,12 @@ function generate_stable_form_id($form_name) {
 }
 
 function get_form_initials($form_name) {
-    $words = explode(' ', trim($form_name));
+    // Handle null or non-string input safely
+    if (empty($form_name)) {
+        return 'UNK';
+    }
+    
+    $words = explode(' ', trim((string) $form_name));
     $initials = '';
     
     foreach ($words as $word) {
@@ -1050,7 +1055,7 @@ function eipsi_forms_submit_form_handler() {
     if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
         $ip_address_raw = $_SERVER['HTTP_CF_CONNECTING_IP'];
     } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ip_address_raw = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+        $ip_address_raw = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]);
     }
     
     // Validar IP
