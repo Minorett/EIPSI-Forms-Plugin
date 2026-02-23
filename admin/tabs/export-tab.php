@@ -1,534 +1,742 @@
 <?php
+/**
+ * Export Tab — Participant Data Export
+ *
+ * Allows investigators to export the participant roster (with wave-completion
+ * progress) in CSV or Excel format, with filters and a live data preview.
+ *
+ * @package EIPSI_Forms
+ * @since   1.4.0
+ * @updated 1.8.0 — Rebuilt with participant export, real preview, stats cards
+ */
+
 if (!defined('ABSPATH')) {
     exit;
 }
 
-// Include the export service
-require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-export-service.php';
-$export_service = new EIPSI_Export_Service();
-$surveys = $export_service->get_available_surveys();
+global $wpdb;
+
+// Fetch all active studies for the selector
+$studies = $wpdb->get_results(
+    "SELECT id, study_name, study_code
+     FROM {$wpdb->prefix}survey_studies
+     ORDER BY created_at DESC"
+);
+
+// Determine pre-selected study (from URL or first available)
+$selected_study_id = isset($_GET['study_id']) ? absint($_GET['study_id']) : 0;
+if (!$selected_study_id && !empty($studies)) {
+    $selected_study_id = $studies[0]->id;
+}
+
+$nonce = wp_create_nonce('eipsi_admin_nonce');
 ?>
 
-<div id="export-tab" class="export-tab-container">
-    <h2>📊 Export Longitudinal Data</h2>
-    
-    <!-- Filters -->
-    <div class="export-filters">
+<div id="export-tab" class="eipsi-export-tab-wrap">
+
+    <!-- ─── Header ──────────────────────────────────────────────────── -->
+    <div class="eipsi-export-header">
+        <h2>📊 <?php esc_html_e('Exportar Datos de Participantes', 'eipsi-forms'); ?></h2>
+        <p class="eipsi-export-subtitle">
+            <?php esc_html_e('Descarga el listado completo de participantes con su progreso por onda en formato CSV o Excel, listo para abrir en SPSS, R o Google Sheets.', 'eipsi-forms'); ?>
+        </p>
+    </div>
+
+    <?php if (empty($studies)): ?>
+        <div class="notice notice-warning" style="padding:12px 16px;">
+            <p><?php esc_html_e('No hay estudios longitudinales creados todavía. Crea un estudio primero desde el Wave Manager.', 'eipsi-forms'); ?></p>
+        </div>
+    <?php else: ?>
+
+    <!-- ─── Filters ─────────────────────────────────────────────────── -->
+    <div class="eipsi-export-filters">
         <div class="filter-group">
-            <label for="filter-survey">Study:</label>
-            <select id="filter-survey">
-                <option value="">-- Select Study --</option>
-                <?php foreach ($surveys as $survey): ?>
-                    <option value="<?php echo esc_attr($survey->id); ?>">
-                        <?php echo esc_html($survey->title); ?>
+            <label for="ep-study"><?php esc_html_e('Estudio:', 'eipsi-forms'); ?></label>
+            <select id="ep-study">
+                <?php foreach ($studies as $study): ?>
+                    <option value="<?php echo esc_attr($study->id); ?>"
+                        <?php selected($selected_study_id, $study->id); ?>>
+                        <?php echo esc_html($study->study_name . ' (' . $study->study_code . ')'); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
         </div>
-        
+
         <div class="filter-group">
-            <label for="filter-wave">Wave:</label>
-            <select id="filter-wave">
-                <option value="all">All Waves</option>
-                <option value="T1">Wave 1 (T1)</option>
-                <option value="T2">Wave 2 (T2)</option>
-                <option value="T3">Wave 3 (T3)</option>
+            <label for="ep-status"><?php esc_html_e('Estado:', 'eipsi-forms'); ?></label>
+            <select id="ep-status">
+                <option value="all"><?php esc_html_e('Todos', 'eipsi-forms'); ?></option>
+                <option value="active"><?php esc_html_e('Activos', 'eipsi-forms'); ?></option>
+                <option value="inactive"><?php esc_html_e('Inactivos', 'eipsi-forms'); ?></option>
             </select>
         </div>
-        
+
         <div class="filter-group">
-            <label for="filter-date-from">From:</label>
-            <input type="date" id="filter-date-from">
-        </div>
-        
-        <div class="filter-group">
-            <label for="filter-date-to">To:</label>
-            <input type="date" id="filter-date-to">
-        </div>
-        
-        <div class="filter-group">
-            <label for="filter-status">Status:</label>
-            <select id="filter-status">
-                <option value="all">All</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="late">Late</option>
+            <label for="ep-wave"><?php esc_html_e('Onda:', 'eipsi-forms'); ?></label>
+            <select id="ep-wave">
+                <option value="all"><?php esc_html_e('Todas las ondas', 'eipsi-forms'); ?></option>
+                <!-- Populated dynamically via AJAX -->
             </select>
         </div>
-        
-        <button id="clear-filters" class="button button-secondary">Clear</button>
+
+        <div class="filter-group">
+            <label for="ep-search"><?php esc_html_e('Buscar:', 'eipsi-forms'); ?></label>
+            <input type="text" id="ep-search" placeholder="<?php esc_attr_e('Nombre o email…', 'eipsi-forms'); ?>">
+        </div>
+
+        <div class="filter-group">
+            <label for="ep-date-from"><?php esc_html_e('Desde:', 'eipsi-forms'); ?></label>
+            <input type="date" id="ep-date-from">
+        </div>
+
+        <div class="filter-group">
+            <label for="ep-date-to"><?php esc_html_e('Hasta:', 'eipsi-forms'); ?></label>
+            <input type="date" id="ep-date-to">
+        </div>
+
+        <div class="filter-actions">
+            <button id="ep-apply-filters" class="button button-primary">
+                🔍 <?php esc_html_e('Aplicar', 'eipsi-forms'); ?>
+            </button>
+            <button id="ep-clear-filters" class="button button-secondary">
+                ✕ <?php esc_html_e('Limpiar', 'eipsi-forms'); ?>
+            </button>
+        </div>
     </div>
-    
-    <!-- Statistics -->
-    <div id="export-stats" class="export-stats">
-        <div class="stat-card">
-            <h4>Total Participants</h4>
-            <p class="stat-value">-</p>
-        </div>
-        <div class="stat-card">
-            <h4>Completion Rate (T1)</h4>
-            <p class="stat-value">-</p>
-            <div class="progress-bar">
-                <div class="progress-bar-fill" style="width: 0%"></div>
+
+    <!-- ─── Stats cards ─────────────────────────────────────────────── -->
+    <div class="eipsi-export-stats" id="ep-stats" style="display:none;">
+        <div class="ep-stat-card">
+            <div class="ep-stat-icon">👥</div>
+            <div class="ep-stat-body">
+                <span class="ep-stat-value" id="ep-stat-total">—</span>
+                <span class="ep-stat-label"><?php esc_html_e('Total participantes', 'eipsi-forms'); ?></span>
             </div>
         </div>
-        <div class="stat-card">
-            <h4>Avg Response Time (T1)</h4>
-            <p class="stat-value">-</p>
+        <div class="ep-stat-card">
+            <div class="ep-stat-icon">✅</div>
+            <div class="ep-stat-body">
+                <span class="ep-stat-value" id="ep-stat-active">—</span>
+                <span class="ep-stat-label"><?php esc_html_e('Activos', 'eipsi-forms'); ?></span>
+            </div>
+        </div>
+        <div class="ep-stat-card">
+            <div class="ep-stat-icon">🏁</div>
+            <div class="ep-stat-body">
+                <span class="ep-stat-value" id="ep-stat-completed">—</span>
+                <span class="ep-stat-label"><?php esc_html_e('Completaron todas las ondas', 'eipsi-forms'); ?></span>
+            </div>
+        </div>
+        <div class="ep-stat-card ep-stat-card--wide" id="ep-wave-rates-card" style="display:none;">
+            <div class="ep-stat-icon">📈</div>
+            <div class="ep-stat-body">
+                <span class="ep-stat-label"><?php esc_html_e('Tasa de completación por onda', 'eipsi-forms'); ?></span>
+                <div id="ep-wave-rates"></div>
+            </div>
         </div>
     </div>
-    
-    <!-- Detailed Stats -->
-    <div id="detailed-stats" class="detailed-stats" style="display:none;">
-        <h3>Completion Timeline</h3>
-        <div id="completion-rates" class="completion-rates"></div>
-        <h3>Response Time Analysis</h3>
-        <div id="response-times" class="response-times"></div>
+
+    <!-- ─── Loading state ───────────────────────────────────────────── -->
+    <div id="ep-loading" style="display:none; text-align:center; padding:30px 0;">
+        <span class="spinner is-active" style="float:none; margin:0 auto;"></span>
+        <p style="margin-top:8px; color:#666;"><?php esc_html_e('Cargando datos…', 'eipsi-forms'); ?></p>
     </div>
-    
-    <!-- Download Actions -->
-    <div class="export-actions">
-        <button id="export-excel" class="button button-primary" disabled>
-            📥 Download Excel (.xlsx)
-        </button>
-        <button id="export-csv" class="button button-primary" disabled>
-            📥 Download CSV (.csv)
-        </button>
+
+    <!-- ─── Data summary bar ────────────────────────────────────────── -->
+    <div id="ep-data-summary" class="ep-data-summary" style="display:none;">
+        <span>
+            <strong><?php esc_html_e('Filas:', 'eipsi-forms'); ?></strong>
+            <span id="ep-row-count">0</span>
+        </span>
+        <span>
+            <strong><?php esc_html_e('Columnas:', 'eipsi-forms'); ?></strong>
+            <span id="ep-col-count">0</span>
+        </span>
+        <span>
+            <strong><?php esc_html_e('Codificación:', 'eipsi-forms'); ?></strong> UTF-8
+        </span>
+        <span>
+            <strong><?php esc_html_e('Actualizado:', 'eipsi-forms'); ?></strong>
+            <span id="ep-last-update">—</span>
+        </span>
     </div>
-    
-    <!-- Data Summary -->
-    <div id="data-summary" class="data-summary" style="display:none;">
-        <p><strong>Data:</strong> <span id="row-count">0</span> rows | <strong>Columns:</strong> <span id="column-count">0</span> | <strong>Encoding:</strong> UTF-8 | <strong>Last update:</strong> <span id="last-update">-</span></p>
+
+    <!-- ─── Preview table ───────────────────────────────────────────── -->
+    <div id="ep-preview-wrap" class="ep-preview-wrap" style="display:none;">
+        <h3><?php esc_html_e('Vista previa (primeras 10 filas)', 'eipsi-forms'); ?></h3>
+        <div class="ep-preview-scroll">
+            <table class="widefat striped ep-preview-table">
+                <thead>
+                    <tr id="ep-preview-headers"></tr>
+                </thead>
+                <tbody id="ep-preview-body"></tbody>
+            </table>
+        </div>
     </div>
-    
-    <!-- Preview Table -->
-    <div id="export-preview" class="export-preview" style="display:none;">
-        <h3>Data Preview</h3>
-        <table class="widefat">
-            <thead>
-                <tr id="preview-headers"></tr>
-            </thead>
-            <tbody id="preview-body"></tbody>
-        </table>
-        <p><em>Showing first 10 rows only</em></p>
+
+    <!-- ─── Export action buttons ───────────────────────────────────── -->
+    <div class="eipsi-export-actions" id="ep-actions" style="display:none;">
+        <div class="ep-actions-label">
+            <?php esc_html_e('Descargar datos de participantes:', 'eipsi-forms'); ?>
+        </div>
+        <a id="ep-download-excel"
+           href="#"
+           class="button button-primary ep-btn-download"
+           style="pointer-events:none; opacity:.5;">
+            📥 <?php esc_html_e('Excel (.xlsx)', 'eipsi-forms'); ?>
+        </a>
+        <a id="ep-download-csv"
+           href="#"
+           class="button button-primary ep-btn-download"
+           style="pointer-events:none; opacity:.5;">
+            📄 <?php esc_html_e('CSV (.csv)', 'eipsi-forms'); ?>
+        </a>
+        <p class="ep-actions-hint">
+            <?php esc_html_e('El archivo incluye: ID, email, nombre, estado, fecha de registro, último acceso y progreso por cada onda.', 'eipsi-forms'); ?>
+        </p>
     </div>
-    
-    <!-- Additional Actions -->
-    <div class="additional-actions" style="display:none;">
-        <button id="view-detailed-table" class="button button-secondary">View Detailed Table</button>
-        <button id="email-report" class="button button-secondary">Send Report by Email</button>
-    </div>
+
+    <?php endif; // end if studies ?>
 </div>
 
+<!-- ─── JavaScript ─────────────────────────────────────────────────── -->
 <script>
-jQuery(document).ready(function($) {
-    const nonce = '<?php echo wp_create_nonce('eipsi_admin_nonce'); ?>';
-    let currentStats = null;
-    
-    // Load statistics when survey changes
-    function loadStats() {
-        const surveyId = $('#filter-survey').val();
-        if (!surveyId) {
-            resetUI();
-            return;
+( function ( $ ) {
+    'use strict';
+
+    const nonce    = <?php echo wp_json_encode($nonce); ?>;
+    const adminUrl = <?php echo wp_json_encode(admin_url('admin.php')); ?>;
+
+    let currentStudyId = <?php echo (int) $selected_study_id; ?>;
+    let statsLoaded    = false;
+
+    // -----------------------------------------------------------------------
+    // Init
+    // -----------------------------------------------------------------------
+    $( document ).ready( function () {
+        if ( currentStudyId ) {
+            loadWaves( currentStudyId );
+            loadStats( currentStudyId );
         }
-        
-        $.ajax({
+        bindEvents();
+    } );
+
+    // -----------------------------------------------------------------------
+    // Event bindings
+    // -----------------------------------------------------------------------
+    function bindEvents() {
+        $( '#ep-study' ).on( 'change', function () {
+            currentStudyId = parseInt( $( this ).val(), 10 );
+            statsLoaded    = false;
+            resetUI();
+            if ( currentStudyId ) {
+                loadWaves( currentStudyId );
+                loadStats( currentStudyId );
+            }
+        } );
+
+        $( '#ep-apply-filters' ).on( 'click', function () {
+            if ( currentStudyId ) {
+                loadPreview( currentStudyId );
+            }
+        } );
+
+        $( '#ep-clear-filters' ).on( 'click', function () {
+            $( '#ep-status' ).val( 'all' );
+            $( '#ep-wave' ).val( 'all' );
+            $( '#ep-search' ).val( '' );
+            $( '#ep-date-from, #ep-date-to' ).val( '' );
+            if ( currentStudyId ) {
+                loadPreview( currentStudyId );
+            }
+        } );
+
+        // Live search with debounce
+        let searchTimer;
+        $( '#ep-search' ).on( 'input', function () {
+            clearTimeout( searchTimer );
+            searchTimer = setTimeout( function () {
+                if ( currentStudyId ) loadPreview( currentStudyId );
+            }, 500 );
+        } );
+    }
+
+    // -----------------------------------------------------------------------
+    // Load wave list
+    // -----------------------------------------------------------------------
+    function loadWaves( studyId ) {
+        $.ajax( {
             url: ajaxurl,
             type: 'POST',
             data: {
-                action: 'eipsi_get_export_stats',
+                action: 'eipsi_get_participant_waves',
                 nonce: nonce,
-                survey_id: surveyId,
+                study_id: studyId,
             },
-            beforeSend: function() {
-                $('#export-excel, #export-csv').prop('disabled', true);
+            success( resp ) {
+                if ( ! resp.success ) return;
+                const $select = $( '#ep-wave' );
+                $select.find( 'option:not([value="all"])' ).remove();
+                resp.data.forEach( function ( w ) {
+                    $select.append(
+                        $( '<option>' )
+                            .val( w.wave_index )
+                            .text( 'T' + w.wave_index + ' — ' + w.name )
+                    );
+                } );
             },
-            success: function(response) {
-                if (response.success) {
-                    currentStats = response.data;
-                    updateStatsUI(currentStats);
-                    $('#export-excel, #export-csv').prop('disabled', false);
-                    $('#data-summary, .additional-actions').show();
-                    loadPreview();
+        } );
+    }
+
+    // -----------------------------------------------------------------------
+    // Load stats + auto-trigger preview
+    // -----------------------------------------------------------------------
+    function loadStats( studyId ) {
+        $( '#ep-loading' ).show();
+        $( '#ep-stats, #ep-actions, #ep-preview-wrap, #ep-data-summary' ).hide();
+
+        $.ajax( {
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_get_participant_stats',
+                nonce: nonce,
+                study_id: studyId,
+            },
+            success( resp ) {
+                if ( ! resp.success ) return;
+                const s = resp.data;
+
+                $( '#ep-stat-total' ).text( s.total_participants || 0 );
+                $( '#ep-stat-active' ).text( s.active_participants || 0 );
+                $( '#ep-stat-completed' ).text( s.completed_all_waves || 0 );
+
+                // Wave completion rates
+                const rates = s.completion_rates || {};
+                if ( Object.keys( rates ).length > 0 ) {
+                    let html = '';
+                    Object.keys( rates ).forEach( function ( key ) {
+                        const r = rates[ key ];
+                        html += '<div class="ep-wave-rate">' +
+                            '<span class="ep-wave-label">' + escHtml( key ) + ' — ' + escHtml( r.wave_name || '' ) + ':</span> ' +
+                            '<strong>' + r.rate + '%</strong> ' +
+                            '<span class="ep-wave-detail">(' + r.completed + ' / ' + r.total + ')</span>' +
+                            '<div class="ep-mini-bar"><div class="ep-mini-fill" style="width:' + r.rate + '%"></div></div>' +
+                            '</div>';
+                    } );
+                    $( '#ep-wave-rates' ).html( html );
+                    $( '#ep-wave-rates-card' ).show();
+                }
+
+                $( '#ep-stats' ).show();
+                statsLoaded = true;
+
+                // Auto-load preview
+                loadPreview( studyId );
+            },
+            error() {
+                $( '#ep-loading' ).hide();
+            },
+        } );
+    }
+
+    // -----------------------------------------------------------------------
+    // Load preview
+    // -----------------------------------------------------------------------
+    function loadPreview( studyId ) {
+        $( '#ep-loading' ).show();
+        $( '#ep-preview-wrap, #ep-data-summary, #ep-actions' ).hide();
+
+        const filters = getFilters();
+
+        $.ajax( {
+            url: ajaxurl,
+            type: 'POST',
+            data: Object.assign( {
+                action: 'eipsi_get_participant_preview',
+                nonce: nonce,
+                study_id: studyId,
+            }, filters ),
+            success( resp ) {
+                $( '#ep-loading' ).hide();
+
+                if ( ! resp.success ) {
+                    showNotice( 'error', resp.data ? resp.data.message : 'Error al cargar vista previa.' );
+                    return;
+                }
+
+                const d = resp.data;
+                renderPreview( d.headers, d.rows );
+
+                // Update summary bar
+                $( '#ep-row-count' ).text( d.total );
+                $( '#ep-col-count' ).text( d.columns );
+                $( '#ep-last-update' ).text( new Date().toLocaleString() );
+                $( '#ep-data-summary' ).show();
+
+                // Enable download buttons
+                const baseExcel = buildDownloadUrl( studyId, filters, 'export_participants_excel' );
+                const baseCsv   = buildDownloadUrl( studyId, filters, 'export_participants_csv' );
+
+                $( '#ep-download-excel' )
+                    .attr( 'href', baseExcel )
+                    .css( { 'pointer-events': '', 'opacity': '' } );
+
+                $( '#ep-download-csv' )
+                    .attr( 'href', baseCsv )
+                    .css( { 'pointer-events': '', 'opacity': '' } );
+
+                $( '#ep-actions' ).show();
+
+                if ( d.total === 0 ) {
+                    $( '#ep-preview-wrap' ).hide();
+                    showNotice( 'warning', 'No se encontraron participantes con los filtros actuales.' );
                 } else {
-                    showError('Failed to load statistics: ' + (response.data.message || 'Unknown error'));
+                    $( '#ep-preview-wrap' ).show();
                 }
             },
-            error: function() {
-                showError('Failed to load statistics');
-            }
-        });
+            error() {
+                $( '#ep-loading' ).hide();
+                showNotice( 'error', 'Error de conexión. Intenta nuevamente.' );
+            },
+        } );
     }
-    
-    // Update statistics UI
-    function updateStatsUI(stats) {
-        // Update main stats
-        $('.stat-card:eq(0) .stat-value').text(stats.total_participants || 0);
-        $('.stat-card:eq(2) .stat-value').text(stats.avg_response_times['T1'] ? stats.avg_response_times['T1'].minutes + ' min' : '-');
-        
-        // Update completion rate for T1
-        if (stats.completion_rates['T1']) {
-            const rate = stats.completion_rates['T1'].rate;
-            $('.stat-card:eq(1) .stat-value').text(rate + '%');
-            $('.progress-bar-fill').css('width', rate + '%');
-        } else {
-            $('.stat-card:eq(1) .stat-value').text('-');
-            $('.progress-bar-fill').css('width', '0%');
+
+    // -----------------------------------------------------------------------
+    // Render preview table
+    // -----------------------------------------------------------------------
+    function renderPreview( headers, rows ) {
+        const $thead = $( '#ep-preview-headers' ).empty();
+        const $tbody = $( '#ep-preview-body' ).empty();
+
+        headers.forEach( function ( h ) {
+            $thead.append( '<th>' + escHtml( h ) + '</th>' );
+        } );
+
+        if ( rows.length === 0 ) {
+            $tbody.append(
+                '<tr><td colspan="' + headers.length + '" style="text-align:center;padding:20px;color:#666;">' +
+                    'Sin resultados' +
+                '</td></tr>'
+            );
+            return;
         }
-        
-        // Update detailed stats
-        if (Object.keys(stats.completion_rates).length > 0) {
-            $('#detailed-stats').show();
-            
-            // Completion rates by wave
-            let completionHtml = '';
-            Object.keys(stats.completion_rates).forEach(function(wave) {
-                const data = stats.completion_rates[wave];
-                completionHtml += `
-                    <div class="wave-stat">
-                        <strong>${wave}:</strong> ${data.completed}/${data.total} (${data.rate}%)
-                        <div class="mini-progress-bar">
-                            <div class="mini-progress-fill" style="width: ${data.rate}%"></div>
-                        </div>
-                    </div>
-                `;
-            });
-            $('#completion-rates').html(completionHtml);
-            
-            // Response times by wave
-            let responseHtml = '';
-            Object.keys(stats.avg_response_times).forEach(function(wave) {
-                const data = stats.avg_response_times[wave];
-                responseHtml += `
-                    <div class="wave-stat">
-                        <strong>${wave}:</strong> ${data.minutes} minutes (${data.seconds} seconds)
-                    </div>
-                `;
-            });
-            $('#response-times').html(responseHtml);
-        }
-        
-        // Update data summary
-        $('#last-update').text(new Date().toLocaleString());
+
+        rows.forEach( function ( row ) {
+            const $tr = $( '<tr>' );
+            row.forEach( function ( cell ) {
+                $tr.append( '<td>' + escHtml( String( cell !== null ? cell : '' ) ) + '</td>' );
+            } );
+            $tbody.append( $tr );
+        } );
     }
-    
-    // Load data preview
-    function loadPreview() {
-        const surveyId = $('#filter-survey').val();
-        if (!surveyId) return;
-        
-        // Show preview with first few rows
-        $('#export-preview').show();
-        
-        // This would typically be an AJAX call to get preview data
-        // For now, we'll just show the headers
-        const headers = ['Participant ID', 'Wave', 'Submitted At', 'Response Time (min)', 'Status', 'User Fingerprint'];
-        let headerHtml = '';
-        headers.forEach(function(header) {
-            headerHtml += `<th>${header}</th>`;
-        });
-        $('#preview-headers').html(headerHtml);
-        $('#column-count').text(headers.length);
-        
-        // Update row count (this would come from actual data)
-        $('#row-count').text('0');
+
+    // -----------------------------------------------------------------------
+    // Build download URL
+    // -----------------------------------------------------------------------
+    function buildDownloadUrl( studyId, filters, action ) {
+        const params = new URLSearchParams( {
+            page: 'eipsi-results',
+            tab: 'export',
+            action: action,
+            study_id: studyId,
+            status: filters.status     || 'all',
+            wave_index: filters.wave_index || 'all',
+            search: filters.search     || '',
+            date_from: filters.date_from  || '',
+            date_to: filters.date_to    || '',
+        } );
+        return adminUrl + '?' + params.toString();
     }
-    
-    // Reset UI when no survey selected
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+    function getFilters() {
+        return {
+            status:     $( '#ep-status' ).val(),
+            wave_index: $( '#ep-wave' ).val(),
+            search:     $( '#ep-search' ).val(),
+            date_from:  $( '#ep-date-from' ).val(),
+            date_to:    $( '#ep-date-to' ).val(),
+        };
+    }
+
     function resetUI() {
-        $('.stat-value').text('-');
-        $('.progress-bar-fill').css('width', '0%');
-        $('#detailed-stats, #export-preview, #data-summary, .additional-actions').hide();
-        $('#export-excel, #export-csv').prop('disabled', true);
-        $('#preview-headers, #preview-body').empty();
+        $( '#ep-stats, #ep-actions, #ep-preview-wrap, #ep-data-summary, #ep-loading' ).hide();
+        $( '#ep-preview-headers, #ep-preview-body, #ep-wave-rates' ).empty();
+        $( '#ep-stat-total, #ep-stat-active, #ep-stat-completed' ).text( '—' );
+        $( '#ep-download-excel, #ep-download-csv' )
+            .attr( 'href', '#' )
+            .css( { 'pointer-events': 'none', 'opacity': '0.5' } );
     }
-    
-    // Show error message
-    function showError(message) {
-        alert('Error: ' + message);
+
+    function escHtml( str ) {
+        return String( str )
+            .replace( /&/g, '&amp;' )
+            .replace( /</g, '&lt;' )
+            .replace( />/g, '&gt;' )
+            .replace( /"/g, '&quot;' );
     }
-    
-    // Export to Excel
-    $('#export-excel').click(function() {
-        const surveyId = $('#filter-survey').val();
-        const filters = {
-            wave_index: $('#filter-wave').val(),
-            date_from: $('#filter-date-from').val(),
-            date_to: $('#filter-date-to').val(),
-            status: $('#filter-status').val(),
-        };
-        
-        // Build URL with parameters
-        let url = `<?php echo admin_url('admin.php?page=eipsi-export-longitudinal&action=export_longitudinal_excel'); ?>`;
-        url += `&survey_id=${surveyId}`;
-        if (filters.wave_index !== 'all') url += `&wave_index=${filters.wave_index}`;
-        if (filters.date_from) url += `&date_from=${filters.date_from}`;
-        if (filters.date_to) url += `&date_to=${filters.date_to}`;
-        if (filters.status !== 'all') url += `&status=${filters.status}`;
-        
-        // Add nonce for security
-        url += `&_wpnonce=${nonce}`;
-        
-        window.location.href = url;
-    });
-    
-    // Export to CSV
-    $('#export-csv').click(function() {
-        const surveyId = $('#filter-survey').val();
-        const filters = {
-            wave_index: $('#filter-wave').val(),
-            date_from: $('#filter-date-from').val(),
-            date_to: $('#filter-date-to').val(),
-            status: $('#filter-status').val(),
-        };
-        
-        // Build URL with parameters
-        let url = `<?php echo admin_url('admin.php?page=eipsi-export-longitudinal&action=export_longitudinal_csv'); ?>`;
-        url += `&survey_id=${surveyId}`;
-        if (filters.wave_index !== 'all') url += `&wave_index=${filters.wave_index}`;
-        if (filters.date_from) url += `&date_from=${filters.date_from}`;
-        if (filters.date_to) url += `&date_to=${filters.date_to}`;
-        if (filters.status !== 'all') url += `&status=${filters.status}`;
-        
-        // Add nonce for security
-        url += `&_wpnonce=${nonce}`;
-        
-        window.location.href = url;
-    });
-    
-    // Clear filters
-    $('#clear-filters').click(function() {
-        $('#filter-wave').val('all');
-        $('#filter-date-from, #filter-date-to').val('');
-        $('#filter-status').val('all');
-        loadStats();
-    });
-    
-    // View detailed table
-    $('#view-detailed-table').click(function() {
-        const surveyId = $('#filter-survey').val();
-        if (surveyId) {
-            window.location.href = `<?php echo admin_url('admin.php?page=eipsi-results'); ?>&survey_id=${surveyId}`;
-        }
-    });
-    
-    // Email report
-    $('#email-report').click(function() {
-        // This would open an email modal or redirect to email functionality
-        alert('Email report functionality would be implemented here');
-    });
-    
-    // Load stats on change
-    $('#filter-survey').change(loadStats);
-    
-    // Also load stats when other filters change (for demo purposes)
-    $('#filter-wave, #filter-status').change(function() {
-        if ($('#filter-survey').val()) {
-            loadPreview();
-        }
-    });
-});
+
+    function showNotice( type, msg ) {
+        $( '.ep-inline-notice' ).remove();
+        const cls = type === 'error' ? 'notice-error' : type === 'warning' ? 'notice-warning' : 'notice-success';
+        const $n  = $( '<div class="notice ' + cls + ' ep-inline-notice" style="margin:10px 0;padding:10px 14px;">' +
+            '<p>' + escHtml( msg ) + '</p>' +
+        '</div>' );
+        $( '#ep-preview-wrap' ).before( $n );
+        setTimeout( function () { $n.fadeOut( 400, function () { $( this ).remove(); } ); }, 5000 );
+    }
+
+} )( jQuery );
 </script>
 
+<!-- ─── Styles ──────────────────────────────────────────────────────── -->
 <style>
-.export-filters {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-    padding: 15px;
-    background: #f9f9f9;
+/* ── Layout ─────────────────────────────────────────────────── */
+.eipsi-export-tab-wrap {
+    max-width: 1200px;
+}
+
+.eipsi-export-header {
+    margin-bottom: 20px;
+}
+
+.eipsi-export-header h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+}
+
+.eipsi-export-subtitle {
+    color: #555;
+    margin: 0;
+    font-size: 14px;
+}
+
+/* ── Filters ─────────────────────────────────────────────────── */
+.eipsi-export-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: flex-end;
+    background: #f6f7f7;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
 }
 
 .filter-group {
     display: flex;
     flex-direction: column;
+    gap: 4px;
+    min-width: 150px;
 }
 
 .filter-group label {
+    font-size: 12px;
     font-weight: 600;
-    margin-bottom: 5px;
-    color: #333;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
 }
 
 .filter-group select,
-.filter-group input {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
+.filter-group input[type="text"],
+.filter-group input[type="date"] {
+    border: 1px solid #c3c4c7;
     border-radius: 4px;
-    font-size: 14px;
+    padding: 6px 10px;
+    font-size: 13px;
+    height: 34px;
 }
 
-.export-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-}
-
-.stat-card {
-    padding: 20px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.stat-card h4 {
-    margin: 0 0 10px 0;
-    color: #666;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.stat-value {
-    font-size: 28px;
-    font-weight: bold;
-    color: #000;
-    margin: 0;
-}
-
-.progress-bar {
-    height: 8px;
-    background: #e0e0e0;
-    border-radius: 4px;
-    margin-top: 10px;
-    overflow: hidden;
-}
-
-.progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4CAF50, #45a049);
-    transition: width 0.3s ease;
-}
-
-.detailed-stats {
-    margin: 30px 0;
-    padding: 20px;
-    background: #f5f5f5;
-    border-radius: 8px;
-}
-
-.detailed-stats h3 {
-    margin: 0 0 15px 0;
-    color: #333;
-    font-size: 18px;
-}
-
-.wave-stat {
-    margin: 10px 0;
-    padding: 10px;
-    background: #fff;
-    border-radius: 4px;
-    border-left: 4px solid #4CAF50;
-}
-
-.mini-progress-bar {
-    height: 4px;
-    background: #e0e0e0;
-    border-radius: 2px;
-    margin-top: 5px;
-    overflow: hidden;
-}
-
-.mini-progress-fill {
-    height: 100%;
-    background: #4CAF50;
-    transition: width 0.3s ease;
-}
-
-.export-actions {
-    margin: 30px 0;
+.filter-actions {
     display: flex;
-    gap: 15px;
-    justify-content: center;
+    gap: 8px;
+    align-items: flex-end;
+    padding-bottom: 0;
 }
 
-.export-actions button {
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+/* ── Stats cards ─────────────────────────────────────────────── */
+.eipsi-export-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
 }
 
-.export-actions button:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+.ep-stat-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
 }
 
-.export-actions button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.ep-stat-card--wide {
+    grid-column: 1 / -1;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
-.data-summary {
-    padding: 15px;
-    background: #e8f5e8;
-    border: 1px solid #4CAF50;
+.ep-stat-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.ep-stat-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.ep-stat-value {
+    font-size: 30px;
+    font-weight: 700;
+    color: #1d2327;
+    line-height: 1.1;
+}
+
+.ep-stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* Wave rate bars */
+.ep-wave-rate {
+    margin: 8px 0 4px;
+}
+.ep-wave-label {
+    font-size: 13px;
+    color: #333;
+}
+.ep-wave-detail {
+    font-size: 12px;
+    color: #888;
+}
+.ep-mini-bar {
+    height: 5px;
+    background: #e2e4e7;
+    border-radius: 3px;
+    margin-top: 4px;
+    overflow: hidden;
+    max-width: 400px;
+}
+.ep-mini-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0073aa, #00a0d2);
+    border-radius: 3px;
+    transition: width .4s ease;
+}
+
+/* ── Data summary bar ────────────────────────────────────────── */
+.ep-data-summary {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    background: #eaf4fb;
+    border: 1px solid #b3d7e8;
     border-radius: 4px;
-    margin: 20px 0;
+    padding: 10px 16px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    color: #1d2327;
 }
 
-.data-summary p {
-    margin: 0;
-    font-size: 14px;
+.ep-data-summary span strong {
+    color: #0073aa;
 }
 
-.export-preview {
-    margin: 30px 0;
+/* ── Preview ─────────────────────────────────────────────────── */
+.ep-preview-wrap {
+    margin-bottom: 24px;
+}
+
+.ep-preview-wrap h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+}
+
+.ep-preview-scroll {
     overflow-x: auto;
 }
 
-.export-preview table {
-    border-collapse: collapse;
-    width: 100%;
+.ep-preview-table {
+    min-width: 700px;
+    font-size: 13px;
 }
 
-.export-preview th,
-.export-preview td {
-    padding: 12px;
-    text-align: left;
-    border: 1px solid #ddd;
-}
-
-.export-preview th {
-    background: #f5f5f5;
+.ep-preview-table th {
+    background: #f0f0f1;
+    font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
+    padding: 8px 10px;
 }
 
-.export-preview tbody tr:nth-child(even) {
-    background: #f9f9f9;
+.ep-preview-table td {
+    padding: 7px 10px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.additional-actions {
-    margin: 20px 0;
-    text-align: center;
+/* ── Action buttons ──────────────────────────────────────────── */
+.eipsi-export-actions {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
 }
 
-.additional-actions button {
-    margin: 0 10px;
-    padding: 8px 16px;
+.ep-actions-label {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: #333;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-    .export-filters {
-        grid-template-columns: 1fr;
-    }
-    
-    .export-stats {
-        grid-template-columns: 1fr;
-    }
-    
-    .export-actions {
+.ep-btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 10px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: box-shadow .2s ease, transform .1s ease;
+}
+
+.ep-btn-download:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,115,170,.3);
+}
+
+.ep-actions-hint {
+    font-size: 12px;
+    color: #777;
+    margin: 10px 0 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 782px) {
+    .eipsi-export-filters {
         flex-direction: column;
-        align-items: center;
+    }
+    .filter-group {
+        min-width: 100%;
+    }
+    .eipsi-export-stats {
+        grid-template-columns: 1fr;
     }
 }
 </style>

@@ -690,13 +690,22 @@ add_action('admin_init', function() {
             eipsi_export_to_csv();
         }
     }
-    
+
     // Handle longitudinal export actions
     if (isset($_GET['page']) && $_GET['page'] === 'eipsi-export-longitudinal') {
         if (isset($_GET['action']) && $_GET['action'] === 'export_longitudinal_excel') {
             eipsi_export_longitudinal_to_excel();
         } elseif (isset($_GET['action']) && $_GET['action'] === 'export_longitudinal_csv') {
             eipsi_export_longitudinal_to_csv();
+        }
+    }
+
+    // Handle participant export actions (new feature)
+    if (isset($_GET['page']) && $_GET['page'] === 'eipsi-results') {
+        if (isset($_GET['action']) && $_GET['action'] === 'export_participants_excel') {
+            eipsi_export_participants_to_excel();
+        } elseif (isset($_GET['action']) && $_GET['action'] === 'export_participants_csv') {
+            eipsi_export_participants_to_csv();
         }
     }
 });
@@ -708,30 +717,29 @@ function eipsi_export_longitudinal_to_excel() {
         echo wp_json_encode(array('success' => false, 'message' => 'You do not have sufficient permissions to perform this action.'));
         exit;
     }
-    }
-    
+
     $survey_id = isset($_GET['survey_id']) ? absint($_GET['survey_id']) : 0;
     if (!$survey_id) {
         wp_die(__('Invalid survey ID.', 'eipsi-forms'));
     }
-    
+
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-export-service.php';
     $export_service = new EIPSI_Export_Service();
-    
+
     $filters = array(
         'wave_index' => isset($_GET['wave_index']) ? sanitize_text_field($_GET['wave_index']) : 'all',
-        'date_from' => isset($_GET['date_from']) ? sanitize_text_field($_GET['date_from']) : null,
-        'date_to' => isset($_GET['date_to']) ? sanitize_text_field($_GET['date_to']) : null,
-        'status' => isset($_GET['status']) ? sanitize_text_field($_GET['status']) : 'all',
+        'date_from'  => isset($_GET['date_from'])  ? sanitize_text_field($_GET['date_from'])  : null,
+        'date_to'    => isset($_GET['date_to'])     ? sanitize_text_field($_GET['date_to'])    : null,
+        'status'     => isset($_GET['status'])      ? sanitize_text_field($_GET['status'])     : 'all',
     );
-    
-    $data = $export_service->export_longitudinal_data($survey_id, $filters);
+
+    $data     = $export_service->export_longitudinal_data($survey_id, $filters);
     $filename = $export_service->export_to_excel($data, $survey_id);
-    
+
     // Download the file
     $export_dir = EIPSI_FORMS_PLUGIN_DIR . 'exports';
-    $file_path = $export_dir . '/' . $filename;
-    
+    $file_path  = $export_dir . '/' . $filename;
+
     if (file_exists($file_path)) {
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -750,30 +758,29 @@ function eipsi_export_longitudinal_to_csv() {
         echo wp_json_encode(array('success' => false, 'message' => 'You do not have sufficient permissions to perform this action.'));
         exit;
     }
-    }
-    
+
     $survey_id = isset($_GET['survey_id']) ? absint($_GET['survey_id']) : 0;
     if (!$survey_id) {
         wp_die(__('Invalid survey ID.', 'eipsi-forms'));
     }
-    
+
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-export-service.php';
     $export_service = new EIPSI_Export_Service();
-    
+
     $filters = array(
         'wave_index' => isset($_GET['wave_index']) ? sanitize_text_field($_GET['wave_index']) : 'all',
-        'date_from' => isset($_GET['date_from']) ? sanitize_text_field($_GET['date_from']) : null,
-        'date_to' => isset($_GET['date_to']) ? sanitize_text_field($_GET['date_to']) : null,
-        'status' => isset($_GET['status']) ? sanitize_text_field($_GET['status']) : 'all',
+        'date_from'  => isset($_GET['date_from'])  ? sanitize_text_field($_GET['date_from'])  : null,
+        'date_to'    => isset($_GET['date_to'])     ? sanitize_text_field($_GET['date_to'])    : null,
+        'status'     => isset($_GET['status'])      ? sanitize_text_field($_GET['status'])     : 'all',
     );
-    
-    $data = $export_service->export_longitudinal_data($survey_id, $filters);
+
+    $data     = $export_service->export_longitudinal_data($survey_id, $filters);
     $filename = $export_service->export_to_csv($data, $survey_id);
-    
+
     // Download the file
     $export_dir = EIPSI_FORMS_PLUGIN_DIR . 'exports';
-    $file_path = $export_dir . '/' . $filename;
-    
+    $file_path  = $export_dir . '/' . $filename;
+
     if (file_exists($file_path)) {
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -783,4 +790,111 @@ function eipsi_export_longitudinal_to_csv() {
     } else {
         wp_die(__('Export file not found.', 'eipsi-forms'));
     }
+}
+/**
+ * Export participants to Excel (.xlsx)
+ *
+ * Endpoint: admin.php?page=eipsi-results&action=export_participants_excel&study_id=N
+ *
+ * @since 1.8.0
+ */
+function eipsi_export_participants_to_excel() {
+    if (!current_user_can('manage_options')) {
+        status_header(403);
+        wp_die(__('You do not have sufficient permissions.', 'eipsi-forms'));
+    }
+
+    $study_id = isset($_GET['study_id']) ? absint($_GET['study_id']) : 0;
+    if (!$study_id) {
+        wp_die(__('Invalid study ID.', 'eipsi-forms'));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-export-service.php';
+    $export_service = new EIPSI_Export_Service();
+
+    $filters = array(
+        'status'     => isset($_GET['status'])     ? sanitize_text_field($_GET['status'])     : 'all',
+        'wave_index' => isset($_GET['wave_index']) ? sanitize_text_field($_GET['wave_index']) : 'all',
+        'search'     => isset($_GET['search'])     ? sanitize_text_field($_GET['search'])     : '',
+        'date_from'  => isset($_GET['date_from'])  ? sanitize_text_field($_GET['date_from'])  : null,
+        'date_to'    => isset($_GET['date_to'])    ? sanitize_text_field($_GET['date_to'])    : null,
+    );
+
+    $filename = $export_service->export_participants_to_excel($study_id, $filters);
+
+    $export_dir = EIPSI_FORMS_PLUGIN_DIR . 'exports';
+    $file_path  = $export_dir . '/' . $filename;
+
+    if (file_exists($file_path)) {
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($file_path));
+        header('Cache-Control: max-age=0');
+        readfile($file_path);
+        @unlink($file_path);
+        exit;
+    } else {
+        wp_die(__('Export file not found.', 'eipsi-forms'));
+    }
+}
+
+/**
+ * Export participants to CSV (streaming, UTF-8 BOM for Excel)
+ *
+ * Endpoint: admin.php?page=eipsi-results&action=export_participants_csv&study_id=N
+ *
+ * @since 1.8.0
+ */
+function eipsi_export_participants_to_csv() {
+    if (!current_user_can('manage_options')) {
+        status_header(403);
+        wp_die(__('You do not have sufficient permissions.', 'eipsi-forms'));
+    }
+
+    $study_id = isset($_GET['study_id']) ? absint($_GET['study_id']) : 0;
+    if (!$study_id) {
+        wp_die(__('Invalid study ID.', 'eipsi-forms'));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-export-service.php';
+    $export_service = new EIPSI_Export_Service();
+
+    $filters = array(
+        'status'     => isset($_GET['status'])     ? sanitize_text_field($_GET['status'])     : 'all',
+        'wave_index' => isset($_GET['wave_index']) ? sanitize_text_field($_GET['wave_index']) : 'all',
+        'search'     => isset($_GET['search'])     ? sanitize_text_field($_GET['search'])     : '',
+        'date_from'  => isset($_GET['date_from'])  ? sanitize_text_field($_GET['date_from'])  : null,
+        'date_to'    => isset($_GET['date_to'])    ? sanitize_text_field($_GET['date_to'])    : null,
+    );
+
+    $study_title = eipsi_get_study_title($study_id);
+    $slug        = sanitize_title($study_title);
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="participantes-' . $slug . '-' . date('Y-m-d') . '.csv"');
+    header('Cache-Control: max-age=0');
+
+    $output = fopen('php://output', 'w');
+    // UTF-8 BOM so Excel opens it correctly
+    fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+    $export_service->stream_participants_csv($study_id, $filters, $output);
+
+    fclose($output);
+    exit;
+}
+
+/**
+ * Helper: get study title safely.
+ *
+ * @param int $study_id
+ * @return string
+ */
+function eipsi_get_study_title($study_id) {
+    global $wpdb;
+    $title = $wpdb->get_var($wpdb->prepare(
+        "SELECT study_name FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $study_id
+    ));
+    return $title ? $title : 'estudio-' . $study_id;
 }
