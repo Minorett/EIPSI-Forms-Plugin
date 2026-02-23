@@ -1177,7 +1177,12 @@ class EIPSI_Database_Schema_Manager {
         self::ensure_local_index( $table_name, 'session_id' );
 
         // v1.4.0 - Composite index for faster lookups
-        $wpdb->query( "ALTER TABLE {$table_name} ADD KEY IF NOT EXISTS participant_survey_wave (participant_id, survey_id, wave_index)" );
+        // Check if index exists first (IF NOT EXISTS is not valid for ADD KEY in MySQL/MariaDB)
+        $existing_indices = $wpdb->get_results( "SHOW INDEX FROM {$table_name}" );
+        $index_names = array_column( $existing_indices, 'Key_name' );
+        if ( ! in_array( 'participant_survey_wave', $index_names, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY participant_survey_wave (participant_id, survey_id, wave_index)" );
+        }
         
         return $columns_added;
     }
