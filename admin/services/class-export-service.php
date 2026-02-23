@@ -61,7 +61,7 @@ class EIPSI_Export_Service {
                     ELSE 'Pending'
                 END as status
             FROM {$wpdb->prefix}survey_participants sp
-            JOIN {$wpdb->prefix}survey_waves sw ON sp.survey_id = sw.survey_id
+            JOIN {$wpdb->prefix}survey_waves sw ON sp.survey_id = sw.study_id
             LEFT JOIN {$wpdb->prefix}survey_responses sr ON sp.id = sr.participant_id AND sw.id = sr.wave_id
             WHERE sp.survey_id = %d
         ";

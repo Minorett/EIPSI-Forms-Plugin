@@ -156,6 +156,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-email-handlers.php';
 // Participant Authentication Handlers (v1.5.5)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-participant-handlers.php';
 
+// Export AJAX Handlers — participant roster + longitudinal (v1.8.0)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-export-handlers.php';
+
 // ============================================================================
 // EMAIL SYSTEM CONFIGURATION (v1.5.4 - Default Email Fix)
 // ============================================================================

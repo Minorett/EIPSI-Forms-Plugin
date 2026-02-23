@@ -178,21 +178,22 @@ function wp_ajax_eipsi_get_available_participants_handler() {
 
     global $wpdb;
 
-    // Obtener study_code del estudio (porque survey_participants usa study_id como string/code en algunas partes)
-    // Pero en el esquema nuevo debería ser el numeric ID o el code.
-    // Veamos survey_participants...
-    $study_code = $wpdb->get_var($wpdb->prepare("SELECT study_id FROM {$wpdb->prefix}survey_studies WHERE id = %d", $study_id));
-
+    // survey_participants uses survey_id (numeric study ID), first_name + last_name, is_active
     $participants = $wpdb->get_results($wpdb->prepare(
-        "SELECT p.id, p.participant_id, p.full_name, p.email 
+        "SELECT p.id,
+                p.id AS participant_id,
+                p.email,
+                p.first_name,
+                p.last_name,
+                CONCAT(COALESCE(p.first_name,''), ' ', COALESCE(p.last_name,'')) AS full_name
          FROM {$wpdb->prefix}survey_participants p
-         WHERE (p.study_id = %d OR p.study_id = %s)
+         WHERE p.survey_id = %d
+         AND p.is_active = 1
          AND p.id NOT IN (
              SELECT participant_id FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d
          )
-         AND p.status = 'active'
-         ORDER BY p.full_name ASC",
-        $study_id, $study_code, $wave_id
+         ORDER BY p.first_name ASC, p.last_name ASC",
+        $study_id, $wave_id
     ));
 
     wp_send_json_success($participants);
