@@ -10,6 +10,7 @@
     const StudyDashboard = {
         currentStudyId: null,
         autoRefreshInterval: null,
+        resendDebounceMap: new Map(),
 
         init: function() {
             this.bindEvents();
@@ -82,6 +83,62 @@
                     // Redirect to close handler/anonymize
                     window.location.href = `admin.php?action=eipsi_close_study&study_id=${self.currentStudyId}&nonce=${eipsiStudyDash.nonce}`;
                 }
+            });
+
+            // View participants
+            $('#action-view-participants').on('click', function() {
+                self.openParticipantsList();
+            });
+
+            // Participant status filter
+            $('#participant-status-filter').on('change', function() {
+                self.loadParticipantsList(1);
+            });
+
+            // Participant search
+            let searchTimeout;
+            $('#participant-search').on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function() {
+                    self.loadParticipantsList(1);
+                }, 300);
+            });
+
+            // Toggle participant status
+            $(document).on('click', '.toggle-participant-status', function() {
+                const participantId = $(this).data('participant-id');
+                const isActive = $(this).data('is-active');
+                self.toggleParticipantStatus(participantId, isActive);
+            });
+
+            // Resend email dropdown toggle
+            $(document).on('click', '.resend-email-btn', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const $dropdown = $(this).siblings('.resend-email-dropdown');
+                $('.resend-email-dropdown').not($dropdown).hide();
+                $dropdown.toggle();
+            });
+
+            // Close dropdowns on click outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.resend-email-wrapper').length) {
+                    $('.resend-email-dropdown').hide();
+                }
+            });
+
+            // Resend email type selection
+            $(document).on('click', '.resend-email-option', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const participantId = $(this).data('participant-id');
+                const emailType = $(this).data('email-type');
+                const participantEmail = $(this).data('participant-email');
+                const waveId = $(this).data('wave-id') || null;
+                
+                $(this).closest('.resend-email-dropdown').hide();
+                
+                self.resendEmail(participantId, emailType, participantEmail, waveId);
             });
         },
 
@@ -371,6 +428,277 @@
                 clearInterval(this.autoRefreshInterval);
                 this.autoRefreshInterval = null;
             }
+        },
+
+        /**
+         * Open participants list modal
+         */
+        openParticipantsList: function() {
+            $('#eipsi-participants-list-modal').fadeIn();
+            this.loadParticipantsList(1);
+        },
+
+        /**
+         * Load participants list with pagination
+         */
+        loadParticipantsList: function(page) {
+            const self = this;
+            const $loading = $('#participants-loading');
+            const $content = $('#participants-content');
+
+            $loading.show();
+            $content.hide();
+
+            const filters = {
+                status: $('#participant-status-filter').val(),
+                search: $('#participant-search').val()
+            };
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'GET',
+                data: {
+                    action: 'eipsi_get_participants_list',
+                    study_id: this.currentStudyId,
+                    page: page,
+                    per_page: 20,
+                    nonce: eipsiStudyDash.nonce,
+                    ...filters
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.renderParticipantsList(response.data);
+                        $loading.hide();
+                        $content.show();
+                    } else {
+                        alert('Error: ' + (response.data || 'No se pudieron cargar los participantes'));
+                    }
+                },
+                error: function() {
+                    alert('Error de conexión');
+                }
+            });
+        },
+
+        /**
+         * Render participants table
+         */
+        renderParticipantsList: function(data) {
+            const self = this;
+            const $tbody = $('#participants-tbody');
+            $tbody.empty();
+
+            $('#participants-count').text(`${data.total} participantes`);
+
+            if (data.participants.length === 0) {
+                $tbody.append('<tr><td colspan="6" style="text-align:center;">No se encontraron participantes</td></tr>');
+                return;
+            }
+
+            data.participants.forEach(function(p) {
+                const statusBadge = p.is_active 
+                    ? '<span class="eipsi-badge badge-active">Activo</span>'
+                    : '<span class="eipsi-badge badge-inactive">Inactivo</span>';
+
+                const toggleText = p.is_active ? 'Desactivar' : 'Activar';
+                const toggleClass = p.is_active ? 'deactivate' : 'activate';
+
+                const row = `
+                    <tr data-participant-id="${p.id}">
+                        <td><code>${p.email}</code></td>
+                        <td>${p.first_name || ''} ${p.last_name || ''}</td>
+                        <td>${statusBadge}</td>
+                        <td>${p.created_at || '-'}</td>
+                        <td>${p.last_login || 'Nunca'}</td>
+                        <td>
+                            <div class="participants-actions-row">
+                                <button type="button" 
+                                        class="button button-small toggle-participant-status ${toggleClass}" 
+                                        data-participant-id="${p.id}" 
+                                        data-is-active="${p.is_active ? '1' : '0'}"
+                                        title="${toggleText}">
+                                    ${p.is_active ? '🔒' : '🔓'}
+                                </button>
+                                <div class="resend-email-wrapper" style="position: relative; display: inline-block;">
+                                    <button type="button" class="button button-small resend-email-btn" title="Reenviar email">
+                                        📧
+                                    </button>
+                                    <div class="resend-email-dropdown" style="display:none; position:absolute; right:0; top:100%; background:#fff; border:1px solid #ccc; border-radius:4px; box-shadow:0 2px 5px rgba(0,0,0,0.15); z-index:1000; min-width:180px;">
+                                        <a href="#" class="resend-email-option" data-participant-id="${p.id}" data-email-type="magic_link" data-participant-email="${p.email}" style="display:block; padding:8px 12px; text-decoration:none; color:#333;">
+                                            ✨ Enviar Magic Link
+                                        </a>
+                                        <a href="#" class="resend-email-option" data-participant-id="${p.id}" data-email-type="welcome" data-participant-email="${p.email}" style="display:block; padding:8px 12px; text-decoration:none; color:#333;">
+                                            👋 Email de Bienvenida
+                                        </a>
+                                        <a href="#" class="resend-email-option" data-participant-id="${p.id}" data-email-type="reminder" data-participant-email="${p.email}" style="display:block; padding:8px 12px; text-decoration:none; color:#333;">
+                                            🔔 Recordatorio de Onda
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                $tbody.append(row);
+            });
+
+            // Render pagination
+            this.renderParticipantsPagination(data.page, data.total_pages);
+        },
+
+        /**
+         * Render pagination for participants
+         */
+        renderParticipantsPagination: function(currentPage, totalPages) {
+            const self = this;
+            const $pagination = $('#participants-pagination');
+            $pagination.empty();
+
+            if (totalPages <= 1) return;
+
+            let html = '<div class="pagination-links">';
+
+            if (currentPage > 1) {
+                html += `<button class="button button-small" data-page="${currentPage - 1}">← Anterior</button>`;
+            }
+
+            html += `<span style="margin: 0 10px;">Página ${currentPage} de ${totalPages}</span>`;
+
+            if (currentPage < totalPages) {
+                html += `<button class="button button-small" data-page="${currentPage + 1}">Siguiente →</button>`;
+            }
+
+            html += '</div>';
+
+            $pagination.html(html);
+
+            // Bind pagination clicks
+            $pagination.find('button').on('click', function() {
+                self.loadParticipantsList($(this).data('page'));
+            });
+        },
+
+        /**
+         * Toggle participant active status
+         */
+        toggleParticipantStatus: function(participantId, isActive) {
+            const self = this;
+            const newStatus = isActive ? 0 : 1;
+            const actionText = isActive ? 'desactivar' : 'activar';
+
+            if (!confirm(`¿Estás seguro que querés ${actionText} este participante?`)) {
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_toggle_participant_status',
+                    participant_id: participantId,
+                    is_active: newStatus,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Reload the list
+                        self.loadParticipantsList(1);
+                    } else {
+                        alert('Error: ' + (response.data || 'No se pudo cambiar el estado'));
+                    }
+                },
+                error: function() {
+                    alert('Error de conexión');
+                }
+            });
+        },
+
+        /**
+         * Resend email to participant (with debounce)
+         */
+        resendEmail: function(participantId, emailType, participantEmail, waveId) {
+            const self = this;
+
+            // Debounce: prevent multiple rapid clicks
+            const debounceKey = `${participantId}-${emailType}`;
+            if (this.resendDebounceMap.has(debounceKey)) {
+                return;
+            }
+            this.resendDebounceMap.set(debounceKey, true);
+            setTimeout(() => this.resendDebounceMap.delete(debounceKey), 3000);
+
+            const typeLabels = {
+                'welcome': 'Email de bienvenida',
+                'magic_link': 'Magic Link',
+                'reminder': 'Recordatorio de onda',
+                'confirmation': 'Email de confirmación',
+                'recovery': 'Email de recuperación'
+            };
+
+            if (!confirm(`¿Enviar ${typeLabels[emailType] || 'email'} a ${participantEmail}?`)) {
+                return;
+            }
+
+            // Show loading state
+            const $row = $(`tr[data-participant-id="${participantId}"]`);
+            $row.addClass('loading');
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_resend_participant_email',
+                    participant_id: participantId,
+                    email_type: emailType,
+                    study_id: this.currentStudyId,
+                    wave_id: waveId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    $row.removeClass('loading');
+                    
+                    if (response.success) {
+                        self.showToast(response.data.message || 'Email enviado correctamente', 'success');
+                    } else {
+                        self.showToast(response.data.message || 'Error al enviar email', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $row.removeClass('loading');
+                    self.showToast('Error de conexión: ' + error, 'error');
+                }
+            });
+        },
+
+        /**
+         * Show toast notification
+         */
+        showToast: function(message, type) {
+            const $toast = $(`
+                <div class="eipsi-toast eipsi-toast-${type}" style="
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    padding: 12px 20px;
+                    background: ${type === 'success' ? '#46b450' : '#dc3232'};
+                    color: #fff;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                    z-index: 100000;
+                    font-size: 14px;
+                    max-width: 400px;
+                ">
+                    ${message}
+                </div>
+            `);
+
+            $('body').append($toast);
+
+            setTimeout(function() {
+                $toast.fadeOut(function() {
+                    $toast.remove();
+                });
+            }, 4000);
         }
     };
 
