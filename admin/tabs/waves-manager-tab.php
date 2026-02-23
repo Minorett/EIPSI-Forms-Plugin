@@ -27,6 +27,7 @@ wp_localize_script('eipsi-waves-manager', 'eipsiWavesManagerData', array(
     'ajaxUrl' => admin_url('admin-ajax.php'),
     'anonymizeNonce' => wp_create_nonce('eipsi_anonymize_survey_nonce'),
     'wavesNonce' => wp_create_nonce('eipsi_waves_nonce'),
+    'adminNonce' => wp_create_nonce('eipsi_admin_nonce'),
     'studyId' => $current_study_id,
     'strings' => array(
         'confirmDelete' => __('¿Estás seguro de eliminar esta onda? Esta acción no se puede deshacer.', 'eipsi-forms'),

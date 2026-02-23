@@ -3358,10 +3358,20 @@ function eipsi_export_to_csv_handler() {
 add_action('wp_ajax_eipsi_add_participant_magic_link', 'eipsi_add_participant_magic_link_handler');
 
 function eipsi_add_participant_magic_link_handler() {
-    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    // Accept multiple nonce types for compatibility
+    $nonce_valid = false;
+    if (isset($_POST['nonce'])) {
+        $nonce_valid = wp_verify_nonce($_POST['nonce'], 'eipsi_waves_nonce') ||
+                       wp_verify_nonce($_POST['nonce'], 'eipsi_anonymize_survey_nonce') ||
+                       wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce');
+    }
     
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => 'Unauthorized'));
+    if (!$nonce_valid) {
+        wp_send_json_error(array('message' => 'Nonce inválido'));
+    }
+    
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => 'No tienes permisos para realizar esta acción'));
     }
     
     $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
@@ -3417,10 +3427,20 @@ function eipsi_add_participant_magic_link_handler() {
 add_action('wp_ajax_eipsi_add_participants_bulk', 'eipsi_add_participants_bulk_handler');
 
 function eipsi_add_participants_bulk_handler() {
-    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    // Accept multiple nonce types for compatibility
+    $nonce_valid = false;
+    if (isset($_POST['nonce'])) {
+        $nonce_valid = wp_verify_nonce($_POST['nonce'], 'eipsi_waves_nonce') ||
+                       wp_verify_nonce($_POST['nonce'], 'eipsi_anonymize_survey_nonce') ||
+                       wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce');
+    }
     
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error(array('message' => 'Unauthorized'));
+    if (!$nonce_valid) {
+        wp_send_json_error(array('message' => 'Nonce inválido'));
+    }
+    
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => 'No tienes permisos para realizar esta acción'));
     }
     
     $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
