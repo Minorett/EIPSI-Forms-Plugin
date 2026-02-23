@@ -1,483 +1,699 @@
 /**
- * EIPSI Forms - Participant Dashboard CSS
- *
+ * EIPSI Forms - Participant Dashboard Styles (Enhanced v1.6.0)
+ * 
+ * Mejoras:
+ * - Progress visualization
+ * - Better card design
+ * - Status badges
+ * - Responsive table
+ * - Dark mode support
+ * 
  * @package EIPSI_Forms
  * @since 1.6.0
  */
 
-/* CSS Variables - Light & Dark Mode */
-:root {
-    --eipsi-dashboard-bg: #ffffff;
-    --eipsi-dashboard-text: #1a1a1a;
-    --eipsi-dashboard-border: #e0e0e0;
-    --eipsi-dashboard-card-bg: #ffffff;
-    --eipsi-dashboard-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    
-    --eipsi-primary-color: #2271b1;
-    --eipsi-primary-hover: #135e96;
-    --eipsi-success-color: #008080;
-    --eipsi-success-bg: #f0f8f0;
-    --eipsi-warning-color: #d98500;
-    --eipsi-warning-bg: #fff8e0;
-    --eipsi-danger-color: #800000;
-    --eipsi-danger-bg: #fee;
-    
-    --eipsi-status-completed: var(--eipsi-success-color);
-    --eipsi-status-pending: var(--eipsi-warning-color);
-    --eipsi-status-expired: var(--eipsi-danger-color);
-    --eipsi-status-today: var(--eipsi-warning-color);
-    
-    --eipsi-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-    --eipsi-border-radius: 8px;
-    --eipsi-transition: all 0.2s ease;
-}
+/* ============================================================================
+   DASHBOARD CONTAINER
+   ============================================================================ */
 
-/* Dark Mode Variables */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --eipsi-dashboard-bg: #1a1a1a;
-        --eipsi-dashboard-text: #f0f0f0;
-        --eipsi-dashboard-border: #2d2d2d;
-        --eipsi-dashboard-card-bg: #252525;
-        --eipsi-dashboard-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-        
-        --eipsi-success-bg: #1a2e1a;
-        --eipsi-warning-bg: #2d2a1a;
-        --eipsi-danger-bg: #2a1a1a;
-    }
-}
-
-/* Base Styles */
 .eipsi-participant-dashboard {
-    font-family: var(--eipsi-font-family);
-    color: var(--eipsi-dashboard-text);
-    background: var(--eipsi-dashboard-bg);
-    padding: 2rem;
-    max-width: 1200px;
+    max-width: 800px;
     margin: 0 auto;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Dashboard Header */
+/* ============================================================================
+   HEADER & WELCOME
+   ============================================================================ */
+
 .eipsi-dashboard-header {
+    margin-bottom: 32px;
+}
+
+.eipsi-welcome-section {
     text-align: center;
-    margin-bottom: 3rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 2px solid var(--eipsi-dashboard-border);
+    margin-bottom: 24px;
 }
 
 .eipsi-dashboard-title {
-    font-size: 2.5rem;
+    font-size: 28px;
     font-weight: 700;
-    margin: 0 0 0.5rem 0;
-    color: var(--eipsi-dashboard-text);
+    color: var(--eipsi-color-text, #1d2327);
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.welcome-emoji {
+    font-size: 32px;
+    line-height: 1;
 }
 
 .eipsi-dashboard-subtitle {
-    font-size: 1.2rem;
-    color: var(--eipsi-dashboard-text);
-    opacity: 0.7;
+    font-size: 16px;
+    color: var(--eipsi-color-text-muted, #6c757d);
     margin: 0;
 }
 
-/* Dashboard Sections */
+/* ============================================================================
+   PROGRESS SECTION
+   ============================================================================ */
+
+.eipsi-progress-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-top: 20px;
+}
+
+.eipsi-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.eipsi-progress-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--eipsi-color-text, #1d2327);
+}
+
+.eipsi-progress-percentage {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--eipsi-color-primary, #2271b1);
+}
+
+.eipsi-progress-bar {
+    height: 12px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.eipsi-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--eipsi-color-primary, #2271b1) 0%, #4a90d9 100%);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+    position: relative;
+}
+
+.eipsi-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+    animation: eipsi-shimmer 2s infinite;
+}
+
+@keyframes eipsi-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.eipsi-progress-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--eipsi-color-text-muted, #6c757d);
+}
+
+.eipsi-progress-stats span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ============================================================================
+   DASHBOARD SECTIONS
+   ============================================================================ */
+
 .eipsi-dashboard-section {
-    margin-bottom: 3rem;
+    margin-bottom: 32px;
+}
+
+.eipsi-section-highlight {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-radius: 20px;
+    padding: 24px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    position: relative;
+}
+
+.eipsi-section-highlight::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, #2196f3 0%, #9c27b0 100%);
+    border-radius: 20px;
+    z-index: -1;
 }
 
 .eipsi-section-title {
-    font-size: 1.8rem;
+    font-size: 18px;
     font-weight: 600;
-    margin: 0 0 1.5rem 0;
-    color: var(--eipsi-dashboard-text);
+    color: var(--eipsi-color-text, #1d2327);
+    margin: 0 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Next Take Card */
+.section-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* ============================================================================
+   NEXT TAKE CARD
+   ============================================================================ */
+
 .eipsi-next-take-card {
-    background: var(--eipsi-dashboard-card-bg);
-    border-radius: var(--eipsi-border-radius);
-    box-shadow: var(--eipsi-dashboard-card-shadow);
-    overflow: hidden;
-    transition: var(--eipsi-transition);
-    border: 1px solid var(--eipsi-dashboard-border);
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
-.eipsi-next-take-card:hover {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
+.eipsi-next-take-card.urgent {
+    animation: eipsi-pulse-border 2s infinite;
 }
 
-.eipsi-no-next-take {
-    text-align: center;
-    padding: 2rem;
-}
-
-.eipsi-no-next-take .eipsi-card-body {
-    padding: 0;
-}
-
-.eipsi-no-data {
-    font-size: 1.2rem;
-    color: var(--eipsi-dashboard-text);
-    opacity: 0.6;
-    margin: 0;
+@keyframes eipsi-pulse-border {
+    0%, 100% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); }
+    50% { box-shadow: 0 4px 24px rgba(214, 54, 56, 0.2); }
 }
 
 .eipsi-card-header {
-    background: linear-gradient(135deg, var(--eipsi-primary-color), var(--eipsi-primary-hover));
-    color: white;
-    padding: 1.5rem 2rem;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.wave-badge {
+    flex-shrink: 0;
 }
 
 .eipsi-wave-index {
-    display: inline-block;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--eipsi-color-primary, #2271b1) 0%, #4a90d9 100%);
+    color: #fff;
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 16px;
+    border-radius: 12px;
+}
+
+.wave-info {
+    flex: 1;
 }
 
 .eipsi-form-title {
-    margin: 0;
-    font-size: 1.3rem;
+    font-size: 18px;
     font-weight: 600;
-    color: white;
+    color: var(--eipsi-color-text, #1d2327);
+    margin: 0 0 4px;
+}
+
+.wave-estimated-time {
+    font-size: 13px;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .eipsi-card-body {
-    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .eipsi-due-date {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding: 1rem;
-    background: var(--eipsi-dashboard-bg);
-    border-radius: var(--eipsi-border-radius);
-    border-left: 4px solid var(--eipsi-primary-color);
+    gap: 12px;
+    padding: 16px;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border-radius: 12px;
+}
+
+.due-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.due-info {
+    display: flex;
+    flex-direction: column;
 }
 
 .eipsi-due-label {
-    font-weight: 600;
-    opacity: 0.8;
+    font-size: 12px;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .eipsi-due-value {
+    font-size: 18px;
     font-weight: 700;
-    font-size: 1.1rem;
-}
-
-.status-expired {
-    border-left-color: var(--eipsi-danger-color);
-    background: var(--eipsi-danger-bg);
 }
 
 .status-expired .eipsi-due-value {
-    color: var(--eipsi-danger-color);
-}
-
-.status-today {
-    border-left-color: var(--eipsi-warning-color);
-    background: var(--eipsi-warning-bg);
+    color: #d63638;
 }
 
 .status-today .eipsi-due-value {
-    color: var(--eipsi-warning-color);
+    color: #f0ad4e;
 }
 
 .status-soon .eipsi-due-value {
-    color: var(--eipsi-warning-color);
+    color: #2271b1;
 }
 
-/* Buttons */
 .eipsi-take-actions {
-    text-align: center;
+    display: flex;
+    gap: 12px;
 }
 
 .eipsi-button-primary {
-    display: inline-block;
-    background: var(--eipsi-primary-color);
-    color: white;
-    padding: 0.875rem 2rem;
+    flex: 1;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, var(--eipsi-color-primary, #2271b1) 0%, #4a90d9 100%);
+    color: #fff;
     border: none;
-    border-radius: var(--eipsi-border-radius);
-    font-size: 1rem;
+    border-radius: 12px;
+    font-size: 16px;
     font-weight: 600;
-    text-decoration: none;
     cursor: pointer;
-    transition: var(--eipsi-transition);
-    min-width: 200px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
 }
 
 .eipsi-button-primary:hover {
-    background: var(--eipsi-primary-hover);
-    color: white;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(34, 113, 177, 0.3);
 }
 
-.eipsi-button-primary:active {
-    transform: translateY(0);
+.btn-icon {
+    font-size: 18px;
+    line-height: 1;
 }
 
-.eipsi-button-logout {
-    background: transparent;
-    color: var(--eipsi-danger-color);
-    border: 2px solid var(--eipsi-danger-color);
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--eipsi-border-radius);
-    font-size: 0.9rem;
+/* Completion Card */
+.eipsi-completion-card {
+    text-align: center;
+    padding: 40px 24px;
+}
+
+.completion-icon {
+    font-size: 64px;
+    line-height: 1;
+    margin-bottom: 16px;
+}
+
+.completion-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--eipsi-color-success, #00a32a);
+    margin: 0 0 12px;
+}
+
+.completion-stats {
+    margin-top: 20px;
+}
+
+.completion-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: rgba(0, 163, 42, 0.1);
+    color: var(--eipsi-color-success, #00a32a);
+    border-radius: 50px;
     font-weight: 600;
-    cursor: pointer;
-    transition: var(--eipsi-transition);
 }
 
-.eipsi-button-logout:hover {
-    background: var(--eipsi-danger-color);
-    color: white;
-}
+/* ============================================================================
+   WAVES TABLE
+   ============================================================================ */
 
-/* Waves Table */
 .eipsi-waves-table-wrapper {
-    background: var(--eipsi-dashboard-card-bg);
-    border-radius: var(--eipsi-border-radius);
-    box-shadow: var(--eipsi-dashboard-card-shadow);
-    border: 1px solid var(--eipsi-dashboard-border);
-    overflow: hidden;
+    overflow-x: auto;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .eipsi-waves-table {
     width: 100%;
     border-collapse: collapse;
-    background: transparent;
+    font-size: 14px;
+    background: #fff;
 }
 
 .eipsi-waves-table thead {
-    background: var(--eipsi-dashboard-bg);
-    border-bottom: 2px solid var(--eipsi-dashboard-border);
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
 }
 
 .eipsi-waves-table th {
-    padding: 1rem 1.5rem;
+    padding: 16px;
     text-align: left;
-    font-weight: 700;
-    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--eipsi-color-text, #1d2327);
+    font-size: 13px;
     text-transform: uppercase;
-    color: var(--eipsi-dashboard-text);
-    opacity: 0.8;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .eipsi-waves-table td {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--eipsi-dashboard-border);
+    padding: 16px;
+    border-top: 1px solid var(--eipsi-color-border, #e9ecef);
+    vertical-align: middle;
 }
 
-.eipsi-waves-table tbody tr:hover {
-    background: var(--eipsi-dashboard-bg);
+.eipsi-waves-table tr:hover {
+    background: rgba(34, 113, 177, 0.02);
 }
 
-.eipsi-wave-cell {
+/* Wave Cell */
+.wave-info-compact {
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    align-items: center;
+    gap: 12px;
 }
 
-.eipsi-wave-index {
-    font-weight: 700;
-    color: var(--eipsi-primary-color);
-    font-size: 0.9rem;
+.wave-info-compact .eipsi-wave-index {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    border-radius: 8px;
 }
 
 .eipsi-wave-name {
-    color: var(--eipsi-dashboard-text);
-    font-weight: 600;
+    font-weight: 500;
+    color: var(--eipsi-color-text, #1d2327);
 }
 
 /* Status Badges */
-.eipsi-status-cell {
-    text-align: center;
-}
-
 .eipsi-status-badge {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.status-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.eipsi-status-badge.status-completed {
+    background: rgba(0, 163, 42, 0.1);
+    color: var(--eipsi-color-success, #00a32a);
+}
+
+.eipsi-status-badge.status-in-progress {
+    background: rgba(240, 173, 78, 0.1);
+    color: #f0ad4e;
+}
+
+.eipsi-status-badge.status-pending {
+    background: rgba(34, 113, 177, 0.1);
+    color: var(--eipsi-color-primary, #2271b1);
+}
+
+.eipsi-status-badge.status-not-started {
+    background: rgba(108, 117, 125, 0.1);
+    color: var(--eipsi-color-text-muted, #6c757d);
+}
+
+/* Due Date Status */
+.status-expired {
+    color: #d63638;
     font-weight: 600;
+}
+
+.status-today {
+    color: #f0ad4e;
+    font-weight: 600;
+}
+
+.status-soon {
+    color: var(--eipsi-color-primary, #2271b1);
+}
+
+/* ============================================================================
+   EMPTY STATES
+   ============================================================================ */
+
+.eipsi-empty-state {
     text-align: center;
-    min-width: 120px;
+    padding: 48px 24px;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border-radius: 16px;
 }
 
-.status-completed {
-    color: var(--eipsi-success-color);
-    background: var(--eipsi-success-bg);
-}
-
-.status-pending {
-    color: var(--eipsi-warning-color);
-    background: var(--eipsi-warning-bg);
-}
-
-.status-not-started {
-    color: var(--eipsi-dashboard-text);
-    background: var(--eipsi-dashboard-bg);
+.empty-icon {
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 16px;
     opacity: 0.6;
 }
 
-/* Dashboard Footer */
+.eipsi-empty-state p {
+    margin: 0 0 8px;
+    color: var(--eipsi-color-text, #1d2327);
+    font-size: 16px;
+}
+
+.empty-hint {
+    font-size: 14px !important;
+    color: var(--eipsi-color-text-muted, #6c757d) !important;
+}
+
+/* ============================================================================
+   CONTACT SECTION
+   ============================================================================ */
+
+.eipsi-contact-section {
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.eipsi-contact-info p {
+    margin: 0 0 16px;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.eipsi-contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #fff;
+    color: var(--eipsi-color-primary, #2271b1);
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.eipsi-contact-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.contact-icon {
+    font-size: 18px;
+}
+
+/* ============================================================================
+   FOOTER
+   ============================================================================ */
+
 .eipsi-dashboard-footer {
-    margin-top: 3rem;
-    padding-top: 2rem;
-    border-top: 2px solid var(--eipsi-dashboard-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--eipsi-color-border, #e9ecef);
 }
 
 .eipsi-footer-actions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    gap: 12px;
     flex-wrap: wrap;
-    gap: 1rem;
+    justify-content: center;
 }
 
-.eipsi-link-contact {
-    color: var(--eipsi-primary-color);
-    text-decoration: none;
-    font-weight: 600;
-    transition: var(--eipsi-transition);
+.eipsi-button-logout {
+    padding: 12px 24px;
+    background: transparent;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    border: 1.5px solid var(--eipsi-color-border, #d0d5dd);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.eipsi-link-contact:hover {
-    color: var(--eipsi-primary-hover);
-    text-decoration: underline;
+.eipsi-button-logout:hover {
+    background: rgba(214, 54, 56, 0.05);
+    border-color: #d63638;
+    color: #d63638;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+.eipsi-footer-info {
+    font-size: 12px;
+    color: var(--eipsi-color-text-muted, #6c757d);
+}
+
+.security-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 640px) {
     .eipsi-participant-dashboard {
-        padding: 1rem;
+        padding: 16px;
     }
     
     .eipsi-dashboard-title {
-        font-size: 2rem;
+        font-size: 22px;
     }
     
-    .eipsi-dashboard-subtitle {
-        font-size: 1rem;
+    .eipsi-section-highlight {
+        padding: 20px 16px;
     }
     
     .eipsi-card-header {
-        padding: 1rem;
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.5rem;
+        gap: 12px;
     }
     
-    .eipsi-card-body {
-        padding: 1.5rem;
+    .eipsi-waves-table {
+        font-size: 13px;
+    }
+    
+    .eipsi-waves-table th,
+    .eipsi-waves-table td {
+        padding: 12px 8px;
+    }
+    
+    .status-text {
+        display: none;
+    }
+    
+    .eipsi-status-badge {
+        padding: 8px;
+    }
+    
+    .eipsi-progress-stats {
+        gap: 16px;
+    }
+}
+
+/* ============================================================================
+   DARK MODE
+   ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+    .eipsi-progress-section,
+    .eipsi-contact-section,
+    .eipsi-empty-state {
+        background: #2d2d2d;
+    }
+    
+    .eipsi-next-take-card,
+    .eipsi-waves-table {
+        background: #1e1e1e;
+    }
+    
+    .eipsi-waves-table thead {
+        background: #2d2d2d;
+    }
+    
+    .eipsi-waves-table td {
+        border-color: #333;
     }
     
     .eipsi-due-date {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
+        background: #2d2d2d;
     }
     
-    .eipsi-waves-table {
-        font-size: 0.9rem;
-    }
-    
-    .eipsi-waves-table th,
-    .eipsi-waves-table td {
-        padding: 1rem 0.75rem;
-    }
-    
-    .eipsi-wave-index {
-        font-size: 0.8rem;
-    }
-    
-    .eipsi-status-badge {
-        min-width: auto;
-        padding: 0.4rem 0.8rem;
-        font-size: 0.8rem;
-    }
-    
-    .eipsi-footer-actions {
-        flex-direction: column;
-        align-items: stretch;
-        text-align: center;
-    }
-    
-    .eipsi-button-logout {
-        width: 100%;
+    .eipsi-contact-link {
+        background: #2d2d2d;
     }
 }
 
-@media (max-width: 480px) {
-    .eipsi-dashboard-title {
-        font-size: 1.5rem;
-    }
-    
-    .eipsi-section-title {
-        font-size: 1.5rem;
-    }
-    
-    .eipsi-waves-table {
-        font-size: 0.8rem;
-    }
-    
-    .eipsi-waves-table th,
-    .eipsi-waves-table td {
-        padding: 0.75rem 0.5rem;
-    }
-    
-    .eipsi-wave-cell {
-        gap: 0.1rem;
-    }
-    
-    .eipsi-status-badge {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.75rem;
-    }
+body.eipsi-dark-mode .eipsi-progress-section,
+body.eipsi-dark-mode .eipsi-contact-section,
+body.eipsi-dark-mode .eipsi-empty-state {
+    background: #2d2d2d;
 }
 
-/* High Contrast Mode Support */
-@media (prefers-contrast: high) {
-    :root {
-        --eipsi-dashboard-border: #000000;
-        --eipsi-primary-color: #0000ff;
-        --eipsi-success-color: #008000;
-        --eipsi-warning-color: #ff8c00;
-        --eipsi-danger-color: #ff0000;
-    }
+body.eipsi-dark-mode .eipsi-next-take-card,
+body.eipsi-dark-mode .eipsi-waves-table {
+    background: #1e1e1e;
 }
 
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        transition: none !important;
-        animation: none !important;
-    }
+body.eipsi-dark-mode .eipsi-waves-table thead {
+    background: #2d2d2d;
 }
 
-/* Print Styles */
-@media print {
-    .eipsi-participant-dashboard {
-        background: white !important;
-        color: black !important;
-    }
-    
-    .eipsi-button-primary,
-    .eipsi-button-logout,
-    .eipsi-link-contact {
-        display: none !important;
-    }
-    
-    .eipsi-dashboard-card-shadow {
-        box-shadow: none !important;
-        border: 1px solid #ccc;
-    }
+body.eipsi-dark-mode .eipsi-waves-table td {
+    border-color: #333;
+}
+
+body.eipsi-dark-mode .eipsi-due-date {
+    background: #2d2d2d;
+}
+
+body.eipsi-dark-mode .eipsi-contact-link {
+    background: #2d2d2d;
 }

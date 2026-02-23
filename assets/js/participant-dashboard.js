@@ -1,6 +1,12 @@
 /**
- * EIPSI Forms - Participant Dashboard JavaScript
- *
+ * EIPSI Forms - Participant Dashboard JavaScript (Enhanced v1.6.0)
+ * 
+ * Features:
+ * - Logout functionality
+ * - Real-time updates
+ * - Wave status interactions
+ * - Loading states
+ * 
  * @package EIPSI_Forms
  * @since 1.6.0
  */
@@ -8,278 +14,15 @@
 (function($) {
     'use strict';
 
-    /**
-     * Participant Dashboard Handler
-     */
-    window.EIPSI_Participant_Dashboard = {
-        
-        /**
-         * Initialize dashboard functionality
-         */
-        init: function() {
-            this.bindEvents();
-            this.initTooltips();
-            console.log('EIPSI Participant Dashboard initialized');
-        },
-
-        /**
-         * Bind event handlers
-         */
-        bindEvents: function() {
-            var self = this;
-
-            // Logout button handler
-            $('#eipsi-logout-button').on('click', function(e) {
-                e.preventDefault();
-                self.handleLogout($(this));
-            });
-
-            // Respond now button handler (optional - for tracking)
-            $('.eipsi-respond-now').on('click', function(e) {
-                self.handleRespondNow($(this));
-            });
-
-            // Contact link handler
-            $('.eipsi-link-contact').on('click', function(e) {
-                self.handleContact($(this));
-            });
-
-            // Status badge hover effects
-            $('.eipsi-status-badge').on('mouseenter', function() {
-                self.showStatusTooltip($(this));
-            }).on('mouseleave', function() {
-                self.hideTooltip();
-            });
-        },
-
-        /**
-         * Handle logout functionality
-         * @param {jQuery} $button The logout button
-         */
-        handleLogout: function($button) {
-            var self = this;
-            var nonce = $button.data('nonce') || '';
-            var confirmMessage = eipsiParticipantDashboardL10n?.confirm_logout || '¿Estás seguro de que quieres cerrar sesión?';
-
-            // Confirm logout
-            if (!confirm(confirmMessage)) {
-                return;
-            }
-
-            // Show loading state
-            var originalText = $button.text();
-            var loadingText = eipsiParticipantDashboardL10n?.logging_out || 'Cerrando sesión...';
-            $button.prop('disabled', true).text(loadingText);
-
-            // Make AJAX request
-            $.ajax({
-                url: eipsiParticipantDashboardL10n?.ajaxUrl || ajaxurl || '/wp-admin/admin-ajax.php',
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    action: 'eipsi_participant_logout',
-                    nonce: nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Show success message
-                        self.showMessage(
-                            eipsiParticipantDashboardL10n?.logout_success || 'Sesión cerrada correctamente',
-                            'success'
-                        );
-
-                        // Redirect after short delay
-                        setTimeout(function() {
-                            var redirectUrl = eipsiParticipantDashboardL10n?.loginPageUrl || window.location.href;
-                            window.location.href = redirectUrl;
-                        }, 1000);
-                    } else {
-                        // Show error message
-                        self.showMessage(
-                            response.data?.message || eipsiParticipantDashboardL10n?.logout_error || 'Error al cerrar sesión',
-                            'error'
-                        );
-                        
-                        // Reset button state
-                        $button.prop('disabled', false).text(originalText);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Logout error:', error);
-                    self.showMessage(
-                        eipsiParticipantDashboardL10n?.logout_error || 'Error al cerrar sesión',
-                        'error'
-                    );
-                    
-                    // Reset button state
-                    $button.prop('disabled', false).text(originalText);
-                }
-            });
-        },
-
-        /**
-         * Handle respond now button click
-         * @param {jQuery} $button The respond button
-         */
-        handleRespondNow: function($button) {
-            // Add loading state
-            $button.addClass('eipsi-loading');
-            
-            // Track the click event
-            if (typeof eipsiTracking !== 'undefined' && eipsiTracking.trackEvent) {
-                eipsiTracking.trackEvent('dashboard_respond_now_clicked', {
-                    wave_id: $button.attr('href').match(/wave_id=(\d+)/)?.[1] || 'unknown',
-                    survey_id: $button.attr('href').match(/survey_id=(\d+)/)?.[1] || 'unknown'
-                });
-            }
-        },
-
-        /**
-         * Handle contact link click
-         * @param {jQuery} $link The contact link
-         */
-        handleContact: function($link) {
-            // Track the contact attempt
-            if (typeof eipsiTracking !== 'undefined' && eipsiTracking.trackEvent) {
-                eipsiTracking.trackEvent('dashboard_contact_clicked');
-            }
-        },
-
-        /**
-         * Show status tooltip
-         * @param {jQuery} $badge The status badge
-         */
-        showStatusTooltip: function($badge) {
-            var status = $badge.hasClass('status-completed') ? 'completed' :
-                        $badge.hasClass('status-pending') ? 'pending' : 'not-started';
-            
-            var messages = {
-                'completed': eipsiParticipantDashboardL10n?.status_completed_tooltip || 'Esta toma fue completada exitosamente',
-                'pending': eipsiParticipantDashboardL10n?.status_pending_tooltip || 'Esta toma está pendiente o en progreso',
-                'not-started': eipsiParticipantDashboardL10n?.status_not_started_tooltip || 'Esta toma aún no ha sido iniciada'
-            };
-
-            this.showTooltip(messages[status], $badge);
-        },
-
-        /**
-         * Show tooltip
-         * @param {string} message The tooltip message
-         * @param {jQuery} $element The element to attach tooltip to
-         */
-        showTooltip: function(message, $element) {
-            var $tooltip = $('<div class="eipsi-tooltip">' + message + '</div>');
-            $('body').append($tooltip);
-
-            var offset = $element.offset();
-            var width = $element.outerWidth();
-            var height = $element.outerHeight();
-            var tooltipHeight = $tooltip.outerHeight();
-
-            $tooltip.css({
-                left: offset.left + (width / 2) - ($tooltip.outerWidth() / 2),
-                top: offset.top - tooltipHeight - 10,
-                position: 'absolute',
-                zIndex: 1000
-            });
-
-            this.currentTooltip = $tooltip;
-        },
-
-        /**
-         * Hide tooltip
-         */
-        hideTooltip: function() {
-            if (this.currentTooltip) {
-                this.currentTooltip.remove();
-                this.currentTooltip = null;
-            }
-        },
-
-        /**
-         * Initialize tooltips
-         */
-        initTooltips: function() {
-            // Create tooltip CSS if not exists
-            if ($('#eipsi-tooltip-css').length === 0) {
-                var tooltipCSS = `
-                    <style id="eipsi-tooltip-css">
-                        .eipsi-tooltip {
-                            background: var(--eipsi-dashboard-text);
-                            color: var(--eipsi-dashboard-bg);
-                            padding: 0.5rem 0.75rem;
-                            border-radius: 4px;
-                            font-size: 0.85rem;
-                            white-space: nowrap;
-                            pointer-events: none;
-                        }
-                        .eipsi-tooltip::after {
-                            content: '';
-                            position: absolute;
-                            top: 100%;
-                            left: 50%;
-                            margin-left: -5px;
-                            border: 5px solid transparent;
-                            border-top-color: var(--eipsi-dashboard-text);
-                        }
-                    </style>
-                `;
-                $('head').append(tooltipCSS);
-            }
-        },
-
-        /**
-         * Show message to user
-         * @param {string} message The message to show
-         * @param {string} type Message type (success, error, warning)
-         */
-        showMessage: function(message, type) {
-            var $message = $('<div class="eipsi-dashboard-message eipsi-message-' + type + '">' + message + '</div>');
-            
-            // Add message CSS if not exists
-            if ($('#eipsi-message-css').length === 0) {
-                var messageCSS = `
-                    <style id="eipsi-message-css">
-                        .eipsi-dashboard-message {
-                            position: fixed;
-                            top: 20px;
-                            right: 20px;
-                            padding: 1rem 1.5rem;
-                            border-radius: var(--eipsi-border-radius);
-                            font-weight: 600;
-                            z-index: 10000;
-                            animation: eipsi-slide-in 0.3s ease;
-                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                        }
-                        .eipsi-message-success {
-                            background: var(--eipsi-success-color);
-                            color: white;
-                        }
-                        .eipsi-message-error {
-                            background: var(--eipsi-danger-color);
-                            color: white;
-                        }
-                        .eipsi-message-warning {
-                            background: var(--eipsi-warning-color);
-                            color: white;
-                        }
-                        @keyframes eipsi-slide-in {
-                            from { transform: translateX(100%); opacity: 0; }
-                            to { transform: translateX(0); opacity: 1; }
-                        }
-                    </style>
-                `;
-                $('head').append(messageCSS);
-            }
-
-            $('body').append($message);
-
-            // Auto remove after 3 seconds
-            setTimeout(function() {
-                $message.fadeOut(300, function() {
-                    $(this).remove();
-                });
-            }, 3000);
+    // Configuration
+    const config = {
+        ajaxUrl: window.eipsiParticipantDashboardL10n?.ajaxUrl || '/wp-admin/admin-ajax.php',
+        nonce: window.eipsiParticipantDashboardL10n?.nonce || '',
+        strings: window.eipsiParticipantDashboardL10n?.strings || {
+            confirm_logout: '¿Estás seguro de que quieres cerrar sesión?',
+            logging_out: 'Cerrando sesión...',
+            logout_success: 'Sesión cerrada correctamente',
+            logout_error: 'Error al cerrar sesión'
         }
     };
 
@@ -287,7 +30,182 @@
      * Initialize on document ready
      */
     $(document).ready(function() {
-        window.EIPSI_Participant_Dashboard.init();
+        initLogout();
+        initWaveInteractions();
+        initProgressAnimation();
     });
+
+    /**
+     * Initialize logout functionality
+     */
+    function initLogout() {
+        $(document).on('click', '#eipsi-logout-button', function(e) {
+            e.preventDefault();
+            
+            const $btn = $(this);
+            const originalText = $btn.html();
+            
+            // Confirm logout
+            if (!confirm(config.strings.confirm_logout)) {
+                return;
+            }
+            
+            // Show loading state
+            $btn.prop('disabled', true).html('<span class="btn-icon">⏳</span> ' + config.strings.logging_out);
+            
+            $.ajax({
+                url: config.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_participant_logout',
+                    nonce: $btn.data('nonce') || config.nonce
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Show success message
+                        showNotification(config.strings.logout_success, 'success');
+                        
+                        // Redirect after a brief delay
+                        setTimeout(function() {
+                            if (response.data.redirect) {
+                                window.location.href = response.data.redirect;
+                            } else {
+                                window.location.reload();
+                            }
+                        }, 500);
+                    } else {
+                        showNotification(response.data?.message || config.strings.logout_error, 'error');
+                        $btn.prop('disabled', false).html(originalText);
+                    }
+                },
+                error: function() {
+                    showNotification(config.strings.logout_error, 'error');
+                    $btn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+    }
+
+    /**
+     * Initialize wave interactions
+     */
+    function initWaveInteractions() {
+        // Highlight current/next wave row
+        $('.eipsi-waves-table tbody tr').each(function() {
+            const $row = $(this);
+            if ($row.hasClass('status-pending') || $row.hasClass('status-in-progress')) {
+                $row.addClass('is-next-wave');
+            }
+        });
+        
+        // Add click handler for wave rows (optional navigation)
+        $(document).on('click', '.eipsi-waves-table tbody tr', function() {
+            const $row = $(this);
+            const $link = $row.find('a');
+            
+            if ($link.length) {
+                window.location.href = $link.attr('href');
+            }
+        });
+    }
+
+    /**
+     * Initialize progress bar animation
+     */
+    function initProgressAnimation() {
+        const $progressFill = $('.eipsi-progress-fill');
+        
+        if ($progressFill.length) {
+            // Animate progress bar on load
+            const targetWidth = $progressFill.css('width');
+            $progressFill.css('width', '0');
+            
+            setTimeout(function() {
+                $progressFill.css('width', targetWidth);
+            }, 300);
+        }
+        
+        // Animate step indicators
+        $('.eipsi-step.completed').each(function(index) {
+            const $step = $(this);
+            setTimeout(function() {
+                $step.addClass('animate');
+            }, index * 200);
+        });
+    }
+
+    /**
+     * Show notification
+     */
+    function showNotification(message, type) {
+        // Remove existing notifications
+        $('.eipsi-notification').remove();
+        
+        const $notification = $('<div class="eipsi-notification eipsi-notification--' + type + '">' + message + '</div>');
+        
+        $('body').append($notification);
+        
+        // Animate in
+        $notification.css({
+            transform: 'translateY(-100%)',
+            opacity: 0
+        }).animate({
+            transform: 'translateY(0)',
+            opacity: 1
+        }, 300);
+        
+        // Auto-remove
+        setTimeout(function() {
+            $notification.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+
+    /**
+     * Refresh dashboard data (can be called periodically)
+     */
+    function refreshDashboard() {
+        $.ajax({
+            url: config.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_get_participant_dashboard',
+                nonce: config.nonce
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    updateDashboardUI(response.data);
+                }
+            }
+        });
+    }
+
+    /**
+     * Update dashboard UI with new data
+     */
+    function updateDashboardUI(data) {
+        // Update progress bar
+        if (data.progress_percentage !== undefined) {
+            $('.eipsi-progress-fill').css('width', data.progress_percentage + '%');
+            $('.eipsi-progress-percentage').text(data.progress_percentage + '%');
+        }
+        
+        // Update stats
+        if (data.completed_waves !== undefined) {
+            $('.stat-completed').text('✅ ' + data.completed_waves + ' completadas');
+        }
+        if (data.pending_waves !== undefined) {
+            $('.stat-pending').text('⏳ ' + data.pending_waves + ' pendientes');
+        }
+    }
+
+    // Expose public API
+    window.EIPSIDashboard = {
+        refresh: refreshDashboard,
+        showNotification: showNotification
+    };
 
 })(jQuery);

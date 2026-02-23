@@ -99,6 +99,14 @@ function eipsi_render_form_template_markup($template_id, $context = 'block', $op
     if (eipsi_form_requires_login($template_id)) {
         // If NOT authenticated → show login gate
         if (!eipsi_is_participant_logged_in()) {
+            // Enqueue login gate styles
+            wp_enqueue_style(
+                'eipsi-login-gate-css',
+                EIPSI_FORMS_PLUGIN_URL . 'assets/css/login-gate.css',
+                array('eipsi-theme-toggle-css'),
+                EIPSI_FORMS_VERSION
+            );
+            
             ob_start();
             include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/login-gate.php';
             return ob_get_clean();

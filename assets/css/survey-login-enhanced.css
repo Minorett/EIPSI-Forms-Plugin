@@ -1,0 +1,778 @@
+/**
+ * EIPSI Forms - Survey Login Form Styles (Enhanced v1.6.0)
+ * 
+ * Mejoras:
+ * - Progress steps indicator
+ * - Better visual hierarchy
+ * - Magic link tab
+ * - Password strength meter
+ * - Loading states
+ * - Dark mode support
+ * 
+ * @package EIPSI_Forms
+ * @since 1.6.0
+ */
+
+/* ============================================================================
+   CONTAINER & HEADER
+   ============================================================================ */
+
+.eipsi-survey-login-container {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 32px;
+    background: var(--eipsi-color-card-bg, #fff);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--eipsi-color-card-border, #e9ecef);
+}
+
+/* Header */
+.eipsi-login-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.eipsi-login-logo {
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.eipsi-login-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--eipsi-color-text, #1d2327);
+    margin: 0 0 8px;
+    line-height: 1.3;
+}
+
+.eipsi-login-subtitle {
+    font-size: 15px;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    margin: 0;
+}
+
+/* ============================================================================
+   PROGRESS STEPS
+   ============================================================================ */
+
+.eipsi-login-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 32px;
+    padding: 0 16px;
+}
+
+.eipsi-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.eipsi-step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--eipsi-color-background-subtle, #e9ecef);
+    color: var(--eipsi-color-text-muted, #6c757d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.eipsi-step.active .eipsi-step-number {
+    background: var(--eipsi-color-primary, #2271b1);
+    color: #fff;
+}
+
+.eipsi-step.completed .eipsi-step-number {
+    background: var(--eipsi-color-success, #00a32a);
+    color: #fff;
+}
+
+.eipsi-step-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    white-space: nowrap;
+}
+
+.eipsi-step.active .eipsi-step-label {
+    color: var(--eipsi-color-primary, #2271b1);
+}
+
+.eipsi-step-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--eipsi-color-background-subtle, #e9ecef);
+    margin: 0 8px;
+    margin-bottom: 20px;
+    max-width: 60px;
+}
+
+/* ============================================================================
+   TABS
+   ============================================================================ */
+
+.eipsi-survey-login-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    padding: 4px;
+    border-radius: 12px;
+}
+
+.eipsi-survey-login-tab {
+    flex: 1;
+    padding: 12px 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.eipsi-survey-login-tab:hover {
+    color: var(--eipsi-color-text, #1d2327);
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.eipsi-survey-login-tab.active {
+    color: var(--eipsi-color-primary, #2271b1);
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.tab-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* ============================================================================
+   TAB CONTENT & PANES
+   ============================================================================ */
+
+.eipsi-pane-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.eipsi-pane-description {
+    font-size: 14px;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.eipsi-survey-login-pane {
+    display: none;
+    animation: eipsi-fade-in 0.3s ease;
+}
+
+.eipsi-survey-login-pane.active {
+    display: block;
+}
+
+@keyframes eipsi-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================================
+   FORMS
+   ============================================================================ */
+
+.eipsi-survey-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Form Group */
+.eipsi-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.eipsi-form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--eipsi-color-text, #1d2327);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.eipsi-form-group label .required {
+    color: var(--eipsi-color-error, #d63638);
+}
+
+.field-hint {
+    font-size: 12px;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    margin-top: 2px;
+}
+
+/* Input Wrapper */
+.eipsi-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.eipsi-input-wrapper .input-icon {
+    position: absolute;
+    left: 12px;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.eipsi-input-wrapper input {
+    flex: 1;
+    padding: 12px 40px 12px 40px;
+    border: 1.5px solid var(--eipsi-color-border, #d0d5dd);
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    background: var(--eipsi-color-input-bg, #fff);
+    color: var(--eipsi-color-text, #1d2327);
+    width: 100%;
+}
+
+.eipsi-input-wrapper input:focus {
+    outline: none;
+    border-color: var(--eipsi-color-primary, #2271b1);
+    box-shadow: 0 0 0 4px rgba(34, 113, 177, 0.1);
+}
+
+.eipsi-input-wrapper input.valid {
+    border-color: var(--eipsi-color-success, #00a32a);
+}
+
+.eipsi-input-wrapper input.invalid {
+    border-color: var(--eipsi-color-error, #d63638);
+}
+
+.eipsi-valid-icon {
+    position: absolute;
+    right: 12px;
+    color: var(--eipsi-color-success, #00a32a);
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.eipsi-input-wrapper input.valid + .eipsi-valid-icon,
+.eipsi-input-wrapper input.valid ~ .eipsi-valid-icon {
+    opacity: 1;
+}
+
+/* Password Toggle */
+.toggle-password {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.toggle-password:hover {
+    color: var(--eipsi-color-primary, #2271b1);
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+}
+
+.toggle-password .dashicons {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}
+
+/* Password Strength Meter */
+.password-strength-meter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.strength-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--eipsi-color-background-subtle, #e9ecef);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+
+.strength-bar::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background: var(--eipsi-color-error, #d63638);
+    transition: all 0.3s ease;
+}
+
+.strength-bar.weak::after {
+    width: 25%;
+    background: var(--eipsi-color-error, #d63638);
+}
+
+.strength-bar.fair::after {
+    width: 50%;
+    background: #f0ad4e;
+}
+
+.strength-bar.good::after {
+    width: 75%;
+    background: #5bc0de;
+}
+
+.strength-bar.strong::after {
+    width: 100%;
+    background: var(--eipsi-color-success, #00a32a);
+}
+
+.strength-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--eipsi-color-text-muted, #6c757d);
+}
+
+/* ============================================================================
+   ROWS & GRID
+   ============================================================================ */
+
+.eipsi-row {
+    display: flex;
+    gap: 12px;
+}
+
+.eipsi-row .eipsi-form-group {
+    flex: 1;
+}
+
+@media (max-width: 480px) {
+    .eipsi-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
+/* ============================================================================
+   FORM OPTIONS & CHECKBOXES
+   ============================================================================ */
+
+.eipsi-form-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.eipsi-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--eipsi-color-text, #1d2327);
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.eipsi-checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    margin-top: 1px;
+    accent-color: var(--eipsi-color-primary, #2271b1);
+}
+
+.forgot-password-link {
+    font-size: 14px;
+    color: var(--eipsi-color-primary, #2271b1);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.forgot-password-link:hover {
+    text-decoration: underline;
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+.eipsi-button-primary {
+    padding: 14px 24px;
+    background: var(--eipsi-color-primary, #2271b1);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.eipsi-button-primary:hover {
+    background: var(--eipsi-color-primary-hover, #135e96);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 113, 177, 0.3);
+}
+
+.eipsi-button-primary:active {
+    transform: translateY(0);
+}
+
+.eipsi-button-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.eipsi-button-primary .eipsi-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: eipsi-spin 0.8s linear infinite;
+}
+
+@keyframes eipsi-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Magic Link Button */
+.eipsi-button-magic {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.eipsi-button-magic:hover {
+    background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* ============================================================================
+   MAGIC LINK SPECIFIC
+   ============================================================================ */
+
+.magic-link-icon {
+    font-size: 64px;
+    text-align: center;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.magic-link-info {
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 8px 0;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 14px;
+    color: var(--eipsi-color-text, #1d2327);
+}
+
+.info-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* ============================================================================
+   FORM FOOTER
+   ============================================================================ */
+
+.eipsi-form-footer {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid var(--eipsi-color-border, #e9ecef);
+    margin-top: 8px;
+}
+
+.eipsi-form-footer p {
+    margin: 8px 0;
+    font-size: 14px;
+    color: var(--eipsi-color-text-muted, #6c757d);
+}
+
+.eipsi-form-footer a,
+.switch-to-register,
+.switch-to-login,
+.forgot-password {
+    color: var(--eipsi-color-primary, #2271b1);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.eipsi-form-footer a:hover,
+.switch-to-register:hover,
+.switch-to-login:hover,
+.forgot-password:hover {
+    text-decoration: underline;
+}
+
+/* ============================================================================
+   MESSAGES & ALERTS
+   ============================================================================ */
+
+.error-message,
+.success-message,
+.eipsi-error-message,
+.eipsi-success-message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.error-message::before,
+.eipsi-error-message::before {
+    content: '⚠️';
+    font-size: 16px;
+}
+
+.success-message::before,
+.eipsi-success-message::before {
+    content: '✅';
+    font-size: 16px;
+}
+
+.error-message,
+.eipsi-error-message {
+    background: #fcf0f1;
+    color: #d63638;
+    border: 1px solid #f5c6cb;
+}
+
+.success-message,
+.eipsi-success-message {
+    background: #edfaef;
+    color: #00a32a;
+    border: 1px solid #b8e6bf;
+}
+
+/* ============================================================================
+   SECURITY NOTICE
+   ============================================================================ */
+
+.eipsi-security-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    margin-top: 20px;
+    background: rgba(0, 163, 42, 0.08);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--eipsi-color-success, #00a32a);
+    font-weight: 500;
+}
+
+.security-icon {
+    font-size: 14px;
+}
+
+/* ============================================================================
+   LOADING OVERLAY
+   ============================================================================ */
+
+.eipsi-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    gap: 16px;
+}
+
+.eipsi-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--eipsi-color-border, #d0d5dd);
+    border-top-color: var(--eipsi-color-primary, #2271b1);
+    border-radius: 50%;
+    animation: eipsi-spin 0.8s linear infinite;
+}
+
+.eipsi-loading-text {
+    font-size: 16px;
+    color: var(--eipsi-color-text, #1d2327);
+    font-weight: 500;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 560px) {
+    .eipsi-survey-login-container {
+        margin: 16px;
+        padding: 24px 20px;
+        border-radius: 12px;
+    }
+    
+    .eipsi-login-title {
+        font-size: 20px;
+    }
+    
+    .eipsi-survey-login-tab {
+        padding: 10px 4px;
+        font-size: 13px;
+    }
+    
+    .tab-icon {
+        display: none;
+    }
+    
+    .eipsi-step-label {
+        display: none;
+    }
+    
+    .eipsi-login-steps {
+        padding: 0 32px;
+    }
+}
+
+/* ============================================================================
+   DARK MODE
+   ============================================================================ */
+
+body.eipsi-dark-mode .eipsi-survey-login-container,
+@media (prefers-color-scheme: dark) {
+    .eipsi-survey-login-container {
+        background: #1e1e1e;
+        border-color: #333;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .eipsi-login-title,
+    .eipsi-form-group label,
+    .eipsi-checkbox-label,
+    .info-item {
+        color: #e0e0e0;
+    }
+    
+    .eipsi-login-subtitle,
+    .eipsi-pane-description,
+    .field-hint,
+    .eipsi-form-footer p,
+    .strength-text {
+        color: #888;
+    }
+    
+    .eipsi-survey-login-tabs {
+        background: #2d2d2d;
+    }
+    
+    .eipsi-survey-login-tab.active {
+        background: #3d3d3d;
+        color: #72aee6;
+    }
+    
+    .eipsi-survey-login-tab:hover {
+        color: #e0e0e0;
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .eipsi-input-wrapper input {
+        background: #2d2d2d;
+        border-color: #444;
+        color: #e0e0e0;
+    }
+    
+    .eipsi-input-wrapper input:focus {
+        border-color: #72aee6;
+        box-shadow: 0 0 0 4px rgba(114, 174, 230, 0.2);
+    }
+    
+    .eipsi-form-footer,
+    .eipsi-step-connector {
+        border-color: #333;
+    }
+    
+    .magic-link-info,
+    .toggle-password:hover {
+        background: #2d2d2d;
+    }
+    
+    .eipsi-loading-overlay {
+        background: rgba(30, 30, 30, 0.95);
+    }
+    
+    .eipsi-loading-text {
+        color: #e0e0e0;
+    }
+    
+    .error-message,
+    .eipsi-error-message {
+        background: rgba(214, 54, 56, 0.15);
+        border-color: #d63638;
+    }
+    
+    .success-message,
+    .eipsi-success-message {
+        background: rgba(0, 163, 42, 0.15);
+        border-color: #00a32a;
+    }
+}
