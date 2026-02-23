@@ -14,6 +14,9 @@ jQuery(document).ready(function($) {
     const $assignModal = $('#eipsi-assign-modal');
     const $waveForm = $('#eipsi-wave-form');
 
+    // Debounce map for resend email
+    const resendDebounceMap = new Map();
+
     /**
      * Helper to show messages
      */
@@ -24,6 +27,92 @@ jQuery(document).ready(function($) {
         
         // Auto-dismiss after 5s
         setTimeout(() => $container.empty(), 5000);
+    }
+
+    /**
+     * Helper to show toast notifications
+     */
+    function showToast(message, type = 'success') {
+        const $toast = $(`
+            <div class="eipsi-toast eipsi-toast-${type}" style="
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                background: ${type === 'success' ? '#46b450' : '#dc3232'};
+                color: #fff;
+                border-radius: 4px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                z-index: 100000;
+                font-size: 14px;
+                max-width: 400px;
+            ">
+                ${message}
+            </div>
+        `);
+
+        $('body').append($toast);
+
+        setTimeout(function() {
+            $toast.fadeOut(function() {
+                $toast.remove();
+            });
+        }, 4000);
+    }
+
+    /**
+     * Helper to resend email with debounce
+     */
+    function resendEmail(participantId, emailType, participantEmail, waveId) {
+        // Debounce: prevent multiple rapid clicks
+        const debounceKey = `${participantId}-${emailType}`;
+        if (resendDebounceMap.has(debounceKey)) {
+            return;
+        }
+        resendDebounceMap.set(debounceKey, true);
+        setTimeout(() => resendDebounceMap.delete(debounceKey), 3000);
+
+        const typeLabels = {
+            'welcome': 'Email de bienvenida',
+            'magic_link': 'Magic Link',
+            'reminder': 'Recordatorio de onda',
+            'confirmation': 'Email de confirmación',
+            'recovery': 'Email de recuperación'
+        };
+
+        if (!confirm(`¿Enviar ${typeLabels[emailType] || 'email'} a ${participantEmail}?`)) {
+            return;
+        }
+
+        // Show loading state on the row
+        const $row = $(`tr[data-participant-id="${participantId}"]`);
+        $row.addClass('loading');
+
+        $.ajax({
+            url: api.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_resend_participant_email',
+                participant_id: participantId,
+                email_type: emailType,
+                study_id: studyId,
+                wave_id: waveId,
+                nonce: api.nonce
+            },
+            success: function(response) {
+                $row.removeClass('loading');
+                
+                if (response.success) {
+                    showToast(response.data.message || 'Email enviado correctamente', 'success');
+                } else {
+                    showToast(response.data.message || 'Error al enviar email', 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                $row.removeClass('loading');
+                showToast('Error de conexión: ' + error, 'error');
+            }
+        });
     }
 
     /**
@@ -290,4 +379,77 @@ jQuery(document).ready(function($) {
             $('.eipsi-modal').fadeOut();
         }
     });
+
+    /**
+     * Resend email dropdown toggle
+     */
+    $(document).on('click', '.resend-email-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const $dropdown = $(this).siblings('.resend-email-dropdown');
+        $('.resend-email-dropdown').not($dropdown).hide();
+        $dropdown.toggle();
+    });
+
+    // Close dropdowns on click outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.resend-email-wrapper').length) {
+            $('.resend-email-dropdown').hide();
+        }
+    });
+
+    /**
+     * Resend email type selection
+     */
+    $(document).on('click', '.resend-email-option', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const participantId = $(this).data('participant-id');
+        const emailType = $(this).data('email-type');
+        const participantEmail = $(this).data('participant-email');
+        const waveId = $(this).data('wave-id') || activeWaveId;
+        
+        $(this).closest('.resend-email-dropdown').hide();
+        
+        resendEmail(participantId, emailType, participantEmail, waveId);
+    });
+
+    /**
+     * Render participants with resend email actions (for wave assignment modal)
+     */
+    function renderParticipantsWithEmailActions(participants, waveId) {
+        const $tbody = $('#available-participants-tbody');
+        $tbody.empty();
+
+        if (participants.length === 0) {
+            $tbody.append('<tr><td colspan="5" style="text-align:center;">Todos los participantes activos ya están asignados a esta onda.</td></tr>');
+            return;
+        }
+
+        participants.forEach(p => {
+            $tbody.append(`
+                <tr data-participant-id="${p.id}">
+                    <td class="check-column"><input type="checkbox" name="participant_ids[]" value="${p.id}"></td>
+                    <td>${p.full_name}</td>
+                    <td>${p.email}</td>
+                    <td><code>${p.participant_id}</code></td>
+                    <td>
+                        <div class="resend-email-wrapper" style="position: relative; display: inline-block;">
+                            <button type="button" class="button button-small resend-email-btn" title="Reenviar email">
+                                📧
+                            </button>
+                            <div class="resend-email-dropdown" style="display:none; position:absolute; right:0; top:100%; background:#fff; border:1px solid #ccc; border-radius:4px; box-shadow:0 2px 5px rgba(0,0,0,0.15); z-index:1000; min-width:180px;">
+                                <a href="#" class="resend-email-option" data-participant-id="${p.id}" data-email-type="magic_link" data-participant-email="${p.email}" data-wave-id="${waveId}" style="display:block; padding:8px 12px; text-decoration:none; color:#333;">
+                                    ✨ Enviar Magic Link
+                                </a>
+                                <a href="#" class="resend-email-option" data-participant-id="${p.id}" data-email-type="reminder" data-participant-email="${p.email}" data-wave-id="${waveId}" style="display:block; padding:8px 12px; text-decoration:none; color:#333;">
+                                    🔔 Recordatorio de Onda
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `);
+        });
+    }
 });

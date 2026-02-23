@@ -823,6 +823,194 @@ class EIPSI_Email_Service {
     }
 
     /**
+     * Resend specific email type to a participant.
+     *
+     * @param int    $participant_id Participant ID.
+     * @param string $email_type Email type (welcome, reminder, magic_link, confirmation, recovery).
+     * @param int    $survey_id Survey ID (optional, will be fetched if not provided).
+     * @param int    $wave_id Wave ID (optional, required for reminder/confirmation).
+     * @return array {success: bool, message: string, error: string|null}
+     * @since 1.5.3
+     * @access public
+     */
+    public static function resend_participant_email($participant_id, $email_type, $survey_id = 0, $wave_id = null) {
+        // Validate email type
+        $valid_types = array('welcome', 'reminder', 'magic_link', 'confirmation', 'recovery');
+        if (!in_array($email_type, $valid_types)) {
+            return array(
+                'success' => false,
+                'message' => 'Tipo de email inválido',
+                'error' => 'invalid_email_type'
+            );
+        }
+
+        // Get participant
+        $participant = self::get_participant($participant_id);
+        if (!$participant) {
+            return array(
+                'success' => false,
+                'message' => 'Participante no encontrado',
+                'error' => 'participant_not_found'
+            );
+        }
+
+        // Check if participant is active
+        if (!$participant->is_active) {
+            return array(
+                'success' => false,
+                'message' => 'El participante está inactivo. Actívalo primero para enviar emails.',
+                'error' => 'participant_inactive'
+            );
+        }
+
+        // Get survey_id from participant if not provided
+        if (empty($survey_id)) {
+            $survey_id = $participant->survey_id;
+        }
+
+        // Validate survey exists
+        $survey_name = get_the_title($survey_id);
+        if (empty($survey_name)) {
+            return array(
+                'success' => false,
+                'message' => 'Estudio no encontrado',
+                'error' => 'survey_not_found'
+            );
+        }
+
+        // Get wave object if needed
+        $wave = null;
+        if (in_array($email_type, array('reminder', 'confirmation', 'recovery'))) {
+            if (empty($wave_id)) {
+                // Try to get current active wave for participant
+                $wave = self::get_current_wave_for_participant($survey_id, $participant_id);
+            } else {
+                $wave = self::get_wave($wave_id);
+            }
+            
+            if (!$wave) {
+                return array(
+                    'success' => false,
+                    'message' => 'No se encontró una onda activa para este participante',
+                    'error' => 'wave_not_found'
+                );
+            }
+        }
+
+        // Send the appropriate email type
+        $result = false;
+        $error_msg = '';
+
+        try {
+            switch ($email_type) {
+                case 'welcome':
+                    $result = self::send_welcome_email($survey_id, $participant_id);
+                    $error_msg = 'No se pudo enviar el email de bienvenida';
+                    break;
+
+                case 'magic_link':
+                    $send_result = self::send_magic_link_email($survey_id, $participant_id);
+                    $result = !empty($send_result['success']);
+                    $error_msg = $send_result['error'] ?? 'No se pudo enviar el Magic Link';
+                    break;
+
+                case 'reminder':
+                    $result = self::send_wave_reminder_email($survey_id, $participant_id, $wave);
+                    $error_msg = 'No se pudo enviar el recordatorio de onda';
+                    break;
+
+                case 'confirmation':
+                    $result = self::send_wave_confirmation_email($survey_id, $participant_id, $wave);
+                    $error_msg = 'No se pudo enviar el email de confirmación';
+                    break;
+
+                case 'recovery':
+                    $result = self::send_dropout_recovery_email($survey_id, $participant_id, $wave);
+                    $error_msg = 'No se pudo enviar el email de recuperación';
+                    break;
+            }
+        } catch (Exception $e) {
+            error_log("[EIPSI Email] Exception in resend_participant_email: " . $e->getMessage());
+            return array(
+                'success' => false,
+                'message' => 'Error al enviar email: ' . $e->getMessage(),
+                'error' => 'exception'
+            );
+        }
+
+        if ($result) {
+            $type_labels = array(
+                'welcome' => 'Email de bienvenida',
+                'magic_link' => 'Magic Link',
+                'reminder' => 'Recordatorio de onda',
+                'confirmation' => 'Email de confirmación',
+                'recovery' => 'Email de recuperación'
+            );
+
+            return array(
+                'success' => true,
+                'message' => sprintf(
+                    '%s enviado exitosamente a %s',
+                    $type_labels[$email_type],
+                    $participant->email
+                ),
+                'error' => null
+            );
+        }
+
+        return array(
+            'success' => false,
+            'message' => $error_msg,
+            'error' => 'send_failed'
+        );
+    }
+
+    /**
+     * Get wave object by ID (helper).
+     *
+     * @param int $wave_id Wave ID.
+     * @return object|null Wave object.
+     * @since 1.5.3
+     * @access private
+     */
+    private static function get_wave($wave_id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+            $wave_id
+        ));
+    }
+
+    /**
+     * Get current active wave for a participant.
+     *
+     * @param int $survey_id Survey ID.
+     * @param int $participant_id Participant ID.
+     * @return object|null Wave object.
+     * @since 1.5.3
+     * @access private
+     */
+    private static function get_current_wave_for_participant($survey_id, $participant_id) {
+        global $wpdb;
+
+        // Get the most recent incomplete assignment for this participant
+        $assignment = $wpdb->get_row($wpdb->prepare(
+            "SELECT a.*, w.* 
+             FROM {$wpdb->prefix}survey_assignments a
+             JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+             WHERE a.participant_id = %d 
+               AND a.study_id = %d 
+               AND a.status != 'submitted'
+             ORDER BY w.wave_index ASC
+             LIMIT 1",
+            $participant_id,
+            $survey_id
+        ));
+
+        return $assignment;
+    }
+
+    /**
      * Get participants who haven't completed a wave.
      *
      * @param int $survey_id Survey ID.
