@@ -231,18 +231,10 @@ function eipsi_get_audit_log_handler() {
  * AJAX Handler: Export monitoring report
  */
 function eipsi_export_monitoring_report_handler() {
-    // Verify nonce manually to avoid sending headers too early
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce')) {
-        status_header(403);
-        echo wp_json_encode(array('success' => false, 'message' => 'Unauthorized'));
-        exit;
-    }
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
 
-    // Check permissions before any output
     if (!current_user_can('manage_options')) {
-        status_header(403);
-        echo wp_json_encode(array('success' => false, 'message' => 'Unauthorized'));
-        exit;
+        wp_send_json_error(array('message' => 'Unauthorized'));
     }
 
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/monitoring.php';
@@ -255,18 +247,10 @@ function eipsi_export_monitoring_report_handler() {
         'audit_log' => EIPSI_Monitoring::get_audit_log_entries(50),
     );
 
-
-    // Clear any existing output buffer to prevent header issues
-    while (ob_get_level() > 0) {
-        ob_end_clean();
-    }
-
     $filename = 'monitoring_report_' . gmdate('Y-m-d_H-i-s') . '.json';
-    header('Content-Type: application/json; charset=utf-8');
+    header('Content-Type: application/json');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Cache-Control: no-cache, must-revalidate');
-    header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
-    echo wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    echo wp_json_encode($data, JSON_PRETTY_PRINT);
     exit;
 }
 
