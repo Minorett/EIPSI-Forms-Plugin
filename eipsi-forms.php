@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.5.4
+ * Version: 1.7.0
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization, longitudinal, studies
- * Stable tag: 1.5.4
+ * Stable tag: 1.7.0
  *
  * @package EIPSI_Forms
  */
@@ -23,7 +23,7 @@
     exit;
  }
 
- define('EIPSI_FORMS_VERSION', '1.5.5');
+ define('EIPSI_FORMS_VERSION', '1.7.0');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -570,6 +570,65 @@ function eipsi_enqueue_survey_login_assets() {
             )
         ));
     }
+}
+
+/**
+ * Enqueue Participant UX Enhanced Assets (v1.7.0)
+ *
+ * Carga los assets mejorados para UX de participantes con
+ * enfoque en empatía y experiencia humana.
+ *
+ * @since 1.7.0
+ */
+add_action('wp_enqueue_scripts', 'eipsi_enqueue_participant_ux_assets');
+function eipsi_enqueue_participant_ux_assets() {
+    // Detectar si hay formularios EIPSI en la página
+    global $post;
+    if (!is_a($post, 'WP_Post')) return;
+
+    $has_eipsi_form = has_shortcode($post->post_content, 'eipsi_form') ||
+                      has_shortcode($post->post_content, 'eipsi_survey_form') ||
+                      has_shortcode($post->post_content, 'eipsi_longitudinal_study') ||
+                      has_shortcode($post->post_content, 'eipsi_survey_login') ||
+                      has_shortcode($post->post_content, 'eipsi_participant_dashboard');
+
+    if (!$has_eipsi_form) {
+        return;
+    }
+
+    // Participant UX Enhanced Styles
+    wp_enqueue_style(
+        'eipsi-participant-ux-css',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/participant-ux-enhanced.css',
+        array('eipsi-theme-toggle-css'),
+        EIPSI_FORMS_VERSION
+    );
+
+    // Participant UX Enhanced Scripts
+    wp_enqueue_script(
+        'eipsi-participant-ux-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/participant-ux-enhanced.js',
+        array('jquery'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+
+    // Localize script con strings traducibles
+    wp_localize_script('eipsi-participant-ux-js', 'eipsiParticipantUX', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('eipsi_participant_ux'),
+        'strings' => array(
+            'progress' => __('Progreso', 'eipsi-forms'),
+            'questionsAnswered' => __('preguntas respondidas', 'eipsi-forms'),
+            'of' => __('de', 'eipsi-forms'),
+            'celebrate' => __('¡Genial!', 'eipsi-forms'),
+            'complete' => __('¡Felicidades! Completaste todas las preguntas', 'eipsi-forms'),
+            'sectionComplete' => __('¡Excelente! Completaste esta sección', 'eipsi-forms'),
+            'helpTitle' => __('¿Por qué preguntamos esto?', 'eipsi-forms'),
+            'expandHelp' => __('Ver más contexto', 'eipsi-forms'),
+            'collapseHelp' => __('Mostrar menos', 'eipsi-forms')
+        )
+    ));
 }
 
 // Registrar el shortcode de aleatorización pública (legacy)
