@@ -28,6 +28,9 @@ add_action('wp_ajax_eipsi_get_pending_participants', 'wp_ajax_eipsi_get_pending_
 add_action('wp_ajax_eipsi_edit_participant', 'wp_ajax_eipsi_edit_participant_handler');
 add_action('wp_ajax_eipsi_delete_participant', 'wp_ajax_eipsi_delete_participant_handler');
 add_action('wp_ajax_eipsi_get_participant', 'wp_ajax_eipsi_get_participant_handler');
+add_action('wp_ajax_eipsi_validate_wave_dates', 'wp_ajax_eipsi_validate_wave_dates_handler');
+add_action('wp_ajax_eipsi_preview_wave_email', 'wp_ajax_eipsi_preview_wave_email_handler');
+add_action('wp_ajax_eipsi_get_wave_email_preview', 'wp_ajax_eipsi_get_wave_email_preview_handler');
 
 /**
  * Create or Update Wave
@@ -563,4 +566,195 @@ function wp_ajax_eipsi_delete_participant_handler() {
     wp_send_json_success(array(
         'message' => 'Participant deleted successfully'
     ));
+}
+
+/**
+ * Validate wave dates before saving
+ */
+function wp_ajax_eipsi_validate_wave_dates_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => __('No tienes permisos para realizar esta acción.', 'eipsi-forms')));
+    }
+
+    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
+    $wave_id = isset($_POST['wave_id']) ? absint($_POST['wave_id']) : 0;
+
+    if (!$study_id) {
+        wp_send_json_error(array('message' => __('ID de estudio no proporcionado.', 'eipsi-forms')));
+    }
+
+    $wave_data = array(
+        'start_date' => isset($_POST['start_date']) ? sanitize_text_field($_POST['start_date']) : null,
+        'due_date' => isset($_POST['due_date']) ? sanitize_text_field($_POST['due_date']) : null,
+        'wave_index' => isset($_POST['wave_index']) ? absint($_POST['wave_index']) : 1,
+    );
+
+    $validation = EIPSI_Wave_Service::validate_wave_dates($wave_data, $study_id, $wave_id);
+
+    wp_send_json_success($validation);
+}
+
+/**
+ * Preview wave email before sending
+ */
+function wp_ajax_eipsi_preview_wave_email_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => __('No tienes permisos para realizar esta acción.', 'eipsi-forms')));
+    }
+
+    $wave_id = isset($_POST['wave_id']) ? absint($_POST['wave_id']) : 0;
+    $email_type = isset($_POST['email_type']) ? sanitize_text_field($_POST['email_type']) : 'reminder';
+    $participant_id = isset($_POST['participant_id']) ? absint($_POST['participant_id']) : 0;
+
+    if (!$wave_id) {
+        wp_send_json_error(array('message' => __('ID de onda no proporcionado.', 'eipsi-forms')));
+    }
+
+    // Get wave and study
+    $wave = EIPSI_Wave_Service::get_wave($wave_id);
+    if (!$wave) {
+        wp_send_json_error(array('message' => __('Onda no encontrada.', 'eipsi-forms')));
+    }
+
+    $study_id = absint($wave->study_id);
+
+    // If no participant specified, get first pending participant
+    if (!$participant_id) {
+        if (class_exists('EIPSI_Email_Service') && method_exists('EIPSI_Email_Service', 'get_pending_participants')) {
+            $pending = EIPSI_Email_Service::get_pending_participants($study_id, $wave_id);
+            if (!empty($pending) && isset($pending[0])) {
+                $participant_id = $pending[0]->id;
+            }
+        }
+    }
+
+    // If still no participant, use sample data for preview
+    if (!$participant_id) {
+        // Generate sample preview with placeholder data
+        $preview = generate_sample_email_preview($wave, $email_type);
+        wp_send_json_success($preview);
+    }
+
+    // Get actual preview with participant data
+    if (class_exists('EIPSI_Email_Service')) {
+        $preview = EIPSI_Email_Service::get_wave_email_preview($study_id, $wave_id, $participant_id, $email_type);
+        wp_send_json_success($preview);
+    }
+
+    wp_send_json_error(array('message' => __('No se pudo generar la vista previa.', 'eipsi-forms')));
+}
+
+/**
+ * Get wave email preview for a specific participant
+ */
+function wp_ajax_eipsi_get_wave_email_preview_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => __('No tienes permisos para realizar esta acción.', 'eipsi-forms')));
+    }
+
+    $wave_id = isset($_GET['wave_id']) ? absint($_GET['wave_id']) : 0;
+    $participant_id = isset($_GET['participant_id']) ? absint($_GET['participant_id']) : 0;
+    $email_type = isset($_GET['email_type']) ? sanitize_text_field($_GET['email_type']) : 'reminder';
+
+    if (!$wave_id || !$participant_id) {
+        wp_send_json_error(array('message' => __('Parámetros incompletos.', 'eipsi-forms')));
+    }
+
+    $wave = EIPSI_Wave_Service::get_wave($wave_id);
+    if (!$wave) {
+        wp_send_json_error(array('message' => __('Onda no encontrada.', 'eipsi-forms')));
+    }
+
+    $study_id = absint($wave->study_id);
+
+    if (class_exists('EIPSI_Email_Service')) {
+        $preview = EIPSI_Email_Service::get_wave_email_preview($study_id, $wave_id, $participant_id, $email_type);
+        wp_send_json_success($preview);
+    }
+
+    wp_send_json_error(array('message' => __('Servicio de email no disponible.', 'eipsi-forms')));
+}
+
+/**
+ * Generate sample email preview with placeholder data
+ */
+function generate_sample_email_preview($wave, $email_type) {
+    $survey_name = get_the_title($wave->study_id) ?: 'Nombre del Estudio';
+    $investigator_name = get_option('eipsi_investigator_name', 'Equipo de Investigación');
+    $investigator_email = get_option('eipsi_investigator_email', get_option('admin_email'));
+
+    $placeholders = array(
+        'first_name' => '[Nombre del Participante]',
+        'survey_name' => $survey_name,
+        'wave_index' => 'T' . $wave->wave_index,
+        'due_date' => !empty($wave->due_date) ? date_i18n(get_option('date_format'), strtotime($wave->due_date)) : '[Fecha de vencimiento]',
+        'due_at' => !empty($wave->due_date) ? date_i18n(get_option('date_format'), strtotime($wave->due_date)) : '[Fecha de vencimiento]',
+        'magic_link' => site_url('/?eipsi_magic=PREVIEW_TOKEN'),
+        'estimated_time' => '10-15',
+        'investigator_name' => $investigator_name,
+        'investigator_email' => $investigator_email,
+    );
+
+    $subject = '';
+    $template_name = '';
+
+    switch ($email_type) {
+        case 'reminder':
+            $subject = "Recordatorio: Tu próxima toma en {$survey_name}";
+            $template_name = 'wave-reminder';
+            break;
+        case 'welcome':
+            $subject = "Bienvenido a {$survey_name}";
+            $template_name = 'welcome';
+            break;
+        case 'confirmation':
+            $subject = "Recibimos tu respuesta";
+            $template_name = 'wave-confirmation';
+            break;
+        case 'recovery':
+            $subject = "Te extrañamos - {$survey_name}";
+            $template_name = 'dropout-recovery';
+            break;
+        case 'manual':
+        default:
+            $subject = "Recordatorio: Toma {$wave->wave_index} en {$survey_name}";
+            $template_name = 'manual-reminder';
+            break;
+    }
+
+    // Get email content using reflection or direct call
+    if (class_exists('EIPSI_Email_Service')) {
+        $reflection = new ReflectionClass('EIPSI_Email_Service');
+        $method = $reflection->getMethod('render_template');
+        $method->setAccessible(true);
+        $content = $method->invoke(null, $template_name, $placeholders);
+    } else {
+        $content = "<p>Vista previa del email de tipo: {$email_type}</p>";
+        $content .= "<p><strong>Nota:</strong> Esta es una vista previa de muestra. Los datos reales del participante se sustituirán al enviar.</p>";
+    }
+
+    return array(
+        'success' => true,
+        'is_sample' => true,
+        'subject' => $subject,
+        'content' => $content,
+        'magic_link' => $placeholders['magic_link'],
+        'email' => '[email@participante.com]',
+        'wave' => array(
+            'id' => $wave->id,
+            'name' => $wave->name,
+            'wave_index' => $wave->wave_index,
+            'due_date' => $wave->due_date,
+        ),
+        'participant_sample' => array(
+            'first_name' => $placeholders['first_name'],
+            'email' => $placeholders['email'],
+        )
+    );
 }

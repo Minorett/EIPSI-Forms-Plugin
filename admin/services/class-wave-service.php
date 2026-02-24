@@ -330,4 +330,248 @@ class EIPSI_Wave_Service {
 
         return true;
     }
+
+    /**
+     * Calculate wave status based on dates.
+     *
+     * @param int|array $wave Wave ID or wave array.
+     * @return string Status: upcoming, active, closed, overdue.
+     * @since 1.7.1
+     * @access public
+     */
+    public static function calculate_wave_status($wave) {
+        global $wpdb;
+
+        // Get wave object if ID passed
+        if (is_numeric($wave)) {
+            $wave = self::get_wave($wave);
+        }
+
+        if (!$wave) {
+            return 'unknown';
+        }
+
+        $now = current_time('mysql');
+        $start_date = !empty($wave->start_date) ? $wave->start_date : $wave->due_date;
+        $due_date = !empty($wave->due_date) ? $wave->due_date : null;
+
+        // If no dates set, default to active
+        if (empty($start_date) && empty($due_date)) {
+            return 'active';
+        }
+
+        // upcoming: start_date > today (or no start_date but due_date > today)
+        if (!empty($start_date) && strtotime($start_date) > strtotime($now)) {
+            return 'upcoming';
+        }
+
+        // If we have due_date
+        if (!empty($due_date)) {
+            // active: start_date <= today <= due_date
+            $start_ts = !empty($start_date) ? strtotime($start_date) : 0;
+            $due_ts = strtotime($due_date);
+            $now_ts = strtotime($now);
+
+            if ($start_ts <= $now_ts && $now_ts <= $due_ts) {
+                return 'active';
+            }
+
+            // overdue: due_date < today (participant started but didn't complete)
+            // This requires checking if there are assignments in progress
+            if ($now_ts > $due_ts) {
+                $has_in_progress = $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->prefix}survey_assignments
+                     WHERE wave_id = %d AND status = 'in_progress'",
+                    $wave->id
+                ));
+
+                if ($has_in_progress > 0) {
+                    return 'overdue';
+                }
+
+                return 'closed';
+            }
+        }
+
+        // Default if only start_date exists and we're past it
+        if (!empty($start_date) && strtotime($start_date) <= strtotime($now)) {
+            // Check if there are pending assignments
+            $has_pending = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}survey_assignments
+                 WHERE wave_id = %d AND status = 'pending'",
+                $wave->id
+            ));
+
+            if ($has_pending > 0) {
+                return 'active';
+            }
+        }
+
+        return 'active';
+    }
+
+    /**
+     * Validate wave dates before saving.
+     *
+     * @param array $wave_data Wave data to validate.
+     * @param int   $study_id Study ID.
+     * @param int   $exclude_wave_id Wave ID to exclude (for updates).
+     * @return array {valid: bool, warnings: array, errors: array}
+     * @since 1.7.1
+     * @access public
+     */
+    public static function validate_wave_dates($wave_data, $study_id, $exclude_wave_id = 0) {
+        global $wpdb;
+        
+        $warnings = array();
+        $errors = array();
+
+        $start_date = isset($wave_data['start_date']) ? $wave_data['start_date'] : null;
+        $due_date = isset($wave_data['due_date']) ? $wave_data['due_date'] : null;
+        $wave_index = isset($wave_data['wave_index']) ? absint($wave_data['wave_index']) : 1;
+        $is_new = empty($exclude_wave_id);
+
+        // Validate: Due date > start date
+        if (!empty($start_date) && !empty($due_date)) {
+            if (strtotime($due_date) <= strtotime($start_date)) {
+                $errors[] = __('La fecha de vencimiento debe ser posterior a la fecha de inicio.', 'eipsi-forms');
+            }
+        }
+
+        // Validate: Start date not in past for new waves
+        if ($is_new && !empty($start_date)) {
+            $now = current_time('mysql');
+            if (strtotime($start_date) < strtotime($now . ' -1 day')) {
+                $warnings[] = __('La fecha de inicio está en el pasado. Los participantes no podrán acceder hasta esa fecha.', 'eipsi-forms');
+            }
+        }
+
+        // Validate: Wave N+1 start date > Wave N end date
+        if (!empty($wave_index)) {
+            // Get previous wave
+            $previous_wave = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}survey_waves
+                 WHERE study_id = %d AND wave_index < %d
+                 ORDER BY wave_index DESC LIMIT 1",
+                $study_id,
+                $wave_index
+            ));
+
+            // Get next wave
+            $next_wave = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}survey_waves
+                 WHERE study_id = %d AND wave_index > %d AND id != %d
+                 ORDER BY wave_index ASC LIMIT 1",
+                $study_id,
+                $wave_index,
+                $exclude_wave_id
+            ));
+
+            // Check: This wave start should be > previous wave end (due_date)
+            if ($previous_wave && !empty($previous_wave->due_date)) {
+                if (!empty($start_date) && strtotime($start_date) <= strtotime($previous_wave->due_date)) {
+                    $warnings[] = sprintf(
+                        __('La fecha de inicio de la Onda T%d debería ser posterior a la fecha de vencimiento de la Onda T%d (%s).', 'eipsi-forms'),
+                        $wave_index,
+                        $previous_wave->wave_index,
+                        date_i18n(get_option('date_format'), strtotime($previous_wave->due_date))
+                    );
+                }
+            }
+
+            // Check: Next wave start should be > this wave end (due_date)
+            if ($next_wave && !empty($next_wave->start_date)) {
+                if (!empty($due_date) && strtotime($next_wave->start_date) <= strtotime($due_date)) {
+                    $warnings[] = sprintf(
+                        __('La fecha de inicio de la Onda T%d (%s) debería ser posterior a la fecha de vencimiento de esta onda (%s).', 'eipsi-forms'),
+                        $next_wave->wave_index,
+                        date_i18n(get_option('date_format'), strtotime($next_wave->start_date)),
+                        !empty($due_date) ? date_i18n(get_option('date_format'), strtotime($due_date)) : 'no establecida'
+                    );
+                }
+            }
+        }
+
+        return array(
+            'valid' => empty($errors),
+            'warnings' => $warnings,
+            'errors' => $errors
+        );
+    }
+
+    /**
+     * Update wave status based on current dates.
+     *
+     * @param int $wave_id Wave ID.
+     * @return bool True if updated.
+     * @since 1.7.1
+     * @access public
+     */
+    public static function update_wave_status($wave_id) {
+        global $wpdb;
+
+        $wave = self::get_wave($wave_id);
+        if (!$wave) {
+            return false;
+        }
+
+        $status = self::calculate_wave_status($wave);
+
+        // Map our status to DB status
+        $db_status = $status;
+        if ($status === 'upcoming') {
+            $db_status = 'draft';
+        } elseif ($status === 'overdue') {
+            $db_status = 'active';
+        }
+
+        $result = $wpdb->update(
+            $wpdb->prefix . 'survey_waves',
+            array('status' => $db_status),
+            array('id' => $wave_id),
+            array('%s'),
+            array('%d')
+        );
+
+        return $result !== false;
+    }
+
+    /**
+     * Update all wave statuses for a study via cron.
+     *
+     * @param int $study_id Study ID. If 0, update all.
+     * @return array Results.
+     * @since 1.7.1
+     * @access public
+     */
+    public static function update_all_wave_statuses($study_id = 0) {
+        global $wpdb;
+
+        $query = "SELECT id FROM {$wpdb->prefix}survey_waves";
+        $params = array();
+
+        if ($study_id > 0) {
+            $query .= " WHERE study_id = %d";
+            $params[] = $study_id;
+        }
+
+        $waves = $wpdb->get_results($wpdb->prepare($query, $params));
+
+        $updated = 0;
+        $failed = 0;
+
+        foreach ($waves as $wave) {
+            if (self::update_wave_status($wave->id)) {
+                $updated++;
+            } else {
+                $failed++;
+            }
+        }
+
+        return array(
+            'updated' => $updated,
+            'failed' => $failed,
+            'total' => count($waves)
+        );
+    }
 }
