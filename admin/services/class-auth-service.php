@@ -379,7 +379,146 @@ class EIPSI_Auth_Service {
         
         // Agregar time_remaining_hours al objeto
         $session->time_remaining_hours = $time_remaining_hours;
+        $session->time_remaining_seconds = $time_remaining_seconds;
         
         return $session;
+    }
+    
+    /**
+     * Get session remaining time in seconds.
+     *
+     * Returns the remaining time for the current session.
+     *
+     * @return array { remaining_seconds: int, expires_at: string, is_expired: bool }
+     * @since 2.0.0
+     * @access public
+     */
+    public static function get_session_remaining_time() {
+        $session = self::get_current_session_info();
+        
+        if (!$session) {
+            return array(
+                'remaining_seconds' => 0,
+                'expires_at' => null,
+                'is_expired' => true
+            );
+        }
+        
+        $expires_timestamp = strtotime($session->expires_at);
+        $now_timestamp = time();
+        $remaining_seconds = max(0, $expires_timestamp - $now_timestamp);
+        
+        return array(
+            'remaining_seconds' => (int) $remaining_seconds,
+            'expires_at' => $session->expires_at,
+            'is_expired' => $remaining_seconds <= 0
+        );
+    }
+    
+    /**
+     * Extend current session.
+     *
+     * Extends the session expiration time by the specified TTL.
+     *
+     * @param int $ttl_hours Time to extend in hours (default 168 = 7 days).
+     * @return array { success: bool, new_expires_at: string|null, error: string|null }
+     * @since 2.0.0
+     * @access public
+     */
+    public static function extend_session($ttl_hours = 168) {
+        global $wpdb;
+        
+        // Cookie name
+        $cookie_name = defined('EIPSI_SESSION_COOKIE_NAME') ? EIPSI_SESSION_COOKIE_NAME : 'eipsi_session_token';
+        
+        // Leer token
+        $token = isset($_COOKIE[$cookie_name]) ? $_COOKIE[$cookie_name] : null;
+        if (!$token) {
+            return array(
+                'success' => false,
+                'new_expires_at' => null,
+                'error' => 'no_session'
+            );
+        }
+        
+        // Hash token
+        $token_hash = hash('sha256', $token);
+        
+        // Check if session exists and is valid
+        $table_name = $wpdb->prefix . 'survey_sessions';
+        $session = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE token = %s",
+            $token_hash
+        ));
+        
+        if (!$session) {
+            return array(
+                'success' => false,
+                'new_expires_at' => null,
+                'error' => 'session_not_found'
+            );
+        }
+        
+        // Check if already expired
+        $expires_timestamp = strtotime($session->expires_at);
+        if ($expires_timestamp < time()) {
+            return array(
+                'success' => false,
+                'new_expires_at' => null,
+                'error' => 'session_expired'
+            );
+        }
+        
+        // Calculate new expiration time
+        $new_expires_at = date('Y-m-d H:i:s', strtotime("+{$ttl_hours} hours"));
+        
+        // Update session in database
+        $result = $wpdb->update(
+            $table_name,
+            array('expires_at' => $new_expires_at),
+            array('token' => $token_hash),
+            array('%s'),
+            array('%s')
+        );
+        
+        if ($result === false) {
+            return array(
+                'success' => false,
+                'new_expires_at' => null,
+                'error' => 'db_error'
+            );
+        }
+        
+        // Update cookie with new expiration
+        $cookie_expires = strtotime("+{$ttl_hours} hours");
+        $secure = is_ssl();
+        
+        if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
+            $cookie_options = array(
+                'expires' => $cookie_expires,
+                'path' => '/',
+                'domain' => '',
+                'secure' => $secure,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            );
+            setcookie($cookie_name, $token, $cookie_options);
+        } else {
+            setcookie(
+                $cookie_name,
+                $token,
+                $cookie_expires,
+                '/',
+                '',
+                $secure,
+                true
+            );
+        }
+        
+        return array(
+            'success' => true,
+            'new_expires_at' => $new_expires_at,
+            'error' => null
+        );
     }
 }

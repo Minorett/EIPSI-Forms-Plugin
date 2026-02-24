@@ -97,13 +97,38 @@ function eipsi_render_survey_login_form($atts) {
     wp_localize_script('eipsi-participant-auth', 'eipsiAuth', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_participant_auth'),
+        'loginUrl' => get_permalink(),
         'strings' => array(
             'registering' => __('Registrando...', 'eipsi-forms'),
             'logging_in' => __('Ingresando...', 'eipsi-forms'),
             'loading' => __('Cargando...', 'eipsi-forms'),
-            'confirm_logout' => __('¿Estás seguro de que quieres cerrar sesión?', 'eipsi-forms')
+            'confirm_logout' => __('¿Estás seguro de que quieres cerrar sesión?', 'eipsi-forms'),
+            // Session timer strings
+            'session_expires_in' => __('Tu sesión expira en', 'eipsi-forms'),
+            'extend_session' => __('Extender sesión', 'eipsi-forms'),
+            'hide_timer' => __('Ocultar', 'eipsi-forms'),
+            'session_expiring_soon' => __('¡Tu sesión está por expirar!', 'eipsi-forms'),
+            'session_expired_title' => __('Sesión Expirada', 'eipsi-forms'),
+            'session_expired_message' => __('Tu sesión ha expirado por seguridad. Por favor, inicia sesión nuevamente para continuar.', 'eipsi-forms'),
+            'login_again' => __('Iniciar sesión', 'eipsi-forms'),
+            'session_extended' => __('¡Sesión extendida!', 'eipsi-forms'),
+            'extend_error' => __('Error al extender la sesión', 'eipsi-forms'),
+            'network_error' => __('Error de conexión. Intenta nuevamente.', 'eipsi-forms'),
+            'minute' => __('minuto', 'eipsi-forms'),
+            'minutes' => __('minutos', 'eipsi-forms'),
+            'second' => __('segundo', 'eipsi-forms'),
+            'seconds' => __('segundos', 'eipsi-forms')
         )
     ));
+    
+    // Handle redirect_to parameter from URL (for post-login redirect)
+    $redirect_to = isset($_GET['redirect_to']) ? esc_url_raw(wp_unslash($_GET['redirect_to'])) : '';
+    if (!empty($redirect_to)) {
+        wp_add_inline_script('eipsi-participant-auth', 
+            'window.eipsiRedirectTo = "' . $redirect_to . '";', 
+            'before'
+        );
+    }
     
     ob_start();
     include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/survey-login-form.php';
@@ -166,6 +191,45 @@ function eipsi_participant_dashboard_shortcode($atts) {
         return '<div class="eipsi-dashboard-error"><p>' . __('Error: No se encontró el estudio.', 'eipsi-forms') . '</p></div>';
     }
     
+    // Enqueue session timer assets
+    wp_enqueue_style(
+        'eipsi-participant-portal-css',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/participant-portal.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+    
+    wp_enqueue_script(
+        'eipsi-participant-portal-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/participant-portal.js',
+        array('jquery'),
+        EIPSI_FORMS_VERSION,
+        true
+    );
+    
+    // Localize script with session timer strings (for authenticated pages)
+    wp_localize_script('eipsi-participant-portal-js', 'eipsiAuth', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('eipsi_participant_auth'),
+        'loginUrl' => eipsi_get_login_page_url($survey_id),
+        'strings' => array(
+            'session_expires_in' => __('Tu sesión expira en', 'eipsi-forms'),
+            'extend_session' => __('Extender sesión', 'eipsi-forms'),
+            'hide_timer' => __('Ocultar', 'eipsi-forms'),
+            'session_expiring_soon' => __('¡Tu sesión está por expirar!', 'eipsi-forms'),
+            'session_expired_title' => __('Sesión Expirada', 'eipsi-forms'),
+            'session_expired_message' => __('Tu sesión ha expirado por seguridad. Por favor, inicia sesión nuevamente para continuar.', 'eipsi-forms'),
+            'login_again' => __('Iniciar sesión', 'eipsi-forms'),
+            'session_extended' => __('¡Sesión extendida!', 'eipsi-forms'),
+            'extend_error' => __('Error al extender la sesión', 'eipsi-forms'),
+            'network_error' => __('Error de conexión. Intenta nuevamente.', 'eipsi-forms'),
+            'minute' => __('minuto', 'eipsi-forms'),
+            'minutes' => __('minutos', 'eipsi-forms'),
+            'second' => __('segundo', 'eipsi-forms'),
+            'seconds' => __('segundos', 'eipsi-forms')
+        )
+    ));
+    
     // Get all waves for the study (with assignments)
     $all_waves = eipsi_get_participant_waves_with_assignments($participant_id, $survey_id);
     
@@ -184,6 +248,48 @@ function eipsi_participant_dashboard_shortcode($atts) {
     return ob_get_clean();
 }
 add_shortcode('eipsi_participant_dashboard', 'eipsi_participant_dashboard_shortcode');
+
+/**
+ * Helper function to get the login page URL for a study
+ * 
+ * @param int $survey_id Survey/Study ID
+ * @return string Login page URL
+ */
+function eipsi_get_login_page_url($survey_id = 0) {
+    // Try to find a page with the survey login shortcode for this survey
+    if ($survey_id > 0) {
+        $login_pages = get_posts(array(
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'posts_per_page' => 1,
+            'meta_query' => array(
+                array(
+                    'key' => '_eipsi_survey_id',
+                    'value' => $survey_id
+                )
+            )
+        ));
+        
+        if (!empty($login_pages)) {
+            return get_permalink($login_pages[0]->ID);
+        }
+    }
+    
+    // Try to find any page with the participant login shortcode
+    $login_pages = get_posts(array(
+        'post_type' => 'page',
+        'post_status' => 'publish',
+        'posts_per_page' => 1,
+        's' => 'eipsi_survey_login'
+    ));
+    
+    if (!empty($login_pages)) {
+        return get_permalink($login_pages[0]->ID);
+    }
+    
+    // Default to home page
+    return home_url('/');
+}
 
 /**
  * Helper function to get participant waves with assignment data

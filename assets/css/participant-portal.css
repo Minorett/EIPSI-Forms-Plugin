@@ -929,3 +929,297 @@
 .dark-mode .eipsi-dashboard-section {
     background: var(--eipsi-bg-color);
 }
+
+/* =================================================================
+   SESSION TIMER BAR
+   ================================================================= */
+
+.eipsi-session-timer-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 9999;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.eipsi-session-timer-bar.eipsi-timer-warning {
+    background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+    animation: pulse-warning 1s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.85;
+    }
+}
+
+.eipsi-timer-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.eipsi-timer-icon {
+    font-size: 1.25rem;
+}
+
+.eipsi-timer-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.eipsi-timer-time {
+    font-size: 1rem;
+    font-weight: 700;
+    min-width: 100px;
+}
+
+.eipsi-extend-session-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.eipsi-extend-session-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: translateY(-1px);
+}
+
+.eipsi-extend-session-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.eipsi-extend-session-btn .eipsi-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.eipsi-timer-close {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.eipsi-timer-close:hover {
+    color: #fff;
+}
+
+.eipsi-session-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.eipsi-extend-success {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(76, 175, 80, 0.3);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    animation: fade-in 0.3s ease;
+}
+
+/* =================================================================
+   SESSION EXPIRED MODAL
+   ================================================================= */
+
+.eipsi-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    animation: fade-in 0.3s ease;
+}
+
+.eipsi-modal-content {
+    background: #fff;
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: scale-in 0.3s ease;
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.eipsi-modal-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.eipsi-modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: #333;
+}
+
+.eipsi-modal-message {
+    font-size: 1rem;
+    color: #666;
+    margin: 0 0 24px 0;
+    line-height: 1.5;
+}
+
+.eipsi-modal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.eipsi-modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* =================================================================
+   RESPONSIVE STYLES FOR TIMER
+   ================================================================= */
+
+@media (max-width: 600px) {
+    .eipsi-session-timer-bar {
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px 20px;
+    }
+    
+    .eipsi-timer-content {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .eipsi-extend-session-btn {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .eipsi-timer-close {
+        position: static;
+        margin-top: 8px;
+    }
+    
+    .eipsi-modal-content {
+        padding: 24px;
+        margin: 20px;
+    }
+    
+    .eipsi-modal-icon {
+        font-size: 3rem;
+    }
+    
+    .eipsi-modal-title {
+        font-size: 1.25rem;
+    }
+}
+
+/* =================================================================
+   DARK MODE FOR TIMER
+   ================================================================= */
+
+@media (prefers-color-scheme: dark) {
+    .eipsi-modal-content {
+        background: var(--eipsi-bg-color, #1a1a2e);
+    }
+    
+    .eipsi-modal-title {
+        color: var(--eipsi-text-color, #eaeaea);
+    }
+    
+    .eipsi-modal-message {
+        color: var(--eipsi-text-muted, #a0a0a0);
+    }
+}
+
+.dark-mode .eipsi-modal-content {
+    background: var(--eipsi-bg-color, #1a1a2e);
+}
+
+.dark-mode .eipsi-modal-title {
+    color: var(--eipsi-text-color, #eaeaea);
+}
+
+.dark-mode .eipsi-modal-message {
+    color: var(--eipsi-text-muted, #a0a0a0);
+}
