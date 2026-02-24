@@ -93,6 +93,7 @@ if ($survey_id) {
             </div>
             
             <form id="eipsi-participant-login-form" class="eipsi-participant-login-form eipsi-survey-login-form">
+                <?php wp_nonce_field('eipsi_participant_auth', 'eipsi_auth_nonce'); ?>
                 <input type="hidden" name="survey_id" value="<?php echo esc_attr($survey_id); ?>">
                 
                 <div class="eipsi-form-group">
@@ -164,7 +165,27 @@ if ($survey_id) {
             </div>
             
             <form id="eipsi-participant-register-form" class="eipsi-participant-register-form eipsi-survey-login-form">
+                <?php wp_nonce_field('eipsi_participant_auth', 'eipsi_auth_nonce'); ?>
                 <input type="hidden" name="survey_id" value="<?php echo esc_attr($survey_id); ?>">
+                
+                <?php if (empty($survey_id)): ?>
+                <div class="eipsi-form-group">
+                    <label for="register-study-code">
+                        <?php esc_html_e('Código del Estudio', 'eipsi-forms'); ?>
+                        <span class="required">*</span>
+                    </label>
+                    <div class="eipsi-input-wrapper">
+                        <span class="input-icon">🔬</span>
+                        <input type="text" 
+                               id="register-study-code" 
+                               name="study_code" 
+                               required 
+                               placeholder="Ejemplo: ESTUDIO_2025" 
+                               aria-label="<?php esc_attr_e('Código del Estudio', 'eipsi-forms'); ?>">
+                    </div>
+                    <small class="field-hint"><?php esc_html_e('Ingresá el código que te proporcionó el investigador.', 'eipsi-forms'); ?></small>
+                </div>
+                <?php endif; ?>
                 
                 <div class="eipsi-form-group">
                     <label for="register-email">
@@ -295,6 +316,7 @@ if ($survey_id) {
             </div>
             
             <form id="eipsi-magic-link-form" class="eipsi-magic-link-form eipsi-survey-login-form">
+                <?php wp_nonce_field('eipsi_participant_auth', 'eipsi_auth_nonce'); ?>
                 <input type="hidden" name="survey_id" value="<?php echo esc_attr($survey_id); ?>">
                 
                 <div class="magic-link-icon">✉️</div>
