@@ -309,6 +309,130 @@ if (!defined('ABSPATH')) {
     </div>
 </div>
 
+
+<!-- Modal for Participant Detail -->
+<div id="eipsi-participant-detail-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content participant-detail-modal">
+        <div class="eipsi-modal-header">
+            <h2>🧾 <?php esc_html_e('Detalle del Participante', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <div id="participant-detail-loading" class="eipsi-loading-overlay">
+                <div class="spinner is-active"></div>
+                <p><?php esc_html_e('Cargando historial...', 'eipsi-forms'); ?></p>
+            </div>
+
+            <div id="participant-detail-error" class="notice notice-error" style="display:none; margin-bottom: 15px;"></div>
+
+            <div id="participant-detail-content" style="display:none;">
+                <div class="participant-detail-header">
+                    <div>
+                        <h3 id="participant-detail-name"></h3>
+                        <p id="participant-detail-email" class="participant-detail-email"></p>
+                    </div>
+                    <div id="participant-detail-status"></div>
+                </div>
+
+                <div class="participant-detail-grid">
+                    <div class="participant-detail-card">
+                        <h4><?php esc_html_e('Estado actual', 'eipsi-forms'); ?></h4>
+                        <p><strong><?php esc_html_e('Creado:', 'eipsi-forms'); ?></strong> <span id="participant-detail-created"></span></p>
+                        <p><strong><?php esc_html_e('Último ingreso:', 'eipsi-forms'); ?></strong> <span id="participant-detail-last-login"></span></p>
+                        <p><strong><?php esc_html_e('Sesión activa:', 'eipsi-forms'); ?></strong> <span id="participant-detail-session"></span></p>
+                    </div>
+
+                    <div class="participant-detail-card">
+                        <h4><?php esc_html_e('Timeline clínico', 'eipsi-forms'); ?></h4>
+                        <div id="participant-detail-timeline"></div>
+                    </div>
+                </div>
+
+                <div class="participant-detail-card">
+                    <h4><?php esc_html_e('Waves completadas', 'eipsi-forms'); ?></h4>
+                    <div class="participant-detail-table">
+                        <table class="wp-list-table widefat fixed striped">
+                            <thead>
+                                <tr>
+                                    <th><?php esc_html_e('Wave', 'eipsi-forms'); ?></th>
+                                    <th><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
+                                    <th><?php esc_html_e('Asignada', 'eipsi-forms'); ?></th>
+                                    <th><?php esc_html_e('Completada', 'eipsi-forms'); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody id="participant-waves-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="participant-detail-card">
+                    <h4><?php esc_html_e('Historial de Magic Links', 'eipsi-forms'); ?></h4>
+                    <div class="participant-detail-table">
+                        <table class="wp-list-table widefat fixed striped">
+                            <thead>
+                                <tr>
+                                    <th><?php esc_html_e('Enviado', 'eipsi-forms'); ?></th>
+                                    <th><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
+                                    <th><?php esc_html_e('Expira', 'eipsi-forms'); ?></th>
+                                    <th><?php esc_html_e('Usado', 'eipsi-forms'); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody id="participant-magic-links-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="eipsi-modal-footer">
+            <button class="button button-secondary eipsi-modal-close"><?php esc_html_e('Cerrar', 'eipsi-forms'); ?></button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Removing Participant -->
+<div id="eipsi-remove-participant-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content small-modal">
+        <div class="eipsi-modal-header">
+            <h2>🗑️ <?php esc_html_e('Quitar participante', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <p class="description">
+                <?php esc_html_e('Elegí cómo quitar a este participante del estudio. Siempre queda un registro en la auditoría.', 'eipsi-forms'); ?>
+            </p>
+            <p><strong><?php esc_html_e('Email:', 'eipsi-forms'); ?></strong> <span id="remove-participant-email"></span></p>
+
+            <div class="remove-participant-options">
+                <label class="remove-option">
+                    <input type="radio" name="remove-participant-type" value="deactivate" checked>
+                    <span>
+                        <strong><?php esc_html_e('Desactivar (mantener historial)', 'eipsi-forms'); ?></strong><br>
+                        <small><?php esc_html_e('El participante queda inactivo, no puede ingresar ni recibe recordatorios.', 'eipsi-forms'); ?></small>
+                    </span>
+                </label>
+                <label class="remove-option">
+                    <input type="radio" name="remove-participant-type" value="delete">
+                    <span>
+                        <strong><?php esc_html_e('Eliminar definitivamente', 'eipsi-forms'); ?></strong><br>
+                        <small><?php esc_html_e('Se borra el participante, sus sesiones y asignaciones del estudio.', 'eipsi-forms'); ?></small>
+                    </span>
+                </label>
+            </div>
+
+            <p>
+                <label for="remove-participant-reason"><strong><?php esc_html_e('Motivo (opcional):', 'eipsi-forms'); ?></strong></label>
+                <textarea id="remove-participant-reason" class="widefat" rows="3" placeholder="Ej: abandono, solicitud del participante"></textarea>
+            </p>
+
+            <div id="remove-participant-error" class="notice notice-error" style="display:none; margin-top: 10px;"></div>
+        </div>
+        <div class="eipsi-modal-footer">
+            <button class="button button-secondary eipsi-modal-close"><?php esc_html_e('Cancelar', 'eipsi-forms'); ?></button>
+            <button class="button button-primary" id="confirm-remove-participant"><?php esc_html_e('Confirmar', 'eipsi-forms'); ?></button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal for Magic Link Resend -->
 <div id="eipsi-magic-link-resend-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content medium-modal">

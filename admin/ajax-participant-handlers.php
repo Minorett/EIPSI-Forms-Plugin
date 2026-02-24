@@ -84,6 +84,27 @@ function eipsi_participant_register_handler() {
     $result = EIPSI_Participant_Service::create_participant($survey_id, $email, $password, $metadata);
     
     if (!$result['success']) {
+        if ($result['error'] === 'email_exists') {
+            $login_url = wp_get_referer();
+            if ($login_url) {
+                $login_url = add_query_arg('action', 'login', $login_url);
+            } else {
+                $login_url = home_url('/');
+            }
+
+            wp_send_json_error(array(
+                'message' => __('Este email ya está registrado. Iniciá sesión o solicitá un nuevo Magic Link.', 'eipsi-forms'),
+                'message_html' => sprintf(
+                    __('Este email ya está registrado. <a href="%s">Iniciá sesión aquí</a> o solicitá un nuevo Magic Link.', 'eipsi-forms'),
+                    esc_url($login_url)
+                ),
+                'code' => 'email_exists',
+                'login_url' => $login_url,
+                'magic_link_available' => true,
+                'request_magic_link_action' => 'eipsi_request_magic_link'
+            ));
+        }
+
         $error_messages = array(
             'invalid_email' => __('El email ingresado no es válido.', 'eipsi-forms'),
             'short_password' => __('La contraseña debe tener al menos 8 caracteres.', 'eipsi-forms'),

@@ -20,6 +20,9 @@
 	const participantsPerPage = 20;
 	let currentMagicLinkParticipantId = 0;
 	let currentMagicLinkParticipantEmail = '';
+	let currentParticipantDetailId = 0;
+	let currentRemoveParticipantId = 0;
+	let currentRemoveParticipantEmail = '';
 
 	// ===========================
 	// INITIALIZATION
@@ -132,6 +135,53 @@
 				$( '#eipsi-participants-list-modal' ).fadeOut( 200 );
 			}
 		);
+
+		// Close Participant Detail Modal
+		$( document ).on(
+			'click',
+			'#eipsi-participant-detail-modal .eipsi-modal-close',
+			function () {
+				closeParticipantDetailModal();
+			}
+		);
+
+		// Close Remove Participant Modal
+		$( document ).on(
+			'click',
+			'#eipsi-remove-participant-modal .eipsi-modal-close',
+			function () {
+				closeRemoveParticipantModal();
+			}
+		);
+
+		// Open Participant Detail
+		$( document ).on( 'click', '.view-participant-detail', function () {
+			const participantId = $( this ).data( 'participant-id' );
+			if ( participantId ) {
+				openParticipantDetailModal( participantId );
+			}
+		} );
+
+		$( document ).on( 'click', '.participant-row', function ( event ) {
+			if ( $( event.target ).closest( 'button, a, input, label' ).length ) {
+				return;
+			}
+			const participantId = $( this ).data( 'participant-id' );
+			if ( participantId ) {
+				openParticipantDetailModal( participantId );
+			}
+		} );
+
+		// Remove Participant
+		$( document ).on( 'click', '.remove-participant', function () {
+			const participantId = $( this ).data( 'participant-id' );
+			const participantEmail = $( this ).data( 'participant-email' );
+			openRemoveParticipantModal( participantId, participantEmail );
+		} );
+
+		$( document ).on( 'click', '#confirm-remove-participant', function () {
+			confirmRemoveParticipant();
+		} );
 
 		// Filter Participants
 		$( document ).on( 'change', '#participant-status-filter', function () {
@@ -1250,14 +1300,26 @@
 				  '"' +
 				  resendDisabled +
 				  '>🔗 Generar Link</button>';
+			const viewButton =
+				'<button class="button button-small button-secondary view-participant-detail" data-participant-id="' +
+				  p.id +
+				  '">🧾 Ver detalle</button>';
+			const removeButton =
+				'<button class="button button-small button-link-delete remove-participant" data-participant-id="' +
+				  p.id +
+				  '" data-participant-email="' +
+				  escapeHtml( p.email ) +
+				  '">🗑️ Quitar</button>';
 			const actionsHtml =
 				'<div class="participant-actions">' +
+				  viewButton +
 				  toggleButton +
 				  resendButton +
 				  generateButton +
+				  removeButton +
 				  '</div>';
 
-			html += '<tr class="participant-row">';
+			html += '<tr class="participant-row" data-participant-id="' + p.id + '">';
 			html += '<td><strong>' + escapeHtml( p.email ) + '</strong></td>';
 			html +=
 				'<td>' +
@@ -1417,6 +1479,372 @@
 				'</td></tr>'
 		);
 		$( '#participants-content' ).show();
+	}
+
+
+	function openParticipantDetailModal( participantId ) {
+		if ( ! participantId ) {
+			return;
+		}
+		currentParticipantDetailId = participantId;
+		$( '#participant-detail-loading' ).show();
+		$( '#participant-detail-content' ).hide();
+		$( '#participant-detail-error' ).hide().text( '' );
+		$( '#eipsi-participant-detail-modal' ).fadeIn( 200 );
+		loadParticipantDetail( participantId );
+	}
+
+	function closeParticipantDetailModal() {
+		$( '#eipsi-participant-detail-modal' ).fadeOut( 200 );
+		currentParticipantDetailId = 0;
+	}
+
+	function loadParticipantDetail( participantId ) {
+		const ajaxUrl =
+			eipsiStudyDash.ajaxUrl ||
+			( typeof ajaxurl !== 'undefined'
+				? ajaxurl
+				: '/wp-admin/admin-ajax.php' );
+
+		$.ajax( {
+			url: ajaxUrl,
+			type: 'GET',
+			data: {
+				action: 'eipsi_get_participant_detail',
+				nonce: eipsiStudyDash.nonce,
+				participant_id: participantId,
+				study_id: currentStudyId,
+			},
+			success( response ) {
+				if ( response.success && response.data ) {
+					renderParticipantDetail( response.data );
+				} else {
+					showParticipantDetailError(
+						response.data || 'No pudimos cargar el detalle.'
+					);
+				}
+			},
+			error() {
+				showParticipantDetailError( 'Error de conexión.' );
+			},
+			complete() {
+				$( '#participant-detail-loading' ).hide();
+				$( '#participant-detail-content' ).fadeIn( 200 );
+			},
+		} );
+	}
+
+	function showParticipantDetailError( message ) {
+		$( '#participant-detail-error' )
+			.text( message )
+			.show();
+		$( '#participant-detail-content' ).hide();
+	}
+
+	function renderParticipantDetail( data ) {
+		const participant = data.participant || {};
+		const assignments = data.assignments || [];
+		const magicLinks = data.magic_links || [];
+		const session = data.session || {};
+
+		const fullName =
+			( participant.first_name || '' ) +
+			( participant.last_name
+				? ' ' + participant.last_name
+				: '' );
+
+		$( '#participant-detail-name' ).text( fullName.trim() || 'Sin nombre' );
+		$( '#participant-detail-email' ).text( participant.email || '' );
+		$( '#participant-detail-status' ).html(
+			participant.is_active
+				? '<span class="status-badge active">● Activo</span>'
+				: '<span class="status-badge inactive">● Inactivo</span>'
+		);
+		$( '#participant-detail-created' ).text(
+			participant.created_at ? formatDateTime( participant.created_at ) : 'N/A'
+		);
+		$( '#participant-detail-last-login' ).text(
+			participant.last_login_at
+				? formatDateTime( participant.last_login_at )
+				: 'Nunca'
+		);
+
+		const sessionLabel = session.active
+			? 'Sí (expira ' + formatDateTime( session.expires_at ) + ')'
+			: 'No';
+		$( '#participant-detail-session' ).text( sessionLabel );
+
+		$( '#participant-detail-error' ).hide();
+
+		renderParticipantTimeline( participant, assignments );
+		renderParticipantWaves( assignments );
+		renderParticipantMagicLinks( magicLinks );
+	}
+
+	function renderParticipantTimeline( participant, assignments ) {
+		const timeline = [];
+
+		if ( participant.created_at ) {
+			timeline.push( {
+				label: 'Invitado',
+				date: participant.created_at,
+				status: 'completed',
+			} );
+		}
+
+		if ( participant.last_login_at ) {
+			timeline.push( {
+				label: 'Registrado / ingreso',
+				date: participant.last_login_at,
+				status: 'completed',
+			} );
+		}
+
+		assignments.forEach( function ( assignment ) {
+			const waveLabel = assignment.wave_name
+				? assignment.wave_name
+				: 'Wave ' + assignment.wave_index;
+			let statusLabel = 'Pendiente';
+			let status = 'pending';
+			let dateValue = assignment.assigned_at;
+
+			if ( assignment.status === 'submitted' ) {
+				statusLabel = 'Completada';
+				status = 'completed';
+				dateValue = assignment.submitted_at || assignment.first_viewed_at;
+			} else if ( assignment.status === 'in_progress' ) {
+				statusLabel = 'En curso';
+				status = 'progress';
+				dateValue = assignment.first_viewed_at || assignment.assigned_at;
+			} else if ( assignment.status === 'expired' ) {
+				statusLabel = 'Vencida';
+				status = 'expired';
+				dateValue = assignment.due_at || assignment.assigned_at;
+			}
+
+			timeline.push( {
+				label: waveLabel + ' · ' + statusLabel,
+				date: dateValue,
+				status: status,
+			} );
+		} );
+
+		if ( timeline.length === 0 ) {
+			$( '#participant-detail-timeline' ).html(
+				'<p class="description">Sin eventos registrados todavía.</p>'
+			);
+			return;
+		}
+
+		let html = '<ul class="participant-timeline">';
+		timeline.forEach( function ( item ) {
+			const dateLabel = item.date ? formatDateTime( item.date ) : 'N/A';
+			html +=
+				'<li class="timeline-item ' +
+				item.status +
+				'"><span class="timeline-dot"></span><div class="timeline-content"><strong>' +
+				escapeHtml( item.label ) +
+				'</strong><span class="timeline-date">' +
+				dateLabel +
+				'</span></div></li>';
+		} );
+		html += '</ul>';
+
+		$( '#participant-detail-timeline' ).html( html );
+	}
+
+	function renderParticipantWaves( assignments ) {
+		const $tbody = $( '#participant-waves-tbody' );
+		if ( ! assignments.length ) {
+			$tbody.html(
+				'<tr><td colspan="4" style="text-align:center;color:#666;">Sin waves asignadas.</td></tr>'
+			);
+			return;
+		}
+
+		let html = '';
+		assignments.forEach( function ( assignment ) {
+			const waveLabel = assignment.wave_name
+				? assignment.wave_name
+				: 'Wave ' + assignment.wave_index;
+			let statusLabel = 'Pendiente';
+			if ( assignment.status === 'submitted' ) {
+				statusLabel = 'Completada';
+			} else if ( assignment.status === 'in_progress' ) {
+				statusLabel = 'En curso';
+			} else if ( assignment.status === 'expired' ) {
+				statusLabel = 'Vencida';
+			} else if ( assignment.status === 'skipped' ) {
+				statusLabel = 'Omitida';
+			}
+
+			html += '<tr>';
+			html += '<td>' + escapeHtml( waveLabel ) + '</td>';
+			html += '<td>' + escapeHtml( statusLabel ) + '</td>';
+			html +=
+				'<td>' +
+				( assignment.assigned_at
+					? formatDateTime( assignment.assigned_at )
+					: 'N/A' ) +
+				'</td>';
+			html +=
+				'<td>' +
+				( assignment.submitted_at
+					? formatDateTime( assignment.submitted_at )
+					: '—' ) +
+				'</td>';
+			html += '</tr>';
+		} );
+
+		$tbody.html( html );
+	}
+
+	function renderParticipantMagicLinks( magicLinks ) {
+		const $tbody = $( '#participant-magic-links-tbody' );
+		if ( ! magicLinks.length ) {
+			$tbody.html(
+				'<tr><td colspan="4" style="text-align:center;color:#666;">Sin enlaces enviados.</td></tr>'
+			);
+			return;
+		}
+
+		let html = '';
+		magicLinks.forEach( function ( link ) {
+			const statusLabel = getMagicLinkDetailStatus( link.status );
+			html += '<tr>';
+			html +=
+				'<td>' +
+				( link.created_at
+					? formatDateTime( link.created_at )
+					: 'N/A' ) +
+				'</td>';
+			html += '<td>' + statusLabel + '</td>';
+			html +=
+				'<td>' +
+				( link.expires_at
+					? formatDateTime( link.expires_at )
+					: 'N/A' ) +
+				'</td>';
+			html +=
+				'<td>' +
+				( link.used_at
+					? formatDateTime( link.used_at )
+					: '—' ) +
+				'</td>';
+			html += '</tr>';
+		} );
+
+		$tbody.html( html );
+	}
+
+	function getMagicLinkDetailStatus( status ) {
+		switch ( status ) {
+			case 'clicked':
+				return '<span class="status-pill success">Usado</span>';
+			case 'expired':
+				return '<span class="status-pill warning">Vencido</span>';
+			default:
+				return '<span class="status-pill info">Activo</span>';
+		}
+	}
+
+	function openRemoveParticipantModal( participantId, participantEmail ) {
+		if ( ! participantId ) {
+			return;
+		}
+		currentRemoveParticipantId = participantId;
+		currentRemoveParticipantEmail = participantEmail || '';
+
+		$( '#remove-participant-email' ).text( currentRemoveParticipantEmail );
+		$( '#remove-participant-reason' ).val( '' );
+		$( '#remove-participant-error' ).hide().text( '' );
+		$( 'input[name="remove-participant-type"]' ).first().prop( 'checked', true );
+		$( '#eipsi-remove-participant-modal' ).fadeIn( 200 );
+	}
+
+	function closeRemoveParticipantModal() {
+		$( '#eipsi-remove-participant-modal' ).fadeOut( 200 );
+		currentRemoveParticipantId = 0;
+		currentRemoveParticipantEmail = '';
+	}
+
+	function confirmRemoveParticipant() {
+		const removeType = $( 'input[name="remove-participant-type"]:checked' ).val();
+		const reason = $( '#remove-participant-reason' ).val();
+
+		if ( removeType === 'delete' ) {
+			showConfirmationDialog( {
+				title: 'Eliminar definitivamente',
+				message:
+					'Esta acción eliminará al participante y su historial.
+
+Email: ' +
+					currentRemoveParticipantEmail +
+					'
+
+¿Deseás continuar?',
+				confirmText: 'Sí, eliminar',
+				onConfirm() {
+					removeParticipant( removeType, reason );
+				},
+			} );
+			return;
+		}
+
+		removeParticipant( removeType, reason );
+	}
+
+	function removeParticipant( removeType, reason ) {
+		if ( ! currentRemoveParticipantId ) {
+			return;
+		}
+
+		const $btn = $( '#confirm-remove-participant' );
+		const originalText = $btn.text();
+		$btn.text( 'Procesando...' ).prop( 'disabled', true );
+		$( '#remove-participant-error' ).hide().text( '' );
+
+		const ajaxUrl =
+			eipsiStudyDash.ajaxUrl ||
+			( typeof ajaxurl !== 'undefined'
+				? ajaxurl
+				: '/wp-admin/admin-ajax.php' );
+
+		$.ajax( {
+			url: ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'eipsi_remove_participant',
+				nonce: eipsiStudyDash.nonce,
+				participant_id: currentRemoveParticipantId,
+				study_id: currentStudyId,
+				remove_type: removeType,
+				reason: reason,
+			},
+			success( response ) {
+				if ( response.success ) {
+					showNotification(
+						response.data.message || 'Participante actualizado.',
+						'success'
+					);
+					closeRemoveParticipantModal();
+					loadParticipantsList( currentPage );
+					loadStudyOverview( currentStudyId );
+				} else {
+					$( '#remove-participant-error' )
+						.text( response.data || 'No se pudo completar la acción.' )
+						.show();
+				}
+			},
+			error() {
+			$( '#remove-participant-error' )
+				.text( 'Error de conexión.' )
+				.show();
+		},
+			complete() {
+				$btn.text( originalText ).prop( 'disabled', false );
+			},
+		} );
 	}
 
 	// ===========================

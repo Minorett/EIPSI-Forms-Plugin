@@ -21,7 +21,9 @@ add_action('wp_ajax_eipsi_add_participant', 'wp_ajax_eipsi_add_participant_handl
 add_action('wp_ajax_eipsi_validate_csv_participants', 'wp_ajax_eipsi_validate_csv_participants_handler');
 add_action('wp_ajax_eipsi_import_csv_participants', 'wp_ajax_eipsi_import_csv_participants_handler');
 add_action('wp_ajax_eipsi_get_participants_list', 'wp_ajax_eipsi_get_participants_list_handler');
+add_action('wp_ajax_eipsi_get_participant_detail', 'wp_ajax_eipsi_get_participant_detail_handler');
 add_action('wp_ajax_eipsi_toggle_participant_status', 'wp_ajax_eipsi_toggle_participant_status_handler');
+add_action('wp_ajax_eipsi_remove_participant', 'wp_ajax_eipsi_remove_participant_handler');
 add_action('wp_ajax_eipsi_save_study_cron_config', 'wp_ajax_eipsi_save_study_cron_config_handler');
 add_action('wp_ajax_eipsi_get_study_cron_config', 'wp_ajax_eipsi_get_study_cron_config_handler');
 add_action('wp_ajax_eipsi_save_study_settings', 'wp_ajax_eipsi_save_study_settings_handler');
@@ -1065,6 +1067,106 @@ function wp_ajax_eipsi_get_participants_list_handler() {
 }
 
 /**
+ * GET participant detail data for timeline view.
+ */
+function wp_ajax_eipsi_get_participant_detail_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $participant_id = isset($_GET['participant_id']) ? intval($_GET['participant_id']) : 0;
+    $study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
+
+    if (empty($participant_id) || empty($study_id)) {
+        wp_send_json_error('Missing parameters');
+    }
+
+    global $wpdb;
+
+    $participant = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}survey_participants WHERE id = %d AND survey_id = %d",
+        $participant_id,
+        $study_id
+    ));
+
+    if (!$participant) {
+        wp_send_json_error('Participant not found');
+    }
+
+    $assignments = $wpdb->get_results($wpdb->prepare(
+        "SELECT a.id, a.status, a.assigned_at, a.first_viewed_at, a.submitted_at, a.due_at,
+                w.name AS wave_name, w.wave_index
+         FROM {$wpdb->prefix}survey_assignments a
+         LEFT JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+         WHERE a.participant_id = %d AND a.study_id = %d
+         ORDER BY w.wave_index ASC",
+        $participant_id,
+        $study_id
+    ));
+
+    $magic_links = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, created_at, expires_at, used_at
+         FROM {$wpdb->prefix}survey_magic_links
+         WHERE survey_id = %d AND participant_id = %d
+         ORDER BY created_at DESC",
+        $study_id,
+        $participant_id
+    ));
+
+    $now_ts = current_time('timestamp');
+    $magic_links_data = array();
+
+    foreach ($magic_links as $magic_link) {
+        $status = 'active';
+        if (!empty($magic_link->used_at)) {
+            $status = 'clicked';
+        } elseif (!empty($magic_link->expires_at) && strtotime($magic_link->expires_at) < $now_ts) {
+            $status = 'expired';
+        }
+
+        $magic_links_data[] = array(
+            'id' => (int) $magic_link->id,
+            'created_at' => $magic_link->created_at,
+            'expires_at' => $magic_link->expires_at,
+            'used_at' => $magic_link->used_at,
+            'status' => $status,
+        );
+    }
+
+    $active_session = $wpdb->get_row($wpdb->prepare(
+        "SELECT created_at, expires_at
+         FROM {$wpdb->prefix}survey_sessions
+         WHERE participant_id = %d AND survey_id = %d AND expires_at > %s
+         ORDER BY expires_at DESC LIMIT 1",
+        $participant_id,
+        $study_id,
+        current_time('mysql')
+    ));
+
+    wp_send_json_success(array(
+        'participant' => array(
+            'id' => (int) $participant->id,
+            'survey_id' => (int) $participant->survey_id,
+            'email' => $participant->email,
+            'first_name' => $participant->first_name,
+            'last_name' => $participant->last_name,
+            'created_at' => $participant->created_at,
+            'last_login_at' => $participant->last_login_at,
+            'is_active' => (bool) $participant->is_active,
+        ),
+        'assignments' => $assignments,
+        'magic_links' => $magic_links_data,
+        'session' => array(
+            'active' => !empty($active_session),
+            'created_at' => $active_session ? $active_session->created_at : null,
+            'expires_at' => $active_session ? $active_session->expires_at : null,
+        ),
+    ));
+}
+
+/**
  * Get latest magic links for participants.
  */
 function eipsi_get_latest_magic_links_map($study_id, $participant_ids) {
@@ -1202,6 +1304,127 @@ function wp_ajax_eipsi_toggle_participant_status_handler() {
     } else {
         wp_send_json_error('Error al cambiar el estado del participante');
     }
+}
+
+/**
+ * POST remove participant from study (deactivate or delete).
+ */
+function wp_ajax_eipsi_remove_participant_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $action_type = isset($_POST['remove_type']) ? sanitize_text_field($_POST['remove_type']) : '';
+    $reason = isset($_POST['reason']) ? sanitize_text_field($_POST['reason']) : '';
+
+    if (empty($participant_id) || empty($study_id)) {
+        wp_send_json_error('Missing participant data');
+    }
+
+    if (!in_array($action_type, array('deactivate', 'delete'), true)) {
+        wp_send_json_error('Invalid removal type');
+    }
+
+    global $wpdb;
+
+    $participant = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, survey_id, email FROM {$wpdb->prefix}survey_participants WHERE id = %d AND survey_id = %d",
+        $participant_id,
+        $study_id
+    ));
+
+    if (!$participant) {
+        wp_send_json_error('Participant not found');
+    }
+
+    if ($action_type === 'deactivate') {
+        $updated = $wpdb->update(
+            "{$wpdb->prefix}survey_participants",
+            array('is_active' => 0),
+            array('id' => $participant_id),
+            array('%d'),
+            array('%d')
+        );
+
+        if ($updated === false) {
+            wp_send_json_error('No se pudo desactivar al participante');
+        }
+
+        eipsi_log_participant_audit($study_id, $participant_id, 'participant_deactivated', $reason, $participant->email);
+
+        wp_send_json_success(array(
+            'message' => 'Participante desactivado correctamente.'
+        ));
+    }
+
+    $deletions = array();
+    $tables_to_delete = array(
+        $wpdb->prefix . 'survey_sessions' => array('participant_id' => $participant_id),
+        $wpdb->prefix . 'survey_assignments' => array('participant_id' => $participant_id),
+        $wpdb->prefix . 'survey_magic_links' => array('participant_id' => $participant_id),
+        $wpdb->prefix . 'survey_email_log' => array('participant_id' => $participant_id),
+    );
+
+    foreach ($tables_to_delete as $table => $where) {
+        $result = $wpdb->delete($table, $where);
+        if ($result === false) {
+            $deletions[] = $table;
+        }
+    }
+
+    $deleted = $wpdb->delete(
+        $wpdb->prefix . 'survey_participants',
+        array('id' => $participant_id),
+        array('%d')
+    );
+
+    if ($deleted === false) {
+        wp_send_json_error('No se pudo eliminar al participante');
+    }
+
+    eipsi_log_participant_audit($study_id, $participant_id, 'participant_deleted', $reason, $participant->email);
+
+    wp_send_json_success(array(
+        'message' => 'Participante eliminado definitivamente.',
+        'warnings' => $deletions
+    ));
+}
+
+/**
+ * Log participant removal actions to audit log.
+ */
+function eipsi_log_participant_audit($study_id, $participant_id, $action, $reason = '', $email = '') {
+    global $wpdb;
+
+    $user = wp_get_current_user();
+    $actor_id = $user ? (int) $user->ID : null;
+    $actor_username = $user && $user->exists() ? $user->user_login : null;
+    $ip_address = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field($_SERVER['REMOTE_ADDR']) : null;
+
+    $metadata = array(
+        'reason' => $reason,
+        'email' => $email,
+    );
+
+    $wpdb->insert(
+        $wpdb->prefix . 'survey_audit_log',
+        array(
+            'survey_id' => $study_id,
+            'participant_id' => $participant_id,
+            'action' => $action,
+            'actor_type' => 'admin',
+            'actor_id' => $actor_id,
+            'actor_username' => $actor_username,
+            'ip_address' => $ip_address,
+            'metadata' => wp_json_encode($metadata),
+            'created_at' => current_time('mysql'),
+        ),
+        array('%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s')
+    );
 }
 
 /**

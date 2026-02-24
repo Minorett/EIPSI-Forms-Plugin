@@ -706,3 +706,161 @@
     float: none !important;
     margin: 0 auto 15px auto !important;
 }
+
+
+/* ===========================
+   PARTICIPANT DETAIL MODAL
+   =========================== */
+
+.participant-row {
+    cursor: pointer;
+}
+
+.participant-row:hover {
+    background: #f3f6ff;
+}
+
+.participant-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.participant-detail-modal {
+    max-width: 960px;
+}
+
+.participant-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.participant-detail-header h3 {
+    margin: 0 0 4px 0;
+}
+
+.participant-detail-email {
+    margin: 0;
+    color: #666;
+}
+
+.participant-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.participant-detail-card {
+    background: #fafafa;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.participant-detail-card h4 {
+    margin-top: 0;
+}
+
+.participant-detail-table {
+    overflow-x: auto;
+}
+
+.participant-timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.timeline-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.timeline-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-top: 6px;
+    background: #2271b1;
+}
+
+.timeline-item.completed .timeline-dot {
+    background: #27ae60;
+}
+
+.timeline-item.progress .timeline-dot {
+    background: #f39c12;
+}
+
+.timeline-item.expired .timeline-dot {
+    background: #c0392b;
+}
+
+.timeline-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.timeline-date {
+    font-size: 12px;
+    color: #666;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-pill.success {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-pill.warning {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.status-pill.info {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.remove-participant-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.remove-option {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: #f8f8f8;
+    border: 1px solid #e5e5e5;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.remove-option input {
+    margin-top: 4px;
+}
+
+@media (max-width: 960px) {
+    .participant-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
