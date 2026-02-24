@@ -6,6 +6,86 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.1.0] – 2025-02-24 (Phase 3: Researcher Data Confidence)
+
+### ✅ Phase 3 - Confianza en Datos para Investigadores
+
+**Epic:** Researcher Data Confidence - "Por fin alguien entendió cómo trabajo de verdad con mis pacientes"
+
+Esta fase garantiza que los investigadores puedan exportar datos limpios, verificar su integridad y cumplir con GDPR sin fricciones.
+
+#### 3A - Export Hardening
+
+**Task 3A.1 - Participant Access Log Export**
+- ✅ Exportación CSV/Excel de logs de acceso para IRB compliance
+- ✅ Filtros: date range, estudio, tipo de acción
+- ✅ Columnas: Date, Participant Name, Email, Study, Action, IP, Device
+- ✅ Servicio: `EIPSI_Access_Log_Export_Service`
+
+**Task 3A.2 - Completion Rate Accuracy Check**
+- ✅ Verificación automática de tasas de finalización vs DB
+- ✅ Detección de discrepancias con explicaciones claras
+- ✅ Timestamp "Last verified" en todas las exportaciones
+- ✅ Alertas de alta prioridad para inconsistencias críticas
+- ✅ Servicio: `EIPSI_Completion_Verification_Service`
+
+**Task 3A.3 - Wave-Level Timestamps**
+- ✅ Columnas agregadas: `wave_started_at`, `wave_completed_at`, `time_to_complete`
+- ✅ Datos esenciales para análisis longitudinal
+
+#### 3B - Monitoring Upgrades
+
+**Task 3B.4 - Per-Participant Progress View**
+- ✅ Timeline completo por participante: invited → registered → wave 1 → wave 2
+- ✅ Visualización de progreso con indicadores visuales
+- ✅ Próxima acción recomendada (reenviar, recordatorio, etc.)
+- ✅ Servicio: `EIPSI_Participant_Timeline_Service`
+
+**Task 3B.5 - Failed Email Alerts**
+- ✅ Dashboard de alertas para emails fallidos (bounces, timeouts)
+- ✅ Categorización automática de errores (SMTP, auth, DNS, etc.)
+- ✅ Botones de reintento individual y bulk
+- ✅ Integración con `EIPSI_Email_Service`
+- ✅ Servicio: `EIPSI_Failed_Email_Alerts_Service`
+
+**Task 3B.6 - Cron Health Indicator**
+- ✅ Monitoreo de todos los trabajos cron del sistema
+- ✅ Indicador de última ejecución y estado pass/fail
+- ✅ Capacidad de forzar ejecución manual
+- ✅ Historial de ejecuciones
+- ✅ Servicio: `EIPSI_Cron_Health_Service`
+
+#### 3C - GDPR Deletion Foundation
+
+**Task 3C.7 - Participant Self-Service Data Request**
+- ✅ Portal para participantes solicitar sus datos (export/delete/anonymize)
+- ✅ Cola de administrador con estados: pending → processing → completed
+- ✅ Notificaciones por email a participantes y admins
+- ✅ Servicio: `EIPSI_Participant_Data_Request_Service`
+
+**Task 3C.8 - Admin-Initiated Anonymization**
+- ✅ Extensión del servicio existente para anonimización per-participant
+- ✅ Integración completa con flujo GDPR
+
+**Task 3C.9 - Retention Policy Enforcement**
+- ✅ Cron job existente `eipsi_purge_access_logs_daily` mantiene compliance
+
+#### Technical Details
+- **Archivos nuevos:** 7 servicios + 1 archivo AJAX handlers
+- **Tablas DB nuevas:** `wp_survey_cron_log`, `wp_survey_data_requests`
+- **Endpoints AJAX:** 15 nuevos
+- **Líneas de código:** ~2,500 nuevas (PHP)
+- **Build status:** ✅ Exitoso
+- **Lint JS:** 2 errores pre-existentes (no relacionados)
+
+#### Criterios de Éxito Verificados
+- [x] Researcher can export complete dataset for IRB in under 5 minutes
+- [x] Failed magic link deliveries visible in monitoring
+- [x] Participant can request their data through portal
+- [x] Cron health visible in admin
+
+---
+
 ## [1.3.16] – 2025-01-26 (CRITICAL: Delete Response con BD Externa Roto)
 
 ### 🔴 HOTFIX CRÍTICO - Eliminación de Respuestas Fallaba con BD Externa

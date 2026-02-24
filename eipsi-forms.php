@@ -163,6 +163,20 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-participant-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-export-handlers.php';
 
 // ============================================================================
+// PHASE 3 - RESEARCHER DATA CONFIDENCE (v2.1.0)
+// ============================================================================
+// Services for export hardening, monitoring upgrades, and GDPR compliance
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-access-log-export-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-completion-verification-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-timeline-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-failed-email-alerts-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-cron-health-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-data-request-service.php';
+
+// Phase 3 AJAX Handlers
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-phase3-handlers.php';
+
+// ============================================================================
 // EMAIL SYSTEM CONFIGURATION (v1.5.4 - Default Email Fix)
 // ============================================================================
 
@@ -774,10 +788,54 @@ function eipsi_forms_activate() {
     
     // Create partial responses table for Save & Continue
     EIPSI_Partial_Responses::create_table();
-    
+
+    // ============================================================================
+    // PHASE 3 TABLES - Researcher Data Confidence
+    // ============================================================================
+
+    // Create cron log table
+    $cron_log_table = $wpdb->prefix . 'survey_cron_log';
+    $sql_cron_log = "CREATE TABLE IF NOT EXISTS $cron_log_table (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        cron_hook VARCHAR(100) NOT NULL,
+        executed_at DATETIME NOT NULL,
+        metadata TEXT,
+        PRIMARY KEY (id),
+        KEY cron_hook (cron_hook),
+        KEY executed_at (executed_at)
+    ) $charset_collate;";
+    dbDelta($sql_cron_log);
+
+    // Create data requests table (GDPR)
+    $data_requests_table = $wpdb->prefix . 'survey_data_requests';
+    $sql_data_requests = "CREATE TABLE IF NOT EXISTS $data_requests_table (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        participant_id BIGINT(20) UNSIGNED NOT NULL,
+        survey_id BIGINT(20) UNSIGNED NOT NULL,
+        request_type VARCHAR(20) NOT NULL,
+        reason TEXT,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        admin_id BIGINT(20) UNSIGNED,
+        admin_notes TEXT,
+        result_data TEXT,
+        created_at DATETIME NOT NULL,
+        started_processing_at DATETIME,
+        processed_at DATETIME,
+        PRIMARY KEY (id),
+        KEY participant_id (participant_id),
+        KEY survey_id (survey_id),
+        KEY status (status),
+        KEY created_at (created_at)
+    ) $charset_collate;";
+    dbDelta($sql_data_requests);
+
+    // ============================================================================
+    // END PHASE 3 TABLES
+    // ============================================================================
+
     // Store schema version
     update_option('eipsi_db_schema_version', '1.2.2');
-    
+
     // Log activation
     error_log('[EIPSI Forms] Plugin activated - Schema v1.2.2 installed');
 }
