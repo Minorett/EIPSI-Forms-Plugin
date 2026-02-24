@@ -16,6 +16,17 @@
         lastAction: null
     };
     
+    // Session timer state
+    var sessionTimer = {
+        intervalId: null,
+        remainingSeconds: 0,
+        showThreshold: 300, // 5 minutes in seconds
+        warningThreshold: 60, // 1 minute in seconds
+        isExtending: false,
+        isExpired: false,
+        currentWave: null
+    };
+    
     /**
      * Initialize auth handlers
      */
@@ -44,6 +55,332 @@
         
         // Check session on page load
         checkSessionStatus();
+        
+        // Initialize session timer on authenticated pages
+        initSessionTimer();
+    }
+    
+    // =============================================================================
+    // SESSION TIMER FUNCTIONS
+    // =============================================================================
+    
+    /**
+     * Initialize session timer on authenticated pages
+     */
+    function initSessionTimer() {
+        var $dashboard = $('.eipsi-participant-dashboard');
+        var $studyPage = $('.eipsi-longitudinal-study-container');
+        
+        if ($dashboard.length === 0 && $studyPage.length === 0) {
+            return;
+        }
+        
+        // Get current wave from URL or data attribute
+        var urlParams = new URLSearchParams(window.location.search);
+        sessionTimer.currentWave = urlParams.get('wave') || $('body').data('current-wave') || null;
+        
+        // Create timer bar if it doesn't exist
+        createTimerBar();
+        
+        // Start checking session time
+        checkSessionTime();
+        
+        // Check every 30 seconds
+        sessionTimer.intervalId = setInterval(checkSessionTime, 30000);
+    }
+    
+    /**
+     * Create timer bar element
+     */
+    function createTimerBar() {
+        if ($('#eipsi-session-timer-bar').length > 0) {
+            return;
+        }
+        
+        var timerBarHtml = '<div id="eipsi-session-timer-bar" class="eipsi-session-timer-bar" style="display: none;">' +
+            '<div class="eipsi-timer-content">' +
+                '<span class="eipsi-timer-icon">⏱️</span>' +
+                '<span class="eipsi-timer-text">' + eipsiAuth.strings.session_expires_in + '</span>' +
+                '<span class="eipsi-timer-time" id="eipsi-timer-time"></span>' +
+            '</div>' +
+            '<button type="button" class="eipsi-extend-session-btn" id="eipsi-extend-session-btn">' +
+                '<span class="btn-text">' + eipsiAuth.strings.extend_session + '</span>' +
+                '<span class="eipsi-spinner" style="display: none;"></span>' +
+            '</button>' +
+            '<button type="button" class="eipsi-timer-close" id="eipsi-timer-close" title="' + eipsiAuth.strings.hide_timer + '">×</button>' +
+        '</div>';
+        
+        $('body').append(timerBarHtml);
+        
+        // Bind events
+        $(document).on('click', '#eipsi-extend-session-btn', handleExtendSession);
+        $(document).on('click', '#eipsi-timer-close', handleHideTimer);
+    }
+    
+    /**
+     * Check session time via AJAX
+     */
+    function checkSessionTime() {
+        if (sessionTimer.isExpired) {
+            return;
+        }
+        
+        $.ajax({
+            url: eipsiAuth.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_check_session_time',
+                nonce: eipsiAuth.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    sessionTimer.remainingSeconds = response.data.remaining_seconds;
+                    updateTimerDisplay();
+                    
+                    // Show timer bar if below threshold
+                    if (sessionTimer.remainingSeconds <= sessionTimer.showThreshold) {
+                        showTimerBar();
+                    }
+                    
+                    // Show warning if below warning threshold
+                    if (sessionTimer.remainingSeconds <= sessionTimer.warningThreshold && 
+                        sessionTimer.remainingSeconds > 0) {
+                        showWarningState();
+                    }
+                    
+                    // Start countdown if below threshold
+                    if (sessionTimer.remainingSeconds <= sessionTimer.showThreshold) {
+                        startCountdown();
+                    }
+                } else {
+                    // Session expired
+                    handleSessionExpired();
+                }
+            },
+            error: function() {
+                // Network error - don't break the page
+                if (window.console) {
+                    console.log('EIPSI: Could not check session time');
+                }
+            }
+        });
+    }
+    
+    /**
+     * Start countdown timer
+     */
+    function startCountdown() {
+        // Clear existing countdown
+        if (sessionTimer.countdownId) {
+            clearInterval(sessionTimer.countdownId);
+        }
+        
+        // Update every second
+        sessionTimer.countdownId = setInterval(function() {
+            if (sessionTimer.remainingSeconds > 0) {
+                sessionTimer.remainingSeconds--;
+                updateTimerDisplay();
+                
+                // Check for warning threshold
+                if (sessionTimer.remainingSeconds <= sessionTimer.warningThreshold) {
+                    showWarningState();
+                }
+                
+                // Check for expiration
+                if (sessionTimer.remainingSeconds <= 0) {
+                    handleSessionExpired();
+                }
+            }
+        }, 1000);
+    }
+    
+    /**
+     * Update timer display
+     */
+    function updateTimerDisplay() {
+        var $timerTime = $('#eipsi-timer-time');
+        if ($timerTime.length === 0) return;
+        
+        var minutes = Math.floor(sessionTimer.remainingSeconds / 60);
+        var seconds = sessionTimer.remainingSeconds % 60;
+        
+        var displayText = '';
+        if (minutes > 0) {
+            displayText = minutes + ' ' + (minutes === 1 ? eipsiAuth.strings.minute : eipsiAuth.strings.minutes);
+            if (seconds > 0 && minutes < 10) {
+                displayText += ' ' + seconds + ' ' + (seconds === 1 ? eipsiAuth.strings.second : eipsiAuth.strings.seconds);
+            }
+        } else {
+            displayText = seconds + ' ' + (seconds === 1 ? eipsiAuth.strings.second : eipsiAuth.strings.seconds);
+        }
+        
+        $timerTime.text(displayText);
+    }
+    
+    /**
+     * Show timer bar
+     */
+    function showTimerBar() {
+        var $timerBar = $('#eipsi-session-timer-bar');
+        if ($timerBar.length === 0) return;
+        
+        $timerBar.slideDown(300);
+    }
+    
+    /**
+     * Show warning state
+     */
+    function showWarningState() {
+        var $timerBar = $('#eipsi-session-timer-bar');
+        $timerBar.addClass('eipsi-timer-warning');
+        
+        // Show warning message
+        if (!$('#eipsi-session-warning').length) {
+            var warningHtml = '<div id="eipsi-session-warning" class="eipsi-session-warning">' +
+                '<span class="warning-icon">⚠️</span>' +
+                '<span class="warning-text">' + eipsiAuth.strings.session_expiring_soon + '</span>' +
+            '</div>';
+            
+            $timerBar.find('.eipsi-timer-content').after(warningHtml);
+        }
+    }
+    
+    /**
+     * Handle session expired
+     */
+    function handleSessionExpired() {
+        sessionTimer.isExpired = true;
+        
+        // Clear intervals
+        if (sessionTimer.intervalId) clearInterval(sessionTimer.intervalId);
+        if (sessionTimer.countdownId) clearInterval(sessionTimer.countdownId);
+        
+        // Show expired modal
+        var expiredHtml = '<div id="eipsi-session-expired-modal" class="eipsi-modal-overlay">' +
+            '<div class="eipsi-modal-content">' +
+                '<div class="eipsi-modal-icon">🔒</div>' +
+                '<h3 class="eipsi-modal-title">' + eipsiAuth.strings.session_expired_title + '</h3>' +
+                '<p class="eipsi-modal-message">' + eipsiAuth.strings.session_expired_message + '</p>' +
+                '<button type="button" class="eipsi-modal-btn" id="eipsi-login-redirect-btn">' +
+                    eipsiAuth.strings.login_again +
+                '</button>' +
+            '</div>' +
+        '</div>';
+        
+        $('body').append(expiredHtml);
+        
+        // Bind redirect button
+        $(document).on('click', '#eipsi-login-redirect-btn', function() {
+            redirectToLogin();
+        });
+    }
+    
+    /**
+     * Redirect to login with current wave state
+     */
+    function redirectToLogin() {
+        var currentUrl = window.location.href;
+        var loginUrl = eipsiAuth.loginUrl || window.location.origin;
+        
+        // Preserve wave state in redirect
+        var redirectUrl = loginUrl;
+        if (sessionTimer.currentWave) {
+            redirectUrl = loginUrl + (loginUrl.indexOf('?') > -1 ? '&' : '?') + 
+                'redirect_to=' + encodeURIComponent(currentUrl);
+        } else {
+            redirectUrl = loginUrl + (loginUrl.indexOf('?') > -1 ? '&' : '?') + 
+                'redirect_to=' + encodeURIComponent(currentUrl);
+        }
+        
+        window.location.href = redirectUrl;
+    }
+    
+    /**
+     * Handle extend session
+     */
+    function handleExtendSession(e) {
+        e.preventDefault();
+        
+        if (sessionTimer.isExtending) return;
+        
+        var $btn = $('#eipsi-extend-session-btn');
+        var $btnText = $btn.find('.btn-text');
+        var $spinner = $btn.find('.eipsi-spinner');
+        
+        // Set loading state
+        sessionTimer.isExtending = true;
+        $btn.prop('disabled', true);
+        $btnText.hide();
+        $spinner.show();
+        
+        $.ajax({
+            url: eipsiAuth.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_extend_session',
+                nonce: eipsiAuth.nonce,
+                ttl_hours: 168 // 7 days
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Update remaining time
+                    sessionTimer.remainingSeconds = response.data.remaining_seconds;
+                    updateTimerDisplay();
+                    
+                    // Remove warning state
+                    $('#eipsi-session-timer-bar').removeClass('eipsi-timer-warning');
+                    $('#eipsi-session-warning').remove();
+                    
+                    // Show success message
+                    showExtendSuccess();
+                    
+                    // Hide timer bar after extension
+                    setTimeout(function() {
+                        $('#eipsi-session-timer-bar').slideUp(300);
+                    }, 3000);
+                } else {
+                    showError(response.data.message || eipsiAuth.strings.extend_error);
+                }
+            },
+            error: function() {
+                showError(eipsiAuth.strings.network_error);
+            },
+            complete: function() {
+                sessionTimer.isExtending = false;
+                $btn.prop('disabled', false);
+                $btnText.show();
+                $spinner.hide();
+            }
+        });
+    }
+    
+    /**
+     * Show extend success message
+     */
+    function showExtendSuccess() {
+        var $timerBar = $('#eipsi-session-timer-bar');
+        
+        var successHtml = '<div class="eipsi-extend-success">' +
+            '<span class="success-icon">✅</span>' +
+            '<span class="success-text">' + eipsiAuth.strings.session_extended + '</span>' +
+        '</div>';
+        
+        $timerBar.find('.eipsi-timer-content').after(successHtml);
+        
+        // Remove after 3 seconds
+        setTimeout(function() {
+            $('.eipsi-extend-success').fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+    
+    /**
+     * Handle hide timer
+     */
+    function handleHideTimer(e) {
+        e.preventDefault();
+        $('#eipsi-session-timer-bar').slideUp(300);
     }
     
     /**

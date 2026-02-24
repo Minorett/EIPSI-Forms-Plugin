@@ -473,6 +473,136 @@ function eipsi_validate_magic_link_token_handler() {
 add_action('wp_ajax_nopriv_eipsi_validate_magic_link_token', 'eipsi_validate_magic_link_token_handler');
 add_action('wp_ajax_eipsi_validate_magic_link_token', 'eipsi_validate_magic_link_token_handler');
 
+/**
+ * AJAX Handler: Check Session Remaining Time
+ * 
+ * Returns the remaining time for the current session.
+ * 
+ * @since 2.0.0
+ */
+function eipsi_check_session_time_handler() {
+    // Verify nonce
+    check_ajax_referer('eipsi_participant_auth', 'nonce');
+    
+    // Ensure service is loaded
+    if (!class_exists('EIPSI_Auth_Service')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
+    }
+    
+    // Get remaining time
+    $result = EIPSI_Auth_Service::get_session_remaining_time();
+    
+    if ($result['is_expired']) {
+        wp_send_json_error(array(
+            'message' => __('Tu sesión ha expirado.', 'eipsi-forms'),
+            'code' => 'session_expired',
+            'remaining_seconds' => 0,
+            'expires_at' => null
+        ));
+    }
+    
+    wp_send_json_success(array(
+        'remaining_seconds' => $result['remaining_seconds'],
+        'expires_at' => $result['expires_at'],
+        'is_expired' => false
+    ));
+}
+add_action('wp_ajax_nopriv_eipsi_check_session_time', 'eipsi_check_session_time_handler');
+add_action('wp_ajax_eipsi_check_session_time', 'eipsi_check_session_time_handler');
+
+/**
+ * AJAX Handler: Extend Session
+ * 
+ * Extends the current session expiration time.
+ * 
+ * @since 2.0.0
+ */
+function eipsi_extend_session_handler() {
+    // Verify nonce
+    check_ajax_referer('eipsi_participant_auth', 'nonce');
+    
+    // Ensure service is loaded
+    if (!class_exists('EIPSI_Auth_Service')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
+    }
+    
+    // Get TTL from request (default 168 hours = 7 days)
+    $ttl_hours = isset($_POST['ttl_hours']) ? absint($_POST['ttl_hours']) : 168;
+    
+    // Validate TTL (max 30 days)
+    if ($ttl_hours < 1 || $ttl_hours > 720) {
+        $ttl_hours = 168;
+    }
+    
+    // Extend session
+    $result = EIPSI_Auth_Service::extend_session($ttl_hours);
+    
+    if (!$result['success']) {
+        $error_messages = array(
+            'no_session' => __('No hay sesión activa.', 'eipsi-forms'),
+            'session_not_found' => __('Sesión no encontrada.', 'eipsi-forms'),
+            'session_expired' => __('Tu sesión ya ha expirado. Por favor inicia sesión nuevamente.', 'eipsi-forms'),
+            'db_error' => __('Error al extender la sesión. Intenta nuevamente.', 'eipsi-forms')
+        );
+        
+        wp_send_json_error(array(
+            'message' => isset($error_messages[$result['error']]) ? $error_messages[$result['error']] : __('Error desconocido.', 'eipsi-forms'),
+            'code' => $result['error']
+        ));
+    }
+    
+    // Get new remaining time
+    $remaining = EIPSI_Auth_Service::get_session_remaining_time();
+    
+    wp_send_json_success(array(
+        'message' => __('¡Sesión extendida exitosamente!', 'eipsi-forms'),
+        'new_expires_at' => $result['new_expires_at'],
+        'remaining_seconds' => $remaining['remaining_seconds']
+    ));
+}
+add_action('wp_ajax_nopriv_eipsi_extend_session', 'eipsi_extend_session_handler');
+add_action('wp_ajax_eipsi_extend_session', 'eipsi_extend_session_handler');
+
+/**
+ * AJAX Handler: Check Participant Session Status
+ * 
+ * Returns whether the participant has an active session.
+ * Used by login page to redirect already-logged-in users.
+ * 
+ * @since 1.5.5
+ */
+function eipsi_participant_check_session_handler() {
+    // Verify nonce
+    check_ajax_referer('eipsi_participant_auth', 'nonce');
+    
+    // Ensure service is loaded
+    if (!class_exists('EIPSI_Auth_Service')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
+    }
+    
+    // Check if authenticated
+    $is_authenticated = EIPSI_Auth_Service::is_authenticated();
+    
+    if (!$is_authenticated) {
+        wp_send_json_error(array(
+            'message' => __('No hay sesión activa.', 'eipsi-forms'),
+            'code' => 'not_authenticated'
+        ));
+    }
+    
+    // Get participant and survey IDs
+    $participant_id = EIPSI_Auth_Service::get_current_participant();
+    $survey_id = EIPSI_Auth_Service::get_current_survey();
+    
+    wp_send_json_success(array(
+        'authenticated' => true,
+        'participant_id' => $participant_id,
+        'survey_id' => $survey_id
+    ));
+}
+add_action('wp_ajax_nopriv_eipsi_participant_check_session', 'eipsi_participant_check_session_handler');
+add_action('wp_ajax_eipsi_participant_check_session', 'eipsi_participant_check_session_handler');
+
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
