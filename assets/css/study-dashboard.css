@@ -706,3 +706,191 @@
     float: none !important;
     margin: 0 auto 15px auto !important;
 }
+
+/* ===========================
+   PARTICIPANT DETAIL MODAL
+   =========================== */
+
+.participant-detail-modal {
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.participant-info-section,
+.participant-timeline-section,
+.magic-link-history-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.participant-info-section:last-child,
+.participant-timeline-section:last-child,
+.magic-link-history-section:last-child {
+    border-bottom: none;
+}
+
+.participant-info-section h3,
+.participant-timeline-section h3,
+.magic-link-history-section h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.participant-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.participant-info-grid .info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.participant-info-grid .info-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.participant-info-grid .info-value {
+    font-size: 14px;
+    color: #1a1a1a;
+}
+
+/* Timeline Styles */
+.timeline-container {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e0e0e0;
+}
+
+.timeline-event {
+    position: relative;
+    padding: 10px 0 15px 0;
+}
+
+.timeline-event::before {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 12px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    border: 2px solid #fff;
+}
+
+.timeline-event.completed::before {
+    background: #27ae60;
+}
+
+.timeline-event.in_progress::before {
+    background: #3498db;
+}
+
+.timeline-event.started::before {
+    background: #f39c12;
+}
+
+.timeline-event.pending::before {
+    background: #95a5a6;
+}
+
+.timeline-event.info::before {
+    background: #9b59b6;
+}
+
+.timeline-event .event-label {
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+
+.timeline-event .event-date {
+    font-size: 12px;
+    color: #666;
+}
+
+.timeline-event .event-form {
+    font-size: 12px;
+    color: #888;
+    font-style: italic;
+}
+
+/* Remove Participant Modal */
+.remove-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.remove-option {
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fafafa;
+}
+
+.remove-option h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.remove-option p {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.remove-reason {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.remove-reason label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* Participant Detail Actions */
+.participant-detail-modal .eipsi-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+@media (max-width: 600px) {
+    .participant-info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeline-container {
+        padding-left: 20px;
+    }
+    
+    .timeline-event::before {
+        left: -16px;
+    }
+}

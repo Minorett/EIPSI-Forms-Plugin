@@ -33,6 +33,9 @@ add_action('wp_ajax_eipsi_resend_magic_link', 'wp_ajax_eipsi_resend_magic_link_h
 add_action('wp_ajax_eipsi_extend_magic_link', 'wp_ajax_eipsi_extend_magic_link_handler');
 add_action('wp_ajax_eipsi_resend_participant_email', 'wp_ajax_eipsi_resend_participant_email_handler');
 add_action('wp_ajax_eipsi_get_participant_email_history', 'wp_ajax_eipsi_get_participant_email_history_handler');
+add_action('wp_ajax_eipsi_get_participant_detail', 'wp_ajax_eipsi_get_participant_detail_handler');
+add_action('wp_ajax_eipsi_remove_participant', 'wp_ajax_eipsi_remove_participant_handler');
+add_action('wp_ajax_eipsi_delete_participant', 'wp_ajax_eipsi_delete_participant_handler');
 
 /**
  * GET consolidated study data
@@ -1201,6 +1204,199 @@ function wp_ajax_eipsi_toggle_participant_status_handler() {
         ));
     } else {
         wp_send_json_error('Error al cambiar el estado del participante');
+    }
+}
+
+/**
+ * GET participant detail with full history
+ * 
+ * @since 1.6.0
+ */
+function wp_ajax_eipsi_get_participant_detail_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $participant_id = isset($_GET['participant_id']) ? intval($_GET['participant_id']) : 0;
+    if (empty($participant_id)) {
+        wp_send_json_error('Missing participant ID');
+    }
+
+    // Load participant service
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    // Get participant basic info
+    $participant = EIPSI_Participant_Service::get_by_id($participant_id);
+    if (!$participant) {
+        wp_send_json_error('Participant not found');
+    }
+
+    // Get wave completions
+    $wave_completions = EIPSI_Participant_Service::get_wave_completions($participant_id, $participant->survey_id);
+
+    // Get magic link history
+    $magic_link_history = EIPSI_Participant_Service::get_magic_link_history($participant_id);
+
+    // Check active session
+    $has_active_session = EIPSI_Participant_Service::has_active_session($participant_id);
+
+    // Get study info
+    global $wpdb;
+    $study = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $participant->survey_id
+    ));
+
+    // Build timeline
+    $timeline = array();
+
+    // 1. Registration event
+    $timeline[] = array(
+        'event' => 'registered',
+        'label' => __('Registrado', 'eipsi-forms'),
+        'date' => $participant->created_at,
+        'status' => 'completed',
+        'icon' => '📝'
+    );
+
+    // 2. Last login event
+    if (!empty($participant->last_login_at)) {
+        $timeline[] = array(
+            'event' => 'last_login',
+            'label' => __('Último acceso', 'eipsi-forms'),
+            'date' => $participant->last_login_at,
+            'status' => 'info',
+            'icon' => '🔐'
+        );
+    }
+
+    // 3. Wave events
+    foreach ($wave_completions as $wave) {
+        $wave_status = 'pending';
+        $wave_icon = '⏳';
+        
+        if ($wave->status === 'submitted') {
+            $wave_status = 'completed';
+            $wave_icon = '✅';
+        } elseif ($wave->status === 'in_progress') {
+            $wave_status = 'in_progress';
+            $wave_icon = '🔄';
+        } elseif (!empty($wave->started_at)) {
+            $wave_status = 'started';
+            $wave_icon = '▶️';
+        }
+
+        $timeline[] = array(
+            'event' => 'wave_' . $wave->wave_index,
+            'label' => sprintf(__('Wave %d: %s', 'eipsi-forms'), $wave->wave_index, $wave->wave_name),
+            'date' => !empty($wave->completed_at) ? $wave->completed_at : (!empty($wave->started_at) ? $wave->started_at : null),
+            'status' => $wave_status,
+            'icon' => $wave_icon,
+            'wave_name' => $wave->wave_name,
+            'wave_index' => $wave->wave_index,
+            'form_title' => $wave->form_title
+        );
+    }
+
+    wp_send_json_success(array(
+        'participant' => $participant,
+        'study' => $study,
+        'wave_completions' => $wave_completions,
+        'magic_link_history' => $magic_link_history,
+        'has_active_session' => $has_active_session,
+        'timeline' => $timeline
+    ));
+}
+
+/**
+ * POST remove participant (deactivate - soft delete)
+ * 
+ * @since 1.6.0
+ */
+function wp_ajax_eipsi_remove_participant_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+    $reason = isset($_POST['reason']) ? sanitize_text_field($_POST['reason']) : '';
+
+    if (empty($participant_id)) {
+        wp_send_json_error(array('message' => 'Missing participant ID'));
+    }
+
+    // Load participant service
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    // Get participant info for response
+    $participant = EIPSI_Participant_Service::get_by_id($participant_id);
+    if (!$participant) {
+        wp_send_json_error(array('message' => 'Participant not found'));
+    }
+
+    // Deactivate (soft delete)
+    $success = EIPSI_Participant_Service::deactivate($participant_id, $reason);
+
+    if ($success) {
+        wp_send_json_success(array(
+            'message' => sprintf(__('Participante "%s" ha sido desactivado. Su historial se ha conservado.', 'eipsi-forms'), $participant->email),
+            'action' => 'deactivated',
+            'participant_id' => $participant_id
+        ));
+    } else {
+        wp_send_json_error(array('message' => __('Error al desactivar el participante.', 'eipsi-forms')));
+    }
+}
+
+/**
+ * POST delete participant (hard delete)
+ * 
+ * @since 1.6.0
+ */
+function wp_ajax_eipsi_delete_participant_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+    $reason = isset($_POST['reason']) ? sanitize_text_field($_POST['reason']) : '';
+
+    if (empty($participant_id)) {
+        wp_send_json_error(array('message' => 'Missing participant ID'));
+    }
+
+    // Load participant service
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    // Get participant info for response
+    $participant = EIPSI_Participant_Service::get_by_id($participant_id);
+    if (!$participant) {
+        wp_send_json_error(array('message' => 'Participant not found'));
+    }
+
+    // Hard delete
+    $success = EIPSI_Participant_Service::hard_delete($participant_id, $reason);
+
+    if ($success) {
+        wp_send_json_success(array(
+            'message' => sprintf(__('Participante "%s" ha sido eliminado completamente junto con todo su historial.', 'eipsi-forms'), $participant->email),
+            'action' => 'deleted',
+            'participant_id' => $participant_id
+        ));
+    } else {
+        wp_send_json_error(array('message' => __('Error al eliminar el participante.', 'eipsi-forms')));
     }
 }
 

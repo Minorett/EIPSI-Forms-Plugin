@@ -309,6 +309,126 @@ if (!defined('ABSPATH')) {
     </div>
 </div>
 
+<!-- Modal for Participant Detail View -->
+<div id="eipsi-participant-detail-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content participant-detail-modal">
+        <div class="eipsi-modal-header">
+            <h2>👤 <?php esc_html_e('Detalles del Participante', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <div id="participant-detail-loading" class="eipsi-loading-overlay">
+                <div class="spinner is-active"></div>
+                <p><?php esc_html_e('Cargando detalles del participante...', 'eipsi-forms'); ?></p>
+            </div>
+
+            <div id="participant-detail-content" style="display:none;">
+                <!-- Participant Info -->
+                <div class="participant-info-section">
+                    <h3><?php esc_html_e('Información del Participante', 'eipsi-forms'); ?></h3>
+                    <div class="participant-info-grid">
+                        <div class="info-item">
+                            <span class="info-label"><?php esc_html_e('Email:', 'eipsi-forms'); ?></span>
+                            <span class="info-value" id="detail-participant-email"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><?php esc_html_e('Nombre:', 'eipsi-forms'); ?></span>
+                            <span class="info-value" id="detail-participant-name"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><?php esc_html_e('Estado:', 'eipsi-forms'); ?></span>
+                            <span class="info-value"><span id="detail-participant-status" class="eipsi-badge"></span></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><?php esc_html_e('Sesión Activa:', 'eipsi-forms'); ?></span>
+                            <span class="info-value" id="detail-participant-session"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><?php esc_html_e('Fecha de Registro:', 'eipsi-forms'); ?></span>
+                            <span class="info-value" id="detail-participant-created"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><?php esc_html_e('Último Acceso:', 'eipsi-forms'); ?></span>
+                            <span class="info-value" id="detail-participant-last-login"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="participant-timeline-section">
+                    <h3><?php esc_html_e('Línea de Tiempo', 'eipsi-forms'); ?></h3>
+                    <div id="participant-timeline" class="timeline-container">
+                        <!-- Timeline events will be injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Magic Link History -->
+                <div class="magic-link-history-section">
+                    <h3><?php esc_html_e('Historial de Magic Links', 'eipsi-forms'); ?></h3>
+                    <div id="magic-link-history-table-wrapper">
+                        <table class="wp-list-table widefat fixed striped">
+                            <thead>
+                                <tr>
+                                    <th><?php esc_html_e('Fecha de Creación', 'eipsi-forms'); ?></th>
+                                    <th><?php esc_html_e('Expira', 'eipsi-forms'); ?></th>
+                                    <th><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
+                                    <th><?php esc_html_e('Usado', 'eipsi-forms'); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody id="magic-link-history-tbody">
+                                <!-- Rows injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="eipsi-modal-footer">
+            <button class="button button-secondary eipsi-modal-close"><?php esc_html_e('Cerrar', 'eipsi-forms'); ?></button>
+            <button class="button button-link-delete" id="btn-remove-participant"><?php esc_html_e('🗑️ Eliminar Participante', 'eipsi-forms'); ?></button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Remove Participant Confirmation -->
+<div id="eipsi-remove-participant-modal" class="eipsi-modal" style="display:none; z-index: 100002;">
+    <div class="eipsi-modal-content small-modal">
+        <div class="eipsi-modal-header">
+            <h2>⚠️ <?php esc_html_e('Eliminar Participante', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <p><?php esc_html_e('¿Qué acción deseas realizar con este participante?', 'eipsi-forms'); ?></p>
+            
+            <div class="remove-options">
+                <div class="remove-option remove-option-deactivate">
+                    <h4>📴 <?php esc_html_e('Desactivar (Soft Delete)', 'eipsi-forms'); ?></h4>
+                    <p><?php esc_html_e('El participante será marcado como inactivo. Su historial de respuestas y datos se conservarán en el sistema. El participante no podrá iniciar sesión.', 'eipsi-forms'); ?></p>
+                    <button class="button button-secondary" id="btn-confirm-deactivate">
+                        <?php esc_html_e('Desactivar', 'eipsi-forms'); ?>
+                    </button>
+                </div>
+                
+                <div class="remove-option remove-option-delete">
+                    <h4>🗑️ <?php esc_html_e('Eliminar Completamente (Hard Delete)', 'eipsi-forms'); ?></h4>
+                    <p><?php esc_html_e('El participante y todos sus datos serán eliminados permanentemente. Esta acción no se puede deshacer.', 'eipsi-forms'); ?></p>
+                    <button class="button button-link-delete" id="btn-confirm-delete">
+                        <?php esc_html_e('Eliminar Permanentemente', 'eipsi-forms'); ?>
+                    </button>
+                </div>
+            </div>
+
+            <div class="remove-reason">
+                <label for="remove-participant-reason"><?php esc_html_e('Razón (opcional):', 'eipsi-forms'); ?></label>
+                <input type="text" id="remove-participant-reason" class="widefat" placeholder="<?php esc_attr_e('Ej: Participant requested removal', 'eipsi-forms'); ?>">
+            </div>
+
+            <div id="remove-participant-error" class="notice notice-error" style="display:none; margin-top: 10px;"></div>
+            <div id="remove-participant-success" class="notice notice-success" style="display:none; margin-top: 10px;"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal for Magic Link Resend -->
 <div id="eipsi-magic-link-resend-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content medium-modal">
