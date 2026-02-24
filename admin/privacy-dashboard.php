@@ -3,13 +3,66 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Register and sanitize access log retention setting
+ * Phase 2 - Admin Settings for Retention Days
+ *
+ * @since 2.0.0
+ */
+function eipsi_register_access_log_retention_setting() {
+    register_setting('eipsi_forms_options', 'eipsi_access_log_retention_days', array(
+        'type' => 'integer',
+        'default' => 365,
+        'sanitize_callback' => function($value) {
+            $value = intval($value);
+            // Clamp between 30 and 2555 (7 years max)
+            return max(30, min(2555, $value));
+        }
+    ));
+}
+add_action('admin_init', 'eipsi_register_access_log_retention_setting');
+
+/**
+ * Get access log retention days
+ *
+ * @return int Number of days to retain access logs (default: 365)
+ */
+function eipsi_get_access_log_retention_days() {
+    return get_option('eipsi_access_log_retention_days', 365);
+}
+
+/**
+ * Get last access log purge date
+ *
+ * @return string|null MySQL datetime or null if never purged
+ */
+function eipsi_get_last_access_log_purge_date() {
+    return get_option('eipsi_last_access_log_purge', null);
+}
+
 function render_privacy_dashboard($form_id = null) {
     $current_form_id = $form_id ?: (isset($_GET['form_id']) ? sanitize_text_field($_GET['form_id']) : '');
-    
+
+    // Handle access log retention settings form submission
+    $retention_message = '';
+    if (isset($_POST['eipsi_access_log_retention_nonce']) &&
+        wp_verify_nonce($_POST['eipsi_access_log_retention_nonce'], 'eipsi_access_log_retention_settings')) {
+
+        $retention_days = isset($_POST['access_log_retention_days']) ? intval($_POST['access_log_retention_days']) : 365;
+        $retention_days = max(30, min(2555, $retention_days)); // Clamp between 30 and 2555
+
+        update_option('eipsi_access_log_retention_days', $retention_days);
+        $retention_message = __('Configuración de retención guardada correctamente.', 'eipsi-forms');
+    }
+
     // Obtener configuración actual
     require_once dirname(__FILE__) . '/privacy-config.php';
     $global_config = get_global_privacy_defaults();
     $privacy_config = get_privacy_config($current_form_id);
+
+    // Get current retention settings
+    $retention_days = eipsi_get_access_log_retention_days();
+    $last_purge = eipsi_get_last_access_log_purge_date();
     
     ?>
     <div class="eipsi-privacy-dashboard">
@@ -212,6 +265,134 @@ function render_privacy_dashboard($form_id = null) {
                 <li>🔄 <strong>Override por Formulario:</strong> Cada formulario puede tener su propia configuración independientemente de la global</li>
                 <li>📊 <strong>Exportación Excel:</strong> El Fingerprint_ID se incluye siempre que esté activado. Los detalles crudos del fingerprint se pueden exportar en una hoja separada (opción de debugging)</li>
             </ul>
+        </div>
+
+        <!-- SEPARADOR -->
+        <hr style="margin: 30px 0; border: none; height: 1px; background: #e2e8f0;">
+
+        <!-- ACCESS LOG RETENTION SECTION - Phase 2 -->
+        <div class="eipsi-retention-config" style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-top: 20px;">
+            <h3 style="margin-top: 0;">
+                <span class="dashicons dashicons-clock" style="color: #2271b1;"></span>
+                <?php echo esc_html__('Retención de Logs de Acceso', 'eipsi-forms'); ?>
+            </h3>
+
+            <p class="description" style="margin-bottom: 15px;">
+                <?php echo esc_html__('Los logs de acceso registran cada acción de los participantes (login, magic link, completado de tomas, etc.) para auditoría y seguridad. Configura cuánto tiempo conservar estos registros.', 'eipsi-forms'); ?>
+            </p>
+
+            <?php if (!empty($retention_message)): ?>
+                <div class="notice notice-success inline" style="margin-bottom: 15px;">
+                    <p><?php echo esc_html($retention_message); ?></p>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" style="margin-top: 15px;">
+                <?php wp_nonce_field('eipsi_access_log_retention_settings', 'eipsi_access_log_retention_nonce'); ?>
+
+                <table class="form-table" role="presentation">
+                    <tbody>
+                        <tr>
+                            <th scope="row" style="width: 250px;">
+                                <label for="access_log_retention_days">
+                                    <?php echo esc_html__('Días de retención', 'eipsi-forms'); ?>
+                                </label>
+                            </th>
+                            <td>
+                                <input type="number"
+                                    id="access_log_retention_days"
+                                    name="access_log_retention_days"
+                                    value="<?php echo esc_attr($retention_days); ?>"
+                                    min="30"
+                                    max="2555"
+                                    class="small-text"
+                                    required>
+                                <span style="margin-left: 8px; color: #666;">
+                                    <?php echo esc_html__('días', 'eipsi-forms'); ?>
+                                </span>
+                                <p class="description">
+                                    <?php echo esc_html__('Mínimo: 30 días | Máximo: 2555 días (7 años). Registros más antiguos se eliminan automáticamente.', 'eipsi-forms'); ?>
+                                </p>
+                            </td>
+                        </tr>
+
+                        <?php if ($last_purge): ?>
+                        <tr>
+                            <th scope="row">
+                                <?php echo esc_html__('Última purga', 'eipsi-forms'); ?>
+                            </th>
+                            <td>
+                                <span style="color: #666;">
+                                    <?php
+                                    echo esc_html(
+                                        mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $last_purge)
+                                    );
+                                    ?>
+                                </span>
+                                <p class="description">
+                                    <?php echo esc_html__('Fecha de la última ejecución automática de limpieza de logs.', 'eipsi-forms'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+
+                        <?php
+                        // Get current log count
+                        global $wpdb;
+                        $table_name = $wpdb->prefix . 'survey_participant_access_log';
+                        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+                        if ($table_exists) {
+                            $total_logs = $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}");
+                            $old_logs = $wpdb->get_var($wpdb->prepare(
+                                "SELECT COUNT(*) FROM {$table_name} WHERE created_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
+                                $retention_days
+                            ));
+                        ?>
+                        <tr>
+                            <th scope="row">
+                                <?php echo esc_html__('Estado actual', 'eipsi-forms'); ?>
+                            </th>
+                            <td>
+                                <span class="dashicons dashicons-database" style="color: #2271b1;"></span>
+                                <strong><?php echo number_format_i18n($total_logs); ?></strong>
+                                <?php echo esc_html__('registros totales', 'eipsi-forms'); ?>
+
+                                <?php if ($old_logs > 0): ?>
+                                <br>
+                                <span style="color: #d63638; margin-top: 5px; display: inline-block;">
+                                    <span class="dashicons dashicons-warning" style="font-size: 16px;"></span>
+                                    <?php
+                                    echo sprintf(
+                                        esc_html__('%d registros tienen más de %d días y serán eliminados en la próxima purga.', 'eipsi-forms'),
+                                        number_format_i18n($old_logs),
+                                        $retention_days
+                                    );
+                                    ?>
+                                </span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+
+                <button type="submit" class="button button-primary">
+                    <span class="dashicons dashicons-yes" style="margin-top: 3px;"></span>
+                    <?php echo esc_html__('Guardar configuración de retención', 'eipsi-forms'); ?>
+                </button>
+            </form>
+
+            <div style="margin-top: 20px; padding: 15px; background: #fff; border-radius: 6px; border: 1px solid #dcdcde;">
+                <h4 style="margin-top: 0; color: #50575e;">
+                    <span class="dashicons dashicons-info" style="color: #2271b1;"></span>
+                    <?php echo esc_html__('Recomendaciones de retención', 'eipsi-forms'); ?>
+                </h4>
+                <ul style="margin: 0 0 0 20px; color: #666; font-size: 13px; line-height: 1.6;">
+                    <li><strong>90 días:</strong> <?php echo esc_html__('Mínimo recomendado para auditoría básica.', 'eipsi-forms'); ?></li>
+                    <li><strong>365 días:</strong> <?php echo esc_html__('Estándar para estudios clínicos anuales.', 'eipsi-forms'); ?></li>
+                    <li><strong>7 años (2555 días):</strong> <?php echo esc_html__('Requisito regulatorio para estudios clínicos longitudinales.', 'eipsi-forms'); ?></li>
+                </ul>
+            </div>
         </div>
     </div>
     <?php
