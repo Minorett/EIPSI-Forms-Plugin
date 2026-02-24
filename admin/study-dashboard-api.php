@@ -231,16 +231,38 @@ function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
         wp_send_json_error('Missing wave ID');
     }
 
-    // Usar Email Service para enviar recordatorios
-    // NOTA: send_manual_reminders será implementado plenamente en Fase 2
-    $sent_count = 0;
-    if (method_exists('EIPSI_Email_Service', 'send_manual_reminders')) {
-        $sent_count = EIPSI_Email_Service::send_manual_reminders($wave_id);
+    global $wpdb;
+
+    // Get survey_id from wave
+    $wave = $wpdb->get_row($wpdb->prepare(
+        "SELECT survey_id FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+        $wave_id
+    ));
+
+    if (!$wave || empty($wave->survey_id)) {
+        wp_send_json_error('Wave not found or missing survey association');
     }
 
+    $survey_id = (int) $wave->survey_id;
+
+    // Get active participant IDs assigned to this wave
+    $participant_ids = $wpdb->get_col($wpdb->prepare(
+        "SELECT participant_id FROM {$wpdb->prefix}survey_assignments 
+         WHERE wave_id = %d AND status = 'active'",
+        $wave_id
+    ));
+
+    if (empty($participant_ids)) {
+        wp_send_json_error('No active participants found for this wave');
+    }
+
+    // Send reminders via Email Service
+    $result = EIPSI_Email_Service::send_manual_reminders($survey_id, $participant_ids, $wave_id);
+
     wp_send_json_success(array(
-        'message' => sprintf(__('Se han enviado %d recordatorios.', 'eipsi-forms'), $sent_count),
-        'sent' => $sent_count
+        'message' => sprintf(__('Se han enviado %d recordatorios.', 'eipsi-forms'), $result['sent_count']),
+        'sent' => $result['sent_count'],
+        'failed' => $result['failed_count']
     ));
 }
 
