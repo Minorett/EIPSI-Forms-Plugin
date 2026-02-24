@@ -1,0 +1,79 @@
+- generic [active] [ref=e1]:
+  - link "Ir al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e9]:
+        - link "test page" [ref=e14] [cursor=pointer]:
+          - /url: https://palevioletred-goat-519138.hostingersite.com/
+          - img "test page" [ref=e15]
+        - navigation "Primary Site Navigation" [ref=e20]:
+          - list [ref=e22]:
+            - listitem [ref=e23]:
+              - link "_home" [ref=e24] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/
+            - listitem [ref=e25]:
+              - link "_about" [ref=e26] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/about/
+            - listitem [ref=e27]:
+              - link "_portfolio" [ref=e28] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/portfolio/
+            - listitem [ref=e29]:
+              - link "_services" [ref=e30] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/services/
+            - listitem [ref=e31]:
+              - link "_resume" [ref=e32] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/resume/
+            - listitem [ref=e33]:
+              - link "_contact" [ref=e34] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/contact/
+    - main [ref=e38]:
+      - article [ref=e39]:
+        - heading "ERG" [level=1] [ref=e41]
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - heading "Consentimiento Informado" [level=3] [ref=e50]
+              - generic [ref=e52]:
+                - paragraph [ref=e54]: Acepto participar voluntariamente en este estudio de investigación. He sido informado sobre los objetivos, procedimientos, riesgos y beneficios. Entiendo que mi participación es completamente voluntaria y puedo retirarme en cualquier momento sin penalización. Mis datos serán tratados de forma anónima y confidencial según las normativas ANMAT y APA.
+                - generic [ref=e56]:
+                  - checkbox "He leído y acepto participar voluntariamente *" [ref=e57] [cursor=pointer]
+                  - generic [ref=e58] [cursor=pointer]:
+                    - text: He leído y acepto participar voluntariamente
+                    - generic [ref=e59]: "*"
+            - text: "* * * * * * * * * * *"
+          - generic [ref=e61]:
+            - button "Ir a la siguiente página (página 2 de 7)" [disabled]: Siguiente
+    - contentinfo [ref=e62]:
+      - generic [ref=e65]:
+        - 'navigation "Site Navigation: Menu" [ref=e69]':
+          - list [ref=e71]:
+            - listitem [ref=e72]:
+              - link "_home" [ref=e73] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/
+            - listitem [ref=e74]:
+              - link "_about" [ref=e75] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/about/
+            - listitem [ref=e76]:
+              - link "_portfolio" [ref=e77] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/portfolio/
+            - listitem [ref=e78]:
+              - link "_services" [ref=e79] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/services/
+            - listitem [ref=e80]:
+              - link "_resume" [ref=e81] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/resume/
+            - listitem [ref=e82]:
+              - link "_contact" [ref=e83] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/contact/
+        - generic [ref=e87]:
+          - link "Facebook" [ref=e88] [cursor=pointer]:
+            - /url: ""
+            - img [ref=e90]
+          - link "Instagram" [ref=e92] [cursor=pointer]:
+            - /url: ""
+            - img [ref=e94]
+          - link "Twitter" [ref=e96] [cursor=pointer]:
+            - /url: ""
+            - img [ref=e98]
+        - paragraph [ref=e103]: Copyright © 2026 test page

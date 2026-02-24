@@ -1,0 +1,93 @@
+- generic [active] [ref=e1]:
+  - link "Ir al contenido" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e9]:
+        - link "test page" [ref=e14] [cursor=pointer]:
+          - /url: https://palevioletred-goat-519138.hostingersite.com/
+          - img "test page" [ref=e15]
+        - navigation "Primary Site Navigation" [ref=e20]:
+          - list [ref=e22]:
+            - listitem [ref=e23]:
+              - link "_home" [ref=e24] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/
+            - listitem [ref=e25]:
+              - link "_about" [ref=e26] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/about/
+            - listitem [ref=e27]:
+              - link "_portfolio" [ref=e28] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/portfolio/
+            - listitem [ref=e29]:
+              - link "_services" [ref=e30] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/services/
+            - listitem [ref=e31]:
+              - link "_resume" [ref=e32] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/resume/
+            - listitem [ref=e33]:
+              - link "_contact" [ref=e34] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/contact/
+    - main [ref=e38]:
+      - article [ref=e39]:
+        - heading "test random" [level=1] [ref=e41]
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - generic [ref=e45]: 🔖
+              - generic [ref=e46]: "Grupo: test_1"
+            - generic [ref=e49]:
+              - generic [ref=e50]:
+                - generic [ref=e51]:
+                  - heading "Tu número es:" [level=3] [ref=e52]
+                  - paragraph [ref=e54]: "1"
+                - group "¿Qué número ves arriba?" [ref=e56]:
+                  - generic [ref=e57]: ¿Qué número ves arriba?
+                  - list [ref=e58]:
+                    - listitem [ref=e59] [cursor=pointer]:
+                      - generic [ref=e60]:
+                        - radio "1" [ref=e61]
+                        - generic [ref=e62]: "1"
+                    - listitem [ref=e63] [cursor=pointer]:
+                      - generic [ref=e64]:
+                        - radio "2" [ref=e65]
+                        - generic [ref=e66]: "2"
+                    - listitem [ref=e67] [cursor=pointer]:
+                      - generic [ref=e68]:
+                        - radio "3" [ref=e69]
+                        - generic [ref=e70]: "3"
+              - button "Enviar el formulario (página única)" [ref=e73] [cursor=pointer]: Enviar
+              - generic [ref=e74]: Página 1 de 1
+          - paragraph
+    - contentinfo [ref=e75]:
+      - generic [ref=e78]:
+        - 'navigation "Site Navigation: Menu" [ref=e82]':
+          - list [ref=e84]:
+            - listitem [ref=e85]:
+              - link "_home" [ref=e86] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/
+            - listitem [ref=e87]:
+              - link "_about" [ref=e88] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/about/
+            - listitem [ref=e89]:
+              - link "_portfolio" [ref=e90] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/portfolio/
+            - listitem [ref=e91]:
+              - link "_services" [ref=e92] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/services/
+            - listitem [ref=e93]:
+              - link "_resume" [ref=e94] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/resume/
+            - listitem [ref=e95]:
+              - link "_contact" [ref=e96] [cursor=pointer]:
+                - /url: https://palevioletred-goat-519138.hostingersite.com/contact/
+        - generic [ref=e100]:
+          - link "Facebook" [ref=e101] [cursor=pointer]:
+            - /url: ""
+            - img [ref=e103]
+          - link "Instagram" [ref=e105] [cursor=pointer]:
+            - /url: ""
+            - img [ref=e107]
+          - link "Twitter" [ref=e109] [cursor=pointer]:
+            - /url: ""
+            - img [ref=e111]
+        - paragraph [ref=e116]: Copyright © 2026 test page
