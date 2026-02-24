@@ -427,12 +427,27 @@
 
 .wave-badge.completed {
     background: var(--eipsi-warning-bg);
-    color: var(--eipsi-warning-text);
+    color: #b45309;
 }
 
 .wave-badge.closed {
     background: var(--eipsi-error-bg);
     color: var(--eipsi-error);
+}
+
+.wave-badge.upcoming {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.wave-badge.overdue {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.wave-badge.paused {
+    background: #f3f4f6;
+    color: #6b7280;
 }
 
 /* Card Body */

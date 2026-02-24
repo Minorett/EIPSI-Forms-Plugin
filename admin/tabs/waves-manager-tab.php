@@ -61,9 +61,19 @@ $next_wave_index = 1;
 $wave_count = 0;
 $wave_columns = 1;
 if ($current_study_id) {
-    $waves = EIPSI_Wave_Service::get_study_waves($current_study_id);
-    $wave_count = count($waves);
+    $waves_raw = EIPSI_Wave_Service::get_study_waves($current_study_id);
+    $wave_count = count($waves_raw);
     $wave_columns = $wave_count > 0 ? min(3, $wave_count) : 1;
+    
+    // Calculate dynamic status for each wave
+    $waves = array();
+    foreach ($waves_raw as $wave) {
+        $wave_array = (array) $wave;
+        // Calculate dynamic status
+        $wave_array['status'] = EIPSI_Wave_Service::calculate_wave_status($wave);
+        $waves[] = $wave_array;
+    }
+    
     if (!empty($waves)) {
         $last_wave = end($waves);
         $next_wave_index = (int)$last_wave['wave_index'] + 1;
@@ -151,7 +161,18 @@ $available_forms = get_posts(array(
                                 <div class="wave-title-section">
                                     <h3 class="wave-title"><?php echo esc_html($wave['name']); ?></h3>
                                     <span class="wave-badge <?php echo esc_attr($wave['status']); ?>">
-                                        <?php echo esc_html(ucfirst($wave['status'])); ?>
+                                        <?php
+                                        $status_labels = array(
+                                            'upcoming' => __('Próxima', 'eipsi-forms'),
+                                            'active' => __('Activa', 'eipsi-forms'),
+                                            'closed' => __('Cerrada', 'eipsi-forms'),
+                                            'overdue' => __('Vencida', 'eipsi-forms'),
+                                            'draft' => __('Borrador', 'eipsi-forms'),
+                                            'completed' => __('Completada', 'eipsi-forms'),
+                                            'paused' => __('Pausada', 'eipsi-forms'),
+                                        );
+                                        echo esc_html($status_labels[$wave['status']] ?? ucfirst($wave['status']));
+                                        ?>
                                     </span>
                                 </div>
                             </div>
@@ -166,6 +187,14 @@ $available_forms = get_posts(array(
                                         <span class="wave-info-label">📋 <?php esc_html_e('Formulario:', 'eipsi-forms'); ?></span>
                                         <span class="wave-info-value"><?php echo esc_html($form_name); ?></span>
                                     </div>
+                                    <?php if (!empty($wave['start_date'])): ?>
+                                    <div class="wave-info-row">
+                                        <span class="wave-info-label">🚀 <?php esc_html_e('Inicio:', 'eipsi-forms'); ?></span>
+                                        <span class="wave-info-value">
+                                            <?php echo esc_html(date_i18n(get_option('date_format') . ' H:i', strtotime($wave['start_date']))); ?>
+                                        </span>
+                                    </div>
+                                    <?php endif; ?>
                                     <div class="wave-info-row">
                                         <span class="wave-info-label">📅 <?php esc_html_e('Vence:', 'eipsi-forms'); ?></span>
                                         <span class="wave-info-value">
@@ -276,11 +305,20 @@ $available_forms = get_posts(array(
 
             <div class="eipsi-form-row">
                 <div class="form-group">
+                    <label for="start_date" class="eipsi-form-label">
+                        🚀 <?php esc_html_e('Fecha de Inicio:', 'eipsi-forms'); ?>
+                    </label>
+                    <input type="datetime-local" id="start_date" name="start_date" class="eipsi-form-input">
+                    <small class="form-help"><?php esc_html_e('Fecha en que los participantes podrán acceder a esta onda. Si está vacía, estará disponible inmediatamente.', 'eipsi-forms'); ?></small>
+                </div>
+
+                <div class="form-group">
                     <label for="due_date" class="eipsi-form-label">
                         📅 <?php esc_html_e('Fecha de Vencimiento:', 'eipsi-forms'); ?>
                     </label>
                     <input type="datetime-local" id="due_date" name="due_date" class="eipsi-form-input">
                 </div>
+            </div>
 
                 <div class="form-group">
                     <label for="wave_status" class="eipsi-form-label">
@@ -732,7 +770,81 @@ participante4@ejemplo.com; participante5@ejemplo.com', 'eipsi-forms'); ?>"></tex
     </div>
 </div>
 
-<!-- Modal: Enviar Recordatorio Manual -->
+<!-- Modal: Email Preview -->
+<div id="eipsi-email-preview-modal" class="eipsi-modal" style="display:none;">
+    <div class="eipsi-modal-content modal-large">
+        <span class="eipsi-close-modal">&times;</span>
+        <h3>📧 <?php esc_html_e('Vista Previa del Email', 'eipsi-forms'); ?></h3>
+        
+        <div class="email-preview-info" style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label><strong><?php esc_html_e('Tipo de Email:', 'eipsi-forms'); ?></strong></label>
+                <select id="email-preview-type" class="eipsi-form-select" style="max-width: 300px;">
+                    <option value="reminder"><?php esc_html_e('Recordatorio de Onda', 'eipsi-forms'); ?></option>
+                    <option value="manual"><?php esc_html_e('Recordatorio Manual', 'eipsi-forms'); ?></option>
+                    <option value="welcome"><?php esc_html_e('Bienvenida', 'eipsi-forms'); ?></option>
+                    <option value="confirmation"><?php esc_html_e('Confirmación', 'eipsi-forms'); ?></option>
+                    <option value="recovery"><?php esc_html_e('Recuperación (Dropout)', 'eipsi-forms'); ?></option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label><strong><?php esc_html_e('Participante:', 'eipsi-forms'); ?></strong></label>
+                <select id="email-preview-participant" class="eipsi-form-select" style="max-width: 300px;">
+                    <option value=""><?php esc_html_e('Vista previa de muestra', 'eipsi-forms'); ?></option>
+                </select>
+            </div>
+        </div>
+
+        <div class="email-preview-content" style="border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+            <div class="email-preview-header" style="background: #f0f0f0; padding: 10px 15px; border-bottom: 1px solid #ddd;">
+                <strong><?php esc_html_e('Asunto:', 'eipsi-forms'); ?></strong>
+                <span id="email-preview-subject"></span>
+            </div>
+            <div class="email-preview-body" id="email-preview-body" style="padding: 20px; min-height: 200px; background: #fff;">
+                <!-- Email content loaded via AJAX -->
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <span class="spinner is-active"></span>
+                    <p><?php esc_html_e('Cargando vista previa...', 'eipsi-forms'); ?></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="email-preview-footer" style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 4px; font-size: 0.9em;">
+            <strong>⚠️ <?php esc_html_e('Nota:', 'eipsi-forms'); ?></strong>
+            <?php esc_html_e('Este es un ejemplo del email que recibirán los participantes. El enlace mágico (magic link) se generará automáticamente al enviar.', 'eipsi-forms'); ?>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="button button-secondary" id="email-preview-refresh-btn">
+                🔄 <?php esc_html_e('Actualizar Vista Previa', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="button eipsi-close-modal-btn">
+                ❌ <?php esc_html_e('Cerrar', 'eipsi-forms'); ?>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Validation Warning Modal -->
+<div id="eipsi-validation-warning-modal" class="eipsi-modal" style="display:none;">
+    <div class="eipsi-modal-content">
+        <span class="eipsi-close-modal">&times;</span>
+        <h3>⚠️ <?php esc_html_e('Advertencia de Configuración', 'eipsi-forms'); ?></h3>
+        
+        <div class="validation-warnings-list" id="validation-warnings-list" style="margin: 20px 0;">
+            <!-- Warnings loaded dynamically -->
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="button button-primary" id="validation-confirm-save-btn">
+                <?php esc_html_e('Guardar de Todos Modos', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="button eipsi-close-modal-btn">
+                <?php esc_html_e('Revisar Fechas', 'eipsi-forms'); ?>
+            </button>
+        </div>
+    </div>
+</div>
 <div id="eipsi-manual-reminder-modal" class="eipsi-modal" style="display:none;">
     <div class="eipsi-modal-content modal-large">
         <span class="eipsi-close-modal">&times;</span>

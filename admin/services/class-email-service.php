@@ -1414,4 +1414,191 @@ class EIPSI_Email_Service {
             'health_status' => $success_rate >= 95 ? 'excellent' : ($success_rate >= 85 ? 'good' : 'needs_attention')
         );
     }
+
+    /**
+     * Get wave email preview without sending.
+     *
+     * @param int    $survey_id Survey ID.
+     * @param int    $wave_id Wave ID.
+     * @param int    $participant_id Participant ID.
+     * @param string $email_type Email type (reminder, welcome, confirmation, recovery, manual).
+     * @return array Preview data.
+     * @since 1.7.1
+     * @access public
+     */
+    public static function get_wave_email_preview($survey_id, $wave_id, $participant_id, $email_type = 'reminder') {
+        $participant = self::get_participant($participant_id);
+        
+        // If no participant, return sample data
+        if (!$participant) {
+            return self::get_sample_email_preview($survey_id, $wave_id, $email_type);
+        }
+
+        $survey_name = get_the_title($survey_id);
+        $wave = EIPSI_Wave_Service::get_wave($wave_id);
+        
+        if (!$wave) {
+            return array('success' => false, 'message' => 'Wave not found');
+        }
+
+        // Get existing magic link or generate preview token
+        $magic_link = self::get_latest_magic_link_url($survey_id, $participant_id);
+        
+        if (empty($magic_link)) {
+            $magic_link = add_query_arg('eipsi_magic', 'PREVIEW_TOKEN_' . $participant_id, site_url('/'));
+        }
+
+        $investigator_name = get_option('eipsi_investigator_name', 'Equipo de Investigación');
+        $investigator_email = get_option('eipsi_investigator_email', get_option('admin_email'));
+
+        $placeholders = array(
+            'first_name' => $participant->first_name ?: 'Participante',
+            'last_name' => $participant->last_name ?: '',
+            'survey_name' => $survey_name,
+            'wave_index' => isset($wave->wave_index) ? "Toma " . $wave->wave_index : $wave->name,
+            'due_date' => !empty($wave->due_date) ? date_i18n(get_option('date_format'), strtotime($wave->due_date)) : 'Por definir',
+            'due_at' => !empty($wave->due_date) ? date_i18n(get_option('date_format'), strtotime($wave->due_date)) : 'Por definir',
+            'magic_link' => $magic_link,
+            'estimated_time' => isset($wave->estimated_time) ? $wave->estimated_time : '10-15',
+            'investigator_name' => $investigator_name,
+            'investigator_email' => $investigator_email,
+            'custom_message' => '',
+        );
+
+        $subject = '';
+        $template_name = '';
+
+        switch ($email_type) {
+            case 'reminder':
+                $subject = "Recordatorio: Tu próxima toma en {$survey_name}";
+                $template_name = 'wave-reminder';
+                break;
+            case 'welcome':
+                $subject = "Bienvenido a {$survey_name}";
+                $template_name = 'welcome';
+                break;
+            case 'confirmation':
+                $subject = "Recibimos tu respuesta";
+                $template_name = 'wave-confirmation';
+                $placeholders['submitted_at'] = date_i18n(get_option('date_format') . ' ' . get_option('time_format'));
+                $placeholders['next_wave_index'] = 'Próxima toma';
+                $placeholders['next_due_at'] = 'Por definir';
+                break;
+            case 'recovery':
+                $subject = "Te extrañamos - {$survey_name}";
+                $template_name = 'dropout-recovery';
+                break;
+            case 'manual':
+            default:
+                $subject = "Recordatorio: Toma {$wave->wave_index} en {$survey_name}";
+                $template_name = 'manual-reminder';
+                break;
+        }
+
+        $content = self::render_template($template_name, $placeholders);
+
+        return array(
+            'success' => true,
+            'is_sample' => false,
+            'subject' => $subject,
+            'content' => $content,
+            'magic_link' => $magic_link,
+            'email' => $participant->email,
+            'wave' => array(
+                'id' => $wave->id,
+                'name' => $wave->name,
+                'wave_index' => $wave->wave_index,
+                'due_date' => $wave->due_date,
+            ),
+            'participant' => array(
+                'id' => $participant->id,
+                'first_name' => $participant->first_name,
+                'last_name' => $participant->last_name,
+                'email' => $participant->email,
+            )
+        );
+    }
+
+    /**
+     * Get sample email preview with placeholder data.
+     *
+     * @param int    $survey_id Survey ID.
+     * @param int    $wave_id Wave ID.
+     * @param string $email_type Email type.
+     * @return array Sample preview data.
+     * @since 1.7.1
+     * @access public
+     */
+    public static function get_sample_email_preview($survey_id, $wave_id, $email_type = 'reminder') {
+        $survey_name = get_the_title($survey_id) ?: 'Nombre del Estudio';
+        $wave = EIPSI_Wave_Service::get_wave($wave_id);
+        
+        $investigator_name = get_option('eipsi_investigator_name', 'Equipo de Investigación');
+        $investigator_email = get_option('eipsi_investigator_email', get_option('admin_email'));
+
+        $placeholders = array(
+            'first_name' => '[Nombre del Participante]',
+            'last_name' => '',
+            'survey_name' => $survey_name,
+            'wave_index' => $wave ? ("Toma " . $wave->wave_index) : 'T1',
+            'due_date' => $wave && !empty($wave->due_date) ? date_i18n(get_option('date_format'), strtotime($wave->due_date)) : '[Fecha de vencimiento]',
+            'due_at' => $wave && !empty($wave->due_date) ? date_i18n(get_option('date_format'), strtotime($wave->due_date)) : '[Fecha de vencimiento]',
+            'magic_link' => site_url('/?eipsi_magic=PREVIEW_TOKEN'),
+            'estimated_time' => '10-15',
+            'investigator_name' => $investigator_name,
+            'investigator_email' => $investigator_email,
+            'custom_message' => '',
+            'submitted_at' => date_i18n(get_option('date_format') . ' ' . get_option('time_format')),
+            'next_wave_index' => 'Próxima toma',
+            'next_due_at' => 'Por definir',
+        );
+
+        $subject = '';
+        $template_name = '';
+
+        switch ($email_type) {
+            case 'reminder':
+                $subject = "Recordatorio: Tu próxima toma en {$survey_name}";
+                $template_name = 'wave-reminder';
+                break;
+            case 'welcome':
+                $subject = "Bienvenido a {$survey_name}";
+                $template_name = 'welcome';
+                break;
+            case 'confirmation':
+                $subject = "Recibimos tu respuesta";
+                $template_name = 'wave-confirmation';
+                break;
+            case 'recovery':
+                $subject = "Te extrañamos - {$survey_name}";
+                $template_name = 'dropout-recovery';
+                break;
+            case 'manual':
+            default:
+                $subject = $wave ? "Recordatorio: Toma {$wave->wave_index} en {$survey_name}" : "Recordatorio: {$survey_name}";
+                $template_name = 'manual-reminder';
+                break;
+        }
+
+        $content = self::render_template($template_name, $placeholders);
+
+        return array(
+            'success' => true,
+            'is_sample' => true,
+            'subject' => $subject,
+            'content' => $content,
+            'magic_link' => $placeholders['magic_link'],
+            'email' => '[email@participante.com]',
+            'wave' => $wave ? array(
+                'id' => $wave->id,
+                'name' => $wave->name,
+                'wave_index' => $wave->wave_index,
+                'due_date' => $wave->due_date,
+            ) : null,
+            'participant_sample' => array(
+                'first_name' => $placeholders['first_name'],
+                'email' => $placeholders['email'],
+            )
+        );
+    }
 }
