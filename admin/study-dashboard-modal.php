@@ -289,6 +289,7 @@ if (!defined('ABSPATH')) {
                                 <th><?php esc_html_e('Email', 'eipsi-forms'); ?></th>
                                 <th><?php esc_html_e('Nombre', 'eipsi-forms'); ?></th>
                                 <th><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
+                                <th><?php esc_html_e('Magic Link', 'eipsi-forms'); ?></th>
                                 <th><?php esc_html_e('Fecha Registro', 'eipsi-forms'); ?></th>
                                 <th><?php esc_html_e('Último Acceso', 'eipsi-forms'); ?></th>
                                 <th><?php esc_html_e('Acciones', 'eipsi-forms'); ?></th>
@@ -304,6 +305,72 @@ if (!defined('ABSPATH')) {
                     <!-- Paginación generada dinámicamente -->
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Magic Link Resend -->
+<div id="eipsi-magic-link-resend-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content medium-modal">
+        <div class="eipsi-modal-header">
+            <h2>✨ <?php esc_html_e('Reenviar Magic Link', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <div class="magic-link-preview-meta">
+                <p><strong><?php esc_html_e('Destinatario:', 'eipsi-forms'); ?></strong> <span id="resend-magic-link-email"></span></p>
+                <p><strong><?php esc_html_e('Asunto:', 'eipsi-forms'); ?></strong> <span id="resend-magic-link-subject"></span></p>
+            </div>
+            <div id="resend-magic-link-preview" class="magic-link-preview"></div>
+            <div id="resend-magic-link-link-wrap" class="magic-link-preview-link" style="display:none;">
+                <label for="resend-magic-link-link"><?php esc_html_e('Enlace actual', 'eipsi-forms'); ?></label>
+                <div class="magic-link-field">
+                    <input type="text" id="resend-magic-link-link" class="widefat" readonly>
+                    <button type="button" class="button button-secondary button-small" id="copy-resend-magic-link">📋 <?php esc_html_e('Copiar', 'eipsi-forms'); ?></button>
+                </div>
+            </div>
+            <p class="description magic-link-preview-note">
+                <?php esc_html_e('Al reenviar se generará un nuevo Magic Link y el anterior quedará vencido.', 'eipsi-forms'); ?>
+            </p>
+            <div id="resend-magic-link-error" class="notice notice-error" style="display:none; margin-top: 10px;"></div>
+            <div id="resend-magic-link-success" class="notice notice-success" style="display:none; margin-top: 10px;"></div>
+        </div>
+        <div class="eipsi-modal-footer">
+            <button class="button button-secondary eipsi-modal-close"><?php esc_html_e('Cerrar', 'eipsi-forms'); ?></button>
+            <button class="button button-primary" id="confirm-resend-magic-link">📨 <?php esc_html_e('Enviar Magic Link', 'eipsi-forms'); ?></button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Manual Magic Link -->
+<div id="eipsi-magic-link-manual-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content small-modal">
+        <div class="eipsi-modal-header">
+            <h2>🔗 <?php esc_html_e('Generar Magic Link', 'eipsi-forms'); ?></h2>
+            <button class="eipsi-modal-close">&times;</button>
+        </div>
+        <div class="eipsi-modal-body">
+            <form id="manual-magic-link-form">
+                <p>
+                    <label for="manual-magic-link-email"><?php esc_html_e('Email del participante', 'eipsi-forms'); ?></label>
+                    <input type="email" id="manual-magic-link-email" class="widefat" required>
+                </p>
+                <button type="button" class="button button-secondary" id="manual-generate-magic-link">🔐 <?php esc_html_e('Generar enlace', 'eipsi-forms'); ?></button>
+
+                <div id="manual-magic-link-output" class="magic-link-output" style="display:none;">
+                    <label for="manual-magic-link-url"><?php esc_html_e('Enlace generado', 'eipsi-forms'); ?></label>
+                    <div class="magic-link-field">
+                        <input type="text" id="manual-magic-link-url" class="widefat" readonly>
+                        <button type="button" class="button button-secondary button-small" id="manual-copy-magic-link">📋 <?php esc_html_e('Copiar', 'eipsi-forms'); ?></button>
+                    </div>
+                    <p class="description magic-link-note">
+                        <?php esc_html_e('Compartilo por WhatsApp o el canal que prefieras. Expira en 48 horas.', 'eipsi-forms'); ?>
+                    </p>
+                </div>
+
+                <div id="manual-magic-link-error" class="notice notice-error" style="display:none; margin-top: 10px;"></div>
+                <div id="manual-magic-link-success" class="notice notice-success" style="display:none; margin-top: 10px;"></div>
+            </form>
         </div>
     </div>
 </div>

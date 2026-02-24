@@ -97,6 +97,98 @@ class EIPSI_Email_Service {
 
         return array('success' => true, 'magic_link' => $magic_link, 'error' => null);
     }
+
+    /**
+     * Get magic link email preview without sending.
+     *
+     * @param int $survey_id Survey ID.
+     * @param int $participant_id Participant ID.
+     * @return array Preview data.
+     * @since 1.7.1
+     * @access public
+     */
+    public static function get_magic_link_preview($survey_id, $participant_id) {
+        $participant = self::get_participant($participant_id);
+        if (!$participant) {
+            return array('success' => false, 'message' => 'Participante no encontrado');
+        }
+
+        $survey_name = get_the_title($survey_id);
+        $magic_link = self::get_latest_magic_link_url($survey_id, $participant_id);
+
+        if (empty($magic_link)) {
+            $magic_link = add_query_arg('eipsi_magic', 'PREVIEW', site_url('/'));
+        }
+
+        $placeholders = array(
+            'first_name' => $participant->first_name,
+            'last_name' => $participant->last_name,
+            'survey_name' => $survey_name,
+            'magic_link' => $magic_link,
+            'custom_message' => '',
+            'investigator_name' => get_option('eipsi_investigator_name', 'Equipo de Investigación'),
+            'investigator_email' => get_option('eipsi_investigator_email', get_option('admin_email')),
+        );
+
+        $subject = "Acceso rápido a {$survey_name}";
+        $content = self::render_template('magic-link', $placeholders);
+
+        return array(
+            'success' => true,
+            'subject' => $subject,
+            'content' => $content,
+            'magic_link' => $magic_link,
+            'email' => $participant->email
+        );
+    }
+
+    /**
+     * Extend magic link expiry without invalidating the token.
+     *
+     * @param int $survey_id Survey ID.
+     * @param int $participant_id Participant ID.
+     * @param int $hours Extra hours to add.
+     * @return array Result with status and new expiry.
+     * @since 1.7.1
+     * @access public
+     */
+    public static function extend_magic_link_expiry($survey_id, $participant_id, $hours = 48) {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'survey_magic_links';
+        $magic_link = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table_name} WHERE survey_id = %d AND participant_id = %d AND used_at IS NULL ORDER BY created_at DESC LIMIT 1",
+            $survey_id,
+            $participant_id
+        ));
+
+        if (!$magic_link) {
+            return array('success' => false, 'message' => 'No hay Magic Links activos para extender.');
+        }
+
+        $now_ts = current_time('timestamp', true);
+        $expires_ts = strtotime($magic_link->expires_at);
+        if ($expires_ts < $now_ts) {
+            $expires_ts = $now_ts;
+        }
+
+        $new_expires_ts = $expires_ts + ($hours * HOUR_IN_SECONDS);
+        $new_expires_at = gmdate('Y-m-d H:i:s', $new_expires_ts);
+
+        $updated = $wpdb->update(
+            $table_name,
+            array('expires_at' => $new_expires_at),
+            array('id' => $magic_link->id),
+            array('%s'),
+            array('%d')
+        );
+
+        if ($updated === false) {
+            return array('success' => false, 'message' => 'No se pudo extender el Magic Link.');
+        }
+
+        return array('success' => true, 'expires_at' => $new_expires_at);
+    }
     
     /**
      * Send welcome email con magic link.
@@ -353,6 +445,44 @@ class EIPSI_Email_Service {
         }
 
         return $participant;
+    }
+
+    /**
+     * Get latest magic link URL for preview purposes.
+     *
+     * @param int $survey_id Survey ID.
+     * @param int $participant_id Participant ID.
+     * @return string Magic link URL or empty string.
+     * @since 1.7.1
+     * @access private
+     */
+    private static function get_latest_magic_link_url($survey_id, $participant_id) {
+        $magic_link = self::get_latest_magic_link_record($survey_id, $participant_id);
+
+        if (!$magic_link || empty($magic_link->token_plain)) {
+            return '';
+        }
+
+        return add_query_arg('eipsi_magic', $magic_link->token_plain, site_url('/'));
+    }
+
+    /**
+     * Get latest magic link record.
+     *
+     * @param int $survey_id Survey ID.
+     * @param int $participant_id Participant ID.
+     * @return object|null Magic link record.
+     * @since 1.7.1
+     * @access private
+     */
+    private static function get_latest_magic_link_record($survey_id, $participant_id) {
+        global $wpdb;
+
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}survey_magic_links WHERE survey_id = %d AND participant_id = %d ORDER BY created_at DESC LIMIT 1",
+            $survey_id,
+            $participant_id
+        ));
     }
 
     /**

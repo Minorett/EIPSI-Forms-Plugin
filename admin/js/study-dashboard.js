@@ -18,6 +18,8 @@
 	let isLoading = false;
 	let currentPage = 1;
 	const participantsPerPage = 20;
+	let currentMagicLinkParticipantId = 0;
+	let currentMagicLinkParticipantEmail = '';
 
 	// ===========================
 	// INITIALIZATION
@@ -179,6 +181,67 @@
 				},
 			} );
 		} );
+
+		// Magic Link Actions
+		$( document ).on( 'click', '.eipsi-magic-link-resend', function () {
+			const participantId = $( this ).data( 'participant-id' );
+			const participantEmail = $( this ).data( 'participant-email' );
+			openResendMagicLinkModal( participantId, participantEmail );
+		} );
+
+		$( document ).on( 'click', '.eipsi-magic-link-generate', function () {
+			const participantId = $( this ).data( 'participant-id' );
+			const participantEmail = $( this ).data( 'participant-email' );
+			openManualMagicLinkModal( participantId, participantEmail );
+		} );
+
+		$( document ).on( 'click', '.magic-link-extend', function () {
+			const participantId = $( this ).data( 'participant-id' );
+			const participantEmail = $( this ).data( 'participant-email' );
+			confirmExtendMagicLink( participantId, participantEmail );
+		} );
+
+		$( document ).on( 'click', '#confirm-resend-magic-link', function () {
+			resendMagicLinkFromModal();
+		} );
+
+		$( document ).on( 'click', '#manual-generate-magic-link', function () {
+			generateManualMagicLink();
+		} );
+
+		$( document ).on( 'click', '#manual-copy-magic-link', function () {
+			copyTextToClipboard(
+				$( '#manual-magic-link-url' ).val(),
+				'Magic Link copiado al portapapeles.'
+			);
+		} );
+
+		$( document ).on( 'click', '#copy-resend-magic-link', function () {
+			copyTextToClipboard(
+				$( '#resend-magic-link-link' ).val(),
+				'Magic Link copiado al portapapeles.'
+			);
+		} );
+
+		$( document ).on( 'input', '#manual-magic-link-email', function () {
+			clearManualMagicLinkMessages();
+		} );
+
+		$( document ).on(
+			'click',
+			'#eipsi-magic-link-resend-modal .eipsi-modal-close',
+			function () {
+				$( '#eipsi-magic-link-resend-modal' ).fadeOut( 200 );
+			}
+		);
+
+		$( document ).on(
+			'click',
+			'#eipsi-magic-link-manual-modal .eipsi-modal-close',
+			function () {
+				$( '#eipsi-magic-link-manual-modal' ).fadeOut( 200 );
+			}
+		);
 
 		// Pagination
 		$( document ).on(
@@ -736,33 +799,36 @@
 	}
 
 	function copyMagicLink() {
-		const magicLink = $( '#magic-link-url' ).val();
-		if ( ! magicLink ) {
+		copyTextToClipboard(
+			$( '#magic-link-url' ).val(),
+			'Magic Link copiado al portapapeles.'
+		);
+	}
+
+	function copyTextToClipboard( text, successMessage ) {
+		if ( ! text ) {
 			showNotification( 'No hay Magic Link para copiar.', 'error' );
 			return;
 		}
 
 		if ( navigator.clipboard && navigator.clipboard.writeText ) {
 			navigator.clipboard
-				.writeText( magicLink )
+				.writeText( text )
 				.then( function () {
-					showNotification(
-						'Magic Link copiado al portapapeles.',
-						'success'
-					);
+					showNotification( successMessage, 'success' );
 				} )
 				.catch( function () {
-					fallbackCopyMagicLink( magicLink );
+					fallbackCopyText( text, successMessage );
 				} );
 			return;
 		}
 
-		fallbackCopyMagicLink( magicLink );
+		fallbackCopyText( text, successMessage );
 	}
 
-	function fallbackCopyMagicLink( magicLink ) {
+	function fallbackCopyText( text, successMessage ) {
 		const textarea = document.createElement( 'textarea' );
-		textarea.value = magicLink;
+		textarea.value = text;
 		textarea.setAttribute( 'readonly', '' );
 		textarea.style.position = 'absolute';
 		textarea.style.left = '-9999px';
@@ -770,7 +836,301 @@
 		textarea.select();
 		document.execCommand( 'copy' );
 		document.body.removeChild( textarea );
-		showNotification( 'Magic Link copiado al portapapeles.', 'success' );
+		showNotification( successMessage, 'success' );
+	}
+
+	function openResendMagicLinkModal( participantId, participantEmail ) {
+		if ( ! participantId ) {
+			return;
+		}
+
+		currentMagicLinkParticipantId = participantId;
+		currentMagicLinkParticipantEmail = participantEmail || '';
+
+		$( '#resend-magic-link-email' ).text( participantEmail || '' );
+		$( '#resend-magic-link-subject' ).text( '' );
+		$( '#resend-magic-link-preview' ).html( '<p>Cargando vista previa...</p>' );
+		$( '#resend-magic-link-link' ).val( '' );
+		$( '#resend-magic-link-link-wrap' ).hide();
+		clearResendMagicLinkMessages();
+
+		$( '#eipsi-magic-link-resend-modal' ).fadeIn( 200 );
+		loadMagicLinkPreview( participantId );
+	}
+
+	function loadMagicLinkPreview( participantId ) {
+		const ajaxUrl =
+			eipsiStudyDash.ajaxUrl ||
+			( typeof ajaxurl !== 'undefined'
+				? ajaxurl
+				: '/wp-admin/admin-ajax.php' );
+
+		$.ajax( {
+			url: ajaxUrl,
+			type: 'GET',
+			data: {
+				action: 'eipsi_get_magic_link_preview',
+				nonce: eipsiStudyDash.nonce,
+				study_id: currentStudyId,
+				participant_id: participantId,
+			},
+			success( response ) {
+				if ( response.success && response.data ) {
+					$( '#resend-magic-link-email' ).text(
+						response.data.email || currentMagicLinkParticipantEmail
+					);
+					$( '#resend-magic-link-subject' ).text(
+						response.data.subject || ''
+					);
+					$( '#resend-magic-link-preview' ).html(
+						response.data.content || ''
+					);
+
+					if ( response.data.magic_link ) {
+						$( '#resend-magic-link-link' ).val(
+							response.data.magic_link
+						);
+						$( '#resend-magic-link-link-wrap' ).show();
+					}
+				} else {
+					showResendMagicLinkError(
+						response.data || 'No pudimos cargar la vista previa.'
+					);
+				}
+			},
+			error() {
+				showResendMagicLinkError(
+					'Error de conexión al cargar la vista previa.'
+				);
+			},
+		} );
+	}
+
+	function resendMagicLinkFromModal() {
+		if ( ! currentStudyId || ! currentMagicLinkParticipantId ) {
+			showResendMagicLinkError(
+				'No hay participante seleccionado para reenviar.'
+			);
+			return;
+		}
+
+		const $btn = $( '#confirm-resend-magic-link' );
+		const originalText = $btn.text();
+		$btn.text( 'Enviando...' ).prop( 'disabled', true );
+		clearResendMagicLinkMessages();
+
+		const ajaxUrl =
+			eipsiStudyDash.ajaxUrl ||
+			( typeof ajaxurl !== 'undefined'
+				? ajaxurl
+				: '/wp-admin/admin-ajax.php' );
+
+		$.ajax( {
+			url: ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'eipsi_resend_magic_link',
+				nonce: eipsiStudyDash.nonce,
+				study_id: currentStudyId,
+				participant_id: currentMagicLinkParticipantId,
+			},
+			success( response ) {
+				if ( response.success && response.data ) {
+					showResendMagicLinkSuccess(
+						response.data.message || 'Magic Link reenviado.'
+					);
+
+					if ( response.data.magic_link ) {
+						$( '#resend-magic-link-link' ).val(
+							response.data.magic_link
+						);
+						$( '#resend-magic-link-link-wrap' ).show();
+					}
+
+					loadParticipantsList( currentPage );
+				} else {
+					showResendMagicLinkError(
+						response.data || 'No pudimos reenviar el Magic Link.'
+					);
+				}
+			},
+			error() {
+				showResendMagicLinkError(
+					'Error de conexión al reenviar el Magic Link.'
+				);
+			},
+			complete() {
+				$btn.text( originalText ).prop( 'disabled', false );
+			},
+		} );
+	}
+
+	function clearResendMagicLinkMessages() {
+		$( '#resend-magic-link-error' ).hide().empty();
+		$( '#resend-magic-link-success' ).hide().empty();
+	}
+
+	function showResendMagicLinkError( message ) {
+		$( '#resend-magic-link-error' )
+			.html( '<p>' + escapeHtml( message ) + '</p>' )
+			.show();
+		$( '#resend-magic-link-success' ).hide().empty();
+	}
+
+	function showResendMagicLinkSuccess( message ) {
+		$( '#resend-magic-link-success' )
+			.html( '<p>' + escapeHtml( message ) + '</p>' )
+			.show();
+		$( '#resend-magic-link-error' ).hide().empty();
+	}
+
+	function openManualMagicLinkModal( participantId, participantEmail ) {
+		currentMagicLinkParticipantId = participantId || 0;
+		currentMagicLinkParticipantEmail = participantEmail || '';
+
+		$( '#manual-magic-link-email' ).val( participantEmail || '' );
+		$( '#manual-magic-link-output' ).hide();
+		$( '#manual-magic-link-url' ).val( '' );
+		clearManualMagicLinkMessages();
+
+		$( '#eipsi-magic-link-manual-modal' ).fadeIn( 200 );
+		$( '#manual-magic-link-email' ).trigger( 'focus' );
+	}
+
+	function clearManualMagicLinkMessages() {
+		$( '#manual-magic-link-error' ).hide().empty();
+		$( '#manual-magic-link-success' ).hide().empty();
+	}
+
+	function showManualMagicLinkError( message ) {
+		$( '#manual-magic-link-error' )
+			.html( '<p>' + escapeHtml( message ) + '</p>' )
+			.show();
+		$( '#manual-magic-link-success' ).hide().empty();
+	}
+
+	function showManualMagicLinkSuccess( message ) {
+		$( '#manual-magic-link-success' )
+			.html( '<p>' + escapeHtml( message ) + '</p>' )
+			.show();
+		$( '#manual-magic-link-error' ).hide().empty();
+	}
+
+	function generateManualMagicLink() {
+		if ( ! currentStudyId ) {
+			showManualMagicLinkError( 'No hay estudio seleccionado.' );
+			return;
+		}
+
+		const email = $( '#manual-magic-link-email' ).val().trim();
+		if ( ! email ) {
+			showManualMagicLinkError( 'Ingresá un email válido.' );
+			return;
+		}
+
+		const $btn = $( '#manual-generate-magic-link' );
+		const originalText = $btn.text();
+		$btn.text( 'Generando...' ).prop( 'disabled', true );
+		clearManualMagicLinkMessages();
+
+		const ajaxUrl =
+			eipsiStudyDash.ajaxUrl ||
+			( typeof ajaxurl !== 'undefined'
+				? ajaxurl
+				: '/wp-admin/admin-ajax.php' );
+
+		$.ajax( {
+			url: ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'eipsi_generate_magic_link',
+				nonce: eipsiStudyDash.nonce,
+				study_id: currentStudyId,
+				email,
+			},
+			success( response ) {
+				if ( response.success && response.data ) {
+					$( '#manual-magic-link-url' ).val(
+						response.data.magic_link
+					);
+					$( '#manual-magic-link-output' ).show();
+					showManualMagicLinkSuccess(
+						response.data.message ||
+							'Magic Link generado correctamente.'
+					);
+					loadParticipantsList( currentPage );
+				} else {
+					showManualMagicLinkError(
+						response.data || 'No pudimos generar el Magic Link.'
+					);
+				}
+			},
+			error() {
+				showManualMagicLinkError(
+					'Error de conexión al generar el Magic Link.'
+				);
+			},
+			complete() {
+				$btn.text( originalText ).prop( 'disabled', false );
+			},
+		} );
+	}
+
+	function confirmExtendMagicLink( participantId, participantEmail ) {
+		if ( ! participantId ) {
+			return;
+		}
+
+		showConfirmationDialog( {
+			title: 'Extender Magic Link',
+			message:
+				'¿Extender 48 horas el Magic Link de ' +
+				( participantEmail || 'este participante' ) +
+				'? Esta acción no invalida el enlace actual.',
+			confirmText: 'Sí, extender',
+			onConfirm() {
+				extendMagicLink( participantId );
+			},
+		} );
+	}
+
+	function extendMagicLink( participantId ) {
+		const ajaxUrl =
+			eipsiStudyDash.ajaxUrl ||
+			( typeof ajaxurl !== 'undefined'
+				? ajaxurl
+				: '/wp-admin/admin-ajax.php' );
+
+		$.ajax( {
+			url: ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'eipsi_extend_magic_link',
+				nonce: eipsiStudyDash.nonce,
+				study_id: currentStudyId,
+				participant_id: participantId,
+			},
+			success( response ) {
+				if ( response.success ) {
+					showNotification(
+						response.data.message || 'Magic Link extendido.',
+						'success'
+					);
+					loadParticipantsList( currentPage );
+				} else {
+					showNotification(
+						response.data || 'No pudimos extender el Magic Link.',
+						'error'
+					);
+				}
+			},
+			error() {
+				showNotification(
+					'Error de conexión al extender el Magic Link.',
+					'error'
+				);
+			},
+		} );
 	}
 
 	// ===========================
@@ -847,7 +1207,7 @@
 
 		if ( participants.length === 0 ) {
 			$tbody.html(
-				'<tr><td colspan="6" style="text-align:center;padding:30px;color:#666;">No se encontraron participantes</td></tr>'
+				'<tr><td colspan="7" style="text-align:center;padding:30px;color:#666;">No se encontraron participantes</td></tr>'
 			);
 			$( '#participants-pagination' ).empty();
 			return;
@@ -872,6 +1232,31 @@
 				  escapeHtml( p.email ) +
 				  '" title="Reactivar participante">🟢 Reactivar</button>';
 
+			const magicLinkStatus = getMagicLinkStatusHtml( p );
+			const resendDisabled = p.is_active ? '' : ' disabled';
+			const resendButton =
+				'<button class="button button-small eipsi-magic-link-resend" data-participant-id="' +
+				  p.id +
+				  '" data-participant-email="' +
+				  escapeHtml( p.email ) +
+				  '"' +
+				  resendDisabled +
+				  '>🔁 Reenviar</button>';
+			const generateButton =
+				'<button class="button button-small button-secondary eipsi-magic-link-generate" data-participant-id="' +
+				  p.id +
+				  '" data-participant-email="' +
+				  escapeHtml( p.email ) +
+				  '"' +
+				  resendDisabled +
+				  '>🔗 Generar Link</button>';
+			const actionsHtml =
+				'<div class="participant-actions">' +
+				  toggleButton +
+				  resendButton +
+				  generateButton +
+				  '</div>';
+
 			html += '<tr class="participant-row">';
 			html += '<td><strong>' + escapeHtml( p.email ) + '</strong></td>';
 			html +=
@@ -881,6 +1266,7 @@
 				escapeHtml( p.last_name ) +
 				'</td>';
 			html += '<td>' + statusBadge + '</td>';
+			html += '<td>' + magicLinkStatus + '</td>';
 			html += '<td>' + formatDate( p.created_at ) + '</td>';
 			html +=
 				'<td>' +
@@ -888,7 +1274,7 @@
 					? formatDateTime( p.last_login_at )
 					: 'Nunca' ) +
 				'</td>';
-			html += '<td>' + toggleButton + '</td>';
+			html += '<td>' + actionsHtml + '</td>';
 			html += '</tr>';
 		} );
 
@@ -896,6 +1282,55 @@
 
 		// Render pagination
 		renderParticipantsPagination( page, pages );
+	}
+
+	function getMagicLinkStatusMeta( status ) {
+		const map = {
+			sent: { label: 'Enviado', icon: '✉️', className: 'status-sent' },
+			delivered: { label: 'Entregado', icon: '📬', className: 'status-delivered' },
+			clicked: { label: 'Click', icon: '✅', className: 'status-clicked' },
+			expired: { label: 'Vencido', icon: '⌛', className: 'status-expired' },
+			failed: { label: 'Fallido', icon: '⚠️', className: 'status-failed' },
+			none: { label: 'Sin envío', icon: '—', className: 'status-none' },
+		};
+		return map[ status ] || map.none;
+	}
+
+	function getMagicLinkStatusHtml( participant ) {
+		const meta = getMagicLinkStatusMeta( participant.magic_link_status );
+		let html =
+			'<div class="magic-link-status ' +
+			meta.className +
+			'"><span class="status-icon">' +
+			meta.icon +
+			'</span><span>' +
+			meta.label +
+			'</span></div>';
+
+		if ( participant.magic_link_expires_at ) {
+			html +=
+				'<div class="magic-link-expiry">Expira: ' +
+				formatDateTime( participant.magic_link_expires_at ) +
+				'</div>';
+		}
+
+		if ( participant.magic_link_sent_at ) {
+			html +=
+				'<div class="magic-link-sent-at">Último envío: ' +
+				formatDateTime( participant.magic_link_sent_at ) +
+				'</div>';
+		}
+
+		if ( participant.magic_link_can_extend ) {
+			html +=
+				'<button class="button button-small button-secondary magic-link-extend" data-participant-id="' +
+				participant.id +
+				'" data-participant-email="' +
+				escapeHtml( participant.email ) +
+				'">⏳ Extender 48 h</button>';
+		}
+
+		return html;
 	}
 
 	function renderParticipantsPagination( pageNum, totalPages ) {
@@ -977,7 +1412,7 @@
 	function showErrorParticipants( message ) {
 		const $tbody = $( '#participants-tbody' );
 		$tbody.html(
-			'<tr><td colspan="6" style="text-align:center;color:#d63638;padding:30px;"><strong>Error:</strong> ' +
+			'<tr><td colspan="7" style="text-align:center;color:#d63638;padding:30px;"><strong>Error:</strong> ' +
 				message +
 				'</td></tr>'
 		);

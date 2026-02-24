@@ -28,6 +28,9 @@ add_action('wp_ajax_eipsi_save_study_settings', 'wp_ajax_eipsi_save_study_settin
 add_action('wp_ajax_eipsi_close_study', 'wp_ajax_eipsi_close_study_handler');
 add_action('wp_ajax_eipsi_generate_magic_link', 'wp_ajax_eipsi_generate_magic_link_handler');
 add_action('wp_ajax_eipsi_send_magic_link', 'wp_ajax_eipsi_send_magic_link_handler');
+add_action('wp_ajax_eipsi_get_magic_link_preview', 'wp_ajax_eipsi_get_magic_link_preview_handler');
+add_action('wp_ajax_eipsi_resend_magic_link', 'wp_ajax_eipsi_resend_magic_link_handler');
+add_action('wp_ajax_eipsi_extend_magic_link', 'wp_ajax_eipsi_extend_magic_link_handler');
 add_action('wp_ajax_eipsi_resend_participant_email', 'wp_ajax_eipsi_resend_participant_email_handler');
 add_action('wp_ajax_eipsi_get_participant_email_history', 'wp_ajax_eipsi_get_participant_email_history_handler');
 
@@ -407,6 +410,107 @@ function wp_ajax_eipsi_send_magic_link_handler() {
     wp_send_json_success(array(
         'magic_link' => $send_result['magic_link'],
         'message' => sprintf(__('Magic Link enviado a %s.', 'eipsi-forms'), $email)
+    ));
+}
+
+/**
+ * GET magic link email preview.
+ */
+function wp_ajax_eipsi_get_magic_link_preview_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
+    $participant_id = isset($_GET['participant_id']) ? intval($_GET['participant_id']) : 0;
+
+    if (empty($study_id) || empty($participant_id)) {
+        wp_send_json_error('Missing parameters');
+    }
+
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    $preview = EIPSI_Email_Service::get_magic_link_preview($study_id, $participant_id);
+
+    if (empty($preview['success'])) {
+        wp_send_json_error(!empty($preview['message']) ? $preview['message'] : 'No se pudo generar la vista previa.');
+    }
+
+    wp_send_json_success(array(
+        'subject' => $preview['subject'],
+        'content' => $preview['content'],
+        'magic_link' => $preview['magic_link'],
+        'email' => $preview['email']
+    ));
+}
+
+/**
+ * POST resend magic link email to participant.
+ */
+function wp_ajax_eipsi_resend_magic_link_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+
+    if (empty($study_id) || empty($participant_id)) {
+        wp_send_json_error('Missing parameters');
+    }
+
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    $send_result = EIPSI_Email_Service::send_magic_link_email($study_id, $participant_id);
+
+    if (empty($send_result['success'])) {
+        wp_send_json_error(!empty($send_result['error']) ? $send_result['error'] : 'No se pudo reenviar el Magic Link.');
+    }
+
+    wp_send_json_success(array(
+        'magic_link' => $send_result['magic_link'],
+        'message' => __('Magic Link reenviado correctamente.', 'eipsi-forms')
+    ));
+}
+
+/**
+ * POST extend magic link expiry.
+ */
+function wp_ajax_eipsi_extend_magic_link_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+
+    if (empty($study_id) || empty($participant_id)) {
+        wp_send_json_error('Missing parameters');
+    }
+
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    $result = EIPSI_Email_Service::extend_magic_link_expiry($study_id, $participant_id, 48);
+
+    if (empty($result['success'])) {
+        wp_send_json_error(!empty($result['message']) ? $result['message'] : 'No se pudo extender el Magic Link.');
+    }
+
+    wp_send_json_success(array(
+        'expires_at' => $result['expires_at'],
+        'message' => __('Vencimiento extendido por 48 horas.', 'eipsi-forms')
     ));
 }
 
@@ -938,7 +1042,131 @@ function wp_ajax_eipsi_get_participants_list_handler() {
 
     $result = EIPSI_Participant_Service::list_participants($study_id, $page, $per_page, $filters);
 
+    if (!empty($result['participants'])) {
+        $participant_ids = array_map('intval', wp_list_pluck($result['participants'], 'id'));
+        $magic_links_map = eipsi_get_latest_magic_links_map($study_id, $participant_ids);
+        $magic_link_email_map = eipsi_get_magic_link_email_status_map($study_id, $participant_ids);
+
+        foreach ($result['participants'] as $participant) {
+            $magic_link = isset($magic_links_map[$participant->id]) ? $magic_links_map[$participant->id] : null;
+            $email_status = isset($magic_link_email_map[$participant->id]) ? $magic_link_email_map[$participant->id] : null;
+            $status_data = eipsi_get_magic_link_status_data($magic_link, $email_status);
+
+            $participant->magic_link_status = $status_data['status'];
+            $participant->magic_link_expires_at = $magic_link ? $magic_link->expires_at : null;
+            $participant->magic_link_used_at = $magic_link ? $magic_link->used_at : null;
+            $participant->magic_link_sent_at = $email_status ? $email_status['sent_at'] : null;
+            $participant->magic_link_sent_status = $email_status ? $email_status['status'] : null;
+            $participant->magic_link_can_extend = $status_data['can_extend'];
+        }
+    }
+
     wp_send_json_success($result);
+}
+
+/**
+ * Get latest magic links for participants.
+ */
+function eipsi_get_latest_magic_links_map($study_id, $participant_ids) {
+    global $wpdb;
+
+    if (empty($participant_ids)) {
+        return array();
+    }
+
+    $placeholders = implode(',', array_fill(0, count($participant_ids), '%d'));
+    $table_name = $wpdb->prefix . 'survey_magic_links';
+
+    $query = "SELECT ml.*
+        FROM {$table_name} ml
+        INNER JOIN (
+            SELECT participant_id, MAX(created_at) AS latest_created
+            FROM {$table_name}
+            WHERE survey_id = %d AND participant_id IN ({$placeholders})
+            GROUP BY participant_id
+        ) latest ON ml.participant_id = latest.participant_id AND ml.created_at = latest.latest_created
+        WHERE ml.survey_id = %d";
+
+    $params = array_merge(array($study_id), $participant_ids, array($study_id));
+    $results = $wpdb->get_results($wpdb->prepare($query, $params));
+
+    $map = array();
+    foreach ($results as $row) {
+        $map[(int) $row->participant_id] = $row;
+    }
+
+    return $map;
+}
+
+/**
+ * Get latest magic link email status per participant.
+ */
+function eipsi_get_magic_link_email_status_map($study_id, $participant_ids) {
+    global $wpdb;
+
+    if (empty($participant_ids)) {
+        return array();
+    }
+
+    $placeholders = implode(',', array_fill(0, count($participant_ids), '%d'));
+    $table_name = $wpdb->prefix . 'survey_email_log';
+
+    $query = "SELECT el.participant_id, el.status, el.sent_at
+        FROM {$table_name} el
+        INNER JOIN (
+            SELECT participant_id, MAX(sent_at) AS latest_sent
+            FROM {$table_name}
+            WHERE survey_id = %d AND email_type = %s AND participant_id IN ({$placeholders})
+            GROUP BY participant_id
+        ) latest ON el.participant_id = latest.participant_id AND el.sent_at = latest.latest_sent
+        WHERE el.survey_id = %d AND el.email_type = %s";
+
+    $params = array_merge(array($study_id, 'magic_link'), $participant_ids, array($study_id, 'magic_link'));
+    $results = $wpdb->get_results($wpdb->prepare($query, $params));
+
+    $map = array();
+    foreach ($results as $row) {
+        $map[(int) $row->participant_id] = array(
+            'status' => $row->status,
+            'sent_at' => $row->sent_at
+        );
+    }
+
+    return $map;
+}
+
+/**
+ * Resolve magic link status and actions.
+ */
+function eipsi_get_magic_link_status_data($magic_link, $email_status) {
+    $status = 'none';
+    $can_extend = false;
+    $now_ts = current_time('timestamp', true);
+
+    $email_state = $email_status ? $email_status['status'] : null;
+
+    if ($magic_link) {
+        $can_extend = empty($magic_link->used_at);
+
+        if (!empty($magic_link->used_at)) {
+            $status = 'clicked';
+        } elseif (!empty($magic_link->expires_at) && strtotime($magic_link->expires_at) < $now_ts) {
+            $status = 'expired';
+        } elseif ($email_state === 'sent') {
+            $status = 'delivered';
+        } elseif ($email_state === 'failed' || $email_state === 'bounced') {
+            $status = 'failed';
+        } else {
+            $status = 'sent';
+        }
+    } elseif ($email_state === 'failed' || $email_state === 'bounced') {
+        $status = 'failed';
+    }
+
+    return array(
+        'status' => $status,
+        'can_extend' => $can_extend
+    );
 }
 
 /**
