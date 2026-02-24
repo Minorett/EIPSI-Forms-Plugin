@@ -84,10 +84,51 @@ function eipsi_participant_register_handler() {
     $result = EIPSI_Participant_Service::create_participant($survey_id, $email, $password, $metadata);
     
     if (!$result['success']) {
+        // Special handling for email_exists - provide friendly options
+        if ($result['error'] === 'email_exists') {
+            // Check if participant is active
+            $existing_participant = EIPSI_Participant_Service::get_by_email($survey_id, $email);
+            $is_active = $existing_participant && $existing_participant->is_active;
+            
+            $options = array();
+            
+            if ($is_active) {
+                // Active participant - offer login or magic link
+                wp_send_json_error(array(
+                    'message' => __('Este email ya está registrado en este estudio.', 'eipsi-forms'),
+                    'code' => 'email_exists',
+                    'existing_email' => true,
+                    'options' => array(
+                        'login' => array(
+                            'label' => __('Iniciar sesión', 'eipsi-forms'),
+                            'description' => __('¿Ya tienes una cuenta? Inicia sesión con tu contraseña.', 'eipsi-forms')
+                        ),
+                        'magic_link' => array(
+                            'label' => __('Solicitar Magic Link', 'eipsi-forms'),
+                            'description' => __('¿Olvidaste tu contraseña? Te enviamos un enlace de acceso por email.', 'eipsi-forms')
+                        )
+                    )
+                ));
+            } else {
+                // Inactive participant - offer to reactivate
+                wp_send_json_error(array(
+                    'message' => __('Este email ya está registrado pero tu cuenta está desactivada.', 'eipsi-forms'),
+                    'code' => 'email_exists_inactive',
+                    'existing_email' => true,
+                    'is_inactive' => true,
+                    'options' => array(
+                        'contact' => array(
+                            'label' => __('Contactar al investigador', 'eipsi-forms'),
+                            'description' => __('Tu cuenta está inactiva. Por favor contacta al investigador del estudio para reactivarla.', 'eipsi-forms')
+                        )
+                    )
+                ));
+            }
+        }
+        
         $error_messages = array(
             'invalid_email' => __('El email ingresado no es válido.', 'eipsi-forms'),
             'short_password' => __('La contraseña debe tener al menos 8 caracteres.', 'eipsi-forms'),
-            'email_exists' => __('Este email ya está registrado en este estudio.', 'eipsi-forms'),
             'db_error' => __('Error al crear el registro. Intenta nuevamente.', 'eipsi-forms')
         );
         

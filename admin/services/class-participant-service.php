@@ -352,4 +352,199 @@ class EIPSI_Participant_Service {
             'pages' => ceil($total / $per_page)
         );
     }
+
+    /**
+     * Get participant by ID with full details.
+     *
+     * @param int $participant_id ID del participante.
+     * @return object|null Fila de wp_survey_participants.
+     * @since 1.6.0
+     * @access public
+     */
+    public static function get_by_id($participant_id) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'survey_participants';
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE id = %d",
+            $participant_id
+        ));
+    }
+
+    /**
+     * Get participant's wave completion history.
+     *
+     * @param int $participant_id ID del participante.
+     * @param int $study_id ID del estudio.
+     * @return array Array de completaciones de wave.
+     * @since 1.6.0
+     * @access public
+     */
+    public static function get_wave_completions($participant_id, $study_id) {
+        global $wpdb;
+        
+        $query = "
+            SELECT 
+                a.id as assignment_id,
+                a.wave_id,
+                a.status,
+                a.started_at,
+                a.completed_at,
+                a.submitted_at,
+                w.name as wave_name,
+                w.wave_index,
+                f.post_title as form_title
+            FROM {$wpdb->prefix}survey_assignments a
+            LEFT JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+            LEFT JOIN {$wpdb->prefix}posts f ON w.form_id = f.ID
+            WHERE a.participant_id = %d AND a.study_id = %d
+            ORDER BY w.wave_index ASC
+        ";
+        
+        return $wpdb->get_results($wpdb->prepare($query, $participant_id, $study_id));
+    }
+
+    /**
+     * Get participant's magic link history.
+     *
+     * @param int $participant_id ID del participante.
+     * @return array Array de magic links.
+     * @since 1.6.0
+     * @access public
+     */
+    public static function get_magic_link_history($participant_id) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'survey_magic_links';
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE participant_id = %d ORDER BY created_at DESC LIMIT 20",
+            $participant_id
+        ));
+    }
+
+    /**
+     * Check if participant has active session.
+     *
+     * @param int $participant_id ID del participante.
+     * @return bool True if has active session.
+     * @since 1.6.0
+     * @access public
+     */
+    public static function has_active_session($participant_id) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'survey_sessions';
+        $session = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE participant_id = %d AND expires_at > NOW() LIMIT 1",
+            $participant_id
+        ));
+        
+        return !empty($session);
+    }
+
+    /**
+     * Deactivate participant (soft delete).
+     *
+     * @param int $participant_id ID del participante.
+     * @param string $reason Razón de desactivación.
+     * @return bool True if success.
+     * @since 1.6.0
+     * @access public
+     */
+    public static function deactivate($participant_id, $reason = '') {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'survey_participants';
+        $result = $wpdb->update(
+            $table_name,
+            array(
+                'is_active' => 0,
+                'updated_at' => current_time('mysql')
+            ),
+            array('id' => $participant_id),
+            array('%d', '%s'),
+            array('%d')
+        );
+
+        // Log de auditoría
+        if ($result !== false) {
+            eipsi_log_participant_audit($participant_id, 'deactivated', $reason);
+        }
+
+        return $result !== false;
+    }
+
+    /**
+     * Hard delete participant (complete removal).
+     *
+     * @param int $participant_id ID del participante.
+     * @param string $reason Razón de eliminación.
+     * @return bool True if success.
+     * @since 1.6.0
+     * @access public
+     */
+    public static function hard_delete($participant_id, $reason = '') {
+        global $wpdb;
+        
+        $tables = array(
+            $wpdb->prefix . 'survey_sessions',
+            $wpdb->prefix . 'survey_magic_links',
+            $wpdb->prefix . 'survey_assignments',
+            $wpdb->prefix . 'survey_participants'
+        );
+
+        // Log de auditoría antes de eliminar
+        eipsi_log_participant_audit($participant_id, 'hard_deleted', $reason);
+
+        // Eliminar en orden por foreign keys
+        foreach ($tables as $table) {
+            $wpdb->delete($table, array('participant_id' => $participant_id), array('%d'));
+        }
+        
+        // Eliminar el participante
+        $result = $wpdb->delete(
+            $wpdb->prefix . 'survey_participants',
+            array('id' => $participant_id),
+            array('%d')
+        );
+
+        return $result !== false;
+    }
+}
+
+/**
+ * Log participant audit action.
+ *
+ * @param int    $participant_id ID del participante.
+ * @param string $action Acción realizada.
+ * @param string $reason Razón (opcional).
+ * @since 1.6.0
+ */
+function eipsi_log_participant_audit($participant_id, $action, $reason = '') {
+    global $wpdb;
+    
+    $current_user = wp_get_current_user();
+    $user_id = $current_user->ID ?? 0;
+    $user_name = $current_user->user_login ?? 'system';
+    
+    $wpdb->insert(
+        $wpdb->prefix . 'survey_email_log',
+        array(
+            'survey_id' => 0,
+            'participant_id' => $participant_id,
+            'email_type' => 'audit_log',
+            'recipient_email' => $user_name . '@admin',
+            'subject' => 'Audit: ' . $action,
+            'content' => json_encode(array(
+                'action' => $action,
+                'reason' => $reason,
+                'performed_by' => $user_name,
+                'user_id' => $user_id,
+                'timestamp' => current_time('mysql')
+            )),
+            'status' => 'audit',
+            'sent_at' => current_time('mysql')
+        ),
+        array('%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s')
+    );
 }
