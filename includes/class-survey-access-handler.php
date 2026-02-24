@@ -101,12 +101,14 @@ class EIPSI_Survey_Access_Handler {
         // Mark token as used
         EIPSI_MagicLinksService::mark_magic_link_used($result['ml_id']);
 
-        // Redirect to Survey
-        $redirect_url = home_url('/survey/');
+        // Redirect to Participant Portal
+        // Use /estudio/ by default (participant portal), with filter for customization
+        $participant_portal_url = apply_filters('eipsi_participant_portal_url', home_url('/estudio/'), $result['study_id'], $result['participant_id']);
+        
         $redirect_url = add_query_arg(array(
             'form_id' => $wave_info->form_id,
             'wave_id' => $wave_info->wave_id
-        ), $redirect_url);
+        ), $participant_portal_url);
 
         wp_redirect($redirect_url);
         exit;

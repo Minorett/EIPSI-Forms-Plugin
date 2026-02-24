@@ -21,6 +21,12 @@ if (!defined('ABSPATH')) {
  * @return string Rendered HTML
  */
 function eipsi_form_shortcode($atts) {
+    // Guard Clause: Never render form in admin context
+    // Prevents showing participant forms in WordPress admin panel
+    if (is_admin()) {
+        return '';
+    }
+    
     $atts = shortcode_atts(array(
         'id' => 0,
     ), $atts, 'eipsi_form');
@@ -28,7 +34,7 @@ function eipsi_form_shortcode($atts) {
     $template_id = absint($atts['id']);
     
     // Allow overriding from URL if id is 0 or not set, ONLY if authenticated
-    // This allows a single /survey/ page to serve multiple forms based on magic links
+    // This allows a single /estudio/ page to serve multiple forms based on magic links
     if ($template_id === 0 && isset($_GET['form_id']) && function_exists('eipsi_is_participant_logged_in') && eipsi_is_participant_logged_in()) {
         $template_id = absint($_GET['form_id']);
     }
@@ -113,6 +119,12 @@ function eipsi_render_survey_login_form($atts) {
  * @return string Rendered HTML
  */
 function eipsi_participant_dashboard_shortcode($atts) {
+    // Guard Clause: Never render dashboard in admin context
+    // Prevents showing participant dashboard in WordPress admin panel
+    if (is_admin()) {
+        return '';
+    }
+    
     // Parse attributes first to check survey_id
     $atts = shortcode_atts(array(
         'survey_id' => 0,
