@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 1.7.0
+ * Version: 2.0.0
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization, longitudinal, studies
- * Stable tag: 1.7.0
+ * Stable tag: 2.0.0
  *
  * @package EIPSI_Forms
  */
@@ -23,7 +23,7 @@
     exit;
  }
 
- define('EIPSI_FORMS_VERSION', '1.7.0');
+ define('EIPSI_FORMS_VERSION', '2.0.0');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -138,6 +138,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-smtp-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-anonymize-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-magic-links-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-access-log-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-auth-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/class-survey-access-handler.php';
 
 // Initialize Survey Access Handler
@@ -703,6 +706,11 @@ function eipsi_forms_activate() {
         wp_schedule_event(time(), 'hourly', 'eipsi_send_dropout_recovery_hourly');
     }
     
+    // Phase 2: Schedule daily purge of access logs (GDPR compliance)
+    if (!wp_next_scheduled('eipsi_purge_access_logs_daily')) {
+        wp_schedule_event(time(), 'daily', 'eipsi_purge_access_logs_daily');
+    }
+    
     // Create form results table
     $table_name = $wpdb->prefix . 'vas_form_results';
     $sql = "CREATE TABLE IF NOT EXISTS $table_name (
@@ -849,6 +857,26 @@ function eipsi_forms_deactivate() {
 
     // Study cron jobs (v1.5.3)
     wp_clear_scheduled_hook('eipsi_study_cron_job');
+    
+    // Phase 2: Access log purge
+    wp_clear_scheduled_hook('eipsi_purge_access_logs_daily');
+}
+
+/**
+ * Phase 2: Daily purge of old access logs (GDPR compliance)
+ */
+add_action('eipsi_purge_access_logs_daily', 'eipsi_purge_access_logs_handler');
+function eipsi_purge_access_logs_handler() {
+    if (!class_exists('EIPSI_Participant_Access_Log_Service')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-access-log-service.php';
+    }
+    
+    $retention_days = (int) get_option('eipsi_access_log_retention_days', 365);
+    $deleted = EIPSI_Participant_Access_Log_Service::purge_old_logs($retention_days);
+    
+    if ($deleted > 0) {
+        error_log("[EIPSI Forms] Purged {$deleted} old access log records (retention: {$retention_days} days)");
+    }
 }
 
 // Handle unsubscribe link from emails (Fase 2)

@@ -94,6 +94,8 @@ class EIPSI_Database_Schema_Manager {
             $magic_links_sync = self::sync_local_survey_magic_links_table();
             $email_log_sync = self::sync_local_survey_email_log_table();
             $audit_log_sync = self::sync_local_survey_audit_log_table();
+            // Phase 2 - Participant Access Log (v2.0.0)
+            $participant_access_log_sync = self::sync_local_survey_participant_access_log_table();
             
             $results['results_table'] = $results_sync;
             $results['events_table'] = $events_sync;
@@ -109,6 +111,7 @@ class EIPSI_Database_Schema_Manager {
             $results['survey_magic_links_table'] = $magic_links_sync;
             $results['survey_email_log_table'] = $email_log_sync;
             $results['survey_audit_log_table'] = $audit_log_sync;
+            $results['survey_participant_access_log_table'] = $participant_access_log_sync;
             
             if ( ! $results_sync['success'] || ! $events_sync['success'] || 
                  ! $rct_configs_sync['success'] || ! $rct_assignments_sync['success'] ||
@@ -116,7 +119,8 @@ class EIPSI_Database_Schema_Manager {
                  ! $participants_sync['success'] || ! $sessions_sync['success'] ||
                  ! $waves_sync['success'] || ! $assignments_sync['success'] || 
                  ! $magic_links_sync['success'] || ! $email_log_sync['success'] ||
-                 ! $audit_log_sync['success'] ) {
+                 ! $audit_log_sync['success'] || 
+                 ! $participant_access_log_sync['success'] ) {
                 $results['success'] = false;
                 if ( ! $results_sync['success'] ) {
                     $results['errors'][] = $results_sync['error'];
@@ -153,6 +157,9 @@ class EIPSI_Database_Schema_Manager {
                 }
                 if ( ! $audit_log_sync['success'] ) {
                     $results['errors'][] = $audit_log_sync['error'];
+                }
+                if ( ! $participant_access_log_sync['success'] ) {
+                    $results['errors'][] = $participant_access_log_sync['error'];
                 }
             }
         }
@@ -2246,6 +2253,117 @@ class EIPSI_Database_Schema_Manager {
 
         if ( ! in_array( 'idx_action_created', $index_names, true ) ) {
             $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_action_created (action, created_at)" );
+        }
+
+        return $result;
+    }
+    
+    /**
+     * Sync wp_survey_participant_access_log table in local DB
+     * Phase 2 - Access Logging for GDPR Compliance
+     *
+     * @since 2.0.0
+     * @return array Result with success status and details
+     */
+    private static function sync_local_survey_participant_access_log_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'survey_participant_access_log';
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+
+        if ( ! $result['exists'] ) {
+            // Create table
+            $sql = "CREATE TABLE {$table_name} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                participant_id BIGINT(20) UNSIGNED NOT NULL,
+                study_id INT(11) NOT NULL,
+                action_type ENUM('registration', 'login', 'login_failed', 'magic_link_clicked', 'magic_link_sent', 'wave_started', 'wave_completed', 'logout', 'session_expired', 'password_reset_requested', 'password_reset_completed') NOT NULL,
+                ip_address VARCHAR(45) NOT NULL,
+                user_agent VARCHAR(500),
+                metadata JSON,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                INDEX idx_participant_id (participant_id),
+                INDEX idx_study_id (study_id),
+                INDEX idx_action_type (action_type),
+                INDEX idx_created_at (created_at),
+                INDEX idx_participant_action (participant_id, action_type),
+                INDEX idx_study_created (study_id, created_at)
+            ) {$charset_collate};";
+
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+
+            $result['created'] = true;
+            $result['exists'] = true;
+
+            error_log( '[EIPSI Forms] Created table: ' . $table_name );
+        }
+
+        // Ensure required columns exist
+        $required_columns = array(
+            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NOT NULL AFTER id",
+            'study_id' => "ALTER TABLE {$table_name} ADD COLUMN study_id INT(11) NOT NULL AFTER participant_id",
+            'action_type' => "ALTER TABLE {$table_name} ADD COLUMN action_type ENUM('registration', 'login', 'login_failed', 'magic_link_clicked', 'magic_link_sent', 'wave_started', 'wave_completed', 'logout', 'session_expired', 'password_reset_requested', 'password_reset_completed') NOT NULL AFTER study_id",
+            'ip_address' => "ALTER TABLE {$table_name} ADD COLUMN ip_address VARCHAR(45) NOT NULL AFTER action_type",
+            'user_agent' => "ALTER TABLE {$table_name} ADD COLUMN user_agent VARCHAR(500) AFTER ip_address",
+            'metadata' => "ALTER TABLE {$table_name} ADD COLUMN metadata JSON AFTER user_agent",
+            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP AFTER metadata",
+        );
+
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $table_name,
+                    $column
+                )
+            );
+
+            if ( empty( $column_exists ) ) {
+                if ( false !== $wpdb->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                    error_log( "[EIPSI Forms] Added missing column '{$column}' to {$table_name}" );
+                } else {
+                    $result['columns_missing'][] = $column;
+                    $result['success'] = false;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
+                    }
+                }
+            }
+        }
+
+        // Ensure indices exist
+        self::ensure_local_index( $table_name, 'participant_id' );
+        self::ensure_local_index( $table_name, 'study_id' );
+        self::ensure_local_index( $table_name, 'action_type' );
+        self::ensure_local_index( $table_name, 'created_at' );
+
+        // Composite indices for performance
+        $existing_indices = $wpdb->get_results( "SHOW INDEX FROM {$table_name}" );
+        $index_names = array_column( $existing_indices, 'Key_name' );
+
+        if ( ! in_array( 'idx_participant_action', $index_names, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_participant_action (participant_id, action_type)" );
+        }
+
+        if ( ! in_array( 'idx_study_created', $index_names, true ) ) {
+            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_study_created (study_id, created_at)" );
         }
 
         return $result;
