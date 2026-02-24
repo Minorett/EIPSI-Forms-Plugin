@@ -1843,6 +1843,8 @@ class EIPSI_Database_Schema_Manager {
             retry_count INT DEFAULT 0,
             last_retry_sent DATETIME NULL,
 
+        due_at DATETIME NULL,
+
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -1852,6 +1854,7 @@ class EIPSI_Database_Schema_Manager {
             KEY idx_participant_id (participant_id),
             KEY idx_status (status),
             KEY idx_submitted_at (submitted_at),
+            KEY idx_due_at (due_at),
             UNIQUE KEY uk_wave_participant (wave_id, participant_id)
         ) ENGINE=InnoDB {$charset_collate};";
 
@@ -2508,6 +2511,8 @@ function eipsi_sync_survey_assignments_table() {
         retry_count INT DEFAULT 0,
         last_retry_sent DATETIME NULL,
 
+        due_at DATETIME NULL,
+
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -2517,6 +2522,7 @@ function eipsi_sync_survey_assignments_table() {
         INDEX idx_participant_id (participant_id),
         INDEX idx_status (status),
         INDEX idx_submitted_at (submitted_at),
+        INDEX idx_due_at (due_at),
         UNIQUE KEY uk_wave_participant (wave_id, participant_id)
     ) ENGINE=InnoDB {$charset_collate};";
 

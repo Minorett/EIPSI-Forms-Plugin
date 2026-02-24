@@ -1023,17 +1023,17 @@ class EIPSI_Email_Service {
         global $wpdb;
         
         $participant_table = $wpdb->prefix . 'survey_participants';
-        $wave_assignments_table = $wpdb->prefix . 'survey_wave_assignments';
-        $submissions_table = $wpdb->prefix . 'survey_submissions';
+        $assignments_table = $wpdb->prefix . 'survey_assignments';
+        $results_table = $wpdb->prefix . 'vas_form_results';
         
         // Get participants assigned to wave but haven't submitted
         $query = "SELECT DISTINCT p.id, p.first_name, p.last_name, p.email
                   FROM {$participant_table} p
-                  INNER JOIN {$wave_assignments_table} wa ON p.id = wa.participant_id
-                  LEFT JOIN {$submissions_table} s ON p.id = s.participant_id AND wa.wave_id = s.wave_id
-                  WHERE wa.wave_id = %d 
+                  INNER JOIN {$assignments_table} a ON p.id = a.participant_id
+                  LEFT JOIN {$results_table} r ON p.id = r.participant_id AND a.wave_id = r.wave_index
+                  WHERE a.wave_id = %d 
                     AND p.is_active = 1 
-                    AND (s.id IS NULL OR s.status != 'completed')
+                    AND (r.id IS NULL OR r.status != 'submitted')
                   ORDER BY p.last_name, p.first_name";
         
         return $wpdb->get_results($wpdb->prepare($query, $wave_id));
