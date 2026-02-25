@@ -76,7 +76,14 @@ while (count($timing_intervals) < ($number_of_waves - 1)) {
                                        min="1" 
                                        max="365"
                                        class="interval-days-input">
-                                <span class="days-label">días después</span>
+                                <select name="timing_intervals[<?php echo $i; ?>][time_unit]" 
+                                        class="interval-unit-select"
+                                        onchange="handleTimeUnitChange(this)">
+                                    <option value="days">días</option>
+                                    <option value="minutes">minutos</option>
+                                </select>
+                                <span class="days-label">después</span>
+                                <span class="day-equivalent" style="display: none;"></span>
                             </div>
                             <input type="hidden" 
                                    name="timing_intervals[<?php echo $i; ?>][from_wave]"
@@ -91,6 +98,9 @@ while (count($timing_intervals) < ($number_of_waves - 1)) {
                 <div class="quick-templates">
                     <h4>Plantillas Rápidas:</h4>
                     <div class="template-buttons">
+                        <button type="button" class="template-btn" onclick="eipsiApplyTimingTemplate('monitoreo_semanal')">
+                            📅 Monitoreo Semanal (7d c/u)
+                        </button>
                         <button type="button" class="template-btn" onclick="eipsiApplyTimingTemplate('pre_post_follow')">
                             📋 Pre-Post-Seguimiento (7d, 30d, 90d)
                         </button>
@@ -199,6 +209,12 @@ function eipsiApplyTimingTemplate(template) {
     const numberOfWaves = parseInt('<?php echo $number_of_waves; ?>');
     
     const templates = {
+        'monitoreo_semanal': {
+            2: [7], // T1->T2: 7 days
+            3: [7, 7], // T1->T2: 7d, T2->T3: 7d
+            4: [7, 7, 7], // T1->T2: 7d, T2->T3: 7d, T3->T4: 7d
+            5: [7, 7, 7, 7] // T1->T2: 7d, T2->T3: 7d, T3->T4: 7d, T4->T5: 7d
+        },
         'pre_post_follow': {
             2: [7], // T1->T2: 7 days
             3: [7, 30], // T1->T2: 7d, T2->T3: 30d
@@ -226,7 +242,15 @@ function eipsiApplyTimingTemplate(template) {
         intervals.forEach((days, index) => {
             if (inputs[index]) {
                 inputs[index].value = days;
+                // Update day equivalent display
+                updateDayEquivalent(inputs[index]);
             }
+        });
+        
+        // Reset all unit selectors to 'days'
+        const unitSelects = intervalsList.querySelectorAll('select[name$="[time_unit]"]');
+        unitSelects.forEach(select => {
+            select.value = 'days';
         });
         
         // Visual feedback
@@ -244,6 +268,74 @@ function eipsiApplyTimingTemplate(template) {
     }
 }
 
+// Minutes to days conversion helpers
+const MINUTES_PER_DAY = 1440;
+
+function minutesToDays(minutes) {
+    return Math.round(minutes / MINUTES_PER_DAY);
+}
+
+function daysToMinutes(days) {
+    return days * MINUTES_PER_DAY;
+}
+
+function formatDayEquivalent(minutes) {
+    const days = minutesToDays(minutes);
+    if (days === 0) {
+        return `${minutes} minutos`;
+    }
+    return `${minutes} minutos (${days} ${days === 1 ? 'día' : 'días'})`;
+}
+
+function updateDayEquivalent(input) {
+    const container = input.closest('.interval-input');
+    if (!container) return;
+    
+    const unitSelect = container.querySelector('select[name$="[time_unit]"]');
+    const equivalentSpan = container.querySelector('.day-equivalent');
+    
+    if (!equivalentSpan) return;
+    
+    const value = parseInt(input.value) || 0;
+    const unit = unitSelect ? unitSelect.value : 'days';
+    
+    if (unit === 'minutes') {
+        equivalentSpan.textContent = formatDayEquivalent(value);
+        equivalentSpan.style.display = 'inline';
+    } else {
+        equivalentSpan.style.display = 'none';
+    }
+}
+
+// Handle time unit change
+function handleTimeUnitChange(select) {
+    const container = select.closest('.interval-input');
+    const input = container.querySelector('input[name$="[days_after]"]');
+    const equivalentSpan = container.querySelector('.day-equivalent');
+    const daysLabel = container.querySelector('.days-label');
+    
+    const unit = select.value;
+    
+    if (unit === 'minutes') {
+        // Convert current days to minutes for display
+        const currentDays = parseInt(input.value) || 7;
+        input.value = daysToMinutes(currentDays);
+        input.min = 1;
+        input.max = 525600; // 1 year in minutes
+        daysLabel.textContent = 'minutos después';
+        equivalentSpan.style.display = 'inline';
+        updateDayEquivalent(input);
+    } else {
+        // Convert current minutes to days
+        const currentMinutes = parseInt(input.value) || 10080;
+        input.value = minutesToDays(currentMinutes);
+        input.min = 1;
+        input.max = 365;
+        daysLabel.textContent = 'días después';
+        equivalentSpan.style.display = 'none';
+    }
+}
+
 // Handle retry checkbox
 document.addEventListener('DOMContentLoaded', function() {
     const retryCheckbox = document.querySelector('input[name="enable_retries"]');
@@ -257,6 +349,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Initialize day equivalent displays
+    document.querySelectorAll('.interval-days-input').forEach(input => {
+        input.addEventListener('input', function() {
+            updateDayEquivalent(this);
+        });
+    });
 });
 </script>
 
@@ -357,9 +456,35 @@ document.addEventListener('DOMContentLoaded', function() {
     color: #ffffff;
 }
 
+.interval-unit-select {
+    padding: 0.5rem;
+    border: 2px solid #2c4a71;
+    border-radius: 6px;
+    background: #1f314a;
+    color: #ffffff;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.interval-unit-select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
 .days-label {
     color: #ffffff;
     font-size: 0.9rem;
+}
+
+.day-equivalent {
+    color: #28a745;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-left: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background: rgba(40, 167, 69, 0.15);
+    border-radius: 4px;
+    white-space: nowrap;
 }
 
 .quick-templates {
