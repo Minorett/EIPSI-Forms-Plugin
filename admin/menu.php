@@ -35,6 +35,26 @@ function eipsi_forms_menu() {
         'eipsi_display_results_experience_page'
     );
 
+    // Submenú: Randomization
+    add_submenu_page(
+        'eipsi-results-experience',
+        __('Randomization', 'eipsi-forms'),
+        __('Randomization', 'eipsi-forms'),
+        $capabilities['results'],
+        'eipsi-randomization',
+        'eipsi_display_randomization_menu_page'
+    );
+
+    // Submenú: Longitudinal Pools
+    add_submenu_page(
+        'eipsi-results-experience',
+        __('Longitudinal Pools', 'eipsi-forms'),
+        __('Longitudinal Pools', 'eipsi-forms'),
+        $capabilities['longitudinal'],
+        'eipsi-longitudinal-pools',
+        'eipsi_display_longitudinal_pools_page'
+    );
+
     // Submenú: Configuration
     add_submenu_page(
         'eipsi-results-experience',
@@ -63,6 +83,11 @@ function eipsi_forms_menu() {
         $capabilities['form_library'],
         'edit.php?post_type=eipsi_form_template'
     );
+}
+
+function eipsi_display_randomization_menu_page() {
+    $_GET['tab'] = 'randomization';
+    eipsi_display_results_experience_page();
 }
 
 add_action('admin_menu', 'eipsi_forms_menu');
