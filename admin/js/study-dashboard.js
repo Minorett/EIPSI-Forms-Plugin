@@ -849,7 +849,9 @@
 
 		$( '#resend-magic-link-email' ).text( participantEmail || '' );
 		$( '#resend-magic-link-subject' ).text( '' );
-		$( '#resend-magic-link-preview' ).html( '<p>Cargando vista previa...</p>' );
+		$( '#resend-magic-link-preview' ).html(
+			'<p>Cargando vista previa...</p>'
+		);
 		$( '#resend-magic-link-link' ).val( '' );
 		$( '#resend-magic-link-link-wrap' ).hide();
 		clearResendMagicLinkMessages();
@@ -1236,27 +1238,31 @@
 			const resendDisabled = p.is_active ? '' : ' disabled';
 			const resendButton =
 				'<button class="button button-small eipsi-magic-link-resend" data-participant-id="' +
-				  p.id +
-				  '" data-participant-email="' +
-				  escapeHtml( p.email ) +
-				  '"' +
-				  resendDisabled +
-				  '>🔁 Reenviar</button>';
+				p.id +
+				'" data-participant-email="' +
+				escapeHtml( p.email ) +
+				'"' +
+				resendDisabled +
+				'>🔁 Reenviar</button>';
 			const generateButton =
 				'<button class="button button-small button-secondary eipsi-magic-link-generate" data-participant-id="' +
-				  p.id +
-				  '" data-participant-email="' +
-				  escapeHtml( p.email ) +
-				  '"' +
-				  resendDisabled +
-				  '>🔗 Generar Link</button>';
-			const viewDetailButton = '<button class="button button-small button-link view-participant-detail" data-participant-id="' + p.id + '" title="Ver detalles">👁️ Ver Detalles</button>'; const actionsHtml =
+				p.id +
+				'" data-participant-email="' +
+				escapeHtml( p.email ) +
+				'"' +
+				resendDisabled +
+				'>🔗 Generar Link</button>';
+			const viewDetailButton =
+				'<button class="button button-small button-link view-participant-detail" data-participant-id="' +
+				p.id +
+				'" title="Ver detalles">👁️ Ver Detalles</button>';
+			const actionsHtml =
 				'<div class="participant-actions">' +
-				  viewDetailButton +
-					  toggleButton +
-				  resendButton +
-				  generateButton +
-				  '</div>';
+				viewDetailButton +
+				toggleButton +
+				resendButton +
+				generateButton +
+				'</div>';
 
 			html += '<tr class="participant-row">';
 			html += '<td><strong>' + escapeHtml( p.email ) + '</strong></td>';
@@ -1288,10 +1294,26 @@
 	function getMagicLinkStatusMeta( status ) {
 		const map = {
 			sent: { label: 'Enviado', icon: '✉️', className: 'status-sent' },
-			delivered: { label: 'Entregado', icon: '📬', className: 'status-delivered' },
-			clicked: { label: 'Click', icon: '✅', className: 'status-clicked' },
-			expired: { label: 'Vencido', icon: '⌛', className: 'status-expired' },
-			failed: { label: 'Fallido', icon: '⚠️', className: 'status-failed' },
+			delivered: {
+				label: 'Entregado',
+				icon: '📬',
+				className: 'status-delivered',
+			},
+			clicked: {
+				label: 'Click',
+				icon: '✅',
+				className: 'status-clicked',
+			},
+			expired: {
+				label: 'Vencido',
+				icon: '⌛',
+				className: 'status-expired',
+			},
+			failed: {
+				label: 'Fallido',
+				icon: '⚠️',
+				className: 'status-failed',
+			},
 			none: { label: 'Sin envío', icon: '—', className: 'status-none' },
 		};
 		return map[ status ] || map.none;
@@ -1391,18 +1413,20 @@
 			data: {
 				action: 'eipsi_get_participant_detail',
 				nonce: eipsiStudyDash.nonce,
-				participant_id: participantId
+				participant_id: participantId,
 			},
-			success: function ( response ) {
+			success( response ) {
 				if ( response.success ) {
 					renderParticipantDetail( response.data );
 				} else {
-					alert( response.data || 'Error loading participant detail' );
+					alert(
+						response.data || 'Error loading participant detail'
+					);
 				}
 			},
-			error: function () {
+			error() {
 				alert( 'Error loading participant detail' );
-			}
+			},
 		} );
 	}
 
@@ -1419,9 +1443,15 @@
 		// Status badge
 		const statusBadge = $( '#detail-participant-status' );
 		if ( p.is_active ) {
-			statusBadge.text( 'Activo' ).removeClass().addClass( 'eipsi-badge badge-active' );
+			statusBadge
+				.text( 'Activo' )
+				.removeClass()
+				.addClass( 'eipsi-badge badge-active' );
 		} else {
-			statusBadge.text( 'Inactivo' ).removeClass().addClass( 'eipsi-badge badge-inactive' );
+			statusBadge
+				.text( 'Inactivo' )
+				.removeClass()
+				.addClass( 'eipsi-badge badge-inactive' );
 		}
 
 		// Session status
@@ -1454,7 +1484,8 @@
 		let html = '';
 
 		if ( ! timeline || timeline.length === 0 ) {
-			html = '<p style="color: #666; font-style: italic;">No hay eventos en la línea de tiempo.</p>';
+			html =
+				'<p style="color: #666; font-style: italic;">No hay eventos en la línea de tiempo.</p>';
 		} else {
 			timeline.forEach( function ( event ) {
 				const dateStr = event.date ? formatDate( event.date ) : '—';
@@ -1472,7 +1503,10 @@
 					'</div>';
 
 				if ( event.form_title ) {
-					html += '<div class="event-form">' + event.form_title + '</div>';
+					html +=
+						'<div class="event-form">' +
+						event.form_title +
+						'</div>';
 				}
 
 				html += '</div>';
@@ -1487,18 +1521,21 @@
 		let html = '';
 
 		if ( ! history || history.length === 0 ) {
-			html = '<tr><td colspan="4" style="text-align: center; color: #666;">No hay magic links enviados.</td></tr>';
+			html =
+				'<tr><td colspan="4" style="text-align: center; color: #666;">No hay magic links enviados.</td></tr>';
 		} else {
 			history.forEach( function ( link ) {
 				const createdAt = formatDate( link.created_at );
 				const expiresAt = formatDate( link.expires_at );
 				const usedAt = link.used_at ? formatDate( link.used_at ) : '—';
 
-				let statusHtml = '<span style="color: #95a5a6;">Sin usar</span>';
+				let statusHtml =
+					'<span style="color: #95a5a6;">Sin usar</span>';
 				if ( link.used_at ) {
 					statusHtml = '<span style="color: #27ae60;">Usado</span>';
 				} else if ( new Date( link.expires_at ) < new Date() ) {
-					statusHtml = '<span style="color: #e74c3c;">Expirado</span>';
+					statusHtml =
+						'<span style="color: #e74c3c;">Expirado</span>';
 				} else {
 					statusHtml = '<span style="color: #3498db;">Activo</span>';
 				}
@@ -1525,14 +1562,16 @@
 	}
 
 	function formatDate( dateStr ) {
-		if ( ! dateStr ) return '—';
+		if ( ! dateStr ) {
+			return '—';
+		}
 		const date = new Date( dateStr );
 		return date.toLocaleString( 'es-AR', {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric',
 			hour: '2-digit',
-			minute: '2-digit'
+			minute: '2-digit',
 		} );
 	}
 
@@ -1556,7 +1595,9 @@
 		const participantId = currentDetailParticipantId;
 
 		$( '#remove-participant-error' ).hide();
-		$( '#btn-confirm-deactivate' ).prop( 'disabled', trueProcesando...' ).text( ' );
+		$( '#btn-confirm-deactivate' )
+			.prop( 'disabled', true )
+			.text( 'Procesando...' );
 
 		const ajaxUrl =
 			eipsiStudyDash.ajaxUrl ||
@@ -1571,9 +1612,9 @@
 				action: 'eipsi_remove_participant',
 				nonce: eipsiStudyDash.nonce,
 				participant_id: participantId,
-				reason: reason
+				reason,
 			},
-			success: function ( response ) {
+			success( response ) {
 				if ( response.success ) {
 					$( '#remove-participant-success' )
 						.text( response.data.message )
@@ -1590,19 +1631,25 @@
 						.show();
 				}
 			},
-			error: function () {
-				$( '#remove-participant-error' ).text( 'Error de conexión' ).show();
+			error() {
+				$( '#remove-participant-error' )
+					.text( 'Error de conexión' )
+					.show();
 			},
-			complete: function () {
+			complete() {
 				$( '#btn-confirm-deactivate' )
 					.prop( 'disabled', false )
 					.text( 'Desactivar' );
-			}
+			},
 		} );
 	}
 
 	function deleteParticipantHard() {
-		if ( ! confirm( '¿Estás completamente seguro? Esta acción eliminará TODOS los datos del participante incluyendo sus respuestas. NO SE PUEDE DESHACER.' ) ) {
+		if (
+			! confirm(
+				'¿Estás completamente seguro? Esta acción eliminará TODOS los datos del participante incluyendo sus respuestas. NO SE PUEDE DESHACER.'
+			)
+		) {
 			return;
 		}
 
@@ -1610,7 +1657,9 @@
 		const participantId = currentDetailParticipantId;
 
 		$( '#remove-participant-error' ).hide();
-		$( '#btn-confirm-delete' ).prop( 'disabled', true ).text( 'Eliminando...' );
+		$( '#btn-confirm-delete' )
+			.prop( 'disabled', true )
+			.text( 'Eliminando...' );
 
 		const ajaxUrl =
 			eipsiStudyDash.ajaxUrl ||
@@ -1625,9 +1674,9 @@
 				action: 'eipsi_delete_participant',
 				nonce: eipsiStudyDash.nonce,
 				participant_id: participantId,
-				reason: reason
+				reason,
 			},
-			success: function ( response ) {
+			success( response ) {
 				if ( response.success ) {
 					$( '#remove-participant-success' )
 						.text( response.data.message )
@@ -1644,17 +1693,18 @@
 						.show();
 				}
 			},
-			error: function () {
-				$( '#remove-participant-error' ).text( 'Error de conexión' ).show();
+			error() {
+				$( '#remove-participant-error' )
+					.text( 'Error de conexión' )
+					.show();
 			},
-			complete: function () {
+			complete() {
 				$( '#btn-confirm-delete' )
 					.prop( 'disabled', false )
 					.text( 'Eliminar Permanentemente' );
-			}
+			},
 		} );
 	}
-
 
 	function toggleParticipantStatus( participantId, isActive ) {
 		const $btn = $(

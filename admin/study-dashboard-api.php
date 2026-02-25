@@ -1637,3 +1637,233 @@ function wp_ajax_eipsi_save_study_settings_handler() {
         'study_id' => $study_id
     ));
 }
+
+// ============================================================================
+// MAGIC LINK HANDLERS (v1.7.0)
+// ============================================================================
+
+/**
+ * POST generate magic link from Study Dashboard (email only).
+ *
+ * Este handler permite generar un magic link para un participante
+ * usando solo su email. Si el participante no existe, lo crea.
+ *
+ * @since 1.7.0
+ */
+function wp_ajax_eipsi_generate_magic_link_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+
+    if (empty($study_id)) {
+        wp_send_json_error(array('message' => 'Missing study ID'));
+    }
+
+    if (empty($email) || !is_email($email)) {
+        wp_send_json_error(array('message' => 'Email inválido'));
+    }
+
+    // Load services
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    // Create or get participant (email only)
+    $participant_result = EIPSI_Participant_Service::create_or_get_for_magic_link($study_id, $email);
+
+    if (!$participant_result['success']) {
+        $error_messages = array(
+            'invalid_email' => 'El formato del email es inválido',
+            'db_error' => 'Error al crear/obtener el participante'
+        );
+        wp_send_json_error(array(
+            'message' => $error_messages[$participant_result['error']] ?? 'Error desconocido'
+        ));
+    }
+
+    $participant_id = $participant_result['participant_id'];
+
+    // Send magic link email
+    $email_result = EIPSI_Email_Service::send_magic_link_email($study_id, $participant_id);
+
+    if ($email_result['success']) {
+        wp_send_json_success(array(
+            'message' => $participant_result['is_new']
+                ? 'Participante creado y Magic Link enviado exitosamente'
+                : 'Magic Link enviado exitosamente',
+            'participant_id' => $participant_id,
+            'email' => $email,
+            'is_new' => $participant_result['is_new'],
+            'magic_link' => $email_result['magic_link']
+        ));
+    } else {
+        wp_send_json_success(array(
+            'message' => 'Participante creado/obtenido, pero hubo un problema enviando el Magic Link',
+            'participant_id' => $participant_id,
+            'email' => $email,
+            'is_new' => $participant_result['is_new'],
+            'error' => $email_result['error']
+        ));
+    }
+}
+
+/**
+ * POST send magic link to existing participant.
+ *
+ * @since 1.7.0
+ */
+function wp_ajax_eipsi_send_magic_link_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+    $custom_message = isset($_POST['custom_message']) ? sanitize_textarea_field($_POST['custom_message']) : '';
+
+    if (empty($study_id) || empty($participant_id)) {
+        wp_send_json_error(array('message' => 'Missing study ID or participant ID'));
+    }
+
+    // Load Email Service
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    $result = EIPSI_Email_Service::send_magic_link_email($study_id, $participant_id, $custom_message);
+
+    if ($result['success']) {
+        wp_send_json_success(array(
+            'message' => 'Magic Link enviado exitosamente',
+            'magic_link' => $result['magic_link']
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => 'Error al enviar el Magic Link',
+            'error' => $result['error']
+        ));
+    }
+}
+
+/**
+ * GET magic link email preview.
+ *
+ * @since 1.7.0
+ */
+function wp_ajax_eipsi_get_magic_link_preview_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
+    $participant_id = isset($_GET['participant_id']) ? intval($_GET['participant_id']) : 0;
+
+    if (empty($study_id) || empty($participant_id)) {
+        wp_send_json_error(array('message' => 'Missing study ID or participant ID'));
+    }
+
+    // Load Email Service
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    $preview = EIPSI_Email_Service::get_magic_link_preview($study_id, $participant_id);
+
+    if ($preview['success']) {
+        wp_send_json_success($preview);
+    } else {
+        wp_send_json_error(array('message' => $preview['message']));
+    }
+}
+
+/**
+ * POST resend magic link to participant.
+ *
+ * @since 1.7.0
+ */
+function wp_ajax_eipsi_resend_magic_link_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+
+    if (empty($study_id) || empty($participant_id)) {
+        wp_send_json_error(array('message' => 'Missing study ID or participant ID'));
+    }
+
+    // Load Email Service
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    $result = EIPSI_Email_Service::send_magic_link_email($study_id, $participant_id);
+
+    if ($result['success']) {
+        wp_send_json_success(array(
+            'message' => 'Magic Link reenviado exitosamente',
+            'magic_link' => $result['magic_link']
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => 'Error al reenviar el Magic Link',
+            'error' => $result['error']
+        ));
+    }
+}
+
+/**
+ * POST extend magic link expiry.
+ *
+ * @since 1.7.0
+ */
+function wp_ajax_eipsi_extend_magic_link_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+    $hours = isset($_POST['hours']) ? intval($_POST['hours']) : 48;
+
+    if (empty($study_id) || empty($participant_id)) {
+        wp_send_json_error(array('message' => 'Missing study ID or participant ID'));
+    }
+
+    // Validate hours (max 168 = 7 days)
+    $hours = max(1, min(168, $hours));
+
+    // Load Email Service
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    $result = EIPSI_Email_Service::extend_magic_link_expiry($study_id, $participant_id, $hours);
+
+    if ($result['success']) {
+        wp_send_json_success(array(
+            'message' => sprintf('Magic Link extendido %d horas', $hours),
+            'expires_at' => $result['expires_at']
+        ));
+    } else {
+        wp_send_json_error(array('message' => $result['message']));
+    }
+}

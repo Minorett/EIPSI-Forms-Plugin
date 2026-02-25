@@ -510,6 +510,110 @@ class EIPSI_Participant_Service {
 
         return $result !== false;
     }
+
+    /**
+     * Create or get participant for magic link flow (email only).
+     *
+     * Este método permite crear un participante con solo email para el flujo
+     * de magic links, sin requerir contraseña ni nombre/apellido.
+     *
+     * @param int    $survey_id ID del survey.
+     * @param string $email Email del participante.
+     * @return array { success: bool, participant_id: int|null, is_new: bool, error: string|null }
+     * @since 1.7.0
+     * @access public
+     */
+    public static function create_or_get_for_magic_link($survey_id, $email) {
+        global $wpdb;
+
+        try {
+            // Validar email
+            if (!is_email($email)) {
+                return array(
+                    'success' => false,
+                    'participant_id' => null,
+                    'is_new' => false,
+                    'error' => 'invalid_email'
+                );
+            }
+
+            // Sanitizar email
+            $email = sanitize_email($email);
+            $table_name = $wpdb->prefix . 'survey_participants';
+
+            // Verificar si ya existe
+            $existing = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $table_name WHERE survey_id = %d AND email = %s",
+                $survey_id,
+                $email
+            ));
+
+            if ($existing) {
+                // Si existe pero está inactivo, reactivarlo
+                if (!$existing->is_active) {
+                    $wpdb->update(
+                        $table_name,
+                        array('is_active' => 1, 'updated_at' => current_time('mysql')),
+                        array('id' => $existing->id),
+                        array('%d', '%s'),
+                        array('%d')
+                    );
+                }
+
+                return array(
+                    'success' => true,
+                    'participant_id' => (int) $existing->id,
+                    'is_new' => false,
+                    'error' => null
+                );
+            }
+
+            // Crear nuevo participante sin contraseña (magic link only)
+            // Generar contraseña aleatoria para satisfacer constraint de DB
+            $temp_password = wp_generate_password(32, true, true);
+            $password_hash = wp_hash_password($temp_password);
+
+            $result = $wpdb->insert(
+                $table_name,
+                array(
+                    'survey_id' => $survey_id,
+                    'email' => $email,
+                    'password_hash' => $password_hash,
+                    'first_name' => '',
+                    'last_name' => '',
+                    'created_at' => current_time('mysql'),
+                    'is_active' => 1
+                ),
+                array('%d', '%s', '%s', '%s', '%s', '%s', '%d')
+            );
+
+            if ($result === false) {
+                error_log('EIPSI Participant creation for magic link failed: ' . $wpdb->last_error);
+                return array(
+                    'success' => false,
+                    'participant_id' => null,
+                    'is_new' => false,
+                    'error' => 'db_error'
+                );
+            }
+
+            return array(
+                'success' => true,
+                'participant_id' => (int) $wpdb->insert_id,
+                'is_new' => true,
+                'error' => null
+            );
+
+        } catch (Exception $e) {
+            error_log('EIPSI Participant creation for magic link exception: ' . $e->getMessage());
+            return array(
+                'success' => false,
+                'participant_id' => null,
+                'is_new' => false,
+                'error' => 'db_error'
+            );
+        }
+    }
 }
 
 /**
