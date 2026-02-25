@@ -506,7 +506,7 @@ function eipsi_longitudinal_study_shortcode($atts) {
         'show_config' => 'yes',   // Show study configuration details (yes/no)
         'show_waves' => 'yes',    // Show waves list (yes/no)
         'theme' => 'default',     // Theme: default, compact, card
-        'view' => 'dashboard',    // View mode: dashboard, participant, public
+        'view' => 'auto',         // View mode: auto, dashboard, participant, public
     ), $atts, 'eipsi_longitudinal_study');
     
     $study_code = sanitize_text_field($atts['study_code']);
@@ -516,7 +516,78 @@ function eipsi_longitudinal_study_shortcode($atts) {
     $show_config = strtolower($atts['show_config']) === 'yes';
     $show_waves = strtolower($atts['show_waves']) === 'yes';
     $theme = sanitize_key($atts['theme']);
-    $view_mode = sanitize_key($atts['view']);
+    $requested_view = sanitize_key($atts['view']);
+    
+    // ============================================================
+    // CRITICAL: Authentication State Detection
+    // Determines what view to show based on user context
+    // ============================================================
+    $view_mode = 'public'; // Default for non-authenticated users
+    
+    // Check if participant is already authenticated
+    $is_participant_logged_in = false;
+    $current_participant_id = 0;
+    $current_survey_id = 0;
+    
+    if (class_exists('EIPSI_Auth_Service')) {
+        $is_participant_logged_in = EIPSI_Auth_Service::is_authenticated();
+        if ($is_participant_logged_in) {
+            $current_participant_id = EIPSI_Auth_Service::get_current_participant();
+            $current_survey_id = EIPSI_Auth_Service::get_current_survey();
+        }
+    }
+    
+    // Check for magic link token in URL for auto-login
+    $magic_token = isset($_GET['eipsi_magic']) ? sanitize_text_field($_GET['eipsi_magic']) : '';
+    
+    if (!$is_participant_logged_in && !empty($magic_token)) {
+        // Attempt magic link auto-login
+        if (class_exists('EIPSI_MagicLinksService')) {
+            $validation = EIPSI_MagicLinksService::validate_magic_link($magic_token);
+            
+            if ($validation['valid']) {
+                // Create session for participant
+                $session_result = EIPSI_Auth_Service::create_session(
+                    $validation['participant_id'],
+                    $validation['survey_id']
+                );
+                
+                if ($session_result['success']) {
+                    // Mark magic link as used
+                    EIPSI_MagicLinksService::mark_magic_link_used($validation['ml_id']);
+                    
+                    // Update authentication state
+                    $is_participant_logged_in = true;
+                    $current_participant_id = $validation['participant_id'];
+                    $current_survey_id = $validation['survey_id'];
+                }
+            }
+        }
+    }
+    
+    // Now determine view_mode based on authentication and context
+    if ($requested_view === 'dashboard') {
+        // Dashboard view is ONLY for WordPress admins
+        if (current_user_can('manage_options')) {
+            $view_mode = 'dashboard';
+        } else {
+            // Non-admins requesting dashboard get redirected to participant view if logged in
+            $view_mode = $is_participant_logged_in ? 'participant' : 'public';
+        }
+    } elseif ($requested_view === 'participant') {
+        // Participant view requires authentication
+        $view_mode = $is_participant_logged_in ? 'participant' : 'public';
+    } elseif ($requested_view === 'public') {
+        // Public view always shows login/register
+        $view_mode = 'public';
+    } else {
+        // Auto mode (default): determine based on authentication state
+        if ($is_participant_logged_in) {
+            $view_mode = 'participant';
+        } else {
+            $view_mode = 'public';
+        }
+    }
     
     // Get study data - prefer study_code for security
     global $wpdb;
@@ -590,6 +661,9 @@ function eipsi_longitudinal_study_shortcode($atts) {
         )
     ));
     
+    // Get the actual study ID from the fetched study
+    $actual_study_id = (int) $study->id;
+    
     // Get waves for the study
     $waves = array();
     if ($show_waves) {
@@ -599,7 +673,7 @@ function eipsi_longitudinal_study_shortcode($atts) {
                 "SELECT * FROM {$wpdb->prefix}survey_waves 
                  WHERE study_id = %d AND wave_index = %d 
                  ORDER BY wave_index ASC",
-                $study_id,
+                $actual_study_id,
                 $wave_index
             ), ARRAY_A);
         } else {
@@ -608,7 +682,7 @@ function eipsi_longitudinal_study_shortcode($atts) {
                 "SELECT * FROM {$wpdb->prefix}survey_waves 
                  WHERE study_id = %d 
                  ORDER BY wave_index ASC",
-                $study_id
+                $actual_study_id
             ), ARRAY_A);
         }
     }
@@ -616,7 +690,7 @@ function eipsi_longitudinal_study_shortcode($atts) {
     // Get participant count
     $participant_count = $wpdb->get_var($wpdb->prepare(
         "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants WHERE survey_id = %d",
-        $study_id
+        $actual_study_id
     ));
     
     // Get study configuration from JSON

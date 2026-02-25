@@ -12,6 +12,7 @@
  * @package EIPSI_Forms
  * @since 1.5.0
  * @since 1.6.0 - Enhanced participant experience
+ * @since 1.6.1 - Fixed authentication detection, added login form for public view
  *
  * Variables available:
  * - $study: Study object from database
@@ -26,20 +27,28 @@
  * - $theme: Theme style (default, compact, card)
  * - $time_limit_override: Override time limit if set
  * - $view_mode: View mode (dashboard, participant, public)
+ * - $is_participant_logged_in: Whether participant is authenticated (from shortcode)
+ * - $current_participant_id: Current participant ID (from shortcode)
+ * - $actual_study_id: The actual study ID (from shortcode)
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-// Check if participant is logged in
-$is_participant_logged_in = function_exists('EIPSI_Auth_Service') && EIPSI_Auth_Service::is_authenticated();
-$current_participant_id = $is_participant_logged_in ? EIPSI_Auth_Service::get_current_participant() : 0;
+// Use authentication state from shortcode if available, otherwise detect
+if (!isset($is_participant_logged_in)) {
+    $is_participant_logged_in = class_exists('EIPSI_Auth_Service') && EIPSI_Auth_Service::is_authenticated();
+}
+if (!isset($current_participant_id)) {
+    $current_participant_id = $is_participant_logged_in ? EIPSI_Auth_Service::get_current_participant() : 0;
+}
 
 // Get participant's next wave if logged in
 $next_wave = null;
 $participant_progress = 0;
 $total_waves = count($waves);
+$study_id_for_query = isset($actual_study_id) ? $actual_study_id : $study->id;
 
 if ($is_participant_logged_in && $current_participant_id && $show_waves) {
     global $wpdb;
@@ -52,7 +61,7 @@ if ($is_participant_logged_in && $current_participant_id && $show_waves) {
          WHERE a.participant_id = %d AND w.study_id = %d
          ORDER BY w.wave_index ASC",
         $current_participant_id,
-        $study->id
+        $study_id_for_query
     ));
 
     // Map wave_id to status
@@ -88,7 +97,7 @@ $view_class = 'view-' . esc_attr($view_mode);
 <div class="<?php echo esc_attr($container_class); ?> <?php echo esc_attr($view_class); ?>" data-study-id="<?php echo esc_attr($study->id); ?>" data-study-code="<?php echo esc_attr($study->study_code); ?>">
 
     <!-- Participant Welcome Section (only for participant view) -->
-    <?php if ($view_mode === 'participant' || $view_mode === 'public'): ?>
+    <?php if ($view_mode === 'participant'): ?>
         <?php if ($is_participant_logged_in): ?>
             <div class="eipsi-participant-welcome">
                 <div class="welcome-header">
@@ -135,15 +144,64 @@ $view_class = 'view-' . esc_attr($view_mode);
                 <?php endif; ?>
             </div>
         <?php else: ?>
+            <!-- Should not happen, but fallback just in case -->
             <div class="eipsi-study-hero">
                 <h2 class="hero-title">📊 <?php echo esc_html($study->study_name); ?></h2>
                 <p class="hero-subtitle">Ayudá a la ciencia clínica completando este estudio</p>
-                <div class="hero-actions">
-                    <a href="#login-section" class="button button-primary button-large">Iniciar Sesión</a>
-                    <a href="#study-info" class="button button-secondary button-large">Más Información</a>
-                </div>
             </div>
         <?php endif; ?>
+    <?php endif; ?>
+
+    <!-- Public View: Login/Register Section -->
+    <?php if ($view_mode === 'public'): ?>
+        <div class="eipsi-public-view">
+            <!-- Study Hero -->
+            <div class="eipsi-study-hero">
+                <h2 class="hero-title">📊 <?php echo esc_html($study->study_name); ?></h2>
+                <?php if (!empty($study->description)): ?>
+                    <p class="hero-description"><?php echo esc_html(wp_trim_words($study->description, 30)); ?></p>
+                <?php endif; ?>
+                <p class="hero-subtitle">Ayudá a la ciencia clínica completando este estudio</p>
+            </div>
+
+            <!-- Login/Register Form -->
+            <div id="login-section" class="eipsi-login-section">
+                <?php
+                // Render the actual login form
+                if (function_exists('eipsi_render_survey_login_form')) {
+                    echo eipsi_render_survey_login_form(array(
+                        'survey_id' => $study_id_for_query
+                    ));
+                } else {
+                    // Fallback if function not available
+                ?>
+                <div class="eipsi-login-fallback">
+                    <h3><?php esc_html_e('Acceso al Estudio', 'eipsi-forms'); ?></h3>
+                    <p><?php esc_html_e('Para participar en este estudio, necesitás iniciar sesión o registrarte.', 'eipsi-forms'); ?></p>
+                    <p><a href="<?php echo esc_url(wp_login_url(get_permalink())); ?>" class="button button-primary"><?php esc_html_e('Iniciar Sesión', 'eipsi-forms'); ?></a></p>
+                </div>
+                <?php } ?>
+            </div>
+
+            <!-- Study Info (collapsible) -->
+            <div id="study-info" class="eipsi-study-info-section">
+                <?php if (!empty($study->description)): ?>
+                    <div class="eipsi-study-description-section">
+                        <h3 class="section-title">📋 Sobre este estudio</h3>
+                        <div class="description-content">
+                            <?php echo wp_kses_post(wpautop($study->description)); ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if (!empty($pi_name)): ?>
+                    <div class="eipsi-pi-info">
+                        <span class="pi-label">🔬 <?php esc_html_e('Investigador Principal:', 'eipsi-forms'); ?></span>
+                        <span class="pi-name"><?php echo esc_html($pi_name); ?></span>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     <?php endif; ?>
 
     <!-- Study Header (for dashboard view or if not participant welcome shown) -->
@@ -177,8 +235,8 @@ $view_class = 'view-' . esc_attr($view_mode);
         </div>
     <?php endif; ?>
     
-    <!-- Study Configuration Summary -->
-    <?php if ($show_config): ?>
+    <!-- Study Configuration Summary (ONLY for dashboard view) -->
+    <?php if ($show_config && $view_mode === 'dashboard'): ?>
     <div class="eipsi-study-config">
         <h3 class="eipsi-section-title">📊 <?php esc_html_e('Información del Estudio', 'eipsi-forms'); ?></h3>
         
@@ -222,8 +280,8 @@ $view_class = 'view-' . esc_attr($view_mode);
     </div>
     <?php endif; ?>
     
-    <!-- Waves List -->
-    <?php if ($show_waves && !empty($waves)): ?>
+    <!-- Waves List (ONLY for dashboard view) -->
+    <?php if ($show_waves && !empty($waves) && $view_mode === 'dashboard'): ?>
     <div class="eipsi-waves-section">
         <h3 class="eipsi-section-title">🌊 <?php esc_html_e('Tomas (Waves)', 'eipsi-forms'); ?></h3>
         
@@ -300,13 +358,14 @@ $view_class = 'view-' . esc_attr($view_mode);
             <?php endforeach; ?>
         </div>
     </div>
-    <?php elseif ($show_waves): ?>
+    <?php elseif ($show_waves && $view_mode === 'dashboard'): ?>
     <div class="eipsi-waves-empty">
         <p><?php esc_html_e('No hay tomas (waves) configuradas para este estudio.', 'eipsi-forms'); ?></p>
     </div>
     <?php endif; ?>
     
-    <!-- Share Section -->
+    <!-- Share Section (ONLY for dashboard view - admins only) -->
+    <?php if ($view_mode === 'dashboard'): ?>
     <div class="eipsi-share-section">
         <h3 class="eipsi-section-title">🔗 <?php esc_html_e('Compartir Estudio', 'eipsi-forms'); ?></h3>
 
@@ -378,6 +437,7 @@ $view_class = 'view-' . esc_attr($view_mode);
             </div>
         </div>
     </div>
+    <?php endif; // End dashboard-only section ?>
     
     <!-- Copy Feedback -->
     <div class="eipsi-copy-feedback" style="display: none;" role="status" aria-live="polite">
