@@ -247,12 +247,31 @@ function eipsi_validate_timing_config($data) {
     if (!empty($data['timing_intervals']) && is_array($data['timing_intervals'])) {
         foreach ($data['timing_intervals'] as $index => $interval) {
             $interval_num = $index + 1;
-            if (empty($interval['days_after'])) {
-                $errors[] = "❌ El intervalo {$interval_num} necesita especificar cuántos días después de la toma anterior debe ocurrir.";
-            } elseif (!is_numeric($interval['days_after']) || intval($interval['days_after']) < 1) {
-                $errors[] = "❌ El intervalo {$interval_num} debe tener un número positivo de días (mínimo 1 día).";
-            } elseif (intval($interval['days_after']) > 365) {
-                $errors[] = "❌ El intervalo {$interval_num} no puede exceder 365 días (1 año). Para estudios con intervalos más largos, considera crear ondas manualmente.";
+            $time_unit = isset($interval['time_unit']) ? sanitize_text_field($interval['time_unit']) : 'days';
+            $value = isset($interval['days_after']) ? $interval['days_after'] : 0;
+            
+            if (empty($value) && $value !== '0' && $value !== 0) {
+                $errors[] = "❌ El intervalo {$interval_num} necesita especificar cuánto tiempo después de la toma anterior debe ocurrir.";
+            } elseif (!is_numeric($value) || intval($value) < 1) {
+                $errors[] = "❌ El intervalo {$interval_num} debe tener un número positivo (mínimo 1).";
+            } else {
+                // Validate based on unit
+                if ($time_unit === 'minutes') {
+                    // Max 525600 minutes (1 year)
+                    if (intval($value) > 525600) {
+                        $errors[] = "❌ El intervalo {$interval_num} no puede exceder 525600 minutos (1 año).";
+                    }
+                    // Check if equivalent days would be valid
+                    $equivalent_days = round(intval($value) / 1440);
+                    if ($equivalent_days > 365) {
+                        $errors[] = "❌ El intervalo {$interval_num} equivale a más de 365 días. Para estudios con intervalos más largos, considera crear ondas manualmente.";
+                    }
+                } else {
+                    // Days validation
+                    if (intval($value) > 365) {
+                        $errors[] = "❌ El intervalo {$interval_num} no puede exceder 365 días (1 año). Para estudios con intervalos más largos, considera crear ondas manualmente.";
+                    }
+                }
             }
         }
     }
@@ -310,10 +329,22 @@ function eipsi_sanitize_timing_config($data) {
     if (!empty($data['timing_intervals']) && is_array($data['timing_intervals'])) {
         $sanitized['timing_intervals'] = array();
         foreach ($data['timing_intervals'] as $interval) {
+            $time_unit = isset($interval['time_unit']) ? sanitize_text_field($interval['time_unit']) : 'days';
+            $value = intval($interval['days_after']);
+            
+            // Convert minutes to days if needed
+            if ($time_unit === 'minutes') {
+                $days = round($value / 1440); // 1440 minutes per day
+            } else {
+                $days = $value;
+            }
+            
             $sanitized['timing_intervals'][] = array(
                 'from_wave' => intval($interval['from_wave']),
                 'to_wave' => intval($interval['to_wave']),
-                'days_after' => intval($interval['days_after'])
+                'days_after' => max(1, $days), // Ensure at least 1 day
+                'original_unit' => $time_unit,
+                'original_value' => $value
             );
         }
     }
