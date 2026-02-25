@@ -519,6 +519,7 @@ function wp_ajax_eipsi_extend_magic_link_handler() {
 
 /**
  * Get participant record for magic link actions.
+ * Creates participant if doesn't exist.
  */
 function eipsi_get_magic_link_participant($study_id, $email) {
     if (!class_exists('EIPSI_Participant_Service')) {
@@ -528,11 +529,34 @@ function eipsi_get_magic_link_participant($study_id, $email) {
     $participant = EIPSI_Participant_Service::get_by_email($study_id, $email);
 
     if (!$participant) {
-        return array('error' => 'No encontramos un participante con ese email.');
+        // Create participant automatically if doesn't exist
+        global $wpdb;
+        
+        // Generate random password
+        $password = wp_generate_password(12, false);
+        
+        // Extract name from email if possible
+        $email_parts = explode('@', $email);
+        $first_name = ucfirst($email_parts[0]);
+        $last_name = '';
+        
+        $result = EIPSI_Participant_Service::create_participant($study_id, $email, $password, array(
+            'first_name' => $first_name,
+            'last_name' => $last_name
+        ));
+        
+        if ($result['success']) {
+            // Get the newly created participant
+            $participant = EIPSI_Participant_Service::get_by_id($result['participant_id']);
+        } else {
+            return array('error' => 'No se pudo crear el participante: ' . ($result['error'] ?? 'Error desconocido'));
+        }
     }
 
-    if (empty($participant->is_active)) {
-        return array('error' => 'Este participante está inactivo. Reactivalo para enviar un Magic Link.');
+    if (!empty($participant) && empty($participant->is_active)) {
+        // Reactivate inactive participant
+        EIPSI_Participant_Service::set_active($participant->id, true);
+        $participant = EIPSI_Participant_Service::get_by_id($participant->id);
     }
 
     return array('participant' => $participant);
