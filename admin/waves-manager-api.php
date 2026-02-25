@@ -26,7 +26,7 @@ add_action('wp_ajax_eipsi_get_pending_participants', 'wp_ajax_eipsi_get_pending_
 // Participant Management Handlers
 // Note: wp_ajax_eipsi_add_participant is defined in study-dashboard-api.php to avoid duplication
 add_action('wp_ajax_eipsi_edit_participant', 'wp_ajax_eipsi_edit_participant_handler');
-add_action('wp_ajax_eipsi_delete_participant', 'wp_ajax_eipsi_delete_participant_handler');
+add_action('wp_ajax_eipsi_delete_participant', 'wp_ajax_eipsi_delete_participant_waves_handler');
 add_action('wp_ajax_eipsi_get_participant', 'wp_ajax_eipsi_get_participant_handler');
 add_action('wp_ajax_eipsi_validate_wave_dates', 'wp_ajax_eipsi_validate_wave_dates_handler');
 add_action('wp_ajax_eipsi_preview_wave_email', 'wp_ajax_eipsi_preview_wave_email_handler');
@@ -496,7 +496,7 @@ function wp_ajax_eipsi_edit_participant_handler() {
 /**
  * Delete participant
  */
-function wp_ajax_eipsi_delete_participant_handler() {
+function wp_ajax_eipsi_delete_participant_waves_handler() {
     check_ajax_referer('eipsi_waves_nonce', 'nonce');
 
     if (!eipsi_user_can_manage_longitudinal()) {
