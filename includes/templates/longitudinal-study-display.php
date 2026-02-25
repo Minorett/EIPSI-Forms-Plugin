@@ -44,6 +44,9 @@ if (!isset($current_participant_id)) {
     $current_participant_id = $is_participant_logged_in ? EIPSI_Auth_Service::get_current_participant() : 0;
 }
 
+// Track if this is a magic link login (for special welcome message)
+$magic_link_login = isset($magic_link_login_success) && $magic_link_login_success;
+
 // Get participant's next wave if logged in
 $next_wave = null;
 $participant_progress = 0;
@@ -101,8 +104,13 @@ $view_class = 'view-' . esc_attr($view_mode);
         <?php if ($is_participant_logged_in): ?>
             <div class="eipsi-participant-welcome">
                 <div class="welcome-header">
-                    <h3 class="welcome-title">👋 ¡Hola de nuevo!</h3>
-                    <p class="welcome-subtitle">Tu progreso en este estudio</p>
+                    <?php if ($magic_link_login): ?>
+                        <h3 class="welcome-title">✨ ¡Bienvenido/a!</h3>
+                        <p class="welcome-subtitle">Accediste correctamente a tu estudio</p>
+                    <?php else: ?>
+                        <h3 class="welcome-title">👋 ¡Hola de nuevo!</h3>
+                        <p class="welcome-subtitle">Tu progreso en este estudio</p>
+                    <?php endif; ?>
                 </div>
                 <div class="progress-overview">
                     <div class="progress-bar-container">
