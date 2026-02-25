@@ -94,6 +94,8 @@ class EIPSI_Database_Schema_Manager {
             $magic_links_sync = self::sync_local_survey_magic_links_table();
             $email_log_sync = self::sync_local_survey_email_log_table();
             $audit_log_sync = self::sync_local_survey_audit_log_table();
+            $longitudinal_pools_sync = self::sync_local_longitudinal_pools_table();
+            $longitudinal_pool_assignments_sync = self::sync_local_longitudinal_pool_assignments_table();
             // Phase 2 - Participant Access Log (v2.0.0)
             $participant_access_log_sync = self::sync_local_survey_participant_access_log_table();
             
@@ -111,6 +113,8 @@ class EIPSI_Database_Schema_Manager {
             $results['survey_magic_links_table'] = $magic_links_sync;
             $results['survey_email_log_table'] = $email_log_sync;
             $results['survey_audit_log_table'] = $audit_log_sync;
+            $results['longitudinal_pools_table'] = $longitudinal_pools_sync;
+            $results['longitudinal_pool_assignments_table'] = $longitudinal_pool_assignments_sync;
             $results['survey_participant_access_log_table'] = $participant_access_log_sync;
             
             if ( ! $results_sync['success'] || ! $events_sync['success'] || 
@@ -120,6 +124,7 @@ class EIPSI_Database_Schema_Manager {
                  ! $waves_sync['success'] || ! $assignments_sync['success'] || 
                  ! $magic_links_sync['success'] || ! $email_log_sync['success'] ||
                  ! $audit_log_sync['success'] || 
+                 ! $longitudinal_pools_sync['success'] || ! $longitudinal_pool_assignments_sync['success'] ||
                  ! $participant_access_log_sync['success'] ) {
                 $results['success'] = false;
                 if ( ! $results_sync['success'] ) {
@@ -157,6 +162,12 @@ class EIPSI_Database_Schema_Manager {
                 }
                 if ( ! $audit_log_sync['success'] ) {
                     $results['errors'][] = $audit_log_sync['error'];
+                }
+                if ( ! $longitudinal_pools_sync['success'] ) {
+                    $results['errors'][] = $longitudinal_pools_sync['error'];
+                }
+                if ( ! $longitudinal_pool_assignments_sync['success'] ) {
+                    $results['errors'][] = $longitudinal_pool_assignments_sync['error'];
                 }
                 if ( ! $participant_access_log_sync['success'] ) {
                     $results['errors'][] = $participant_access_log_sync['error'];
@@ -892,6 +903,8 @@ class EIPSI_Database_Schema_Manager {
         $survey_magic_links_table = $wpdb->prefix . 'survey_magic_links';
         $survey_email_log_table = $wpdb->prefix . 'survey_email_log';
         $survey_audit_log_table = $wpdb->prefix . 'survey_audit_log';
+        $longitudinal_pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+        $longitudinal_pool_assignments_table = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
 
         $repair_log = array(
             'success' => true,
@@ -951,6 +964,16 @@ class EIPSI_Database_Schema_Manager {
                 'columns_added' => array(),
             ),
             'survey_audit_log_table' => array(
+                'exists' => false,
+                'created' => false,
+                'columns_added' => array(),
+            ),
+            'longitudinal_pools_table' => array(
+                'exists' => false,
+                'created' => false,
+                'columns_added' => array(),
+            ),
+            'longitudinal_pool_assignments_table' => array(
                 'exists' => false,
                 'created' => false,
                 'columns_added' => array(),
@@ -1072,6 +1095,16 @@ class EIPSI_Database_Schema_Manager {
         $repair_log['survey_audit_log_table']['exists'] = $audit_log_sync['exists'];
         $repair_log['survey_audit_log_table']['created'] = $audit_log_sync['created'];
         $repair_log['survey_audit_log_table']['columns_added'] = $audit_log_sync['columns_added'];
+
+        $longitudinal_pools_sync = self::sync_local_longitudinal_pools_table();
+        $repair_log['longitudinal_pools_table']['exists'] = $longitudinal_pools_sync['exists'];
+        $repair_log['longitudinal_pools_table']['created'] = $longitudinal_pools_sync['created'];
+        $repair_log['longitudinal_pools_table']['columns_added'] = $longitudinal_pools_sync['columns_added'];
+
+        $longitudinal_pool_assignments_sync = self::sync_local_longitudinal_pool_assignments_table();
+        $repair_log['longitudinal_pool_assignments_table']['exists'] = $longitudinal_pool_assignments_sync['exists'];
+        $repair_log['longitudinal_pool_assignments_table']['created'] = $longitudinal_pool_assignments_sync['created'];
+        $repair_log['longitudinal_pool_assignments_table']['columns_added'] = $longitudinal_pool_assignments_sync['columns_added'];
 
         // Repair results table
         if ( $repair_log['results_table']['exists'] ) {
@@ -2258,6 +2291,210 @@ class EIPSI_Database_Schema_Manager {
 
         if ( ! in_array( 'idx_action_created', $index_names, true ) ) {
             $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_action_created (action, created_at)" );
+        }
+
+        return $result;
+    }
+
+    /**
+     * Sync wp_eipsi_longitudinal_pools table in local DB
+     *
+     * @since 2.1.0
+     * @return array Result with success status and details
+     */
+    private static function sync_local_longitudinal_pools_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'eipsi_longitudinal_pools';
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+
+        if ( ! $result['exists'] ) {
+            $sql = "CREATE TABLE {$table_name} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                pool_name VARCHAR(255) NOT NULL,
+                pool_description TEXT,
+                studies JSON,
+                probabilities JSON,
+                method ENUM('seeded', 'pure-random') DEFAULT 'seeded',
+                status ENUM('active', 'inactive') DEFAULT 'active',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_status (status),
+                KEY idx_method (method),
+                KEY idx_created_at (created_at)
+            ) {$charset_collate};";
+
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+
+            $result['created'] = true;
+            $result['exists'] = true;
+
+            error_log( '[EIPSI Forms] Created table: ' . $table_name );
+        }
+
+        $required_columns = array(
+            'pool_name' => "ALTER TABLE {$table_name} ADD COLUMN pool_name VARCHAR(255) NOT NULL AFTER id",
+            'pool_description' => "ALTER TABLE {$table_name} ADD COLUMN pool_description TEXT AFTER pool_name",
+            'studies' => "ALTER TABLE {$table_name} ADD COLUMN studies JSON AFTER pool_description",
+            'probabilities' => "ALTER TABLE {$table_name} ADD COLUMN probabilities JSON AFTER studies",
+            'method' => "ALTER TABLE {$table_name} ADD COLUMN method ENUM('seeded', 'pure-random') DEFAULT 'seeded' AFTER probabilities",
+            'status' => "ALTER TABLE {$table_name} ADD COLUMN status ENUM('active', 'inactive') DEFAULT 'active' AFTER method",
+            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP AFTER status",
+            'updated_at' => "ALTER TABLE {$table_name} ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at",
+        );
+
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $table_name,
+                    $column
+                )
+            );
+
+            if ( empty( $column_exists ) ) {
+                if ( false !== $wpdb->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                    error_log( "[EIPSI Forms] Added missing column '{$column}' to {$table_name}" );
+                } else {
+                    $result['columns_missing'][] = $column;
+                    $result['success'] = false;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
+                    }
+                }
+            }
+        }
+
+        self::ensure_local_index( $table_name, 'status' );
+        self::ensure_local_index( $table_name, 'method' );
+        self::ensure_local_index( $table_name, 'created_at' );
+
+        return $result;
+    }
+
+    /**
+     * Sync wp_eipsi_longitudinal_pool_assignments table in local DB
+     *
+     * @since 2.1.0
+     * @return array Result with success status and details
+     */
+    private static function sync_local_longitudinal_pool_assignments_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+
+        if ( ! $result['exists'] ) {
+            $sql = "CREATE TABLE {$table_name} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                pool_id BIGINT(20) UNSIGNED NOT NULL,
+                participant_id BIGINT(20) UNSIGNED NOT NULL,
+                assigned_study_id BIGINT(20) UNSIGNED NOT NULL,
+                assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                status ENUM('assigned', 'completed', 'dropped') DEFAULT 'assigned',
+                PRIMARY KEY (id),
+                KEY idx_pool_id (pool_id),
+                KEY idx_participant_id (participant_id),
+                KEY idx_assigned_study_id (assigned_study_id),
+                KEY idx_status (status),
+                KEY idx_assigned_at (assigned_at)
+            ) {$charset_collate};";
+
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+
+            $result['created'] = true;
+            $result['exists'] = true;
+
+            error_log( '[EIPSI Forms] Created table: ' . $table_name );
+        }
+
+        $required_columns = array(
+            'pool_id' => "ALTER TABLE {$table_name} ADD COLUMN pool_id BIGINT(20) UNSIGNED NOT NULL AFTER id",
+            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NOT NULL AFTER pool_id",
+            'assigned_study_id' => "ALTER TABLE {$table_name} ADD COLUMN assigned_study_id BIGINT(20) UNSIGNED NOT NULL AFTER participant_id",
+            'assigned_at' => "ALTER TABLE {$table_name} ADD COLUMN assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP AFTER assigned_study_id",
+            'status' => "ALTER TABLE {$table_name} ADD COLUMN status ENUM('assigned', 'completed', 'dropped') DEFAULT 'assigned' AFTER assigned_at",
+        );
+
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $table_name,
+                    $column
+                )
+            );
+
+            if ( empty( $column_exists ) ) {
+                if ( false !== $wpdb->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                    error_log( "[EIPSI Forms] Added missing column '{$column}' to {$table_name}" );
+                } else {
+                    $result['columns_missing'][] = $column;
+                    $result['success'] = false;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
+                    }
+                }
+            }
+        }
+
+        self::ensure_local_index( $table_name, 'pool_id' );
+        self::ensure_local_index( $table_name, 'participant_id' );
+        self::ensure_local_index( $table_name, 'assigned_study_id' );
+        self::ensure_local_index( $table_name, 'status' );
+        self::ensure_local_index( $table_name, 'assigned_at' );
+
+        if ( function_exists( 'eipsi_longitudinal_ensure_foreign_key' ) ) {
+            eipsi_longitudinal_ensure_foreign_key(
+                $table_name,
+                'fk_pool_assignments_pool',
+                "ALTER TABLE {$table_name} ADD CONSTRAINT fk_pool_assignments_pool FOREIGN KEY (pool_id) REFERENCES {$wpdb->prefix}eipsi_longitudinal_pools(id) ON DELETE CASCADE"
+            );
+
+            eipsi_longitudinal_ensure_foreign_key(
+                $table_name,
+                'fk_pool_assignments_participant',
+                "ALTER TABLE {$table_name} ADD CONSTRAINT fk_pool_assignments_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE"
+            );
+
+            eipsi_longitudinal_ensure_foreign_key(
+                $table_name,
+                'fk_pool_assignments_study',
+                "ALTER TABLE {$table_name} ADD CONSTRAINT fk_pool_assignments_study FOREIGN KEY (assigned_study_id) REFERENCES {$wpdb->prefix}survey_studies(id) ON DELETE CASCADE"
+            );
         }
 
         return $result;
