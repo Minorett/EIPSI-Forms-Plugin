@@ -539,6 +539,7 @@ function eipsi_longitudinal_study_shortcode($atts) {
     
     // Check for magic link token in URL for auto-login
     $magic_token = isset($_GET['eipsi_magic']) ? sanitize_text_field($_GET['eipsi_magic']) : '';
+    $magic_link_login_success = false; // Track if magic link auto-login succeeded
     
     if (!$is_participant_logged_in && !empty($magic_token)) {
         // Attempt magic link auto-login
@@ -560,13 +561,18 @@ function eipsi_longitudinal_study_shortcode($atts) {
                     $is_participant_logged_in = true;
                     $current_participant_id = $validation['participant_id'];
                     $current_survey_id = $validation['survey_id'];
+                    $magic_link_login_success = true; // Mark as successful magic link login
                 }
             }
         }
     }
     
     // Now determine view_mode based on authentication and context
-    if ($requested_view === 'dashboard') {
+    // CRITICAL: Magic link ALWAYS shows participant view, never admin/dashboard
+    if ($magic_link_login_success) {
+        // Magic link users ALWAYS see participant view
+        $view_mode = 'participant';
+    } elseif ($requested_view === 'dashboard') {
         // Dashboard view is ONLY for WordPress admins
         if (current_user_can('manage_options')) {
             $view_mode = 'dashboard';
@@ -725,7 +731,20 @@ function eipsi_longitudinal_study_shortcode($atts) {
     // Render the template
     ob_start();
     include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/longitudinal-study-display.php';
-    return ob_get_clean();
+    $output = ob_get_clean();
+    
+    // Add JavaScript to clean URL after successful magic link login
+    // This removes the token from the URL for security and cleaner UX
+    if ($magic_link_login_success) {
+        $clean_url = remove_query_arg('eipsi_magic', get_permalink());
+        $output .= '<script>
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState({}, document.title, "' . esc_url($clean_url) . '");
+            }
+        </script>';
+    }
+    
+    return $output;
 }
 add_shortcode('eipsi_longitudinal_study', 'eipsi_longitudinal_study_shortcode');
 
