@@ -1,11 +1,74 @@
 /**
  * EIPSI Forms - Participant Portal Styles
- * 
+ *
  * Styles for login, registration, and dashboard
- * 
+ * LIGHT THEME ONLY - EIPSI Brand Colors
+ *
  * @package EIPSI_Forms
  * @since 2.0.0
  */
+
+/* =================================================================
+   EIPSI LIGHT THEME VARIABLES (FORCED)
+   ================================================================= */
+
+.eipsi-participant-portal,
+.eipsi-survey-login-container,
+.eipsi-login-form,
+.eipsi-participant-dashboard {
+    --eipsi-bg-color: #ffffff !important;
+    --eipsi-bg-secondary: #f8f9fa !important;
+    --eipsi-text-color: #333333 !important;
+    --eipsi-text-muted: #6c757d !important;
+    --eipsi-border-color: #e9ecef !important;
+    --eipsi-primary: #2196F3 !important;
+    --eipsi-primary-hover: #1976D2 !important;
+    --eipsi-color-primary: #2196F3 !important;
+    --eipsi-color-primary-hover: #1976D2 !important;
+    --eipsi-color-text: #333333 !important;
+    --eipsi-color-text-muted: #6c757d !important;
+    --eipsi-color-border: #e9ecef !important;
+    --eipsi-color-background: #ffffff !important;
+    --eipsi-color-background-subtle: #f8f9fa !important;
+    --eipsi-color-card-bg: #ffffff !important;
+    --eipsi-color-card-border: #e9ecef !important;
+    --eipsi-color-input-bg: #ffffff !important;
+    --eipsi-color-success: #4CAF50 !important;
+    --eipsi-color-error: #f44336 !important;
+
+    /* Force light background always */
+    background: #ffffff !important;
+    color: #333333 !important;
+}
+
+/* Override any dark mode classes */
+.dark-mode .eipsi-participant-portal,
+.dark-mode .eipsi-survey-login-container,
+.dark-mode .eipsi-login-form,
+.dark-mode .eipsi-participant-dashboard,
+[data-theme="dark"] .eipsi-participant-portal,
+[data-theme="dark"] .eipsi-survey-login-container,
+[data-theme="dark"] .eipsi-login-form,
+[data-theme="dark"] .eipsi-participant-dashboard,
+body.eipsi-dark-mode .eipsi-participant-portal,
+body.eipsi-dark-mode .eipsi-survey-login-container,
+body.eipsi-dark-mode .eipsi-login-form,
+body.eipsi-dark-mode .eipsi-participant-dashboard {
+    --eipsi-bg-color: #ffffff !important;
+    --eipsi-bg-secondary: #f8f9fa !important;
+    --eipsi-text-color: #333333 !important;
+    --eipsi-text-muted: #6c757d !important;
+    --eipsi-border-color: #e9ecef !important;
+    --eipsi-primary: #2196F3 !important;
+    --eipsi-color-primary: #2196F3 !important;
+    --eipsi-color-text: #333333 !important;
+    --eipsi-color-background: #ffffff !important;
+    --eipsi-color-background-subtle: #f8f9fa !important;
+    --eipsi-color-card-bg: #ffffff !important;
+
+    background: #ffffff !important;
+    color: #333333 !important;
+}
 
 /* =================================================================
    LOGIN/REGISTRATION FORM
@@ -24,7 +87,7 @@
 .eipsi-login-header {
     padding: 2rem;
     text-align: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
     color: #fff;
 }
 
@@ -72,7 +135,7 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--eipsi-primary, #667eea);
+    background: #2196F3;
     color: #fff;
     display: flex;
     align-items: center;
@@ -117,14 +180,14 @@
 }
 
 .eipsi-survey-login-tab:hover {
-    background: rgba(102, 126, 234, 0.05);
-    color: var(--eipsi-primary, #667eea);
+    background: rgba(33, 150, 243, 0.05);
+    color: #2196F3;
 }
 
 .eipsi-survey-login-tab.active {
-    color: var(--eipsi-primary, #667eea);
-    background: var(--eipsi-bg-color, #fff);
-    border-bottom: 2px solid var(--eipsi-primary, #667eea);
+    color: #2196F3;
+    background: #ffffff;
+    border-bottom: 2px solid #2196F3;
     margin-bottom: -1px;
 }
 
@@ -203,8 +266,8 @@
 
 .eipsi-input-wrapper input:focus {
     outline: none;
-    border-color: var(--eipsi-primary, #667eea);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    border-color: #2196F3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
 }
 
 .eipsi-input-wrapper.has-error input {
@@ -313,22 +376,23 @@
 
 .forgot-password-link {
     font-size: 0.85rem;
-    color: var(--eipsi-primary, #667eea);
+    color: #2196F3;
     text-decoration: none;
 }
 
 .forgot-password-link:hover {
+    color: #1976D2;
     text-decoration: underline;
 }
 
-/* Buttons */
+/* Buttons - EIPSI Brand Blue */
 .eipsi-button-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
     padding: 0.875rem 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #2196F3;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -340,8 +404,9 @@
 }
 
 .eipsi-button-primary:hover:not(:disabled) {
+    background: #1976D2;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
 }
 
 .eipsi-button-primary:disabled {
@@ -382,7 +447,7 @@
 .eipsi-form-footer a,
 .switch-to-login,
 .switch-to-register {
-    color: var(--eipsi-primary, #667eea);
+    color: #2196F3;
     text-decoration: none;
     font-weight: 500;
 }
@@ -390,6 +455,7 @@
 .eipsi-form-footer a:hover,
 .switch-to-login:hover,
 .switch-to-register:hover {
+    color: #1976D2;
     text-decoration: underline;
 }
 
@@ -545,7 +611,7 @@
 .eipsi-progress-percentage {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--eipsi-primary, #667eea);
+    color: #2196F3;
 }
 
 .eipsi-progress-bar {
@@ -557,7 +623,7 @@
 
 .eipsi-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(90deg, #2196F3 0%, #1976D2 100%);
     border-radius: 4px;
     transition: width 0.5s ease;
 }
@@ -580,7 +646,7 @@
 }
 
 .eipsi-section-highlight {
-    border: 2px solid var(--eipsi-primary, #667eea);
+    border: 2px solid #2196F3;
 }
 
 .eipsi-section-title {
@@ -625,7 +691,7 @@
     justify-content: center;
     width: 40px;
     height: 40px;
-    background: var(--eipsi-primary, #667eea);
+    background: #2196F3;
     color: #fff;
     border-radius: 8px;
     font-weight: 600;
@@ -735,7 +801,7 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    background: var(--eipsi-primary, #667eea);
+    background: #2196F3;
     color: #fff;
     border-radius: 6px;
     font-weight: 600;
@@ -794,7 +860,7 @@
 /* Completion Card */
 .eipsi-completion-card {
     text-align: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
     color: #fff;
 }
 
@@ -836,16 +902,16 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
-    background: var(--eipsi-bg-color, #fff);
+    background: #ffffff;
     border-radius: 8px;
     text-decoration: none;
-    color: var(--eipsi-primary, #667eea);
+    color: #2196F3;
     font-weight: 500;
     transition: background 0.2s ease;
 }
 
 .eipsi-contact-link:hover {
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(33, 150, 243, 0.1);
 }
 
 /* Dashboard Footer */
@@ -888,46 +954,50 @@
 }
 
 /* =================================================================
-   DARK MODE
+   DARK MODE - DISABLED (FORCE LIGHT THEME)
    ================================================================= */
 
+/* Override system dark mode preference - always use light colors */
 @media (prefers-color-scheme: dark) {
     :root {
-        --eipsi-bg-color: #1a1a2e;
-        --eipsi-bg-secondary: #16213e;
-        --eipsi-text-color: #eaeaea;
-        --eipsi-text-muted: #a0a0a0;
-        --eipsi-border-color: #2a2a4a;
+        --eipsi-bg-color: #ffffff;
+        --eipsi-bg-secondary: #f8f9fa;
+        --eipsi-text-color: #333333;
+        --eipsi-text-muted: #6c757d;
+        --eipsi-border-color: #e9ecef;
     }
-    
+
     .eipsi-survey-login-container,
     .eipsi-dashboard-header,
     .eipsi-dashboard-section {
-        background: var(--eipsi-bg-color);
+        background: #ffffff;
     }
-    
+
     .eipsi-login-steps,
     .eipsi-survey-login-tabs,
     .eipsi-next-take-card {
-        background: var(--eipsi-bg-secondary);
+        background: #f8f9fa;
     }
-    
+
     .eipsi-input-wrapper input {
-        background: var(--eipsi-bg-secondary);
-        border-color: var(--eipsi-border-color);
-        color: var(--eipsi-text-color);
+        background: #ffffff;
+        border-color: #e9ecef;
+        color: #333333;
     }
-    
+
     .eipsi-waves-table th {
-        background: var(--eipsi-bg-secondary);
+        background: #f8f9fa;
     }
 }
 
-/* Forced dark mode via class */
+/* Force light mode even with dark-mode class */
 .dark-mode .eipsi-survey-login-container,
 .dark-mode .eipsi-dashboard-header,
-.dark-mode .eipsi-dashboard-section {
-    background: var(--eipsi-bg-color);
+.dark-mode .eipsi-dashboard-section,
+body.eipsi-dark-mode .eipsi-survey-login-container,
+body.eipsi-dark-mode .eipsi-dashboard-header,
+body.eipsi-dark-mode .eipsi-dashboard-section {
+    background: #ffffff;
 }
 
 /* =================================================================
@@ -939,7 +1009,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
     color: #fff;
     padding: 12px 20px;
     display: flex;
@@ -1138,7 +1208,7 @@
     justify-content: center;
     gap: 8px;
     padding: 14px 32px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #2196F3;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -1149,8 +1219,9 @@
 }
 
 .eipsi-modal-btn:hover {
+    background: #1976D2;
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 8px 20px rgba(33, 150, 243, 0.4);
 }
 
 /* =================================================================
@@ -1195,31 +1266,35 @@
 }
 
 /* =================================================================
-   DARK MODE FOR TIMER
+   DARK MODE OVERRIDE - FORCE LIGHT THEME
    ================================================================= */
 
+/* Disable dark mode - Force light colors always */
 @media (prefers-color-scheme: dark) {
     .eipsi-modal-content {
-        background: var(--eipsi-bg-color, #1a1a2e);
+        background: #ffffff;
     }
-    
+
     .eipsi-modal-title {
-        color: var(--eipsi-text-color, #eaeaea);
+        color: #333333;
     }
-    
+
     .eipsi-modal-message {
-        color: var(--eipsi-text-muted, #a0a0a0);
+        color: #6c757d;
     }
 }
 
-.dark-mode .eipsi-modal-content {
-    background: var(--eipsi-bg-color, #1a1a2e);
+.dark-mode .eipsi-modal-content,
+body.eipsi-dark-mode .eipsi-modal-content {
+    background: #ffffff;
 }
 
-.dark-mode .eipsi-modal-title {
-    color: var(--eipsi-text-color, #eaeaea);
+.dark-mode .eipsi-modal-title,
+body.eipsi-dark-mode .eipsi-modal-title {
+    color: #333333;
 }
 
-.dark-mode .eipsi-modal-message {
-    color: var(--eipsi-text-muted, #a0a0a0);
+.dark-mode .eipsi-modal-message,
+body.eipsi-dark-mode .eipsi-modal-message {
+    color: #6c757d;
 }
