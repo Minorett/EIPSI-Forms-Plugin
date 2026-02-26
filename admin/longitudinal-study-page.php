@@ -5,8 +5,10 @@
  * - Create Study
  * - Dashboard Study
  * - Waves Manager
- * - Recordatorios
+ * - Recordatorios y Notificaciones
  * - Email Log & Dropout
+ * - Longitudinal Pools
+ * - Pool Analytics
  */
 
 if (!defined('ABSPATH')) {
@@ -24,7 +26,9 @@ function eipsi_display_longitudinal_study_page() {
         'dashboard-study',
         'waves-manager',
         'reminders',
-        'email-log'
+        'email-log',
+        'longitudinal-pools',
+        'pool-analytics'
     );
 
     if (!in_array($active_tab, $allowed_tabs, true)) {
@@ -60,6 +64,16 @@ function eipsi_display_longitudinal_study_page() {
                class="nav-tab <?php echo esc_attr(($active_tab === 'email-log') ? 'nav-tab-active' : ''); ?>"
                data-tab="email-log">
                 📧 <?php esc_html_e('Email Log & Dropout', 'eipsi-forms'); ?>
+            </a>
+            <a href="?page=eipsi-longitudinal-study&tab=longitudinal-pools"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'longitudinal-pools') ? 'nav-tab-active' : ''); ?>"
+               data-tab="longitudinal-pools">
+                🏊 <?php esc_html_e('Longitudinal Pools', 'eipsi-forms'); ?>
+            </a>
+            <a href="?page=eipsi-longitudinal-study&tab=pool-analytics"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'pool-analytics') ? 'nav-tab-active' : ''); ?>"
+               data-tab="pool-analytics">
+                📊 <?php esc_html_e('Pool Analytics', 'eipsi-forms'); ?>
             </a>
         </h2>
 
@@ -140,6 +154,18 @@ function eipsi_display_longitudinal_study_page() {
                 ));
                 ?>
                 <?php include dirname(__FILE__) . '/tabs/email-log-tab.php'; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($active_tab === 'longitudinal-pools'): ?>
+            <div class="tab-content" data-tab="longitudinal-pools">
+                <?php include dirname(__FILE__) . '/tabs/longitudinal-pools-tab.php'; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($active_tab === 'pool-analytics'): ?>
+            <div class="tab-content" data-tab="pool-analytics">
+                <?php include dirname(__FILE__) . '/tabs/pool-analytics-tab.php'; ?>
             </div>
         <?php endif; ?>
     </div>

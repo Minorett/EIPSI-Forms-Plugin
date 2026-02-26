@@ -92,6 +92,7 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/menu.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/results-page.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/longitudinal-study-page.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-pools-page.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/longitudinal-pool-dashboard.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/export.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
