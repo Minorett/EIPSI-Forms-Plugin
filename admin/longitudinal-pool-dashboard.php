@@ -80,6 +80,30 @@ function eipsi_display_pool_dashboard_page() {
             </div>
         </div>
 
+        <?php if ( $pool_id ) : ?>
+        <div class="eipsi-pool-shortcode-box">
+            <div class="eipsi-shortcode-header">
+                <span class="dashicons dashicons-shortcode" aria-hidden="true"></span>
+                <strong><?php esc_html_e( 'Shortcode para compartir', 'eipsi-forms' ); ?></strong>
+            </div>
+            <div class="eipsi-shortcode-row">
+                <code class="eipsi-shortcode-code">[eipsi_pool_join pool_id="<?php echo esc_attr( $pool_id ); ?>"]</code>
+                <button type="button" class="eipsi-copy-btn" data-shortcode='[eipsi_pool_join pool_id="<?php echo esc_attr( $pool_id ); ?>"]' aria-label="<?php esc_attr_e( 'Copiar shortcode básico', 'eipsi-forms' ); ?>">
+                    <span class="eipsi-copy-icon" aria-hidden="true">📋</span>
+                    <span class="eipsi-copy-text"><?php esc_html_e( 'Copiar', 'eipsi-forms' ); ?></span>
+                </button>
+            </div>
+            <div class="eipsi-shortcode-row">
+                <code class="eipsi-shortcode-code">[eipsi_pool_join pool_id="<?php echo esc_attr( $pool_id ); ?>" show_name="1"]</code>
+                <button type="button" class="eipsi-copy-btn" data-shortcode='[eipsi_pool_join pool_id="<?php echo esc_attr( $pool_id ); ?>" show_name="1"]' aria-label="<?php esc_attr_e( 'Copiar shortcode con nombre', 'eipsi-forms' ); ?>">
+                    <span class="eipsi-copy-icon" aria-hidden="true">📋</span>
+                    <span class="eipsi-copy-text"><?php esc_html_e( 'Copiar', 'eipsi-forms' ); ?></span>
+                </button>
+            </div>
+            <p class="description eipsi-shortcode-hint"><?php esc_html_e( 'Pegá este shortcode en cualquier página o entrada de WordPress para permitir inscripciones.', 'eipsi-forms' ); ?></p>
+        </div>
+        <?php endif; ?>
+
         <?php if ( empty( $pools ) ) : ?>
             <div class="notice notice-warning">
                 <p><?php esc_html_e( 'Todavía no hay pools creados. Creá un pool para ver analytics.', 'eipsi-forms' ); ?></p>

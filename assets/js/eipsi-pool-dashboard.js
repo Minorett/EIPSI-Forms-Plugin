@@ -21,13 +21,108 @@
 
     const strings = ( window.eipsiPoolDashboard && window.eipsiPoolDashboard.strings ) || {};
 
+    // Copy button strings
+    const copyStrings = {
+        copy: __( 'Copiar', 'eipsi-forms' ),
+        copied: __( '¡Copiado!', 'eipsi-forms' ),
+        copyError: __( 'Error al copiar', 'eipsi-forms' ),
+    };
+
     $( document ).ready( function () {
         bindEvents();
+        bindCopyEvents();
 
         if ( window.eipsiPoolDashboard && window.eipsiPoolDashboard.poolId ) {
             loadPoolAnalytics( window.eipsiPoolDashboard.poolId );
         }
     } );
+
+    function __( text, domain ) {
+        if ( typeof wp !== 'undefined' && wp.i18n ) {
+            return wp.i18n.__( text, domain );
+        }
+        return text;
+    }
+
+    function bindCopyEvents() {
+        $( document ).on( 'click', '.eipsi-copy-btn', function ( e ) {
+            e.preventDefault();
+            const button = $( this );
+            const shortcode = button.data( 'shortcode' );
+
+            if ( ! shortcode ) {
+                return;
+            }
+
+            copyToClipboard( shortcode, button );
+        } );
+    }
+
+    function copyToClipboard( text, button ) {
+        // Try modern Clipboard API first
+        if ( navigator.clipboard && navigator.clipboard.writeText ) {
+            navigator.clipboard.writeText( text )
+                .then( function () {
+                    showCopySuccess( button );
+                } )
+                .catch( function () {
+                    fallbackCopy( text, button );
+                } );
+        } else {
+            // Fallback for older browsers
+            fallbackCopy( text, button );
+        }
+    }
+
+    function fallbackCopy( text, button ) {
+        const textArea = document.createElement( 'textarea' );
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild( textArea );
+        textArea.focus();
+        textArea.select();
+
+        try {
+            const successful = document.execCommand( 'copy' );
+            if ( successful ) {
+                showCopySuccess( button );
+            } else {
+                showCopyError( button );
+            }
+        } catch ( err ) {
+            showCopyError( button );
+        }
+
+        document.body.removeChild( textArea );
+    }
+
+    function showCopySuccess( button ) {
+        const originalIcon = button.find( '.eipsi-copy-icon' ).html();
+        const originalText = button.find( '.eipsi-copy-text' ).html();
+
+        button.addClass( 'copied' );
+        button.find( '.eipsi-copy-icon' ).html( '✓' );
+        button.find( '.eipsi-copy-text' ).html( copyStrings.copied );
+
+        setTimeout( function () {
+            button.removeClass( 'copied' );
+            button.find( '.eipsi-copy-icon' ).html( originalIcon );
+            button.find( '.eipsi-copy-text' ).html( originalText );
+        }, 2000 );
+    }
+
+    function showCopyError( button ) {
+        const originalText = button.find( '.eipsi-copy-text' ).html();
+        button.find( '.eipsi-copy-text' ).html( copyStrings.copyError );
+        button.css( 'background', '#dc2626' );
+
+        setTimeout( function () {
+            button.find( '.eipsi-copy-text' ).html( originalText );
+            button.css( 'background', '' );
+        }, 2000 );
+    }
 
     function bindEvents() {
         $( document ).on( 'change', selectors.poolSelector, function () {

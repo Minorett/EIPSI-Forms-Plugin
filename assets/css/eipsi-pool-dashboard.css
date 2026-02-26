@@ -236,4 +236,113 @@
         flex-direction: column;
         align-items: flex-start;
     }
+
+    .eipsi-shortcode-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .eipsi-shortcode-code {
+        word-break: break-all;
+    }
+}
+
+/* Shortcode display box */
+.eipsi-pool-shortcode-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+}
+
+.eipsi-shortcode-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: #334155;
+}
+
+.eipsi-shortcode-header .dashicons {
+    color: #3b6caa;
+}
+
+.eipsi-shortcode-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.eipsi-shortcode-row:last-of-type {
+    margin-bottom: 12px;
+}
+
+.eipsi-shortcode-code {
+    background: #1e293b;
+    color: #a5f3fc;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 13px;
+    flex: 1;
+    min-width: 200px;
+    word-break: break-word;
+}
+
+.eipsi-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #3b6caa;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    white-space: nowrap;
+}
+
+.eipsi-copy-btn:hover {
+    background: #2d5a8f;
+}
+
+.eipsi-copy-btn:active {
+    transform: scale(0.98);
+}
+
+.eipsi-copy-btn.copied {
+    background: #16a34a;
+}
+
+.eipsi-copy-btn.copied .eipsi-copy-text {
+    display: none;
+}
+
+.eipsi-copy-btn.copied .eipsi-copy-success {
+    display: inline;
+}
+
+.eipsi-copy-icon {
+    font-size: 14px;
+}
+
+.eipsi-copy-text {
+    /* Default visible */
+}
+
+.eipsi-copy-success {
+    display: none;
+    color: #fff;
+}
+
+.eipsi-shortcode-hint {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
 }
