@@ -1112,6 +1112,28 @@ class EIPSI_Database_Schema_Manager {
         $repair_log['longitudinal_pool_assignments_table']['created'] = $longitudinal_pool_assignments_sync['created'];
         $repair_log['longitudinal_pool_assignments_table']['columns_added'] = $longitudinal_pool_assignments_sync['columns_added'];
 
+        // Phase 2 tables: participant access log + device data (v2.0.0+)
+        // These were missing from repair_local_schema() — now included for production safety.
+        $participant_access_log_sync = self::sync_local_survey_participant_access_log_table();
+        $repair_log['survey_participant_access_log_table'] = array(
+            'exists'        => $participant_access_log_sync['exists'],
+            'created'       => $participant_access_log_sync['created'],
+            'columns_added' => $participant_access_log_sync['columns_added'],
+        );
+        if ( ! $participant_access_log_sync['success'] ) {
+            $repair_log['success'] = false;
+        }
+
+        $device_data_sync = self::sync_local_device_data_table();
+        $repair_log['eipsi_device_data_table'] = array(
+            'exists'        => $device_data_sync['exists'],
+            'created'       => $device_data_sync['created'],
+            'columns_added' => $device_data_sync['columns_added'],
+        );
+        if ( ! $device_data_sync['success'] ) {
+            $repair_log['success'] = false;
+        }
+
         // Repair results table
         if ( $repair_log['results_table']['exists'] ) {
             $results_repair = self::repair_local_results_table( $results_table );
