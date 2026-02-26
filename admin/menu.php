@@ -55,6 +55,16 @@ function eipsi_forms_menu() {
         'eipsi_display_longitudinal_pools_page'
     );
 
+    // Submenú: Pool Analytics
+    add_submenu_page(
+        'eipsi-results-experience',
+        __('Pool Analytics', 'eipsi-forms'),
+        __('Pool Analytics', 'eipsi-forms'),
+        $capabilities['longitudinal'],
+        'eipsi-pool-dashboard',
+        'eipsi_display_pool_dashboard_page'
+    );
+
     // Submenú: Configuration
     add_submenu_page(
         'eipsi-results-experience',

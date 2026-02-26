@@ -183,6 +183,11 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-phase3-handlers.php';
 // Service: weighted random assignment + magic link generation
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-pool-assignment-service.php';
 
+// Pool Analytics Dashboard (v2.1.0 - Part 4)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-pool-dashboard-service.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/longitudinal-pool-dashboard.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-dashboard-api.php';
+
 // AJAX API: wp_ajax_eipsi_join_pool + wp_ajax_eipsi_get_pool_stats
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-assignment-api.php';
 

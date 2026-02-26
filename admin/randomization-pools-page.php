@@ -205,6 +205,13 @@ function eipsi_display_longitudinal_pools_page() {
                                     ),
                                     admin_url( 'admin.php' )
                                 );
+                                $analytics_url = add_query_arg(
+                                    array(
+                                        'page' => 'eipsi-pool-dashboard',
+                                        'pool_id' => (int) $pool['id'],
+                                    ),
+                                    admin_url( 'admin.php' )
+                                );
                                 $delete_url = wp_nonce_url(
                                     add_query_arg(
                                         array(
@@ -228,6 +235,9 @@ function eipsi_display_longitudinal_pools_page() {
                                     <td>
                                         <a class="button button-small" href="<?php echo esc_url( $edit_url ); ?>">
                                             <?php esc_html_e( 'Editar', 'eipsi-forms' ); ?>
+                                        </a>
+                                        <a class="button button-small" href="<?php echo esc_url( $analytics_url ); ?>">
+                                            <?php esc_html_e( 'Analytics', 'eipsi-forms' ); ?>
                                         </a>
                                         <a class="button button-small button-link-delete" href="<?php echo esc_url( $delete_url ); ?>" onclick="return confirm('<?php echo esc_attr__( '¿Eliminar este pool? Esta acción no se puede deshacer.', 'eipsi-forms' ); ?>');">
                                             <?php esc_html_e( 'Eliminar', 'eipsi-forms' ); ?>
