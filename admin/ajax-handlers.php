@@ -3519,3 +3519,175 @@ function eipsi_get_public_registration_link_handler() {
         'study_code' => $study->study_code
     ));
 }
+
+
+// =============================================================================
+// SCHEMA STATUS AJAX HANDLERS (v1.6.0+)
+// =============================================================================
+
+/**
+ * AJAX Handler: Get schema status
+ * 
+ * Returns complete schema status for all monitored tables
+ * 
+ * @since 1.6.0
+ */
+add_action('wp_ajax_eipsi_get_schema_status', 'eipsi_get_schema_status_handler');
+
+function eipsi_get_schema_status_handler() {
+    // Validate nonce
+    $nonce_valid = false;
+    if (isset($_POST['nonce'])) {
+        $nonce_valid = wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce') ||
+                       wp_verify_nonce($_POST['nonce'], 'eipsi_wizard_nonce');
+    }
+    
+    if (!$nonce_valid) {
+        wp_send_json_error(array('message' => 'Nonce inválido'), 403);
+    }
+    
+    // Check permissions
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'No tienes permisos para realizar esta acción'), 403);
+    }
+    
+    // Load database schema manager if not already loaded
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
+    
+    // Get all tables status
+    $tables = EIPSI_Database_Schema_Manager::get_all_tables_status();
+    
+    // Get health summary
+    $summary = EIPSI_Database_Schema_Manager::get_schema_health_summary();
+    
+    // Update last verified timestamp
+    update_option('eipsi_schema_last_verified', current_time('mysql'));
+    
+    wp_send_json_success(array(
+        'tables' => $tables,
+        'summary' => $summary,
+        'timestamp' => current_time('mysql')
+    ));
+}
+
+/**
+ * AJAX Handler: Repair single table
+ * 
+ * Repairs a specific table (creates if missing, adds columns if missing)
+ * 
+ * @since 1.6.0
+ */
+add_action('wp_ajax_eipsi_repair_single_table', 'eipsi_repair_single_table_handler');
+
+function eipsi_repair_single_table_handler() {
+    // Validate nonce
+    $nonce_valid = false;
+    if (isset($_POST['nonce'])) {
+        $nonce_valid = wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce') ||
+                       wp_verify_nonce($_POST['nonce'], 'eipsi_wizard_nonce');
+    }
+    
+    if (!$nonce_valid) {
+        wp_send_json_error(array('message' => 'Nonce inválido'), 403);
+    }
+    
+    // Check permissions
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'No tienes permisos para realizar esta acción'), 403);
+    }
+    
+    // Get table name
+    $table_name = isset($_POST['table_name']) ? sanitize_text_field(wp_unslash($_POST['table_name'])) : '';
+    
+    // Validate table name - only allow known tables
+    $allowed_tables = array(
+        'vas_form_results',
+        'vas_form_events',
+        'eipsi_randomization_configs',
+        'eipsi_randomization_assignments',
+        'survey_studies',
+        'survey_participants',
+        'survey_sessions',
+        'survey_waves',
+        'survey_assignments',
+        'survey_magic_links',
+        'survey_email_log',
+        'survey_audit_log',
+        'eipsi_longitudinal_pools',
+        'eipsi_longitudinal_pool_assignments',
+        'survey_participant_access_log',
+        'eipsi_device_data'
+    );
+    
+    if (!in_array($table_name, $allowed_tables, true)) {
+        wp_send_json_error(array('message' => 'Tabla no permitida: ' . $table_name), 400);
+    }
+    
+    // Load database schema manager if not already loaded
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
+    
+    // Repair the table
+    $result = EIPSI_Database_Schema_Manager::repair_single_table($table_name);
+    
+    // Log the repair action
+    error_log("[EIPSI Schema Repair] User repair request for table {$table_name}: " . json_encode($result));
+    
+    if ($result['success']) {
+        wp_send_json_success($result);
+    } else {
+        wp_send_json_error($result['error'] ?? 'Error desconocido al reparar la tabla');
+    }
+}
+
+/**
+ * AJAX Handler: Export schema report
+ * 
+ * Generates a downloadable JSON report of the schema status
+ * 
+ * @since 1.6.0
+ */
+add_action('wp_ajax_eipsi_export_schema_report', 'eipsi_export_schema_report_handler');
+
+function eipsi_export_schema_report_handler() {
+    // Validate nonce
+    $nonce_valid = false;
+    if (isset($_POST['nonce'])) {
+        $nonce_valid = wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce') ||
+                       wp_verify_nonce($_POST['nonce'], 'eipsi_wizard_nonce');
+    }
+    
+    if (!$nonce_valid) {
+        wp_send_json_error(array('message' => 'Nonce inválido'), 403);
+    }
+    
+    // Check permissions
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'No tienes permisos para realizar esta acción'), 403);
+    }
+    
+    // Load database schema manager if not already loaded
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
+    
+    // Get all tables status
+    $tables = EIPSI_Database_Schema_Manager::get_all_tables_status();
+    
+    // Get health summary
+    $summary = EIPSI_Database_Schema_Manager::get_schema_health_summary();
+    
+    // Build report
+    $report = array(
+        'generated_at' => current_time('mysql'),
+        'plugin_version' => defined('EIPSI_FORMS_VERSION') ? EIPSI_FORMS_VERSION : 'Unknown',
+        'wordpress_version' => get_bloginfo('version'),
+        'php_version' => PHP_VERSION,
+        'summary' => $summary,
+        'tables' => $tables,
+        'database' => array(
+            'name' => DB_NAME,
+            'host' => DB_HOST,
+            'prefix' => $wpdb->prefix ?? 'wp_'
+        )
+    );
+    
+    wp_send_json_success($report);
+}
