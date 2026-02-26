@@ -65,7 +65,7 @@ $paused_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}survey_studi
 
 ?>
 
-<div class="eipsi-longitudinal-studies-wrap">
+<div class="eipsi-longitudinal-studies-wrap eipsi-force-light-mode">
     
     <!-- Summary Cards -->
     <div class="eipsi-summary-cards">

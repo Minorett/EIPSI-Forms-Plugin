@@ -375,6 +375,18 @@ body.rct-single-config .rct-dashboard {
     border-color: #059669;
 }
 
+.rct-button-export {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+.rct-button-export:hover {
+    background: #059669;
+    color: white;
+    border-color: #059669;
+}
+
 /* Estado vacío */
 .empty-state {
     text-align: center;
@@ -1268,4 +1280,169 @@ body.rct-single-config .rct-dashboard {
   .rct-header { background: #1e293b; color: #e2e8f0; border-color: #334155; }
   .eipsi-modal-content { background: #1e293b; color: #e2e8f0; border-color: #334155; }
   .metric-card { background: #1e293b; border-color: #334155; }
+}
+
+/* Forced light mode overrides */
+.eipsi-force-light-mode .rct-button-export {
+    background: #10b981;
+    border-color: #10b981;
+    color: #ffffff;
+}
+
+.eipsi-force-light-mode .rct-button-export:hover {
+    background: #059669;
+    border-color: #059669;
+    color: #ffffff;
+}
+
+.eipsi-force-light-mode.eipsi-randomization {
+    background: var(--eipsi-bg);
+    color: var(--eipsi-text);
+}
+
+.eipsi-force-light-mode .rct-header {
+    border-bottom-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .rct-header h1 {
+    color: var(--eipsi-text);
+}
+
+.eipsi-force-light-mode .rct-breadcrumb {
+    background: var(--eipsi-bg-muted);
+    border-left-color: var(--eipsi-primary);
+    color: var(--eipsi-text-muted);
+}
+
+.eipsi-force-light-mode .rct-breadcrumb a,
+.eipsi-force-light-mode .config-id-badge code {
+    color: var(--eipsi-primary);
+}
+
+.eipsi-force-light-mode .config-id-badge {
+    background: var(--eipsi-bg-muted);
+    border-color: var(--eipsi-border);
+    color: var(--eipsi-text-muted);
+}
+
+.eipsi-force-light-mode .rct-card {
+    background: var(--eipsi-bg-subtle);
+    border-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .rct-card-title {
+    color: var(--eipsi-text);
+}
+
+.eipsi-force-light-mode .rct-card-meta,
+.eipsi-force-light-mode .last-updated {
+    color: var(--eipsi-text-muted);
+}
+
+.eipsi-force-light-mode .distribution-section,
+.eipsi-force-light-mode .metric-card,
+.eipsi-force-light-mode .rct-distribution-widget {
+    background: var(--eipsi-bg);
+    border-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .distribution-title,
+.eipsi-force-light-mode .distribution-value,
+.eipsi-force-light-mode .distribution-header h3 {
+    color: var(--eipsi-text);
+}
+
+.eipsi-force-light-mode .distribution-label,
+.eipsi-force-light-mode .metric-label,
+.eipsi-force-light-mode .empty-state,
+.eipsi-force-light-mode .distribution-header,
+.eipsi-force-light-mode .distribution-table th {
+    color: var(--eipsi-text-muted);
+}
+
+.eipsi-force-light-mode .progress-bar {
+    background: var(--eipsi-bg-muted);
+}
+
+.eipsi-force-light-mode .metric-value {
+    color: var(--eipsi-primary);
+}
+
+.eipsi-force-light-mode .distribution-header {
+    border-bottom-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .distribution-table th {
+    background: var(--eipsi-bg-subtle);
+    border-bottom-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .distribution-table td {
+    color: var(--eipsi-text);
+    border-bottom-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .distribution-table tbody tr:hover {
+    background: var(--eipsi-bg-subtle);
+}
+
+.eipsi-force-light-mode .users-table {
+    background: var(--eipsi-bg);
+}
+
+.eipsi-force-light-mode .users-table th {
+    background: var(--eipsi-bg-subtle);
+    color: var(--eipsi-text);
+}
+
+.eipsi-force-light-mode .users-table td {
+    color: var(--eipsi-text);
+    border-bottom-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .users-table tbody tr:hover {
+    background: var(--eipsi-bg-subtle);
+}
+
+.eipsi-force-light-mode #rct-distribution-modal .eipsi-modal-content,
+.eipsi-force-light-mode .eipsi-modal-content {
+    background: var(--eipsi-bg);
+    color: var(--eipsi-text);
+    border-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode #rct-distribution-modal .eipsi-modal-header,
+.eipsi-force-light-mode #rct-distribution-modal .eipsi-modal-footer {
+    background: var(--eipsi-bg-subtle);
+    border-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode #rct-distribution-modal .eipsi-modal-header h3 {
+    color: var(--eipsi-text);
+}
+
+.eipsi-force-light-mode .chart-bars-container {
+    background: var(--eipsi-bg-muted);
+}
+
+.eipsi-force-light-mode .chart-label,
+.eipsi-force-light-mode .legend-item {
+    color: var(--eipsi-text-muted);
+}
+
+.eipsi-force-light-mode .distribution-summary,
+.eipsi-force-light-mode .distribution-chart-fallback,
+.eipsi-force-light-mode .chart-row {
+    background: var(--eipsi-bg-subtle);
+    color: var(--eipsi-text);
+}
+
+.eipsi-force-light-mode .chart-values .value.theoretical {
+    background: var(--eipsi-border);
+    color: var(--eipsi-text-muted);
+}
+
+.eipsi-force-light-mode .chart-values .value.real {
+    background: var(--eipsi-success);
+    color: #ffffff;
 }

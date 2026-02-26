@@ -386,3 +386,178 @@
         font-weight: 800;
     }
 }
+/* === FORCED LIGHT MODE === */
+.eipsi-force-light-mode.eipsi-longitudinal-studies-wrap {
+    background: var(--eipsi-bg);
+    color: var(--eipsi-text);
+    border-color: var(--eipsi-border);
+    box-shadow: var(--eipsi-shadow);
+}
+
+.eipsi-force-light-mode .eipsi-card-stat {
+    background: var(--eipsi-bg);
+    border-color: var(--eipsi-border);
+    box-shadow: var(--eipsi-shadow-sm);
+}
+
+.eipsi-force-light-mode .eipsi-card-stat .stat-label {
+    color: var(--eipsi-text-muted);
+}
+
+.eipsi-force-light-mode .eipsi-card-stat .stat-value {
+    color: var(--eipsi-primary);
+    text-shadow: none;
+}
+
+.eipsi-force-light-mode .eipsi-list-filters {
+    background: var(--eipsi-bg-subtle);
+    border-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .eipsi-list-filters input[type="text"] {
+    background: var(--eipsi-bg);
+    color: var(--eipsi-text);
+    border-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .eipsi-list-filters input[type="text"]:focus {
+    background: var(--eipsi-bg);
+    border-color: var(--eipsi-primary);
+    box-shadow: 0 0 0 3px rgba(59, 108, 170, 0.2);
+}
+
+.eipsi-force-light-mode .eipsi-list-filters input[type="text"]::placeholder {
+    color: var(--eipsi-text-light);
+}
+
+.eipsi-force-light-mode .eipsi-list-filters .button-secondary {
+    background: var(--eipsi-bg);
+    color: var(--eipsi-text);
+    border-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .eipsi-list-filters .button-secondary:hover {
+    background: var(--eipsi-bg-subtle);
+    border-color: var(--eipsi-border-dark);
+    color: var(--eipsi-primary);
+}
+
+.eipsi-force-light-mode .eipsi-list-filters .button-primary {
+    background: var(--eipsi-primary);
+    color: #ffffff;
+    border-color: var(--eipsi-primary);
+}
+
+.eipsi-force-light-mode .eipsi-list-filters .button-primary:hover {
+    background: var(--eipsi-primary-hover);
+    border-color: var(--eipsi-primary-hover);
+    box-shadow: var(--eipsi-shadow);
+}
+
+.eipsi-force-light-mode .eipsi-list-filters .button-link {
+    color: var(--eipsi-primary);
+}
+
+.eipsi-force-light-mode .eipsi-list-filters .button-link:hover {
+    color: var(--eipsi-primary-hover);
+}
+
+.eipsi-force-light-mode table.wp-list-table {
+    background: var(--eipsi-bg);
+    border-color: var(--eipsi-border);
+    box-shadow: var(--eipsi-shadow);
+}
+
+.eipsi-force-light-mode table.wp-list-table thead {
+    background: var(--eipsi-primary);
+}
+
+.eipsi-force-light-mode table.wp-list-table thead th {
+    color: #ffffff;
+    border-bottom-color: var(--eipsi-primary);
+}
+
+.eipsi-force-light-mode table.wp-list-table tbody {
+    background: var(--eipsi-bg);
+}
+
+.eipsi-force-light-mode table.wp-list-table tbody tr:nth-child(even) {
+    background: var(--eipsi-bg-subtle);
+}
+
+.eipsi-force-light-mode table.wp-list-table tbody tr:hover {
+    background: var(--eipsi-bg-subtle);
+    box-shadow: inset 0 0 0 1px var(--eipsi-primary-light);
+}
+
+.eipsi-force-light-mode table.wp-list-table tbody td {
+    color: var(--eipsi-text);
+    border-bottom-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode table.wp-list-table tbody td strong {
+    color: var(--eipsi-text);
+}
+
+.eipsi-force-light-mode table.wp-list-table tbody td code {
+    background: var(--eipsi-bg-muted);
+    color: var(--eipsi-primary);
+    border-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .badge-active {
+    background: var(--eipsi-success-bg);
+    color: var(--eipsi-success);
+    border-color: var(--eipsi-success);
+}
+
+.eipsi-force-light-mode .badge-completed {
+    background: var(--eipsi-success-bg);
+    color: var(--eipsi-success);
+    border-color: var(--eipsi-success);
+}
+
+.eipsi-force-light-mode .badge-paused {
+    background: var(--eipsi-warning-bg);
+    color: var(--eipsi-warning-text);
+    border-color: var(--eipsi-warning);
+}
+
+.eipsi-force-light-mode .badge-closed {
+    background: var(--eipsi-bg-muted);
+    color: var(--eipsi-text-muted);
+    border-color: var(--eipsi-border-dark);
+}
+
+.eipsi-force-light-mode .tablenav {
+    background: var(--eipsi-bg-subtle);
+    border-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .tablenav .tablenav-pages a,
+.eipsi-force-light-mode .tablenav .tablenav-pages span {
+    background: var(--eipsi-bg);
+    color: var(--eipsi-text);
+    border-color: var(--eipsi-border);
+}
+
+.eipsi-force-light-mode .tablenav .tablenav-pages a:hover {
+    background: var(--eipsi-primary);
+    color: #ffffff;
+    border-color: var(--eipsi-primary);
+}
+
+.eipsi-force-light-mode .tablenav .tablenav-pages .current {
+    background: var(--eipsi-primary);
+    color: #ffffff;
+    border-color: var(--eipsi-primary);
+}
+
+.eipsi-force-light-mode .tablenav .tablenav-pages .dots {
+    color: var(--eipsi-text-light);
+}
+
+.eipsi-force-light-mode table.wp-list-table tbody td[colspan] {
+    background: var(--eipsi-bg-subtle);
+    color: var(--eipsi-text-muted);
+}

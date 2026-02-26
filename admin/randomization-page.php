@@ -37,7 +37,7 @@ function eipsi_display_randomization() {
     $back_to_results_url = admin_url('admin.php?page=eipsi-results-experience&tab=randomization');
     ?>
     
-    <div class="wrap eipsi-randomization">
+    <div class="wrap eipsi-randomization eipsi-force-light-mode">
         <div class="rct-header">
             <div class="rct-header-left">
                 <?php if (!empty($auto_load_config)) : ?>
