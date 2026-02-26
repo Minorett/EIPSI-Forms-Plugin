@@ -178,6 +178,18 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-data-req
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-phase3-handlers.php';
 
 // ============================================================================
+// LONGITUDINAL POOLS - ASSIGNMENT LOGIC (v2.1.0 - Part 3)
+// ============================================================================
+// Service: weighted random assignment + magic link generation
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-pool-assignment-service.php';
+
+// AJAX API: wp_ajax_eipsi_join_pool + wp_ajax_eipsi_get_pool_stats
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-assignment-api.php';
+
+// Shortcode: [eipsi_pool_join pool_id="X"]
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/shortcodes/class-pool-join-shortcode.php';
+
+// ============================================================================
 // EMAIL SYSTEM CONFIGURATION (v1.5.4 - Default Email Fix)
 // ============================================================================
 
