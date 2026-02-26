@@ -6,6 +6,81 @@
  */
 
 /* ===========================
+   MODAL BASE STYLES
+   =========================== */
+
+.eipsi-modal {
+    display: none;
+    position: fixed;
+    z-index: 100000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    overflow-y: auto;
+    padding: 40px 20px;
+}
+
+/* When modal is shown, use flexbox for centering */
+.eipsi-modal[style*="display: block"] {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.eipsi-modal-content {
+    background: #fff;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: auto;
+}
+
+.eipsi-modal-content.dashboard-wide {
+    max-width: 1200px;
+    width: 95%;
+}
+
+.eipsi-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.eipsi-modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #1a1a1a;
+}
+
+.eipsi-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    line-height: 1;
+}
+
+.eipsi-modal-close:hover {
+    color: #1a1a1a;
+}
+
+.eipsi-modal-body {
+    padding: 20px;
+}
+
+/* ===========================
    DASHBOARD GRID
    =========================== */
 
@@ -179,6 +254,19 @@
     gap: 15px;
 }
 
+.wave-item-card {
+    background: #fafafa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wave-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
 .wave-summary-card {
     background: #fafafa;
     border: 1px solid #e0e0e0;
@@ -241,6 +329,27 @@
 .wave-actions-row {
     display: flex;
     gap: 8px;
+}
+
+.wave-footer {
+    font-size: 12px;
+    color: #666;
+    margin-top: 8px;
+}
+
+.wave-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.wave-actions .button-small {
+    padding: 0 8px;
+    font-size: 12px;
+    min-height: 28px;
+    line-height: 1.5;
 }
 
 /* Quick Actions */

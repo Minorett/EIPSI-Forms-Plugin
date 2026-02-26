@@ -73,16 +73,9 @@
                 self.addParticipant();
             });
 
-            // Action buttons (placeholders for now)
-            $('#action-edit-study').on('click', function() {
-                window.location.href = `?page=eipsi-longitudinal-study&tab=create-study&study_id=${self.currentStudyId}`;
-            });
-
-            $('#action-close-study').on('click', function() {
-                if (confirm(eipsiStudyDash.strings.confirmClose)) {
-                    // Redirect to close handler/anonymize
-                    window.location.href = `admin.php?action=eipsi_close_study&study_id=${self.currentStudyId}&nonce=${eipsiStudyDash.nonce}`;
-                }
+            // Delete study
+            $('#action-delete-study').on('click', function() {
+                self.deleteStudy();
             });
 
             // View participants
@@ -145,8 +138,59 @@
         openDashboard: function(studyId) {
             this.currentStudyId = studyId;
             $('#eipsi-study-dashboard-modal').fadeIn();
+            this.scrollToModal('#eipsi-study-dashboard-modal');
             this.loadStudyData(studyId);
             this.startAutoRefresh();
+        },
+
+        scrollToModal: function(modalSelector) {
+            // Scroll modal into view with smooth animation
+            $('html, body').animate({
+                scrollTop: $(modalSelector).offset().top - 50
+            }, 300);
+        },
+
+        deleteStudy: function() {
+            const self = this;
+            
+            if (!confirm('¿Estás seguro de que querés eliminar este estudio?\n\n⚠️ Esta acción eliminará TODOS los datos relacionados:\n• Participantes\n• Waves\n• Asignaciones\n• Emails enviados\n• Sesiones\n\nEsta acción NO SE PUEDE DESHACER.')) {
+                return;
+            }
+
+            // Double confirmation for safety
+            if (!confirm('⚠️ ÚLTIMA ADVERTENCIA ⚠️\n\nEl estudio será eliminado permanentemente.\n¿Continuar?')) {
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_delete_study',
+                    study_id: this.currentStudyId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Close modal
+                        $('#eipsi-study-dashboard-modal').fadeOut();
+                        self.stopAutoRefresh();
+                        
+                        // Show success message
+                        self.showToast(response.data.message || 'Estudio eliminado correctamente', 'success');
+                        
+                        // Reload page after short delay
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        self.showToast('Error: ' + (response.data || 'No se pudo eliminar el estudio'), 'error');
+                    }
+                },
+                error: function() {
+                    self.showToast('Error de conexión al intentar eliminar el estudio', 'error');
+                }
+            });
         },
 
         loadStudyData: function(studyId) {
@@ -183,12 +227,17 @@
             const waves = data.waves;
             const emails = data.emails;
 
-            // General Info
-            $('#study-modal-title').text(`${general.study_id}: ${general.study_name}`);
-            $('#study-id-display').text(general.study_id);
+            // General Info - usar study_code si existe, sino id
+            const studyDisplayId = general.study_code || general.id;
+            $('#study-modal-title').text(`${studyDisplayId}: ${general.study_name}`);
+            $('#study-id-display').text(general.id);
             $('#study-created-at').text(general.created_at);
-            $('#study-estimated-end').text(general.estimated_end_date || 'N/A');
+            $('#study-estimated-end').text(general.estimated_end_date || 'Sin fecha definida');
             $('#study-status-badge').text(general.status).attr('class', `eipsi-badge badge-${general.status}`);
+
+            // Shortcode - generar con study_code o id
+            const shortcode = `[eipsi_longitudinal_study study_code="${studyDisplayId}"]`;
+            $('#study-shortcode-display').text(shortcode);
 
             // Participant Stats
             $('#total-participants').text(participants.total);
@@ -208,6 +257,7 @@
             $container.empty();
 
             waves.forEach(wave => {
+                const deadlineText = wave.deadline || 'Sin fecha límite';
                 const waveHtml = `
                     <div class="wave-item-card">
                         <div class="wave-header">
@@ -222,11 +272,11 @@
                             <div class="progress-bar-fill blue" style="width: ${wave.progress}%"></div>
                         </div>
                         <div class="wave-footer">
-                            <small>Vence: ${wave.deadline}</small>
+                            <small>Vence: ${deadlineText}</small>
                         </div>
                         <div class="wave-actions">
                             <button class="button button-small send-reminder" data-wave-id="${wave.id}">📧</button>
-                            <button class="button button-small extend-deadline" data-wave-id="${wave.id}" data-deadline="${wave.deadline}">📅</button>
+                            <button class="button button-small extend-deadline" data-wave-id="${wave.id}" data-deadline="${wave.deadline || ''}">📅</button>
                         </div>
                     </div>
                 `;
@@ -264,6 +314,7 @@
                             `);
                         });
                         $('#eipsi-email-logs-modal').fadeIn();
+                        self.scrollToModal('#eipsi-email-logs-modal');
                     }
                 }
             });
@@ -294,6 +345,7 @@
             $('#extend-wave-id').val(waveId);
             $('#new-deadline-date').val(currentDeadline ? currentDeadline.split(' ')[0] : '');
             $('#eipsi-extend-deadline-modal').fadeIn();
+            this.scrollToModal('#eipsi-extend-deadline-modal');
         },
 
         saveExtendedDeadline: function() {
@@ -330,6 +382,7 @@
             
             // Open modal
             $('#eipsi-add-participant-modal').fadeIn();
+            this.scrollToModal('#eipsi-add-participant-modal');
         },
 
         addParticipant: function() {
@@ -435,6 +488,7 @@
          */
         openParticipantsList: function() {
             $('#eipsi-participants-list-modal').fadeIn();
+            this.scrollToModal('#eipsi-participants-list-modal');
             this.loadParticipantsList(1);
         },
 
