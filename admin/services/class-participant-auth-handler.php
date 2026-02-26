@@ -49,7 +49,7 @@ class EIPSI_Participant_Auth_Handler {
     }
     
     /**
-     * Handle participant login.
+     * Handle participant login (passwordless - email only).
      *
      * @since 2.0.0
      */
@@ -62,13 +62,12 @@ class EIPSI_Participant_Auth_Handler {
             ));
             wp_die();
         }
-        
+
         // Get and validate inputs
         $email = sanitize_email($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
         $survey_id = absint($_POST['survey_id'] ?? 0);
         $remember = !empty($_POST['remember']);
-        
+
         // Validate email
         if (!is_email($email)) {
             wp_send_json_error(array(
@@ -77,16 +76,7 @@ class EIPSI_Participant_Auth_Handler {
             ));
             wp_die();
         }
-        
-        // Validate password
-        if (strlen($password) < 8) {
-            wp_send_json_error(array(
-                'code' => 'invalid_password',
-                'message' => __('La contraseña debe tener al menos 8 caracteres.', 'eipsi-forms')
-            ));
-            wp_die();
-        }
-        
+
         // Check rate limit
         $rate_limit = EIPSI_Participant_Access_Log_Service::check_rate_limit($email, $survey_id);
         if (!$rate_limit['allowed']) {
@@ -100,7 +90,7 @@ class EIPSI_Participant_Auth_Handler {
             ));
             wp_die();
         }
-        
+
         // Get survey_id from study_code if provided
         $study_code = sanitize_text_field($_POST['study_code'] ?? '');
         if (!empty($study_code) && empty($survey_id)) {
@@ -113,35 +103,34 @@ class EIPSI_Participant_Auth_Handler {
                 $survey_id = $study->id;
             }
         }
-        
-        // Authenticate
-        $result = EIPSI_Auth_Service::authenticate($survey_id, $email, $password);
-        
+
+        // Authenticate passwordless (email only)
+        $result = EIPSI_Auth_Service::authenticate_passwordless($survey_id, $email);
+
         if (!$result['success']) {
             // Log failed login attempt
             EIPSI_Participant_Access_Log_Service::log(0, $survey_id, 'login_failed', array(
                 'email' => $email,
                 'reason' => $result['error']
             ));
-            
+
             // Map error codes to user-friendly messages
             $error_messages = array(
                 'user_not_found' => __('No encontramos una cuenta con ese email en este estudio.', 'eipsi-forms'),
-                'user_inactive' => __('Tu cuenta está desactivada. Contactá al investigador.', 'eipsi-forms'),
-                'invalid_credentials' => __('Email o contraseña incorrectos.', 'eipsi-forms')
+                'user_inactive' => __('Tu cuenta está desactivada. Contactá al investigador.', 'eipsi-forms')
             );
-            
+
             wp_send_json_error(array(
                 'code' => $result['error'],
                 'message' => $error_messages[$result['error']] ?? __('Error de autenticación.', 'eipsi-forms')
             ));
             wp_die();
         }
-        
+
         // Create session
         $ttl_hours = $remember ? 720 : 168; // 30 days if remember, 7 days otherwise
         $session_result = EIPSI_Auth_Service::create_session($result['participant_id'], $survey_id, $ttl_hours);
-        
+
         if (!$session_result['success']) {
             wp_send_json_error(array(
                 'code' => 'session_error',
@@ -149,29 +138,29 @@ class EIPSI_Participant_Auth_Handler {
             ));
             wp_die();
         }
-        
+
         // Log successful login
         EIPSI_Participant_Access_Log_Service::log($result['participant_id'], $survey_id, 'login', array(
             'email' => $email,
             'remember' => $remember
         ));
-        
+
         // Get redirect URL
         $redirect_url = esc_url_raw($_POST['redirect_url'] ?? '');
         if (empty($redirect_url)) {
             $redirect_url = home_url('/estudio/');
         }
-        
+
         wp_send_json_success(array(
             'message' => __('¡Bienvenido/a! Redirigiendo...', 'eipsi-forms'),
             'redirect_url' => $redirect_url
         ));
-        
+
         wp_die();
     }
     
     /**
-     * Handle participant registration.
+     * Handle participant registration (passwordless - email + terms only).
      *
      * @since 2.0.0
      */
@@ -184,16 +173,13 @@ class EIPSI_Participant_Auth_Handler {
             ));
             wp_die();
         }
-        
+
         // Get and validate inputs
         $email = sanitize_email($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $first_name = sanitize_text_field($_POST['first_name'] ?? '');
-        $last_name = sanitize_text_field($_POST['last_name'] ?? '');
         $study_code = sanitize_text_field($_POST['study_code'] ?? '');
         $survey_id = absint($_POST['survey_id'] ?? 0);
-        $accept_terms = !empty($_POST['accept_terms']);
-        
+        $accept_terms = isset($_POST['accept_terms']) && $_POST['accept_terms'] === '1';
+
         // Validate email
         if (!is_email($email)) {
             wp_send_json_error(array(
@@ -202,25 +188,7 @@ class EIPSI_Participant_Auth_Handler {
             ));
             wp_die();
         }
-        
-        // Validate password
-        if (strlen($password) < 8) {
-            wp_send_json_error(array(
-                'code' => 'short_password',
-                'message' => __('La contraseña debe tener al menos 8 caracteres.', 'eipsi-forms')
-            ));
-            wp_die();
-        }
-        
-        // Validate names
-        if (empty($first_name) || empty($last_name)) {
-            wp_send_json_error(array(
-                'code' => 'missing_name',
-                'message' => __('Por favor, completá tu nombre y apellido.', 'eipsi-forms')
-            ));
-            wp_die();
-        }
-        
+
         // Validate terms acceptance
         if (!$accept_terms) {
             wp_send_json_error(array(
@@ -229,7 +197,7 @@ class EIPSI_Participant_Auth_Handler {
             ));
             wp_die();
         }
-        
+
         // Get survey_id from study_code if provided
         if (!empty($study_code) && empty($survey_id)) {
             global $wpdb;
@@ -237,7 +205,7 @@ class EIPSI_Participant_Auth_Handler {
                 "SELECT id, study_name, status FROM {$wpdb->prefix}survey_studies WHERE study_code = %s",
                 $study_code
             ));
-            
+
             if (!$study) {
                 wp_send_json_error(array(
                     'code' => 'invalid_study_code',
@@ -245,7 +213,7 @@ class EIPSI_Participant_Auth_Handler {
                 ));
                 wp_die();
             }
-            
+
             if (!in_array($study->status, array('active', 'paused'))) {
                 wp_send_json_error(array(
                     'code' => 'study_not_active',
@@ -253,10 +221,10 @@ class EIPSI_Participant_Auth_Handler {
                 ));
                 wp_die();
             }
-            
+
             $survey_id = $study->id;
         }
-        
+
         // Validate survey_id
         if (empty($survey_id)) {
             wp_send_json_error(array(
@@ -265,7 +233,7 @@ class EIPSI_Participant_Auth_Handler {
             ));
             wp_die();
         }
-        
+
         // Check if email already exists for this study
         $existing_participant = EIPSI_Participant_Service::get_by_email($survey_id, $email);
         if ($existing_participant) {
@@ -274,7 +242,7 @@ class EIPSI_Participant_Auth_Handler {
                 'email' => $email,
                 'status' => 'email_exists'
             ));
-            
+
             wp_send_json_error(array(
                 'code' => 'email_exists',
                 'message' => __('Ya existe una cuenta con ese email en este estudio.', 'eipsi-forms'),
@@ -282,43 +250,40 @@ class EIPSI_Participant_Auth_Handler {
             ));
             wp_die();
         }
-        
-        // Create participant
+
+        // Create participant (passwordless - no password, no names)
         $result = EIPSI_Participant_Service::create_participant(
             $survey_id,
             $email,
-            $password,
+            null, // No password for passwordless flow
             array(
-                'first_name' => $first_name,
-                'last_name' => $last_name
+                'first_name' => '',
+                'last_name' => ''
             )
         );
-        
+
         if (!$result['success']) {
             $error_messages = array(
                 'invalid_email' => __('El email no es válido.', 'eipsi-forms'),
-                'short_password' => __('La contraseña debe tener al menos 8 caracteres.', 'eipsi-forms'),
                 'email_exists' => __('Ya existe una cuenta con ese email.', 'eipsi-forms'),
                 'db_error' => __('Error al crear la cuenta. Por favor, intentá nuevamente.', 'eipsi-forms')
             );
-            
+
             wp_send_json_error(array(
                 'code' => $result['error'],
                 'message' => $error_messages[$result['error']] ?? __('Error en el registro.', 'eipsi-forms')
             ));
             wp_die();
         }
-        
+
         // Log successful registration
         EIPSI_Participant_Access_Log_Service::log($result['participant_id'], $survey_id, 'registration', array(
-            'email' => $email,
-            'first_name' => $first_name,
-            'last_name' => $last_name
+            'email' => $email
         ));
-        
+
         // Create session (auto-login after registration)
         $session_result = EIPSI_Auth_Service::create_session($result['participant_id'], $survey_id, 168);
-        
+
         if (!$session_result['success']) {
             // Registration succeeded but session creation failed - still return success
             wp_send_json_success(array(
@@ -328,18 +293,18 @@ class EIPSI_Participant_Auth_Handler {
             ));
             wp_die();
         }
-        
+
         // Get redirect URL
         $redirect_url = esc_url_raw($_POST['redirect_url'] ?? '');
         if (empty($redirect_url)) {
             $redirect_url = home_url('/estudio/');
         }
-        
+
         wp_send_json_success(array(
             'message' => __('¡Cuenta creada exitosamente! Redirigiendo...', 'eipsi-forms'),
             'redirect_url' => $redirect_url
         ));
-        
+
         wp_die();
     }
     

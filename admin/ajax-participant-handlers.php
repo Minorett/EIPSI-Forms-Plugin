@@ -34,10 +34,7 @@ function eipsi_participant_register_handler() {
     // Sanitize and validate inputs
     $survey_id = isset($_POST['survey_id']) ? absint($_POST['survey_id']) : 0;
     $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
-    $password = isset($_POST['password']) ? wp_unslash($_POST['password']) : '';
-    $first_name = isset($_POST['first_name']) ? sanitize_text_field(wp_unslash($_POST['first_name'])) : '';
-    $last_name = isset($_POST['last_name']) ? sanitize_text_field(wp_unslash($_POST['last_name'])) : '';
-    
+
     // Validate required fields
     if (empty($survey_id)) {
         wp_send_json_error(array(
@@ -45,25 +42,11 @@ function eipsi_participant_register_handler() {
             'code' => 'missing_survey_id'
         ));
     }
-    
+
     if (empty($email) || !is_email($email)) {
         wp_send_json_error(array(
             'message' => __('Por favor ingresa un email válido.', 'eipsi-forms'),
             'code' => 'invalid_email'
-        ));
-    }
-    
-    if (empty($password)) {
-        wp_send_json_error(array(
-            'message' => __('La contraseña es requerida.', 'eipsi-forms'),
-            'code' => 'missing_password'
-        ));
-    }
-    
-    if (strlen($password) < 8) {
-        wp_send_json_error(array(
-            'message' => __('La contraseña debe tener al menos 8 caracteres.', 'eipsi-forms'),
-            'code' => 'short_password'
         ));
     }
     
@@ -75,13 +58,16 @@ function eipsi_participant_register_handler() {
         require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
     }
     
-    // Create participant
-    $metadata = array(
-        'first_name' => $first_name,
-        'last_name' => $last_name
+    // Create participant (passwordless - no password, no names)
+    $result = EIPSI_Participant_Service::create_participant(
+        $survey_id,
+        $email,
+        null, // No password for passwordless flow
+        array(
+            'first_name' => '',
+            'last_name' => ''
+        )
     );
-    
-    $result = EIPSI_Participant_Service::create_participant($survey_id, $email, $password, $metadata);
     
     if (!$result['success']) {
         // Special handling for email_exists - provide friendly options
@@ -178,8 +164,7 @@ function eipsi_participant_login_handler() {
     // Sanitize and validate inputs
     $survey_id = isset($_POST['survey_id']) ? absint($_POST['survey_id']) : 0;
     $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
-    $password = isset($_POST['password']) ? wp_unslash($_POST['password']) : '';
-    
+
     // Validate required fields
     if (empty($survey_id)) {
         wp_send_json_error(array(
@@ -187,21 +172,14 @@ function eipsi_participant_login_handler() {
             'code' => 'missing_survey_id'
         ));
     }
-    
+
     if (empty($email) || !is_email($email)) {
         wp_send_json_error(array(
             'message' => __('Por favor ingresa un email válido.', 'eipsi-forms'),
             'code' => 'invalid_email'
         ));
     }
-    
-    if (empty($password)) {
-        wp_send_json_error(array(
-            'message' => __('La contraseña es requerida.', 'eipsi-forms'),
-            'code' => 'missing_password'
-        ));
-    }
-    
+
     // Rate limit check
     if (!eipsi_check_login_rate_limit($email, $survey_id)) {
         wp_send_json_error(array(
@@ -215,8 +193,8 @@ function eipsi_participant_login_handler() {
         require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
     }
 
-    // Authenticate
-    $auth_result = EIPSI_Auth_Service::authenticate($survey_id, $email, $password);
+    // Authenticate passwordless (email only)
+    $auth_result = EIPSI_Auth_Service::authenticate_passwordless($survey_id, $email);
     
     if (!$auth_result['success']) {
         // Record failed login attempt for rate limiting
@@ -224,8 +202,7 @@ function eipsi_participant_login_handler() {
 
         $error_messages = array(
             'user_not_found' => __('Usuario no encontrado. Verifica tu email o regístrate.', 'eipsi-forms'),
-            'user_inactive' => __('Tu cuenta está desactivada. Contacta al investigador.', 'eipsi-forms'),
-            'invalid_credentials' => __('Email o contraseña incorrectos.', 'eipsi-forms')
+            'user_inactive' => __('Tu cuenta está desactivada. Contacta al investigador.', 'eipsi-forms')
         );
 
         wp_send_json_error(array(

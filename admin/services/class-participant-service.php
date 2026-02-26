@@ -22,19 +22,19 @@ class EIPSI_Participant_Service {
     /**
      * Create participant for survey.
      *
-     * Valida email, password y crea registro en wp_survey_participants.
+     * Valida email, password (opcional) y crea registro en wp_survey_participants.
      *
      * @param int    $survey_id ID del survey.
      * @param string $email Email del participante (será sanitizado).
-     * @param string $password Password en texto plano (será hasheado).
+     * @param string|null $password Password en texto plano (opcional, null para passwordless).
      * @param array  $metadata Datos adicionales (first_name, last_name).
      * @return array { success: bool, participant_id: int|null, error: string|null }
      * @since 1.4.0
      * @access public
      */
-    public static function create_participant($survey_id, $email, $password, $metadata = array()) {
+    public static function create_participant($survey_id, $email, $password = null, $metadata = array()) {
         global $wpdb;
-        
+
         try {
             // Validar email con is_email()
             if (!is_email($email)) {
@@ -44,26 +44,34 @@ class EIPSI_Participant_Service {
                     'error' => 'invalid_email'
                 );
             }
-            
+
             // Sanitizar email
             $email = sanitize_email($email);
-            
-            // Validar password: mínimo 8 caracteres, no espacios-only
-            if (strlen($password) < 8 || trim($password) === '') {
-                return array(
-                    'success' => false,
-                    'participant_id' => null,
-                    'error' => 'short_password'
-                );
+
+            // Validar password solo si se proporciona (mínimo 8 caracteres, no espacios-only)
+            if ($password !== null) {
+                if (strlen($password) < 8 || trim($password) === '') {
+                    return array(
+                        'success' => false,
+                        'participant_id' => null,
+                        'error' => 'short_password'
+                    );
+                }
             }
-            
+
             // Sanitizar metadata
             $first_name = isset($metadata['first_name']) ? sanitize_text_field($metadata['first_name']) : '';
             $last_name = isset($metadata['last_name']) ? sanitize_text_field($metadata['last_name']) : '';
-            
-            // Hash password con wp_hash_password()
-            $password_hash = wp_hash_password($password);
-            
+
+            // Hash password o generar hash aleatorio para passwordless
+            if ($password !== null) {
+                $password_hash = wp_hash_password($password);
+            } else {
+                // Passwordless: generar hash aleatorio para satisfacer constraint de DB
+                $temp_password = wp_generate_password(32, true, true);
+                $password_hash = wp_hash_password($temp_password);
+            }
+
             // Verificar UNIQUE(survey_id, email)
             $table_name = $wpdb->prefix . 'survey_participants';
             $existing = $wpdb->get_var($wpdb->prepare(
@@ -71,7 +79,7 @@ class EIPSI_Participant_Service {
                 $survey_id,
                 $email
             ));
-            
+
             if ($existing) {
                 return array(
                     'success' => false,
@@ -79,7 +87,7 @@ class EIPSI_Participant_Service {
                     'error' => 'email_exists'
                 );
             }
-            
+
             // INSERT en wp_survey_participants
             $result = $wpdb->insert(
                 $table_name,
@@ -94,7 +102,7 @@ class EIPSI_Participant_Service {
                 ),
                 array('%d', '%s', '%s', '%s', '%s', '%s', '%d')
             );
-            
+
             if ($result === false) {
                 // Log error pero no mostrar al usuario
                 error_log('EIPSI Participant creation failed: ' . $wpdb->last_error);
@@ -104,13 +112,13 @@ class EIPSI_Participant_Service {
                     'error' => 'db_error'
                 );
             }
-            
+
             return array(
                 'success' => true,
                 'participant_id' => (int) $wpdb->insert_id,
                 'error' => null
             );
-            
+
         } catch (Exception $e) {
             error_log('EIPSI Participant creation exception: ' . $e->getMessage());
             return array(

@@ -34,21 +34,13 @@
         // Tab switching
         $(document).on('click', '.eipsi-survey-login-tab', handleTabSwitch);
         $(document).on('click', '.switch-to-login, .switch-to-register', handleSwitchTab);
-        $(document).on('click', '.forgot-password-link', handleForgotPassword);
-        
+
         // Form submissions
         $(document).on('submit', '#eipsi-participant-login-form', handleLoginSubmit);
         $(document).on('submit', '#eipsi-participant-register-form', handleRegisterSubmit);
-        $(document).on('submit', '#eipsi-magic-link-form', handleMagicLinkSubmit);
-        
+
         // Logout
         $(document).on('click', '#eipsi-logout-button', handleLogout);
-        
-        // Password visibility toggle
-        $(document).on('click', '.toggle-password, .toggle-password-checkbox', handlePasswordToggle);
-        
-        // Password strength meter
-        $(document).on('input', '#register-password', handlePasswordStrength);
         
         // Form validation
         initFormValidation();
@@ -410,57 +402,43 @@
      */
     function handleSwitchTab(e) {
         e.preventDefault();
-        
+
         var targetTab = $(this).hasClass('switch-to-login') ? 'login' : 'register';
         $('.eipsi-survey-login-tab[data-tab="' + targetTab + '"]').trigger('click');
     }
-    
+
     /**
-     * Handle forgot password link
-     */
-    function handleForgotPassword(e) {
-        e.preventDefault();
-        $('.eipsi-survey-login-tab[data-tab="magic"]').trigger('click');
-    }
-    
-    /**
-     * Handle login form submission
+     * Handle login form submission (passwordless - email only)
      */
     function handleLoginSubmit(e) {
         e.preventDefault();
-        
+
         if (authState.isLoading) return;
-        
+
         var $form = $(this);
         var $submitBtn = $form.find('button[type="submit"]');
-        
+
         // Get form data
         var formData = {
             action: 'eipsi_participant_login',
             nonce: eipsiAuth.nonce,
             email: $form.find('input[name="email"]').val(),
-            password: $form.find('input[name="password"]').val(),
             survey_id: $form.find('input[name="survey_id"]').val(),
             remember: $form.find('input[name="remember"]').is(':checked'),
             redirect_url: $form.closest('.eipsi-survey-login-container').data('redirect') || ''
         };
-        
+
         // Validate
         if (!validateEmail(formData.email)) {
             showFieldError($form.find('input[name="email"]'), eipsiAuth.strings.invalid_email);
             return;
         }
-        
-        if (formData.password.length < 8) {
-            showFieldError($form.find('input[name="password"]'), eipsiAuth.strings.short_password);
-            return;
-        }
-        
+
         // Set loading state
         setLoadingState($submitBtn, true);
         authState.isLoading = true;
         authState.lastAction = 'login';
-        
+
         // Send request
         $.ajax({
             url: eipsiAuth.ajaxUrl,
@@ -469,19 +447,19 @@
             success: function(response) {
                 if (response.success) {
                     showSuccess(response.data.message);
-                    
+
                     // Redirect after short delay
                     setTimeout(function() {
                         window.location.href = response.data.redirect_url;
                     }, 1000);
                 } else {
                     showError(response.data.message);
-                    
+
                     // Handle rate limiting
                     if (response.data.code === 'rate_limited') {
                         showRateLimitWarning(response.data.retry_after);
                     }
-                    
+
                     // Handle email exists - show login prompt
                     if (response.data.show_login_link) {
                         showLoginPrompt();
@@ -499,62 +477,49 @@
     }
     
     /**
-     * Handle registration form submission
+     * Handle registration form submission (passwordless - email + terms only)
      */
     function handleRegisterSubmit(e) {
         e.preventDefault();
-        
+
         if (authState.isLoading) return;
-        
+
         var $form = $(this);
         var $submitBtn = $form.find('button[type="submit"]');
-        
+
         // Get form data
+        var $termsCheckbox = $form.find('input[name="accept_terms"]');
         var formData = {
             action: 'eipsi_participant_register',
             nonce: eipsiAuth.nonce,
             email: $form.find('input[name="email"]').val(),
-            password: $form.find('input[name="password"]').val(),
-            confirm_password: $form.find('input[name="confirm_password"]').val(),
-            first_name: $form.find('input[name="first_name"]').val(),
-            last_name: $form.find('input[name="last_name"]').val(),
             study_code: $form.find('input[name="study_code"]').val(),
             survey_id: $form.find('input[name="survey_id"]').val(),
-            accept_terms: $form.find('input[name="accept_terms"]').is(':checked'),
+            accept_terms: $termsCheckbox.is(':checked') ? '1' : '',
             redirect_url: $form.closest('.eipsi-survey-login-container').data('redirect') || ''
         };
-        
+
         // Validate
         if (!validateEmail(formData.email)) {
             showFieldError($form.find('input[name="email"]'), eipsiAuth.strings.invalid_email);
             return;
         }
-        
-        if (formData.password.length < 8) {
-            showFieldError($form.find('input[name="password"]'), eipsiAuth.strings.short_password);
-            return;
-        }
-        
-        if (formData.password !== formData.confirm_password) {
-            showFieldError($form.find('input[name="confirm_password"]'), eipsiAuth.strings.password_mismatch);
-            return;
-        }
-        
-        if (!formData.first_name || !formData.last_name) {
-            showError(eipsiAuth.strings.name_required);
-            return;
-        }
-        
+
+        // Validate terms checkbox
         if (!formData.accept_terms) {
             showError(eipsiAuth.strings.terms_required);
+            $termsCheckbox.closest('.eipsi-checkbox-label').addClass('has-error');
             return;
         }
-        
+
+        // Clear terms checkbox error if valid
+        $termsCheckbox.closest('.eipsi-checkbox-label').removeClass('has-error');
+
         // Set loading state
         setLoadingState($submitBtn, true);
         authState.isLoading = true;
         authState.lastAction = 'register';
-        
+
         // Send request
         $.ajax({
             url: eipsiAuth.ajaxUrl,
@@ -563,7 +528,7 @@
             success: function(response) {
                 if (response.success) {
                     showSuccess(response.data.message);
-                    
+
                     if (response.data.requires_login) {
                         // Switch to login tab
                         setTimeout(function() {
@@ -577,7 +542,7 @@
                     }
                 } else {
                     showError(response.data.message);
-                    
+
                     // Handle email exists - show login prompt
                     if (response.data.show_login_link) {
                         showLoginPrompt();
@@ -593,61 +558,7 @@
             }
         });
     }
-    
-    /**
-     * Handle magic link form submission
-     */
-    function handleMagicLinkSubmit(e) {
-        e.preventDefault();
-        
-        if (authState.isLoading) return;
-        
-        var $form = $(this);
-        var $submitBtn = $form.find('button[type="submit"]');
-        
-        // Get form data
-        var formData = {
-            action: 'eipsi_participant_magic_link',
-            nonce: eipsiAuth.nonce,
-            email: $form.find('input[name="email"]').val(),
-            study_code: $form.find('input[name="study_code"]').val(),
-            survey_id: $form.find('input[name="survey_id"]').val()
-        };
-        
-        // Validate
-        if (!validateEmail(formData.email)) {
-            showFieldError($form.find('input[name="email"]'), eipsiAuth.strings.invalid_email);
-            return;
-        }
-        
-        // Set loading state
-        setLoadingState($submitBtn, true);
-        authState.isLoading = true;
-        authState.lastAction = 'magic_link';
-        
-        // Send request
-        $.ajax({
-            url: eipsiAuth.ajaxUrl,
-            type: 'POST',
-            data: formData,
-            success: function(response) {
-                if (response.success) {
-                    showSuccess(response.data.message);
-                    $form.find('input[name="email"]').val('');
-                } else {
-                    showError(response.data.message);
-                }
-            },
-            error: function() {
-                showError(eipsiAuth.strings.network_error);
-            },
-            complete: function() {
-                setLoadingState($submitBtn, false);
-                authState.isLoading = false;
-            }
-        });
-    }
-    
+
     /**
      * Handle logout
      */
@@ -684,66 +595,7 @@
             }
         });
     }
-    
-    /**
-     * Handle password visibility toggle
-     */
-    function handlePasswordToggle(e) {
-        var $input = $(this).closest('.eipsi-input-wrapper').find('input[type="password"], input[type="text"]');
-        
-        if ($input.attr('type') === 'password') {
-            $input.attr('type', 'text');
-            $(this).find('.dashicons').removeClass('dashicons-visibility').addClass('dashicons-hidden');
-        } else {
-            $input.attr('type', 'password');
-            $(this).find('.dashicons').removeClass('dashicons-hidden').addClass('dashicons-visibility');
-        }
-    }
-    
-    /**
-     * Handle password strength meter
-     */
-    function handlePasswordStrength(e) {
-        var password = $(this).val();
-        var strength = calculatePasswordStrength(password);
-        
-        var $meter = $(this).closest('.eipsi-form-group').find('.password-strength-meter');
-        var $bar = $meter.find('.strength-bar');
-        var $text = $meter.find('.strength-text');
-        
-        // Update bar
-        $bar.css('width', strength.percentage + '%');
-        $bar.css('background-color', strength.color);
-        
-        // Update text
-        $text.text(strength.label);
-        $text.css('color', strength.color);
-    }
-    
-    /**
-     * Calculate password strength
-     */
-    function calculatePasswordStrength(password) {
-        var score = 0;
-        
-        if (password.length >= 8) score += 20;
-        if (password.length >= 12) score += 10;
-        if (/[a-z]/.test(password)) score += 10;
-        if (/[A-Z]/.test(password)) score += 15;
-        if (/[0-9]/.test(password)) score += 15;
-        if (/[^a-zA-Z0-9]/.test(password)) score += 20;
-        
-        if (score < 30) {
-            return { percentage: score, color: '#dc3545', label: eipsiAuth.strings.strength_weak };
-        } else if (score < 50) {
-            return { percentage: score, color: '#ffc107', label: eipsiAuth.strings.strength_fair };
-        } else if (score < 70) {
-            return { percentage: score, color: '#17a2b8', label: eipsiAuth.strings.strength_good };
-        } else {
-            return { percentage: score, color: '#28a745', label: eipsiAuth.strings.strength_strong };
-        }
-    }
-    
+
     /**
      * Check session status
      */
