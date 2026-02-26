@@ -42,6 +42,15 @@
 			loadStudyOverview( studyId );
 		} );
 
+		// Open modal from URL param
+		const urlParams = new URLSearchParams( window.location.search );
+		const preselectedStudyId = parseInt( urlParams.get( 'study_id' ), 10 );
+		if ( preselectedStudyId ) {
+			currentStudyId = preselectedStudyId;
+			openDashboardModal();
+			loadStudyOverview( preselectedStudyId );
+		}
+
 		// Close Modal
 		$( document ).on(
 			'click',
