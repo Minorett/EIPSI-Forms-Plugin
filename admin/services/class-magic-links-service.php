@@ -233,4 +233,104 @@ class EIPSI_MagicLinksService {
 
         return $deleted;
     }
+
+    /**
+     * Generate magic link and auto-create WordPress page with study shortcode
+     *
+     * Creates a WordPress page automatically when generating magic links for a study.
+     * Checks for existing pages to avoid duplicates.
+     *
+     * @param int    $survey_id Survey post ID
+     * @param int    $participant_id Participant ID
+     * @param string $study_code Study code (e.g., "STUDY_2025")
+     * @param string $study_name Study name
+     * @return array { success: bool, token: string|false, page_url: string|null, error: string|null }
+     */
+    public static function generate_and_create_page($survey_id, $participant_id, $study_code, $study_name = '') {
+        global $wpdb;
+
+        // Validate inputs
+        $survey_id = intval($survey_id);
+        $participant_id = intval($participant_id);
+        $study_code = sanitize_title($study_code); // Sanitize for URL use
+
+        if ($survey_id <= 0 || $participant_id <= 0 || empty($study_code)) {
+            error_log('[EIPSI MagicLinksService] Invalid parameters for generate_and_create_page');
+            return array(
+                'success' => false,
+                'token' => false,
+                'page_url' => null,
+                'error' => 'invalid_parameters'
+            );
+        }
+
+        // Check if page already exists for this study
+        $existing_page = get_page_by_path('study-' . $study_code);
+
+        if (!$existing_page) {
+            // Check by meta field as well
+            $existing_pages = get_posts(array(
+                'post_type' => 'page',
+                'meta_key' => 'eipsi_study_code',
+                'meta_value' => $study_code,
+                'posts_per_page' => 1
+            ));
+
+            if (!empty($existing_pages)) {
+                $existing_page = $existing_pages[0];
+            }
+        }
+
+        $page_url = '';
+
+        if ($existing_page) {
+            // Page exists, use it
+            $page_url = get_permalink($existing_page->ID);
+            error_log('[EIPSI MagicLinksService] Using existing page for study ' . $study_code . ': ' . $page_url);
+        } else {
+            // Create new page
+            $page_title = !empty($study_name) ? sprintf(__('Estudio: %s', 'eipsi-forms'), $study_name) : __('Estudio', 'eipsi-forms');
+            $page_slug = 'study-' . $study_code;
+            $page_content = '[eipsi_longitudinal_study study_code="' . esc_attr($study_code) . '"]';
+
+            $page_id = wp_insert_post(array(
+                'post_title' => $page_title,
+                'post_name' => $page_slug,
+                'post_content' => $page_content,
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'meta_input' => array(
+                    'eipsi_study_code' => $study_code,
+                    'eipsi_survey_id' => $survey_id
+                )
+            ));
+
+            if (is_wp_error($page_id)) {
+                error_log('[EIPSI MagicLinksService] Failed to create page: ' . $page_id->get_error_message());
+                // Continue anyway, generate magic link without page
+            } else {
+                $page_url = get_permalink($page_id);
+                error_log('[EIPSI MagicLinksService] Created page for study ' . $study_code . ': ' . $page_url);
+            }
+        }
+
+        // Generate magic link token
+        $token = self::generate_magic_link($survey_id, $participant_id);
+
+        if (!$token) {
+            return array(
+                'success' => false,
+                'token' => false,
+                'page_url' => null,
+                'error' => 'token_generation_failed'
+            );
+        }
+
+        return array(
+            'success' => true,
+            'token' => $token,
+            'page_url' => $page_url,
+            'error' => null
+        );
+    }
 }

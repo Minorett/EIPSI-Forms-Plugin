@@ -93,29 +93,18 @@ if (!empty($survey_id)) {
             </div>
             
             <div class="eipsi-login-gate__actions">
-                <button class="eipsi-login-gate__btn eipsi-login-gate__btn--primary survey-login-tab-trigger" 
+                <button class="eipsi-login-gate__btn eipsi-login-gate__btn--primary survey-login-tab-trigger"
                         data-tab="login"
                         data-survey-id="<?php echo esc_attr($survey_id ?? 0); ?>">
                     <span class="btn-icon">🔑</span>
                     <?php esc_html_e('Ingresar a mi cuenta', 'eipsi-forms'); ?>
                 </button>
-                
-                <button class="eipsi-login-gate__btn eipsi-login-gate__btn--secondary survey-login-tab-trigger" 
+
+                <button class="eipsi-login-gate__btn eipsi-login-gate__btn--secondary survey-login-tab-trigger"
                         data-tab="register"
                         data-survey-id="<?php echo esc_attr($survey_id ?? 0); ?>">
                     <span class="btn-icon">✨</span>
                     <?php esc_html_e('Crear nueva cuenta', 'eipsi-forms'); ?>
-                </button>
-                
-                <div class="eipsi-login-gate__divider">
-                    <span><?php esc_html_e('o', 'eipsi-forms'); ?></span>
-                </div>
-                
-                <button class="eipsi-login-gate__btn eipsi-login-gate__btn--magic survey-login-tab-trigger" 
-                        data-tab="magic"
-                        data-survey-id="<?php echo esc_attr($survey_id ?? 0); ?>">
-                    <span class="btn-icon">✉️</span>
-                    <?php esc_html_e('Acceder con link mágico', 'eipsi-forms'); ?>
                 </button>
             </div>
         </div>

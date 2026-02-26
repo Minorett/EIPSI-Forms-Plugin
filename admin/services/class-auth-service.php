@@ -34,10 +34,10 @@ class EIPSI_Auth_Service {
     public static function authenticate($survey_id, $email, $password) {
         // Sanitizar email
         $email = sanitize_email($email);
-        
+
         // Obtener participante
         $participant = EIPSI_Participant_Service::get_by_email($survey_id, $email);
-        
+
         if (!$participant) {
             return array(
                 'success' => false,
@@ -45,7 +45,7 @@ class EIPSI_Auth_Service {
                 'error' => 'user_not_found'
             );
         }
-        
+
         // Verificar si está activo
         if (!$participant->is_active) {
             return array(
@@ -54,10 +54,10 @@ class EIPSI_Auth_Service {
                 'error' => 'user_inactive'
             );
         }
-        
+
         // Verificar password
         $is_valid = EIPSI_Participant_Service::verify_password($participant->id, $password);
-        
+
         if (!$is_valid) {
             return array(
                 'success' => false,
@@ -65,10 +65,56 @@ class EIPSI_Auth_Service {
                 'error' => 'invalid_credentials'
             );
         }
-        
+
         // Actualizar último login
         EIPSI_Participant_Service::update_last_login($participant->id);
-        
+
+        return array(
+            'success' => true,
+            'participant_id' => $participant->id,
+            'error' => null
+        );
+    }
+
+    /**
+     * Authenticate participant (passwordless - email only).
+     *
+     * Valida email y estado activo sin verificar contraseña.
+     * Usado para flujo de autenticación sin contraseña.
+     *
+     * @param int    $survey_id ID del survey.
+     * @param string $email Email del participante.
+     * @return array { success: bool, participant_id: int|null, error: string|null }
+     * @since 2.0.0
+     * @access public
+     */
+    public static function authenticate_passwordless($survey_id, $email) {
+        // Sanitizar email
+        $email = sanitize_email($email);
+
+        // Obtener participante
+        $participant = EIPSI_Participant_Service::get_by_email($survey_id, $email);
+
+        if (!$participant) {
+            return array(
+                'success' => false,
+                'participant_id' => null,
+                'error' => 'user_not_found'
+            );
+        }
+
+        // Verificar si está activo
+        if (!$participant->is_active) {
+            return array(
+                'success' => false,
+                'participant_id' => null,
+                'error' => 'user_inactive'
+            );
+        }
+
+        // Actualizar último login
+        EIPSI_Participant_Service::update_last_login($participant->id);
+
         return array(
             'success' => true,
             'participant_id' => $participant->id,
