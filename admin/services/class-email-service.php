@@ -68,7 +68,7 @@ class EIPSI_Email_Service {
             return array('success' => false, 'magic_link' => null, 'error' => 'El participante está inactivo');
         }
 
-        $survey_name = get_the_title($survey_id);
+        $survey_name = self::get_study_name($survey_id);
         $magic_link = self::generate_magic_link_url($survey_id, $participant_id);
 
         if (!$magic_link) {
@@ -113,7 +113,7 @@ class EIPSI_Email_Service {
             return array('success' => false, 'message' => 'Participante no encontrado');
         }
 
-        $survey_name = get_the_title($survey_id);
+        $survey_name = self::get_study_name($survey_id);
         $magic_link = self::get_latest_magic_link_url($survey_id, $participant_id);
 
         if (empty($magic_link)) {
@@ -211,7 +211,7 @@ class EIPSI_Email_Service {
             return false;
         }
 
-        $survey_name = get_the_title($survey_id);
+        $survey_name = self::get_study_name($survey_id);
         $magic_link = self::generate_magic_link_url($survey_id, $participant_id);
 
         if (!$magic_link) {
@@ -272,7 +272,7 @@ class EIPSI_Email_Service {
             return false;
         }
 
-        $survey_name = get_the_title($survey_id);
+        $survey_name = self::get_study_name($survey_id);
         $magic_link = self::generate_magic_link_url($survey_id, $participant_id);
 
         if (!$magic_link) {
@@ -323,7 +323,7 @@ class EIPSI_Email_Service {
             return false;
         }
 
-        $survey_name = get_the_title($survey_id);
+        $survey_name = self::get_study_name($survey_id);
 
         // Handle Wave Object/ID
         if (is_numeric($wave) && class_exists('EIPSI_Wave_Service')) {
@@ -388,7 +388,7 @@ class EIPSI_Email_Service {
             return false;
         }
 
-        $survey_name = get_the_title($survey_id);
+        $survey_name = self::get_study_name($survey_id);
 
         if (is_numeric($wave) && class_exists('EIPSI_Wave_Service')) {
             $wave = EIPSI_Wave_Service::get_wave($wave);
@@ -445,6 +445,46 @@ class EIPSI_Email_Service {
         }
 
         return $participant;
+    }
+
+    /**
+     * Resolve study/survey name from ID.
+     *
+     * The $survey_id used across this service is the ID from wp_survey_studies,
+     * NOT a WordPress post ID. get_the_title() only works with WP posts — this
+     * helper resolves the correct name without relying on WP posts.
+     *
+     * @param int $survey_id ID from wp_survey_studies.
+     * @return string Study name or safe fallback.
+     * @since 1.7.2 (bugfix)
+     * @access private
+     */
+    private static function get_study_name($survey_id) {
+        global $wpdb;
+
+        $survey_id = intval($survey_id);
+        if ($survey_id <= 0) {
+            return __('Estudio de Investigación', 'eipsi-forms');
+        }
+
+        // Try wp_survey_studies first (longitudinal studies)
+        $name = $wpdb->get_var($wpdb->prepare(
+            "SELECT study_name FROM {$wpdb->prefix}survey_studies WHERE id = %d LIMIT 1",
+            $survey_id
+        ));
+
+        if (!empty($name)) {
+            return sanitize_text_field($name);
+        }
+
+        // Fallback: try as a WordPress post title (non-longitudinal surveys)
+        $post_title = get_the_title($survey_id);
+        if (!empty($post_title) && $post_title !== __('Auto Draft', 'default')) {
+            return $post_title;
+        }
+
+        error_log("[EIPSI Email] Study name not found for survey_id: $survey_id");
+        return __('Estudio de Investigación', 'eipsi-forms');
     }
 
     /**
@@ -573,8 +613,19 @@ class EIPSI_Email_Service {
                     : $email;
             }, 99);
 
+            // Capture wp_mail_failed WP hook for error detail
+            $wp_mail_last_error = null;
+            $wp_mail_failed_listener = function( $wp_error ) use ( &$wp_mail_last_error ) {
+                if ( $wp_error instanceof WP_Error ) {
+                    $wp_mail_last_error = $wp_error->get_error_message();
+                }
+            };
+            add_action( 'wp_mail_failed', $wp_mail_failed_listener );
+
             // Try to send the email
             $sent = wp_mail($to, $subject, $content, $headers);
+
+            remove_action( 'wp_mail_failed', $wp_mail_failed_listener );
 
             if ($sent) {
                 self::log_email($survey_id, $participant_id, $type, 'sent', null, $subject);
@@ -582,15 +633,9 @@ class EIPSI_Email_Service {
                 return true;
             }
 
-            // Get the last error from WordPress
-            global $wp_mail_error;
-            $error_msg = 'wp_mail returned false';
-            if ($wp_mail_error instanceof WP_Error) {
-                $error_msg = $wp_mail_error->get_error_message();
-            }
-            
-            // Log detailed error information
-            error_log("[EIPSI Email] wp_mail failed: $error_msg");
+            // Get detailed error via wp_mail_failed hook
+            $error_msg = $wp_mail_last_error ?? 'wp_mail returned false (no SMTP error captured)';
+            error_log("[EIPSI Email] wp_mail failed to $to: $error_msg");
             self::log_email($survey_id, $participant_id, $type, 'failed', $error_msg, $subject);
             return false;
             
@@ -927,7 +972,7 @@ class EIPSI_Email_Service {
             return false;
         }
 
-        $survey_name = get_the_title($survey_id);
+        $survey_name = self::get_study_name($survey_id);
         $magic_link = self::generate_magic_link_url($survey_id, $participant_id);
 
         if (!$magic_link) {
@@ -999,7 +1044,7 @@ class EIPSI_Email_Service {
         }
 
         // Validate survey exists
-        $survey_name = get_the_title($survey_id);
+        $survey_name = self::get_study_name($survey_id);
         if (empty($survey_name)) {
             return array(
                 'success' => false,
@@ -1434,7 +1479,7 @@ class EIPSI_Email_Service {
             return self::get_sample_email_preview($survey_id, $wave_id, $email_type);
         }
 
-        $survey_name = get_the_title($survey_id);
+        $survey_name = self::get_study_name($survey_id);
         $wave = EIPSI_Wave_Service::get_wave($wave_id);
         
         if (!$wave) {
@@ -1530,7 +1575,7 @@ class EIPSI_Email_Service {
      * @access public
      */
     public static function get_sample_email_preview($survey_id, $wave_id, $email_type = 'reminder') {
-        $survey_name = get_the_title($survey_id) ?: 'Nombre del Estudio';
+        $survey_name = self::get_study_name($survey_id) ?: 'Nombre del Estudio';
         $wave = EIPSI_Wave_Service::get_wave($wave_id);
         
         $investigator_name = get_option('eipsi_investigator_name', 'Equipo de Investigación');
