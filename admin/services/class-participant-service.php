@@ -354,24 +354,6 @@ class EIPSI_Participant_Service {
     }
 
     /**
-     * Get participant by ID with full details.
-     *
-     * @param int $participant_id ID del participante.
-     * @return object|null Fila de wp_survey_participants.
-     * @since 1.6.0
-     * @access public
-     */
-    public static function get_by_id($participant_id) {
-        global $wpdb;
-        
-        $table_name = $wpdb->prefix . 'survey_participants';
-        return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table_name WHERE id = %d",
-            $participant_id
-        ));
-    }
-
-    /**
      * Get participant's wave completion history.
      *
      * @param int $participant_id ID del participante.
