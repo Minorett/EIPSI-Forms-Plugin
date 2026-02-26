@@ -1,0 +1,291 @@
+/**
+ * EIPSI Forms - Pool Join Shortcode Styles
+ *
+ * Estilos para el formulario [eipsi_pool_join].
+ * Diseño accesible, responsive, y neutro para integrarse en cualquier tema.
+ *
+ * @package EIPSI_Forms
+ * @since 2.1.0
+ */
+
+/* ============================================================================
+   Wrapper
+============================================================================ */
+.eipsi-pool-join-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1a1a2e;
+    line-height: 1.6;
+}
+
+/* ============================================================================
+   Formulario
+============================================================================ */
+.eipsi-pool-join-form {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 28px 32px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.eipsi-pool-description {
+    margin: 0 0 20px;
+    color: #475569;
+    font-size: 0.95rem;
+}
+
+/* ============================================================================
+   Fields
+============================================================================ */
+.eipsi-pool-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.eipsi-pool-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.eipsi-pool-field label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1e293b;
+}
+
+.eipsi-required {
+    color: #ef4444;
+    margin-left: 2px;
+}
+
+.eipsi-pool-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #1e293b;
+    background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+    /* Cumplimiento WCAG 2.1 AA: 44px altura mínima de touch target */
+    min-height: 44px;
+}
+
+.eipsi-pool-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.eipsi-pool-input:invalid:not(:placeholder-shown) {
+    border-color: #ef4444;
+}
+
+.eipsi-pool-field-hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+/* ============================================================================
+   Mensajes inline
+============================================================================ */
+.eipsi-pool-message {
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+.eipsi-pool-msg-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+}
+
+.eipsi-pool-msg-success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+/* ============================================================================
+   Botón de envío
+============================================================================ */
+.eipsi-pool-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.eipsi-pool-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease, opacity 0.2s ease;
+    /* 44px mínimo para touch targets accesibles */
+    min-height: 44px;
+    min-width: 44px;
+    text-decoration: none;
+}
+
+.eipsi-pool-submit-btn:hover:not(:disabled) {
+    background: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.eipsi-pool-submit-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.eipsi-pool-submit-btn:focus-visible {
+    outline: 3px solid #6366f1;
+    outline-offset: 2px;
+}
+
+.eipsi-pool-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ============================================================================
+   Panel de éxito
+============================================================================ */
+.eipsi-pool-success {
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 12px;
+    padding: 32px 28px;
+    text-align: center;
+}
+
+.eipsi-pool-success-icon {
+    width: 56px;
+    height: 56px;
+    line-height: 56px;
+    border-radius: 50%;
+    background: #22c55e;
+    color: #fff;
+    font-size: 1.8rem;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.eipsi-pool-success-title {
+    margin: 0 0 10px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #166534;
+}
+
+.eipsi-pool-success-msg {
+    margin: 0 0 16px;
+    color: #15803d;
+    font-size: 0.95rem;
+}
+
+.eipsi-pool-success-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    background: #22c55e;
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: background 0.2s ease;
+    min-height: 44px;
+}
+
+.eipsi-pool-success-link:hover {
+    background: #16a34a;
+    color: #fff;
+    text-decoration: none;
+}
+
+.eipsi-pool-success-link:focus-visible {
+    outline: 3px solid #16a34a;
+    outline-offset: 2px;
+}
+
+/* ============================================================================
+   Error state (pool inactivo / no encontrado)
+============================================================================ */
+.eipsi-pool-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #b91c1c;
+    font-size: 0.9rem;
+}
+
+/* ============================================================================
+   Dark mode (respeta prefer-color-scheme)
+============================================================================ */
+@media ( prefers-color-scheme: dark ) {
+    .eipsi-pool-join-form {
+        background: #1e293b;
+        border-color: #334155;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+        color: #e2e8f0;
+    }
+
+    .eipsi-pool-description {
+        color: #94a3b8;
+    }
+
+    .eipsi-pool-field label {
+        color: #e2e8f0;
+    }
+
+    .eipsi-pool-input {
+        background: #0f172a;
+        border-color: #475569;
+        color: #e2e8f0;
+    }
+
+    .eipsi-pool-input:focus {
+        border-color: #818cf8;
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+    }
+
+    .eipsi-pool-field-hint {
+        color: #94a3b8;
+    }
+
+    .eipsi-pool-join-wrap {
+        color: #e2e8f0;
+    }
+}
+
+/* ============================================================================
+   Responsive
+============================================================================ */
+@media ( max-width: 480px ) {
+    .eipsi-pool-join-form {
+        padding: 20px 16px;
+    }
+
+    .eipsi-pool-submit-btn {
+        width: 100%;
+    }
+}

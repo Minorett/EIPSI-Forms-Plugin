@@ -320,6 +320,65 @@ function eipsi_display_longitudinal_pools_page() {
                         </button>
                     </p>
                 </form>
+
+                <?php if ( $active_pool_id && class_exists( 'EIPSI_Pool_Assignment_Service' ) ) :
+                    $assignment_svc = new EIPSI_Pool_Assignment_Service();
+                    $pool_stats     = $assignment_svc->get_pool_stats( $active_pool_id );
+                    $studies_map    = array();
+                    foreach ( $studies as $s ) {
+                        $studies_map[ (int) $s->id ] = $s->study_name;
+                    }
+                ?>
+                    <div class="eipsi-pool-stats-box">
+                        <h3><?php esc_html_e( 'Asignaciones actuales', 'eipsi-forms' ); ?></h3>
+
+                        <?php if ( 0 === $pool_stats['total'] ) : ?>
+                            <p class="description"><?php esc_html_e( 'Todavía no hay participantes asignados a este pool.', 'eipsi-forms' ); ?></p>
+                        <?php else : ?>
+                            <p class="eipsi-pool-stats-total">
+                                <?php
+                                printf(
+                                    /* translators: %d: number of participants */
+                                    esc_html( _n( '%d participante asignado', '%d participantes asignados', $pool_stats['total'], 'eipsi-forms' ) ),
+                                    (int) $pool_stats['total']
+                                );
+                                ?>
+                            </p>
+                            <table class="widefat fixed striped eipsi-pool-stats-table">
+                                <thead>
+                                    <tr>
+                                        <th><?php esc_html_e( 'Estudio', 'eipsi-forms' ); ?></th>
+                                        <th style="width:80px;"><?php esc_html_e( 'N', 'eipsi-forms' ); ?></th>
+                                        <th style="width:100px;"><?php esc_html_e( '%', 'eipsi-forms' ); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ( $pool_stats['by_study'] as $s_id => $count ) :
+                                        $s_name  = isset( $studies_map[ $s_id ] ) ? $studies_map[ $s_id ] : sprintf( __( 'Estudio #%d', 'eipsi-forms' ), $s_id );
+                                        $percent = $pool_stats['total'] > 0 ? round( ( $count / $pool_stats['total'] ) * 100, 1 ) : 0;
+                                    ?>
+                                        <tr>
+                                            <td><?php echo esc_html( $s_name ); ?></td>
+                                            <td><?php echo esc_html( $count ); ?></td>
+                                            <td><?php echo esc_html( $percent ); ?>%</td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php endif; ?>
+
+                        <div class="eipsi-pool-shortcode-preview">
+                            <h4><?php esc_html_e( 'Shortcode de acceso público', 'eipsi-forms' ); ?></h4>
+                            <p class="description"><?php esc_html_e( 'Pegá este shortcode en cualquier página para que los participantes se unan al pool:', 'eipsi-forms' ); ?></p>
+                            <code class="eipsi-pool-shortcode-code">[eipsi_pool_join pool_id="<?php echo esc_attr( $active_pool_id ); ?>"]</code>
+                            <p class="description">
+                                <?php esc_html_e( 'Con nombre:', 'eipsi-forms' ); ?>
+                                <code>[eipsi_pool_join pool_id="<?php echo esc_attr( $active_pool_id ); ?>" show_name="1"]</code>
+                            </p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
             </section>
         </div>
     </div>
@@ -375,6 +434,61 @@ function eipsi_display_longitudinal_pools_page() {
             .eipsi-pools-grid {
                 grid-template-columns: 1fr;
             }
+        }
+
+        /* Stats box */
+        .eipsi-pool-stats-box {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .eipsi-pool-stats-box h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .eipsi-pool-stats-total {
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 10px;
+        }
+
+        .eipsi-pool-stats-table {
+            font-size: 13px;
+        }
+
+        /* Shortcode preview */
+        .eipsi-pool-shortcode-preview {
+            margin-top: 20px;
+            padding: 14px 16px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .eipsi-pool-shortcode-preview h4 {
+            margin: 0 0 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .eipsi-pool-shortcode-code {
+            display: block;
+            background: #1e293b;
+            color: #a5f3fc;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 8px 0 4px;
+            word-break: break-all;
+            user-select: all;
+            cursor: text;
         }
     </style>
     <?php
