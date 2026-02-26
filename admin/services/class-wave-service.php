@@ -99,7 +99,7 @@ class EIPSI_Wave_Service {
      * Get wave by ID.
      *
      * @param int $wave_id Wave ID.
-     * @return array|null Wave data.
+     * @return object|null Wave data.
      * @since 1.4.0
      * @access public
      */
@@ -111,7 +111,7 @@ class EIPSI_Wave_Service {
                 "SELECT * FROM {$wpdb->prefix}survey_waves WHERE id = %d",
                 absint($wave_id)
             ),
-            ARRAY_A
+            OBJECT
         );
     }
 
