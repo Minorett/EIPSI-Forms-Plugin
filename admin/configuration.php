@@ -38,31 +38,12 @@ function eipsi_display_configuration_page() {
     $status = $db_helper->get_status();
 
     $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'database';
-    $allowed_tabs = array('database', 'smtp', 'privacy-security', 'notifications');
+    $allowed_tabs = array('database', 'smtp', 'privacy-security');
     if (!in_array($active_tab, $allowed_tabs, true)) {
         $active_tab = 'database';
     }
 
-    $notification_defaults = array(
-        'enabled' => true,
-        'default_days_before' => 3,
-        'daily_send_time' => '09:00',
-        'max_per_run' => 150
-    );
-    $notifications_settings = wp_parse_args(get_option('eipsi_global_notifications_settings', array()), $notification_defaults);
-    $notifications_message = '';
-
-    if ($active_tab === 'notifications' && isset($_POST['eipsi_notifications_nonce'])
-        && wp_verify_nonce($_POST['eipsi_notifications_nonce'], 'eipsi_notifications_settings')) {
-        $notifications_settings = array(
-            'enabled' => isset($_POST['notifications_enabled']),
-            'default_days_before' => max(1, absint($_POST['default_days_before'] ?? 3)),
-            'daily_send_time' => sanitize_text_field($_POST['daily_send_time'] ?? '09:00'),
-            'max_per_run' => max(1, absint($_POST['max_per_run'] ?? 150))
-        );
-        update_option('eipsi_global_notifications_settings', $notifications_settings);
-        $notifications_message = __('Configuración de recordatorios globales guardada.', 'eipsi-forms');
-    }
+    // Global notifications settings are now managed in Longitudinal Study > Recordatorios
     
     ?>
     <div class="wrap eipsi-config-wrap">
@@ -80,10 +61,6 @@ function eipsi_display_configuration_page() {
             <a href="?page=eipsi-configuration&tab=privacy-security"
                class="nav-tab <?php echo esc_attr(($active_tab === 'privacy-security') ? 'nav-tab-active' : ''); ?>">
                 🔒 <?php echo esc_html__('Privacidad & Seguridad', 'eipsi-forms'); ?>
-            </a>
-            <a href="?page=eipsi-configuration&tab=notifications"
-               class="nav-tab <?php echo esc_attr(($active_tab === 'notifications') ? 'nav-tab-active' : ''); ?>">
-                ⏰ <?php echo esc_html__('Notificaciones Globales', 'eipsi-forms'); ?>
             </a>
         </h2>
 
@@ -930,74 +907,10 @@ function eipsi_display_configuration_page() {
 
         <?php endif; ?>
 
-        <?php if ($active_tab === 'notifications'): ?>
-            <div class="eipsi-config-container" style="margin-top: 30px;">
-                <div class="eipsi-config-form-section">
-                    <h2><?php echo esc_html__('Notificaciones y recordatorios globales', 'eipsi-forms'); ?></h2>
-                    <p class="description">
-                        <?php echo esc_html__('Define reglas base para recordatorios automáticos. Cada estudio puede ajustar estos valores desde Longitudinal Study.', 'eipsi-forms'); ?>
-                    </p>
-
-                    <?php if (!empty($notifications_message)): ?>
-                        <div class="notice notice-success inline">
-                            <p><?php echo esc_html($notifications_message); ?></p>
-                        </div>
-                    <?php endif; ?>
-
-                    <form method="post">
-                        <?php wp_nonce_field('eipsi_notifications_settings', 'eipsi_notifications_nonce'); ?>
-                        <table class="form-table" role="presentation">
-                            <tbody>
-                                <tr>
-                                    <th scope="row">
-                                        <?php echo esc_html__('Recordatorios activos', 'eipsi-forms'); ?>
-                                    </th>
-                                    <td>
-                                        <label>
-                                            <input type="checkbox" name="notifications_enabled" value="1" <?php checked($notifications_settings['enabled']); ?>>
-                                            <?php echo esc_html__('Enviar recordatorios globales por defecto', 'eipsi-forms'); ?>
-                                        </label>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">
-                                        <label for="default_days_before">
-                                            <?php echo esc_html__('Días antes del vencimiento', 'eipsi-forms'); ?>
-                                        </label>
-                                    </th>
-                                    <td>
-                                        <input type="number" id="default_days_before" name="default_days_before" value="<?php echo esc_attr($notifications_settings['default_days_before']); ?>" min="1" max="30" class="small-text">
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">
-                                        <label for="daily_send_time">
-                                            <?php echo esc_html__('Hora diaria de envío', 'eipsi-forms'); ?>
-                                        </label>
-                                    </th>
-                                    <td>
-                                        <input type="time" id="daily_send_time" name="daily_send_time" value="<?php echo esc_attr($notifications_settings['daily_send_time']); ?>">
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">
-                                        <label for="max_per_run">
-                                            <?php echo esc_html__('Máximo de envíos por ejecución', 'eipsi-forms'); ?>
-                                        </label>
-                                    </th>
-                                    <td>
-                                        <input type="number" id="max_per_run" name="max_per_run" value="<?php echo esc_attr($notifications_settings['max_per_run']); ?>" min="1" max="500" class="small-text">
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <button type="submit" class="button button-primary">
-                            <?php echo esc_html__('Guardar configuración', 'eipsi-forms'); ?>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        <?php endif; ?>
+        <?php
+        // Note: Global notifications settings are now managed in Longitudinal Study > Recordatorios
+        // This content was moved to provide a more logical grouping with other longitudinal features
+        ?>
     </div>
     <?php
 }
