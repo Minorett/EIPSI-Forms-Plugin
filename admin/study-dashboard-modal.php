@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div id="eipsi-study-dashboard-modal" class="eipsi-modal" style="display:none;">
+<div id="eipsi-study-dashboard-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none;">
     <div class="eipsi-modal-content dashboard-wide">
         <div class="eipsi-modal-header">
             <h2 id="study-modal-title"><?php esc_html_e('Detalles del Estudio', 'eipsi-forms'); ?></h2>
@@ -163,7 +163,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Extra Modal for Email Logs -->
-<div id="eipsi-email-logs-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+<div id="eipsi-email-logs-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content">
         <div class="eipsi-modal-header">
             <h2><?php esc_html_e('Log de Emails', 'eipsi-forms'); ?></h2>
@@ -188,7 +188,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Extra Modal for Extending Deadline -->
-<div id="eipsi-extend-deadline-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+<div id="eipsi-extend-deadline-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content small-modal">
         <div class="eipsi-modal-header">
             <h2><?php esc_html_e('Extender Plazo', 'eipsi-forms'); ?></h2>
@@ -208,7 +208,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Modal for Adding Participant -->
-<div id="eipsi-add-participant-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+<div id="eipsi-add-participant-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content small-modal">
         <div class="eipsi-modal-header">
             <h2>👥 <?php esc_html_e('Agregar Participante', 'eipsi-forms'); ?></h2>
@@ -251,7 +251,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Modal for Participants List -->
-<div id="eipsi-participants-list-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+<div id="eipsi-participants-list-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content participants-modal">
         <div class="eipsi-modal-header">
             <h2>👥 <?php esc_html_e('Gestión de Participantes', 'eipsi-forms'); ?></h2>
@@ -310,7 +310,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Modal for Participant Detail View -->
-<div id="eipsi-participant-detail-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+<div id="eipsi-participant-detail-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content participant-detail-modal">
         <div class="eipsi-modal-header">
             <h2>👤 <?php esc_html_e('Detalles del Participante', 'eipsi-forms'); ?></h2>
@@ -391,7 +391,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Modal for Remove Participant Confirmation -->
-<div id="eipsi-remove-participant-modal" class="eipsi-modal" style="display:none; z-index: 100002;">
+<div id="eipsi-remove-participant-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100002;">
     <div class="eipsi-modal-content small-modal">
         <div class="eipsi-modal-header">
             <h2>⚠️ <?php esc_html_e('Eliminar Participante', 'eipsi-forms'); ?></h2>
@@ -430,7 +430,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Modal for Magic Link Resend -->
-<div id="eipsi-magic-link-resend-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+<div id="eipsi-magic-link-resend-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content medium-modal">
         <div class="eipsi-modal-header">
             <h2>✨ <?php esc_html_e('Reenviar Magic Link', 'eipsi-forms'); ?></h2>
@@ -463,7 +463,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Modal for Manual Magic Link -->
-<div id="eipsi-magic-link-manual-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+<div id="eipsi-magic-link-manual-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content small-modal">
         <div class="eipsi-modal-header">
             <h2>🔗 <?php esc_html_e('Generar Magic Link', 'eipsi-forms'); ?></h2>
@@ -496,7 +496,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Modal for CSV Import -->
-<div id="eipsi-import-csv-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+<div id="eipsi-import-csv-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content medium-modal">
         <div class="eipsi-modal-header">
             <h2>📄 <?php esc_html_e('Importar Participantes desde CSV', 'eipsi-forms'); ?></h2>
@@ -595,7 +595,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Modal for Editing Study -->
-<div id="eipsi-edit-study-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+<div id="eipsi-edit-study-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content medium-modal">
         <style>
         #eipsi-edit-study-modal .form-group {
@@ -696,7 +696,7 @@ if (!defined('ABSPATH')) {
 </div>
 
 <!-- Modal for Cron Jobs Configuration -->
-<div id="eipsi-cron-jobs-modal" class="eipsi-modal" style="display:none; z-index: 100001;">
+<div id="eipsi-cron-jobs-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
     <div class="eipsi-modal-content medium-modal">
         <div class="eipsi-modal-header">
             <h2>⏰ <?php esc_html_e('Configuración de Tareas Programadas', 'eipsi-forms'); ?></h2>

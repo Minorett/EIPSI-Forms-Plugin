@@ -114,6 +114,29 @@
 }
 
 /* ==========================================================================
+   FORCED LIGHT MODE
+   ========================================================================== */
+.eipsi-force-light-mode {
+    background: var(--eipsi-bg);
+    color: var(--eipsi-text);
+}
+
+.eipsi-force-light-mode .eipsi-modal-content,
+.eipsi-force-light-mode .eipsi-card,
+.eipsi-force-light-mode .dashboard-card,
+.eipsi-force-light-mode .rct-card {
+    background: var(--eipsi-bg);
+    border-color: var(--eipsi-border);
+    color: var(--eipsi-text);
+}
+
+.eipsi-force-light-mode .eipsi-modal-header,
+.eipsi-force-light-mode .eipsi-modal-footer {
+    background: var(--eipsi-bg-subtle);
+    border-color: var(--eipsi-border);
+}
+
+/* ==========================================================================
    NAVIGATION TABS
    ========================================================================== */
 .eipsi-results-page .nav-tab-wrapper,
