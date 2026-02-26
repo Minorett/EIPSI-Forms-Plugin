@@ -1,47 +1,35 @@
 /**
- * EIPSI Forms - Robust User Fingerprinting
+ * EIPSI Forms - Device Data Capture (RAW)
  *
- * Genera un fingerprint único del dispositivo/navegador para persistencia
- * de asignaciones en RCT sin depender de cookies o localStorage.
+ * Captura datos RAW del dispositivo/navegador sin procesamiento ni hashes.
+ * El investigador decide qué datos usar al exportar.
  *
  * Features:
- * - Canvas fingerprinting (GPU/renderer)
- * - Screen + timezone + language
- * - User agent + platform
- * - WebGL fingerprinting
- * - Hash SHA-256
- * - ✅ v1.5.4 - Exposes raw fingerprint details for export
+ * - Canvas fingerprint (data URL, no hash)
+ * - WebGL renderer info
+ * - Screen resolution + color depth + pixel ratio
+ * - Timezone + timezone offset
+ * - Language + languages array
+ * - Hardware (CPU cores, RAM if available)
+ * - Do Not Track + Cookies enabled
+ * - Plugins list
+ * - User Agent + Platform
  *
  * @package EIPSI_Forms
- * @since 1.3.1
+ * @since 1.5.4
+ * @updated 2.0.0 - RAW data only, no hash generation
  */
 
-/* global crypto, TextEncoder */
+/* global navigator, window, document, Intl, crypto, TextEncoder */
 
 ( function () {
     'use strict';
 
     /**
-     * Generar hash SHA-256 de un string
-     *
-     * @param {string} message - Texto a hashear
-     * @return {Promise<string>} Hash hexadecimal
-     */
-    async function sha256( message ) {
-        const msgBuffer = new TextEncoder().encode( message );
-        const hashBuffer = await crypto.subtle.digest( 'SHA-256', msgBuffer );
-        const hashArray = Array.from( new Uint8Array( hashBuffer ) );
-        const hashHex = hashArray
-            .map( ( b ) => b.toString( 16 ).padStart( 2, '0' ) )
-            .join( '' );
-        return hashHex;
-    }
-
-    /**
      * Canvas Fingerprinting
-     * Genera hash único basado en cómo el navegador renderiza canvas
+     * Genera data URL del canvas (no hash)
      *
-     * @return {string} Canvas fingerprint
+     * @return {string} Canvas data URL or error indicator
      */
     function getCanvasFingerprint() {
         try {
@@ -73,20 +61,22 @@
             ctx.closePath();
             ctx.fill();
 
-            // Obtener data URL
-            return canvas.toDataURL();
+            // Obtener data URL (truncado para no sobrecargar)
+            const dataUrl = canvas.toDataURL();
+            // Solo guardar primeros 100 caracteres como firma
+            return dataUrl.substring( 0, 100 );
         } catch ( e ) {
             return 'canvas-error';
         }
     }
 
     /**
-     * WebGL Fingerprinting
+     * WebGL Renderer Info
      * Información de la GPU/renderer del usuario
      *
-     * @return {string} WebGL info
+     * @return {string} WebGL vendor + renderer
      */
-    function getWebGLFingerprint() {
+    function getWebGLRenderer() {
         try {
             const canvas = document.createElement( 'canvas' );
             const gl =
@@ -105,12 +95,12 @@
                 const renderer = gl.getParameter(
                     debugInfo.UNMASKED_RENDERER_WEBGL
                 );
-                return vendor + '|' + renderer;
+                return vendor + ' | ' + renderer;
             }
 
             return (
                 gl.getParameter( gl.VENDOR ) +
-                '|' +
+                ' | ' +
                 gl.getParameter( gl.RENDERER )
             );
         } catch ( e ) {
@@ -119,220 +109,218 @@
     }
 
     /**
-     * Recolectar información del dispositivo/navegador
+     * Get browser plugins list
      *
-     * @return {Object} Objeto con rawDetails y string combinado
+     * @return {string} Pipe-separated plugin names
      */
-    function collectDeviceInfo() {
-        const info = [];
-        const rawDetails = {};
+    function getPluginList() {
+        try {
+            if ( navigator.plugins && navigator.plugins.length > 0 ) {
+                const plugins = [];
+                const maxPlugins = Math.min( navigator.plugins.length, 10 );
+                for ( let i = 0; i < maxPlugins; i++ ) {
+                    plugins.push( navigator.plugins[ i ].name );
+                }
+                return plugins.join( ' | ' );
+            }
+            return 'none';
+        } catch ( e ) {
+            return 'error';
+        }
+    }
+
+    /**
+     * Capturar todos los datos RAW del dispositivo
+     *
+     * @return {Object} Objeto con todos los datos crudos
+     */
+    function captureDeviceData() {
+        const data = {};
 
         // Screen resolution
-        rawDetails.screen_resolution = window.screen.width + 'x' + window.screen.height;
-        info.push( 'screen:' + rawDetails.screen_resolution );
+        data.screen_resolution = window.screen.width + 'x' + window.screen.height;
 
         // Color depth
-        rawDetails.color_depth = window.screen.colorDepth;
-        info.push( 'depth:' + rawDetails.color_depth );
+        data.screen_depth = window.screen.colorDepth || null;
 
         // Pixel ratio
-        rawDetails.pixel_ratio = window.devicePixelRatio;
-        info.push( 'ratio:' + rawDetails.pixel_ratio );
+        data.pixel_ratio = window.devicePixelRatio || 1;
 
         // Timezone
         try {
-            rawDetails.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            info.push( 'tz:' + rawDetails.timezone );
+            data.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         } catch ( e ) {
-            rawDetails.timezone = 'unknown';
-            info.push( 'tz:unknown' );
+            data.timezone = 'unknown';
         }
 
-        // Timezone offset
-        rawDetails.timezone_offset = new Date().getTimezoneOffset();
-        info.push( 'offset:' + rawDetails.timezone_offset );
+        // Timezone offset in minutes
+        data.timezone_offset = new Date().getTimezoneOffset();
 
         // Language
-        rawDetails.language = navigator.language || 'unknown';
-        info.push( 'lang:' + rawDetails.language );
+        data.language = navigator.language || 'unknown';
 
         // Languages array
-        if ( navigator.languages ) {
-            rawDetails.languages = navigator.languages.join( ',' );
-            info.push( 'langs:' + rawDetails.languages );
+        if ( navigator.languages && navigator.languages.length > 0 ) {
+            data.languages = navigator.languages.slice( 0, 5 ).join( ', ' );
+        } else {
+            data.languages = data.language;
         }
 
         // Platform
-        rawDetails.platform = navigator.platform || 'unknown';
-        info.push( 'platform:' + rawDetails.platform );
+        data.platform = navigator.platform || 'unknown';
 
         // User agent
-        rawDetails.user_agent = navigator.userAgent;
-        info.push( 'ua:' + rawDetails.user_agent );
+        data.user_agent = navigator.userAgent || 'unknown';
 
         // Hardware concurrency (CPU cores)
-        if ( navigator.hardwareConcurrency ) {
-            rawDetails.hardware_concurrency = navigator.hardwareConcurrency;
-            info.push( 'cores:' + rawDetails.hardware_concurrency );
-        }
+        data.cpu_cores = navigator.hardwareConcurrency || null;
 
-        // Device memory (GB)
-        if ( navigator.deviceMemory ) {
-            rawDetails.device_memory = navigator.deviceMemory;
-            info.push( 'memory:' + rawDetails.device_memory );
-        }
+        // Device memory (GB) - only available in some browsers
+        data.ram = navigator.deviceMemory || null;
 
         // Do Not Track
-        rawDetails.do_not_track = navigator.doNotTrack || 'unknown';
-        info.push( 'dnt:' + rawDetails.do_not_track );
+        data.do_not_track = navigator.doNotTrack || 'unspecified';
 
         // Cookies enabled
-        rawDetails.cookies_enabled = navigator.cookieEnabled;
-        info.push( 'cookies:' + rawDetails.cookies_enabled );
+        data.cookies_enabled = navigator.cookieEnabled ? 'true' : 'false';
 
-        // Canvas fingerprint
-        rawDetails.canvas_fingerprint = getCanvasFingerprint();
-        info.push( 'canvas:' + rawDetails.canvas_fingerprint );
+        // Canvas fingerprint (truncated data URL)
+        data.canvas_fingerprint = getCanvasFingerprint();
 
-        // WebGL fingerprint
-        rawDetails.webgl_fingerprint = getWebGLFingerprint();
-        info.push( 'webgl:' + rawDetails.webgl_fingerprint );
+        // WebGL renderer info
+        data.webgl_renderer = getWebGLRenderer();
 
-        // Plugins (legacy, pero útil)
-        if ( navigator.plugins && navigator.plugins.length > 0 ) {
-            const plugins = [];
-            for ( let i = 0; i < navigator.plugins.length; i++ ) {
-                plugins.push( navigator.plugins[ i ].name );
-            }
-            rawDetails.plugins = plugins.join( '|' );
-            info.push( 'plugins:' + rawDetails.plugins );
-        } else {
-            rawDetails.plugins = 'none';
-        }
+        // Plugins list
+        data.plugins = getPluginList();
 
-        return {
-            rawDetails: rawDetails,
-            combinedString: info.join( '||' )
-        };
+        // Touch support
+        data.touch_support = (
+            'ontouchstart' in window ||
+            navigator.maxTouchPoints > 0 ||
+            window.DocumentTouch
+        ) ? 'true' : 'false';
+
+        // Max touch points
+        data.max_touch_points = navigator.maxTouchPoints || 0;
+
+        return data;
     }
 
     /**
-     * Generar fingerprint único del usuario
+     * Obtener o generar datos del dispositivo (con caché en sessionStorage)
      *
-     * @return {Promise<Object>} Objeto con fingerprint hash y rawDetails
+     * @return {Object} Objeto con todos los datos crudos
      */
-    async function generateFingerprint() {
-        const deviceInfo = collectDeviceInfo();
-        const hash = await sha256( deviceInfo.combinedString );
-        return {
-            fingerprint: 'fp_' + hash.substring( 0, 32 ), // 32 caracteres
-            rawDetails: deviceInfo.rawDetails
-        };
-    }
-
-    /**
-     * Obtener o generar fingerprint (con caché en sessionStorage)
-     *
-     * @return {Promise<Object>} Objeto con fingerprint hash y rawDetails
-     */
-    async function getFingerprint() {
+    function getDeviceData() {
         // Intentar obtener de sessionStorage primero (dura la sesión del navegador)
         try {
-            const cached = sessionStorage.getItem( 'eipsi_fingerprint' );
-            const cachedRaw = sessionStorage.getItem( 'eipsi_fingerprint_raw' );
-            if ( cached && cachedRaw ) {
-                return {
-                    fingerprint: cached,
-                    rawDetails: JSON.parse( cachedRaw )
-                };
+            const cached = sessionStorage.getItem( 'eipsi_device_data' );
+            if ( cached ) {
+                return JSON.parse( cached );
             }
         } catch ( e ) {
             // sessionStorage no disponible (privado/incognito)
         }
 
-        // Generar nuevo fingerprint
-        const result = await generateFingerprint();
+        // Capturar nuevos datos
+        const data = captureDeviceData();
 
         // Guardar en sessionStorage para esta sesión
         try {
-            sessionStorage.setItem( 'eipsi_fingerprint', result.fingerprint );
-            sessionStorage.setItem( 'eipsi_fingerprint_raw', JSON.stringify( result.rawDetails ) );
+            sessionStorage.setItem( 'eipsi_device_data', JSON.stringify( data ) );
         } catch ( e ) {
             // Ignorar si falla
         }
 
-        return result;
+        return data;
     }
 
     /**
      * Exponer globalmente para uso en shortcodes
      */
-    window.eipsiGetFingerprint = getFingerprint;
+    window.eipsiGetDeviceData = getDeviceData;
 
     /**
-     * Auto-generar fingerprint al cargar la página
-     * y guardarlo en un input hidden si existe el formulario
+     * Auto-capturar datos al cargar la página
+     * y guardarlos en inputs hidden si existe el formulario
      */
-    document.addEventListener( 'DOMContentLoaded', async function () {
+    document.addEventListener( 'DOMContentLoaded', function () {
         try {
-            const result = await getFingerprint();
-            const fingerprint = result.fingerprint;
-            const rawDetails = result.rawDetails;
+            const deviceData = getDeviceData();
 
-            // Buscar todos los formularios de EIPSI con aleatorización
+            // Buscar todos los formularios de EIPSI
             const containers = document.querySelectorAll(
-                '.eipsi-randomization-container'
+                '.eipsi-randomization-container, .eipsi-form-container, [data-eipsi-form]'
             );
 
             containers.forEach( function ( container ) {
-                // Crear input hidden con el fingerprint hash
-                let fingerprintInput = container.querySelector(
-                    'input[name="eipsi_user_fingerprint"]'
+                // Crear input hidden con todos los datos RAW
+                let deviceDataInput = container.querySelector(
+                    'input[name="eipsi_device_data"]'
                 );
 
-                if ( ! fingerprintInput ) {
-                    fingerprintInput = document.createElement( 'input' );
-                    fingerprintInput.type = 'hidden';
-                    fingerprintInput.name = 'eipsi_user_fingerprint';
-                    container.appendChild( fingerprintInput );
+                if ( ! deviceDataInput ) {
+                    deviceDataInput = document.createElement( 'input' );
+                    deviceDataInput.type = 'hidden';
+                    deviceDataInput.name = 'eipsi_device_data';
+                    container.appendChild( deviceDataInput );
                 }
 
-                fingerprintInput.value = fingerprint;
-
-                // ✅ v1.5.4 - Crear input hidden con los detalles crudos
-                let rawDetailsInput = container.querySelector(
-                    'input[name="eipsi_fingerprint_raw"]'
-                );
-
-                if ( ! rawDetailsInput ) {
-                    rawDetailsInput = document.createElement( 'input' );
-                    rawDetailsInput.type = 'hidden';
-                    rawDetailsInput.name = 'eipsi_fingerprint_raw';
-                    container.appendChild( rawDetailsInput );
-                }
-
-                rawDetailsInput.value = JSON.stringify( rawDetails );
+                deviceDataInput.value = JSON.stringify( deviceData );
 
                 // Agregar data-attribute para debugging
                 container.setAttribute(
-                    'data-fingerprint',
-                    fingerprint.substring( 0, 16 ) + '...'
+                    'data-device-captured',
+                    'true'
                 );
+            } );
+
+            // También buscar formularios EIPSI por clase
+            const eipsiForms = document.querySelectorAll(
+                'form.eipsi-survey-form, form[data-eipsi-survey]'
+            );
+
+            eipsiForms.forEach( function ( form ) {
+                let deviceDataInput = form.querySelector(
+                    'input[name="eipsi_device_data"]'
+                );
+
+                if ( ! deviceDataInput ) {
+                    deviceDataInput = document.createElement( 'input' );
+                    deviceDataInput.type = 'hidden';
+                    deviceDataInput.name = 'eipsi_device_data';
+                    form.appendChild( deviceDataInput );
+                }
+
+                deviceDataInput.value = JSON.stringify( deviceData );
             } );
 
             // eslint-disable-next-line no-console
             console.log(
-                '[EIPSI Fingerprint] Generated:',
-                fingerprint.substring( 0, 16 ) + '...'
-            );
-            // eslint-disable-next-line no-console
-            console.log(
-                '[EIPSI Fingerprint] Raw details:',
-                rawDetails
+                '[EIPSI Forms] Device data captured:',
+                deviceData
             );
         } catch ( e ) {
             // eslint-disable-next-line no-console
-            console.error( '[EIPSI Fingerprint] Error:', e );
+            console.error( '[EIPSI Forms] Device data capture error:', e );
         }
     } );
+
+    // ============================================================================
+    // BACKWARD COMPATIBILITY - Mantener funciones anteriores
+    // ============================================================================
+
+    /**
+     * @deprecated Use eipsiGetDeviceData() instead
+     * Mantenido por compatibilidad con código existente
+     */
+    window.eipsiGetFingerprint = function() {
+        // eslint-disable-next-line no-console
+        console.warn( '[EIPSI Forms] eipsiGetFingerprint() is deprecated. Use eipsiGetDeviceData() instead.' );
+        const data = getDeviceData();
+        return {
+            fingerprint: 'raw-data-available',
+            rawDetails: data
+        };
+    };
 } )();

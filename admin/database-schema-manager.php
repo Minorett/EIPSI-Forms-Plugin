@@ -99,6 +99,9 @@ class EIPSI_Database_Schema_Manager {
             // Phase 2 - Participant Access Log (v2.0.0)
             $participant_access_log_sync = self::sync_local_survey_participant_access_log_table();
             
+            // Device Data RAW (v2.1.0) - replaces fingerprint hash with raw device data
+            $device_data_sync = self::sync_local_device_data_table();
+            
             $results['results_table'] = $results_sync;
             $results['events_table'] = $events_sync;
             $results['randomization_configs_table'] = $rct_configs_sync;
@@ -116,6 +119,7 @@ class EIPSI_Database_Schema_Manager {
             $results['longitudinal_pools_table'] = $longitudinal_pools_sync;
             $results['longitudinal_pool_assignments_table'] = $longitudinal_pool_assignments_sync;
             $results['survey_participant_access_log_table'] = $participant_access_log_sync;
+            $results['device_data_table'] = $device_data_sync;
             
             if ( ! $results_sync['success'] || ! $events_sync['success'] || 
                  ! $rct_configs_sync['success'] || ! $rct_assignments_sync['success'] ||
@@ -125,7 +129,8 @@ class EIPSI_Database_Schema_Manager {
                  ! $magic_links_sync['success'] || ! $email_log_sync['success'] ||
                  ! $audit_log_sync['success'] || 
                  ! $longitudinal_pools_sync['success'] || ! $longitudinal_pool_assignments_sync['success'] ||
-                 ! $participant_access_log_sync['success'] ) {
+                 ! $participant_access_log_sync['success'] ||
+                 ! $device_data_sync['success'] ) {
                 $results['success'] = false;
                 if ( ! $results_sync['success'] ) {
                     $results['errors'][] = $results_sync['error'];
@@ -169,7 +174,8 @@ class EIPSI_Database_Schema_Manager {
                 if ( ! $longitudinal_pool_assignments_sync['success'] ) {
                     $results['errors'][] = $longitudinal_pool_assignments_sync['error'];
                 }
-                if ( ! $participant_access_log_sync['success'] ) {
+                if ( ! $participant_access_log_sync['success'] ||
+                 ! $device_data_sync['success'] ) {
                     $results['errors'][] = $participant_access_log_sync['error'];
                 }
             }
@@ -2607,6 +2613,152 @@ class EIPSI_Database_Schema_Manager {
         if ( ! in_array( 'idx_study_created', $index_names, true ) ) {
             $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_study_created (study_id, created_at)" );
         }
+
+        return $result;
+    }
+    
+    /**
+     * Sync wp_eipsi_device_data table in local DB
+     * RAW device data storage (replaces fingerprint hash)
+     *
+     * @since 2.1.0
+     * @return array Result with success status and details
+     */
+    private static function sync_local_device_data_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'eipsi_device_data';
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+
+        if ( ! $result['exists'] ) {
+            // Create table with RAW device data columns
+            $sql = "CREATE TABLE {$table_name} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                submission_id BIGINT(20) UNSIGNED NULL,
+                participant_id BIGINT(20) UNSIGNED NULL,
+                
+                -- Canvas fingerprint (truncated data URL)
+                canvas_fingerprint VARCHAR(255) NULL,
+                
+                -- WebGL renderer info
+                webgl_renderer VARCHAR(255) NULL,
+                
+                -- Screen data
+                screen_resolution VARCHAR(50) NULL,
+                screen_depth INT NULL,
+                pixel_ratio DECIMAL(4,2) NULL,
+                
+                -- Timezone data
+                timezone VARCHAR(100) NULL,
+                timezone_offset INT NULL,
+                
+                -- Language data
+                language VARCHAR(50) NULL,
+                languages VARCHAR(255) NULL,
+                
+                -- Hardware data
+                cpu_cores INT NULL,
+                ram INT NULL,
+                
+                -- Privacy settings
+                do_not_track VARCHAR(20) NULL,
+                cookies_enabled VARCHAR(10) NULL,
+                
+                -- Plugins
+                plugins TEXT NULL,
+                
+                -- User agent data
+                user_agent TEXT NULL,
+                platform VARCHAR(100) NULL,
+                
+                -- Touch support
+                touch_support VARCHAR(10) NULL,
+                max_touch_points INT NULL,
+                
+                -- Timestamps
+                captured_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                
+                PRIMARY KEY (id),
+                INDEX idx_submission_id (submission_id),
+                INDEX idx_participant_id (participant_id),
+                INDEX idx_captured_at (captured_at)
+            ) {$charset_collate};";
+
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+
+            $result['created'] = true;
+            $result['exists'] = true;
+
+            error_log( '[EIPSI Forms] Created table: ' . $table_name );
+        }
+
+        // Ensure required columns exist (for future migrations)
+        $required_columns = array(
+            'submission_id' => "ALTER TABLE {$table_name} ADD COLUMN submission_id BIGINT(20) UNSIGNED NULL AFTER id",
+            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NULL AFTER submission_id",
+            'canvas_fingerprint' => "ALTER TABLE {$table_name} ADD COLUMN canvas_fingerprint VARCHAR(255) NULL AFTER participant_id",
+            'webgl_renderer' => "ALTER TABLE {$table_name} ADD COLUMN webgl_renderer VARCHAR(255) NULL AFTER canvas_fingerprint",
+            'screen_resolution' => "ALTER TABLE {$table_name} ADD COLUMN screen_resolution VARCHAR(50) NULL AFTER webgl_renderer",
+            'screen_depth' => "ALTER TABLE {$table_name} ADD COLUMN screen_depth INT NULL AFTER screen_resolution",
+            'pixel_ratio' => "ALTER TABLE {$table_name} ADD COLUMN pixel_ratio DECIMAL(4,2) NULL AFTER screen_depth",
+            'timezone' => "ALTER TABLE {$table_name} ADD COLUMN timezone VARCHAR(100) NULL AFTER pixel_ratio",
+            'timezone_offset' => "ALTER TABLE {$table_name} ADD COLUMN timezone_offset INT NULL AFTER timezone",
+            'language' => "ALTER TABLE {$table_name} ADD COLUMN language VARCHAR(50) NULL AFTER timezone_offset",
+            'languages' => "ALTER TABLE {$table_name} ADD COLUMN languages VARCHAR(255) NULL AFTER language",
+            'cpu_cores' => "ALTER TABLE {$table_name} ADD COLUMN cpu_cores INT NULL AFTER languages",
+            'ram' => "ALTER TABLE {$table_name} ADD COLUMN ram INT NULL AFTER cpu_cores",
+            'do_not_track' => "ALTER TABLE {$table_name} ADD COLUMN do_not_track VARCHAR(20) NULL AFTER ram",
+            'cookies_enabled' => "ALTER TABLE {$table_name} ADD COLUMN cookies_enabled VARCHAR(10) NULL AFTER do_not_track",
+            'plugins' => "ALTER TABLE {$table_name} ADD COLUMN plugins TEXT NULL AFTER cookies_enabled",
+            'user_agent' => "ALTER TABLE {$table_name} ADD COLUMN user_agent TEXT NULL AFTER plugins",
+            'platform' => "ALTER TABLE {$table_name} ADD COLUMN platform VARCHAR(100) NULL AFTER user_agent",
+            'touch_support' => "ALTER TABLE {$table_name} ADD COLUMN touch_support VARCHAR(10) NULL AFTER platform",
+            'max_touch_points' => "ALTER TABLE {$table_name} ADD COLUMN max_touch_points INT NULL AFTER touch_support",
+            'captured_at' => "ALTER TABLE {$table_name} ADD COLUMN captured_at DATETIME DEFAULT CURRENT_TIMESTAMP AFTER max_touch_points",
+        );
+
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $table_name,
+                    $column
+                )
+            );
+
+            if ( empty( $column_exists ) ) {
+                if ( false !== $wpdb->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                    error_log( "[EIPSI Forms] Added missing column '{$column}' to {$table_name}" );
+                } else {
+                    $result['columns_missing'][] = $column;
+                    $result['success'] = false;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
+                    }
+                }
+            }
+        }
+
+        // Ensure indices exist
+        self::ensure_local_index( $table_name, 'submission_id' );
+        self::ensure_local_index( $table_name, 'participant_id' );
+        self::ensure_local_index( $table_name, 'captured_at' );
 
         return $result;
     }
