@@ -189,6 +189,92 @@ class EIPSI_SMTP_Service {
     }
 
     /**
+     * Check if SMTP is fully configured (all required fields present).
+     *
+     * @return bool True if SMTP has all required configuration fields.
+     * @since 1.5.0
+     */
+    public function is_configured() {
+        $config = $this->get_config();
+        
+        if (!$config) {
+            return false;
+        }
+        
+        // Check all required fields
+        if (empty($config['host']) || empty($config['port']) || empty($config['user'])) {
+            return false;
+        }
+        
+        // Check if password exists (it should be set during configuration)
+        $encrypted_password = get_option($this->option_prefix . 'password', '');
+        if (empty($encrypted_password)) {
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Get validation errors for SMTP configuration.
+     *
+     * @return array Array of error messages for missing/malformed settings.
+     * @since 1.5.0
+     */
+    public function get_validation_errors() {
+        $errors = array();
+        
+        $host = get_option($this->option_prefix . 'host', '');
+        $port = get_option($this->option_prefix . 'port', '');
+        $user = get_option($this->option_prefix . 'user', '');
+        $encrypted_password = get_option($this->option_prefix . 'password', '');
+        
+        if (empty($host)) {
+            $errors[] = __('Servidor SMTP no configurado.', 'eipsi-forms');
+        }
+        
+        if (empty($port)) {
+            $errors[] = __('Puerto SMTP no configurado.', 'eipsi-forms');
+        } elseif (!is_numeric($port) || intval($port) < 1 || intval($port) > 65535) {
+            $errors[] = __('Puerto SMTP inválido (debe ser entre 1 y 65535).', 'eipsi-forms');
+        }
+        
+        if (empty($user)) {
+            $errors[] = __('Usuario SMTP no configurado.', 'eipsi-forms');
+        } elseif (!is_email($user)) {
+            $errors[] = __('Usuario SMTP debe ser un correo electrónico válido.', 'eipsi-forms');
+        }
+        
+        if (empty($encrypted_password)) {
+            $errors[] = __('Contraseña SMTP no configurada.', 'eipsi-forms');
+        }
+        
+        return $errors;
+    }
+
+    /**
+     * Get SMTP configuration status with detailed info.
+     *
+     * @return array Status information including 'configured', 'enabled', 'errors'.
+     * @since 1.5.0
+     */
+    public function get_status() {
+        $is_enabled = $this->is_enabled();
+        $is_configured = $this->is_configured();
+        $errors = $this->get_validation_errors();
+        
+        return array(
+            'enabled' => $is_enabled,
+            'configured' => $is_configured,
+            'errors' => $errors,
+            'can_send' => $is_enabled && $is_configured,
+            'status_label' => $is_configured 
+                ? __('SMTP configurado correctamente', 'eipsi-forms')
+                : __('SMTP requiere configuración', 'eipsi-forms'),
+        );
+    }
+
+    /**
      * Send a test email using provided config.
      */
     public function send_test_email($config, $recipient) {

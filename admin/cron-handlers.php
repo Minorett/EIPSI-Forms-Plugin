@@ -21,6 +21,9 @@ add_action('eipsi_send_manual_reminder', 'eipsi_send_manual_reminder_handler', 1
 add_action('eipsi_send_wave_reminders_hourly', 'eipsi_run_send_wave_reminders');
 add_action('eipsi_send_dropout_recovery_hourly', 'eipsi_run_send_dropout_recovery');
 
+// === DOUBLE OPT-IN CRON HOOKS (v1.5.0) ===
+add_action('eipsi_cleanup_unconfirmed_participants_daily', 'eipsi_run_cleanup_unconfirmed_participants');
+
 // === STUDY CRON JOBS (v1.5.3) ===
 add_action('eipsi_study_cron_job', 'eipsi_run_study_cron_job', 10, 1);
 
@@ -810,6 +813,70 @@ function eipsi_run_study_cron_job($study_id) {
 
     error_log("[EIPSI Cron] Study cron job completed for study {$study_id}. Actions: " . $results['actions_executed'] . ", Failed: " . $results['actions_failed']);
     error_log("[EIPSI Cron] Next run scheduled for: " . date('Y-m-d H:i:s', $next_run));
+}
+
+// =================================================================
+// DOUBLE OPT-IN CLEANUP CRON (v1.5.0)
+// =================================================================
+
+/**
+ * Ejecuta la limpieza diaria de participantes no confirmados
+ * 
+ * Este cron job:
+ * 1. Elimina tokens de confirmación expirados
+ * 2. Elimina participantes que nunca confirmaron su email después del período de retención
+ * 3. Registra estadísticas del proceso
+ *
+ * @since 1.5.0
+ * @return void
+ */
+function eipsi_run_cleanup_unconfirmed_participants() {
+    error_log('[EIPSI Cron] Unconfirmed participants cleanup started at ' . current_time('mysql'));
+    
+    // Verificar que el servicio de confirmación existe
+    if (!class_exists('EIPSI_Email_Confirmation_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-confirmation-service.php';
+    }
+    
+    try {
+        // Ejecutar limpieza
+        $result = EIPSI_Email_Confirmation_Service::cleanup_expired_confirmations();
+        
+        // Registrar resultados
+        $deleted_confirmations = isset($result['deleted_confirmations']) ? intval($result['deleted_confirmations']) : 0;
+        $deleted_participants = isset($result['deleted_participants']) ? intval($result['deleted_participants']) : 0;
+        
+        if ($deleted_confirmations > 0 || $deleted_participants > 0) {
+            error_log("[EIPSI Cron] Cleanup completed: {$deleted_confirmations} expired confirmations deleted, {$deleted_participants} unconfirmed participants deleted");
+        } else {
+            error_log('[EIPSI Cron] Cleanup completed: No items to delete');
+        }
+        
+        // Opcional: enviar notificación al admin si se eliminaron muchos participantes
+        if ($deleted_participants > 10) {
+            $admin_email = get_option('admin_email');
+            if (is_email($admin_email)) {
+                $subject = sprintf('[EIPSI Forms] Limpieza de participantes no confirmados - %d eliminados', $deleted_participants);
+                $message = sprintf(
+                    "Se han eliminado %d participantes no confirmados durante la limpieza automática diaria.\n\n" .
+                    "Fecha: %s\n" .
+                    "Tokens expirados eliminados: %d\n" .
+                    "Participantes eliminados: %d\n\n" .
+                    "Este es un mensaje automático del sistema EIPSI Forms.",
+                    $deleted_participants,
+                    current_time('mysql'),
+                    $deleted_confirmations,
+                    $deleted_participants
+                );
+                wp_mail($admin_email, $subject, $message);
+            }
+        }
+        
+    } catch (Exception $e) {
+        error_log('[EIPSI Cron] Error during cleanup: ' . $e->getMessage());
+    }
+    
+    error_log('[EIPSI Cron] Unconfirmed participants cleanup completed');
 }
 
 /**
