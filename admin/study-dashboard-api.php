@@ -31,6 +31,8 @@ add_action('wp_ajax_eipsi_send_magic_link', 'wp_ajax_eipsi_send_magic_link_handl
 add_action('wp_ajax_eipsi_get_magic_link_preview', 'wp_ajax_eipsi_get_magic_link_preview_handler');
 add_action('wp_ajax_eipsi_resend_magic_link', 'wp_ajax_eipsi_resend_magic_link_handler');
 add_action('wp_ajax_eipsi_extend_magic_link', 'wp_ajax_eipsi_extend_magic_link_handler');
+add_action('wp_ajax_eipsi_resend_confirmation', 'wp_ajax_eipsi_resend_confirmation_handler');
+add_action('wp_ajax_eipsi_get_pending_confirmations', 'wp_ajax_eipsi_get_pending_confirmations_handler');
 add_action('wp_ajax_eipsi_resend_participant_email', 'wp_ajax_eipsi_resend_participant_email_handler');
 add_action('wp_ajax_eipsi_get_participant_email_history', 'wp_ajax_eipsi_get_participant_email_history_handler');
 add_action('wp_ajax_eipsi_get_participant_detail', 'wp_ajax_eipsi_get_participant_detail_handler');
@@ -1721,4 +1723,141 @@ function wp_ajax_eipsi_extend_magic_link_handler() {
     } else {
         wp_send_json_error(array('message' => $result['message']));
     }
+}
+
+// ============================================================================
+// DOUBLE OPT-IN HANDLERS (v1.5.0)
+// ============================================================================
+
+/**
+ * POST resend confirmation email to participant
+ * 
+ * @since 1.5.0
+ */
+function wp_ajax_eipsi_resend_confirmation_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+
+    if (empty($study_id) || empty($participant_id)) {
+        wp_send_json_error(array('message' => 'Missing study ID or participant ID'));
+    }
+
+    // Load required services
+    if (!class_exists('EIPSI_Email_Confirmation_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-confirmation-service.php';
+    }
+
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    // Verify participant exists and belongs to study
+    $participant = EIPSI_Participant_Service::get_by_id($participant_id);
+    if (!$participant) {
+        wp_send_json_error(array('message' => 'Participante no encontrado'));
+    }
+
+    if ($participant->survey_id != $study_id) {
+        wp_send_json_error(array('message' => 'El participante no pertenece a este estudio'));
+    }
+
+    // Check if already confirmed
+    if ($participant->is_active && EIPSI_Email_Confirmation_Service::is_confirmed($participant_id)) {
+        wp_send_json_error(array('message' => 'El participante ya ha confirmado su email'));
+    }
+
+    // Resend confirmation
+    $result = EIPSI_Email_Confirmation_Service::resend_confirmation_email($participant_id);
+
+    if ($result['success']) {
+        wp_send_json_success(array(
+            'message' => sprintf('Email de confirmación reenviado a %s', $participant->email),
+            'participant_id' => $participant_id,
+            'email' => $participant->email
+        ));
+    } else {
+        $error_messages = array(
+            'participant_not_found' => 'Participante no encontrado',
+            'already_confirmed' => 'El participante ya ha confirmado su email',
+            'db_error' => 'Error de base de datos al generar el token',
+            'email_send_failed' => 'No se pudo enviar el email de confirmación'
+        );
+        wp_send_json_error(array(
+            'message' => $error_messages[$result['error']] ?? 'Error al reenviar el email de confirmación',
+            'error_code' => $result['error']
+        ));
+    }
+}
+
+/**
+ * GET list of pending confirmations for a study
+ * 
+ * @since 1.5.0
+ */
+function wp_ajax_eipsi_get_pending_confirmations_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+
+    $study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
+    if (empty($study_id)) {
+        wp_send_json_error(array('message' => 'Missing study ID'));
+    }
+
+    global $wpdb;
+
+    // Get participants with pending confirmations
+    $participants_table = $wpdb->prefix . 'survey_participants';
+    $confirmations_table = $wpdb->prefix . 'survey_email_confirmations';
+
+    $pending = $wpdb->get_results($wpdb->prepare(
+        "SELECT 
+            p.id as participant_id,
+            p.email,
+            p.first_name,
+            p.last_name,
+            p.created_at as registered_at,
+            c.token_plain,
+            c.expires_at,
+            c.created_at as confirmation_sent_at
+         FROM {$participants_table} p
+         INNER JOIN {$confirmations_table} c ON p.id = c.participant_id
+         WHERE p.survey_id = %d 
+           AND p.is_active = 0
+           AND c.confirmed_at IS NULL
+           AND c.expires_at > %s
+         ORDER BY c.created_at DESC",
+        $study_id,
+        current_time('mysql')
+    ));
+
+    // Calculate time remaining for each
+    $now = current_time('timestamp');
+    foreach ($pending as $item) {
+        $expires = strtotime($item->expires_at);
+        $hours_remaining = max(0, round(($expires - $now) / HOUR_IN_SECONDS));
+        $item->hours_remaining = $hours_remaining;
+        $item->expires_soon = $hours_remaining < 24;
+    }
+
+    // Get summary stats
+    $total_pending = count($pending);
+    $expiring_soon = count(array_filter($pending, function($p) { return $p->expires_soon; }));
+
+    wp_send_json_success(array(
+        'pending' => $pending,
+        'summary' => array(
+            'total_pending' => $total_pending,
+            'expiring_soon' => $expiring_soon,
+            'hours_threshold' => 24
+        )
+    ));
 }

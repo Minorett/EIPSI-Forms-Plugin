@@ -744,6 +744,11 @@ function eipsi_forms_activate() {
         wp_schedule_event(time(), 'daily', 'eipsi_purge_access_logs_daily');
     }
     
+    // Double Opt-In: Schedule daily cleanup of unconfirmed participants
+    if (!wp_next_scheduled('eipsi_cleanup_unconfirmed_participants_daily')) {
+        wp_schedule_event(time(), 'daily', 'eipsi_cleanup_unconfirmed_participants_daily');
+    }
+    
     // Create form results table
     $table_name = $wpdb->prefix . 'vas_form_results';
     $sql = "CREATE TABLE IF NOT EXISTS $table_name (
@@ -937,6 +942,9 @@ function eipsi_forms_deactivate() {
     
     // Phase 2: Access log purge
     wp_clear_scheduled_hook('eipsi_purge_access_logs_daily');
+    
+    // Double Opt-In cleanup cron
+    wp_clear_scheduled_hook('eipsi_cleanup_unconfirmed_participants_daily');
 }
 
 /**
@@ -1569,3 +1577,56 @@ function eipsi_forms_load_textdomain() {
     );
 }
 add_action('plugins_loaded', 'eipsi_forms_load_textdomain');
+
+/**
+ * Show admin notice if SMTP is not configured but Double Opt-In is enabled
+ * 
+ * @since 1.5.0
+ */
+add_action('admin_notices', 'eipsi_smtp_configuration_notice');
+function eipsi_smtp_configuration_notice() {
+    // Only show to users who can manage options
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+    
+    // Only show on EIPSI admin pages
+    $screen = get_current_screen();
+    if (!$screen || strpos($screen->id, 'eipsi') === false) {
+        return;
+    }
+    
+    // Check if Double Opt-In is enabled
+    $double_optin_enabled = defined('EIPSI_DOUBLE_OPTIN_ENABLED') ? EIPSI_DOUBLE_OPTIN_ENABLED : true;
+    if (!$double_optin_enabled) {
+        return;
+    }
+    
+    // Check SMTP configuration
+    if (!class_exists('EIPSI_SMTP_Service')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-smtp-service.php';
+    }
+    
+    $smtp_service = new EIPSI_SMTP_Service();
+    if ($smtp_service->is_configured()) {
+        return; // SMTP is configured, no notice needed
+    }
+    
+    // Show warning notice
+    $config_url = admin_url('admin.php?page=eipsi-configuration&tab=smtp');
+    ?>
+    <div class="notice notice-warning is-dismissible">
+        <p>
+            <strong><?php echo esc_html__('EIPSI Forms - Double Opt-In Requiere SMTP', 'eipsi-forms'); ?></strong>
+        </p>
+        <p>
+            <?php echo esc_html__('El sistema Double Opt-In está habilitado pero SMTP no está configurado. Los participantes no recibirán emails de confirmación.', 'eipsi-forms'); ?>
+        </p>
+        <p>
+            <a href="<?php echo esc_url($config_url); ?>" class="button button-primary">
+                <?php echo esc_html__('Configurar SMTP Ahora', 'eipsi-forms'); ?>
+            </a>
+        </p>
+    </div>
+    <?php
+}

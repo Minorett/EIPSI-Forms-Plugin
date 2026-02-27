@@ -49,6 +49,11 @@ function eipsi_display_configuration_page() {
     <div class="wrap eipsi-config-wrap">
         <h1><?php echo esc_html__('EIPSI Forms - Configuration', 'eipsi-forms'); ?></h1>
 
+        <?php
+        // Check SMTP status for tab warning indicator
+        $smtp_service_for_tab = class_exists('EIPSI_SMTP_Service') ? new EIPSI_SMTP_Service() : null;
+        $smtp_configured_for_tab = $smtp_service_for_tab ? $smtp_service_for_tab->is_configured() : false;
+        ?>
         <h2 class="nav-tab-wrapper">
             <a href="?page=eipsi-configuration&tab=database"
                class="nav-tab <?php echo esc_attr(($active_tab === 'database') ? 'nav-tab-active' : ''); ?>">
@@ -57,6 +62,9 @@ function eipsi_display_configuration_page() {
             <a href="?page=eipsi-configuration&tab=smtp"
                class="nav-tab <?php echo esc_attr(($active_tab === 'smtp') ? 'nav-tab-active' : ''); ?>">
                 📧 <?php echo esc_html__('SMTP', 'eipsi-forms'); ?>
+                <?php if (!$smtp_configured_for_tab): ?>
+                <span class="dashicons dashicons-warning" style="color: #f0b849; font-size: 14px; margin-left: 5px; vertical-align: middle;" title="<?php echo esc_attr__('SMTP no configurado', 'eipsi-forms'); ?>"></span>
+                <?php endif; ?>
             </a>
             <a href="?page=eipsi-configuration&tab=privacy-security"
                class="nav-tab <?php echo esc_attr(($active_tab === 'privacy-security') ? 'nav-tab-active' : ''); ?>">
@@ -607,6 +615,49 @@ function eipsi_display_configuration_page() {
         <?php if ($active_tab === 'smtp'): ?>
             <!-- SMTP Configuration Section -->
             <div class="eipsi-config-container" style="margin-top: 30px;">
+            
+            <?php
+            // Check SMTP configuration status for warning banner
+            $smtp_service = class_exists('EIPSI_SMTP_Service') ? new EIPSI_SMTP_Service() : null;
+            $smtp_status = $smtp_service ? $smtp_service->get_status() : array('configured' => false, 'errors' => array());
+            
+            // Show warning if SMTP is not fully configured
+            if (!$smtp_status['configured']):
+            ?>
+            <!-- SMTP Warning Banner -->
+            <div class="notice notice-warning" style="margin: 20px 0; padding: 15px; border-left: 4px solid #f0b849; background: #fff8e5;">
+                <h3 style="margin: 0 0 10px 0; color: #946c00;">
+                    <span class="dashicons dashicons-warning" style="color: #f0b849; margin-right: 8px;"></span>
+                    <?php echo esc_html__('⚠️ SMTP No Configurado - Double Opt-In Requiere SMTP', 'eipsi-forms'); ?>
+                </h3>
+                <p style="margin: 0 0 10px 0; color: #946c00;">
+                    <?php echo esc_html__('El sistema Double Opt-In (confirmación de email) requiere SMTP configurado para enviar emails de confirmación. Sin SMTP, los participantes no recibirán los correos de verificación.', 'eipsi-forms'); ?>
+                </p>
+                <?php if (!empty($smtp_status['errors'])): ?>
+                <ul style="margin: 10px 0; padding-left: 20px; color: #946c00;">
+                    <?php foreach ($smtp_status['errors'] as $error): ?>
+                    <li><?php echo esc_html($error); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
+                <p style="margin: 10px 0 0 0; font-size: 13px; color: #946c00;">
+                    <strong><?php echo esc_html__('Configura SMTP ahora:', 'eipsi-forms'); ?></strong> 
+                    <?php echo esc_html__('Completa el formulario abajo y haz clic en "Probar SMTP" antes de guardar.', 'eipsi-forms'); ?>
+                </p>
+            </div>
+            <?php else: ?>
+            <!-- SMTP Success Banner -->
+            <div class="notice notice-success" style="margin: 20px 0; padding: 15px; border-left: 4px solid #46b450; background: #ecf7ed;">
+                <h3 style="margin: 0 0 5px 0; color: #155724;">
+                    <span class="dashicons dashicons-yes-alt" style="color: #46b450; margin-right: 8px;"></span>
+                    <?php echo esc_html__('✅ SMTP Configurado Correctamente', 'eipsi-forms'); ?>
+                </h3>
+                <p style="margin: 0; color: #155724;">
+                    <?php echo esc_html__('El sistema puede enviar emails de confirmación para Double Opt-In.', 'eipsi-forms'); ?>
+                </p>
+            </div>
+            <?php endif; ?>
+            
             <div class="eipsi-config-form-section">
                 <h2><?php echo esc_html__('Configuración SMTP', 'eipsi-forms'); ?></h2>
                 <p class="description">
