@@ -2888,6 +2888,542 @@ class EIPSI_Database_Schema_Manager {
 
         return $result;
     }
+
+
+// =============================================================================
+// SCHEMA STATUS MONITORING METHODS (v1.6.0+)
+// =============================================================================
+
+/**
+ * Get detailed status for a single table
+ * 
+ * @since 1.6.0
+ * @param string $table_name Table name (without prefix)
+ * @return array Detailed table status
+ */
+public static function get_detailed_table_status($table_name) {
+    global $wpdb;
+    $full_table_name = $wpdb->prefix . $table_name;
+    
+    $result = array(
+        'table_name' => $table_name,
+        'full_table_name' => $full_table_name,
+        'exists' => false,
+        'row_count' => 0,
+        'columns' => array(),
+        'required_columns' => array(),
+        'missing_columns' => array(),
+        'indexes' => array(),
+        'size_mb' => 0,
+        'status' => 'error', // ok, warning, error
+        'issues' => array()
+    );
+    
+    // Check if table exists
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$full_table_name}'");
+    $result['exists'] = !empty($table_exists);
+    
+    if (!$result['exists']) {
+        $result['issues'][] = 'Tabla no existe';
+        return $result;
+    }
+    
+    // Get row count
+    $result['row_count'] = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$full_table_name}");
+    
+    // Get columns
+    $columns = $wpdb->get_results("SHOW COLUMNS FROM {$full_table_name}", ARRAY_A);
+    $result['columns'] = array_column($columns, 'Field');
+    
+    // Get required columns based on table type
+    $result['required_columns'] = self::get_required_columns_for_table($table_name);
+    $result['missing_columns'] = array_diff($result['required_columns'], $result['columns']);
+    
+    if (!empty($result['missing_columns'])) {
+        $result['issues'][] = 'Columnas faltantes: ' . implode(', ', $result['missing_columns']);
+    }
+    
+    // Get indexes
+    $indexes = $wpdb->get_results("SHOW INDEX FROM {$full_table_name}", ARRAY_A);
+    $result['indexes'] = array_unique(array_column($indexes, 'Key_name'));
+    
+    // Get table size
+    $size_result = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb 
+            FROM information_schema.TABLES 
+            WHERE table_schema = %s AND table_name = %s",
+            DB_NAME,
+            $full_table_name
+        )
+    );
+    $result['size_mb'] = $size_result ? floatval($size_result->size_mb) : 0;
+    
+    // Determine status
+    if (empty($result['missing_columns'])) {
+        $result['status'] = 'ok';
+    } else {
+        // Check if missing columns are critical
+        $critical_missing = array_intersect($result['missing_columns'], self::get_critical_columns_for_table($table_name));
+        if (!empty($critical_missing)) {
+            $result['status'] = 'error';
+        } else {
+            $result['status'] = 'warning';
+        }
+    }
+    
+    return $result;
+}
+
+/**
+ * Get required columns for each table
+ * 
+ * @since 1.6.0
+ * @param string $table_name
+ * @return array Required columns
+ */
+private static function get_required_columns_for_table($table_name) {
+    $columns = array(
+        'vas_form_results' => array(
+            'id', 'form_id', 'participant_id', 'session_id', 'form_name', 'created_at', 
+            'device', 'ip_address', 'status', 'form_responses'
+        ),
+        'vas_form_events' => array(
+            'id', 'form_id', 'session_id', 'event_type', 'created_at'
+        ),
+        'eipsi_randomization_configs' => array(
+            'id', 'form_id', 'name', 'created_at'
+        ),
+        'eipsi_randomization_assignments' => array(
+            'id', 'config_id', 'user_fingerprint', 'assigned_form_id', 'assigned_at'
+        ),
+        'survey_studies' => array(
+            'id', 'study_code', 'study_name', 'status', 'created_at', 'updated_at'
+        ),
+        'survey_participants' => array(
+            'id', 'survey_id', 'email', 'created_at', 'is_active'
+        ),
+        'survey_sessions' => array(
+            'id', 'token', 'participant_id', 'expires_at', 'created_at'
+        ),
+        'survey_waves' => array(
+            'id', 'study_id', 'wave_index', 'name', 'form_id', 'status', 'created_at'
+        ),
+        'survey_assignments' => array(
+            'id', 'study_id', 'wave_id', 'participant_id', 'status', 'assigned_at'
+        ),
+        'survey_magic_links' => array(
+            'id', 'survey_id', 'participant_id', 'token_hash', 'expires_at', 'created_at'
+        ),
+        'survey_email_log' => array(
+            'id', 'survey_id', 'participant_id', 'email_type', 'recipient_email', 'status', 'sent_at'
+        ),
+        'survey_audit_log' => array(
+            'id', 'study_id', 'participant_id', 'action', 'created_at'
+        ),
+        'eipsi_longitudinal_pools' => array(
+            'id', 'name', 'created_at'
+        ),
+        'eipsi_longitudinal_pool_assignments' => array(
+            'id', 'pool_id', 'participant_id', 'assigned_at'
+        ),
+        'survey_participant_access_log' => array(
+            'id', 'participant_id', 'survey_id', 'action', 'created_at'
+        ),
+        'eipsi_device_data' => array(
+            'id', 'participant_id', 'survey_id', 'fingerprint_hash', 'created_at'
+        )
+    );
+    
+    return isset($columns[$table_name]) ? $columns[$table_name] : array();
+}
+
+/**
+ * Get critical columns that if missing should trigger error status
+ * 
+ * @since 1.6.0
+ * @param string $table_name
+ * @return array Critical columns
+ */
+private static function get_critical_columns_for_table($table_name) {
+    $critical = array(
+        'vas_form_results' => array('id', 'form_name', 'created_at', 'form_responses'),
+        'vas_form_events' => array('id', 'form_id', 'event_type', 'created_at'),
+        'survey_studies' => array('id', 'study_code', 'study_name', 'status'),
+        'survey_participants' => array('id', 'survey_id', 'email'),
+        'survey_waves' => array('id', 'study_id', 'form_id'),
+        'survey_assignments' => array('id', 'study_id', 'wave_id', 'participant_id')
+    );
+    
+    return isset($critical[$table_name]) ? $critical[$table_name] : array();
+}
+
+/**
+ * Get status for all monitored tables
+ * 
+ * @since 1.6.0
+ * @return array All tables status
+ */
+public static function get_all_tables_status() {
+    $tables = array(
+        'vas_form_results',
+        'vas_form_events',
+        'eipsi_randomization_configs',
+        'eipsi_randomization_assignments',
+        'survey_studies',
+        'survey_participants',
+        'survey_sessions',
+        'survey_waves',
+        'survey_assignments',
+        'survey_magic_links',
+        'survey_email_log',
+        'survey_audit_log',
+        'eipsi_longitudinal_pools',
+        'eipsi_longitudinal_pool_assignments',
+        'survey_participant_access_log',
+        'eipsi_device_data'
+    );
+    
+    $status = array();
+    foreach ($tables as $table) {
+        $status[$table] = self::get_detailed_table_status($table);
+    }
+    
+    return $status;
+}
+
+/**
+ * Repair a single table (create or add missing columns)
+ * 
+ * @since 1.6.0
+ * @param string $table_name Table name (without prefix)
+ * @return array Repair result
+ */
+public static function repair_single_table($table_name) {
+    global $wpdb;
+    $full_table_name = $wpdb->prefix . $table_name;
+    
+    $result = array(
+        'success' => false,
+        'table_name' => $table_name,
+        'created' => false,
+        'columns_added' => array(),
+        'columns_missing' => array(),
+        'error' => null,
+        'message' => ''
+    );
+    
+    // Get current status
+    $status = self::get_detailed_table_status($table_name);
+    
+    if (!$status['exists']) {
+        // Table doesn't exist - we need to call the appropriate sync function
+        $sync_method = 'sync_local_' . $table_name . '_table';
+        
+        // Map table names to sync methods
+        $sync_map = array(
+            'vas_form_results' => 'sync_local_results_table',
+            'vas_form_events' => 'sync_local_events_table',
+            'eipsi_randomization_configs' => 'sync_local_randomization_configs_table',
+            'eipsi_randomization_assignments' => 'sync_local_randomization_assignments_table',
+            'survey_studies' => 'sync_local_survey_studies_table',
+            'survey_participants' => 'sync_local_survey_participants_table',
+            'survey_sessions' => 'sync_local_survey_sessions_table',
+            'survey_waves' => 'sync_local_survey_waves_table',
+            'survey_assignments' => 'sync_local_survey_assignments_table',
+            'survey_magic_links' => 'sync_local_survey_magic_links_table',
+            'survey_email_log' => 'sync_local_survey_email_log_table',
+            'survey_audit_log' => 'sync_local_survey_audit_log_table',
+            'eipsi_longitudinal_pools' => 'sync_local_longitudinal_pools_table',
+            'eipsi_longitudinal_pool_assignments' => 'sync_local_longitudinal_pool_assignments_table',
+            'survey_participant_access_log' => 'sync_local_survey_participant_access_log_table',
+            'eipsi_device_data' => 'sync_local_device_data_table'
+        );
+        
+        if (isset($sync_map[$table_name]) && method_exists('EIPSI_Database_Schema_Manager', $sync_map[$table_name])) {
+            $sync_result = call_user_func(array('EIPSI_Database_Schema_Manager', $sync_map[$table_name]));
+            $result['created'] = $sync_result['created'] ?? false;
+            $result['columns_added'] = $sync_result['columns_added'] ?? array();
+            $result['success'] = $sync_result['success'] ?? false;
+            $result['error'] = $sync_result['error'] ?? null;
+            $result['message'] = $result['created'] ? 'Tabla creada exitosamente' : 'Error al crear tabla';
+            
+            error_log("[EIPSI Schema Repair] Table {$table_name}: created=" . ($result['created'] ? 'yes' : 'no') . 
+                      ", columns_added=" . count($result['columns_added']) . 
+                      ", error=" . ($result['error'] ?? 'none'));
+        } else {
+            $result['error'] = 'Método de sincronización no encontrado para: ' . $table_name;
+            $result['message'] = $result['error'];
+        }
+    } else {
+        // Table exists but has missing columns - add them
+        $required_columns = self::get_required_columns_for_table($table_name);
+        $missing_columns = array_diff($required_columns, $status['columns']);
+        
+        if (!empty($missing_columns)) {
+            // Get column definitions from the appropriate sync function
+            $column_definitions = self::get_column_definitions_for_table($table_name);
+            
+            foreach ($missing_columns as $column) {
+                if (isset($column_definitions[$column])) {
+                    $alter_sql = "ALTER TABLE {$full_table_name} ADD COLUMN {$column} {$column_definitions[$column]}";
+                    
+                    if (false !== $wpdb->query($alter_sql)) {
+                        $result['columns_added'][] = $column;
+                        error_log("[EIPSI Schema Repair] Added column {$column} to {$table_name}");
+                    } else {
+                        $result['columns_missing'][] = $column;
+                        error_log("[EIPSI Schema Repair] Failed to add column {$column} to {$table_name}: " . $wpdb->last_error);
+                    }
+                }
+            }
+        }
+        
+        $result['success'] = empty($result['columns_missing']);
+        $result['message'] = empty($result['columns_added']) 
+            ? 'No se requirieron cambios' 
+            : 'Columnas agregadas: ' . implode(', ', $result['columns_added']);
+    }
+    
+    // Update last verification timestamp
+    update_option('eipsi_schema_last_verified', current_time('mysql'));
+    
+    return $result;
+}
+
+/**
+ * Get column definitions for a table
+ * 
+ * @since 1.6.0
+ * @param string $table_name
+ * @return array Column definitions
+ */
+private static function get_column_definitions_for_table($table_name) {
+    $definitions = array(
+        'vas_form_results' => array(
+            'form_id' => 'varchar(20) DEFAULT NULL',
+            'participant_id' => 'varchar(20) DEFAULT NULL',
+            'survey_id' => 'INT(11) DEFAULT NULL',
+            'wave_index' => 'INT(11) DEFAULT NULL',
+            'session_id' => 'varchar(255) DEFAULT NULL',
+            'user_fingerprint' => 'varchar(255) DEFAULT NULL',
+            'browser' => 'varchar(100) DEFAULT NULL',
+            'os' => 'varchar(100) DEFAULT NULL',
+            'screen_width' => 'int(11) DEFAULT NULL',
+            'duration_seconds' => 'decimal(8,3) DEFAULT NULL',
+            'submitted_at' => 'datetime DEFAULT NULL',
+            'start_timestamp_ms' => 'bigint(20) DEFAULT NULL',
+            'end_timestamp_ms' => 'bigint(20) DEFAULT NULL',
+            'metadata' => 'LONGTEXT DEFAULT NULL',
+            "status" => "enum('pending','submitted','error') DEFAULT 'submitted'"
+        ),
+        'vas_form_events' => array(
+            'form_id' => 'varchar(255) NOT NULL DEFAULT \'\'',
+            'session_id' => 'varchar(255) NOT NULL DEFAULT \'\'',
+            'event_type' => 'varchar(50) NOT NULL DEFAULT \'\'',
+            'page_number' => 'int(11) DEFAULT NULL',
+            'metadata' => 'text DEFAULT NULL',
+            'user_agent' => 'text DEFAULT NULL',
+            'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'survey_studies' => array(
+            'study_code' => 'VARCHAR(50) NOT NULL',
+            'study_name' => 'VARCHAR(255) NOT NULL',
+            'description' => 'TEXT',
+            'principal_investigator_id' => 'BIGINT(20) UNSIGNED',
+            'status' => 'ENUM(\'active\', \'completed\', \'paused\', \'archived\') DEFAULT \'active\'',
+            'config' => 'JSON',
+            'created_at' => 'DATETIME NOT NULL',
+            'updated_at' => 'DATETIME NOT NULL'
+        ),
+        'survey_participants' => array(
+            'survey_id' => 'INT(11)',
+            'email' => 'VARCHAR(255) NOT NULL',
+            'password_hash' => 'VARCHAR(255)',
+            'first_name' => 'VARCHAR(100)',
+            'last_name' => 'VARCHAR(100)',
+            'created_at' => 'DATETIME NOT NULL',
+            'last_login_at' => 'DATETIME',
+            'is_active' => 'TINYINT(1) DEFAULT 1'
+        ),
+        'survey_sessions' => array(
+            'token' => 'VARCHAR(255) NOT NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'survey_id' => 'INT(11)',
+            'ip_address' => 'VARCHAR(45)',
+            'user_agent' => 'VARCHAR(500)',
+            'expires_at' => 'DATETIME NOT NULL',
+            'created_at' => 'DATETIME NOT NULL'
+        ),
+        'survey_waves' => array(
+            'study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'wave_index' => 'INT NOT NULL',
+            'name' => 'VARCHAR(255) NOT NULL',
+            'form_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'start_date' => 'DATETIME NULL',
+            'due_date' => 'DATETIME NULL',
+            'reminder_days' => 'INT DEFAULT 3',
+            'retry_enabled' => 'TINYINT(1) DEFAULT 1',
+            'retry_days' => 'INT DEFAULT 7',
+            'max_retries' => 'INT DEFAULT 3',
+            'has_time_limit' => 'TINYINT(1) DEFAULT 0',
+            'completion_time_limit' => 'INT DEFAULT NULL',
+            'status' => 'ENUM(\'draft\', \'active\', \'completed\', \'paused\') DEFAULT \'draft\'',
+            'is_mandatory' => 'TINYINT(1) DEFAULT 1',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+        ),
+        'survey_assignments' => array(
+            'study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'wave_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'status' => 'ENUM(\'pending\', \'in_progress\', \'submitted\', \'skipped\', \'expired\') DEFAULT \'pending\'',
+            'assigned_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+            'first_viewed_at' => 'DATETIME NULL',
+            'submitted_at' => 'DATETIME NULL',
+            'reminder_count' => 'INT DEFAULT 0',
+            'last_reminder_sent' => 'DATETIME NULL',
+            'retry_count' => 'INT DEFAULT 0',
+            'last_retry_sent' => 'DATETIME NULL',
+            'due_at' => 'DATETIME NULL',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+        ),
+        'survey_magic_links' => array(
+            'survey_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'token_hash' => 'VARCHAR(255) NOT NULL',
+            'token_plain' => 'VARCHAR(36)',
+            'expires_at' => 'DATETIME NOT NULL',
+            'used_at' => 'DATETIME NULL',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'survey_email_log' => array(
+            'survey_id' => 'BIGINT(20) UNSIGNED',
+            'participant_id' => 'BIGINT(20) UNSIGNED',
+            'email_type' => 'VARCHAR(50)',
+            'recipient_email' => 'VARCHAR(255)',
+            'subject' => 'VARCHAR(500)',
+            'content' => 'LONGTEXT',
+            'status' => 'VARCHAR(20) DEFAULT \'pending\'',
+            'sent_at' => 'DATETIME',
+            'error_message' => 'TEXT',
+            'magic_link_used' => 'TINYINT(1) DEFAULT 0',
+            'metadata' => 'JSON',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'survey_audit_log' => array(
+            'study_id' => 'BIGINT(20) UNSIGNED',
+            'participant_id' => 'BIGINT(20) UNSIGNED',
+            'action' => 'VARCHAR(100) NOT NULL',
+            'user_id' => 'BIGINT(20) UNSIGNED',
+            'user_email' => 'VARCHAR(255)',
+            'details' => 'TEXT',
+            'ip_address' => 'VARCHAR(45)',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'eipsi_longitudinal_pools' => array(
+            'name' => 'VARCHAR(255) NOT NULL',
+            'description' => 'TEXT',
+            'config' => 'JSON',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+        ),
+        'eipsi_longitudinal_pool_assignments' => array(
+            'pool_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'assigned_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'survey_participant_access_log' => array(
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'survey_id' => 'BIGINT(20) UNSIGNED',
+            'wave_id' => 'BIGINT(20) UNSIGNED',
+            'action' => 'VARCHAR(50) NOT NULL',
+            'ip_address' => 'VARCHAR(45)',
+            'user_agent' => 'TEXT',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'eipsi_device_data' => array(
+            'participant_id' => 'BIGINT(20) UNSIGNED',
+            'survey_id' => 'BIGINT(20) UNSIGNED',
+            'fingerprint_hash' => 'VARCHAR(255)',
+            'device_type' => 'VARCHAR(50)',
+            'device_name' => 'VARCHAR(255)',
+            'browser' => 'VARCHAR(100)',
+            'os' => 'VARCHAR(100)',
+            'screen_resolution' => 'VARCHAR(50)',
+            'language' => 'VARCHAR(20)',
+            'timezone' => 'VARCHAR(50)',
+            'raw_data' => 'JSON',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'eipsi_randomization_configs' => array(
+            'form_id' => 'varchar(255) NOT NULL',
+            'name' => 'varchar(255) NOT NULL',
+            'config' => 'LONGTEXT',
+            'created_at' => 'datetime NOT NULL',
+            'updated_at' => 'datetime NOT NULL'
+        ),
+        'eipsi_randomization_assignments' => array(
+            'config_id' => 'int(11) NOT NULL',
+            'user_fingerprint' => 'varchar(255) NOT NULL',
+            'assigned_form_id' => 'varchar(255) NOT NULL',
+            'assigned_at' => 'datetime NOT NULL'
+        )
+    );
+    
+    return isset($definitions[$table_name]) ? $definitions[$table_name] : array();
+}
+
+/**
+ * Get schema health summary
+ * 
+ * @since 1.6.0
+ * @return array Health summary
+ */
+public static function get_schema_health_summary() {
+    $all_tables = self::get_all_tables_status();
+    
+    $summary = array(
+        'total_tables' => count($all_tables),
+        'healthy_tables' => 0,
+        'warning_tables' => 0,
+        'error_tables' => 0,
+        'total_size_mb' => 0,
+        'total_rows' => 0,
+        'last_verified' => get_option('eipsi_schema_last_verified', null),
+        'issues' => array()
+    );
+    
+    foreach ($all_tables as $table) {
+        if ($table['status'] === 'ok') {
+            $summary['healthy_tables']++;
+        } elseif ($table['status'] === 'warning') {
+            $summary['warning_tables']++;
+        } else {
+            $summary['error_tables']++;
+        }
+        
+        $summary['total_size_mb'] += $table['size_mb'];
+        $summary['total_rows'] += $table['row_count'];
+        
+        if (!empty($table['issues'])) {
+            $summary['issues'][$table['table_name']] = $table['issues'];
+        }
+    }
+    
+    // Calculate health score (0-100)
+    if ($summary['total_tables'] > 0) {
+        $summary['health_score'] = round(
+            ($summary['healthy_tables'] * 100 + $summary['warning_tables'] * 50) / $summary['total_tables']
+        );
+    } else {
+        $summary['health_score'] = 0;
+    }
+    
+    return $summary;
+}
+
 }
 
 // =================================================================
@@ -3437,538 +3973,3 @@ function eipsi_sync_survey_audit_log_table() {
 add_action('eipsi_sync_longitudinal_tables', function() {
     eipsi_maybe_create_tables();
 });
-
-
-// =============================================================================
-// SCHEMA STATUS MONITORING METHODS (v1.6.0+)
-// =============================================================================
-
-/**
- * Get detailed status for a single table
- * 
- * @since 1.6.0
- * @param string $table_name Table name (without prefix)
- * @return array Detailed table status
- */
-public static function get_detailed_table_status($table_name) {
-    global $wpdb;
-    $full_table_name = $wpdb->prefix . $table_name;
-    
-    $result = array(
-        'table_name' => $table_name,
-        'full_table_name' => $full_table_name,
-        'exists' => false,
-        'row_count' => 0,
-        'columns' => array(),
-        'required_columns' => array(),
-        'missing_columns' => array(),
-        'indexes' => array(),
-        'size_mb' => 0,
-        'status' => 'error', // ok, warning, error
-        'issues' => array()
-    );
-    
-    // Check if table exists
-    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$full_table_name}'");
-    $result['exists'] = !empty($table_exists);
-    
-    if (!$result['exists']) {
-        $result['issues'][] = 'Tabla no existe';
-        return $result;
-    }
-    
-    // Get row count
-    $result['row_count'] = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$full_table_name}");
-    
-    // Get columns
-    $columns = $wpdb->get_results("SHOW COLUMNS FROM {$full_table_name}", ARRAY_A);
-    $result['columns'] = array_column($columns, 'Field');
-    
-    // Get required columns based on table type
-    $result['required_columns'] = self::get_required_columns_for_table($table_name);
-    $result['missing_columns'] = array_diff($result['required_columns'], $result['columns']);
-    
-    if (!empty($result['missing_columns'])) {
-        $result['issues'][] = 'Columnas faltantes: ' . implode(', ', $result['missing_columns']);
-    }
-    
-    // Get indexes
-    $indexes = $wpdb->get_results("SHOW INDEX FROM {$full_table_name}", ARRAY_A);
-    $result['indexes'] = array_unique(array_column($indexes, 'Key_name'));
-    
-    // Get table size
-    $size_result = $wpdb->get_row(
-        $wpdb->prepare(
-            "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb 
-            FROM information_schema.TABLES 
-            WHERE table_schema = %s AND table_name = %s",
-            DB_NAME,
-            $full_table_name
-        )
-    );
-    $result['size_mb'] = $size_result ? floatval($size_result->size_mb) : 0;
-    
-    // Determine status
-    if (empty($result['missing_columns'])) {
-        $result['status'] = 'ok';
-    } else {
-        // Check if missing columns are critical
-        $critical_missing = array_intersect($result['missing_columns'], self::get_critical_columns_for_table($table_name));
-        if (!empty($critical_missing)) {
-            $result['status'] = 'error';
-        } else {
-            $result['status'] = 'warning';
-        }
-    }
-    
-    return $result;
-}
-
-/**
- * Get required columns for each table
- * 
- * @since 1.6.0
- * @param string $table_name
- * @return array Required columns
- */
-private static function get_required_columns_for_table($table_name) {
-    $columns = array(
-        'vas_form_results' => array(
-            'id', 'form_id', 'participant_id', 'session_id', 'form_name', 'created_at', 
-            'device', 'ip_address', 'status', 'form_responses'
-        ),
-        'vas_form_events' => array(
-            'id', 'form_id', 'session_id', 'event_type', 'created_at'
-        ),
-        'eipsi_randomization_configs' => array(
-            'id', 'form_id', 'name', 'created_at'
-        ),
-        'eipsi_randomization_assignments' => array(
-            'id', 'config_id', 'user_fingerprint', 'assigned_form_id', 'assigned_at'
-        ),
-        'survey_studies' => array(
-            'id', 'study_code', 'study_name', 'status', 'created_at', 'updated_at'
-        ),
-        'survey_participants' => array(
-            'id', 'survey_id', 'email', 'created_at', 'is_active'
-        ),
-        'survey_sessions' => array(
-            'id', 'token', 'participant_id', 'expires_at', 'created_at'
-        ),
-        'survey_waves' => array(
-            'id', 'study_id', 'wave_index', 'name', 'form_id', 'status', 'created_at'
-        ),
-        'survey_assignments' => array(
-            'id', 'study_id', 'wave_id', 'participant_id', 'status', 'assigned_at'
-        ),
-        'survey_magic_links' => array(
-            'id', 'survey_id', 'participant_id', 'token_hash', 'expires_at', 'created_at'
-        ),
-        'survey_email_log' => array(
-            'id', 'survey_id', 'participant_id', 'email_type', 'recipient_email', 'status', 'sent_at'
-        ),
-        'survey_audit_log' => array(
-            'id', 'study_id', 'participant_id', 'action', 'created_at'
-        ),
-        'eipsi_longitudinal_pools' => array(
-            'id', 'name', 'created_at'
-        ),
-        'eipsi_longitudinal_pool_assignments' => array(
-            'id', 'pool_id', 'participant_id', 'assigned_at'
-        ),
-        'survey_participant_access_log' => array(
-            'id', 'participant_id', 'survey_id', 'action', 'created_at'
-        ),
-        'eipsi_device_data' => array(
-            'id', 'participant_id', 'survey_id', 'fingerprint_hash', 'created_at'
-        )
-    );
-    
-    return isset($columns[$table_name]) ? $columns[$table_name] : array();
-}
-
-/**
- * Get critical columns that if missing should trigger error status
- * 
- * @since 1.6.0
- * @param string $table_name
- * @return array Critical columns
- */
-private static function get_critical_columns_for_table($table_name) {
-    $critical = array(
-        'vas_form_results' => array('id', 'form_name', 'created_at', 'form_responses'),
-        'vas_form_events' => array('id', 'form_id', 'event_type', 'created_at'),
-        'survey_studies' => array('id', 'study_code', 'study_name', 'status'),
-        'survey_participants' => array('id', 'survey_id', 'email'),
-        'survey_waves' => array('id', 'study_id', 'form_id'),
-        'survey_assignments' => array('id', 'study_id', 'wave_id', 'participant_id')
-    );
-    
-    return isset($critical[$table_name]) ? $critical[$table_name] : array();
-}
-
-/**
- * Get status for all monitored tables
- * 
- * @since 1.6.0
- * @return array All tables status
- */
-public static function get_all_tables_status() {
-    $tables = array(
-        'vas_form_results',
-        'vas_form_events',
-        'eipsi_randomization_configs',
-        'eipsi_randomization_assignments',
-        'survey_studies',
-        'survey_participants',
-        'survey_sessions',
-        'survey_waves',
-        'survey_assignments',
-        'survey_magic_links',
-        'survey_email_log',
-        'survey_audit_log',
-        'eipsi_longitudinal_pools',
-        'eipsi_longitudinal_pool_assignments',
-        'survey_participant_access_log',
-        'eipsi_device_data'
-    );
-    
-    $status = array();
-    foreach ($tables as $table) {
-        $status[$table] = self::get_detailed_table_status($table);
-    }
-    
-    return $status;
-}
-
-/**
- * Repair a single table (create or add missing columns)
- * 
- * @since 1.6.0
- * @param string $table_name Table name (without prefix)
- * @return array Repair result
- */
-public static function repair_single_table($table_name) {
-    global $wpdb;
-    $full_table_name = $wpdb->prefix . $table_name;
-    
-    $result = array(
-        'success' => false,
-        'table_name' => $table_name,
-        'created' => false,
-        'columns_added' => array(),
-        'columns_missing' => array(),
-        'error' => null,
-        'message' => ''
-    );
-    
-    // Get current status
-    $status = self::get_detailed_table_status($table_name);
-    
-    if (!$status['exists']) {
-        // Table doesn't exist - we need to call the appropriate sync function
-        $sync_method = 'sync_local_' . $table_name . '_table';
-        
-        // Map table names to sync methods
-        $sync_map = array(
-            'vas_form_results' => 'sync_local_results_table',
-            'vas_form_events' => 'sync_local_events_table',
-            'eipsi_randomization_configs' => 'sync_local_randomization_configs_table',
-            'eipsi_randomization_assignments' => 'sync_local_randomization_assignments_table',
-            'survey_studies' => 'sync_local_survey_studies_table',
-            'survey_participants' => 'sync_local_survey_participants_table',
-            'survey_sessions' => 'sync_local_survey_sessions_table',
-            'survey_waves' => 'sync_local_survey_waves_table',
-            'survey_assignments' => 'sync_local_survey_assignments_table',
-            'survey_magic_links' => 'sync_local_survey_magic_links_table',
-            'survey_email_log' => 'sync_local_survey_email_log_table',
-            'survey_audit_log' => 'sync_local_survey_audit_log_table',
-            'eipsi_longitudinal_pools' => 'sync_local_longitudinal_pools_table',
-            'eipsi_longitudinal_pool_assignments' => 'sync_local_longitudinal_pool_assignments_table',
-            'survey_participant_access_log' => 'sync_local_survey_participant_access_log_table',
-            'eipsi_device_data' => 'sync_local_device_data_table'
-        );
-        
-        if (isset($sync_map[$table_name]) && method_exists('EIPSI_Database_Schema_Manager', $sync_map[$table_name])) {
-            $sync_result = call_user_func(array('EIPSI_Database_Schema_Manager', $sync_map[$table_name]));
-            $result['created'] = $sync_result['created'] ?? false;
-            $result['columns_added'] = $sync_result['columns_added'] ?? array();
-            $result['success'] = $sync_result['success'] ?? false;
-            $result['error'] = $sync_result['error'] ?? null;
-            $result['message'] = $result['created'] ? 'Tabla creada exitosamente' : 'Error al crear tabla';
-            
-            error_log("[EIPSI Schema Repair] Table {$table_name}: created=" . ($result['created'] ? 'yes' : 'no') . 
-                      ", columns_added=" . count($result['columns_added']) . 
-                      ", error=" . ($result['error'] ?? 'none'));
-        } else {
-            $result['error'] = 'Método de sincronización no encontrado para: ' . $table_name;
-            $result['message'] = $result['error'];
-        }
-    } else {
-        // Table exists but has missing columns - add them
-        $required_columns = self::get_required_columns_for_table($table_name);
-        $missing_columns = array_diff($required_columns, $status['columns']);
-        
-        if (!empty($missing_columns)) {
-            // Get column definitions from the appropriate sync function
-            $column_definitions = self::get_column_definitions_for_table($table_name);
-            
-            foreach ($missing_columns as $column) {
-                if (isset($column_definitions[$column])) {
-                    $alter_sql = "ALTER TABLE {$full_table_name} ADD COLUMN {$column} {$column_definitions[$column]}";
-                    
-                    if (false !== $wpdb->query($alter_sql)) {
-                        $result['columns_added'][] = $column;
-                        error_log("[EIPSI Schema Repair] Added column {$column} to {$table_name}");
-                    } else {
-                        $result['columns_missing'][] = $column;
-                        error_log("[EIPSI Schema Repair] Failed to add column {$column} to {$table_name}: " . $wpdb->last_error);
-                    }
-                }
-            }
-        }
-        
-        $result['success'] = empty($result['columns_missing']);
-        $result['message'] = empty($result['columns_added']) 
-            ? 'No se requirieron cambios' 
-            : 'Columnas agregadas: ' . implode(', ', $result['columns_added']);
-    }
-    
-    // Update last verification timestamp
-    update_option('eipsi_schema_last_verified', current_time('mysql'));
-    
-    return $result;
-}
-
-/**
- * Get column definitions for a table
- * 
- * @since 1.6.0
- * @param string $table_name
- * @return array Column definitions
- */
-private static function get_column_definitions_for_table($table_name) {
-    $definitions = array(
-        'vas_form_results' => array(
-            'form_id' => 'varchar(20) DEFAULT NULL',
-            'participant_id' => 'varchar(20) DEFAULT NULL',
-            'survey_id' => 'INT(11) DEFAULT NULL',
-            'wave_index' => 'INT(11) DEFAULT NULL',
-            'session_id' => 'varchar(255) DEFAULT NULL',
-            'user_fingerprint' => 'varchar(255) DEFAULT NULL',
-            'browser' => 'varchar(100) DEFAULT NULL',
-            'os' => 'varchar(100) DEFAULT NULL',
-            'screen_width' => 'int(11) DEFAULT NULL',
-            'duration_seconds' => 'decimal(8,3) DEFAULT NULL',
-            'submitted_at' => 'datetime DEFAULT NULL',
-            'start_timestamp_ms' => 'bigint(20) DEFAULT NULL',
-            'end_timestamp_ms' => 'bigint(20) DEFAULT NULL',
-            'metadata' => 'LONGTEXT DEFAULT NULL',
-            "status" => "enum('pending','submitted','error') DEFAULT 'submitted'"
-        ),
-        'vas_form_events' => array(
-            'form_id' => 'varchar(255) NOT NULL DEFAULT \'\'',
-            'session_id' => 'varchar(255) NOT NULL DEFAULT \'\'',
-            'event_type' => 'varchar(50) NOT NULL DEFAULT \'\'',
-            'page_number' => 'int(11) DEFAULT NULL',
-            'metadata' => 'text DEFAULT NULL',
-            'user_agent' => 'text DEFAULT NULL',
-            'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'survey_studies' => array(
-            'study_code' => 'VARCHAR(50) NOT NULL',
-            'study_name' => 'VARCHAR(255) NOT NULL',
-            'description' => 'TEXT',
-            'principal_investigator_id' => 'BIGINT(20) UNSIGNED',
-            'status' => 'ENUM(\'active\', \'completed\', \'paused\', \'archived\') DEFAULT \'active\'',
-            'config' => 'JSON',
-            'created_at' => 'DATETIME NOT NULL',
-            'updated_at' => 'DATETIME NOT NULL'
-        ),
-        'survey_participants' => array(
-            'survey_id' => 'INT(11)',
-            'email' => 'VARCHAR(255) NOT NULL',
-            'password_hash' => 'VARCHAR(255)',
-            'first_name' => 'VARCHAR(100)',
-            'last_name' => 'VARCHAR(100)',
-            'created_at' => 'DATETIME NOT NULL',
-            'last_login_at' => 'DATETIME',
-            'is_active' => 'TINYINT(1) DEFAULT 1'
-        ),
-        'survey_sessions' => array(
-            'token' => 'VARCHAR(255) NOT NULL',
-            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'survey_id' => 'INT(11)',
-            'ip_address' => 'VARCHAR(45)',
-            'user_agent' => 'VARCHAR(500)',
-            'expires_at' => 'DATETIME NOT NULL',
-            'created_at' => 'DATETIME NOT NULL'
-        ),
-        'survey_waves' => array(
-            'study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'wave_index' => 'INT NOT NULL',
-            'name' => 'VARCHAR(255) NOT NULL',
-            'form_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'start_date' => 'DATETIME NULL',
-            'due_date' => 'DATETIME NULL',
-            'reminder_days' => 'INT DEFAULT 3',
-            'retry_enabled' => 'TINYINT(1) DEFAULT 1',
-            'retry_days' => 'INT DEFAULT 7',
-            'max_retries' => 'INT DEFAULT 3',
-            'has_time_limit' => 'TINYINT(1) DEFAULT 0',
-            'completion_time_limit' => 'INT DEFAULT NULL',
-            'status' => 'ENUM(\'draft\', \'active\', \'completed\', \'paused\') DEFAULT \'draft\'',
-            'is_mandatory' => 'TINYINT(1) DEFAULT 1',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
-            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
-        ),
-        'survey_assignments' => array(
-            'study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'wave_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'status' => 'ENUM(\'pending\', \'in_progress\', \'submitted\', \'skipped\', \'expired\') DEFAULT \'pending\'',
-            'assigned_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
-            'first_viewed_at' => 'DATETIME NULL',
-            'submitted_at' => 'DATETIME NULL',
-            'reminder_count' => 'INT DEFAULT 0',
-            'last_reminder_sent' => 'DATETIME NULL',
-            'retry_count' => 'INT DEFAULT 0',
-            'last_retry_sent' => 'DATETIME NULL',
-            'due_at' => 'DATETIME NULL',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
-            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
-        ),
-        'survey_magic_links' => array(
-            'survey_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'token_hash' => 'VARCHAR(255) NOT NULL',
-            'token_plain' => 'VARCHAR(36)',
-            'expires_at' => 'DATETIME NOT NULL',
-            'used_at' => 'DATETIME NULL',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'survey_email_log' => array(
-            'survey_id' => 'BIGINT(20) UNSIGNED',
-            'participant_id' => 'BIGINT(20) UNSIGNED',
-            'email_type' => 'VARCHAR(50)',
-            'recipient_email' => 'VARCHAR(255)',
-            'subject' => 'VARCHAR(500)',
-            'content' => 'LONGTEXT',
-            'status' => 'VARCHAR(20) DEFAULT \'pending\'',
-            'sent_at' => 'DATETIME',
-            'error_message' => 'TEXT',
-            'magic_link_used' => 'TINYINT(1) DEFAULT 0',
-            'metadata' => 'JSON',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'survey_audit_log' => array(
-            'study_id' => 'BIGINT(20) UNSIGNED',
-            'participant_id' => 'BIGINT(20) UNSIGNED',
-            'action' => 'VARCHAR(100) NOT NULL',
-            'user_id' => 'BIGINT(20) UNSIGNED',
-            'user_email' => 'VARCHAR(255)',
-            'details' => 'TEXT',
-            'ip_address' => 'VARCHAR(45)',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'eipsi_longitudinal_pools' => array(
-            'name' => 'VARCHAR(255) NOT NULL',
-            'description' => 'TEXT',
-            'config' => 'JSON',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
-            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
-        ),
-        'eipsi_longitudinal_pool_assignments' => array(
-            'pool_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'assigned_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'survey_participant_access_log' => array(
-            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'survey_id' => 'BIGINT(20) UNSIGNED',
-            'wave_id' => 'BIGINT(20) UNSIGNED',
-            'action' => 'VARCHAR(50) NOT NULL',
-            'ip_address' => 'VARCHAR(45)',
-            'user_agent' => 'TEXT',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'eipsi_device_data' => array(
-            'participant_id' => 'BIGINT(20) UNSIGNED',
-            'survey_id' => 'BIGINT(20) UNSIGNED',
-            'fingerprint_hash' => 'VARCHAR(255)',
-            'device_type' => 'VARCHAR(50)',
-            'device_name' => 'VARCHAR(255)',
-            'browser' => 'VARCHAR(100)',
-            'os' => 'VARCHAR(100)',
-            'screen_resolution' => 'VARCHAR(50)',
-            'language' => 'VARCHAR(20)',
-            'timezone' => 'VARCHAR(50)',
-            'raw_data' => 'JSON',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'eipsi_randomization_configs' => array(
-            'form_id' => 'varchar(255) NOT NULL',
-            'name' => 'varchar(255) NOT NULL',
-            'config' => 'LONGTEXT',
-            'created_at' => 'datetime NOT NULL',
-            'updated_at' => 'datetime NOT NULL'
-        ),
-        'eipsi_randomization_assignments' => array(
-            'config_id' => 'int(11) NOT NULL',
-            'user_fingerprint' => 'varchar(255) NOT NULL',
-            'assigned_form_id' => 'varchar(255) NOT NULL',
-            'assigned_at' => 'datetime NOT NULL'
-        )
-    );
-    
-    return isset($definitions[$table_name]) ? $definitions[$table_name] : array();
-}
-
-/**
- * Get schema health summary
- * 
- * @since 1.6.0
- * @return array Health summary
- */
-public static function get_schema_health_summary() {
-    $all_tables = self::get_all_tables_status();
-    
-    $summary = array(
-        'total_tables' => count($all_tables),
-        'healthy_tables' => 0,
-        'warning_tables' => 0,
-        'error_tables' => 0,
-        'total_size_mb' => 0,
-        'total_rows' => 0,
-        'last_verified' => get_option('eipsi_schema_last_verified', null),
-        'issues' => array()
-    );
-    
-    foreach ($all_tables as $table) {
-        if ($table['status'] === 'ok') {
-            $summary['healthy_tables']++;
-        } elseif ($table['status'] === 'warning') {
-            $summary['warning_tables']++;
-        } else {
-            $summary['error_tables']++;
-        }
-        
-        $summary['total_size_mb'] += $table['size_mb'];
-        $summary['total_rows'] += $table['row_count'];
-        
-        if (!empty($table['issues'])) {
-            $summary['issues'][$table['table_name']] = $table['issues'];
-        }
-    }
-    
-    // Calculate health score (0-100)
-    if ($summary['total_tables'] > 0) {
-        $summary['health_score'] = round(
-            ($summary['healthy_tables'] * 100 + $summary['warning_tables'] * 50) / $summary['total_tables']
-        );
-    } else {
-        $summary['health_score'] = 0;
-    }
-    
-    return $summary;
-}
