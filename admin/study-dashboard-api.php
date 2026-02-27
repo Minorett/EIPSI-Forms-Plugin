@@ -504,23 +504,67 @@ function wp_ajax_eipsi_add_participant_handler() {
 
     $participant_id = $participant_result['participant_id'];
 
-    // Enviar invitación por email
-    $email_sent = EIPSI_Email_Service::send_welcome_email($study_id, $participant_id);
-
-    if ($email_sent) {
-        wp_send_json_success(array(
-            'message' => 'Participante creado exitosamente e invitación enviada',
-            'participant_id' => $participant_id,
-            'email_sent' => true,
-            'temporary_password' => $password // Include for backward compatibility
-        ));
+    // Check if double opt-in is enabled
+    $double_optin_enabled = defined('EIPSI_DOUBLE_OPTIN_ENABLED') ? EIPSI_DOUBLE_OPTIN_ENABLED : true;
+    
+    if ($double_optin_enabled) {
+        // Load confirmation service
+        if (!class_exists('EIPSI_Email_Confirmation_Service')) {
+            require_once plugin_dir_path(__FILE__) . 'services/class-email-confirmation-service.php';
+        }
+        
+        // Set participant as inactive initially (pending confirmation)
+        EIPSI_Participant_Service::set_active($participant_id, false);
+        
+        // Generate confirmation token
+        $confirmation_result = EIPSI_Email_Confirmation_Service::generate_confirmation_token($study_id, $participant_id, $email);
+        
+        if (!$confirmation_result['success']) {
+            wp_send_json_error('Error al generar el token de confirmación');
+        }
+        
+        // Send confirmation email
+        if (!class_exists('EIPSI_Email_Service')) {
+            require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+        }
+        
+        $email_sent = EIPSI_Email_Service::send_confirmation_email($study_id, $participant_id, $confirmation_result['token']);
+        
+        if ($email_sent) {
+            wp_send_json_success(array(
+                'message' => 'Participante creado. Se ha enviado un email de confirmación.',
+                'participant_id' => $participant_id,
+                'email_sent' => true,
+                'double_optin' => true
+            ));
+        } else {
+            wp_send_json_success(array(
+                'message' => 'Participante creado, pero el email de confirmación no pudo ser enviado',
+                'participant_id' => $participant_id,
+                'email_sent' => false,
+                'double_optin' => true
+            ));
+        }
     } else {
-        wp_send_json_success(array(
-            'message' => 'Participante creado exitosamente, pero hubo un problema enviando el email',
-            'participant_id' => $participant_id,
-            'email_sent' => false,
-            'temporary_password' => $password // Include for backward compatibility
-        ));
+        // Original flow without double opt-in
+        // Enviar invitación por email
+        $email_sent = EIPSI_Email_Service::send_welcome_email($study_id, $participant_id);
+
+        if ($email_sent) {
+            wp_send_json_success(array(
+                'message' => 'Participante creado exitosamente e invitación enviada',
+                'participant_id' => $participant_id,
+                'email_sent' => true,
+                'temporary_password' => $password // Include for backward compatibility
+            ));
+        } else {
+            wp_send_json_success(array(
+                'message' => 'Participante creado exitosamente, pero hubo un problema enviando el email',
+                'participant_id' => $participant_id,
+                'email_sent' => false,
+                'temporary_password' => $password // Include for backward compatibility
+            ));
+        }
     }
 }
 
@@ -1510,6 +1554,46 @@ function wp_ajax_eipsi_send_magic_link_handler() {
     // Load Email Service
     if (!class_exists('EIPSI_Email_Service')) {
         require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    // Check if double opt-in is enabled and participant needs confirmation
+    $double_optin_enabled = defined('EIPSI_DOUBLE_OPTIN_ENABLED') ? EIPSI_DOUBLE_OPTIN_ENABLED : true;
+    
+    if ($double_optin_enabled) {
+        // Load participant service to check status
+        if (!class_exists('EIPSI_Participant_Service')) {
+            require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+        }
+        
+        // Check if participant is active (confirmed) or still pending
+        global $wpdb;
+        $participant = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+            $participant_id
+        ));
+        
+        if ($participant && !$participant->is_active) {
+            // Participant not confirmed - send confirmation instead
+            if (!class_exists('EIPSI_Email_Confirmation_Service')) {
+                require_once plugin_dir_path(__FILE__) . 'services/class-email-confirmation-service.php';
+            }
+            
+            $resend_result = EIPSI_Email_Confirmation_Service::resend_confirmation_email($participant_id);
+            
+            if ($resend_result['success']) {
+                wp_send_json_error(array(
+                    'message' => 'El participante aún no ha confirmado su email. Se ha reenviado el email de confirmación.',
+                    'needs_confirmation' => true
+                ));
+            } else {
+                wp_send_json_error(array(
+                    'message' => 'El participante aún no ha confirmado su email y no se pudo reenviar el correo de confirmación.',
+                    'needs_confirmation' => true,
+                    'error' => $resend_result['error']
+                ));
+            }
+            return;
+        }
     }
 
     $result = EIPSI_Email_Service::send_magic_link_email($study_id, $participant_id, $custom_message);
