@@ -94,6 +94,7 @@ class EIPSI_Database_Schema_Manager {
             $magic_links_sync = self::sync_local_survey_magic_links_table();
             $email_log_sync = self::sync_local_survey_email_log_table();
             $audit_log_sync = self::sync_local_survey_audit_log_table();
+            $email_confirmations_sync = self::sync_local_survey_email_confirmations_table();
             $longitudinal_pools_sync = self::sync_local_longitudinal_pools_table();
             $longitudinal_pool_assignments_sync = self::sync_local_longitudinal_pool_assignments_table();
             // Phase 2 - Participant Access Log (v2.0.0)
@@ -116,6 +117,7 @@ class EIPSI_Database_Schema_Manager {
             $results['survey_magic_links_table'] = $magic_links_sync;
             $results['survey_email_log_table'] = $email_log_sync;
             $results['survey_audit_log_table'] = $audit_log_sync;
+            $results['survey_email_confirmations_table'] = $email_confirmations_sync;
             $results['longitudinal_pools_table'] = $longitudinal_pools_sync;
             $results['longitudinal_pool_assignments_table'] = $longitudinal_pool_assignments_sync;
             $results['survey_participant_access_log_table'] = $participant_access_log_sync;
@@ -166,7 +168,10 @@ class EIPSI_Database_Schema_Manager {
                     $results['errors'][] = $email_log_sync['error'];
                 }
                 if ( ! $audit_log_sync['success'] ) {
-                    $results['errors'][] = $audit_log_sync['error'];
+                    $results['errors'][] = $email_confirmations_sync['error'];
+                }
+                if ( ! $email_confirmations_sync['success'] ) {
+                    $results['errors'][] = $email_confirmations_sync['error'];
                 }
                 if ( ! $longitudinal_pools_sync['success'] ) {
                     $results['errors'][] = $longitudinal_pools_sync['error'];
@@ -1098,6 +1103,7 @@ class EIPSI_Database_Schema_Manager {
         $repair_log['survey_email_log_table']['columns_added'] = $email_log_sync['columns_added'];
 
         $audit_log_sync = self::sync_local_survey_audit_log_table();
+            $email_confirmations_sync = self::sync_local_survey_email_confirmations_table();
         $repair_log['survey_audit_log_table']['exists'] = $audit_log_sync['exists'];
         $repair_log['survey_audit_log_table']['created'] = $audit_log_sync['created'];
         $repair_log['survey_audit_log_table']['columns_added'] = $audit_log_sync['columns_added'];
@@ -2324,6 +2330,104 @@ class EIPSI_Database_Schema_Manager {
         return $result;
     }
 
+    /**
+     * Sync wp_survey_email_confirmations table in local DB
+     * Stores email confirmation tokens for double opt-in
+     * 
+     * @since 1.5.0
+     * @return array Result with success status and details
+     */
+    private static function sync_local_survey_email_confirmations_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'survey_email_confirmations';
+        $charset_collate = $wpdb->get_charset_collate();
+        
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+        
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+        
+        if ( ! $result['exists'] ) {
+            // Create table for double opt-in (v1.5.0)
+            $sql = "CREATE TABLE {$table_name} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                survey_id INT(11) NOT NULL,
+                participant_id BIGINT(20) UNSIGNED NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                token_hash VARCHAR(64) NOT NULL,
+                token_plain VARCHAR(64) NOT NULL,
+                expires_at DATETIME NOT NULL,
+                confirmed_at DATETIME NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_participant (participant_id),
+                KEY idx_email (email),
+                KEY idx_token_hash (token_hash),
+                KEY idx_expires_at (expires_at),
+                KEY idx_confirmed_at (confirmed_at),
+                UNIQUE KEY idx_participant_email (participant_id, email)
+            ) {$charset_collate};";
+            
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+            
+            $result['created'] = true;
+            $result['exists'] = true;
+            
+            error_log( '[EIPSI Forms] Created table: ' . $table_name );
+        }
+        
+        // Ensure required columns exist (for future migrations)
+        $required_columns = array(
+            'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id INT(11) NOT NULL AFTER id",
+            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NOT NULL AFTER survey_id",
+            'email' => "ALTER TABLE {$table_name} ADD COLUMN email VARCHAR(255) NOT NULL AFTER participant_id",
+            'token_hash' => "ALTER TABLE {$table_name} ADD COLUMN token_hash VARCHAR(64) NOT NULL AFTER email",
+            'token_plain' => "ALTER TABLE {$table_name} ADD COLUMN token_plain VARCHAR(64) NOT NULL AFTER token_hash",
+            'expires_at' => "ALTER TABLE {$table_name} ADD COLUMN expires_at DATETIME NOT NULL AFTER token_plain",
+            'confirmed_at' => "ALTER TABLE {$table_name} ADD COLUMN confirmed_at DATETIME NULL AFTER expires_at",
+            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP AFTER confirmed_at",
+        );
+        
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $table_name,
+                    $column
+                )
+            );
+            
+            if ( empty( $column_exists ) ) {
+                if ( false !== $wpdb->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                    error_log( "[EIPSI Forms] Added missing column '{$column}' to {$table_name}" );
+                } else {
+                    $result['columns_missing'][] = $column;
+                    $result['success'] = false;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
+                    }
+                }
+            }
+        }
+        
+        // Ensure security indices
+        self::ensure_local_index( $table_name, 'token_hash' );
+        self::ensure_local_index( $table_name, 'expires_at' );
+        
+        return $result;
+    }
     /**
      * Sync wp_eipsi_longitudinal_pools table in local DB
      *

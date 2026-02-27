@@ -24,6 +24,187 @@ class EIPSI_Survey_Access_Handler {
         
         // Add rewrite rule just in case (optional, but good for cleanliness)
         add_action('init', array($this, 'add_rewrite_rules'));
+        
+        // Also handle email confirmation at root level
+        add_action('template_redirect', array($this, 'handle_confirmation_request'));
+    }
+
+    /**
+     * Handle email confirmation request
+     * Endpoint: /?eipsi_confirm=TOKEN&email=EMAIL
+     * 
+     * @since 1.5.0
+     */
+    public function handle_confirmation_request() {
+        // Check for confirmation parameter
+        $confirm_token = isset($_GET['eipsi_confirm']) ? sanitize_text_field($_GET['eipsi_confirm']) : '';
+        $confirm_email = isset($_GET['email']) ? sanitize_email($_GET['email']) : '';
+        
+        if (empty($confirm_token) || empty($confirm_email)) {
+            return; // Not a confirmation request
+        }
+        
+        // Prevent caching
+        nocache_headers();
+        
+        // Load required services
+        if (!class_exists('EIPSI_Email_Confirmation_Service')) {
+            $service_path = EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-confirmation-service.php';
+            if (file_exists($service_path)) {
+                require_once $service_path;
+            } else {
+                $this->render_confirmation_error('Error del Sistema', 'El servicio de confirmación no está disponible.');
+                return;
+            }
+        }
+        
+        // Validate token
+        $validation_result = EIPSI_Email_Confirmation_Service::validate_confirmation_token($confirm_token, $confirm_email);
+        
+        if (!$validation_result['success']) {
+            $this->handle_confirmation_error($validation_result['error']);
+            return;
+        }
+        
+        // Mark confirmation as completed
+        $mark_result = EIPSI_Email_Confirmation_Service::mark_confirmed($confirm_token, $confirm_email);
+        if (!$mark_result['success']) {
+            $this->render_confirmation_error('Error', 'No se pudo completar la confirmación. Por favor, contacta al administrador.');
+            return;
+        }
+        
+        // Activate the participant (set is_active = 1)
+        global $wpdb;
+        $participant_id = $validation_result['participant_id'];
+        $survey_id = $validation_result['survey_id'];
+        
+        $wpdb->update(
+            $wpdb->prefix . 'survey_participants',
+            array('is_active' => 1, 'updated_at' => current_time('mysql')),
+            array('id' => $participant_id),
+            array('%d', '%s'),
+            array('%d')
+        );
+        
+        // Send welcome email with magic link
+        if (!class_exists('EIPSI_Email_Service')) {
+            $email_service_path = EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
+            if (file_exists($email_service_path)) {
+                require_once $email_service_path;
+            }
+        }
+        
+        if (class_exists('EIPSI_Email_Service')) {
+            EIPSI_Email_Service::send_welcome_after_confirmation($survey_id, $participant_id);
+        }
+        
+        // Render success page
+        $this->render_confirmation_success($validation_result['email']);
+    }
+    
+    /**
+     * Handle confirmation errors
+     */
+    private function handle_confirmation_error($error) {
+        $title = 'Confirmación fallida';
+        $message = 'El enlace de confirmación no es válido.';
+        
+        switch ($error) {
+            case 'invalid_token':
+                $message = 'El enlace de confirmación no es válido o ya ha sido utilizado.';
+                break;
+            case 'token_expired':
+                $title = 'Enlace expirado';
+                $message = 'Este enlace de confirmación ha expirado. Por favor, solicita un nuevo enlace de confirmación desde el panel del estudio.';
+                break;
+            case 'invalid_parameters':
+            default:
+                $message = 'El enlace de confirmación está incompleto o es inválido.';
+                break;
+        }
+        
+        $this->render_confirmation_error($title, $message);
+    }
+    
+    /**
+     * Render confirmation success page
+     */
+    private function render_confirmation_success($email) {
+        status_header(200);
+        
+        ?>
+        <!DOCTYPE html>
+        <html <?php language_attributes(); ?>>
+        <head>
+            <meta charset="<?php bloginfo('charset'); ?>">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Email confirmado - EIPSI Forms</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; margin: 0; padding: 20px; }
+                .container { max-width: 500px; margin: 40px auto; background: #fff; border-radius: 8px; padding: 40px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+                .success-icon { font-size: 60px; color: #28a745; margin-bottom: 20px; }
+                h1 { color: #28a745; margin: 0 0 20px; font-size: 24px; }
+                p { margin: 0 0 15px; color: #555; }
+                .email-note { background: #e7f3ff; padding: 15px; border-radius: 4px; margin: 20px 0; font-size: 14px; }
+                .footer { margin-top: 30px; font-size: 13px; color: #888; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="success-icon">✓</div>
+                <h1>¡Email confirmado!</h1>
+                <p>Tu dirección de email ha sido verificada correctamente.</p>
+                <div class="email-note">
+                    <strong>¡Revisa tu bandeja de entrada!</strong><br>
+                    Te hemos enviado un email con el enlace de acceso al estudio.<br>
+                    <em>(<?php echo esc_html($email); ?>)</em>
+                </div>
+                <p>Si no recibes el email en los próximos minutos, revisa tu carpeta de spam o contacta al investigador.</p>
+                <div class="footer">
+                    <p>© <?php echo date('Y'); ?> EIPSI Forms</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        exit;
+    }
+    
+    /**
+     * Render confirmation error page
+     */
+    private function render_confirmation_error($title, $message) {
+        status_header(403);
+        
+        ?>
+        <!DOCTYPE html>
+        <html <?php language_attributes(); ?>>
+        <head>
+            <meta charset="<?php bloginfo('charset'); ?>">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title><?php echo esc_html($title); ?> - EIPSI Forms</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; margin: 0; padding: 20px; }
+                .container { max-width: 500px; margin: 40px auto; background: #fff; border-radius: 8px; padding: 40px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+                .error-icon { font-size: 60px; color: #dc3545; margin-bottom: 20px; }
+                h1 { color: #dc3545; margin: 0 0 20px; font-size: 24px; }
+                p { margin: 0 0 15px; color: #555; }
+                .footer { margin-top: 30px; font-size: 13px; color: #888; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="error-icon">⚠</div>
+                <h1><?php echo esc_html($title); ?></h1>
+                <p><?php echo esc_html($message); ?></p>
+                <div class="footer">
+                    <p>© <?php echo date('Y'); ?> EIPSI Forms</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        exit;
     }
 
     /**

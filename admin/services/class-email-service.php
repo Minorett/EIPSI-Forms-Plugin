@@ -235,6 +235,130 @@ class EIPSI_Email_Service {
     }
 
     /**
+     * Send email confirmation request (double opt-in).
+     *
+     * Template: includes/emails/email-confirmation.php
+     *
+     * @param int    $survey_id Survey ID.
+     * @param int    $participant_id Participant ID.
+     * @param string $confirmation_token Confirmation token.
+     * @return bool True if sent, false on error.
+     * @since 1.5.0
+     * @access public
+     */
+    public static function send_confirmation_email($survey_id, $participant_id, $confirmation_token) {
+        $participant = self::get_participant($participant_id);
+        if (!$participant) {
+            error_log("[EIPSI Email] Cannot send confirmation: participant not found: $participant_id");
+            return false;
+        }
+
+        // Don't send confirmation to already active participants
+        if ($participant->is_active) {
+            error_log("[EIPSI Email] Skipping confirmation: participant already active: $participant_id");
+            return false;
+        }
+
+        $survey_name = self::get_study_name($survey_id);
+        $confirmation_link = EIPSI_Email_Confirmation_Service::generate_confirmation_url($confirmation_token, $participant->email);
+
+        $placeholders = array(
+            'first_name' => !empty($participant->first_name) ? $participant->first_name : '',
+            'survey_name' => $survey_name,
+            'confirmation_link' => $confirmation_link,
+            'expiry_hours' => defined('EIPSI_CONFIRMATION_TOKEN_EXPIRY_HOURS') ? EIPSI_CONFIRMATION_TOKEN_EXPIRY_HOURS : 48,
+            'investigator_name' => get_option('eipsi_investigator_name', 'Equipo de Investigación'),
+            'investigator_email' => get_option('eipsi_investigator_email', get_option('admin_email')),
+        );
+
+        $subject = "Confirma tu email para participar en {$survey_name}";
+        $content = self::render_template('email-confirmation', $placeholders);
+
+        return self::send_email($survey_id, $participant_id, $participant->email, 'confirmation_request', $subject, $content);
+    }
+
+    /**
+     * Get confirmation email preview without sending.
+     *
+     * @param int $survey_id Survey ID.
+     * @param int $participant_id Participant ID.
+     * @return array Preview data.
+     * @since 1.5.0
+     * @access public
+     */
+    public static function get_confirmation_email_preview($survey_id, $participant_id) {
+        $participant = self::get_participant($participant_id);
+        if (!$participant) {
+            return array('success' => false, 'message' => 'Participante no encontrado');
+        }
+
+        $survey_name = self::get_study_name($survey_id);
+        $preview_token = 'PREVIEW_CONFIRMATION_TOKEN_' . $participant_id;
+        $confirmation_link = site_url('/?eipsi_confirm=' . $preview_token . '&email=' . urlencode($participant->email));
+
+        $placeholders = array(
+            'first_name' => !empty($participant->first_name) ? $participant->first_name : 'Participante',
+            'survey_name' => $survey_name,
+            'confirmation_link' => $confirmation_link,
+            'expiry_hours' => defined('EIPSI_CONFIRMATION_TOKEN_EXPIRY_HOURS') ? EIPSI_CONFIRMATION_TOKEN_EXPIRY_HOURS : 48,
+            'investigator_name' => get_option('eipsi_investigator_name', 'Equipo de Investigación'),
+            'investigator_email' => get_option('eipsi_investigator_email', get_option('admin_email')),
+        );
+
+        $subject = "Confirma tu email para participar en {$survey_name}";
+        $content = self::render_template('email-confirmation', $placeholders);
+
+        return array(
+            'success' => true,
+            'subject' => $subject,
+            'content' => $content,
+            'confirmation_link' => $confirmation_link,
+            'email' => $participant->email
+        );
+    }
+
+    /**
+     * Send magic link after email confirmation.
+     *
+     * This is called when participant confirms their email.
+     *
+     * @param int    $survey_id Survey ID.
+     * @param int    $participant_id Participant ID.
+     * @return bool True if sent, false on error.
+     * @since 1.5.0
+     * @access public
+     */
+    public static function send_welcome_after_confirmation($survey_id, $participant_id) {
+        $participant = self::get_participant($participant_id);
+        if (!$participant) {
+            error_log("[EIPSI Email] Cannot send welcome after confirmation: participant not found: $participant_id");
+            return false;
+        }
+
+        $survey_name = self::get_study_name($survey_id);
+        $magic_link = self::generate_magic_link_url($survey_id, $participant_id);
+
+        if (!$magic_link) {
+            self::log_email($survey_id, $participant_id, 'welcome_after_confirmation', 'failed', 'Could not generate magic link');
+            return false;
+        }
+
+        $placeholders = array(
+            'first_name' => $participant->first_name,
+            'last_name' => $participant->last_name,
+            'survey_name' => $survey_name,
+            'magic_link' => $magic_link,
+            'investigator_name' => get_option('eipsi_investigator_name', 'Equipo de Investigación'),
+            'investigator_email' => get_option('eipsi_investigator_email', get_option('admin_email')),
+        );
+
+        $subject = "Email confirmado - Acceso a {$survey_name}";
+        $content = self::render_template('welcome', $placeholders);
+
+        return self::send_email($survey_id, $participant_id, $participant->email, 'welcome_after_confirmation', $subject, $content);
+    }
+
+    /**
      * Send wave reminder email.
      *
      * Template: includes/emails/wave-reminder.php

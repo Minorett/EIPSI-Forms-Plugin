@@ -44,7 +44,7 @@ if (!defined('EIPSI_PARTICIPANT_ID_STRATEGY')) {
  * @since 1.4.0
  */
 if (!defined('EIPSI_LONGITUDINAL_DB_VERSION')) {
-    define('EIPSI_LONGITUDINAL_DB_VERSION', '1.1.0');
+    define('EIPSI_LONGITUDINAL_DB_VERSION', '1.2.0');
 }
 
 // =================================================================
@@ -150,6 +150,59 @@ if (!defined('EIPSI_MAGIC_LINK_TOKEN_LENGTH')) {
  */
 if (!defined('EIPSI_MAGIC_LINK_URL_PARAM')) {
     define('EIPSI_MAGIC_LINK_URL_PARAM', 'eipsi_magic');
+}
+
+// =================================================================
+// CONFIGURACIÓN DE DOUBLE OPT-IN (CONFIRMACIÓN DE EMAIL)
+// =================================================================
+
+/**
+ * Habilitar double opt-in para nuevos participantes
+ *
+ * Default: true
+ * Cuando está habilitado, los nuevos participantes reciben un email
+ * de confirmación antes de poder acceder al estudio.
+ */
+if (!defined('EIPSI_DOUBLE_OPTIN_ENABLED')) {
+    define('EIPSI_DOUBLE_OPTIN_ENABLED', true);
+}
+
+/**
+ * Tiempo de expiración del token de confirmación (en horas)
+ *
+ * Default: 48 horas = 2 días
+ * El participante debe confirmar su email dentro de este tiempo.
+ */
+if (!defined('EIPSI_CONFIRMATION_TOKEN_EXPIRY_HOURS')) {
+    define('EIPSI_CONFIRMATION_TOKEN_EXPIRY_HOURS', 48);
+}
+
+/**
+ * Longitud del token de confirmación
+ *
+ * Default: 64 caracteres
+ */
+if (!defined('EIPSI_CONFIRMATION_TOKEN_LENGTH')) {
+    define('EIPSI_CONFIRMATION_TOKEN_LENGTH', 64);
+}
+
+/**
+ * Parámetro de URL para confirmación de email
+ *
+ * Ejemplo: site_url() . "/?eipsi_confirm={$token}&email={$email}"
+ */
+if (!defined('EIPSI_CONFIRMATION_URL_PARAM')) {
+    define('EIPSI_CONFIRMATION_URL_PARAM', 'eipsi_confirm');
+}
+
+/**
+ * Tiempo de retención de participantes sin confirmar (en horas)
+ *
+ * Default: 72 horas = 3 días
+ * Los participantes que no confirmen su email serán eliminados después de este tiempo.
+ */
+if (!defined('EIPSI_UNCONFIRMED_PARTICIPANT_RETENTION_HOURS')) {
+    define('EIPSI_UNCONFIRMED_PARTICIPANT_RETENTION_HOURS', 72);
 }
 
 // =================================================================
