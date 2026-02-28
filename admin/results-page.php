@@ -22,8 +22,7 @@ function eipsi_display_results_experience_page() {
         'submissions',
         'completion',
         'privacy',
-        'randomization',
-        'schema-status'
+        'randomization'
     );
 
     if (!in_array($active_tab, $allowed_tabs, true)) {
@@ -57,11 +56,6 @@ function eipsi_display_results_experience_page() {
                data-tab="randomization">
                 🎲 <?php esc_html_e('Randomization', 'eipsi-forms'); ?>
             </a>
-            <a href="?page=eipsi-results-experience&tab=schema-status"
-               class="nav-tab <?php echo esc_attr(($active_tab === 'schema-status') ? 'nav-tab-active' : ''); ?>"
-               data-tab="schema-status">
-                💾 <?php esc_html_e('Schema Status', 'eipsi-forms'); ?>
-            </a>
         </h2>
 
         <div id="eipsi-message-container"></div>
@@ -94,12 +88,6 @@ function eipsi_display_results_experience_page() {
                     echo '<p>' . esc_html__('Error: Randomization no disponible', 'eipsi-forms') . '</p>';
                 }
                 ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($active_tab === 'schema-status'): ?>
-            <div class="tab-content" data-tab="schema-status">
-                <?php include dirname(__FILE__) . '/tabs/schema-status-tab.php'; ?>
             </div>
         <?php endif; ?>
 
