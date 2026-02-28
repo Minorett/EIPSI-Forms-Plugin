@@ -339,8 +339,18 @@
         $form.find('.error-message, .success-message').remove();
         
         // Collect form data
-        const formData = $form.serialize();
-        const data = formData + '&action=' + action + '&nonce=' + config.nonce;
+        // IMPORTANT: We use FormData object to control exactly what gets sent.
+        // The form may contain a wp_nonce_field named 'eipsi_auth_nonce' (from PHP template)
+        // but handlers expect the nonce in a field called 'nonce'. We build the POST manually.
+        const rawFormData = $form.serialize();
+        // Strip any existing nonce fields from the serialized form to avoid duplicates
+        const strippedFormData = rawFormData
+            .replace(/&?eipsi_auth_nonce=[^&]*/g, '')
+            .replace(/&?_wpnonce=[^&]*/g, '')
+            .replace(/&?nonce=[^&]*/g, '');
+        // Ensure config.nonce is available (from wp_localize_script 'eipsiAuth')
+        const authNonce = (window.eipsiAuth && window.eipsiAuth.nonce) ? window.eipsiAuth.nonce : config.nonce;
+        const data = strippedFormData + '&action=' + action + '&nonce=' + encodeURIComponent(authNonce);
         
         $.ajax({
             url: config.ajaxUrl,
@@ -354,10 +364,11 @@
                     // Update step indicator
                     updateStepIndicator(2);
                     
-                    // Redirect if provided
-                    if (response.data.redirect) {
+                    // Redirect if provided (handlers may use 'redirect' or 'redirect_url')
+                    const redirectTarget = response.data.redirect || response.data.redirect_url || '';
+                    if (redirectTarget) {
                         setTimeout(function() {
-                            window.location.href = response.data.redirect;
+                            window.location.href = redirectTarget;
                         }, 1000);
                     } else {
                         setTimeout(function() {

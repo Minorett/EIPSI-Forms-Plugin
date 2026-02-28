@@ -70,21 +70,8 @@ add_shortcode('eipsi_survey_login', 'eipsi_survey_login_shortcode');
  */
 function eipsi_render_survey_login_form($atts) {
     // Enqueue required assets
-    wp_enqueue_style(
-        'eipsi-survey-login-css',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/css/survey-login.css',
-        array(),
-        EIPSI_FORMS_VERSION
-    );
-    
-    wp_enqueue_script(
-        'eipsi-survey-login-js',
-        EIPSI_FORMS_PLUGIN_URL . 'assets/js/survey-login.js',
-        array('jquery'),
-        EIPSI_FORMS_VERSION,
-        true
-    );
-    
+
+    // 1. Participant auth base script — MUST load first so window.eipsiAuth is defined
     wp_enqueue_script(
         'eipsi-participant-auth',
         EIPSI_FORMS_PLUGIN_URL . 'assets/js/participant-auth.js',
@@ -92,8 +79,8 @@ function eipsi_render_survey_login_form($atts) {
         EIPSI_FORMS_VERSION,
         true
     );
-    
-    // Localize script with auth data
+
+    // Localize with nonce — do this immediately after registering the script
     wp_localize_script('eipsi-participant-auth', 'eipsiAuth', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_participant_auth'),
@@ -121,6 +108,21 @@ function eipsi_render_survey_login_form($atts) {
         )
     ));
     
+    // 2. Enhanced login UI script — depends on eipsi-participant-auth so it loads after
+    wp_enqueue_style(
+        'eipsi-survey-login-css',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/survey-login-enhanced.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+    wp_enqueue_script(
+        'eipsi-survey-login-js',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/js/survey-login-enhanced.js',
+        array('jquery', 'eipsi-participant-auth'), // explicit dep ensures correct load order
+        EIPSI_FORMS_VERSION,
+        true
+    );
+
     // Handle redirect_to parameter from URL (for post-login redirect)
     $redirect_to = isset($_GET['redirect_to']) ? esc_url_raw(wp_unslash($_GET['redirect_to'])) : '';
     if (!empty($redirect_to)) {

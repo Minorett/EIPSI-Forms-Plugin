@@ -89,7 +89,7 @@ if ($survey_id) {
             </div>
 
             <form id="eipsi-participant-login-form" class="eipsi-participant-login-form eipsi-survey-login-form">
-                <?php wp_nonce_field('eipsi_participant_auth', 'eipsi_auth_nonce'); ?>
+                <?php // Nonce is injected by JS from window.eipsiAuth.nonce (survey-login-enhanced.js) ?>
                 <input type="hidden" name="survey_id" value="<?php echo esc_attr($survey_id); ?>">
 
                 <div class="eipsi-form-group">
@@ -132,7 +132,7 @@ if ($survey_id) {
             </div>
 
             <form id="eipsi-participant-register-form" class="eipsi-participant-register-form eipsi-survey-login-form">
-                <?php wp_nonce_field('eipsi_participant_auth', 'eipsi_auth_nonce'); ?>
+                <?php // Nonce is injected by JS from window.eipsiAuth.nonce (survey-login-enhanced.js) ?>
                 <input type="hidden" name="survey_id" value="<?php echo esc_attr($survey_id); ?>">
 
                 <?php if (empty($survey_id)): ?>
