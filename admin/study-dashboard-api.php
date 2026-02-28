@@ -1049,6 +1049,76 @@ function wp_ajax_eipsi_toggle_participant_status_handler() {
 }
 
 /**
+ * POST delete participant and related data
+ */
+function wp_ajax_eipsi_delete_participant_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+
+    if (empty($participant_id) || empty($study_id)) {
+        wp_send_json_error('Missing participant or study ID');
+    }
+
+    global $wpdb;
+
+    $participant = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, email FROM {$wpdb->prefix}survey_participants WHERE id = %d AND survey_id = %d",
+        $participant_id,
+        $study_id
+    ));
+
+    if (!$participant) {
+        wp_send_json_error('Participant not found');
+    }
+
+    $wpdb->query('START TRANSACTION');
+
+    try {
+        $delete_queries = array(
+            array("DELETE FROM {$wpdb->prefix}survey_assignments WHERE participant_id = %d", array($participant_id)),
+            array("DELETE FROM {$wpdb->prefix}survey_magic_links WHERE participant_id = %d", array($participant_id)),
+            array("DELETE FROM {$wpdb->prefix}survey_sessions WHERE participant_id = %d", array($participant_id)),
+            array("DELETE FROM {$wpdb->prefix}survey_email_log WHERE participant_id = %d", array($participant_id)),
+            array("DELETE FROM {$wpdb->prefix}survey_email_confirmations WHERE participant_id = %d", array($participant_id)),
+            array("DELETE FROM {$wpdb->prefix}survey_audit_log WHERE participant_id = %d", array($participant_id)),
+            array("DELETE FROM {$wpdb->prefix}survey_participant_access_log WHERE participant_id = %d", array($participant_id)),
+            array("DELETE FROM {$wpdb->prefix}eipsi_longitudinal_pool_assignments WHERE participant_id = %d", array($participant_id)),
+            array("DELETE FROM {$wpdb->prefix}eipsi_device_data WHERE participant_id = %d", array($participant_id)),
+            array("DELETE FROM {$wpdb->prefix}survey_participants WHERE id = %d AND survey_id = %d", array($participant_id, $study_id)),
+        );
+
+        foreach ($delete_queries as $delete_query) {
+            $sql = $wpdb->prepare($delete_query[0], $delete_query[1]);
+            if ($wpdb->query($sql) === false) {
+                throw new Exception($wpdb->last_error);
+            }
+        }
+
+        $wpdb->query('COMMIT');
+
+        wp_send_json_success(array(
+            'message' => sprintf('Participante %s eliminado correctamente', $participant->email)
+        ));
+    } catch (Exception $e) {
+        $wpdb->query('ROLLBACK');
+
+        error_log(sprintf(
+            '[EIPSI Forms] Error deleting participant %d: %s',
+            $participant_id,
+            $e->getMessage()
+        ));
+
+        wp_send_json_error('Error al eliminar el participante');
+    }
+}
+
+/**
  * GET participant detail with full history
  * 
  * @since 1.6.0
