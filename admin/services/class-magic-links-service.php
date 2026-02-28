@@ -47,6 +47,21 @@ class EIPSI_MagicLinksService {
             return false;
         }
 
+        // Fix 3a: Verify survey_id corresponds to an existing WordPress post (FK constraint guard).
+        // survey_id can be a longitudinal study ID that is NOT a wp_posts ID; in that case
+        // we set it to 0 to avoid FK violation on the magic_links table.
+        if ($survey_id > 0) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+            $post_exists = $wpdb->get_var( $wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts} WHERE ID = %d LIMIT 1",
+                $survey_id
+            ) );
+            if ( ! $post_exists ) {
+                error_log( '[EIPSI MagicLinksService] survey_id ' . $survey_id . ' not found in wp_posts; storing 0 to avoid FK violation.' );
+                $survey_id = 0; // Fallback: no post association; FK was removed but we keep this as defence-in-depth.
+            }
+        }
+
         // Delete any existing unused tokens for this participant in this survey
         $deleted = $wpdb->delete(
             "{$wpdb->prefix}survey_magic_links",

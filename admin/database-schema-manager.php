@@ -1473,10 +1473,24 @@ class EIPSI_Database_Schema_Manager {
      */
     private static function ensure_local_index( $table, $column ) {
         global $wpdb;
-        
-        $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Column_name = '{$column}'" );
+
+        // Guard: skip if table or column name is empty to avoid malformed SQL.
+        if ( empty( $table ) || empty( $column ) ) {
+            return;
+        }
+
+        // Guard: skip if the table does not exist yet (prevents SHOW INDEX on missing table).
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+        if ( empty( $table_exists ) ) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $indexes = $wpdb->get_results( "SHOW INDEX FROM `{$table}` WHERE Column_name = '{$column}'" );
         if ( empty( $indexes ) ) {
-            $wpdb->query( "ALTER TABLE {$table} ADD KEY {$column} ({$column})" );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+            $wpdb->query( "ALTER TABLE `{$table}` ADD KEY `{$column}` (`{$column}`)" );
         }
     }
     
@@ -3843,12 +3857,10 @@ function eipsi_sync_survey_magic_links_table() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
 
-    // Foreign keys (best effort) - wp_posts should always exist
-    eipsi_longitudinal_ensure_foreign_key(
-        $table_name,
-        'fk_magic_links_survey',
-        "ALTER TABLE {$table_name} ADD CONSTRAINT fk_magic_links_survey FOREIGN KEY (survey_id) REFERENCES {$wpdb->posts}(ID) ON DELETE CASCADE"
-    );
+    // Note: fk_magic_links_survey (survey_id -> wp_posts) intentionally removed.
+    // survey_id in magic_links can reference longitudinal study IDs that are NOT
+    // WordPress post IDs. Validation is handled at application level in
+    // EIPSI_MagicLinksService::generate_magic_link(). See Fix 3b.
 
     // Only add participant FK if table exists
     if (eipsi_table_exists($participants_table)) {
