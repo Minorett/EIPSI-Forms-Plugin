@@ -159,13 +159,27 @@ function eipsi_display_longitudinal_study_page() {
 
         <?php if ($active_tab === 'longitudinal-pools'): ?>
             <div class="tab-content" data-tab="longitudinal-pools">
-                <?php include dirname(__FILE__) . '/tabs/longitudinal-pools-tab.php'; ?>
+                <?php
+                require_once dirname(__FILE__) . '/tabs/longitudinal-pools-tab.php';
+                if (function_exists('eipsi_render_longitudinal_pools_tab')) {
+                    eipsi_render_longitudinal_pools_tab();
+                } else {
+                    echo '<div class="notice notice-error"><p>' . esc_html__('Error: La funcionalidad de Longitudinal Pools no está disponible.', 'eipsi-forms') . '</p></div>';
+                }
+                ?>
             </div>
         <?php endif; ?>
 
         <?php if ($active_tab === 'pool-analytics'): ?>
             <div class="tab-content" data-tab="pool-analytics">
-                <?php include dirname(__FILE__) . '/tabs/pool-analytics-tab.php'; ?>
+                <?php
+                require_once dirname(__FILE__) . '/tabs/pool-analytics-tab.php';
+                if (function_exists('eipsi_render_pool_analytics_tab')) {
+                    eipsi_render_pool_analytics_tab();
+                } else {
+                    echo '<div class="notice notice-error"><p>' . esc_html__('Error: La funcionalidad de Pool Analytics no está disponible.', 'eipsi-forms') . '</p></div>';
+                }
+                ?>
             </div>
         <?php endif; ?>
     </div>
