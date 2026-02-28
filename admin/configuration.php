@@ -38,7 +38,7 @@ function eipsi_display_configuration_page() {
     $status = $db_helper->get_status();
 
     $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'database';
-    $allowed_tabs = array('database', 'smtp', 'privacy-security');
+    $allowed_tabs = array('database', 'smtp', 'privacy-security', 'schema-status');
     if (!in_array($active_tab, $allowed_tabs, true)) {
         $active_tab = 'database';
     }
@@ -69,6 +69,10 @@ function eipsi_display_configuration_page() {
             <a href="?page=eipsi-configuration&tab=privacy-security"
                class="nav-tab <?php echo esc_attr(($active_tab === 'privacy-security') ? 'nav-tab-active' : ''); ?>">
                 🔒 <?php echo esc_html__('Privacidad & Seguridad', 'eipsi-forms'); ?>
+            </a>
+            <a href="?page=eipsi-configuration&tab=schema-status"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'schema-status') ? 'nav-tab-active' : ''); ?>">
+                💾 <?php echo esc_html__('Schema Status', 'eipsi-forms'); ?>
             </a>
         </h2>
 
@@ -956,6 +960,12 @@ function eipsi_display_configuration_page() {
             </div>
         </div>
 
+        <?php endif; ?>
+
+        <?php if ($active_tab === 'schema-status'): ?>
+            <div class="tab-content" data-tab="schema-status">
+                <?php include dirname(__FILE__) . '/tabs/schema-status-tab.php'; ?>
+            </div>
         <?php endif; ?>
 
         <?php
