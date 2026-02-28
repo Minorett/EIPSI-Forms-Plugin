@@ -287,9 +287,6 @@ if (!defined('ABSPATH')) {
                                 <th><?php esc_html_e('Email', 'eipsi-forms'); ?></th>
                                 <th><?php esc_html_e('Nombre', 'eipsi-forms'); ?></th>
                                 <th><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
-                                <th><?php esc_html_e('Magic Link', 'eipsi-forms'); ?></th>
-                                <th><?php esc_html_e('Fecha Registro', 'eipsi-forms'); ?></th>
-                                <th><?php esc_html_e('Último Acceso', 'eipsi-forms'); ?></th>
                                 <th><?php esc_html_e('Acciones', 'eipsi-forms'); ?></th>
                             </tr>
                         </thead>

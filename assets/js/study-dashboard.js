@@ -104,6 +104,12 @@
                 self.toggleParticipantStatus(participantId, isActive);
             });
 
+            // Delete participant
+            $(document).on('click', '.delete-participant-btn', function() {
+                const participantId = $(this).data('participant-id');
+                self.deleteParticipant(participantId);
+            });
+
             // Resend email dropdown toggle
             $(document).on('click', '.resend-email-btn', function(e) {
                 e.preventDefault();
@@ -545,7 +551,7 @@
             $('#participants-count').text(`${data.total} participantes`);
 
             if (data.participants.length === 0) {
-                $tbody.append('<tr><td colspan="6" style="text-align:center;">No se encontraron participantes</td></tr>');
+                $tbody.append('<tr><td colspan="4" style="text-align:center;">No se encontraron participantes</td></tr>');
                 return;
             }
 
@@ -562,8 +568,6 @@
                         <td><code>${p.email}</code></td>
                         <td>${p.first_name || ''} ${p.last_name || ''}</td>
                         <td>${statusBadge}</td>
-                        <td>${p.created_at || '-'}</td>
-                        <td>${p.last_login || 'Nunca'}</td>
                         <td>
                             <div class="participants-actions-row">
                                 <button type="button" 
@@ -572,6 +576,9 @@
                                         data-is-active="${p.is_active ? '1' : '0'}"
                                         title="${toggleText}">
                                     ${p.is_active ? '🔒' : '🔓'}
+                                </button>
+                                <button type="button" class="button button-small delete-participant-btn" data-participant-id="${p.id}" title="Eliminar">
+                                    🗑️
                                 </button>
                                 <div class="resend-email-wrapper" style="position: relative; display: inline-block;">
                                     <button type="button" class="button button-small resend-email-btn" title="Reenviar email">
@@ -663,6 +670,44 @@
                 },
                 error: function() {
                     alert('Error de conexión');
+                }
+            });
+        },
+
+        /**
+         * Delete participant
+         */
+        deleteParticipant: function(participantId) {
+            const self = this;
+            const $row = $(`tr[data-participant-id="${participantId}"]`);
+
+            if (!confirm('¿Querés eliminar este participante? Se borrarán sus asignaciones, sesiones y magic links. Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            $row.addClass('loading');
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_delete_participant',
+                    participant_id: participantId,
+                    study_id: this.currentStudyId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    $row.removeClass('loading');
+                    if (response.success) {
+                        self.showToast(response.data.message || 'Participante eliminado correctamente', 'success');
+                        self.loadParticipantsList(1);
+                    } else {
+                        self.showToast(response.data.message || 'No se pudo eliminar el participante', 'error');
+                    }
+                },
+                error: function() {
+                    $row.removeClass('loading');
+                    self.showToast('Error de conexión al eliminar el participante', 'error');
                 }
             });
         },
