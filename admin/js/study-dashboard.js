@@ -2290,13 +2290,24 @@
 					? formatDate( data.general.estimated_end_date )
 					: 'No definida'
 			);
-			$( '#study-id-display' ).text( data.general.study_code );
 
-			const shortcode = buildStudyShortcode(
-				data.general.id || currentStudyId,
-				data.general.study_code // Use study_code for security
-			);
+			// Display study_code or fallback to numeric ID
+			const displayId = data.general.study_code || 'ID: ' + ( data.general.id || currentStudyId );
+			$( '#study-id-display' ).text( displayId );
+
+			// Build shortcode with fallback to numeric ID
+			const studyId = data.general.id || currentStudyId;
+			const studyCode = data.general.study_code || '';
+			const shortcode = buildStudyShortcode( studyId, studyCode );
 			$( '#study-shortcode-display' ).text( shortcode );
+
+			// Show warning if using fallback
+			if ( ! studyCode && studyId ) {
+				$( '#study-shortcode-display' ).attr(
+					'title',
+					'Este estudio no tiene un código único. Se está usando el ID numérico.'
+				);
+			}
 
 			const isCompleted = data.general.status === 'completed';
 			const $closeBtn = $( '#action-close-study' );
