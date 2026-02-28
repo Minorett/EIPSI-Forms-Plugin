@@ -330,9 +330,13 @@
             const $button = $( '#eipsi-verify-local-schema' );
             const $resultsContainer = $( '#eipsi-local-schema-results' );
             const $resultsContent = $( '#eipsi-local-schema-content' );
+            const originalButtonHtml = $button.html();
 
-            // Show loading state
-            $button.prop( 'disabled', true ).addClass( 'eipsi-loading' );
+            // Show loading state - spinner + text
+            $button
+                .prop( 'disabled', true )
+                .addClass( 'eipsi-loading' )
+                .html( '<span class="dashicons dashicons-update-alt eipsi-spin"></span> Verificando esquema...' );
             $resultsContainer.hide();
 
             // Make AJAX request
@@ -345,31 +349,49 @@
                 },
                 success( response ) {
                     if ( response.success ) {
-                        let html = '<div class="eipsi-schema-success" style="padding: 10px; background: #e8f5e8; border-radius: 4px; margin-bottom: 10px;">';
-                        html += '<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span> ';
-                        html += '<strong>' + response.data.message + '</strong>';
+                        let html = '<div class="eipsi-schema-success" style="padding: 12px; background: #e8f5e8; border-radius: 4px; margin-bottom: 12px; border-left: 4px solid #46b450;">';
+                        html += '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">';
+                        html += '<span class="dashicons dashicons-yes-alt" style="color: #46b450; font-size: 20px; width: 20px; height: 20px;"></span> ';
+                        html += '<strong style="font-size: 14px; color: #2d5a2d;">' + ( response.data.message || 'Esquema verificado correctamente' ) + '</strong>';
+                        html += '</div>';
                         html += '</div>';
 
-                        // Show tables created
+                        // Summary stats
+                        const tablesCreated = response.data.tables_created ? response.data.tables_created.length : 0;
+                        const columnsAdded = response.data.columns_added || 0;
+
+                        html += '<div style="background: #fff; padding: 12px; border-radius: 4px; border: 1px solid #ddd;">';
+                        html += '<table style="width: 100%; font-size: 13px;">';
+                        html += '<tr><td style="padding: 4px 0; color: #666;">Tablas creadas:</td><td style="padding: 4px 0; font-weight: 600; text-align: right;">' + tablesCreated + '</td></tr>';
+                        html += '<tr><td style="padding: 4px 0; color: #666;">Columnas agregadas:</td><td style="padding: 4px 0; font-weight: 600; text-align: right;">' + columnsAdded + '</td></tr>';
+                        html += '<tr><td style="padding: 4px 0; color: #666;">Estado:</td><td style="padding: 4px 0; font-weight: 600; color: #46b450; text-align: right;">✓ OK</td></tr>';
+                        html += '</table>';
+
+                        // Show tables created details
                         if ( response.data.tables_created && response.data.tables_created.length > 0 ) {
-                            html += '<div style="margin-top: 10px;">';
-                            html += '<strong>Tablas creadas:</strong><ul>';
+                            html += '<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">';
+                            html += '<strong style="font-size: 12px; color: #666; text-transform: uppercase;">Tablas creadas:</strong>';
+                            html += '<ul style="margin: 6px 0 0 0; padding-left: 18px; font-size: 12px; color: #444;">';
                             response.data.tables_created.forEach( function( table ) {
-                                html += '<li>• ' + table + '</li>';
+                                html += '<li style="margin: 2px 0;">' + table + '</li>';
                             } );
                             html += '</ul></div>';
                         }
 
-                        // Show columns added
-                        if ( response.data.columns_added > 0 ) {
-                            html += '<div style="margin-top: 10px;">';
-                            html += '<strong>Columnas agregadas:</strong> ' + response.data.columns_added;
+                        // Show columns added details
+                        if ( columnsAdded > 0 ) {
+                            html += '<div style="margin-top: 8px; font-size: 12px; color: #46b450;">';
+                            html += '<span class="dashicons dashicons-plus-alt" style="font-size: 12px; width: 12px; height: 12px;"></span> ';
+                            html += columnsAdded + ' columna(s) agregada(s) exitosamente';
                             html += '</div>';
                         }
 
+                        html += '</div>';
+
                         // Show last verified timestamp
                         if ( response.data.last_verified ) {
-                            html += '<div style="margin-top: 10px; color: #666; font-size: 12px;">';
+                            html += '<div style="margin-top: 10px; color: #888; font-size: 11px; text-align: right;">';
+                            html += '<span class="dashicons dashicons-clock" style="font-size: 11px; width: 11px; height: 11px;"></span> ';
                             html += 'Última verificación: ' + response.data.last_verified;
                             html += '</div>';
                         }
@@ -382,13 +404,15 @@
                             window.location.reload();
                         }, 3000 );
                     } else {
-                        let html = '<div class="eipsi-schema-error" style="padding: 10px; background: #ffebee; border-radius: 4px; color: #d32f2f;">';
-                        html += '<span class="dashicons dashicons-dismiss"></span> ';
-                        html += '<strong>' + ( response.data.message || 'Error en verificación' ) + '</strong>';
-                        if ( response.data.errors ) {
-                            html += '<ul>';
+                        let html = '<div class="eipsi-schema-error" style="padding: 12px; background: #ffebee; border-radius: 4px; color: #d32f2f; border-left: 4px solid #d32f2f; margin-bottom: 12px;">';
+                        html += '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">';
+                        html += '<span class="dashicons dashicons-dismiss" style="font-size: 20px; width: 20px; height: 20px;"></span> ';
+                        html += '<strong style="font-size: 14px;">' + ( response.data.message || 'Error en verificación' ) + '</strong>';
+                        html += '</div>';
+                        if ( response.data.errors && response.data.errors.length > 0 ) {
+                            html += '<ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 12px;">';
                             response.data.errors.forEach( function( error ) {
-                                html += '<li>' + error + '</li>';
+                                html += '<li style="margin: 2px 0;">' + error + '</li>';
                             } );
                             html += '</ul>';
                         }
@@ -398,9 +422,12 @@
                     }
                 },
                 error() {
-                    let html = '<div class="eipsi-schema-error" style="padding: 10px; background: #ffebee; border-radius: 4px; color: #d32f2f;">';
-                    html += '<span class="dashicons dashicons-dismiss"></span> ';
-                    html += '<strong>Error al verificar el esquema. Intenta nuevamente.</strong>';
+                    let html = '<div class="eipsi-schema-error" style="padding: 12px; background: #ffebee; border-radius: 4px; color: #d32f2f; border-left: 4px solid #d32f2f;">';
+                    html += '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">';
+                    html += '<span class="dashicons dashicons-dismiss" style="font-size: 20px; width: 20px; height: 20px;"></span> ';
+                    html += '<strong style="font-size: 14px;">Error al verificar el esquema</strong>';
+                    html += '</div>';
+                    html += '<p style="margin: 0; font-size: 13px;">No se pudo completar la verificación. Por favor, intenta nuevamente o contacta soporte si el problema persiste.</p>';
                     html += '</div>';
                     $resultsContent.html( html );
                     $resultsContainer.show();
@@ -408,7 +435,8 @@
                 complete() {
                     $button
                         .prop( 'disabled', false )
-                        .removeClass( 'eipsi-loading' );
+                        .removeClass( 'eipsi-loading' )
+                        .html( originalButtonHtml );
                 },
             } );
         },
