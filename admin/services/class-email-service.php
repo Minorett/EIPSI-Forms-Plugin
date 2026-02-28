@@ -57,6 +57,13 @@ class EIPSI_Email_Service {
      * @access public
      */
     public static function send_magic_link_email($survey_id, $participant_id, $custom_message = '') {
+        // Validate survey_id before proceeding - prevent FK errors
+        $survey_id = intval($survey_id);
+        if ($survey_id <= 0) {
+            error_log("[EIPSI Email] Invalid survey_id: $survey_id for participant $participant_id");
+            return array('success' => false, 'magic_link' => null, 'error' => 'ID de estudio inválido: ' . $survey_id);
+        }
+
         $participant = self::get_participant($participant_id);
         if (!$participant) {
             return array('success' => false, 'magic_link' => null, 'error' => 'Participante no encontrado');
@@ -793,7 +800,16 @@ class EIPSI_Email_Service {
         $table_name = $wpdb->prefix . 'survey_email_log';
         $subject = sanitize_text_field($subject);
         
-        $wpdb->insert(
+        // Validate survey_id - allow 0 but cast to int for safe insert
+        $survey_id = intval($survey_id);
+        
+        // Skip logging if participant_id is invalid
+        if ($participant_id <= 0) {
+            error_log("[EIPSI Email] log_email skipped: invalid participant_id: $participant_id");
+            return;
+        }
+        
+        $result = $wpdb->insert(
             $table_name,
             array(
                 'survey_id' => $survey_id,
@@ -808,6 +824,10 @@ class EIPSI_Email_Service {
             ),
             array('%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
         );
+        
+        if ($result === false) {
+            error_log("[EIPSI Email] log_email failed: " . $wpdb->last_error);
+        }
     }
     
     /**
