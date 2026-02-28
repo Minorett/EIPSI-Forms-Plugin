@@ -13,6 +13,8 @@ module.exports = {
 		'*-validation.js',
 		'check-*.js',
 		'stress-test*.js',
+		'fix-*.js',
+		'fix-*.py',
 		'E2E_TEST_REPORT_v1.2.2.md',
 		'QA_VALIDATION_v1.2.2_REPORT.md',
 		'FINAL_AUDIT_v1.2.2_REPORT.md',

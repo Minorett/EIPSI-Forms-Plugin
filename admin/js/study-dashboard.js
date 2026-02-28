@@ -1428,13 +1428,16 @@
 				if ( response.success ) {
 					renderParticipantDetail( response.data );
 				} else {
-					alert(
-						response.data || 'Error loading participant detail'
+					// eslint-disable-next-line no-console
+					console.error(
+						'Error loading participant detail:',
+						response.data
 					);
 				}
 			},
 			error() {
-				alert( 'Error loading participant detail' );
+				// eslint-disable-next-line no-console
+				console.error( 'Error loading participant detail' );
 			},
 		} );
 	}
@@ -1654,11 +1657,11 @@
 	}
 
 	function deleteParticipantHard() {
-		if (
-			! confirm(
-				'¿Estás completamente seguro? Esta acción eliminará TODOS los datos del participante incluyendo sus respuestas. NO SE PUEDE DESHACER.'
-			)
-		) {
+		// eslint-disable-next-line no-alert
+		const confirmed = window.confirm(
+			'¿Estás completamente seguro? Esta acción eliminará TODOS los datos del participante incluyendo sus respuestas. NO SE PUEDE DESHACER.'
+		);
+		if ( ! confirmed ) {
 			return;
 		}
 
@@ -2920,7 +2923,7 @@
 		);
 	}
 
-	function formatDate( dateStr ) {
+	function formatDateShort( dateStr ) {
 		if ( ! dateStr ) {
 			return 'N/A';
 		}
