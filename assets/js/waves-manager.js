@@ -91,6 +91,7 @@ jQuery(document).ready(function($) {
         $.ajax({
             url: api.ajaxUrl,
             type: 'POST',
+            dataType: 'json',
             data: {
                 action: 'eipsi_resend_participant_email',
                 participant_id: participantId,
@@ -105,12 +106,44 @@ jQuery(document).ready(function($) {
                 if (response.success) {
                     showToast(response.data.message || 'Email enviado correctamente', 'success');
                 } else {
-                    showToast(response.data.message || 'Error al enviar email', 'error');
+                    // Show detailed error message from backend
+                    const errorMsg = response.data.message || 'Error al enviar email';
+                    const errorCode = response.data.error || '';
+                    
+                    // Provide helpful guidance based on error type
+                    let helpfulMsg = errorMsg;
+                    if (errorCode === 'invalid_survey_id' || errorCode === 'survey_not_found') {
+                        helpfulMsg = errorMsg + '. Este participante tiene un estudio asociado inválido.';
+                    }
+                    
+                    showToast(helpfulMsg, 'error');
                 }
             },
             error: function(xhr, status, error) {
                 $row.removeClass('loading');
-                showToast('Error de conexión: ' + error, 'error');
+                
+                // Try to parse error response
+                let errorMessage = 'Error de conexión: ' + error;
+                
+                try {
+                    const contentType = xhr.getResponseHeader('content-type');
+                    if (contentType && contentType.indexOf('application/json') !== -1) {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.data && response.data.message) {
+                            errorMessage = response.data.message;
+                            
+                            if (response.data.error === 'invalid_survey_id') {
+                                errorMessage += ' (ID: ' + (response.data.participant_survey_id || '?') + ')';
+                            }
+                        }
+                    } else {
+                        errorMessage = 'Error del servidor. Por favor, revisa los logs.';
+                    }
+                } catch (e) {
+                    errorMessage = 'Error de conexión. Verifica tu conexión a internet.';
+                }
+                
+                showToast(errorMessage, 'error');
             }
         });
     }

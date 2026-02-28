@@ -338,6 +338,9 @@ function wp_ajax_eipsi_get_study_email_logs_handler() {
 /**
  * POST resend email to participant
  * Supports: welcome, magic_link, reminder, confirmation, recovery
+ * 
+ * @since 1.5.3
+ * @fix v1.7.3 - Added survey_id validation to prevent FK errors
  */
 function wp_ajax_eipsi_resend_participant_email_handler() {
     // Check nonce - accept both nonces for compatibility
@@ -373,6 +376,59 @@ function wp_ajax_eipsi_resend_participant_email_handler() {
     // Load Email Service
     if (!class_exists('EIPSI_Email_Service')) {
         require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+
+    // Load Participant Service to validate participant's survey_id
+    if (!class_exists('EIPSI_Participant_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+    }
+
+    // Get participant to validate survey_id
+    $participant = EIPSI_Participant_Service::get_by_id($participant_id);
+    if (!$participant) {
+        wp_send_json_error(array(
+            'message' => 'Participante no encontrado',
+            'error' => 'participant_not_found'
+        ));
+    }
+
+    // Validate participant has a valid survey_id
+    $participant_survey_id = intval($participant->survey_id);
+    if ($participant_survey_id <= 0) {
+        wp_send_json_error(array(
+            'message' => 'El participante no tiene un estudio asociado. ID de estudio inválido: ' . $participant_survey_id,
+            'error' => 'invalid_survey_id',
+            'participant_survey_id' => $participant_survey_id
+        ));
+    }
+
+    // Verify survey_id exists in wp_posts (for FK compliance)
+    global $wpdb;
+    $post_exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT ID FROM {$wpdb->posts} WHERE ID = %d LIMIT 1",
+        $participant_survey_id
+    ));
+
+    if (!$post_exists) {
+        // Check if it's a longitudinal study
+        $study_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}survey_studies WHERE id = %d LIMIT 1",
+            $participant_survey_id
+        ));
+
+        if (!$study_exists) {
+            wp_send_json_error(array(
+                'message' => 'El estudio asociado al participante ya no existe. Por favor, elimina este participante y vuelve a intentarlo.',
+                'error' => 'survey_not_found',
+                'participant_survey_id' => $participant_survey_id
+            ));
+        }
+        // Longitudinal studies are valid - continue
+    }
+
+    // Use the participant's survey_id if not provided
+    if (empty($survey_id)) {
+        $survey_id = $participant_survey_id;
     }
 
     // Send the email
