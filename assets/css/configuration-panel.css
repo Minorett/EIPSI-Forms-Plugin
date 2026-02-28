@@ -622,3 +622,64 @@
     outline: 2px solid var(--eipsi-primary);
     outline-offset: 2px;
 }
+
+/* ==========================================================================
+   LOADING SPINNER ANIMATION
+   ========================================================================== */
+@keyframes eipsi-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.eipsi-spin {
+    animation: eipsi-spin 1s linear infinite;
+    display: inline-block;
+}
+
+/* Button loading state */
+.eipsi-loading {
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
+.eipsi-loading .dashicons {
+    animation: eipsi-spin 1s linear infinite;
+}
+
+/* ==========================================================================
+   SCHEMA RESULTS STYLING
+   ========================================================================== */
+#eipsi-local-schema-results {
+    animation: eipsi-fade-in 0.3s ease-out;
+}
+
+@keyframes eipsi-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.eipsi-schema-success,
+.eipsi-schema-error {
+    animation: eipsi-slide-in 0.3s ease-out;
+}
+
+@keyframes eipsi-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

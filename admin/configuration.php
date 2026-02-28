@@ -540,8 +540,11 @@ function eipsi_display_configuration_page() {
                             </p>
 
                             <!-- Local Schema Results Container -->
-                            <div id="eipsi-local-schema-results" style="display: none; margin-top: 15px; padding: 12px; background: #f0f6fc; border-radius: 4px; border-left: 4px solid #2271b1;">
-                                <h4 style="margin-top: 0; margin-bottom: 10px;"><?php echo esc_html__('Resultados de verificación', 'eipsi-forms'); ?></h4>
+                            <div id="eipsi-local-schema-results" style="display: none; margin-top: 15px; padding: 16px; background: var(--eipsi-primary-lighter, #f0f6fc); border-radius: 6px; border-left: 4px solid var(--eipsi-primary, #2271b1); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <h4 style="margin-top: 0; margin-bottom: 12px; color: var(--eipsi-text, #2c3e50); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                                    <span class="dashicons dashicons-info-outline" style="font-size: 16px; width: 16px; height: 16px; color: var(--eipsi-primary, #2271b1);"></span>
+                                    <?php echo esc_html__('Resultados de verificación', 'eipsi-forms'); ?>
+                                </h4>
                                 <div id="eipsi-local-schema-content"></div>
                             </div>
                         </div>
