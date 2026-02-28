@@ -66,6 +66,31 @@ function wp_ajax_eipsi_get_study_overview_handler() {
         wp_send_json_error('Study not found');
     }
 
+    // Ensure study_code is always populated for shortcode display
+    // If study_code is empty, generate one from study_name or use ID as fallback
+    if (empty($study->study_code)) {
+        // Try to generate from study_name
+        if (!empty($study->study_name)) {
+            $generated_code = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '_', substr($study->study_name, 0, 15)));
+            $generated_code = preg_replace('/_+/', '_', $generated_code); // Remove double underscores
+            $generated_code = trim($generated_code, '_') . '_' . date('Y');
+            
+            // Update the study with the generated code
+            $wpdb->update(
+                "{$wpdb->prefix}survey_studies",
+                array('study_code' => $generated_code),
+                array('id' => $study_id),
+                array('%s'),
+                array('%d')
+            );
+            
+            $study->study_code = $generated_code;
+        } else {
+            // Last resort: use the numeric ID
+            $study->study_code = 'STUDY_' . $study_id;
+        }
+    }
+
     // 2. Participant stats
     // La tabla participants usa 'survey_id' (que es el ID del estudio), no 'study_id'
     $participants_stats = array(
