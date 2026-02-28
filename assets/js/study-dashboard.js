@@ -139,6 +139,29 @@
                 
                 self.resendEmail(participantId, emailType, participantEmail, waveId);
             });
+
+            // Magic Link Form - Generate link button
+            $('#generate-magic-link').on('click', function(e) {
+                e.preventDefault();
+                self.generateMagicLink();
+            });
+
+            // Magic Link Form - Send email button
+            $('#send-magic-link').on('click', function(e) {
+                e.preventDefault();
+                self.sendMagicLinkEmail();
+            });
+
+            // Magic Link Form - Copy link button
+            $('#copy-magic-link').on('click', function() {
+                self.copyMagicLink();
+            });
+
+            // Magic Link Form - Prevent default form submission
+            $('#magic-link-form').on('submit', function(e) {
+                e.preventDefault();
+                self.sendMagicLinkEmail();
+            });
         },
 
         openDashboard: function(studyId) {
@@ -804,6 +827,169 @@
                     self.showToast(errorMessage, 'error');
                 }
             });
+        },
+
+        /**
+         * Generate Magic Link (show in UI, don't send email)
+         */
+        generateMagicLink: function() {
+            const self = this;
+            const email = $('#magic-link-email').val().trim();
+            const $output = $('#magic-link-output');
+            const $error = $('#magic-link-error');
+            const $success = $('#magic-link-success');
+            const $urlInput = $('#magic-link-url');
+
+            // Hide previous messages
+            $error.hide();
+            $success.hide();
+            $output.hide();
+
+            // Validate email
+            if (!email || !this.isValidEmail(email)) {
+                $error.text('Por favor, ingresa un email válido').show();
+                return;
+            }
+
+            // Get study ID from current context
+            const studyId = this.currentStudyId;
+            if (!studyId) {
+                $error.text('No se pudo identificar el estudio').show();
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_generate_magic_link',
+                    study_id: studyId,
+                    email: email,
+                    nonce: eipsiStudyDash.nonce
+                },
+                beforeSend: function() {
+                    $('#generate-magic-link').prop('disabled', true).text('Generando...');
+                },
+                success: function(response) {
+                    $('#generate-magic-link').prop('disabled', false).text('🔐 Generar enlace');
+
+                    if (response.success) {
+                        // Show the magic link in the UI
+                        $urlInput.val(response.data.magic_link || '');
+                        $output.show();
+                        
+                        $success.text(response.data.message || 'Magic Link generado correctamente').show();
+                    } else {
+                        $error.text(response.data.message || 'Error al generar el Magic Link').show();
+                    }
+                },
+                error: function() {
+                    $('#generate-magic-link').prop('disabled', false).text('🔐 Generar enlace');
+                    $error.text('Error de conexión').show();
+                }
+            });
+        },
+
+        /**
+         * Send Magic Link via Email
+         */
+        sendMagicLinkEmail: function() {
+            const self = this;
+            const email = $('#magic-link-email').val().trim();
+            const $error = $('#magic-link-error');
+            const $success = $('#magic-link-success');
+            const $output = $('#magic-link-output');
+
+            // Hide previous messages
+            $error.hide();
+            $success.hide();
+            $output.hide();
+
+            // Validate email
+            if (!email || !this.isValidEmail(email)) {
+                $error.text('Por favor, ingresa un email válido').show();
+                return;
+            }
+
+            // Get study ID from current context
+            const studyId = this.currentStudyId;
+            if (!studyId) {
+                $error.text('No se pudo identificar el estudio').show();
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_generate_magic_link',
+                    study_id: studyId,
+                    email: email,
+                    nonce: eipsiStudyDash.nonce
+                },
+                beforeSend: function() {
+                    $('#send-magic-link').prop('disabled', true).text('Enviando...');
+                },
+                success: function(response) {
+                    $('#send-magic-link').prop('disabled', false).text('📨 Enviar por email');
+
+                    if (response.success) {
+                        // Show success message
+                        $success.text(response.data.message || 'Magic Link enviado exitosamente').show();
+                        
+                        // Also show the link in case they want to copy it
+                        if (response.data.magic_link) {
+                            $('#magic-link-url').val(response.data.magic_link);
+                            $output.show();
+                        }
+                        
+                        // Clear the email input for next use
+                        $('#magic-link-email').val('');
+                    } else {
+                        $error.text(response.data.message || 'Error al enviar el Magic Link').show();
+                    }
+                },
+                error: function() {
+                    $('#send-magic-link').prop('disabled', false).text('📨 Enviar por email');
+                    $error.text('Error de conexión').show();
+                }
+            });
+        },
+
+        /**
+         * Copy Magic Link to clipboard
+         */
+        copyMagicLink: function() {
+            const $urlInput = $('#magic-link-url');
+            const link = $urlInput.val();
+
+            if (!link) {
+                return;
+            }
+
+            // Use Clipboard API
+            navigator.clipboard.writeText(link).then(function() {
+                $('#copy-magic-link').text('✓ ¡Copiado!').prop('disabled', true);
+                setTimeout(function() {
+                    $('#copy-magic-link').text('📋 Copiar').prop('disabled', false);
+                }, 2000);
+            }).catch(function(err) {
+                // Fallback for older browsers
+                $urlInput.select();
+                document.execCommand('copy');
+                $('#copy-magic-link').text('✓ ¡Copiado!').prop('disabled', true);
+                setTimeout(function() {
+                    $('#copy-magic-link').text('📋 Copiar').prop('disabled', false);
+                }, 2000);
+            });
+        },
+
+        /**
+         * Validate email format
+         */
+        isValidEmail: function(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
         },
 
         /**
