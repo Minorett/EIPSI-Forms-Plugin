@@ -34,7 +34,8 @@ function eipsi_send_wave_reminders_hourly() {
     }
 
     foreach ($studies as $study) {
-        $config = json_decode($study->config, true);
+        // Guard against null config (json_decode(null) is deprecated in PHP 8.1+)
+        $config = !empty($study->config) ? json_decode($study->config, true) : array();
         if (!is_array($config) || empty($config['reminders_enabled'])) {
             continue;
         }
@@ -146,7 +147,8 @@ function eipsi_send_dropout_recovery_hourly() {
     }
 
     foreach ($studies as $study) {
-        $config = json_decode($study->config, true);
+        // Guard against null config (json_decode(null) is deprecated in PHP 8.1+)
+        $config = !empty($study->config) ? json_decode($study->config, true) : array();
         if (!is_array($config) || empty($config['dropout_recovery_enabled'])) {
             continue;
         }

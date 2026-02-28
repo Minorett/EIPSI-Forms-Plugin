@@ -24,28 +24,28 @@ class EIPSI_Participant_Auth_Handler {
     /**
      * Initialize AJAX handlers.
      *
+     * NOTE (v2.0.0 fix): Login and register hooks are intentionally NOT registered here.
+     * They are registered exclusively in ajax-participant-handlers.php to avoid duplicate
+     * handler execution (which caused "Campos requeridos faltantes" error in login/register).
+     * Only actions exclusive to this class (magic_link via this class) are registered here.
+     *
      * @since 2.0.0
      */
     public static function init() {
-        // Login
-        add_action('wp_ajax_eipsi_participant_login', array(__CLASS__, 'handle_login'));
-        add_action('wp_ajax_nopriv_eipsi_participant_login', array(__CLASS__, 'handle_login'));
-        
-        // Registration
-        add_action('wp_ajax_eipsi_participant_register', array(__CLASS__, 'handle_register'));
-        add_action('wp_ajax_nopriv_eipsi_participant_register', array(__CLASS__, 'handle_register'));
-        
-        // Magic Link Request (for login and password reset)
+        // DISABLED - These hooks are registered in ajax-participant-handlers.php
+        // Registering them here too caused duplicate execution and broken auth flow.
+        // add_action('wp_ajax_eipsi_participant_login', array(__CLASS__, 'handle_login'));
+        // add_action('wp_ajax_nopriv_eipsi_participant_login', array(__CLASS__, 'handle_login'));
+        // add_action('wp_ajax_eipsi_participant_register', array(__CLASS__, 'handle_register'));
+        // add_action('wp_ajax_nopriv_eipsi_participant_register', array(__CLASS__, 'handle_register'));
+        // add_action('wp_ajax_eipsi_participant_logout', array(__CLASS__, 'handle_logout'));
+        // add_action('wp_ajax_nopriv_eipsi_participant_logout', array(__CLASS__, 'handle_logout'));
+        // add_action('wp_ajax_eipsi_participant_check_session', array(__CLASS__, 'handle_check_session'));
+        // add_action('wp_ajax_nopriv_eipsi_participant_check_session', array(__CLASS__, 'handle_check_session'));
+
+        // Magic Link (unique to this class - different action name)
         add_action('wp_ajax_eipsi_participant_magic_link', array(__CLASS__, 'handle_magic_link_request'));
         add_action('wp_ajax_nopriv_eipsi_participant_magic_link', array(__CLASS__, 'handle_magic_link_request'));
-        
-        // Logout
-        add_action('wp_ajax_eipsi_participant_logout', array(__CLASS__, 'handle_logout'));
-        add_action('wp_ajax_nopriv_eipsi_participant_logout', array(__CLASS__, 'handle_logout'));
-        
-        // Check session
-        add_action('wp_ajax_eipsi_participant_check_session', array(__CLASS__, 'handle_check_session'));
-        add_action('wp_ajax_nopriv_eipsi_participant_check_session', array(__CLASS__, 'handle_check_session'));
     }
     
     /**
