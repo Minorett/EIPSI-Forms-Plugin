@@ -2990,6 +2990,227 @@ public static function get_detailed_table_status($table_name) {
 }
 
 /**
+ * Get schema map for repair helpers
+ *
+ * @since 1.6.0
+ * @return array
+ */
+private static function get_schema_map() {
+    return array(
+        'vas_form_results' => array(
+            'form_id' => 'varchar(20) DEFAULT NULL',
+            'participant_id' => 'varchar(20) DEFAULT NULL',
+            'survey_id' => 'INT(11) DEFAULT NULL',
+            'wave_index' => 'INT(11) DEFAULT NULL',
+            'session_id' => 'varchar(255) DEFAULT NULL',
+            'user_fingerprint' => 'varchar(255) DEFAULT NULL',
+            'form_name' => 'varchar(255) NOT NULL',
+            'form_responses' => 'longtext DEFAULT NULL',
+            'created_at' => 'datetime DEFAULT CURRENT_TIMESTAMP',
+            'submitted_at' => 'datetime DEFAULT NULL',
+            'ip_address' => 'varchar(100) DEFAULT NULL',
+            'device' => 'varchar(50) DEFAULT NULL',
+            'browser' => 'varchar(100) DEFAULT NULL',
+            'os' => 'varchar(100) DEFAULT NULL',
+            'screen_width' => 'int(11) DEFAULT NULL',
+            'duration' => 'int(11) DEFAULT NULL',
+            'duration_seconds' => 'decimal(8,3) DEFAULT NULL',
+            'start_timestamp_ms' => 'bigint(20) DEFAULT NULL',
+            'end_timestamp_ms' => 'bigint(20) DEFAULT NULL',
+            'metadata' => 'LONGTEXT DEFAULT NULL',
+            "status" => "varchar(20) DEFAULT 'submitted'",
+            'rct_assigned_variant' => 'varchar(100) DEFAULT NULL',
+            'rct_randomization_id' => 'varchar(100) DEFAULT NULL'
+        ),
+        'vas_form_events' => array(
+            'form_id' => 'varchar(255) NOT NULL DEFAULT \'\'',
+            'session_id' => 'varchar(255) NOT NULL',
+            'event_type' => 'varchar(50) NOT NULL',
+            'page_number' => 'int(11) DEFAULT NULL',
+            'metadata' => 'text DEFAULT NULL',
+            'user_agent' => 'text DEFAULT NULL',
+            'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'eipsi_randomization_configs' => array(
+            'randomization_id' => 'varchar(255) NOT NULL',
+            'formularios' => 'LONGTEXT NOT NULL',
+            'probabilidades' => 'LONGTEXT',
+            "method" => "varchar(20) DEFAULT 'seeded'",
+            'manual_assignments' => 'LONGTEXT',
+            'show_instructions' => 'tinyint(1) DEFAULT 0',
+            'created_at' => 'datetime DEFAULT CURRENT_TIMESTAMP',
+            'updated_at' => 'datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+        ),
+        'eipsi_randomization_assignments' => array(
+            'randomization_id' => 'varchar(255) NOT NULL',
+            'config_id' => 'varchar(255) NOT NULL',
+            'user_fingerprint' => 'varchar(255) NOT NULL',
+            'assigned_form_id' => 'bigint(20) unsigned NOT NULL',
+            'assigned_at' => 'datetime DEFAULT CURRENT_TIMESTAMP',
+            'last_access' => 'datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+            'access_count' => 'int(11) DEFAULT 1'
+        ),
+        'survey_studies' => array(
+            'study_code' => 'VARCHAR(50) NOT NULL',
+            'study_name' => 'VARCHAR(255) NOT NULL',
+            'description' => 'TEXT',
+            'principal_investigator_id' => 'BIGINT(20) UNSIGNED',
+            "status" => "ENUM('active', 'completed', 'paused', 'archived') DEFAULT 'active'",
+            'config' => 'JSON',
+            'created_at' => 'DATETIME NOT NULL',
+            'updated_at' => 'DATETIME NOT NULL'
+        ),
+        'survey_participants' => array(
+            'survey_id' => 'INT(11)',
+            'email' => 'VARCHAR(255) NOT NULL',
+            'password_hash' => 'VARCHAR(255)',
+            'first_name' => 'VARCHAR(100)',
+            'last_name' => 'VARCHAR(100)',
+            'created_at' => 'DATETIME NOT NULL',
+            'last_login_at' => 'DATETIME',
+            'is_active' => 'TINYINT(1) DEFAULT 1'
+        ),
+        'survey_sessions' => array(
+            'token' => 'VARCHAR(255) NOT NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'survey_id' => 'INT(11)',
+            'ip_address' => 'VARCHAR(45)',
+            'user_agent' => 'VARCHAR(500)',
+            'expires_at' => 'DATETIME NOT NULL',
+            'created_at' => 'DATETIME NOT NULL'
+        ),
+        'survey_waves' => array(
+            'study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'wave_index' => 'INT NOT NULL',
+            'name' => 'VARCHAR(255) NOT NULL',
+            'form_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'start_date' => 'DATETIME NULL',
+            'due_date' => 'DATETIME NULL',
+            'reminder_days' => 'INT DEFAULT 3',
+            'retry_enabled' => 'TINYINT(1) DEFAULT 1',
+            'retry_days' => 'INT DEFAULT 7',
+            'max_retries' => 'INT DEFAULT 3',
+            'has_time_limit' => 'TINYINT(1) DEFAULT 0',
+            'completion_time_limit' => 'INT DEFAULT NULL',
+            "status" => "ENUM('draft', 'active', 'completed', 'paused') DEFAULT 'draft'",
+            'is_mandatory' => 'TINYINT(1) DEFAULT 1',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+        ),
+        'survey_assignments' => array(
+            'study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'wave_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            "status" => "ENUM('pending', 'in_progress', 'submitted', 'skipped', 'expired') DEFAULT 'pending'",
+            'assigned_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+            'first_viewed_at' => 'DATETIME NULL',
+            'submitted_at' => 'DATETIME NULL',
+            'reminder_count' => 'INT DEFAULT 0',
+            'last_reminder_sent' => 'DATETIME NULL',
+            'retry_count' => 'INT DEFAULT 0',
+            'last_retry_sent' => 'DATETIME NULL',
+            'due_at' => 'DATETIME NULL',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+        ),
+        'survey_magic_links' => array(
+            'survey_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'token_hash' => 'VARCHAR(255) NOT NULL',
+            'token_plain' => 'VARCHAR(36)',
+            'expires_at' => 'DATETIME NOT NULL',
+            'used_at' => 'DATETIME NULL',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'survey_email_log' => array(
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'survey_id' => 'INT(11)',
+            "email_type" => "ENUM('reminder', 'welcome', 'confirmation', 'magic_link', 'recovery', 'custom', 'audit_log') DEFAULT 'custom'",
+            'wave_id' => 'BIGINT(20) UNSIGNED',
+            'recipient_email' => 'VARCHAR(255)',
+            'subject' => 'VARCHAR(500)',
+            'content' => 'TEXT',
+            'sent_at' => 'DATETIME NOT NULL',
+            "status" => "ENUM('sent', 'failed', 'bounced', 'audit') DEFAULT 'sent'",
+            'error_message' => 'TEXT',
+            'magic_link_used' => 'TINYINT(1) DEFAULT 0',
+            'metadata' => 'JSON',
+            'created_at' => 'DATETIME'
+        ),
+        'survey_audit_log' => array(
+            'survey_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NULL',
+            'action' => 'VARCHAR(100) NOT NULL',
+            "actor_type" => "ENUM('admin', 'system') DEFAULT 'system'",
+            'actor_id' => 'BIGINT(20) UNSIGNED NULL',
+            'actor_username' => 'VARCHAR(255) NULL',
+            'ip_address' => 'VARCHAR(45) NULL',
+            'metadata' => 'JSON NULL',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'survey_email_confirmations' => array(
+            'survey_id' => 'INT(11) NOT NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'email' => 'VARCHAR(255) NOT NULL',
+            'token_hash' => 'VARCHAR(64) NOT NULL',
+            'token_plain' => 'VARCHAR(64) NOT NULL',
+            'expires_at' => 'DATETIME NOT NULL',
+            'confirmed_at' => 'DATETIME NULL',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'eipsi_longitudinal_pools' => array(
+            'pool_name' => 'VARCHAR(255) NOT NULL',
+            'pool_description' => 'TEXT',
+            'studies' => 'JSON',
+            'probabilities' => 'JSON',
+            "method" => "ENUM('seeded', 'pure-random') DEFAULT 'seeded'",
+            "status" => "ENUM('active', 'inactive') DEFAULT 'active'",
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+        ),
+        'eipsi_longitudinal_pool_assignments' => array(
+            'pool_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'assigned_study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'assigned_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+            "status" => "ENUM('assigned', 'completed', 'dropped') DEFAULT 'assigned'"
+        ),
+        'survey_participant_access_log' => array(
+            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+            'study_id' => 'INT(11) NOT NULL',
+            "action_type" => "ENUM('registration', 'login', 'login_failed', 'magic_link_clicked', 'magic_link_sent', 'wave_started', 'wave_completed', 'logout', 'session_expired', 'password_reset_requested', 'password_reset_completed') NOT NULL",
+            'ip_address' => 'VARCHAR(45) NOT NULL',
+            'user_agent' => 'VARCHAR(500)',
+            'metadata' => 'JSON',
+            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        'eipsi_device_data' => array(
+            'submission_id' => 'BIGINT(20) UNSIGNED NULL',
+            'participant_id' => 'BIGINT(20) UNSIGNED NULL',
+            'canvas_fingerprint' => 'VARCHAR(255) NULL',
+            'webgl_renderer' => 'VARCHAR(255) NULL',
+            'screen_resolution' => 'VARCHAR(50) NULL',
+            'screen_depth' => 'INT NULL',
+            'pixel_ratio' => 'DECIMAL(4,2) NULL',
+            'timezone' => 'VARCHAR(100) NULL',
+            'timezone_offset' => 'INT NULL',
+            'language' => 'VARCHAR(50) NULL',
+            'languages' => 'VARCHAR(255) NULL',
+            'cpu_cores' => 'INT NULL',
+            'ram' => 'INT NULL',
+            'do_not_track' => 'VARCHAR(20) NULL',
+            'cookies_enabled' => 'VARCHAR(10) NULL',
+            'plugins' => 'TEXT NULL',
+            'user_agent' => 'TEXT NULL',
+            'platform' => 'VARCHAR(100) NULL',
+            'touch_support' => 'VARCHAR(10) NULL',
+            'max_touch_points' => 'INT NULL',
+            'captured_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        )
+    );
+}
+
+/**
  * Get required columns for each table
  * 
  * @since 1.6.0
@@ -2997,60 +3218,11 @@ public static function get_detailed_table_status($table_name) {
  * @return array Required columns
  */
 private static function get_required_columns_for_table($table_name) {
-    $columns = array(
-        'vas_form_results' => array(
-            'id', 'form_id', 'participant_id', 'session_id', 'form_name', 'created_at', 
-            'device', 'ip_address', 'status', 'form_responses'
-        ),
-        'vas_form_events' => array(
-            'id', 'form_id', 'session_id', 'event_type', 'created_at'
-        ),
-        'eipsi_randomization_configs' => array(
-            'id', 'form_id', 'name', 'created_at'
-        ),
-        'eipsi_randomization_assignments' => array(
-            'id', 'config_id', 'user_fingerprint', 'assigned_form_id', 'assigned_at'
-        ),
-        'survey_studies' => array(
-            'id', 'study_code', 'study_name', 'status', 'created_at', 'updated_at'
-        ),
-        'survey_participants' => array(
-            'id', 'survey_id', 'email', 'created_at', 'is_active'
-        ),
-        'survey_sessions' => array(
-            'id', 'token', 'participant_id', 'expires_at', 'created_at'
-        ),
-        'survey_waves' => array(
-            'id', 'study_id', 'wave_index', 'name', 'form_id', 'status', 'created_at'
-        ),
-        'survey_assignments' => array(
-            'id', 'study_id', 'wave_id', 'participant_id', 'status', 'assigned_at'
-        ),
-        'survey_magic_links' => array(
-            'id', 'survey_id', 'participant_id', 'token_hash', 'expires_at', 'created_at'
-        ),
-        'survey_email_log' => array(
-            'id', 'survey_id', 'participant_id', 'email_type', 'recipient_email', 'status', 'sent_at'
-        ),
-        'survey_audit_log' => array(
-            'id', 'study_id', 'participant_id', 'action', 'created_at'
-        ),
-        'eipsi_longitudinal_pools' => array(
-            'id', 'name', 'created_at'
-        ),
-        'eipsi_longitudinal_pool_assignments' => array(
-            'id', 'pool_id', 'participant_id', 'assigned_at'
-        ),
-        'survey_participant_access_log' => array(
-            'id', 'participant_id', 'survey_id', 'action', 'created_at'
-        ),
-        'eipsi_device_data' => array(
-            'id', 'participant_id', 'survey_id', 'fingerprint_hash', 'created_at'
-        )
-    );
-    
-    return isset($columns[$table_name]) ? $columns[$table_name] : array();
+    $definitions = self::get_schema_map();
+
+    return isset($definitions[$table_name]) ? array_keys($definitions[$table_name]) : array();
 }
+
 
 /**
  * Get critical columns that if missing should trigger error status
@@ -3092,6 +3264,7 @@ public static function get_all_tables_status() {
         'survey_magic_links',
         'survey_email_log',
         'survey_audit_log',
+        'survey_email_confirmations',
         'eipsi_longitudinal_pools',
         'eipsi_longitudinal_pool_assignments',
         'survey_participant_access_log',
@@ -3148,6 +3321,7 @@ public static function repair_single_table($table_name) {
             'survey_magic_links' => 'sync_local_survey_magic_links_table',
             'survey_email_log' => 'sync_local_survey_email_log_table',
             'survey_audit_log' => 'sync_local_survey_audit_log_table',
+            'survey_email_confirmations' => 'sync_local_survey_email_confirmations_table',
             'eipsi_longitudinal_pools' => 'sync_local_longitudinal_pools_table',
             'eipsi_longitudinal_pool_assignments' => 'sync_local_longitudinal_pool_assignments_table',
             'survey_participant_access_log' => 'sync_local_survey_participant_access_log_table',
@@ -3162,8 +3336,8 @@ public static function repair_single_table($table_name) {
             $result['error'] = $sync_result['error'] ?? null;
             $result['message'] = $result['created'] ? 'Tabla creada exitosamente' : 'Error al crear tabla';
             
-            error_log("[EIPSI Schema Repair] Table {$table_name}: created=" . ($result['created'] ? 'yes' : 'no') . 
-                      ", columns_added=" . count($result['columns_added']) . 
+            error_log("[EIPSI Schema Repair] Table {$table_name}: created=" . ($result['created'] ? 'yes' : 'no') .
+                      ", columns_added=" . count($result['columns_added']) .
                       ", error=" . ($result['error'] ?? 'none'));
         } else {
             $result['error'] = 'Método de sincronización no encontrado para: ' . $table_name;
@@ -3177,6 +3351,12 @@ public static function repair_single_table($table_name) {
         if (!empty($missing_columns)) {
             // Get column definitions from the appropriate sync function
             $column_definitions = self::get_column_definitions_for_table($table_name);
+
+            if (empty($column_definitions)) {
+                $result['error'] = 'Definiciones de columnas no disponibles para: ' . $table_name;
+                $result['message'] = $result['error'];
+                return $result;
+            }
             
             foreach ($missing_columns as $column) {
                 if (isset($column_definitions[$column])) {
@@ -3189,13 +3369,16 @@ public static function repair_single_table($table_name) {
                         $result['columns_missing'][] = $column;
                         error_log("[EIPSI Schema Repair] Failed to add column {$column} to {$table_name}: " . $wpdb->last_error);
                     }
+                } else {
+                    $result['columns_missing'][] = $column;
+                    error_log("[EIPSI Schema Repair] Missing definition for column {$column} in {$table_name}");
                 }
             }
         }
         
         $result['success'] = empty($result['columns_missing']);
-        $result['message'] = empty($result['columns_added']) 
-            ? 'No se requirieron cambios' 
+        $result['message'] = empty($result['columns_added'])
+            ? 'No se requirieron cambios'
             : 'Columnas agregadas: ' . implode(', ', $result['columns_added']);
     }
     
@@ -3213,181 +3396,11 @@ public static function repair_single_table($table_name) {
  * @return array Column definitions
  */
 private static function get_column_definitions_for_table($table_name) {
-    $definitions = array(
-        'vas_form_results' => array(
-            'form_id' => 'varchar(20) DEFAULT NULL',
-            'participant_id' => 'varchar(20) DEFAULT NULL',
-            'survey_id' => 'INT(11) DEFAULT NULL',
-            'wave_index' => 'INT(11) DEFAULT NULL',
-            'session_id' => 'varchar(255) DEFAULT NULL',
-            'user_fingerprint' => 'varchar(255) DEFAULT NULL',
-            'browser' => 'varchar(100) DEFAULT NULL',
-            'os' => 'varchar(100) DEFAULT NULL',
-            'screen_width' => 'int(11) DEFAULT NULL',
-            'duration_seconds' => 'decimal(8,3) DEFAULT NULL',
-            'submitted_at' => 'datetime DEFAULT NULL',
-            'start_timestamp_ms' => 'bigint(20) DEFAULT NULL',
-            'end_timestamp_ms' => 'bigint(20) DEFAULT NULL',
-            'metadata' => 'LONGTEXT DEFAULT NULL',
-            "status" => "enum('pending','submitted','error') DEFAULT 'submitted'"
-        ),
-        'vas_form_events' => array(
-            'form_id' => 'varchar(255) NOT NULL DEFAULT \'\'',
-            'session_id' => 'varchar(255) NOT NULL DEFAULT \'\'',
-            'event_type' => 'varchar(50) NOT NULL DEFAULT \'\'',
-            'page_number' => 'int(11) DEFAULT NULL',
-            'metadata' => 'text DEFAULT NULL',
-            'user_agent' => 'text DEFAULT NULL',
-            'created_at' => 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'survey_studies' => array(
-            'study_code' => 'VARCHAR(50) NOT NULL',
-            'study_name' => 'VARCHAR(255) NOT NULL',
-            'description' => 'TEXT',
-            'principal_investigator_id' => 'BIGINT(20) UNSIGNED',
-            'status' => 'ENUM(\'active\', \'completed\', \'paused\', \'archived\') DEFAULT \'active\'',
-            'config' => 'JSON',
-            'created_at' => 'DATETIME NOT NULL',
-            'updated_at' => 'DATETIME NOT NULL'
-        ),
-        'survey_participants' => array(
-            'survey_id' => 'INT(11)',
-            'email' => 'VARCHAR(255) NOT NULL',
-            'password_hash' => 'VARCHAR(255)',
-            'first_name' => 'VARCHAR(100)',
-            'last_name' => 'VARCHAR(100)',
-            'created_at' => 'DATETIME NOT NULL',
-            'last_login_at' => 'DATETIME',
-            'is_active' => 'TINYINT(1) DEFAULT 1'
-        ),
-        'survey_sessions' => array(
-            'token' => 'VARCHAR(255) NOT NULL',
-            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'survey_id' => 'INT(11)',
-            'ip_address' => 'VARCHAR(45)',
-            'user_agent' => 'VARCHAR(500)',
-            'expires_at' => 'DATETIME NOT NULL',
-            'created_at' => 'DATETIME NOT NULL'
-        ),
-        'survey_waves' => array(
-            'study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'wave_index' => 'INT NOT NULL',
-            'name' => 'VARCHAR(255) NOT NULL',
-            'form_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'start_date' => 'DATETIME NULL',
-            'due_date' => 'DATETIME NULL',
-            'reminder_days' => 'INT DEFAULT 3',
-            'retry_enabled' => 'TINYINT(1) DEFAULT 1',
-            'retry_days' => 'INT DEFAULT 7',
-            'max_retries' => 'INT DEFAULT 3',
-            'has_time_limit' => 'TINYINT(1) DEFAULT 0',
-            'completion_time_limit' => 'INT DEFAULT NULL',
-            'status' => 'ENUM(\'draft\', \'active\', \'completed\', \'paused\') DEFAULT \'draft\'',
-            'is_mandatory' => 'TINYINT(1) DEFAULT 1',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
-            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
-        ),
-        'survey_assignments' => array(
-            'study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'wave_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'status' => 'ENUM(\'pending\', \'in_progress\', \'submitted\', \'skipped\', \'expired\') DEFAULT \'pending\'',
-            'assigned_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
-            'first_viewed_at' => 'DATETIME NULL',
-            'submitted_at' => 'DATETIME NULL',
-            'reminder_count' => 'INT DEFAULT 0',
-            'last_reminder_sent' => 'DATETIME NULL',
-            'retry_count' => 'INT DEFAULT 0',
-            'last_retry_sent' => 'DATETIME NULL',
-            'due_at' => 'DATETIME NULL',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
-            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
-        ),
-        'survey_magic_links' => array(
-            'survey_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'token_hash' => 'VARCHAR(255) NOT NULL',
-            'token_plain' => 'VARCHAR(36)',
-            'expires_at' => 'DATETIME NOT NULL',
-            'used_at' => 'DATETIME NULL',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'survey_email_log' => array(
-            'survey_id' => 'BIGINT(20) UNSIGNED',
-            'participant_id' => 'BIGINT(20) UNSIGNED',
-            'email_type' => 'VARCHAR(50)',
-            'recipient_email' => 'VARCHAR(255)',
-            'subject' => 'VARCHAR(500)',
-            'content' => 'LONGTEXT',
-            'status' => 'VARCHAR(20) DEFAULT \'pending\'',
-            'sent_at' => 'DATETIME',
-            'error_message' => 'TEXT',
-            'magic_link_used' => 'TINYINT(1) DEFAULT 0',
-            'metadata' => 'JSON',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'survey_audit_log' => array(
-            'study_id' => 'BIGINT(20) UNSIGNED',
-            'participant_id' => 'BIGINT(20) UNSIGNED',
-            'action' => 'VARCHAR(100) NOT NULL',
-            'user_id' => 'BIGINT(20) UNSIGNED',
-            'user_email' => 'VARCHAR(255)',
-            'details' => 'TEXT',
-            'ip_address' => 'VARCHAR(45)',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'eipsi_longitudinal_pools' => array(
-            'name' => 'VARCHAR(255) NOT NULL',
-            'description' => 'TEXT',
-            'config' => 'JSON',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
-            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
-        ),
-        'eipsi_longitudinal_pool_assignments' => array(
-            'pool_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'assigned_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'survey_participant_access_log' => array(
-            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-            'survey_id' => 'BIGINT(20) UNSIGNED',
-            'wave_id' => 'BIGINT(20) UNSIGNED',
-            'action' => 'VARCHAR(50) NOT NULL',
-            'ip_address' => 'VARCHAR(45)',
-            'user_agent' => 'TEXT',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'eipsi_device_data' => array(
-            'participant_id' => 'BIGINT(20) UNSIGNED',
-            'survey_id' => 'BIGINT(20) UNSIGNED',
-            'fingerprint_hash' => 'VARCHAR(255)',
-            'device_type' => 'VARCHAR(50)',
-            'device_name' => 'VARCHAR(255)',
-            'browser' => 'VARCHAR(100)',
-            'os' => 'VARCHAR(100)',
-            'screen_resolution' => 'VARCHAR(50)',
-            'language' => 'VARCHAR(20)',
-            'timezone' => 'VARCHAR(50)',
-            'raw_data' => 'JSON',
-            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-        ),
-        'eipsi_randomization_configs' => array(
-            'form_id' => 'varchar(255) NOT NULL',
-            'name' => 'varchar(255) NOT NULL',
-            'config' => 'LONGTEXT',
-            'created_at' => 'datetime NOT NULL',
-            'updated_at' => 'datetime NOT NULL'
-        ),
-        'eipsi_randomization_assignments' => array(
-            'config_id' => 'int(11) NOT NULL',
-            'user_fingerprint' => 'varchar(255) NOT NULL',
-            'assigned_form_id' => 'varchar(255) NOT NULL',
-            'assigned_at' => 'datetime NOT NULL'
-        )
-    );
-    
+    $definitions = self::get_schema_map();
+
     return isset($definitions[$table_name]) ? $definitions[$table_name] : array();
 }
+
 
 /**
  * Get schema health summary
