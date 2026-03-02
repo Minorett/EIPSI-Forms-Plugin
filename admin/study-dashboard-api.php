@@ -91,6 +91,32 @@ function wp_ajax_eipsi_get_study_overview_handler() {
         }
     }
 
+    // Get study page URL
+    $study_page_url = null;
+    $study_page_id = null;
+    if (function_exists('eipsi_get_study_page_url')) {
+        $study_page_url = eipsi_get_study_page_url($study_id, $study->study_code);
+        
+        // Get page ID for edit link
+        $pages = get_posts(array(
+            'post_type' => 'page',
+            'meta_key' => 'eipsi_study_id',
+            'meta_value' => $study_id,
+            'posts_per_page' => 1
+        ));
+        if (!empty($pages)) {
+            $study_page_id = $pages[0]->ID;
+        }
+    }
+    
+    // If no page exists, create one
+    if (empty($study_page_url) && function_exists('eipsi_create_study_page')) {
+        $study_page_id = eipsi_create_study_page($study_id, $study->study_code, $study->study_name ?? 'Estudio');
+        if ($study_page_id) {
+            $study_page_url = get_permalink($study_page_id);
+        }
+    }
+
     // 2. Participant stats
     // La tabla participants usa 'survey_id' (que es el ID del estudio), no 'study_id'
     $participants_stats = array(
@@ -170,7 +196,13 @@ function wp_ajax_eipsi_get_study_overview_handler() {
         'general' => $study,
         'participants' => $participants_stats,
         'waves' => $waves_stats,
-        'emails' => $emails_stats
+        'emails' => $emails_stats,
+        'page' => array(
+            'url' => $study_page_url,
+            'id' => $study_page_id,
+            'edit_url' => $study_page_id ? get_edit_post_link($study_page_id, 'raw') : null,
+            'shortcode' => '[eipsi_longitudinal_study study_code="' . $study->study_code . '"]'
+        )
     ));
 }
 
@@ -1957,5 +1989,66 @@ function wp_ajax_eipsi_get_pending_confirmations_handler() {
             'expiring_soon' => $expiring_soon,
             'hours_threshold' => 24
         )
+    ));
+}
+
+// ============================================================================
+// STUDY PAGE HANDLERS (v1.7.0)
+// ============================================================================
+
+/**
+ * POST create study page
+ *
+ * Creates a WordPress page for the study if it doesn't exist.
+ *
+ * @since 1.7.0
+ */
+add_action('wp_ajax_eipsi_create_study_page', 'wp_ajax_eipsi_create_study_page_handler');
+
+function wp_ajax_eipsi_create_study_page_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    if (empty($study_id)) {
+        wp_send_json_error(array('message' => 'Missing study ID'));
+    }
+
+    global $wpdb;
+
+    // Get study info
+    $study = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, study_code, study_name FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $study_id
+    ));
+
+    if (!$study) {
+        wp_send_json_error(array('message' => 'Study not found'));
+    }
+
+    // Generate study code if not set
+    if (empty($study->study_code)) {
+        $study->study_code = 'STUDY_' . $study_id;
+    }
+
+    // Check if function exists
+    if (!function_exists('eipsi_create_study_page')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/setup-wizard.php';
+    }
+
+    // Create the page
+    $page_id = eipsi_create_study_page($study_id, $study->study_code, $study->study_name ?? 'Estudio');
+
+    if (!$page_id) {
+        wp_send_json_error(array('message' => 'Failed to create study page'));
+    }
+
+    wp_send_json_success(array(
+        'message' => 'Página del estudio creada correctamente',
+        'page_id' => $page_id,
+        'page_url' => get_permalink($page_id)
     ));
 }

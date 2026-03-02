@@ -56,6 +56,44 @@ if (!defined('ABSPATH')) {
                         </div>
                     </div>
 
+                    <!-- Study Page Card -->
+                    <div class="dashboard-card page-card">
+                        <h3>🌐 <?php esc_html_e('Página del Estudio', 'eipsi-forms'); ?></h3>
+                        <div class="card-body">
+                            <div id="study-page-exists" style="display:none;">
+                                <p class="description">
+                                    <?php esc_html_e('Página pública donde los participantes pueden acceder al estudio:', 'eipsi-forms'); ?>
+                                </p>
+                                <div class="eipsi-page-url-field">
+                                    <input type="text" id="study-page-url" class="widefat" readonly>
+                                    <button type="button" class="button button-secondary button-small" id="copy-study-page-url">
+                                        📋 <?php esc_html_e('Copiar', 'eipsi-forms'); ?>
+                                    </button>
+                                </div>
+                                <div class="eipsi-page-actions" style="margin-top: 10px;">
+                                    <a href="#" id="study-page-view-link" class="button button-secondary button-small" target="_blank">
+                                        👁️ <?php esc_html_e('Ver página', 'eipsi-forms'); ?>
+                                    </a>
+                                    <a href="#" id="study-page-edit-link" class="button button-secondary button-small" target="_blank">
+                                        ✏️ <?php esc_html_e('Editar página', 'eipsi-forms'); ?>
+                                    </a>
+                                </div>
+                            </div>
+                            <div id="study-page-not-exists" style="display:none;">
+                                <p class="description">
+                                    <?php esc_html_e('Este estudio aún no tiene una página pública asociada.', 'eipsi-forms'); ?>
+                                </p>
+                                <button type="button" class="button button-primary" id="create-study-page">
+                                    ➕ <?php esc_html_e('Crear página del estudio', 'eipsi-forms'); ?>
+                                </button>
+                            </div>
+                            <div id="study-page-loading" class="eipsi-loading-inline">
+                                <span class="spinner is-active" style="float:none; margin:0;"></span>
+                                <span><?php esc_html_e('Cargando...', 'eipsi-forms'); ?></span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Participant Stats Card -->
                     <div class="dashboard-card participants-card">
                         <h3>👥 <?php esc_html_e('Participantes', 'eipsi-forms'); ?></h3>
