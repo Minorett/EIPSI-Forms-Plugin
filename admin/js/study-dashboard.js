@@ -2292,7 +2292,9 @@
 			);
 
 			// Display study_code or fallback to numeric ID
-			const displayId = data.general.study_code || 'ID: ' + ( data.general.id || currentStudyId );
+			const displayId =
+				data.general.study_code ||
+				'ID: ' + ( data.general.id || currentStudyId );
 			$( '#study-id-display' ).text( displayId );
 
 			// Build shortcode with fallback to numeric ID
