@@ -251,10 +251,12 @@
         },
 
         renderDashboard: function(data) {
+            const self = this;
             const general = data.general;
             const participants = data.participants;
             const waves = data.waves;
             const emails = data.emails;
+            const page = data.page;
 
             // General Info - usar study_code si existe, sino id
             const studyDisplayId = general.study_code || general.id;
@@ -265,8 +267,11 @@
             $('#study-status-badge').text(general.status).attr('class', `eipsi-badge badge-${general.status}`);
 
             // Shortcode - generar con study_code o id
-            const shortcode = `[eipsi_longitudinal_study study_code="${studyDisplayId}"]`;
+            const shortcode = page && page.shortcode ? page.shortcode : `[eipsi_longitudinal_study study_code="${studyDisplayId}"]`;
             $('#study-shortcode-display').text(shortcode);
+
+            // Study Page - show URL and actions
+            this.renderStudyPage(page);
 
             // Participant Stats
             $('#total-participants').text(participants.total);
@@ -316,6 +321,108 @@
             $('#emails-sent-today').text(emails.sent_today);
             $('#emails-failed').text(emails.failed);
             $('#emails-last-sent').text(emails.last_sent ? this.formatRelativeTime(emails.last_sent) : 'Nunca');
+        },
+
+        /**
+         * Render study page section
+         */
+        renderStudyPage: function(page) {
+            const self = this;
+            const $loading = $('#study-page-loading');
+            const $exists = $('#study-page-exists');
+            const $notExists = $('#study-page-not-exists');
+
+            $loading.hide();
+
+            if (page && page.url) {
+                // Page exists
+                $exists.show();
+                $notExists.hide();
+
+                $('#study-page-url').val(page.url);
+                $('#study-page-view-link').attr('href', page.url);
+
+                if (page.edit_url) {
+                    $('#study-page-edit-link').attr('href', page.edit_url).show();
+                } else {
+                    $('#study-page-edit-link').hide();
+                }
+
+                // Bind copy button
+                $('#copy-study-page-url').off('click').on('click', function() {
+                    self.copyToClipboard(page.url, this);
+                });
+            } else {
+                // Page doesn't exist
+                $exists.hide();
+                $notExists.show();
+
+                // Bind create page button
+                $('#create-study-page').off('click').on('click', function() {
+                    self.createStudyPage();
+                });
+            }
+        },
+
+        /**
+         * Create study page via AJAX
+         */
+        createStudyPage: function() {
+            const self = this;
+            const $btn = $('#create-study-page');
+
+            $btn.prop('disabled', true).text('Creando...');
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_create_study_page',
+                    study_id: this.currentStudyId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.showToast('Página del estudio creada correctamente', 'success');
+                        // Reload study data to get the new page info
+                        self.loadStudyData(self.currentStudyId);
+                    } else {
+                        self.showToast('Error: ' + (response.data || 'No se pudo crear la página'), 'error');
+                        $btn.prop('disabled', false).text('➕ Crear página del estudio');
+                    }
+                },
+                error: function() {
+                    self.showToast('Error de conexión', 'error');
+                    $btn.prop('disabled', false).text('➕ Crear página del estudio');
+                }
+            });
+        },
+
+        /**
+         * Copy text to clipboard
+         */
+        copyToClipboard: function(text, button) {
+            const $btn = $(button);
+            const originalText = $btn.text();
+
+            navigator.clipboard.writeText(text).then(function() {
+                $btn.text('✓ Copiado').prop('disabled', true);
+                setTimeout(function() {
+                    $btn.text(originalText).prop('disabled', false);
+                }, 2000);
+            }).catch(function() {
+                // Fallback
+                const $temp = $('<input>');
+                $('body').append($temp);
+                $temp.val(text).select();
+                document.execCommand('copy');
+                $temp.remove();
+
+                $btn.text('✓ Copiado').prop('disabled', true);
+                setTimeout(function() {
+                    $btn.text(originalText).prop('disabled', false);
+                }, 2000);
+            });
         },
 
         openEmailLogs: function() {

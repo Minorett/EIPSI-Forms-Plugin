@@ -23,6 +23,8 @@ class EIPSI_Email_Service {
     /**
      * Generate magic link URL.
      *
+     * Uses the study page URL if available, otherwise falls back to site_url.
+     *
      * @param int $survey_id Survey ID.
      * @param int $participant_id Participant ID.
      * @return string|false Full URL or false on failure.
@@ -40,8 +42,44 @@ class EIPSI_Email_Service {
             return false;
         }
 
-        // URL structure: site_url/?eipsi_magic=TOKEN
-        return add_query_arg('eipsi_magic', $token, site_url('/'));
+        // Get study code for the survey
+        $study_code = self::get_study_code($survey_id);
+        
+        // Try to get the study page URL
+        $base_url = null;
+        if ($study_code && function_exists('eipsi_get_study_page_url')) {
+            $base_url = eipsi_get_study_page_url($survey_id, $study_code);
+        }
+        
+        // Fallback to site_url if no study page exists
+        if (empty($base_url)) {
+            $base_url = site_url('/');
+        }
+
+        // URL structure: base_url?eipsi_magic=TOKEN
+        return add_query_arg('eipsi_magic', $token, $base_url);
+    }
+
+    /**
+     * Get study code from survey ID.
+     *
+     * @param int $survey_id Survey ID.
+     * @return string|null Study code or null.
+     * @since 1.7.0
+     * @access private
+     */
+    private static function get_study_code($survey_id) {
+        global $wpdb;
+        
+        $survey_id = intval($survey_id);
+        if ($survey_id <= 0) {
+            return null;
+        }
+        
+        return $wpdb->get_var($wpdb->prepare(
+            "SELECT study_code FROM {$wpdb->prefix}survey_studies WHERE id = %d LIMIT 1",
+            $survey_id
+        ));
     }
 
     /**

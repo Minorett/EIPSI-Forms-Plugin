@@ -281,7 +281,105 @@ function eipsi_create_study_from_wizard($wizard_data) {
     // Store participant configuration
     eipsi_store_participant_config($study_id, $step_4);
     
+    // Auto-create WordPress page for this study with shortcode
+    $page_id = eipsi_create_study_page($study_id, $study_code, $step_1['study_name']);
+    
+    if ($page_id) {
+        error_log('[EIPSI] Created study page ID ' . $page_id . ' for study ' . $study_id);
+    }
+    
     return $study_id;
+}
+
+/**
+ * Auto-create WordPress page for study with shortcode
+ *
+ * @param int    $study_id   Study ID from wp_survey_studies
+ * @param string $study_code Unique study code
+ * @param string $study_name Study name
+ * @return int|false Page ID or false on failure
+ * @since 1.7.0
+ */
+function eipsi_create_study_page($study_id, $study_code, $study_name) {
+    // Check if page already exists for this study
+    $existing_page = get_page_by_path('estudio-' . sanitize_title($study_code));
+    
+    if (!$existing_page) {
+        // Check by meta field as well
+        $existing_pages = get_posts(array(
+            'post_type' => 'page',
+            'meta_key' => 'eipsi_study_id',
+            'meta_value' => $study_id,
+            'posts_per_page' => 1
+        ));
+        
+        if (!empty($existing_pages)) {
+            $existing_page = $existing_pages[0];
+        }
+    }
+    
+    if ($existing_page) {
+        // Page exists, update it
+        update_post_meta($existing_page->ID, 'eipsi_study_code', $study_code);
+        update_post_meta($existing_page->ID, 'eipsi_study_id', $study_id);
+        return $existing_page->ID;
+    }
+    
+    // Create new page
+    $page_title = sprintf(__('Estudio: %s', 'eipsi-forms'), $study_name);
+    $page_slug = 'estudio-' . sanitize_title($study_code);
+    $page_content = '[eipsi_longitudinal_study study_code="' . esc_attr($study_code) . '"]';
+    
+    $page_id = wp_insert_post(array(
+        'post_title' => $page_title,
+        'post_name' => $page_slug,
+        'post_content' => $page_content,
+        'post_status' => 'publish',
+        'post_type' => 'page',
+        'meta_input' => array(
+            'eipsi_study_code' => $study_code,
+            'eipsi_study_id' => $study_id
+        )
+    ));
+    
+    if (is_wp_error($page_id)) {
+        error_log('[EIPSI] Failed to create study page: ' . $page_id->get_error_message());
+        return false;
+    }
+    
+    return $page_id;
+}
+
+/**
+ * Get the study page URL for a study
+ *
+ * @param int    $study_id   Study ID
+ * @param string $study_code Study code (optional, will be fetched if not provided)
+ * @return string|null Page URL or null if no page exists
+ * @since 1.7.0
+ */
+function eipsi_get_study_page_url($study_id, $study_code = '') {
+    // Try to find by meta field first
+    $pages = get_posts(array(
+        'post_type' => 'page',
+        'meta_key' => 'eipsi_study_id',
+        'meta_value' => $study_id,
+        'posts_per_page' => 1
+    ));
+    
+    if (!empty($pages)) {
+        return get_permalink($pages[0]->ID);
+    }
+    
+    // Try by study code
+    if (!empty($study_code)) {
+        $page = get_page_by_path('estudio-' . sanitize_title($study_code));
+        if ($page) {
+            return get_permalink($page->ID);
+        }
+    }
+    
+    return null;
 }
 
 /**
