@@ -1308,17 +1308,34 @@ function wp_ajax_eipsi_delete_participant_handler() {
         wp_send_json_error(array('message' => 'Participant not found'));
     }
 
-    // Hard delete
-    $success = EIPSI_Participant_Service::hard_delete($participant_id, $reason);
+    // Hard delete - now returns array with details
+    $result = EIPSI_Participant_Service::hard_delete($participant_id, $reason);
 
-    if ($success) {
+    if ($result['success']) {
+        $deleted_count = count($result['deleted']);
+        $anonymized_count = count($result['anonymized']);
+        
+        $message = sprintf(
+            __('Participante "%s" ha sido eliminado. %d tablas purgadas, %d tablas anonimizadas (logs de auditoría preservados).', 'eipsi-forms'),
+            $participant->email,
+            $deleted_count,
+            $anonymized_count
+        );
+        
         wp_send_json_success(array(
-            'message' => sprintf(__('Participante "%s" ha sido eliminado completamente junto con todo su historial.', 'eipsi-forms'), $participant->email),
+            'message' => $message,
             'action' => 'deleted',
-            'participant_id' => $participant_id
+            'participant_id' => $participant_id,
+            'details' => array(
+                'deleted_tables' => array_keys($result['deleted']),
+                'anonymized_tables' => array_keys($result['anonymized'])
+            )
         ));
     } else {
-        wp_send_json_error(array('message' => __('Error al eliminar el participante.', 'eipsi-forms')));
+        wp_send_json_error(array(
+            'message' => __('Error al eliminar el participante.', 'eipsi-forms'),
+            'details' => $result['errors']
+        ));
     }
 }
 
