@@ -1834,11 +1834,11 @@ class EIPSI_Database_Schema_Manager {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
             PRIMARY KEY (id),
-            KEY idx_study_id (study_id),
-            KEY idx_wave_index (study_id, wave_index),
-            KEY idx_status (status),
-            KEY idx_due_date (due_date),
-            UNIQUE KEY uk_study_index (study_id, wave_index)
+            KEY `idx_study_id` (`study_id`),
+            KEY `idx_wave_index` (`study_id`, `wave_index`),
+            KEY `idx_status` (`status`),
+            KEY `idx_due_date` (`due_date`),
+            UNIQUE KEY `uk_study_index` (`study_id`, `wave_index`)
         ) ENGINE=InnoDB {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -1937,13 +1937,13 @@ class EIPSI_Database_Schema_Manager {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
             PRIMARY KEY (id),
-            KEY idx_study_id (study_id),
-            KEY idx_wave_id (wave_id),
-            KEY idx_participant_id (participant_id),
-            KEY idx_status (status),
-            KEY idx_submitted_at (submitted_at),
-            KEY idx_due_at (due_at),
-            UNIQUE KEY uk_wave_participant (wave_id, participant_id)
+            KEY `idx_study_id` (`study_id`),
+            KEY `idx_wave_id` (`wave_id`),
+            KEY `idx_participant_id` (`participant_id`),
+            KEY `idx_status` (`status`),
+            KEY `idx_submitted_at` (`submitted_at`),
+            KEY `idx_due_at` (`due_at`),
+            UNIQUE KEY `uk_wave_participant` (`wave_id`, `participant_id`)
         ) ENGINE=InnoDB {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -2027,10 +2027,10 @@ class EIPSI_Database_Schema_Manager {
                 used_at DATETIME NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
-                INDEX idx_survey_participant (survey_id, participant_id),
-                INDEX idx_token_hash (token_hash),
-                INDEX idx_expires_used (expires_at, used_at),
-                UNIQUE KEY uk_token_hash (token_hash)
+                KEY `idx_survey_participant` (`survey_id`, `participant_id`),
+                KEY `idx_token_hash` (`token_hash`),
+                KEY `idx_expires_used` (`expires_at`, `used_at`),
+                UNIQUE KEY `uk_token_hash` (`token_hash`)
             ) {$charset_collate};";
             
             require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -2081,10 +2081,10 @@ class EIPSI_Database_Schema_Manager {
                     used_at DATETIME NULL,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    INDEX idx_survey_participant (survey_id, participant_id),
-                    INDEX idx_token_hash (token_hash),
-                    INDEX idx_expires_used (expires_at, used_at),
-                    UNIQUE KEY uk_token_hash (token_hash)
+                    KEY `idx_survey_participant` (`survey_id`, `participant_id`),
+                    KEY `idx_token_hash` (`token_hash`),
+                    KEY `idx_expires_used` (`expires_at`, `used_at`),
+                    UNIQUE KEY `uk_token_hash` (`token_hash`)
                 ) {$charset_collate};";
                 
                 dbDelta( $sql );
@@ -2169,9 +2169,9 @@ class EIPSI_Database_Schema_Manager {
                 error_message TEXT,
                 metadata JSON,
                 PRIMARY KEY (id),
-                KEY participant_id (participant_id),
-                KEY sent_at (sent_at),
-                KEY status (status)
+                KEY `participant_id` (`participant_id`),
+                KEY `sent_at` (`sent_at`),
+                KEY `status` (`status`)
             ) {$charset_collate};";
             
             require_once ABSPATH . 'wp-admin/includes/upgrade.php';
