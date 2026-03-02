@@ -3451,6 +3451,351 @@ public static function get_schema_health_summary() {
     return $summary;
 }
 
+    // =================================================================
+    // TASK 6: Safe Table Creation Order + FK Guards
+    // =================================================================
+    
+    /**
+     * TASK 6: Get table creation order respecting FK dependencies
+     * 
+     * Order:
+     * - Level 0: Root tables (survey_studies, survey_participants, eipsi_longitudinal_pools)
+     * - Level 1: Tables depending on root (survey_sessions, survey_waves, etc.)
+     * - Level 2: Tables depending on level 1 (survey_assignments, pool_assignments)
+     * 
+     * @since 1.6.0
+     * @return array Ordered table list with dependencies
+     */
+    private static function get_table_creation_order() {
+        return array(
+            // Level 0: Root tables (no FK dependencies)
+            'survey_studies' => array(
+                'level' => 0,
+                'dependencies' => array(),
+                'sync_method' => 'sync_local_survey_studies_table',
+            ),
+            'survey_participants' => array(
+                'level' => 0,
+                'dependencies' => array(),
+                'sync_method' => 'sync_local_survey_participants_table',
+            ),
+            'eipsi_longitudinal_pools' => array(
+                'level' => 0,
+                'dependencies' => array(),
+                'sync_method' => 'sync_local_longitudinal_pools_table',
+            ),
+            // Independent tables (no FK constraints or optional FKs)
+            'survey_audit_log' => array(
+                'level' => 0,
+                'dependencies' => array(),
+                'sync_method' => 'sync_local_survey_audit_log_table',
+            ),
+            'eipsi_device_data' => array(
+                'level' => 0,
+                'dependencies' => array(),
+                'sync_method' => 'sync_local_device_data_table',
+            ),
+            // Level 1: Tables depending on root tables
+            'survey_sessions' => array(
+                'level' => 1,
+                'dependencies' => array('survey_participants'),
+                'sync_method' => 'sync_local_survey_sessions_table',
+            ),
+            'survey_waves' => array(
+                'level' => 1,
+                'dependencies' => array('survey_studies'),
+                'sync_method' => 'sync_local_survey_waves_table',
+            ),
+            'survey_magic_links' => array(
+                'level' => 1,
+                'dependencies' => array('survey_participants'),
+                'sync_method' => 'sync_local_survey_magic_links_table',
+            ),
+            'survey_email_log' => array(
+                'level' => 1,
+                'dependencies' => array('survey_participants'),
+                'sync_method' => 'sync_local_survey_email_log_table',
+            ),
+            'survey_email_confirmations' => array(
+                'level' => 1,
+                'dependencies' => array('survey_participants'),
+                'sync_method' => 'sync_local_survey_email_confirmations_table',
+            ),
+            'survey_participant_access_log' => array(
+                'level' => 1,
+                'dependencies' => array('survey_participants'),
+                'sync_method' => 'sync_local_survey_participant_access_log_table',
+            ),
+            // Level 2: Tables depending on level 1 tables
+            'survey_assignments' => array(
+                'level' => 2,
+                'dependencies' => array('survey_studies', 'survey_waves', 'survey_participants'),
+                'sync_method' => 'sync_local_survey_assignments_table',
+            ),
+            'eipsi_longitudinal_pool_assignments' => array(
+                'level' => 2,
+                'dependencies' => array('eipsi_longitudinal_pools', 'survey_participants', 'survey_studies'),
+                'sync_method' => 'sync_local_longitudinal_pool_assignments_table',
+            ),
+        );
+    }
+    
+    /**
+     * TASK 6: Ensure parent tables exist before creating child table
+     * 
+     * @since 1.6.0
+     * @param string $table_name Table to check dependencies for
+     * @param array $dependencies Array of required parent tables
+     * @return array Result with success status and missing tables
+     */
+    private static function ensure_parent_tables_exist( $table_name, $dependencies ) {
+        global $wpdb;
+        
+        $result = array(
+            'success' => true,
+            'missing_tables' => array(),
+            'created_tables' => array(),
+        );
+        
+        if ( empty( $dependencies ) ) {
+            return $result;
+        }
+        
+        $table_order = self::get_table_creation_order();
+        
+        foreach ( $dependencies as $dep_table ) {
+            $full_table_name = $wpdb->prefix . $dep_table;
+            
+            // Check if parent table exists
+            $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$full_table_name}'" );
+            
+            if ( empty( $table_exists ) ) {
+                // Parent doesn't exist - try to create it first
+                error_log( "[EIPSI Task 6] Parent table {$dep_table} missing, attempting to create before {$table_name}" );
+                
+                if ( isset( $table_order[ $dep_table ] ) ) {
+                    $sync_method = $table_order[ $dep_table ]['sync_method'];
+                    
+                    if ( method_exists( 'EIPSI_Database_Schema_Manager', $sync_method ) ) {
+                        $sync_result = call_user_func( array( 'EIPSI_Database_Schema_Manager', $sync_method ) );
+                        
+                        if ( ! empty( $sync_result['created'] ) ) {
+                            $result['created_tables'][] = $dep_table;
+                            error_log( "[EIPSI Task 6] Successfully created parent table {$dep_table}" );
+                        } elseif ( ! empty( $sync_result['exists'] ) ) {
+                            // Table was created by another process
+                            error_log( "[EIPSI Task 6] Parent table {$dep_table} now exists" );
+                        } else {
+                            $result['missing_tables'][] = $dep_table;
+                            $result['success'] = false;
+                            error_log( "[EIPSI Task 6] FAILED to create parent table {$dep_table}: " . ( $sync_result['error'] ?? 'Unknown error' ) );
+                        }
+                    } else {
+                        $result['missing_tables'][] = $dep_table;
+                        $result['success'] = false;
+                        error_log( "[EIPSI Task 6] Sync method not found for parent table {$dep_table}" );
+                    }
+                } else {
+                    $result['missing_tables'][] = $dep_table;
+                    $result['success'] = false;
+                    error_log( "[EIPSI Task 6] Unknown parent table dependency: {$dep_table}" );
+                }
+            }
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * TASK 6: Add foreign keys in phase 2 (after all tables exist)
+     * 
+     * @since 1.6.0
+     * @return array Results for each FK attempt
+     */
+    private static function add_foreign_keys_phase2() {
+        global $wpdb;
+        
+        $results = array(
+            'success' => true,
+            'added' => array(),
+            'failed' => array(),
+            'skipped' => array(),
+        );
+        
+        $fk_definitions = array(
+            'survey_waves' => array(
+                'fk_waves_study' => array(
+                    'referenced_table' => 'survey_studies',
+                    'sql' => "ALTER TABLE {table} ADD CONSTRAINT fk_waves_study FOREIGN KEY (study_id) REFERENCES {prefix}survey_studies(id) ON DELETE CASCADE",
+                ),
+            ),
+            'survey_assignments' => array(
+                'fk_assignments_study' => array(
+                    'referenced_table' => 'survey_studies',
+                    'sql' => "ALTER TABLE {table} ADD CONSTRAINT fk_assignments_study FOREIGN KEY (study_id) REFERENCES {prefix}survey_studies(id) ON DELETE CASCADE",
+                ),
+                'fk_assignments_wave' => array(
+                    'referenced_table' => 'survey_waves',
+                    'sql' => "ALTER TABLE {table} ADD CONSTRAINT fk_assignments_wave FOREIGN KEY (wave_id) REFERENCES {prefix}survey_waves(id) ON DELETE CASCADE",
+                ),
+                'fk_assignments_participant' => array(
+                    'referenced_table' => 'survey_participants',
+                    'sql' => "ALTER TABLE {table} ADD CONSTRAINT fk_assignments_participant FOREIGN KEY (participant_id) REFERENCES {prefix}survey_participants(id) ON DELETE CASCADE",
+                ),
+            ),
+            'eipsi_longitudinal_pool_assignments' => array(
+                'fk_pool_assignments_pool' => array(
+                    'referenced_table' => 'eipsi_longitudinal_pools',
+                    'sql' => "ALTER TABLE {table} ADD CONSTRAINT fk_pool_assignments_pool FOREIGN KEY (pool_id) REFERENCES {prefix}eipsi_longitudinal_pools(id) ON DELETE CASCADE",
+                ),
+                'fk_pool_assignments_participant' => array(
+                    'referenced_table' => 'survey_participants',
+                    'sql' => "ALTER TABLE {table} ADD CONSTRAINT fk_pool_assignments_participant FOREIGN KEY (participant_id) REFERENCES {prefix}survey_participants(id) ON DELETE CASCADE",
+                ),
+                'fk_pool_assignments_study' => array(
+                    'referenced_table' => 'survey_studies',
+                    'sql' => "ALTER TABLE {table} ADD CONSTRAINT fk_pool_assignments_study FOREIGN KEY (assigned_study_id) REFERENCES {prefix}survey_studies(id) ON DELETE CASCADE",
+                ),
+            ),
+        );
+        
+        foreach ( $fk_definitions as $table_name => $fks ) {
+            $full_table_name = $wpdb->prefix . $table_name;
+            
+            // Check if table exists
+            $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$full_table_name}'" );
+            if ( empty( $table_exists ) ) {
+                foreach ( $fks as $fk_name => $fk_info ) {
+                    $results['skipped'][] = "{$table_name}.{$fk_name}";
+                    error_log( "[EIPSI Task 6] Skipping FK {$fk_name}: table {$table_name} doesn't exist" );
+                }
+                continue;
+            }
+            
+            foreach ( $fks as $fk_name => $fk_info ) {
+                // Check if referenced table exists
+                $ref_table_name = $wpdb->prefix . $fk_info['referenced_table'];
+                $ref_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$ref_table_name}'" );
+                
+                if ( empty( $ref_exists ) ) {
+                    $results['skipped'][] = "{$table_name}.{$fk_name}";
+                    error_log( "[EIPSI Task 6] Skipping FK {$fk_name}: referenced table {$fk_info['referenced_table']} doesn't exist" );
+                    continue;
+                }
+                
+                // Check if FK already exists
+                if ( function_exists( 'eipsi_longitudinal_fk_exists' ) && eipsi_longitudinal_fk_exists( $full_table_name, $fk_name ) ) {
+                    $results['skipped'][] = "{$table_name}.{$fk_name}";
+                    continue;
+                }
+                
+                // Prepare SQL
+                $sql = str_replace(
+                    array( '{table}', '{prefix}' ),
+                    array( $full_table_name, $wpdb->prefix ),
+                    $fk_info['sql']
+                );
+                
+                // Try to add FK
+                if ( function_exists( 'eipsi_longitudinal_ensure_foreign_key' ) ) {
+                    $fk_result = eipsi_longitudinal_ensure_foreign_key( $full_table_name, $fk_name, $sql );
+                    
+                    if ( $fk_result ) {
+                        $results['added'][] = "{$table_name}.{$fk_name}";
+                    } else {
+                        $results['failed'][] = "{$table_name}.{$fk_name}";
+                        // Don't mark success as false - FKs are optional
+                    }
+                } else {
+                    // Direct attempt
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+                    $result = @$wpdb->query( $sql );
+                    
+                    if ( $result === false ) {
+                        $results['failed'][] = "{$table_name}.{$fk_name}";
+                        error_log( "[EIPSI Task 6] Failed to add FK {$fk_name}: " . $wpdb->last_error );
+                    } else {
+                        $results['added'][] = "{$table_name}.{$fk_name}";
+                        error_log( "[EIPSI Task 6] Added FK {$fk_name}" );
+                    }
+                }
+            }
+        }
+        
+        return $results;
+    }
+    
+    /**
+     * TASK 6: Sync longitudinal tables in safe order
+     * 
+     * @since 1.6.0
+     * @return array Sync results for all tables
+     */
+    public static function sync_longitudinal_tables_safe() {
+        $results = array(
+            'success' => true,
+            'tables_created' => array(),
+            'tables_existing' => array(),
+            'tables_failed' => array(),
+            'fk_phase2' => null,
+            'errors' => array(),
+        );
+        
+        $table_order = self::get_table_creation_order();
+        
+        // Sort by level (0, 1, 2) to ensure proper creation order
+        uasort( $table_order, function( $a, $b ) {
+            return $a['level'] - $b['level'];
+        });
+        
+        // Phase 1: Create tables in order
+        foreach ( $table_order as $table_name => $table_info ) {
+            // TASK 6: Ensure parent tables exist before creating child
+            if ( ! empty( $table_info['dependencies'] ) ) {
+                $parent_check = self::ensure_parent_tables_exist( $table_name, $table_info['dependencies'] );
+                
+                if ( ! $parent_check['success'] ) {
+                    $results['tables_failed'][] = $table_name;
+                    $results['errors'][] = "Cannot create {$table_name}: missing parent tables " . implode( ', ', $parent_check['missing_tables'] );
+                    error_log( "[EIPSI Task 6] Skipping {$table_name}: missing parents " . implode( ', ', $parent_check['missing_tables'] ) );
+                    continue;
+                }
+            }
+            
+            // Sync the table
+            $sync_method = $table_info['sync_method'];
+            
+            if ( method_exists( 'EIPSI_Database_Schema_Manager', $sync_method ) ) {
+                $sync_result = call_user_func( array( 'EIPSI_Database_Schema_Manager', $sync_method ) );
+                
+                if ( ! empty( $sync_result['created'] ) ) {
+                    $results['tables_created'][] = $table_name;
+                    error_log( "[EIPSI Task 6] Created table: {$table_name}" );
+                } elseif ( ! empty( $sync_result['exists'] ) ) {
+                    $results['tables_existing'][] = $table_name;
+                } elseif ( ! $sync_result['success'] ) {
+                    $results['tables_failed'][] = $table_name;
+                    $results['errors'][] = "Failed to sync {$table_name}: " . ( $sync_result['error'] ?? 'Unknown error' );
+                    $results['success'] = false;
+                }
+            }
+        }
+        
+        // Phase 2: Add foreign keys after all tables exist
+        $results['fk_phase2'] = self::add_foreign_keys_phase2();
+        
+        // Log summary
+        error_log( sprintf(
+            '[EIPSI Task 6] Sync complete: %d created, %d existing, %d failed, %d FKs added',
+            count( $results['tables_created'] ),
+            count( $results['tables_existing'] ),
+            count( $results['tables_failed'] ),
+            count( $results['fk_phase2']['added'] )
+        ) );
+        
+        return $results;
+    }
+
 }
 
 // =================================================================
