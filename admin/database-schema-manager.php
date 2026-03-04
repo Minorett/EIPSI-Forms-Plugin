@@ -1835,7 +1835,6 @@ class EIPSI_Database_Schema_Manager {
 
             PRIMARY KEY (id),
             KEY `idx_study_id` (`study_id`),
-            KEY `idx_wave_index` (`study_id`, `wave_index`),
             KEY `idx_status` (`status`),
             KEY `idx_due_date` (`due_date`),
             UNIQUE KEY `uk_study_index` (`study_id`, `wave_index`)
@@ -1931,7 +1930,7 @@ class EIPSI_Database_Schema_Manager {
             retry_count INT DEFAULT 0,
             last_retry_sent DATETIME NULL,
 
-        due_at DATETIME NULL,
+            due_at DATETIME NULL,
 
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
