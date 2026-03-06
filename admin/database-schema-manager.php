@@ -3,6 +3,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Load database repair utilities for fixing corrupt indexes
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-repair.php';
+
 /**
  * EIPSI Forms Database Schema Manager
  * Handles automatic table creation and schema synchronization for external databases

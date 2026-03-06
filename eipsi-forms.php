@@ -98,6 +98,10 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/partial-responses.php';
+
+// Database schema migration (v2.0.1) - Fix corrupt indexes
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-migration.php';
+
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/configuration.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers-wizard.php';
@@ -873,6 +877,12 @@ register_deactivation_hook(__FILE__, 'eipsi_forms_deactivate');
  * @since 1.4.0
  */
 register_activation_hook(EIPSI_FORMS_PLUGIN_FILE, function() {
+    // Run database migration to fix corrupt indexes (v2.0.1)
+    if (function_exists('eipsi_migrate_fix_corrupt_indexes')) {
+        eipsi_migrate_fix_corrupt_indexes();
+    }
+
+    // Sync tables after migration
     do_action('eipsi_sync_longitudinal_tables');
     do_action('eipsi_sync_rct_tables');
 });
