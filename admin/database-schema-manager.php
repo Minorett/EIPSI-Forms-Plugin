@@ -1787,6 +1787,57 @@ class EIPSI_Database_Schema_Manager {
     }
     
     /**
+     * Build normalized index definitions for dbDelta CREATE TABLE statements.
+     * Prevents empty or malformed index names from ever reaching dbDelta.
+     *
+     * @param array $indexes Array of index definitions.
+     * @return string
+     */
+    private static function build_dbdelta_index_sql( $indexes ) {
+        $lines = array();
+
+        foreach ( $indexes as $index ) {
+            if ( empty( $index['type'] ) || empty( $index['name'] ) || empty( $index['columns'] ) || ! is_array( $index['columns'] ) ) {
+                continue;
+            }
+
+            $type = strtoupper( trim( (string) $index['type'] ) );
+            $name = trim( (string) $index['name'] );
+            $columns = array_filter(
+                array_map(
+                    static function( $column ) {
+                        $column = trim( (string) $column );
+                        return '' !== $column ? $column : null;
+                    },
+                    $index['columns']
+                )
+            );
+
+            if ( '' === $name || empty( $columns ) ) {
+                continue;
+            }
+
+            $escaped_columns = array_map(
+                static function( $column ) {
+                    return "`{$column}`";
+                },
+                $columns
+            );
+
+            if ( 'UNIQUE' === $type ) {
+                $lines[] = sprintf( 'UNIQUE KEY `%1$s` (%2$s)', $name, implode( ', ', $escaped_columns ) );
+                continue;
+            }
+
+            if ( 'KEY' === $type ) {
+                $lines[] = sprintf( 'KEY `%1$s` (%2$s)', $name, implode( ', ', $escaped_columns ) );
+            }
+        }
+
+        return implode( ",\n            ", $lines );
+    }
+
+    /**
      * Sync wp_survey_waves table in local DB
      *
      * @since 1.4.0
@@ -1811,6 +1862,31 @@ class EIPSI_Database_Schema_Manager {
         $result['exists'] = ! empty( $table_exists );
         $already_existed = $result['exists'];
 
+        $index_sql = self::build_dbdelta_index_sql(
+            array(
+                array(
+                    'type'    => 'KEY',
+                    'name'    => 'idx_study_id',
+                    'columns' => array( 'study_id' ),
+                ),
+                array(
+                    'type'    => 'KEY',
+                    'name'    => 'idx_status',
+                    'columns' => array( 'status' ),
+                ),
+                array(
+                    'type'    => 'KEY',
+                    'name'    => 'idx_due_date',
+                    'columns' => array( 'due_date' ),
+                ),
+                array(
+                    'type'    => 'UNIQUE',
+                    'name'    => 'uk_study_index',
+                    'columns' => array( 'study_id', 'wave_index' ),
+                ),
+            )
+        );
+
         // Create / update table via dbDelta
         $sql = "CREATE TABLE {$table_name} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -1818,42 +1894,23 @@ class EIPSI_Database_Schema_Manager {
             wave_index INT NOT NULL,
             name VARCHAR(255) NOT NULL,
             form_id BIGINT(20) UNSIGNED NOT NULL,
-
             start_date DATETIME NULL,
             due_date DATETIME NULL,
-
             reminder_days INT DEFAULT 3,
             retry_enabled TINYINT(1) DEFAULT 1,
             retry_days INT DEFAULT 7,
             max_retries INT DEFAULT 3,
-
             has_time_limit TINYINT(1) DEFAULT 0,
             completion_time_limit INT DEFAULT NULL,
-
             status ENUM('draft', 'active', 'completed', 'paused') DEFAULT 'draft',
             is_mandatory TINYINT(1) DEFAULT 1,
-
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
             PRIMARY KEY (id),
-            KEY `idx_study_id` (`study_id`),
-            KEY `idx_status` (`status`),
-            KEY `idx_due_date` (`due_date`),
-            UNIQUE KEY `uk_study_index` (`study_id`, `wave_index`)
+            {$index_sql}
         ) ENGINE=InnoDB {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-        // Clean up empty indexes before dbDelta
-        $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table_name}", ARRAY_A );
-        if ( ! empty( $indexes ) ) {
-            foreach ( $indexes as $index ) {
-                if ( empty( $index['Key_name'] ) ) {
-                    $wpdb->query( "ALTER TABLE {$table_name} DROP INDEX ``" );
-                }
-            }
-        }
 
         dbDelta( $sql );
 
@@ -1924,52 +1981,68 @@ class EIPSI_Database_Schema_Manager {
         $result['exists'] = ! empty( $table_exists );
         $already_existed = $result['exists'];
 
+        $index_sql = self::build_dbdelta_index_sql(
+            array(
+                array(
+                    'type'    => 'KEY',
+                    'name'    => 'idx_study_id',
+                    'columns' => array( 'study_id' ),
+                ),
+                array(
+                    'type'    => 'KEY',
+                    'name'    => 'idx_wave_id',
+                    'columns' => array( 'wave_id' ),
+                ),
+                array(
+                    'type'    => 'KEY',
+                    'name'    => 'idx_participant_id',
+                    'columns' => array( 'participant_id' ),
+                ),
+                array(
+                    'type'    => 'KEY',
+                    'name'    => 'idx_status',
+                    'columns' => array( 'status' ),
+                ),
+                array(
+                    'type'    => 'KEY',
+                    'name'    => 'idx_submitted_at',
+                    'columns' => array( 'submitted_at' ),
+                ),
+                array(
+                    'type'    => 'KEY',
+                    'name'    => 'idx_due_at',
+                    'columns' => array( 'due_at' ),
+                ),
+                array(
+                    'type'    => 'UNIQUE',
+                    'name'    => 'uk_wave_participant',
+                    'columns' => array( 'wave_id', 'participant_id' ),
+                ),
+            )
+        );
+
         // Create / update table via dbDelta
         $sql = "CREATE TABLE {$table_name} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-
             study_id BIGINT(20) UNSIGNED NOT NULL,
             wave_id BIGINT(20) UNSIGNED NOT NULL,
             participant_id BIGINT(20) UNSIGNED NOT NULL,
-
             status ENUM('pending', 'in_progress', 'submitted', 'skipped', 'expired') DEFAULT 'pending',
-
             assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             first_viewed_at DATETIME NULL,
             submitted_at DATETIME NULL,
-
             reminder_count INT DEFAULT 0,
             last_reminder_sent DATETIME NULL,
-
             retry_count INT DEFAULT 0,
             last_retry_sent DATETIME NULL,
-
             due_at DATETIME NULL,
-
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
             PRIMARY KEY (id),
-            KEY `idx_study_id` (`study_id`),
-            KEY `idx_wave_id` (`wave_id`),
-            KEY `idx_participant_id` (`participant_id`),
-            KEY `idx_status` (`status`),
-            KEY `idx_submitted_at` (`submitted_at`),
-            KEY `idx_due_at` (`due_at`),
-            UNIQUE KEY `uk_wave_participant` (`wave_id`, `participant_id`)
+            {$index_sql}
         ) ENGINE=InnoDB {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-        // Clean up empty indexes before dbDelta
-        $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table_name}", ARRAY_A );
-        if ( ! empty( $indexes ) ) {
-            foreach ( $indexes as $index ) {
-                if ( empty( $index['Key_name'] ) ) {
-                    $wpdb->query( "ALTER TABLE {$table_name} DROP INDEX ``" );
-                }
-            }
-        }
 
         dbDelta( $sql );
 
