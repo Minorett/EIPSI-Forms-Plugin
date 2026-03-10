@@ -1844,6 +1844,17 @@ class EIPSI_Database_Schema_Manager {
         ) ENGINE=InnoDB {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        // Clean up empty indexes before dbDelta
+        $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table_name}", ARRAY_A );
+        if ( ! empty( $indexes ) ) {
+            foreach ( $indexes as $index ) {
+                if ( empty( $index['Key_name'] ) ) {
+                    $wpdb->query( "ALTER TABLE {$table_name} DROP INDEX ``" );
+                }
+            }
+        }
+
         dbDelta( $sql );
 
         if ( ! $already_existed ) {
@@ -1949,6 +1960,17 @@ class EIPSI_Database_Schema_Manager {
         ) ENGINE=InnoDB {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        // Clean up empty indexes before dbDelta
+        $indexes = $wpdb->get_results( "SHOW INDEX FROM {$table_name}", ARRAY_A );
+        if ( ! empty( $indexes ) ) {
+            foreach ( $indexes as $index ) {
+                if ( empty( $index['Key_name'] ) ) {
+                    $wpdb->query( "ALTER TABLE {$table_name} DROP INDEX ``" );
+                }
+            }
+        }
+
         dbDelta( $sql );
 
         if ( ! $already_existed ) {
