@@ -6,6 +6,10 @@ if (!defined('ABSPATH')) {
 // Load database repair utilities for fixing corrupt indexes
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-repair.php';
 
+if ( ! class_exists( 'WP_Error' ) ) {
+    require_once ABSPATH . 'wp-includes/class-wp-error.php';
+}
+
 /**
  * EIPSI Forms Database Schema Manager
  * Handles automatic table creation and schema synchronization for external databases
@@ -1838,11 +1842,44 @@ class EIPSI_Database_Schema_Manager {
     }
 
     /**
-     * Sync wp_survey_waves table in local DB
+     * Validate generated SQL before passing it to dbDelta.
      *
-     * @since 1.4.0
-     * @return array Result with success status and details
+     * @param string $sql SQL statement.
+     * @param string $table_name Table name for error context.
+     * @return true|WP_Error
      */
+    private static function validate_sql_for_dbdelta( $sql, $table_name ) {
+        $sql_lines = explode( "\n", $sql );
+
+        foreach ( $sql_lines as $line_num => $line ) {
+            $trimmed = trim( $line );
+
+            if ( empty( $trimmed ) ) {
+                continue;
+            }
+
+            if ( 0 === strpos( $trimmed, '--' ) ) {
+                continue;
+            }
+
+            if ( preg_match( '/^\s*KEY\s+/i', $trimmed ) || preg_match( '/^\s*UNIQUE\s+KEY\s+/i', $trimmed ) ) {
+                if ( false !== strpos( $trimmed, '``' ) || preg_match( '/KEY\s+``\s*\(/i', $trimmed ) ) {
+                    $error_msg = sprintf( 'Malformed index definition in %1$s (line %2$d): %3$s', $table_name, $line_num, $trimmed );
+                    error_log( 'EIPSI Forms: ' . $error_msg );
+                    return new WP_Error( 'dbdelta_malformed_index', $error_msg, array( 'line' => $trimmed ) );
+                }
+
+                if ( false !== strpos( $trimmed, '()' ) ) {
+                    $error_msg = sprintf( 'Empty index columns in %1$s (line %2$d): %3$s', $table_name, $line_num, $trimmed );
+                    error_log( 'EIPSI Forms: ' . $error_msg );
+                    return new WP_Error( 'dbdelta_empty_index_columns', $error_msg, array( 'line' => $trimmed ) );
+                }
+            }
+        }
+
+        return true;
+    }
+
     private static function sync_local_survey_waves_table() {
         global $wpdb;
 
@@ -1911,6 +1948,13 @@ class EIPSI_Database_Schema_Manager {
         ) ENGINE=InnoDB {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $validation = self::validate_sql_for_dbdelta( $sql, $table_name );
+        if ( is_wp_error( $validation ) ) {
+            $result['success'] = false;
+            $result['error']   = $validation->get_error_message();
+            return $result;
+        }
 
         dbDelta( $sql );
 
@@ -2043,6 +2087,13 @@ class EIPSI_Database_Schema_Manager {
         ) ENGINE=InnoDB {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $validation = self::validate_sql_for_dbdelta( $sql, $table_name );
+        if ( is_wp_error( $validation ) ) {
+            $result['success'] = false;
+            $result['error']   = $validation->get_error_message();
+            return $result;
+        }
 
         dbDelta( $sql );
 
