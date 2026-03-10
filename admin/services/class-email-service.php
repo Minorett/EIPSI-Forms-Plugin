@@ -32,6 +32,13 @@ class EIPSI_Email_Service {
      * @access public
      */
     public static function generate_magic_link_url($survey_id, $participant_id) {
+        // Validate survey_id before proceeding
+        $survey_id = intval($survey_id);
+        if ($survey_id <= 0) {
+            error_log("[EIPSI Email] Invalid survey_id in generate_magic_link_url: $survey_id");
+            return false;
+        }
+
         if (!class_exists('EIPSI_MagicLinksService')) {
             require_once plugin_dir_path(__FILE__) . 'class-magic-links-service.php';
         }
@@ -247,6 +254,13 @@ class EIPSI_Email_Service {
      * @access public
      */
     public static function send_welcome_email($survey_id, $participant_id) {
+        // Validate survey_id before proceeding
+        $survey_id = intval($survey_id);
+        if ($survey_id <= 0) {
+            error_log("[EIPSI Email] Invalid survey_id in send_welcome_email: $survey_id");
+            return false;
+        }
+
         $participant = self::get_participant($participant_id);
         if (!$participant) return false;
 
