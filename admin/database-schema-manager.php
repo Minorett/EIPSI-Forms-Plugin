@@ -1655,6 +1655,7 @@ class EIPSI_Database_Schema_Manager {
             'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME NOT NULL AFTER last_name",
             'last_login_at' => "ALTER TABLE {$table_name} ADD COLUMN last_login_at DATETIME AFTER created_at",
             'is_active' => "ALTER TABLE {$table_name} ADD COLUMN is_active TINYINT(1) DEFAULT 1 AFTER last_login_at",
+            'updated_at' => "ALTER TABLE {$table_name} ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER is_active",
         );
         
         foreach ( $required_columns as $column => $alter_sql ) {
@@ -3216,7 +3217,8 @@ private static function get_schema_map() {
             'last_name' => 'VARCHAR(100)',
             'created_at' => 'DATETIME NOT NULL',
             'last_login_at' => 'DATETIME',
-            'is_active' => 'TINYINT(1) DEFAULT 1'
+            'is_active' => 'TINYINT(1) DEFAULT 1',
+            'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
         ),
         'survey_sessions' => array(
             'token' => 'VARCHAR(255) NOT NULL',
