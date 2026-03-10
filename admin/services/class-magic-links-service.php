@@ -20,7 +20,7 @@ class EIPSI_MagicLinksService {
     /**
      * Generate a magic link token for survey access
      *
-     * @param int $survey_id Survey post ID
+     * @param int $survey_id Survey ID from wp_survey_studies (longitudinal study)
      * @param int $participant_id Participant ID from wp_survey_participants
      * @return string|false Token plain text (UUID4) or false on failure
      */
@@ -32,7 +32,7 @@ class EIPSI_MagicLinksService {
         $participant_id = intval($participant_id);
 
         if ($survey_id <= 0 || $participant_id <= 0) {
-            error_log('[EIPSI MagicLinksService] Invalid survey_id or participant_id');
+            error_log('[EIPSI MagicLinksService] Invalid survey_id or participant_id: survey_id=' . $survey_id . ', participant_id=' . $participant_id);
             return false;
         }
 
@@ -47,19 +47,16 @@ class EIPSI_MagicLinksService {
             return false;
         }
 
-        // Fix 3a: Verify survey_id corresponds to an existing WordPress post (FK constraint guard).
-        // survey_id can be a longitudinal study ID that is NOT a wp_posts ID; in that case
-        // we set it to 0 to avoid FK violation on the magic_links table.
-        if ($survey_id > 0) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-            $post_exists = $wpdb->get_var( $wpdb->prepare(
-                "SELECT ID FROM {$wpdb->posts} WHERE ID = %d LIMIT 1",
-                $survey_id
-            ) );
-            if ( ! $post_exists ) {
-                error_log( '[EIPSI MagicLinksService] survey_id ' . $survey_id . ' not found in wp_posts; storing 0 to avoid FK violation.' );
-                $survey_id = 0; // Fallback: no post association; FK was removed but we keep this as defence-in-depth.
-            }
+        // Validate survey_id exists in wp_survey_studies (longitudinal study table)
+        // survey_id references survey_studies.id, NOT wp_posts.ID
+        $study_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+            $survey_id
+        ));
+
+        if (!$study_exists) {
+            error_log('[EIPSI MagicLinksService] Study not found in survey_studies for survey_id: ' . $survey_id);
+            return false;
         }
 
         // Delete any existing unused tokens for this participant in this survey
