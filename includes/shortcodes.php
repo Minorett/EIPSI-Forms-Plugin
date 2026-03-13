@@ -152,6 +152,13 @@ function eipsi_participant_dashboard_shortcode($atts) {
         return '';
     }
     
+    // Auto-detect and flag the current page as having a dashboard (for redirect detection)
+    // This enables automatic redirect detection in eipsi_get_participant_redirect_url()
+    $current_page_id = get_the_ID();
+    if ($current_page_id && !has_post_meta($current_page_id, '_eipsi_has_dashboard')) {
+        update_post_meta($current_page_id, '_eipsi_has_dashboard', '1');
+    }
+    
     // Parse attributes first to check survey_id
     $atts = shortcode_atts(array(
         'survey_id' => 0,
