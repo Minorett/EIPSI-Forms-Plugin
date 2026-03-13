@@ -525,17 +525,58 @@ function eipsi_longitudinal_study_shortcode($atts) {
     // Determines what view to show based on user context
     // ============================================================
     $view_mode = 'public'; // Default for non-authenticated users
-    
+
     // Check if participant is already authenticated
     $is_participant_logged_in = false;
     $current_participant_id = 0;
     $current_survey_id = 0;
-    
+
     if (class_exists('EIPSI_Auth_Service')) {
         $is_participant_logged_in = EIPSI_Auth_Service::is_authenticated();
         if ($is_participant_logged_in) {
             $current_participant_id = EIPSI_Auth_Service::get_current_participant();
             $current_survey_id = EIPSI_Auth_Service::get_current_survey();
+        }
+    }
+
+    // ============================================================
+    // CRITICAL: Direct Form Rendering (Fix for Task C)
+    // If form_id is in URL and user is authenticated, render form directly
+    // ============================================================
+    if ($is_participant_logged_in && isset($_GET['form_id']) && !empty($_GET['form_id'])) {
+        $form_id = intval($_GET['form_id']);
+
+        // Validate that this form belongs to the study
+        // Get study data first to validate form belongs to this study
+        global $wpdb;
+
+        if (!empty($study_code)) {
+            $study = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}survey_studies WHERE study_code = %s",
+                $study_code
+            ));
+        } elseif ($study_id > 0) {
+            $study = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+                $study_id
+            ));
+        }
+
+        if ($study) {
+            $actual_study_id = (int) $study->id;
+
+            // Check if form_id belongs to a wave in this study
+            $form_belongs_to_study = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}survey_waves
+                 WHERE study_id = %d AND form_id = %d",
+                $actual_study_id,
+                $form_id
+            ));
+
+            if ($form_belongs_to_study > 0) {
+                // Render the form directly
+                return eipsi_render_form_shortcode_markup($form_id);
+            }
         }
     }
     
