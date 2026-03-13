@@ -55,6 +55,33 @@ body.eipsi-dark-mode .eipsi-survey-login-container {
    CONTAINER & HEADER
    ============================================================================ */
 
+/* Email Confirmation Message */
+.eipsi-confirmation-message {
+    background: linear-gradient(135deg, #e7f3ff 0%, #d1e8ff 100%);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+}
+
+.eipsi-confirmation-message .confirmation-icon {
+    font-size: 32px;
+    line-height: 1;
+    color: #1976D2;
+    flex-shrink: 0;
+}
+
+.eipsi-confirmation-message p {
+    margin: 0;
+    color: #1565C0;
+    font-size: 15px;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
 .eipsi-survey-login-container {
     max-width: 520px;
     margin: 0 auto;
