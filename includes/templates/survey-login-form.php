@@ -20,6 +20,16 @@ if (!defined('ABSPATH')) {
 $survey_id = isset($atts['survey_id']) ? absint($atts['survey_id']) : 0;
 $redirect_url = isset($atts['redirect_url']) ? esc_url($atts['redirect_url']) : '';
 
+// Check for confirmation message from email verification
+$confirmation_message = '';
+if (isset($_GET['eipsi_msg']) && $_GET['eipsi_msg'] === 'email_confirmed') {
+    $confirmed_email = isset($_GET['eipsi_email']) ? sanitize_email(urldecode($_GET['eipsi_email'])) : '';
+    $confirmation_message = sprintf(
+        __('¡Email confirmado! Revisá %s para el enlace de acceso al estudio.', 'eipsi-forms'),
+        !empty($confirmed_email) ? esc_html($confirmed_email) : __('tu bandeja de entrada', 'eipsi-forms')
+    );
+}
+
 // Obtener información del estudio si existe
 $study_name = '';
 if ($survey_id) {
@@ -37,6 +47,14 @@ if ($survey_id) {
 <div class="eipsi-survey-login-container" id="eipsi-survey-login-<?php echo esc_attr($survey_id); ?>"
      data-survey-id="<?php echo esc_attr($survey_id); ?>"
      data-redirect="<?php echo esc_attr($redirect_url); ?>">
+
+    <!-- Email Confirmation Message -->
+    <?php if (!empty($confirmation_message)): ?>
+    <div class="eipsi-confirmation-message">
+        <span class="confirmation-icon">✓</span>
+        <p><?php echo wp_kses_post($confirmation_message); ?></p>
+    </div>
+    <?php endif; ?>
 
     <!-- Header con información del estudio -->
     <div class="eipsi-login-header">

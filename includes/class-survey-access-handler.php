@@ -98,8 +98,8 @@ class EIPSI_Survey_Access_Handler {
             EIPSI_Email_Service::send_welcome_after_confirmation($survey_id, $participant_id);
         }
         
-        // Render success page
-        $this->render_confirmation_success($validation_result['email']);
+        // Redirect to login page with confirmation message
+        $this->render_confirmation_success($validation_result['email'], $survey_id);
     }
     
     /**
@@ -127,47 +127,80 @@ class EIPSI_Survey_Access_Handler {
     }
     
     /**
-     * Render confirmation success page
+     * Render confirmation success page - Redirect to login
      */
-    private function render_confirmation_success($email) {
-        status_header(200);
+    private function render_confirmation_success($email, $survey_id = 0) {
+        // Find study login page
+        $login_url = $this->find_study_login_page($survey_id);
         
-        ?>
-        <!DOCTYPE html>
-        <html <?php language_attributes(); ?>>
-        <head>
-            <meta charset="<?php bloginfo('charset'); ?>">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Email confirmado - EIPSI Forms</title>
-            <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; margin: 0; padding: 20px; }
-                .container { max-width: 500px; margin: 40px auto; background: #fff; border-radius: 8px; padding: 40px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
-                .success-icon { font-size: 60px; color: #28a745; margin-bottom: 20px; }
-                h1 { color: #28a745; margin: 0 0 20px; font-size: 24px; }
-                p { margin: 0 0 15px; color: #555; }
-                .email-note { background: #e7f3ff; padding: 15px; border-radius: 4px; margin: 20px 0; font-size: 14px; }
-                .footer { margin-top: 30px; font-size: 13px; color: #888; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="success-icon">✓</div>
-                <h1>¡Email confirmado!</h1>
-                <p>Tu dirección de email ha sido verificada correctamente.</p>
-                <div class="email-note">
-                    <strong>¡Revisa tu bandeja de entrada!</strong><br>
-                    Te hemos enviado un email con el enlace de acceso al estudio.<br>
-                    <em>(<?php echo esc_html($email); ?>)</em>
-                </div>
-                <p>Si no recibes el email en los próximos minutos, revisa tu carpeta de spam o contacta al investigador.</p>
-                <div class="footer">
-                    <p>© <?php echo date('Y'); ?> EIPSI Forms</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        <?php
+        // Add confirmation message as query parameter
+        $redirect_url = add_query_arg(array(
+            'eipsi_msg' => 'email_confirmed',
+            'eipsi_email' => urlencode($email)
+        ), $login_url);
+        
+        // Redirect to login page
+        wp_redirect($redirect_url);
         exit;
+    }
+    
+    /**
+     * Find study login page URL
+     * 
+     * @param int $survey_id Survey/Study ID
+     * @return string Login page URL
+     */
+    private function find_study_login_page($survey_id = 0) {
+        // Method 1: Check for study login page with survey_id meta
+        if ($survey_id > 0) {
+            $login_pages = get_posts(array(
+                'post_type' => 'page',
+                'post_status' => 'publish',
+                'posts_per_page' => 1,
+                'meta_query' => array(
+                    array(
+                        'key' => '_eipsi_survey_id',
+                        'value' => $survey_id
+                    )
+                )
+            ));
+            
+            if (!empty($login_pages)) {
+                return get_permalink($login_pages[0]->ID);
+            }
+        }
+        
+        // Method 2: Find any page with eipsi_survey_login shortcode
+        $login_pages = get_posts(array(
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'posts_per_page' => 1,
+            's' => 'eipsi_survey_login'
+        ));
+        
+        if (!empty($login_pages)) {
+            return get_permalink($login_pages[0]->ID);
+        }
+        
+        // Method 3: Find participant dashboard page
+        $dashboard_pages = get_posts(array(
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'posts_per_page' => 1,
+            'meta_query' => array(
+                array(
+                    'key' => '_eipsi_has_dashboard',
+                    'value' => '1'
+                )
+            )
+        ));
+        
+        if (!empty($dashboard_pages)) {
+            return get_permalink($dashboard_pages[0]->ID);
+        }
+        
+        // Default to home page
+        return home_url('/');
     }
     
     /**
