@@ -600,7 +600,34 @@ function eipsi_get_participant_redirect_url($survey_id, $participant_id) {
         }
     }
     
-    // Try to find a page with the participant dashboard shortcode
+    // Method 1: Check survey meta for assigned dashboard page
+    $assigned_dashboard = get_post_meta($survey_id, '_eipsi_dashboard_page_id', true);
+    if (!empty($assigned_dashboard)) {
+        $permalink = get_permalink($assigned_dashboard);
+        if ($permalink) {
+            return $permalink;
+        }
+    }
+    
+    // Method 2: Find page with eipsi_participant_dashboard shortcode by meta key (more reliable than search)
+    $dashboard_pages = get_posts(array(
+        'post_type' => 'page',
+        'post_status' => 'publish',
+        'posts_per_page' => 10,
+        'meta_query' => array(
+            array(
+                'key' => '_eipsi_has_dashboard',
+                'value' => '1'
+            )
+        )
+    ));
+    
+    if (!empty($dashboard_pages)) {
+        // Return first matching page
+        return get_permalink($dashboard_pages[0]->ID);
+    }
+    
+    // Method 3: Legacy search - try to find a page containing the shortcode in content
     $dashboard_page = get_posts(array(
         'post_type' => 'page',
         'post_status' => 'publish',
@@ -612,7 +639,7 @@ function eipsi_get_participant_redirect_url($survey_id, $participant_id) {
         return get_permalink($dashboard_page[0]->ID);
     }
     
-    // Try to find a page with the survey login shortcode for this survey
+    // Method 4: Try to find a page with the survey login shortcode for this survey
     $login_pages = get_posts(array(
         'post_type' => 'page',
         'post_status' => 'publish',
