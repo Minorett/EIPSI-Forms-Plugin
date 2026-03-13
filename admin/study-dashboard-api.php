@@ -1665,8 +1665,10 @@ function wp_ajax_eipsi_generate_magic_link_handler() {
 
 /**
  * POST send magic link to existing participant.
+ * Also accepts 'email' parameter to create/get participant if needed.
  *
  * @since 1.7.0
+ * @fix v1.7.x - Added email support to match frontend behavior
  */
 function wp_ajax_eipsi_send_magic_link_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
@@ -1677,10 +1679,42 @@ function wp_ajax_eipsi_send_magic_link_handler() {
 
     $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
     $participant_id = isset($_POST['participant_id']) ? intval($_POST['participant_id']) : 0;
+    $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
     $custom_message = isset($_POST['custom_message']) ? sanitize_textarea_field($_POST['custom_message']) : '';
 
-    if (empty($study_id) || empty($participant_id)) {
-        wp_send_json_error(array('message' => 'Missing study ID or participant ID'));
+    if (empty($study_id)) {
+        wp_send_json_error(array('message' => 'Missing study ID'));
+    }
+
+    // If no participant_id but we have email, create/get participant
+    if (empty($participant_id) && !empty($email)) {
+        if (!is_email($email)) {
+            wp_send_json_error(array('message' => 'Email inválido'));
+        }
+
+        // Load services
+        if (!class_exists('EIPSI_Participant_Service')) {
+            require_once plugin_dir_path(__FILE__) . 'services/class-participant-service.php';
+        }
+
+        if (!class_exists('EIPSI_Email_Service')) {
+            require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+        }
+
+        // Create or get participant (email only)
+        $participant_result = EIPSI_Participant_Service::create_or_get_for_magic_link($study_id, $email);
+
+        if (!$participant_result['success']) {
+            wp_send_json_error(array(
+                'message' => 'Error al obtener el participante: ' . ($participant_result['error'] ?? 'desconocido')
+            ));
+        }
+
+        $participant_id = $participant_result['participant_id'];
+    }
+
+    if (empty($participant_id)) {
+        wp_send_json_error(array('message' => 'Se requiere participant_id o email'));
     }
 
     // Load Email Service
