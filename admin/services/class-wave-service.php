@@ -574,4 +574,35 @@ class EIPSI_Wave_Service {
             'total' => count($waves)
         );
     }
+
+    /**
+     * Get next pending wave (assignment) for a participant.
+     *
+     * Returns the wave row (OBJECT) so callers can read ->id and other fields.
+     *
+     * @param int $participant_id
+     * @param int $survey_id
+     * @return object|null
+     */
+    public static function get_next_pending_wave($participant_id, $survey_id) {
+        global $wpdb;
+
+        $participant_id = absint($participant_id);
+        $survey_id = absint($survey_id);
+
+        if (!$participant_id || !$survey_id) {
+            return null;
+        }
+
+        $sql = "SELECT w.*
+                FROM {$wpdb->prefix}survey_assignments a
+                INNER JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+                WHERE a.participant_id = %d
+                  AND a.survey_id = %d
+                  AND a.status = 'pending'
+                ORDER BY w.wave_index ASC
+                LIMIT 1";
+
+        return $wpdb->get_row($wpdb->prepare($sql, $participant_id, $survey_id), OBJECT);
+    }
 }

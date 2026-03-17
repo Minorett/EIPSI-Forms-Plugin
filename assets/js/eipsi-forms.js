@@ -2924,6 +2924,13 @@
             const nextButton = form.querySelector( '.eipsi-next-button' );
             const formData = new FormData( form );
 
+            // Incluir wave_id desde URL si está presente (flujo longitudinal)
+            const urlParams = new URLSearchParams( window.location.search );
+            const waveId = urlParams.get( 'wave_id' );
+            if ( waveId ) {
+                formData.append( 'wave_id', waveId );
+            }
+
             // Sanitize untouched VAS sliders (prevent "50" from being sent)
             form.querySelectorAll( '.vas-slider' ).forEach( ( slider ) => {
                 if (

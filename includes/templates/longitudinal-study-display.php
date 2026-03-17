@@ -152,6 +152,7 @@ $view_class      = 'view-' . esc_attr( $view_mode );
                             </div>
                             <form action="" method="get">
                                 <input type="hidden" name="form_id" value="<?php echo esc_attr( $next_wave['form_id'] ); ?>">
+                                <input type="hidden" name="wave_id" value="<?php echo esc_attr( $next_wave['id'] ); ?>">
                                 <button type="submit" class="button button-primary button-large">
                                     <?php esc_html_e( 'Comenzar toma →', 'eipsi-forms' ); ?>
                                 </button>

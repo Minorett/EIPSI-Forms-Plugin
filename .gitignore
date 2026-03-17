@@ -30,6 +30,9 @@ webpack-manifest.json
 *.tmp
 .cache/
 
+# EIPSI debug logs (explicit)
+eipsi-save-partial-debug.log
+
 # OS files
 Thumbs.db
 .DS_Store
