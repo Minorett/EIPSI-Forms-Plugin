@@ -595,8 +595,13 @@ function eipsi_get_participant_redirect_url($survey_id, $participant_id) {
     // Check for a custom redirect URL in session or POST
     if (isset($_POST['redirect_url']) && !empty($_POST['redirect_url'])) {
         $custom_redirect = esc_url_raw(wp_unslash($_POST['redirect_url']));
-        if (!empty($custom_redirect)) {
-            return $custom_redirect;
+        
+        // Security: Prevent open redirect (v1.6.0)
+        // Only allow redirect if it's a local URL within the same domain
+        $validated_redirect = wp_validate_redirect($custom_redirect, '');
+        
+        if (!empty($validated_redirect)) {
+            return $validated_redirect;
         }
     }
     
