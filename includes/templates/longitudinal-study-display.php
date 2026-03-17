@@ -178,10 +178,11 @@ $view_class = 'view-' . esc_attr($view_mode);
                 // Render the actual login form
                 if (function_exists('eipsi_render_survey_login_form')) {
                     echo eipsi_render_survey_login_form(array(
-                        'survey_id' => $study_id_for_query
+                        'survey_id' => $study_id_for_query,
+                        'redirect_url' => get_permalink()
                     ));
                 } else {
-                    // Fallback if function not available
+
                 ?>
                 <div class="eipsi-login-fallback">
                     <h3><?php esc_html_e('Acceso al Estudio', 'eipsi-forms'); ?></h3>

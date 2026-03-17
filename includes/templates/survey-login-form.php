@@ -109,6 +109,7 @@ if ($survey_id) {
             <form id="eipsi-participant-login-form" class="eipsi-participant-login-form eipsi-survey-login-form">
                 <?php // Nonce is injected by JS from window.eipsiAuth.nonce (survey-login-enhanced.js) ?>
                 <input type="hidden" name="survey_id" value="<?php echo esc_attr($survey_id); ?>">
+                <input type="hidden" name="redirect_url" value="<?php echo esc_attr($redirect_url); ?>">
 
                 <div class="eipsi-form-group">
                     <label for="login-email">
@@ -152,6 +153,7 @@ if ($survey_id) {
             <form id="eipsi-participant-register-form" class="eipsi-participant-register-form eipsi-survey-login-form">
                 <?php // Nonce is injected by JS from window.eipsiAuth.nonce (survey-login-enhanced.js) ?>
                 <input type="hidden" name="survey_id" value="<?php echo esc_attr($survey_id); ?>">
+                <input type="hidden" name="redirect_url" value="<?php echo esc_attr($redirect_url); ?>">
 
                 <?php if (empty($survey_id)): ?>
                 <div class="eipsi-form-group">

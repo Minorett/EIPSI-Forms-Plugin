@@ -125,11 +125,23 @@ function eipsi_render_survey_login_form($atts) {
 
     // Handle redirect_to parameter from URL (for post-login redirect)
     $redirect_to = isset($_GET['redirect_to']) ? esc_url_raw(wp_unslash($_GET['redirect_to'])) : '';
+    
+    // If not set in GET, check if passed in $atts
+    if (empty($redirect_to) && isset($atts['redirect_url'])) {
+        $redirect_to = $atts['redirect_url'];
+    }
+
     if (!empty($redirect_to)) {
         wp_add_inline_script('eipsi-participant-auth', 
             'window.eipsiRedirectTo = "' . $redirect_to . '";', 
             'before'
         );
+        
+        // Ensure it's available for the template
+        if (!is_array($atts)) {
+            $atts = array();
+        }
+        $atts['redirect_url'] = $redirect_to;
     }
     
     ob_start();
@@ -295,9 +307,15 @@ function eipsi_get_login_page_url($survey_id = 0) {
     if (!empty($login_pages)) {
         return get_permalink($login_pages[0]->ID);
     }
+
+    // Method 3: Check for a page with slug 'login'
+    $login_page = get_page_by_path('login');
+    if ($login_page) {
+        return get_permalink($login_page->ID);
+    }
     
-    // Default to home page
-    return home_url('/');
+    // Default fallback (v1.6.0) - try to use /login if it exists, otherwise home
+    return home_url('/login');
 }
 
 /**
@@ -617,6 +635,26 @@ function eipsi_longitudinal_study_shortcode($atts) {
         }
     }
     
+    // ============================================================
+    // LOGIN REDIRECT FLOW (v1.6.0)
+    // If not logged in and not an admin, redirect to /login
+    // ============================================================
+    if (!$is_participant_logged_in && !current_user_can('manage_options') && $requested_view !== 'public' && empty($magic_token)) {
+        $current_url = (is_ssl() ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        $login_url = eipsi_get_login_page_url();
+        
+        // Prevent infinite redirect if shortcode is placed on the login page
+        $current_path = trim(wp_parse_url($current_url, PHP_URL_PATH), '/');
+        $login_path = trim(wp_parse_url($login_url, PHP_URL_PATH), '/');
+        
+        if ($current_path !== $login_path) {
+            $redirect_url = add_query_arg('redirect_to', urlencode($current_url), $login_url);
+            
+            // Use JavaScript redirect as headers are likely already sent in a shortcode
+            return '<script>window.location.href="' . esc_url($redirect_url) . '";</script>';
+        }
+    }
+
     // Now determine view_mode based on authentication and context
     // CRITICAL: Magic link ALWAYS shows participant view, never admin/dashboard
     if ($magic_link_login_success) {
