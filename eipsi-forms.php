@@ -1308,6 +1308,7 @@ function eipsi_forms_enqueue_frontend_assets() {
     wp_localize_script('eipsi-forms-js', 'eipsiFormsConfig', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_forms_nonce'),
+        'savePartialNonce' => wp_create_nonce('eipsi_save_partial'),
         'strings' => array(
             'requiredField' => 'Este campo es obligatorio.',
             'sliderRequired' => 'Por favor, interactúe con la escala para continuar.',

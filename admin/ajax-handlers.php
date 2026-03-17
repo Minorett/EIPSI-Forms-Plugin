@@ -1034,9 +1034,6 @@ function eipsi_save_global_privacy_config_handler() {
 }
 
 function eipsi_forms_submit_form_handler() {
-    if (!session_id()) {
-        session_start();
-    }
     check_ajax_referer('eipsi_forms_nonce', 'nonce');
     
     
@@ -1173,9 +1170,36 @@ function eipsi_forms_submit_form_handler() {
     $survey_id = EIPSI_Auth_Service::get_current_survey();
     $wave_index = null;
 
-    // Try to get wave context from session if available
-    if (isset($_SESSION['eipsi_wave_id'])) {
-        $wave_id = absint($_SESSION['eipsi_wave_id']);
+    // Intentar obtener wave_id de múltiples fuentes
+    $wave_id = 0;
+
+    // Fuente 1: POST directo (viene del formulario via ?wave_id= en URL)
+    if (!empty($_POST['wave_id'])) {
+        $wave_id = absint($_POST['wave_id']);
+    }
+
+    // Fuente 2: GET (viene de ?wave_id= en la URL del shortcode)
+    if (empty($wave_id) && !empty($_GET['wave_id'])) {
+        $wave_id = absint($_GET['wave_id']);
+    }
+
+    // Fuente 3: sesión DB del participante (EIPSI_Auth_Service)
+    if (empty($wave_id) && class_exists('EIPSI_Auth_Service')) {
+        $participant_id_for_wave = EIPSI_Auth_Service::get_current_participant();
+        $survey_id_for_wave      = EIPSI_Auth_Service::get_current_survey();
+
+        if ($participant_id_for_wave && $survey_id_for_wave) {
+            if (class_exists('EIPSI_Wave_Service')) {
+                $pending = EIPSI_Wave_Service::get_next_pending_wave($participant_id_for_wave, $survey_id_for_wave);
+                if ($pending) {
+                    $wave_id = (int) $pending->id;
+                }
+            }
+        }
+    }
+
+    // Si obtuvimos wave_id, mapear wave_index desde DB
+    if (!empty($wave_id)) {
         $wave_index_val = $wpdb->get_var($wpdb->prepare(
             "SELECT wave_index FROM {$wpdb->prefix}survey_waves WHERE id = %d",
             $wave_id
@@ -1467,13 +1491,11 @@ function eipsi_forms_submit_form_handler() {
         $next_wave_data = null;
         $has_next_wave = false;
         
-        // Si hay contexto longitudinal (wave_id en sesión), actualizar assignment
-        if (isset($_SESSION['eipsi_wave_id']) && $survey_id) {
-            $wave_id = absint($_SESSION['eipsi_wave_id']);
-            
+        // Si hay contexto longitudinal (wave_id detectable), actualizar assignment
+        if (!empty($wave_id) && $survey_id) {
             // Cargar Wave_Service
             require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/Wave_Service.php';
-            
+
             // Marcar assignment como submitted
             $marked = Wave_Service::mark_assignment_submitted($participant_id, $survey_id, $wave_id);
             
@@ -2400,15 +2422,86 @@ function eipsi_get_completion_config_handler() {
  * Save & Continue: Save partial response
  */
 function eipsi_save_partial_response_handler() {
-    // No check_ajax_referer for save operations (need to work even during connection issues)
+    // Nonce required even for nopriv. Prevents CSRF + drive-by writes.
+    check_ajax_referer('eipsi_save_partial', 'nonce');
+
+    // #region agent log
+    $eipsi_dbg_log = static function($message, $data = array(), $hypothesisId = 'SC') {
+        try {
+            $log_path = defined('WP_CONTENT_DIR')
+                ? trailingslashit(WP_CONTENT_DIR) . 'eipsi-save-partial-debug.log'
+                : 'eipsi-save-partial-debug.log';
+            $payload = array(
+                'hypothesisId' => $hypothesisId,
+                'location' => 'admin/ajax-handlers.php:eipsi_save_partial_response_handler',
+                'message' => $message,
+                'data' => $data,
+                'timestamp' => (int) round(microtime(true) * 1000),
+            );
+            @file_put_contents($log_path, wp_json_encode($payload) . PHP_EOL, FILE_APPEND);
+        } catch (Exception $e) {
+            // ignore
+        }
+    };
+    // #endregion agent log
     
     $form_id = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : '';
     $participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
     $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
     $page_index = isset($_POST['page_index']) ? intval($_POST['page_index']) : 1;
     $responses = isset($_POST['responses']) ? $_POST['responses'] : array();
+
+    // Payload size guard (50KB max) — prevents logical DoS.
+    $raw_data = '';
+    if (isset($_POST['data'])) {
+        $raw_data = is_string($_POST['data']) ? wp_unslash($_POST['data']) : wp_json_encode($_POST['data']);
+    } elseif (isset($_POST['responses'])) {
+        $raw_data = is_string($_POST['responses']) ? wp_unslash($_POST['responses']) : wp_json_encode($_POST['responses']);
+    }
+    $raw_len = is_string($raw_data) ? strlen($raw_data) : 0;
+    if ($raw_len > 51200) {
+        $eipsi_dbg_log('save_partial_rejected_payload_too_large', array(
+            'bytes' => $raw_len,
+        ), 'SC');
+        wp_send_json_error(
+            new WP_Error('eipsi_payload_too_large', __('Draft payload exceeds 50KB limit.', 'eipsi-forms')),
+            400
+        );
+    }
+
+    // Rate limit: 30 requests / minute by session_id (fallback to IP hash).
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field($_SERVER['REMOTE_ADDR']) : '';
+    $rate_key_material = !empty($session_id) ? ('sid:' . $session_id) : ('ip:' . $ip);
+    $rate_key = 'eipsi_sc_rl_' . md5($rate_key_material);
+    $bucket = get_transient($rate_key);
+    if (!is_array($bucket) || !isset($bucket['count'], $bucket['reset'])) {
+        $bucket = array('count' => 0, 'reset' => time() + 60);
+    }
+    // reset window if needed
+    if ((int) $bucket['reset'] < time()) {
+        $bucket = array('count' => 0, 'reset' => time() + 60);
+    }
+    $bucket['count'] = (int) $bucket['count'] + 1;
+    set_transient($rate_key, $bucket, 70);
+
+    if ($bucket['count'] > 30) {
+        $eipsi_dbg_log('save_partial_rate_limited', array(
+            'count' => $bucket['count'],
+            'windowSeconds' => max(0, (int) $bucket['reset'] - time()),
+            'keyHash' => md5($rate_key_material),
+        ), 'SC');
+        wp_send_json_error(
+            new WP_Error('eipsi_rate_limited', __('Too many Save & Continue requests. Please wait a minute and try again.', 'eipsi-forms')),
+            429
+        );
+    }
     
     if (empty($form_id) || empty($participant_id) || empty($session_id)) {
+        $eipsi_dbg_log('save_partial_missing_required', array(
+            'hasFormId' => !empty($form_id),
+            'hasParticipantId' => !empty($participant_id),
+            'hasSessionId' => !empty($session_id),
+        ), 'SC');
         wp_send_json_error(array(
             'message' => __('Missing required parameters', 'eipsi-forms')
         ));
@@ -2417,12 +2510,22 @@ function eipsi_save_partial_response_handler() {
     $result = EIPSI_Partial_Responses::save($form_id, $participant_id, $session_id, $page_index, $responses);
     
     if ($result['success']) {
+        $eipsi_dbg_log('save_partial_ok', array(
+            'action' => $result['action'] ?? null,
+            'pageIndex' => $page_index,
+            'bytes' => $raw_len,
+            'count' => $bucket['count'],
+        ), 'SC');
         wp_send_json_success(array(
             'message' => __('Partial response saved', 'eipsi-forms'),
             'action' => $result['action'],
             'id' => $result['id']
         ));
     } else {
+        $eipsi_dbg_log('save_partial_failed', array(
+            'error' => $result['error'] ?? null,
+            'pageIndex' => $page_index,
+        ), 'SC');
         wp_send_json_error(array(
             'message' => __('Failed to save partial response', 'eipsi-forms'),
             'error' => $result['error']

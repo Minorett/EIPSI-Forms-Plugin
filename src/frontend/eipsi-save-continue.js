@@ -983,6 +983,10 @@
 			payload.append( 'session_id', this.sessionId );
 			payload.append( 'page_index', currentPage );
 			payload.append( 'responses', JSON.stringify( responses ) );
+			payload.append(
+				'nonce',
+				this.config?.savePartialNonce || this.config?.nonce || ''
+			);
 
 			const bodyString = payload.toString();
 
@@ -1085,6 +1089,10 @@
 				formData.append(
 					'responses',
 					JSON.stringify( responses || this.collectResponses() )
+				);
+				formData.append(
+					'nonce',
+					this.config?.savePartialNonce || this.config?.nonce || ''
 				);
 
 				const response = await fetch( this.config.ajaxUrl, {
