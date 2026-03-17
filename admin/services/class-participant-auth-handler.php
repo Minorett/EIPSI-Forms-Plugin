@@ -145,10 +145,27 @@ class EIPSI_Participant_Auth_Handler {
             'remember' => $remember
         ));
 
-        // Get redirect URL
-        $redirect_url = esc_url_raw($_POST['redirect_url'] ?? '');
+        // Get redirect URL from request
+        $redirect_to = isset($_POST['redirect_to']) ? esc_url_raw($_POST['redirect_to']) : '';
+        $redirect_url = isset($_POST['redirect_url']) ? esc_url_raw($_POST['redirect_url']) : $redirect_to;
+
+        // Security: validate redirect URL - only allow same-domain redirects
+        if ($redirect_url) {
+            $parsed = parse_url($redirect_url);
+            $home_parsed = parse_url(home_url());
+
+            // Only allow same-domain redirects (no host means relative URL)
+            if (!isset($parsed['host']) || $parsed['host'] === $home_parsed['host']) {
+                // Valid same-domain redirect
+            } else {
+                // Invalid external redirect - force fallback
+                $redirect_url = '';
+            }
+        }
+
+        // Fallback to dashboard
         if (empty($redirect_url)) {
-            $redirect_url = home_url('/estudio/');
+            $redirect_url = home_url('/participante-dashboard/');
         }
 
         wp_send_json_success(array(
@@ -294,10 +311,27 @@ class EIPSI_Participant_Auth_Handler {
             wp_die();
         }
 
-        // Get redirect URL
-        $redirect_url = esc_url_raw($_POST['redirect_url'] ?? '');
+        // Get redirect URL from request
+        $redirect_to = isset($_POST['redirect_to']) ? esc_url_raw($_POST['redirect_to']) : '';
+        $redirect_url = isset($_POST['redirect_url']) ? esc_url_raw($_POST['redirect_url']) : $redirect_to;
+
+        // Security: validate redirect URL - only allow same-domain redirects
+        if ($redirect_url) {
+            $parsed = parse_url($redirect_url);
+            $home_parsed = parse_url(home_url());
+
+            // Only allow same-domain redirects (no host means relative URL)
+            if (!isset($parsed['host']) || $parsed['host'] === $home_parsed['host']) {
+                // Valid same-domain redirect
+            } else {
+                // Invalid external redirect - force fallback
+                $redirect_url = '';
+            }
+        }
+
+        // Fallback to dashboard
         if (empty($redirect_url)) {
-            $redirect_url = home_url('/estudio/');
+            $redirect_url = home_url('/participante-dashboard/');
         }
 
         wp_send_json_success(array(
