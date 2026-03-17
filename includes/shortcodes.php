@@ -564,13 +564,6 @@ function eipsi_longitudinal_study_shortcode($atts) {
         }
     }
 
-    // Redirect to login if not authenticated and not public view
-    if (!$is_participant_logged_in && $requested_view !== 'public') {
-        $redirect_to = isset($_GET['redirect_to']) ? $_GET['redirect_to'] : $_SERVER['REQUEST_URI'];
-        wp_redirect('/login?redirect_to=' . urlencode($redirect_to));
-        exit;
-    }
-
     // ============================================================
     // CRITICAL: Direct Form Rendering (Fix for Task C)
     // If form_id is in URL and user is authenticated, render form directly
