@@ -189,6 +189,35 @@ function eipsi_participant_login_handler() {
     $survey_id = isset($_POST['survey_id']) ? absint($_POST['survey_id']) : 0;
     $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
 
+    // Si no hay survey_id, intentar resolverlo desde study_code o redirect_url
+    if ( empty( $survey_id ) ) {
+        $study_code = isset( $_POST['study_code'] ) ? sanitize_text_field( $_POST['study_code'] ) : '';
+        if ( ! empty( $study_code ) ) {
+            global $wpdb;
+            $study = $wpdb->get_row( $wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}survey_studies WHERE study_code = %s", $study_code
+            ) );
+            if ( $study ) $survey_id = (int) $study->id;
+        }
+    }
+    if ( empty( $survey_id ) ) {
+        $redirect_to = isset( $_POST['redirect_url'] ) ? esc_url_raw( $_POST['redirect_url'] ) : '';
+        if ( ! empty( $redirect_to ) ) {
+            $redirect_path = trim( wp_parse_url( $redirect_to, PHP_URL_PATH ), '/' );
+            $redirect_page = get_page_by_path( $redirect_path );
+            if ( $redirect_page ) {
+                $content = $redirect_page->post_content;
+                if ( preg_match( '/\[eipsi_longitudinal_study[^\]]*study_code=["\']([^"\']+)["\']/', $content, $matches ) ) {
+                    global $wpdb;
+                    $study = $wpdb->get_row( $wpdb->prepare(
+                        "SELECT id FROM {$wpdb->prefix}survey_studies WHERE study_code = %s", $matches[1]
+                    ) );
+                    if ( $study ) $survey_id = (int) $study->id;
+                }
+            }
+        }
+    }
+
     if (empty($email) || !is_email($email)) {
         wp_send_json_error(array(
             'message' => __('Por favor ingresa un email válido.', 'eipsi-forms'),
@@ -213,14 +242,11 @@ function eipsi_participant_login_handler() {
     $auth_result = EIPSI_Auth_Service::authenticate_passwordless($survey_id, $email);
     
     if (!$auth_result['success']) {
-        // Record failed login attempt for rate limiting
         eipsi_record_failed_login($email, $survey_id);
-
         $error_messages = array(
             'user_not_found' => __('Usuario no encontrado. Verifica tu email o regístrate.', 'eipsi-forms'),
             'user_inactive' => __('Tu cuenta está desactivada. Contacta al investigador.', 'eipsi-forms')
         );
-
         wp_send_json_error(array(
             'message' => isset($error_messages[$auth_result['error']]) ? $error_messages[$auth_result['error']] : __('Error de autenticación.', 'eipsi-forms'),
             'code' => $auth_result['error']
@@ -237,16 +263,16 @@ function eipsi_participant_login_handler() {
         ));
     }
 
-    // Clear login rate limit on successful authentication
     eipsi_clear_login_rate_limit($email, $survey_id);
     
-    // Get redirect URL
     $redirect_url = eipsi_get_participant_redirect_url($survey_id, $auth_result['participant_id']);
     
     wp_send_json_success(array(
-        'message' => __('¡Bienvenido! Redirigiendo...', 'eipsi-forms'),
+        'message'        => __('¡Bienvenido! Redirigiendo...', 'eipsi-forms'),
         'participant_id' => $auth_result['participant_id'],
-        'redirect' => $redirect_url
+        'redirect'       => $redirect_url,
+        'session_token'  => $session_result['token'],
+        'cookie_name'    => $session_result['cookie_name'],
     ));
 }
 add_action('wp_ajax_nopriv_eipsi_participant_login', 'eipsi_participant_login_handler');
