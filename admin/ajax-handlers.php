@@ -1036,6 +1036,7 @@ function eipsi_save_global_privacy_config_handler() {
 function eipsi_forms_submit_form_handler() {
     check_ajax_referer('eipsi_forms_nonce', 'nonce');
     
+    $wpdb->suppress_errors(true); // ← AGREGAR ACÁ
     
     // ✅ v1.4.3 - VALIDACIÓN CONTEXTUAL DE CONSENTIMIENTO
     // La validación de consentimiento se hace en el frontend (eipsi-forms.js líneas 88-127)
