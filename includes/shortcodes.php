@@ -557,7 +557,10 @@ function eipsi_longitudinal_study_shortcode($atts) {
         'theme' => 'default',     // Theme: default, compact, card
         'view' => 'auto',         // View mode: auto, dashboard, participant, public
     ), $atts, 'eipsi_longitudinal_study');
-    
+        // Prevent page caching — this page contains dynamic authenticated content
+    if ( ! is_admin() ) {
+        nocache_headers();
+    }
     $study_code = sanitize_text_field($atts['study_code']);
     $study_id = absint($atts['id']);
     $wave_index = absint($atts['wave']);
