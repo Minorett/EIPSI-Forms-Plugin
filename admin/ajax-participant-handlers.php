@@ -189,14 +189,6 @@ function eipsi_participant_login_handler() {
     $survey_id = isset($_POST['survey_id']) ? absint($_POST['survey_id']) : 0;
     $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
 
-    // Validate required fields
-    if (empty($survey_id)) {
-        wp_send_json_error(array(
-            'message' => __('ID del estudio es requerido.', 'eipsi-forms'),
-            'code' => 'missing_survey_id'
-        ));
-    }
-
     if (empty($email) || !is_email($email)) {
         wp_send_json_error(array(
             'message' => __('Por favor ingresa un email válido.', 'eipsi-forms'),
