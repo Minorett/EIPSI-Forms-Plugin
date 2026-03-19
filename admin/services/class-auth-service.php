@@ -189,42 +189,39 @@ class EIPSI_Auth_Service {
             // Setear cookie - usar setcookie() simple para compatibilidad PHP < 7.3
             $secure = is_ssl(); // Solo HTTPS
             
-            if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
-                // PHP 7.3+: usar opciones como array
-                $cookie_options = array(
-                    'expires' => $cookie_expires,
-                    'path' => '/',
-                    'domain' => '',
-                    'secure' => $secure,
-                    'httponly' => true,
-                    'samesite' => 'Lax'
-                );
-                setcookie($cookie_name, $token, $cookie_options);
+            $cookie_set = false;
+            if ( ! headers_sent() ) {
+                if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
+                    $cookie_options = array(
+                        'expires'  => $cookie_expires,
+                        'path'     => '/',
+                        'domain'   => '',
+                        'secure'   => $secure,
+                        'httponly' => true,
+                        'samesite' => 'Lax'
+                    );
+                    $cookie_set = setcookie($cookie_name, $token, $cookie_options);
+                } else {
+                    $cookie_set = setcookie($cookie_name, $token, $cookie_expires, '/', '', $secure, true);
+                }
             } else {
-                // PHP < 7.3: usar setcookie() tradicional
-                setcookie(
-                    $cookie_name,
-                    $token,
-                    $cookie_expires,
-                    '/',  // path
-                    '',   // domain
-                    $secure,
-                    true  // httponly
-                );
+                error_log('EIPSI Auth: headers already sent, cookie fallback required for participant ' . $participant_id);
             }
             
             return array(
-                'success' => true,
-                'token' => $token, // Solo para testing/debugging - NUNCA loguear
-                'error' => null
+                'success'     => true,
+                'token'       => $token,
+                'cookie_name' => $cookie_name,
+                'cookie_set'  => $cookie_set,
+                'error'       => null
             );
             
         } catch (Exception $e) {
             error_log('EIPSI Session creation exception: ' . $e->getMessage());
             return array(
                 'success' => false,
-                'token' => null,
-                'error' => 'db_error'
+                'token'   => null,
+                'error'   => 'db_error'
             );
         }
     }
