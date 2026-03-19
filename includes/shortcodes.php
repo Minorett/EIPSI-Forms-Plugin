@@ -69,6 +69,28 @@ add_shortcode('eipsi_survey_login', 'eipsi_survey_login_shortcode');
  * @return string Rendered HTML
  */
 function eipsi_render_survey_login_form($atts) {
+    // Auto-resolve survey_id from redirect_to if not provided
+    if (empty($atts['survey_id']) && isset($_GET['redirect_to'])) {
+        $redirect_url = esc_url_raw($_GET['redirect_to']);
+        $redirect_path = trim(wp_parse_url($redirect_url, PHP_URL_PATH), '/');
+        $redirect_page = get_page_by_path($redirect_path);
+        
+        if ($redirect_page) {
+            $content = $redirect_page->post_content;
+            if (preg_match('/\[eipsi_longitudinal_study[^\]]*study_code=["\']([^"\']+)["\']/', $content, $matches)) {
+                $study_code = $matches[1];
+                global $wpdb;
+                $study = $wpdb->get_row($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}survey_studies WHERE study_code = %s",
+                    $study_code
+                ));
+                if ($study) {
+                    $atts['survey_id'] = (int)$study->id;
+                }
+            }
+        }
+    }
+    
     // Enqueue required assets
 
     // 1. Participant auth base script — MUST load first so window.eipsiAuth is defined
