@@ -366,6 +366,13 @@
                     
                     // Redirect if provided (handlers may use 'redirect' or 'redirect_url')
                     const redirectTarget = response.data.redirect || response.data.redirect_url || '';
+
+                    // Cookie fallback: set session cookie via JS if PHP couldn't set it
+                    if (response.data.session_token && response.data.cookie_name) {
+                        const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+                        document.cookie = response.data.cookie_name + '=' + response.data.session_token + '; path=/; SameSite=Lax' + secure;
+                    }
+
                     if (redirectTarget) {
                         setTimeout(function() {
                             window.location.href = redirectTarget;
