@@ -163,10 +163,12 @@ function eipsi_participant_register_handler() {
     $redirect_url = eipsi_get_participant_redirect_url($survey_id, $result['participant_id']);
     
     wp_send_json_success(array(
-        'message' => __('¡Registro exitoso! Redirigiendo...', 'eipsi-forms'),
+        'message'        => __('¡Registro exitoso! Redirigiendo...', 'eipsi-forms'),
         'participant_id' => $result['participant_id'],
-        'auto_login' => true,
-        'redirect' => $redirect_url
+        'auto_login'     => true,
+        'redirect'       => $redirect_url,
+        'session_token'  => $session_result['token'],
+        'cookie_name'    => $session_result['cookie_name'],
     ));
 }
 add_action('wp_ajax_nopriv_eipsi_participant_register', 'eipsi_participant_register_handler');
@@ -620,10 +622,10 @@ function eipsi_get_participant_redirect_url($survey_id, $participant_id) {
         
         // Security: Prevent open redirect (v1.6.0)
         // Only allow redirect if it's a local URL within the same domain
-        $validated_redirect = wp_validate_redirect($custom_redirect, '');
-        
-        if (!empty($validated_redirect)) {
-            return $validated_redirect;
+        $parsed      = wp_parse_url( $custom_redirect );
+        $home_parsed = wp_parse_url( home_url() );
+        if ( ! isset( $parsed['host'] ) || $parsed['host'] === $home_parsed['host'] ) {
+            return $custom_redirect;
         }
     }
     
