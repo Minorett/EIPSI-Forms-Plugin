@@ -80,15 +80,28 @@ function eipsi_participant_register_handler() {
         require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
     }
     
+    // v1.5.7 - Load study config to check double opt-in setting
+    global $wpdb;
+    $study = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, config FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $survey_id
+    ));
+    
+    $study_config = ($study && !empty($study->config)) ? json_decode($study->config, true) : array();
+    // FIX: double_opt_in defaults to TRUE when config is NULL or not set
+    $double_opt_in = !isset($study_config['double_opt_in']) || $study_config['double_opt_in'] === true;
+    
     // Create participant (passwordless - no password, no names)
-    $result = EIPSI_Participant_Service::create_participant(
+    // If double_opt_in is true, participant is created with is_active = 0
+    $result = EIPSI_Participant_Service::create_participant_with_status(
         $survey_id,
         $email,
         null, // No password for passwordless flow
         array(
             'first_name' => '',
             'last_name' => ''
-        )
+        ),
+        !$double_opt_in // is_active = false if double_opt_in required
     );
     
     if (!$result['success']) {
@@ -146,6 +159,49 @@ function eipsi_participant_register_handler() {
         ));
     }
     
+    // v1.5.7 - Handle double opt-in flow
+    if ($double_opt_in) {
+        // Load confirmation service
+        if (!class_exists('EIPSI_Email_Confirmation_Service')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-confirmation-service.php';
+        }
+        if (!class_exists('EIPSI_Email_Service')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
+        }
+        
+        // Generate confirmation token
+        $token_result = EIPSI_Email_Confirmation_Service::generate_confirmation_token(
+            $survey_id,
+            $result['participant_id'],
+            $email
+        );
+        
+        if (!$token_result['success']) {
+            // Token generation failed - log but still return success to user
+            error_log('[EIPSI] Failed to generate confirmation token for participant ' . $result['participant_id']);
+        } else {
+            // Send confirmation email
+            $email_sent = EIPSI_Email_Service::send_confirmation_email(
+                $survey_id,
+                $result['participant_id'],
+                $token_result['token']
+            );
+            
+            if (!$email_sent) {
+                error_log('[EIPSI] Failed to send confirmation email to ' . $email);
+            }
+        }
+        
+        // Return response indicating confirmation is required (no session created)
+        wp_send_json_success(array(
+            'message' => __('Revisá tu bandeja de entrada para confirmar tu email.', 'eipsi-forms'),
+            'participant_id' => $result['participant_id'],
+            'requires_confirmation' => true,
+            'auto_login' => false
+        ));
+    }
+    
+    // No double opt-in required - proceed with auto-login
     // Create session (auto-login after registration)
     $session_result = EIPSI_Auth_Service::create_session($result['participant_id'], $survey_id);
     
@@ -243,9 +299,18 @@ function eipsi_participant_login_handler() {
     
     if (!$auth_result['success']) {
         eipsi_record_failed_login($email, $survey_id);
+        
+        // v1.5.7 - Special handling for inactive users (pending email confirmation)
+        if ($auth_result['error'] === 'user_inactive') {
+            wp_send_json_error(array(
+                'message' => __('Tu email aún no fue confirmado. Revisá tu bandeja de entrada o solicitá un nuevo link de confirmación.', 'eipsi-forms'),
+                'code' => 'email_not_confirmed',
+                'show_resend_link' => true
+            ));
+        }
+        
         $error_messages = array(
             'user_not_found' => __('Usuario no encontrado. Verifica tu email o regístrate.', 'eipsi-forms'),
-            'user_inactive' => __('Tu cuenta está desactivada. Contacta al investigador.', 'eipsi-forms')
         );
         wp_send_json_error(array(
             'message' => isset($error_messages[$auth_result['error']]) ? $error_messages[$auth_result['error']] : __('Error de autenticación.', 'eipsi-forms'),

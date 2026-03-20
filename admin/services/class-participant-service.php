@@ -128,6 +128,115 @@ class EIPSI_Participant_Service {
             );
         }
     }
+
+    /**
+     * Create participant with explicit active status.
+     *
+     * This is used for double opt-in flow where participant starts as inactive.
+     *
+     * @param int         $survey_id ID del survey.
+     * @param string      $email Email del participante.
+     * @param string|null $password Password en texto plano (opcional).
+     * @param array       $metadata Datos adicionales (first_name, last_name).
+     * @param bool        $is_active Initial active status (default true).
+     * @return array { success: bool, participant_id: int|null, error: string|null }
+     * @since 1.5.7
+     * @access public
+     */
+    public static function create_participant_with_status($survey_id, $email, $password = null, $metadata = array(), $is_active = true) {
+        global $wpdb;
+
+        try {
+            // Validar email con is_email()
+            if (!is_email($email)) {
+                return array(
+                    'success' => false,
+                    'participant_id' => null,
+                    'error' => 'invalid_email'
+                );
+            }
+
+            // Sanitizar email
+            $email = sanitize_email($email);
+
+            // Validar password solo si se proporciona
+            if ($password !== null) {
+                if (strlen($password) < 8 || trim($password) === '') {
+                    return array(
+                        'success' => false,
+                        'participant_id' => null,
+                        'error' => 'short_password'
+                    );
+                }
+            }
+
+            // Sanitizar metadata
+            $first_name = isset($metadata['first_name']) ? sanitize_text_field($metadata['first_name']) : '';
+            $last_name = isset($metadata['last_name']) ? sanitize_text_field($metadata['last_name']) : '';
+
+            // Hash password o generar hash aleatorio para passwordless
+            if ($password !== null) {
+                $password_hash = wp_hash_password($password);
+            } else {
+                $temp_password = wp_generate_password(32, true, true);
+                $password_hash = wp_hash_password($temp_password);
+            }
+
+            // Verificar UNIQUE(survey_id, email)
+            $table_name = $wpdb->prefix . 'survey_participants';
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM $table_name WHERE survey_id = %d AND email = %s",
+                $survey_id,
+                $email
+            ));
+
+            if ($existing) {
+                return array(
+                    'success' => false,
+                    'participant_id' => null,
+                    'error' => 'email_exists'
+                );
+            }
+
+            // INSERT en wp_survey_participants with explicit is_active status
+            $result = $wpdb->insert(
+                $table_name,
+                array(
+                    'survey_id' => $survey_id,
+                    'email' => $email,
+                    'password_hash' => $password_hash,
+                    'first_name' => $first_name,
+                    'last_name' => $last_name,
+                    'created_at' => current_time('mysql'),
+                    'is_active' => $is_active ? 1 : 0
+                ),
+                array('%d', '%s', '%s', '%s', '%s', '%s', '%d')
+            );
+
+            if ($result === false) {
+                error_log('EIPSI Participant creation failed: ' . $wpdb->last_error);
+                return array(
+                    'success' => false,
+                    'participant_id' => null,
+                    'error' => 'db_error'
+                );
+            }
+
+            return array(
+                'success' => true,
+                'participant_id' => (int) $wpdb->insert_id,
+                'error' => null
+            );
+
+        } catch (Exception $e) {
+            error_log('EIPSI Participant creation exception: ' . $e->getMessage());
+            return array(
+                'success' => false,
+                'participant_id' => null,
+                'error' => 'db_error'
+            );
+        }
+    }
     
     /**
      * Get participant by email.

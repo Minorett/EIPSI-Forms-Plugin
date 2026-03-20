@@ -110,6 +110,29 @@ class EIPSI_Survey_Access_Handler {
             array( '%d' )
         );
 
+        // v1.5.7 - Create wave assignments for the participant after email confirmation
+        // Load assignment service if not already loaded
+        if ( ! class_exists( 'EIPSI_Assignment_Service' ) ) {
+            $assignment_service_path = EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
+            if ( file_exists( $assignment_service_path ) ) {
+                require_once $assignment_service_path;
+            }
+        }
+
+        // Create assignments for all active waves of the study
+        if ( function_exists( 'eipsi_create_assignments_for_participant' ) ) {
+            $assignment_result = eipsi_create_assignments_for_participant( $participant_id, $survey_id );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( sprintf(
+                    '[EIPSI] Email confirmation: created %d assignments for participant %d (skipped: %d)',
+                    $assignment_result['created'],
+                    $participant_id,
+                    $assignment_result['skipped']
+                ) );
+            }
+        }
+
         // Send welcome email with magic link.
         if ( ! class_exists( 'EIPSI_Email_Service' ) ) {
             $email_service_path = EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
