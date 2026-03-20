@@ -420,15 +420,25 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
         error_log('[EIPSI] No waves configured for study ' . $study_id);
         return false;
     }
-    
+
     // Extract timing configuration with defaults
     $reminder_days = isset($timing_config['reminder_days']) ? absint($timing_config['reminder_days']) : 3;
     $retry_enabled = isset($timing_config['retry_enabled']) ? (int)(bool)$timing_config['retry_enabled'] : 1;
     $retry_days = isset($timing_config['retry_days']) ? absint($timing_config['retry_days']) : 7;
     $max_retries = isset($timing_config['max_retries']) ? absint($timing_config['max_retries']) : 3;
-    
+
+    // Extract timing intervals between waves (from step 3)
+    $timing_intervals = isset($timing_config['timing_intervals']) ? $timing_config['timing_intervals'] : array();
+    // Build a map: from_wave_index => interval_days
+    $interval_map = array();
+    foreach ($timing_intervals as $interval) {
+        if (isset($interval['from_wave']) && isset($interval['days_after'])) {
+            $interval_map[$interval['from_wave']] = absint($interval['days_after']);
+        }
+    }
+
     $created_count = 0;
-    
+
     foreach ($wave_config['waves_config'] as $index => $wave) {
         // Map wizard fields to wave service format
         $wave_data = array(
@@ -442,24 +452,33 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             'retry_days' => $retry_days,
             'max_retries' => $max_retries,
         );
-        
+
+        // Add interval_days: days after previous wave (0 for first wave)
+        $wave_index = $wave_data['wave_index'];
+        // In wizard step 3, intervals use 0-based from_wave: interval for T2 (wave_index 2) is from_wave=1
+        if ($wave_index > 1 && isset($interval_map[$wave_index - 1])) {
+            $wave_data['interval_days'] = $interval_map[$wave_index - 1];
+        } else {
+            $wave_data['interval_days'] = 0; // First wave has no previous wave
+        }
+
         // Skip if no form_id
         if (empty($wave_data['form_id'])) {
             error_log('[EIPSI] Skipping wave ' . $wave_data['name'] . ' - no form template');
             continue;
         }
-        
+
         // Create wave using service
         $result = EIPSI_Wave_Service::create_wave($study_id, $wave_data);
-        
+
         if (is_wp_error($result)) {
             error_log('[EIPSI] Error creating wave: ' . $result->get_error_message());
         } else {
             $created_count++;
-            error_log('[EIPSI] Created wave ID ' . $result . ' for study ' . $study_id);
+            error_log('[EIPSI] Created wave ID ' . $result . ' for study ' . $study_id . ' with interval_days=' . $wave_data['interval_days']);
         }
     }
-    
+
     error_log('[EIPSI] Created ' . $created_count . ' waves for study ' . $study_id);
     return $created_count > 0;
 }

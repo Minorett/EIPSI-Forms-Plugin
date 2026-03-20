@@ -50,6 +50,7 @@ class EIPSI_Wave_Service {
         $retry_days = isset($wave_data['retry_days']) ? absint($wave_data['retry_days']) : 7;
         $max_retries = isset($wave_data['max_retries']) ? absint($wave_data['max_retries']) : 3;
         $is_mandatory = isset($wave_data['is_mandatory']) ? (int) (bool) $wave_data['is_mandatory'] : 1;
+        $interval_days = isset($wave_data['interval_days']) ? absint($wave_data['interval_days']) : 0;
 
         $allowed_statuses = array('draft', 'active', 'completed', 'paused');
         $status = isset($wave_data['status']) ? sanitize_text_field($wave_data['status']) : 'draft';
@@ -62,6 +63,7 @@ class EIPSI_Wave_Service {
             'wave_index' => $wave_index,
             'name' => $name,
             'form_id' => $form_id,
+            'interval_days' => $interval_days,
             'reminder_days' => $reminder_days,
             'retry_enabled' => $retry_enabled,
             'retry_days' => $retry_days,
@@ -70,7 +72,7 @@ class EIPSI_Wave_Service {
             'is_mandatory' => $is_mandatory,
         );
 
-        $formats = array('%d', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%s', '%d');
+        $formats = array('%d', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d');
 
         if (!empty($wave_data['start_date'])) {
             $data['start_date'] = sanitize_text_field($wave_data['start_date']);
