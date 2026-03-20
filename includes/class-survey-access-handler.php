@@ -367,26 +367,26 @@ class EIPSI_Survey_Access_Handler {
     /**
      * Find the next pending wave for a participant.
      *
-     * FIX (v2.1.0): Changed a.study_id to a.survey_id to match the actual
-     * column name in wp_survey_assignments used by the rest of the codebase.
+     * FIX (v1.5.6): Uses a.study_id which is the correct column name
+     * in wp_survey_assignments table (NOT survey_id).
      *
-     * @param int $survey_id    Survey/Study ID.
+     * @param int $study_id    Study ID.
      * @param int $participant_id Participant ID.
      * @return object|null Row with wave_id and form_id, or null if none pending.
      */
-    private function get_target_wave( $survey_id, $participant_id ) {
+    private function get_target_wave( $study_id, $participant_id ) {
         global $wpdb;
 
         $sql = "SELECT a.wave_id, w.form_id
                 FROM {$wpdb->prefix}survey_assignments a
                 JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
                 WHERE a.participant_id = %d
-                  AND a.survey_id = %d
+                  AND a.study_id = %d
                   AND a.status IN ('pending', 'in_progress')
                 ORDER BY w.wave_index ASC
                 LIMIT 1";
 
-        return $wpdb->get_row( $wpdb->prepare( $sql, $participant_id, $survey_id ) );
+        return $wpdb->get_row( $wpdb->prepare( $sql, $participant_id, $study_id ) );
     }
 
     /**
