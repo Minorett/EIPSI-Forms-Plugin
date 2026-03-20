@@ -1998,6 +1998,35 @@ class EIPSI_Database_Schema_Manager {
             );
         }
 
+        // Ensure required columns exist (v1.5.5+)
+        $required_columns = array(
+            'interval_days' => "ALTER TABLE {$table_name} ADD COLUMN interval_days INT(11) DEFAULT 7 AFTER due_date",
+        );
+
+        foreach ( $required_columns as $column => $alter_sql ) {
+            $column_exists = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                    DB_NAME,
+                    $table_name,
+                    $column
+                )
+            );
+
+            if ( empty( $column_exists ) ) {
+                if ( false !== $wpdb->query( $alter_sql ) ) {
+                    $result['columns_added'][] = $column;
+                    error_log( "[EIPSI Forms] Added missing column '{$column}' to {$table_name}" );
+                } else {
+                    $result['columns_missing'][] = $column;
+                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
+                    }
+                }
+            }
+        }
+
         return $result;
     }
     
