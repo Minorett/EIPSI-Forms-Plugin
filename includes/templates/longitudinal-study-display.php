@@ -77,6 +77,7 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
         $wave_status[ $assignment->wave_id ] = $assignment->status;
     }
 
+    $last_wave_id = null;
     foreach ( $waves as $wave ) {
         if ( empty( $wave_status[ $wave['id'] ] ) || $wave_status[ $wave['id'] ] !== 'submitted' ) {
             if ( null === $next_wave ) {
@@ -84,12 +85,40 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
             }
         } else {
             $completed_waves++;
+            // Track the last completed wave (most recent one before next_wave)
+            if ( null === $next_wave ) {
+                $last_wave_id = $wave['id'];
+            }
         }
     }
 
     $participant_progress = $total_waves > 0
         ? (int) round( ( $completed_waves / $total_waves ) * 100 )
         : 0;
+
+    // =========================================================================
+    // INTERVAL CHECK: Verify if next wave respects configured interval
+    // =========================================================================
+    if ( $next_wave && $last_wave_id && ! empty( $next_wave['interval_days'] ) ) {
+        // Get submitted_at of the last completed submission
+        $last_submission = $wpdb->get_row( $wpdb->prepare(
+            "SELECT submitted_at FROM {$wpdb->prefix}survey_assignments
+            WHERE participant_id = %d AND wave_id = %d AND status = 'submitted'",
+            $current_participant_id,
+            $last_wave_id
+        ) );
+
+        if ( $last_submission ) {
+            $available_date = strtotime( $last_submission->submitted_at . ' +' . (int) $next_wave['interval_days'] . ' days' );
+            $now            = current_time( 'timestamp' );
+
+            if ( $available_date > $now ) {
+                // Next wave is locked - interval not yet passed
+                $next_wave['available_date'] = date_i18n( get_option( 'date_format' ), $available_date );
+                $next_wave['is_locked']      = true;
+            }
+        }
+    }
 }
 
 // CSS classes
@@ -145,18 +174,42 @@ $view_class      = 'view-' . esc_attr( $view_mode );
                 <?php if ( $next_wave ) : ?>
                     <div class="next-action">
                         <h4 class="next-action-title">📝 Tu próxima toma</h4>
-                        <div class="next-action-card">
+                        <div class="next-action-card <?php echo ! empty( $next_wave['is_locked'] ) ? 'wave-locked' : ''; ?>">
                             <div class="wave-info">
                                 <span class="wave-badge">T<?php echo esc_html( $next_wave['wave_index'] ); ?></span>
                                 <strong class="wave-name"><?php echo esc_html( $next_wave['name'] ); ?></strong>
                             </div>
-                            <form action="" method="get">
-                                <input type="hidden" name="form_id" value="<?php echo esc_attr( $next_wave['form_id'] ); ?>">
-                                <input type="hidden" name="wave_id" value="<?php echo esc_attr( $next_wave['id'] ); ?>">
-                                <button type="submit" class="button button-primary button-large">
-                                    <?php esc_html_e( 'Comenzar toma →', 'eipsi-forms' ); ?>
-                                </button>
-                            </form>
+                            <?php if ( ! empty( $next_wave['is_locked'] ) ) : ?>
+                                <div class="wave-locked-message">
+                                    <span class="lock-icon">🔒</span>
+                                    <p class="lock-text">
+                                        <?php
+                                        printf(
+                                            esc_html__( 'Tu próxima toma estará disponible el %s', 'eipsi-forms' ),
+                                            '<strong>' . esc_html( $next_wave['available_date'] ) . '</strong>'
+                                        );
+                                        ?>
+                                    </p>
+                                    <?php if ( ! empty( $next_wave['interval_days'] ) ) : ?>
+                                        <small class="lock-hint">
+                                            <?php
+                                            printf(
+                                                esc_html( _n( '(intervalo de %d día desde la toma anterior)', '(intervalo de %d días desde la toma anterior)', $next_wave['interval_days'], 'eipsi-forms' ) ),
+                                                (int) $next_wave['interval_days']
+                                            );
+                                            ?>
+                                        </small>
+                                    <?php endif; ?>
+                                </div>
+                            <?php else : ?>
+                                <form action="" method="get">
+                                    <input type="hidden" name="form_id" value="<?php echo esc_attr( $next_wave['form_id'] ); ?>">
+                                    <input type="hidden" name="wave_id" value="<?php echo esc_attr( $next_wave['id'] ); ?>">
+                                    <button type="submit" class="button button-primary button-large">
+                                        <?php esc_html_e( 'Comenzar toma →', 'eipsi-forms' ); ?>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php else : ?>
