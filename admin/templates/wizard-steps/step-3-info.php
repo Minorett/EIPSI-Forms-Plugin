@@ -72,7 +72,7 @@ while (count($timing_intervals) < ($number_of_waves - 1)) {
                             <div class="interval-input">
                                 <input type="number" 
                                        name="timing_intervals[<?php echo $i; ?>][days_after]"
-                                       value="<?php echo esc_attr($timing_intervals[$i]['days_after']); ?>"
+                                       value="<?php echo isset($timing_intervals[$i]['days_after']) && $timing_intervals[$i]['days_after'] !== '' ? esc_attr($timing_intervals[$i]['days_after']) : '7'; ?>"
                                        min="1" 
                                        max="365"
                                        class="interval-days-input">
