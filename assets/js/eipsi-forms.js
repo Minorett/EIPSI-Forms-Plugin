@@ -3892,12 +3892,23 @@ if ( pages.length === 0 ) {
 
             let buttonHtml = '';
             if ( config.show_home_button ) {
-                const buttonAction =
-                    config.button_action === 'close'
-                        ? 'onclick="window.close();"'
-                        : config.button_action === 'reload'
-                        ? 'onclick="window.location.reload();"'
-                        : 'onclick="window.location.href = '/';"';
+                // v1.5.7 - If wave_id is in URL (longitudinal context), redirect to study dashboard (base URL)
+                // instead of reloading the form or going to site home
+                const urlParams = new URLSearchParams( window.location.search );
+                const hasWaveId = urlParams.has( 'wave_id' );
+                const studyDashboardUrl = window.location.origin + window.location.pathname;
+                
+                let buttonAction;
+                if ( hasWaveId ) {
+                    // Longitudinal context: go back to study dashboard (remove form_id and wave_id params)
+                    buttonAction = `onclick="window.location.href = '${ studyDashboardUrl }';"`;
+                } else if ( config.button_action === 'close' ) {
+                    buttonAction = 'onclick="window.close();"';
+                } else if ( config.button_action === 'reload' ) {
+                    buttonAction = 'onclick="window.location.reload();"';
+                } else {
+                    buttonAction = 'onclick="window.location.href = \'/\';"';
+                }
 
                 const buttonLabel = nextWaveData && !nextWaveData.has_next 
                     ? 'Volver a inicio'
