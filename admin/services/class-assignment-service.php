@@ -469,4 +469,137 @@ class EIPSI_Assignment_Service {
             ARRAY_A
         );
     }
+
+    /**
+     * Create assignments for a participant for all active waves of a study.
+     *
+     * This is called after email confirmation to set up all wave assignments.
+     * The function is idempotent - if an assignment already exists, it's skipped.
+     *
+     * @param int $participant_id ID del participante
+     * @param int $study_id ID del estudio
+     * @return array { created: int, skipped: int, errors: array }
+     * @since 1.5.7
+     * @access public
+     */
+    public static function create_assignments_for_participant($participant_id, $study_id) {
+        global $wpdb;
+
+        $participant_id = absint($participant_id);
+        $study_id = absint($study_id);
+
+        $result = array(
+            'created' => 0,
+            'skipped' => 0,
+            'errors' => array()
+        );
+
+        if (!$participant_id || !$study_id) {
+            $result['errors'][] = 'Invalid participant_id or study_id';
+            return $result;
+        }
+
+        // Validate participant exists
+        $participant_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+            $participant_id
+        ));
+
+        if (!$participant_exists) {
+            $result['errors'][] = 'Participant not found';
+            return $result;
+        }
+
+        // Get all active waves for the study
+        $active_waves = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, wave_index, name 
+             FROM {$wpdb->prefix}survey_waves 
+             WHERE study_id = %d AND status = 'active'
+             ORDER BY wave_index ASC",
+            $study_id
+        ));
+
+        if (empty($active_waves)) {
+            // No active waves - not an error, just nothing to do
+            return $result;
+        }
+
+        // Create assignment for each active wave
+        foreach ($active_waves as $wave) {
+            // Check if assignment already exists (idempotent)
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}survey_assignments 
+                 WHERE wave_id = %d AND participant_id = %d",
+                $wave->id,
+                $participant_id
+            ));
+
+            if ($existing) {
+                $result['skipped']++;
+                continue;
+            }
+
+            // Create the assignment
+            $inserted = $wpdb->insert(
+                $wpdb->prefix . 'survey_assignments',
+                array(
+                    'study_id' => $study_id,
+                    'wave_id' => $wave->id,
+                    'participant_id' => $participant_id,
+                    'status' => 'pending',
+                    'created_at' => current_time('mysql')
+                ),
+                array('%d', '%d', '%d', '%s', '%s')
+            );
+
+            if ($inserted === false) {
+                // Check if it's a duplicate (race condition)
+                if (strpos($wpdb->last_error, 'Duplicate entry') !== false) {
+                    $result['skipped']++;
+                } else {
+                    $result['errors'][] = sprintf(
+                        'Failed to create assignment for wave %d: %s',
+                        $wave->id,
+                        $wpdb->last_error
+                    );
+                }
+            } else {
+                $result['created']++;
+            }
+        }
+
+        // Log the result
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                '[EIPSI] Created %d assignments for participant %d in study %d (skipped: %d, errors: %d)',
+                $result['created'],
+                $participant_id,
+                $study_id,
+                $result['skipped'],
+                count($result['errors'])
+            ));
+        }
+
+        return $result;
+    }
+}
+
+/**
+ * Global function wrapper for creating assignments for a participant.
+ *
+ * This function can be called from anywhere to create assignments
+ * for a participant after email confirmation.
+ *
+ * @param int $participant_id ID del participante
+ * @param int $study_id ID del estudio
+ * @return array Result array with created, skipped, and errors counts
+ * @since 1.5.7
+ */
+function eipsi_create_assignments_for_participant($participant_id, $study_id) {
+    // Ensure service is loaded
+    if (!class_exists('EIPSI_Assignment_Service')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
+    }
+    
+    return EIPSI_Assignment_Service::create_assignments_for_participant($participant_id, $study_id);
 }
