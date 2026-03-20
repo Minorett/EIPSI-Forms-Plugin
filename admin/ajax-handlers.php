@@ -1036,14 +1036,22 @@ function eipsi_save_global_privacy_config_handler() {
 function eipsi_forms_submit_form_handler() {
     check_ajax_referer('eipsi_forms_nonce', 'nonce');
     
-    $wpdb->suppress_errors(true); // ← AGREGAR ACÁ
+    global $wpdb;
+    $wpdb->suppress_errors(true);
     
-    // ✅ v1.4.3 - VALIDACIÓN CONTEXTUAL DE CONSENTIMIENTO
+    // v1.5.6 - Obtener participante autenticado desde la sesión
+    // Esto corrige el bug donde participant_id llegaba como 0 desde el frontend
+    $authenticated_participant_id = 0;
+    $authenticated_study_id = 0;
+    if (class_exists('EIPSI_Auth_Service')) {
+        $authenticated_participant_id = EIPSI_Auth_Service::get_current_participant();
+        $authenticated_study_id = EIPSI_Auth_Service::get_current_survey();
+    }
+    
+    // v1.4.3 - VALIDACIÓN CONTEXTUAL DE CONSENTIMIENTO
     // La validación de consentimiento se hace en el frontend (eipsi-forms.js líneas 88-127)
     // Solo valida si existe el bloque consent-block en el formulario
     // Esto permite usar bloques individuales sin consentimiento obligatorio
-    
-    global $wpdb;
     
     $form_name = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : 'default';
 
@@ -1167,8 +1175,12 @@ function eipsi_forms_submit_form_handler() {
     // Usar Participant ID universal del frontend si está disponible, sino fallback al viejo sistema
     $participant_id = !empty($frontend_participant_id) ? $frontend_participant_id : generateStableFingerprint($user_data);
     
-    // Capture longitudinal context (v1.4.0)
-    $survey_id = EIPSI_Auth_Service::get_current_survey();
+    // v1.5.6 - Para operaciones longitudinales (assignments), usar el participant_id autenticado
+    // El participant_id del frontend es un fingerprint/string, pero las tablas de assignments usan INT
+    $longitudinal_participant_id = $authenticated_participant_id;
+    
+    // Capture longitudinal context (v1.4.0) - usar study_id en lugar de survey_id
+    $study_id = $authenticated_study_id;
     $wave_index = null;
 
     // Intentar obtener wave_id de múltiples fuentes
@@ -1185,16 +1197,11 @@ function eipsi_forms_submit_form_handler() {
     }
 
     // Fuente 3: sesión DB del participante (EIPSI_Auth_Service)
-    if (empty($wave_id) && class_exists('EIPSI_Auth_Service')) {
-        $participant_id_for_wave = EIPSI_Auth_Service::get_current_participant();
-        $survey_id_for_wave      = EIPSI_Auth_Service::get_current_survey();
-
-        if ($participant_id_for_wave && $survey_id_for_wave) {
-            if (class_exists('EIPSI_Wave_Service')) {
-                $pending = EIPSI_Wave_Service::get_next_pending_wave($participant_id_for_wave, $survey_id_for_wave);
-                if ($pending) {
-                    $wave_id = (int) $pending->id;
-                }
+    if (empty($wave_id) && $longitudinal_participant_id && $study_id) {
+        if (class_exists('EIPSI_Wave_Service')) {
+            $pending = EIPSI_Wave_Service::get_next_pending_wave($longitudinal_participant_id, $study_id);
+            if ($pending) {
+                $wave_id = (int) $pending->id;
             }
         }
     }
@@ -1492,31 +1499,32 @@ function eipsi_forms_submit_form_handler() {
         $next_wave_data = null;
         $has_next_wave = false;
         
-        // Si hay contexto longitudinal (wave_id detectable), actualizar assignment
-        if (!empty($wave_id) && $survey_id) {
+        // v1.5.6 - Si hay contexto longitudinal (wave_id detectable), actualizar assignment
+        // Usar longitudinal_participant_id (INT) y study_id en lugar de participant_id (string) y survey_id
+        if (!empty($wave_id) && $study_id && $longitudinal_participant_id) {
             // Cargar Wave_Service
             require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/Wave_Service.php';
 
-            // Marcar assignment como submitted
-            $marked = Wave_Service::mark_assignment_submitted($participant_id, $survey_id, $wave_id);
+            // Marcar assignment como submitted usando study_id (columna correcta en wp_survey_assignments)
+            $marked = Wave_Service::mark_assignment_submitted($longitudinal_participant_id, $study_id, $wave_id);
             
             if (!$marked && defined('WP_DEBUG') && WP_DEBUG) {
                 error_log(sprintf(
-                    '[EIPSI] Warning: No se pudo marcar assignment como submitted (participant_id=%d, survey_id=%d, wave_id=%d)',
-                    $participant_id,
-                    $survey_id,
+                    '[EIPSI] Warning: No se pudo marcar assignment como submitted (participant_id=%d, study_id=%d, wave_id=%d)',
+                    $longitudinal_participant_id,
+                    $study_id,
                     $wave_id
                 ));
             }
             
-            // Obtener próxima toma pendiente
-            $next_wave = Wave_Service::get_next_pending_wave($participant_id, $survey_id);
+            // Obtener próxima toma pendiente usando study_id
+            $next_wave = Wave_Service::get_next_pending_wave($longitudinal_participant_id, $study_id);
             
             if ($next_wave) {
                 $has_next_wave = true;
                 $next_wave_data = array(
                     'wave_index' => $next_wave['wave_index'],
-                    'due_at' => $next_wave['due_at'],
+                    'due_date' => $next_wave['due_date'],
                     'wave_name' => $next_wave['wave_name']
                 );
             }
@@ -1524,7 +1532,7 @@ function eipsi_forms_submit_form_handler() {
         
         // Preparar respuesta de éxito con información de próximas tomas
         $success_response = array(
-            'message' => __('¡GRACIAS! Tu respuesta ha sido guardada exitosamente', 'eipsi-forms'),
+            'message' => __('Form submitted successfully!', 'eipsi-forms'),
             'external_db' => false,
             'insert_id' => $insert_id,
             'has_next' => $has_next_wave,
@@ -1532,8 +1540,8 @@ function eipsi_forms_submit_form_handler() {
         );
         
         // Si no hay próxima toma, agregar mensaje de completado
-        if (!$has_next_wave && $survey_id) {
-            $success_response['completion_message'] = __('Todas las tomas completadas ✅', 'eipsi-forms');
+        if (!$has_next_wave && $study_id) {
+            $success_response['completion_message'] = __('All waves completed!', 'eipsi-forms');
         }
         
         if ($used_fallback) {
