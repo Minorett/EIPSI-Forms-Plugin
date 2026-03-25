@@ -28,7 +28,8 @@ function eipsi_display_longitudinal_study_page() {
         'reminders',
         'email-log',
         'longitudinal-pools',
-        'pool-analytics'
+        'pool-analytics',
+        'export'
     );
 
     if (!in_array($active_tab, $allowed_tabs, true)) {
@@ -74,6 +75,11 @@ function eipsi_display_longitudinal_study_page() {
                class="nav-tab <?php echo esc_attr(($active_tab === 'pool-analytics') ? 'nav-tab-active' : ''); ?>"
                data-tab="pool-analytics">
                 📊 <?php esc_html_e('Pool Analytics', 'eipsi-forms'); ?>
+            </a>
+            <a href="?page=eipsi-longitudinal-study&tab=export"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'export') ? 'nav-tab-active' : ''); ?>"
+               data-tab="export">
+                📥 <?php esc_html_e('Export', 'eipsi-forms'); ?>
             </a>
         </h2>
 
@@ -180,6 +186,12 @@ function eipsi_display_longitudinal_study_page() {
                     echo '<div class="notice notice-error"><p>' . esc_html__('Error: La funcionalidad de Pool Analytics no está disponible.', 'eipsi-forms') . '</p></div>';
                 }
                 ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($active_tab === 'export'): ?>
+            <div class="tab-content" data-tab="export">
+                <?php include dirname(__FILE__) . '/tabs/export-tab.php'; ?>
             </div>
         <?php endif; ?>
     </div>
