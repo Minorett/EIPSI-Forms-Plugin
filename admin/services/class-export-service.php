@@ -338,6 +338,71 @@ class EIPSI_Export_Service {
             $assignments_by_p[ $a->participant_id ][] = $a;
         }
 
+        // --- Get form_responses from vas_form_results ---
+        // Relationship: assignments -> survey_waves (wave_id -> id) -> vas_form_results (form_id)
+        $form_responses_by_p = array();
+
+        if (!empty($assignments)) {
+            // Get unique wave_ids from assignments
+            $wave_ids = array_unique(array_column($assignments, 'wave_id'));
+
+            if (!empty($wave_ids)) {
+                // Query waves to get form_id mapping
+                $waves_form_ids = array();
+                foreach ($wave_ids as $wid) {
+                    if (isset($waves_by_id[$wid])) {
+                        $waves_form_ids[$wid] = $waves_by_id[$wid]->form_id;
+                    }
+                }
+
+                // Get form_responses from vas_form_results
+                // Using form_id from survey_waves to link to vas_form_results
+                $form_ids = array_unique(array_filter(array_values($waves_form_ids)));
+
+                if (!empty($form_ids) && !empty($participant_ids)) {
+                    $form_ids_placeholder = implode(',', array_fill(0, count($form_ids), '%d'));
+                    $ids_placeholder2     = implode(',', array_fill(0, count($participant_ids), '%d'));
+
+                    $form_responses = $wpdb->get_results(
+                        $wpdb->prepare(
+                            "SELECT fr.form_id, fr.participant_id, fr.form_responses
+                             FROM {$wpdb->prefix}vas_form_results fr
+                             WHERE fr.form_id IN ({$form_ids_placeholder})
+                             AND fr.participant_id IN ({$ids_placeholder2})",
+                            array_merge($form_ids, $participant_ids)
+                        )
+                    );
+
+                    // Map responses by participant_id and wave_index
+                    foreach ($form_responses as $fr) {
+                        // Find which wave this form_id belongs to
+                        $matched_wave_id = null;
+                        foreach ($waves_form_ids as $wid => $fid) {
+                            if ($fid == $fr->form_id) {
+                                $matched_wave_id = $wid;
+                                break;
+                            }
+                        }
+
+                        if ($matched_wave_id && isset($waves_by_id[$matched_wave_id])) {
+                            $wave_index = $waves_by_id[$matched_wave_id]->wave_index;
+                            $decoded    = json_decode($fr->form_responses, true);
+
+                            if (!isset($form_responses_by_p[$fr->participant_id])) {
+                                $form_responses_by_p[$fr->participant_id] = array();
+                            }
+
+                            if (is_array($decoded)) {
+                                $form_responses_by_p[$fr->participant_id][$wave_index] = $decoded;
+                            } else {
+                                $form_responses_by_p[$fr->participant_id][$wave_index] = array();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // --- Build result rows ---
         $rows = array();
         foreach ($participants as $p) {
@@ -387,6 +452,7 @@ class EIPSI_Export_Service {
                 'waves_total'        => $total_waves,
                 'completion_percent' => $completion_percent,
                 'wave_statuses'      => $wave_status_map,
+                'form_responses'     => isset($form_responses_by_p[$p->id]) ? $form_responses_by_p[$p->id] : array(),
             );
 
             $rows[] = $row;
