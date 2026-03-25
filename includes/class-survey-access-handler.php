@@ -180,19 +180,41 @@ class EIPSI_Survey_Access_Handler {
      * @param int    $survey_id Survey/Study ID.
      */
     private function render_confirmation_success( $email, $survey_id = 0 ) {
-        $login_url = $this->find_study_login_page( $survey_id );
+    $login_url = $this->find_study_login_page( $survey_id );
 
-        $redirect_url = add_query_arg(
-            array(
-                'eipsi_msg'   => 'email_confirmed',
-                'eipsi_email' => rawurlencode( $email ), // rawurlencode preserves '+' correctly
-            ),
-            $login_url
-        );
-
-        wp_redirect( $redirect_url );
-        exit;
+    // Find the study page URL to pass as redirect_to
+    $study_url = '';
+    if ( $survey_id > 0 ) {
+        global $wpdb;
+        $study_code = $wpdb->get_var( $wpdb->prepare(
+            "SELECT study_code FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+            $survey_id
+        ) );
+        if ( $study_code ) {
+            $study_pages = get_posts( array(
+                'post_type'      => 'page',
+                'post_status'    => 'publish',
+                'posts_per_page' => 1,
+                's'              => $study_code,
+            ) );
+            if ( ! empty( $study_pages ) ) {
+                $study_url = get_permalink( $study_pages[0]->ID );
+            }
+        }
     }
+
+    $args = array(
+        'eipsi_msg'   => 'email_confirmed',
+        'eipsi_email' => rawurlencode( $email ),
+    );
+
+    if ( ! empty( $study_url ) ) {
+        $args['redirect_to'] = $study_url;
+    }
+
+    wp_redirect( add_query_arg( $args, $login_url ) );
+    exit;
+}
 
     /**
      * Find the login page URL for a study.
