@@ -546,6 +546,9 @@ class EIPSI_Export_Service {
      * @return array
      */
     private function build_participant_row($row, $waves, $response_keys_by_wave = array()) {
+        // =====================================================================
+        // 1. Datos base del participante (10 columnas)
+        // =====================================================================
         $data = array(
             $row['id'],
             $row['email'],
@@ -559,42 +562,61 @@ class EIPSI_Export_Service {
             $row['completion_percent'],
         );
 
+        // =====================================================================
+        // 2. Datos de waves: estado, completado, y form_responses
+        // =====================================================================
         $form_responses = isset($row['form_responses']) ? $row['form_responses'] : array();
+        
+        // Mapeo de status a etiquetas legibles
+        $status_map = array(
+            'submitted'   => 'Completado',
+            'in_progress' => 'En progreso',
+            'pending'     => 'Pendiente',
+            'expired'     => 'Expirado',
+        );
 
         foreach ($waves as $wave) {
-            $wi          = $wave->wave_index;
-            $wave_info   = isset($row['wave_statuses'][$wi]) ? $row['wave_statuses'][$wi] : null;
-            $status_map  = array(
-                'submitted'    => 'Completado',
-                'in_progress'  => 'En progreso',
-                'pending'      => 'Pendiente',
-                'expired'      => 'Expirado',
-            );
+            $wi = $wave->wave_index;
+            $wave_info = isset($row['wave_statuses'][$wi]) ? $row['wave_statuses'][$wi] : null;
 
+            // 2a. Estado del wave
             if ($wave_info) {
                 $data[] = isset($status_map[$wave_info['status']]) ? $status_map[$wave_info['status']] : $wave_info['status'];
-                $data[] = $wave_info['submitted_at'] ? date('Y-m-d H:i', strtotime($wave_info['submitted_at'])) : '';
             } else {
                 $data[] = 'No asignado';
-                $data[] = '';
             }
 
-            // Add dynamic form_response values
+            // 2b. Fecha de completado
+            $data[] = ($wave_info && $wave_info['submitted_at']) 
+                ? date('Y-m-d H:i', strtotime($wave_info['submitted_at'])) 
+                : '';
+
+            // 2c. Valores de form_responses para este wave
+            // Iterar sobre las claves del JSON en el mismo orden que los headers
             if (!empty($response_keys_by_wave[$wi])) {
                 $wave_responses = isset($form_responses[$wi]) ? $form_responses[$wi] : array();
+                
                 foreach ($response_keys_by_wave[$wi] as $field_key) {
                     $value = '';
+                    
+                    // $row['form_responses'][wave_index][field_name] tiene los datos
                     if (isset($wave_responses[$field_key])) {
                         $val = $wave_responses[$field_key];
-                        // Serialize arrays/objects for CSV display
+                        
+                        // Serializar arrays/objetos para CSV/Excel
                         if (is_array($val) || is_object($val)) {
-                            $value = json_encode($val);
+                            $value = json_encode($val, JSON_UNESCAPED_UNICODE);
                         } else {
                             $value = $val;
                         }
                     }
+                    // Si no hay respuesta, $value queda como string vacío
+                    
                     $data[] = $value;
                 }
+            } else {
+                // No hay claves definidas para este wave - añadir celdas vacías
+                // (El número de celdas depende de los headers, se llena con vacíos)
             }
         }
 
