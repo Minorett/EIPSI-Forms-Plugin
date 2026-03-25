@@ -467,10 +467,11 @@ class EIPSI_Export_Service {
     /**
      * Build the flat header array for participant export.
      *
+     * @param array $rows  List of participant rows (optional, for extracting form_response keys).
      * @param array $waves List of wave objects.
      * @return string[]
      */
-    private function build_participant_headers($waves) {
+    private function build_participant_headers($rows, $waves) {
         $headers = array(
             'ID',
             'Email',
@@ -484,23 +485,67 @@ class EIPSI_Export_Service {
             'Progreso (%)',
         );
 
+        // Extract response keys grouped by wave_index
+        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
+
         foreach ($waves as $wave) {
-            $label     = 'T' . $wave->wave_index . ' - ' . $wave->name;
+            $label = 'T' . $wave->wave_index . ' - ' . $wave->name;
             $headers[] = $label . ' (Estado)';
             $headers[] = $label . ' (Completado)';
+
+            // Add dynamic headers for form_response fields
+            $wave_index = $wave->wave_index;
+            if (isset($response_keys_by_wave[$wave_index])) {
+                foreach ($response_keys_by_wave[$wave_index] as $field_key) {
+                    $headers[] = 'T' . $wave_index . ' - ' . $field_key;
+                }
+            }
         }
 
         return $headers;
     }
 
     /**
+     * Extract unique form_response keys grouped by wave_index.
+     *
+     * @param array $rows Participant rows with form_responses.
+     * @return array Keys indexed by wave_index.
+     */
+    private function extract_response_keys_by_wave($rows) {
+        $response_keys_by_wave = array();
+
+        foreach ($rows as $row) {
+            if (!empty($row['form_responses']) && is_array($row['form_responses'])) {
+                foreach ($row['form_responses'] as $wave_index => $responses) {
+                    if (is_array($responses)) {
+                        if (!isset($response_keys_by_wave[$wave_index])) {
+                            $response_keys_by_wave[$wave_index] = array();
+                        }
+                        $response_keys_by_wave[$wave_index] = array_unique(
+                            array_merge($response_keys_by_wave[$wave_index], array_keys($responses))
+                        );
+                    }
+                }
+            }
+        }
+
+        // Sort keys per wave for consistency
+        foreach ($response_keys_by_wave as $wi => $keys) {
+            sort($response_keys_by_wave[$wi]);
+        }
+
+        return $response_keys_by_wave;
+    }
+
+    /**
      * Build a flat data row for one participant.
      *
-     * @param array $row    Participant row from fetch_participants_data().
-     * @param array $waves  Wave list.
+     * @param array $row                    Participant row from fetch_participants_data().
+     * @param array $waves                  Wave list.
+     * @param array $response_keys_by_wave  Optional: keys per wave_index (from build_participant_headers).
      * @return array
      */
-    private function build_participant_row($row, $waves) {
+    private function build_participant_row($row, $waves, $response_keys_by_wave = array()) {
         $data = array(
             $row['id'],
             $row['email'],
@@ -514,14 +559,16 @@ class EIPSI_Export_Service {
             $row['completion_percent'],
         );
 
+        $form_responses = isset($row['form_responses']) ? $row['form_responses'] : array();
+
         foreach ($waves as $wave) {
             $wi          = $wave->wave_index;
             $wave_info   = isset($row['wave_statuses'][$wi]) ? $row['wave_statuses'][$wi] : null;
             $status_map  = array(
-                'submitted'   => 'Completado',
-                'in_progress' => 'En progreso',
-                'pending'     => 'Pendiente',
-                'expired'     => 'Expirado',
+                'submitted'    => 'Completado',
+                'in_progress'  => 'En progreso',
+                'pending'      => 'Pendiente',
+                'expired'      => 'Expirado',
             );
 
             if ($wave_info) {
@@ -530,6 +577,24 @@ class EIPSI_Export_Service {
             } else {
                 $data[] = 'No asignado';
                 $data[] = '';
+            }
+
+            // Add dynamic form_response values
+            if (!empty($response_keys_by_wave[$wi])) {
+                $wave_responses = isset($form_responses[$wi]) ? $form_responses[$wi] : array();
+                foreach ($response_keys_by_wave[$wi] as $field_key) {
+                    $value = '';
+                    if (isset($wave_responses[$field_key])) {
+                        $val = $wave_responses[$field_key];
+                        // Serialize arrays/objects for CSV display
+                        if (is_array($val) || is_object($val)) {
+                            $value = json_encode($val);
+                        } else {
+                            $value = $val;
+                        }
+                    }
+                    $data[] = $value;
+                }
             }
         }
 
@@ -550,11 +615,12 @@ class EIPSI_Export_Service {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        $headers    = $this->build_participant_headers($waves);
-        $xlsx_data  = array($headers);
+        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
+        $headers              = $this->build_participant_headers($rows, $waves);
+        $xlsx_data            = array($headers);
 
         foreach ($rows as $row) {
-            $xlsx_data[] = $this->build_participant_row($row, $waves);
+            $xlsx_data[] = $this->build_participant_row($row, $waves, $response_keys_by_wave);
         }
 
         // Summary sheet row
@@ -589,10 +655,11 @@ class EIPSI_Export_Service {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        fputcsv($output, $this->build_participant_headers($waves));
+        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
+        fputcsv($output, $this->build_participant_headers($rows, $waves));
 
         foreach ($rows as $row) {
-            fputcsv($output, $this->build_participant_row($row, $waves));
+            fputcsv($output, $this->build_participant_row($row, $waves, $response_keys_by_wave));
         }
     }
 
@@ -611,11 +678,12 @@ class EIPSI_Export_Service {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        $headers      = $this->build_participant_headers($waves);
-        $preview_rows = array();
+        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
+        $headers              = $this->build_participant_headers($rows, $waves);
+        $preview_rows         = array();
 
         foreach (array_slice($rows, 0, $limit) as $row) {
-            $preview_rows[] = $this->build_participant_row($row, $waves);
+            $preview_rows[] = $this->build_participant_row($row, $waves, $response_keys_by_wave);
         }
 
         return array(
