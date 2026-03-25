@@ -46,8 +46,7 @@ class EIPSI_Email_Confirmation_Service {
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'config/longitudinal-config.php';
 
         try {
-            $token_plain = wp_generate_password( EIPSI_CONFIRMATION_TOKEN_LENGTH, true, true );
-            $token_hash  = wp_hash( $token_plain );
+            $token_plain = bin2hex( random_bytes( 32 ) );            $token_hash  = wp_hash( $token_plain );
             $expires_at  = gmdate(
                 'Y-m-d H:i:s',
                 current_time( 'timestamp', true ) + ( EIPSI_CONFIRMATION_TOKEN_EXPIRY_HOURS * HOUR_IN_SECONDS )
