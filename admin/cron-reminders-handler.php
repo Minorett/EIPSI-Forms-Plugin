@@ -40,28 +40,31 @@ function eipsi_send_wave_reminders_hourly() {
             continue;
         }
 
-        $reminder_days = isset($config['reminder_days_before']) ? intval($config['reminder_days_before']) : 3;
+        $today = current_time('Y-m-d');
         $max_emails = isset($config['max_reminder_emails']) ? intval($config['max_reminder_emails']) : 100;
 
         // Get pending assignments that need reminders
-        $reminder_date = date('Y-m-d H:i:s', strtotime("+{$reminder_days} days"));
+        // New logic: available_date = (last_submission_date OR participant_created_at) + interval_days
         $emails_sent = 0;
 
         $pending_assignments = $wpdb->get_results($wpdb->prepare(
-            "SELECT a.*, w.name as wave_name, w.wave_index, p.email, p.first_name, p.last_name, p.id as participant_id
+            "SELECT a.*, w.name as wave_name, w.wave_index, w.due_date, p.email, p.first_name, p.last_name, p.id as participant_id
              FROM {$wpdb->prefix}survey_assignments a
              JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
              JOIN {$wpdb->prefix}survey_participants p ON a.participant_id = p.id
              WHERE a.study_id = %d
              AND a.status = 'pending'
-             AND w.due_date <= %s
-             AND w.due_date > NOW()
-             AND p.status = 'active'
+             AND p.is_active = 1
              AND p.email IS NOT NULL
-             ORDER BY w.due_date ASC
+             AND (
+                 SELECT DATE_ADD(DATE(COALESCE(MAX(a2.submitted_at), p.created_at)), INTERVAL w.interval_days DAY)
+                 FROM {$wpdb->prefix}survey_assignments a2 
+                 WHERE a2.participant_id = p.id AND a2.study_id = a.study_id AND a2.status = 'submitted'
+             ) = %s
+             ORDER BY a.id ASC
              LIMIT %d",
             $study->id,
-            $reminder_date,
+            $today,
             $max_emails
         ));
 
@@ -155,26 +158,29 @@ function eipsi_send_dropout_recovery_hourly() {
 
         $dropout_days = isset($config['dropout_recovery_days']) ? intval($config['dropout_recovery_days']) : 7;
         $max_emails = isset($config['max_recovery_emails']) ? intval($config['max_recovery_emails']) : 50;
-
-        // Get overdue assignments (dropouts)
-        $overdue_date = date('Y-m-d H:i:s', strtotime("-{$dropout_days} days"));
+        $today = current_time('Y-m-d');
         $emails_sent = 0;
 
         $overdue_assignments = $wpdb->get_results($wpdb->prepare(
-            "SELECT a.*, w.name as wave_name, w.wave_index, p.email, p.first_name, p.last_name, p.id as participant_id
+            "SELECT a.*, w.name as wave_name, w.wave_index, w.due_date, p.email, p.first_name, p.last_name, p.id as participant_id
              FROM {$wpdb->prefix}survey_assignments a
              JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
              JOIN {$wpdb->prefix}survey_participants p ON a.participant_id = p.id
              WHERE a.study_id = %d
              AND a.status = 'pending'
-             AND w.due_date < %s
-             AND p.status = 'active'
+             AND p.is_active = 1
              AND p.email IS NOT NULL
              AND a.reminder_count < 3
-             ORDER BY w.due_date ASC
+             AND DATE_ADD(DATE(COALESCE(
+                 (SELECT MAX(a2.submitted_at) FROM {$wpdb->prefix}survey_assignments a2 
+                  WHERE a2.participant_id = p.id AND a2.study_id = a.study_id AND a2.status = 'submitted'),
+                 p.created_at
+             )), INTERVAL (w.interval_days + %d) DAY) <= %s
+             ORDER BY a.id ASC
              LIMIT %d",
             $study->id,
-            $overdue_date,
+            $dropout_days,
+            $today,
             $max_emails
         ));
 
