@@ -110,16 +110,17 @@ class Wave_Service {
         $result = $wpdb->update(
             $table,
             array(
-                'status' => 'submitted',
-                'updated_at' => current_time('mysql')
+                'status'       => 'submitted',
+                'submitted_at' => current_time( 'mysql' ),
+                'updated_at'   => current_time( 'mysql' )
             ),
             array(
                 'participant_id' => $participant_id,
-                'study_id' => $study_id,
-                'wave_id' => $wave_id
+                'study_id'       => $study_id,
+                'wave_id'        => $wave_id
             ),
-            array('%s', '%s'), // format for values
-            array('%d', '%d', '%d') // format for where
+            array( '%s', '%s', '%s' ), // format for values
+            array( '%d', '%d', '%d' )  // format for where
         );
         
         if ($result === false) {

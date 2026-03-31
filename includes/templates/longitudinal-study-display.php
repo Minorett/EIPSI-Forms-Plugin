@@ -102,7 +102,8 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
     if ( $next_wave && $last_wave_id && ! empty( $next_wave['interval_days'] ) ) {
         // Get submitted_at of the last completed submission
         $last_submission = $wpdb->get_row( $wpdb->prepare(
-            "SELECT submitted_at FROM {$wpdb->prefix}survey_assignments
+            "SELECT COALESCE(submitted_at, updated_at, created_at) as submitted_at
+            FROM {$wpdb->prefix}survey_assignments
             WHERE participant_id = %d AND wave_id = %d AND status = 'submitted'",
             $current_participant_id,
             $last_wave_id
