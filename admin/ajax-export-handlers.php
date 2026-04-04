@@ -214,3 +214,145 @@ function eipsi_get_participant_preview_handler() {
 
     wp_send_json_success($preview);
 }
+
+// ---------------------------------------------------------------------------
+// Participant Wide Excel (new — v1.8.0)
+// ---------------------------------------------------------------------------
+
+add_action('wp_ajax_eipsi_export_participants_wide_excel', 'eipsi_export_participants_wide_excel_handler');
+
+function eipsi_export_participants_wide_excel_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+
+    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
+    $filters  = isset($_POST['filters'])
+        ? array_map('sanitize_text_field', (array) $_POST['filters'])
+        : array();
+
+    if (!$study_id) {
+        wp_send_json_error(array('message' => 'Invalid study ID'));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-export-service.php';
+    $svc      = new EIPSI_Export_Service();
+    $filename = $svc->export_participants_wide_excel($study_id, $filters);
+
+    wp_send_json_success(array('filename' => $filename));
+}
+
+// ---------------------------------------------------------------------------
+// Participant Wide CSV (new — v1.8.0)
+// ---------------------------------------------------------------------------
+
+add_action('wp_ajax_eipsi_export_participants_wide_csv', 'eipsi_export_participants_wide_csv_handler');
+
+function eipsi_export_participants_wide_csv_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+
+    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
+    $filters  = isset($_POST['filters'])
+        ? array_map('sanitize_text_field', (array) $_POST['filters'])
+        : array();
+
+    if (!$study_id) {
+        wp_send_json_error(array('message' => 'Invalid study ID'));
+    }
+
+    $filename   = 'participantes-wide-' . $study_id . '-' . date('Y-m-d_H-i-s') . '.csv';
+    $export_dir = EIPSI_FORMS_PLUGIN_DIR . 'exports';
+    if (!file_exists($export_dir)) {
+        wp_mkdir_p($export_dir);
+    }
+    $file_path = $export_dir . '/' . $filename;
+    $output    = fopen($file_path, 'w');
+
+    if (!$output) {
+        wp_send_json_error(array('message' => 'Could not create export file'));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-export-service.php';
+    $svc = new EIPSI_Export_Service();
+    $svc->export_participants_wide_csv($study_id, $filters, $output);
+    fclose($output);
+
+    wp_send_json_success(array('filename' => $filename));
+}
+
+// ---------------------------------------------------------------------------
+// Participant Long Excel (new — v1.8.0)
+// ---------------------------------------------------------------------------
+
+add_action('wp_ajax_eipsi_export_participants_long_excel', 'eipsi_export_participants_long_excel_handler');
+
+function eipsi_export_participants_long_excel_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+
+    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
+    $filters  = isset($_POST['filters'])
+        ? array_map('sanitize_text_field', (array) $_POST['filters'])
+        : array();
+
+    if (!$study_id) {
+        wp_send_json_error(array('message' => 'Invalid study ID'));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-export-service.php';
+    $svc      = new EIPSI_Export_Service();
+    $filename = $svc->export_participants_long_excel($study_id, $filters);
+
+    wp_send_json_success(array('filename' => $filename));
+}
+
+// ---------------------------------------------------------------------------
+// Participant Long CSV (new — v1.8.0)
+// ---------------------------------------------------------------------------
+
+add_action('wp_ajax_eipsi_export_participants_long_csv', 'eipsi_export_participants_long_csv_handler');
+
+function eipsi_export_participants_long_csv_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Unauthorized'));
+    }
+
+    $study_id = isset($_POST['study_id']) ? absint($_POST['study_id']) : 0;
+    $filters  = isset($_POST['filters'])
+        ? array_map('sanitize_text_field', (array) $_POST['filters'])
+        : array();
+
+    if (!$study_id) {
+        wp_send_json_error(array('message' => 'Invalid study ID'));
+    }
+
+    $filename   = 'participantes-long-' . $study_id . '-' . date('Y-m-d_H-i-s') . '.csv';
+    $export_dir = EIPSI_FORMS_PLUGIN_DIR . 'exports';
+    if (!file_exists($export_dir)) {
+        wp_mkdir_p($export_dir);
+    }
+    $file_path = $export_dir . '/' . $filename;
+    $output    = fopen($file_path, 'w');
+
+    if (!$output) {
+        wp_send_json_error(array('message' => 'Could not create export file'));
+    }
+
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-export-service.php';
+    $svc = new EIPSI_Export_Service();
+    $svc->export_participants_long_csv($study_id, $filters, $output);
+    fclose($output);
+
+    wp_send_json_success(array('filename' => $filename));
+}
