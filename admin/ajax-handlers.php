@@ -3803,3 +3803,23 @@ function eipsi_export_schema_report_handler() {
     
     wp_send_json_success($report);
 }
+
+/**
+ * AJAX Handler: Fix collations
+ * 
+ * Fixes collations for all plugin tables to ensure utf8mb4_unicode_ci
+ * 
+ * @since 2.0.0
+ */
+add_action('wp_ajax_eipsi_fix_collations', 'eipsi_fix_collations_handler');
+
+function eipsi_fix_collations_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    if (!current_user_can('manage_options')) wp_send_json_error();
+    
+    // Load database schema manager if not already loaded
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
+    
+    $result = EIPSI_Database_Schema_Manager::fix_collations();
+    wp_send_json_success($result);
+}

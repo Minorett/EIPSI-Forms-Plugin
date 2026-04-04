@@ -45,6 +45,7 @@ $table_display_names = array(
     <!-- Refresh Controls -->
     <div class="monitoring-controls">
         <button id="refresh-schema" class="button button-primary">🔄 Refresh Now</button>
+        <button id="fix-collations" class="button button-secondary">🔧 Corregir Collations</button>
         <label>
             <input type="checkbox" id="auto-refresh-schema" checked>
             Auto-refresh every 30s
@@ -364,10 +365,11 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    // Download JSON file
+                    // Create downloadable JSON
                     const dataStr = JSON.stringify(response.data, null, 2);
-                    const blob = new Blob([dataStr], {type: 'application/json'});
-                    const url = URL.createObjectURL(blob);
+                    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                    const url = URL.createObjectURL(dataBlob);
+                    
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = 'eipsi-schema-report-' + new Date().toISOString().slice(0,10) + '.json';
@@ -376,8 +378,64 @@ jQuery(document).ready(function($) {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                 } else {
-                    alert('Error exporting report: ' + response.data);
+                    alert('Error exporting report: ' + (response.data || 'Unknown error'));
                 }
+            },
+            error: function() {
+                alert('Error exporting report. Please try again.');
+            }
+        });
+    });
+    
+    // Fix collations
+    $('#fix-collations').click(function() {
+        if (!confirm('¿Estás seguro de que deseas corregir las collations de todas las tablas del plugin?\n\nEsto convertirá todas las tablas a utf8mb4_unicode_ci y puede tomar varios segundos en bases de datos grandes.')) {
+            return;
+        }
+        
+        const $btn = $(this);
+        const originalText = $btn.text();
+        
+        $btn.prop('disabled', true).text(' Corrigiendo...');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_fix_collations',
+                nonce: nonce,
+            },
+            success: function(response) {
+                $btn.prop('disabled', false).text(originalText);
+                
+                if (response.success) {
+                    const result = response.data;
+                    let message = ' Collations corregidas exitosamente!\n\n';
+                    
+                    if (result.total_fixed === 0) {
+                        message = ' Todas las tablas ya tienen la collation correcta (utf8mb4_unicode_ci).';
+                    } else {
+                        message += 'Tablas corregidas: ' + result.total_fixed + '\n\n';
+                        result.fixed_tables.forEach(function(table) {
+                            if (table.success) {
+                                message += '• ' + table.table + ': ' + table.old_collation + ' → ' + table.new_collation + '\n';
+                            } else {
+                                message += '• ' + table.table + ': ERROR - ' + table.error + '\n';
+                            }
+                        });
+                    }
+                    
+                    alert(message);
+                    
+                    // Refresh schema status to show updated collations
+                    loadSchemaStatus();
+                } else {
+                    alert('Error corrigiendo collations: ' + (response.data || 'Unknown error'));
+                }
+            },
+            error: function() {
+                $btn.prop('disabled', false).text(originalText);
+                alert('Error de conexión. Por favor intenta nuevamente.');
             }
         });
     });

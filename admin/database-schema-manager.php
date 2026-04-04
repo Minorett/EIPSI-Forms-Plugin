@@ -3564,6 +3564,12 @@ public static function repair_single_table($table_name) {
     // Update last verification timestamp
     update_option('eipsi_schema_last_verified', current_time('mysql'));
     
+    // Fix collations automatically
+    $collation_fix = self::fix_collations();
+    if ($collation_fix['total_fixed'] > 0) {
+        error_log('[EIPSI] Fixed ' . $collation_fix['total_fixed'] . ' table collations during schema repair');
+    }
+    
     return $result;
 }
 
@@ -3973,6 +3979,81 @@ public static function get_schema_health_summary() {
         ) );
         
         return $results;
+    }
+
+    /**
+     * Fix collations for all plugin tables
+     * Ensures all tables use utf8mb4_unicode_ci collation
+     * 
+     * @return array Results with fixed tables list
+     */
+    public static function fix_collations() {
+        global $wpdb;
+        
+        $plugin_tables = array(
+            'vas_form_results',
+            'survey_sessions', 
+            'survey_participants',
+            'survey_waves',
+            'survey_assignments',
+            'survey_studies',
+            'survey_magic_links',
+            'survey_email_log',
+            'survey_audit_log'
+        );
+        
+        $fixed_tables = array();
+        $target_collation = 'utf8mb4_unicode_ci';
+        
+        foreach ($plugin_tables as $table) {
+            $full_table_name = $wpdb->prefix . $table;
+            
+            // Get current table status
+            $status = $wpdb->get_row(
+                $wpdb->prepare(
+                    "SHOW TABLE STATUS LIKE %s",
+                    $full_table_name
+                ),
+                ARRAY_A
+            );
+            
+            if ($status && $status['Collation'] !== $target_collation) {
+                // Fix collation
+                $alter_sql = $wpdb->prepare(
+                    "ALTER TABLE %i CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+                    $full_table_name
+                );
+                
+                $result = $wpdb->query($alter_sql);
+                
+                if ($result !== false) {
+                    $fixed_tables[] = array(
+                        'table' => $full_table_name,
+                        'old_collation' => $status['Collation'],
+                        'new_collation' => $target_collation,
+                        'success' => true
+                    );
+                    
+                    error_log("[EIPSI] Fixed collation for table {$full_table_name}: {$status['Collation']} -> {$target_collation}");
+                } else {
+                    $fixed_tables[] = array(
+                        'table' => $full_table_name,
+                        'old_collation' => $status['Collation'],
+                        'new_collation' => $target_collation,
+                        'success' => false,
+                        'error' => $wpdb->last_error
+                    );
+                    
+                    error_log("[EIPSI] Failed to fix collation for table {$full_table_name}: {$wpdb->last_error}");
+                }
+            }
+        }
+        
+        return array(
+            'success' => true,
+            'fixed_tables' => $fixed_tables,
+            'total_fixed' => count($fixed_tables)
+        );
     }
 
 }
