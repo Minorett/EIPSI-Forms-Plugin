@@ -254,6 +254,12 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
     // Init
     // -----------------------------------------------------------------------
     $( document ).ready( function () {
+        // Sync currentStudyId with actual select value on page load
+        const initialStudyId = parseInt( $( '#ep-study' ).val(), 10 );
+        if ( initialStudyId && initialStudyId !== currentStudyId ) {
+            currentStudyId = initialStudyId;
+        }
+        
         if ( currentStudyId ) {
             loadWaves( currentStudyId );
             loadStats( currentStudyId );
@@ -266,7 +272,9 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
     // -----------------------------------------------------------------------
     function bindEvents() {
         $( '#ep-study' ).on( 'change', function () {
-            currentStudyId = parseInt( $( this ).val(), 10 );
+            const newStudyId = parseInt( $( this ).val(), 10 );
+            console.log( 'Study changed from', currentStudyId, 'to', newStudyId );
+            currentStudyId = newStudyId;
             statsLoaded    = false;
             resetUI();
             if ( currentStudyId ) {
@@ -392,6 +400,7 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
     // Load preview
     // -----------------------------------------------------------------------
     function loadPreview( studyId ) {
+        console.log( 'loadPreview called with studyId:', studyId, 'currentStudyId:', currentStudyId );
         $( '#ep-loading' ).show();
         $( '#ep-preview-wrap, #ep-data-summary, #ep-actions' ).hide();
 
@@ -402,6 +411,8 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
         const action = selectedFormat === 'wide' 
             ? 'eipsi_get_participants_wide_preview'
             : 'eipsi_get_participants_long_preview';
+
+        console.log( 'Sending AJAX with study_id:', studyId, 'action:', action );
 
         $.ajax( {
             url: ajaxurl,
@@ -449,10 +460,13 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
     // Download handlers
     // -----------------------------------------------------------------------
     function downloadFile( action, studyId ) {
+        console.log( 'downloadFile called with action:', action, 'studyId:', studyId, 'currentStudyId:', currentStudyId );
         const filters = getFilters();
         const $btn    = $( '#' + action.replace( 'eipsi_export_participants_', 'ep-download-' ).replace( '_', '-' ) );
         
         $btn.prop( 'disabled', true ).addClass( 'loading' ).text( '⏳ Generando...' );
+
+        console.log( 'Sending download AJAX with study_id:', studyId, 'action:', action );
 
         $.ajax( {
             url: ajaxurl,
