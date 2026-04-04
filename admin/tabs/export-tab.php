@@ -161,6 +161,29 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
         </span>
     </div>
 
+    <!-- ─── Format selection ───────────────────────────────────────────── -->
+    <div class="eipsi-export-format-selection" id="ep-format-selection" style="display:none;">
+        <p class="ep-format-intro">
+            <?php esc_html_e('Selecciona el formato para la vista previa:', 'eipsi-forms'); ?>
+        </p>
+        <div class="ep-format-options">
+            <label class="ep-format-option">
+                <input type="radio" name="preview-format" value="wide" checked>
+                <span class="ep-format-label">
+                    <strong>📊 Wide</strong> — 
+                    <?php esc_html_e('Una fila por participante', 'eipsi-forms'); ?>
+                </span>
+            </label>
+            <label class="ep-format-option">
+                <input type="radio" name="preview-format" value="long">
+                <span class="ep-format-label">
+                    <strong>📈 Long</strong> — 
+                    <?php esc_html_e('Una fila por participante por toma', 'eipsi-forms'); ?>
+                </span>
+            </label>
+        </div>
+    </div>
+
     <!-- ─── Preview table ───────────────────────────────────────────── -->
     <div id="ep-preview-wrap" class="ep-preview-wrap" style="display:none;">
         <h3><?php esc_html_e('Vista previa (primeras 10 filas)', 'eipsi-forms'); ?></h3>
@@ -276,6 +299,13 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
                 if ( currentStudyId ) loadPreview( currentStudyId );
             }, 500 );
         } );
+
+        // Format selection change handler
+        $( 'input[name="preview-format"]' ).on( 'change', function () {
+            if ( currentStudyId && statsLoaded ) {
+                loadPreview( currentStudyId );
+            }
+        } );
     }
 
     // -----------------------------------------------------------------------
@@ -310,7 +340,7 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
     // -----------------------------------------------------------------------
     function loadStats( studyId ) {
         $( '#ep-loading' ).show();
-        $( '#ep-stats, #ep-actions, #ep-preview-wrap, #ep-data-summary' ).hide();
+        $( '#ep-stats, #ep-actions, #ep-preview-wrap, #ep-data-summary, #ep-format-selection' ).hide();
 
         $.ajax( {
             url: ajaxurl,
@@ -346,6 +376,7 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
                 }
 
                 $( '#ep-stats' ).show();
+                $( '#ep-format-selection' ).show();
                 statsLoaded = true;
 
                 // Auto-load preview
@@ -365,15 +396,20 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
         $( '#ep-preview-wrap, #ep-data-summary, #ep-actions' ).hide();
 
         const filters = getFilters();
+        const selectedFormat = $( 'input[name="preview-format"]:checked' ).val() || 'wide';
+        
+        // Determine the correct action based on format
+        const action = selectedFormat === 'wide' 
+            ? 'eipsi_get_participants_wide_preview'
+            : 'eipsi_get_participants_long_preview';
 
         $.ajax( {
             url: ajaxurl,
             type: 'POST',
             data: Object.assign( {
-                action: 'eipsi_get_participant_preview',
+                action: action,
                 nonce: nonce,
                 study_id: studyId,
-                format: 'wide', // Default preview format
             }, filters ),
             success( resp ) {
                 $( '#ep-loading' ).hide();
@@ -534,9 +570,11 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
     }
 
     function resetUI() {
-        $( '#ep-stats, #ep-actions, #ep-preview-wrap, #ep-data-summary, #ep-loading' ).hide();
+        $( '#ep-stats, #ep-actions, #ep-preview-wrap, #ep-data-summary, #ep-loading, #ep-format-selection' ).hide();
         $( '#ep-preview-headers, #ep-preview-body, #ep-wave-rates' ).empty();
         $( '#ep-stat-total, #ep-stat-active, #ep-stat-completed' ).text( '—' );
+        // Reset format selection to wide
+        $( 'input[name="preview-format"][value="wide"]' ).prop( 'checked', true );
         // Reset download buttons (remove loading state)
         $( '.ep-btn-download' )
             .prop( 'disabled', false )
@@ -720,6 +758,65 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
     background: linear-gradient(90deg, #0073aa, #00a0d2);
     border-radius: 3px;
     transition: width .4s ease;
+}
+
+/* ── Format selection ───────────────────────────────────────── */
+.eipsi-export-format-selection {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.ep-format-intro {
+    font-size: 14px;
+    color: #333;
+    margin: 0 0 12px;
+    text-align: center;
+}
+
+.ep-format-options {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.ep-format-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    transition: all 0.2s ease;
+}
+
+.ep-format-option:hover {
+    border-color: #0073aa;
+    background: #f0f6fc;
+}
+
+.ep-format-option input[type="radio"] {
+    margin: 0;
+}
+
+.ep-format-option:has(input:checked) {
+    border-color: #0073aa;
+    background: #eaf4fb;
+    box-shadow: 0 0 0 2px rgba(0,115,170,0.2);
+}
+
+.ep-format-label {
+    font-size: 13px;
+    color: #1d2327;
+}
+
+.ep-format-label strong {
+    color: #0073aa;
 }
 
 /* ── Data summary bar ────────────────────────────────────────── */
