@@ -338,69 +338,84 @@ class EIPSI_Export_Service {
             $assignments_by_p[ $a->participant_id ][] = $a;
         }
 
-        // --- Get form_responses from vas_form_results ---
-        // Relationship: assignments -> survey_waves (wave_id -> id) -> vas_form_results (form_id)
+        // --- NEW: Get metadata and responses from vas_form_results ---
+        $wave_responses_by_p = array();
         $form_responses_by_p = array();
 
-        if (!empty($assignments)) {
-            // Get unique wave_ids from assignments
-            $wave_ids = array_unique(array_column($assignments, 'wave_id'));
+        if (!function_exists('get_privacy_config')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/privacy-config.php';
+        }
 
-            if (!empty($wave_ids)) {
-                // Query waves to get form_id mapping
-                $waves_form_ids = array();
-                foreach ($wave_ids as $wid) {
-                    if (isset($waves_by_id[$wid])) {
-                        $waves_form_ids[$wid] = $waves_by_id[$wid]->form_id;
-                    }
-                }
+        $form_metadata = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT 
+                    r.form_id, 
+                    s.participant_id, 
+                    r.form_responses, 
+                    r.submitted_at, 
+                    r.duration_seconds, 
+                    r.user_fingerprint,
+                    r.device, 
+                    r.browser, 
+                    r.os, 
+                    r.screen_width, 
+                    r.ip_address,
+                    r.wave_index
+                 FROM {$wpdb->prefix}vas_form_results r
+                 LEFT JOIN {$wpdb->prefix}survey_sessions s ON s.token = r.session_id
+                 LEFT JOIN {$wpdb->prefix}survey_participants p ON p.id = s.participant_id
+                 WHERE p.survey_id = %d",
+                $study_id
+            )
+        );
 
-                // Get form_responses from vas_form_results
-                // Using form_id from survey_waves to link to vas_form_results
-                $form_ids = array_unique(array_filter(array_values($waves_form_ids)));
+        $privacy_configs = array();
 
-                if (!empty($form_ids) && !empty($participant_ids)) {
-                    $form_ids_placeholder = implode(',', array_fill(0, count($form_ids), '%d'));
-                    $ids_placeholder2     = implode(',', array_fill(0, count($participant_ids), '%d'));
+        foreach ($form_metadata as $res) {
+            $p_id = $res->participant_id;
+            $wi   = $res->wave_index;
+            $fid  = $res->form_id;
 
-                    $form_responses = $wpdb->get_results(
-                        $wpdb->prepare(
-                            "SELECT fr.form_id, fr.participant_id, fr.form_responses
-                             FROM {$wpdb->prefix}vas_form_results fr
-                             WHERE fr.form_id IN ({$form_ids_placeholder})
-                             AND fr.participant_id IN ({$ids_placeholder2})",
-                            array_merge($form_ids, $participant_ids)
-                        )
-                    );
+            if (!$p_id) continue;
 
-                    // Map responses by participant_id and wave_index
-                    foreach ($form_responses as $fr) {
-                        // Find which wave this form_id belongs to
-                        $matched_wave_id = null;
-                        foreach ($waves_form_ids as $wid => $fid) {
-                            if ($fid == $fr->form_id) {
-                                $matched_wave_id = $wid;
-                                break;
-                            }
-                        }
-
-                        if ($matched_wave_id && isset($waves_by_id[$matched_wave_id])) {
-                            $wave_index = $waves_by_id[$matched_wave_id]->wave_index;
-                            $decoded    = json_decode($fr->form_responses, true);
-
-                            if (!isset($form_responses_by_p[$fr->participant_id])) {
-                                $form_responses_by_p[$fr->participant_id] = array();
-                            }
-
-                            if (is_array($decoded)) {
-                                $form_responses_by_p[$fr->participant_id][$wave_index] = $decoded;
-                            } else {
-                                $form_responses_by_p[$fr->participant_id][$wave_index] = array();
-                            }
-                        }
+            // Fallback for wave_index if not present in results table
+            if ($wi === null) {
+                foreach ($waves as $w) {
+                    if ($w->form_id == $fid) {
+                        $wi = $w->wave_index;
+                        break;
                     }
                 }
             }
+
+            if ($wi === null) continue;
+
+            if (!isset($privacy_configs[$fid])) {
+                $privacy_configs[$fid] = get_privacy_config($fid);
+            }
+            $privacy = $privacy_configs[$fid];
+
+            $decoded = json_decode($res->form_responses, true);
+            $wave_data = array(
+                'form_responses'   => is_array($decoded) ? $decoded : array(),
+                'submitted_at'     => $res->submitted_at,
+                'duration_seconds' => $res->duration_seconds,
+                'user_fingerprint' => $res->user_fingerprint,
+            );
+
+            // Conditional fields based on privacy config
+            if (!empty($privacy['device_type']))  $wave_data['device'] = $res->device;
+            if (!empty($privacy['browser']))      $wave_data['browser'] = $res->browser;
+            if (!empty($privacy['os']))           $wave_data['os'] = $res->os;
+            if (!empty($privacy['screen_width'])) $wave_data['screen_width'] = $res->screen_width;
+            if (!empty($privacy['ip_address']))   $wave_data['ip_address'] = $res->ip_address;
+
+            if (!isset($wave_responses_by_p[$p_id])) {
+                $wave_responses_by_p[$p_id] = array();
+                $form_responses_by_p[$p_id] = array();
+            }
+            $wave_responses_by_p[$p_id][$wi] = $wave_data;
+            $form_responses_by_p[$p_id][$wi] = $wave_data['form_responses'];
         }
 
         // --- Build result rows ---
@@ -453,6 +468,7 @@ class EIPSI_Export_Service {
                 'completion_percent' => $completion_percent,
                 'wave_statuses'      => $wave_status_map,
                 'form_responses'     => isset($form_responses_by_p[$p->id]) ? $form_responses_by_p[$p->id] : array(),
+                'wave_responses'     => isset($wave_responses_by_p[$p->id]) ? $wave_responses_by_p[$p->id] : array(),
             );
 
             $rows[] = $row;
