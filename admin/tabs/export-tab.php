@@ -176,24 +176,41 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
 
     <!-- ─── Export action buttons ───────────────────────────────────── -->
     <div class="eipsi-export-actions" id="ep-actions" style="display:none;">
-        <div class="ep-actions-label">
-            <?php esc_html_e('Descargar datos de participantes:', 'eipsi-forms'); ?>
-        </div>
-        <a id="ep-download-excel"
-           href="#"
-           class="button button-primary ep-btn-download"
-           style="pointer-events:none; opacity:.5;">
-            📥 <?php esc_html_e('Excel (.xlsx)', 'eipsi-forms'); ?>
-        </a>
-        <a id="ep-download-csv"
-           href="#"
-           class="button button-primary ep-btn-download"
-           style="pointer-events:none; opacity:.5;">
-            📄 <?php esc_html_e('CSV (.csv)', 'eipsi-forms'); ?>
-        </a>
-        <p class="ep-actions-hint">
-            <?php esc_html_e('El archivo incluye: ID, email, nombre, estado, fecha de registro, último acceso y progreso por cada onda.', 'eipsi-forms'); ?>
+        <p class="ep-actions-intro">
+            <?php esc_html_e('Selecciona el formato según el software estadístico que uses:', 'eipsi-forms'); ?>
         </p>
+        
+        <div class="ep-format-section">
+            <div class="ep-format-header">
+                <span class="ep-format-icon">📊</span>
+                <strong><?php esc_html_e('Formato Wide — recomendado para SPSS:', 'eipsi-forms'); ?></strong>
+            </div>
+            <p class="ep-format-desc"><?php esc_html_e('Una fila por participante. Ideal para repeated measures y correlaciones entre tomas.', 'eipsi-forms'); ?></p>
+            <div class="ep-format-buttons">
+                <button id="ep-download-excel-wide" class="button button-primary ep-btn-download ep-btn-download--wide">
+                    📥 <?php esc_html_e('Excel Wide', 'eipsi-forms'); ?>
+                </button>
+                <button id="ep-download-csv-wide" class="button button-secondary ep-btn-download ep-btn-download--wide">
+                    📄 <?php esc_html_e('CSV Wide', 'eipsi-forms'); ?>
+                </button>
+            </div>
+        </div>
+
+        <div class="ep-format-section">
+            <div class="ep-format-header">
+                <span class="ep-format-icon">📈</span>
+                <strong><?php esc_html_e('Formato Long — recomendado para R:', 'eipsi-forms'); ?></strong>
+            </div>
+            <p class="ep-format-desc"><?php esc_html_e('Una fila por participante por toma. Ideal para modelos mixtos y ggplot2.', 'eipsi-forms'); ?></p>
+            <div class="ep-format-buttons">
+                <button id="ep-download-excel-long" class="button button-primary ep-btn-download ep-btn-download--long">
+                    📥 <?php esc_html_e('Excel Long', 'eipsi-forms'); ?>
+                </button>
+                <button id="ep-download-csv-long" class="button button-secondary ep-btn-download ep-btn-download--long">
+                    📄 <?php esc_html_e('CSV Long', 'eipsi-forms'); ?>
+                </button>
+            </div>
+        </div>
     </div>
 
     <?php endif; // end if studies ?>
@@ -356,6 +373,7 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
                 action: 'eipsi_get_participant_preview',
                 nonce: nonce,
                 study_id: studyId,
+                format: 'wide', // Default preview format
             }, filters ),
             success( resp ) {
                 $( '#ep-loading' ).hide();
@@ -375,17 +393,6 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
                 $( '#ep-data-summary' ).show();
 
                 // Enable download buttons
-                const baseExcel = buildDownloadUrl( studyId, filters, 'export_participants_excel' );
-                const baseCsv   = buildDownloadUrl( studyId, filters, 'export_participants_csv' );
-
-                $( '#ep-download-excel' )
-                    .attr( 'href', baseExcel )
-                    .css( { 'pointer-events': '', 'opacity': '' } );
-
-                $( '#ep-download-csv' )
-                    .attr( 'href', baseCsv )
-                    .css( { 'pointer-events': '', 'opacity': '' } );
-
                 $( '#ep-actions' ).show();
 
                 if ( d.total === 0 ) {
@@ -401,6 +408,70 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
             },
         } );
     }
+
+    // -----------------------------------------------------------------------
+    // Download handlers
+    // -----------------------------------------------------------------------
+    function downloadFile( action, studyId ) {
+        const filters = getFilters();
+        const $btn    = $( '#' + action.replace( 'eipsi_export_participants_', 'ep-download-' ).replace( '_', '-' ) );
+        
+        $btn.prop( 'disabled', true ).addClass( 'loading' ).text( '⏳ Generando...' );
+
+        $.ajax( {
+            url: ajaxurl,
+            type: 'POST',
+            data: Object.assign( {
+                action: action,
+                nonce: nonce,
+                study_id: studyId,
+            }, filters ),
+            success( resp ) {
+                $btn.prop( 'disabled', false ).removeClass( 'loading' );
+                
+                if ( ! resp.success ) {
+                    showNotice( 'error', resp.data ? resp.data.message : 'Error al exportar.' );
+                    return;
+                }
+
+                const filename = resp.data.filename;
+                const downloadUrl = <?php echo wp_json_encode( plugins_url( 'exports/', EIPSI_FORMS_PLUGIN_FILE ) ); ?> + filename;
+                
+                // Trigger download
+                const $a = $( '<a>', {
+                    href: downloadUrl,
+                    download: filename,
+                    target: '_blank'
+                } )[0];
+                document.body.appendChild( $a );
+                $a.click();
+                document.body.removeChild( $a );
+
+                showNotice( 'success', '✅ Archivo exportado: ' + filename );
+            },
+            error() {
+                $btn.prop( 'disabled', false ).removeClass( 'loading' );
+                showNotice( 'error', 'Error de conexión. Intenta nuevamente.' );
+            },
+        } );
+    }
+
+    // Bind download buttons
+    $( '#ep-download-excel-wide' ).on( 'click', function () {
+        downloadFile( 'eipsi_export_participants_wide_excel', currentStudyId );
+    } );
+
+    $( '#ep-download-csv-wide' ).on( 'click', function () {
+        downloadFile( 'eipsi_export_participants_wide_csv', currentStudyId );
+    } );
+
+    $( '#ep-download-excel-long' ).on( 'click', function () {
+        downloadFile( 'eipsi_export_participants_long_excel', currentStudyId );
+    } );
+
+    $( '#ep-download-csv-long' ).on( 'click', function () {
+        downloadFile( 'eipsi_export_participants_long_csv', currentStudyId );
+    } );
 
     // -----------------------------------------------------------------------
     // Render preview table
@@ -466,9 +537,26 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
         $( '#ep-stats, #ep-actions, #ep-preview-wrap, #ep-data-summary, #ep-loading' ).hide();
         $( '#ep-preview-headers, #ep-preview-body, #ep-wave-rates' ).empty();
         $( '#ep-stat-total, #ep-stat-active, #ep-stat-completed' ).text( '—' );
-        $( '#ep-download-excel, #ep-download-csv' )
-            .attr( 'href', '#' )
-            .css( { 'pointer-events': 'none', 'opacity': '0.5' } );
+        // Reset download buttons (remove loading state)
+        $( '.ep-btn-download' )
+            .prop( 'disabled', false )
+            .removeClass( 'loading' )
+            .each( function () {
+                const $btn = $( this );
+                if ( $btn.hasClass( 'ep-btn-download--wide' ) ) {
+                    if ( $btn.attr( 'id' ).includes( 'excel' ) ) {
+                        $btn.html( '📥 <?php esc_html_e( "Excel Wide", "eipsi-forms" ); ?>' );
+                    } else {
+                        $btn.html( '📄 <?php esc_html_e( "CSV Wide", "eipsi-forms" ); ?>' );
+                    }
+                } else {
+                    if ( $btn.attr( 'id' ).includes( 'excel' ) ) {
+                        $btn.html( '📥 <?php esc_html_e( "Excel Long", "eipsi-forms" ); ?>' );
+                    } else {
+                        $btn.html( '📄 <?php esc_html_e( "CSV Long", "eipsi-forms" ); ?>' );
+                    }
+                }
+            } );
     }
 
     function escHtml( str ) {
@@ -696,35 +784,103 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
     margin-bottom: 20px;
 }
 
-.ep-actions-label {
-    font-weight: 600;
+.ep-actions-intro {
     font-size: 14px;
-    margin-bottom: 12px;
     color: #333;
+    margin: 0 0 16px;
+    text-align: center;
+}
+
+.ep-format-section {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+}
+
+.ep-format-section:last-of-type {
+    margin-bottom: 0;
+}
+
+.ep-format-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.ep-format-icon {
+    font-size: 18px;
+}
+
+.ep-format-header strong {
+    font-size: 14px;
+    color: #1d2327;
+}
+
+.ep-format-desc {
+    font-size: 12px;
+    color: #666;
+    margin: 0 0 12px;
+}
+
+.ep-format-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .ep-btn-download {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin-right: 10px;
     padding: 8px 18px;
     font-size: 14px;
     font-weight: 600;
     border-radius: 5px;
     text-decoration: none;
     transition: box-shadow .2s ease, transform .1s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
 }
 
-.ep-btn-download:hover {
+.ep-btn-download:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(0,115,170,.3);
 }
 
-.ep-actions-hint {
-    font-size: 12px;
-    color: #777;
-    margin: 10px 0 0;
+.ep-btn-download:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ep-btn-download.loading {
+    opacity: 0.8;
+}
+
+/* Primary button (Excel) */
+.ep-btn-download.button-primary {
+    background: #0073aa;
+    color: #fff;
+    border-color: #006ba1;
+}
+
+.ep-btn-download.button-primary:hover:not(:disabled) {
+    background: #005f8d;
+    border-color: #005078;
+}
+
+/* Secondary button (CSV) */
+.ep-btn-download.button-secondary {
+    background: #fff;
+    color: #3c434a;
+    border-color: #c3c4c7;
+}
+
+.ep-btn-download.button-secondary:hover:not(:disabled) {
+    background: #f6f7f7;
+    border-color: #a7aaad;
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */

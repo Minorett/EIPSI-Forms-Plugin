@@ -712,22 +712,45 @@ class EIPSI_Export_Service {
      * @return array { headers: string[], rows: array[], total: int }
      */
     public function get_participants_preview($study_id, $filters = array(), $limit = 10) {
+        $format = isset($filters['format']) && in_array($filters['format'], array('wide', 'long')) 
+            ? $filters['format'] 
+            : 'wide';
+        
         $result = $this->fetch_participants_data($study_id, $filters);
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
         $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
-        $headers              = $this->build_participant_headers($rows, $waves);
-        $preview_rows         = array();
-
-        foreach (array_slice($rows, 0, $limit) as $row) {
-            $preview_rows[] = $this->build_participant_row($row, $waves, $response_keys_by_wave);
+        
+        if ($format === 'wide') {
+            $headers     = $this->build_participant_headers($rows, $waves);
+            $preview_rows = array();
+            foreach (array_slice($rows, 0, $limit) as $row) {
+                $preview_rows[] = $this->build_participant_row($row, $waves, $response_keys_by_wave);
+            }
+        } else {
+            // Long format: one row per participant per wave
+            $all_unique_field_names = array();
+            foreach ($response_keys_by_wave as $wi => $keys) {
+                $all_unique_field_names = array_unique(array_merge($all_unique_field_names, $keys));
+            }
+            sort($all_unique_field_names);
+            
+            $headers      = $this->build_participants_long_headers($all_unique_field_names);
+            $preview_rows = array();
+            
+            $rows_limited = array_slice($rows, 0, $limit);
+            foreach ($rows_limited as $row) {
+                foreach ($waves as $wave) {
+                    $preview_rows[] = $this->build_participants_long_row($row, $wave, $all_unique_field_names);
+                }
+            }
         }
 
         return array(
             'headers' => $headers,
             'rows'    => $preview_rows,
-            'total'   => count($rows),
+            'total'   => ($format === 'long' && !empty($waves)) ? count($rows) * count($waves) : count($rows),
             'columns' => count($headers),
         );
     }
