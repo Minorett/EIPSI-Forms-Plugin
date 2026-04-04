@@ -69,6 +69,10 @@ add_shortcode('eipsi_survey_login', 'eipsi_survey_login_shortcode');
  * @return string Rendered HTML
  */
 function eipsi_render_survey_login_form($atts) {
+    // Prevent page caching — contains dynamic nonce
+    if ( ! is_admin() ) {
+        nocache_headers();
+    }
     // Auto-resolve survey_id from redirect_to if not provided
     if (empty($atts['survey_id']) && isset($_GET['redirect_to'])) {
         $redirect_url = esc_url_raw($_GET['redirect_to']);
