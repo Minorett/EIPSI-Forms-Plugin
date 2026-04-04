@@ -1086,4 +1086,309 @@ class EIPSI_Export_Service {
             'format'  => 'wide',
         );
     }
+
+    // =========================================================================
+    // LONG FORMAT EXPORT (one row per participant × wave)
+    // =========================================================================
+
+    /**
+     * Build the LONG header array for participant export.
+     *
+     * Estructura Long: una fila por participante × toma.
+     * - Columnas base: ID, Email, Estado, Registrado, Toma (wave_index), Wave_name
+     * - Por cada toma: submitted_at, duration_seconds, fingerprint_id, device, y un campo por cada field_name único
+     * - Si no completó esa toma, las columnas de respuesta van vacías
+     *
+     * @param array $all_unique_field_names List of ALL unique field_names across ALL forms in the study.
+     * @return string[]
+     */
+    private function build_participants_long_headers($all_unique_field_names) {
+        $headers = array(
+            'ID',
+            'Email',
+            'Estado',
+            'Registrado',
+            'Toma',
+            'Wave_name',
+            'submitted_at',
+            'duration_seconds',
+            'fingerprint_id',
+            'device',
+        );
+
+        // Add all unique field_name columns
+        foreach ($all_unique_field_names as $field_name) {
+            $headers[] = $field_name;
+        }
+
+        return $headers;
+    }
+
+    /**
+     * Extract all unique field_names from ALL forms in the study.
+     *
+     * This makes a FIRST PASS to collect all field_names from vas_form_results
+     * across all participants and waves for the study.
+     *
+     * @param int $study_id
+     * @return array List of unique field_name strings.
+     */
+    private function get_all_unique_field_names($study_id) {
+        global $wpdb;
+
+        // Get all form_responses JSON from vas_form_results for this study
+        $results = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT r.form_responses
+                 FROM {$wpdb->prefix}vas_form_results r
+                 LEFT JOIN {$wpdb->prefix}survey_sessions s ON s.token = r.session_id
+                 LEFT JOIN {$wpdb->prefix}survey_participants p ON p.id = s.participant_id
+                 WHERE p.survey_id = %d
+                 AND r.form_responses IS NOT NULL
+                 AND r.form_responses != ''",
+                $study_id
+            )
+        );
+
+        $all_fields = array();
+
+        foreach ($results as $json) {
+            $decoded = json_decode($json, true);
+            if (is_array($decoded)) {
+                $all_fields = array_merge($all_fields, array_keys($decoded));
+            }
+        }
+
+        // Return unique sorted field names
+        $unique_fields = array_unique($all_fields);
+        sort($unique_fields);
+
+        return $unique_fields;
+    }
+
+    /**
+     * Build a LONG data row for one participant × wave combination.
+     *
+     * @param array  $participant_row        Participant row from fetch_participants_data().
+     * @param object $wave                   Wave object.
+     * @param array  $all_unique_field_names List of all unique field_names across the study.
+     * @return array
+     */
+    private function build_participants_long_row($participant_row, $wave, $all_unique_field_names) {
+        $wi = $wave->wave_index;
+
+        // =====================================================================
+        // 1. Datos base del participante
+        // =====================================================================
+        $data = array(
+            $participant_row['id'],
+            $participant_row['email'],
+            $participant_row['is_active'] ? 'Activo' : 'Inactivo',
+            $participant_row['created_at'] ? date('Y-m-d H:i', strtotime($participant_row['created_at'])) : '',
+            $wi, // Toma (wave_index)
+            $wave->name, // Wave_name
+        );
+
+        // =====================================================================
+        // 2. Datos de la toma específica (submitted_at, duration, fingerprint, device)
+        // =====================================================================
+        $wave_responses = isset($participant_row['wave_responses'][$wi])
+            ? $participant_row['wave_responses'][$wi]
+            : array();
+
+        $form_responses = isset($participant_row['form_responses'][$wi])
+            ? $participant_row['form_responses'][$wi]
+            : array();
+
+        // 2a. submitted_at
+        $data[] = isset($wave_responses['submitted_at'])
+            ? date('Y-m-d H:i:s', strtotime($wave_responses['submitted_at']))
+            : '';
+
+        // 2b. duration_seconds
+        $data[] = isset($wave_responses['duration_seconds'])
+            ? (int) $wave_responses['duration_seconds']
+            : '';
+
+        // 2c. fingerprint_id
+        $data[] = isset($wave_responses['user_fingerprint'])
+            ? $wave_responses['user_fingerprint']
+            : '';
+
+        // 2d. device
+        $data[] = isset($wave_responses['device'])
+            ? $wave_responses['device']
+            : '';
+
+        // =====================================================================
+        // 3. Valores de form_responses para esta toma (usando ALL unique field_names)
+        // =====================================================================
+        // Para cada field_name único en el estudio, buscar si existe en esta toma
+        foreach ($all_unique_field_names as $field_name) {
+            $value = '';
+
+            if (isset($form_responses[$field_name])) {
+                $val = $form_responses[$field_name];
+
+                // Serializar arrays/objetos para CSV/Excel
+                if (is_array($val) || is_object($val)) {
+                    $value = json_encode($val, JSON_UNESCAPED_UNICODE);
+                } else {
+                    $value = $val;
+                }
+            }
+
+            $data[] = $value;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Export participant roster to Excel in LONG format, returns filename.
+     *
+     * Estructura Long: una fila por participante × toma.
+     *
+     * @param int   $study_id
+     * @param array $filters
+     * @return string Filename (in exports/ directory)
+     */
+    public function export_participants_long_excel($study_id, $filters = array()) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php';
+
+        $result = $this->fetch_participants_data($study_id, $filters);
+        $rows   = isset($result['rows'])  ? $result['rows']  : array();
+        $waves  = isset($result['waves']) ? $result['waves'] : array();
+
+        // FIRST PASS: Collect all unique field_names from the entire study
+        $all_unique_field_names = $this->get_all_unique_field_names($study_id);
+
+        // Build headers
+        $headers = $this->build_participants_long_headers($all_unique_field_names);
+        $xlsx_data = array($headers);
+
+        // Build rows: one row per participant × wave combination
+        foreach ($rows as $participant_row) {
+            foreach ($waves as $wave) {
+                $xlsx_data[] = $this->build_participants_long_row(
+                    $participant_row,
+                    $wave,
+                    $all_unique_field_names
+                );
+            }
+        }
+
+        // Summary sheet row
+        $xlsx_data[] = array();
+        $xlsx_data[] = array('Total filas (participantes × tomas)', count($xlsx_data) - 2);
+        $xlsx_data[] = array('Total participantes', count($rows));
+        $xlsx_data[] = array('Total tomas', count($waves));
+        $active = count(array_filter($rows, function ($r) { return $r['is_active']; }));
+        $xlsx_data[] = array('Activos', $active);
+        $xlsx_data[] = array('Inactivos', count($rows) - $active);
+        $xlsx_data[] = array('Formato', 'Long');
+        $xlsx_data[] = array('Exportado el', date('Y-m-d H:i:s'));
+
+        $filename   = 'participantes-long-' . $study_id . '-' . date('Y-m-d_H-i-s') . '.xlsx';
+        $export_dir = EIPSI_FORMS_PLUGIN_DIR . 'exports';
+        if (!file_exists($export_dir)) {
+            wp_mkdir_p($export_dir);
+        }
+
+        $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($xlsx_data);
+        $xlsx->saveAs($export_dir . '/' . $filename);
+
+        return $filename;
+    }
+
+    /**
+     * Export participant roster to CSV in LONG format.
+     *
+     * Estructura Long: una fila por participante × toma.
+     *
+     * @param int      $study_id
+     * @param array    $filters
+     * @param resource $output   Open file handle (e.g., php://output).
+     */
+    public function export_participants_long_csv($study_id, $filters, $output) {
+        $result = $this->fetch_participants_data($study_id, $filters);
+        $rows   = isset($result['rows'])  ? $result['rows']  : array();
+        $waves  = isset($result['waves']) ? $result['waves'] : array();
+
+        // FIRST PASS: Collect all unique field_names from the entire study
+        $all_unique_field_names = $this->get_all_unique_field_names($study_id);
+
+        // Write headers
+        fputcsv($output, $this->build_participants_long_headers($all_unique_field_names));
+
+        // Write rows: one row per participant × wave combination
+        foreach ($rows as $participant_row) {
+            foreach ($waves as $wave) {
+                fputcsv($output, $this->build_participants_long_row(
+                    $participant_row,
+                    $wave,
+                    $all_unique_field_names
+                ));
+            }
+        }
+    }
+
+    /**
+     * Return a lightweight preview (first N rows) of the participant LONG export.
+     *
+     * Used by the AJAX preview endpoint in the UI.
+     *
+     * @param int   $study_id
+     * @param array $filters
+     * @param int   $limit    Max rows to return (default 10).
+     * @return array { headers: string[], rows: array[], total: int }
+     */
+    public function get_participants_long_preview($study_id, $filters = array(), $limit = 10) {
+        $result = $this->fetch_participants_data($study_id, $filters);
+        $rows   = isset($result['rows'])  ? $result['rows']  : array();
+        $waves  = isset($result['waves']) ? $result['waves'] : array();
+
+        // FIRST PASS: Collect all unique field_names from the entire study
+        $all_unique_field_names = $this->get_all_unique_field_names($study_id);
+
+        // Build headers
+        $headers = $this->build_participants_long_headers($all_unique_field_names);
+
+        // Build preview rows (one per participant × wave, up to limit)
+        $preview_rows = array();
+        $count = 0;
+
+        foreach ($rows as $participant_row) {
+            if ($count >= $limit) {
+                break;
+            }
+
+            foreach ($waves as $wave) {
+                if ($count >= $limit) {
+                    break;
+                }
+
+                $preview_rows[] = $this->build_participants_long_row(
+                    $participant_row,
+                    $wave,
+                    $all_unique_field_names
+                );
+
+                $count++;
+            }
+        }
+
+        // Calculate total rows (participants × waves)
+        $total_rows = count($rows) * count($waves);
+
+        return array(
+            'headers' => $headers,
+            'rows'    => $preview_rows,
+            'total'   => $total_rows,
+            'columns' => count($headers),
+            'format'  => 'long',
+            'total_participants' => count($rows),
+            'total_waves' => count($waves),
+        );
+    }
 }
