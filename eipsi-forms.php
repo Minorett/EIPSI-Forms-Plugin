@@ -537,19 +537,6 @@ function eipsi_enqueue_participant_auth_assets() {
         EIPSI_FORMS_VERSION,
         true
     );
-    
-    wp_localize_script('eipsi-participant-auth', 'eipsiAuth', array(
-        'ajaxUrl' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('eipsi_participant_auth'),
-        'strings' => array(
-            'registering' => __('Registrando...', 'eipsi-forms'),
-            'logging_in' => __('Ingresando...', 'eipsi-forms'),
-            'success' => __('¡Éxito!', 'eipsi-forms'),
-            'error' => __('Error', 'eipsi-forms'),
-            'confirm_logout' => __('¿Estás seguro de que quieres cerrar sesión?', 'eipsi-forms'),
-            'loading' => __('Cargando...', 'eipsi-forms')
-        )
-    ));
 }
 
 /**
