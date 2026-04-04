@@ -857,4 +857,233 @@ class EIPSI_Export_Service {
 
         return array_column($waves, 'wave_index');
     }
+
+    // =========================================================================
+    // WIDE FORMAT EXPORT (one row per participant)
+    // =========================================================================
+
+    /**
+     * Build the wide header array for participant export.
+     *
+     * Estructura Wide:
+     * - Columnas base: ID, Email, Estado, Registrado, Último acceso, Ondas asignadas, Ondas completadas, Progreso (%)
+     * - Por cada wave: T{n}_submitted_at, T{n}_duration_seconds, T{n}_fingerprint_id, T{n}_device, T{n}_{field_name}
+     * - SIN columnas Nombre ni Apellido
+     *
+     * @param array $rows  List of participant rows.
+     * @param array $waves List of wave objects.
+     * @return string[]
+     */
+    private function build_participants_wide_headers($rows, $waves) {
+        $headers = array(
+            'ID',
+            'Email',
+            'Estado',
+            'Registrado',
+            'Último acceso',
+            'Ondas asignadas',
+            'Ondas completadas',
+            'Progreso (%)',
+        );
+
+        // Extract response keys grouped by wave_index
+        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
+
+        foreach ($waves as $wave) {
+            $prefix = 'T' . $wave->wave_index;
+            $headers[] = $prefix . '_submitted_at';
+            $headers[] = $prefix . '_duration_seconds';
+            $headers[] = $prefix . '_fingerprint_id';
+            $headers[] = $prefix . '_device';
+
+            // Add dynamic headers for form_response fields
+            $wave_index = $wave->wave_index;
+            if (isset($response_keys_by_wave[$wave_index])) {
+                foreach ($response_keys_by_wave[$wave_index] as $field_key) {
+                    $headers[] = $prefix . '_' . $field_key;
+                }
+            }
+        }
+
+        return $headers;
+    }
+
+    /**
+     * Build a wide data row for one participant.
+     *
+     * @param array $row                    Participant row from fetch_participants_data().
+     * @param array $waves                  Wave list.
+     * @param array $response_keys_by_wave  Optional: keys per wave_index.
+     * @return array
+     */
+    private function build_participants_wide_row($row, $waves, $response_keys_by_wave = array()) {
+        // =====================================================================
+        // 1. Datos base del participante (SIN Nombre ni Apellido)
+        // =====================================================================
+        $data = array(
+            $row['id'],
+            $row['email'],
+            $row['is_active'] ? 'Activo' : 'Inactivo',
+            $row['created_at'] ? date('Y-m-d H:i', strtotime($row['created_at'])) : '',
+            $row['last_login_at'] ? date('Y-m-d H:i', strtotime($row['last_login_at'])) : '',
+            $row['waves_assigned'],
+            $row['waves_submitted'],
+            $row['completion_percent'],
+        );
+
+        // =====================================================================
+        // 2. Datos de waves en formato Wide
+        // =====================================================================
+        $wave_responses = isset($row['wave_responses']) ? $row['wave_responses'] : array();
+        $form_responses = isset($row['form_responses']) ? $row['form_responses'] : array();
+
+        foreach ($waves as $wave) {
+            $wi = $wave->wave_index;
+
+            // 2a. submitted_at
+            $submitted_at = isset($wave_responses[$wi]['submitted_at'])
+                ? date('Y-m-d H:i:s', strtotime($wave_responses[$wi]['submitted_at']))
+                : '';
+            $data[] = $submitted_at;
+
+            // 2b. duration_seconds
+            $duration = isset($wave_responses[$wi]['duration_seconds'])
+                ? (int) $wave_responses[$wi]['duration_seconds']
+                : '';
+            $data[] = $duration;
+
+            // 2c. fingerprint_id
+            $fingerprint = isset($wave_responses[$wi]['user_fingerprint'])
+                ? $wave_responses[$wi]['user_fingerprint']
+                : '';
+            $data[] = $fingerprint;
+
+            // 2d. device
+            $device = isset($wave_responses[$wi]['device'])
+                ? $wave_responses[$wi]['device']
+                : '';
+            $data[] = $device;
+
+            // 2e. Valores de form_responses para este wave
+            if (!empty($response_keys_by_wave[$wi])) {
+                $wave_form_responses = isset($form_responses[$wi]) ? $form_responses[$wi] : array();
+
+                foreach ($response_keys_by_wave[$wi] as $field_key) {
+                    $value = '';
+
+                    if (isset($wave_form_responses[$field_key])) {
+                        $val = $wave_form_responses[$field_key];
+
+                        // Serializar arrays/objetos para CSV/Excel
+                        if (is_array($val) || is_object($val)) {
+                            $value = json_encode($val, JSON_UNESCAPED_UNICODE);
+                        } else {
+                            $value = $val;
+                        }
+                    }
+
+                    $data[] = $value;
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Export participant roster to Excel in WIDE format, returns filename.
+     *
+     * Estructura Wide: una fila por participante con columnas por cada wave.
+     *
+     * @param int   $study_id
+     * @param array $filters
+     * @return string Filename (in exports/ directory)
+     */
+    public function export_participants_wide_excel($study_id, $filters = array()) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php';
+
+        $result = $this->fetch_participants_data($study_id, $filters);
+        $rows   = isset($result['rows'])  ? $result['rows']  : array();
+        $waves  = isset($result['waves']) ? $result['waves'] : array();
+
+        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
+        $headers              = $this->build_participants_wide_headers($rows, $waves);
+        $xlsx_data            = array($headers);
+
+        foreach ($rows as $row) {
+            $xlsx_data[] = $this->build_participants_wide_row($row, $waves, $response_keys_by_wave);
+        }
+
+        // Summary sheet row
+        $xlsx_data[] = array();
+        $xlsx_data[] = array('Total participantes', count($rows));
+        $active      = count(array_filter($rows, function ($r) { return $r['is_active']; }));
+        $xlsx_data[] = array('Activos', $active);
+        $xlsx_data[] = array('Inactivos', count($rows) - $active);
+        $xlsx_data[] = array('Formato', 'Wide');
+        $xlsx_data[] = array('Exportado el', date('Y-m-d H:i:s'));
+
+        $filename   = 'participantes-wide-' . $study_id . '-' . date('Y-m-d_H-i-s') . '.xlsx';
+        $export_dir = EIPSI_FORMS_PLUGIN_DIR . 'exports';
+        if (!file_exists($export_dir)) {
+            wp_mkdir_p($export_dir);
+        }
+
+        $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($xlsx_data);
+        $xlsx->saveAs($export_dir . '/' . $filename);
+
+        return $filename;
+    }
+
+    /**
+     * Export participant roster to CSV in WIDE format.
+     *
+     * @param int      $study_id
+     * @param array    $filters
+     * @param resource $output   Open file handle (e.g., php://output).
+     */
+    public function export_participants_wide_csv($study_id, $filters, $output) {
+        $result = $this->fetch_participants_data($study_id, $filters);
+        $rows   = isset($result['rows'])  ? $result['rows']  : array();
+        $waves  = isset($result['waves']) ? $result['waves'] : array();
+
+        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
+        fputcsv($output, $this->build_participants_wide_headers($rows, $waves));
+
+        foreach ($rows as $row) {
+            fputcsv($output, $this->build_participants_wide_row($row, $waves, $response_keys_by_wave));
+        }
+    }
+
+    /**
+     * Return a lightweight preview (first N rows) of the participant WIDE export.
+     *
+     * Used by the AJAX preview endpoint in the UI.
+     *
+     * @param int   $study_id
+     * @param array $filters
+     * @param int   $limit    Max rows to return (default 10).
+     * @return array { headers: string[], rows: array[], total: int }
+     */
+    public function get_participants_wide_preview($study_id, $filters = array(), $limit = 10) {
+        $result = $this->fetch_participants_data($study_id, $filters);
+        $rows   = isset($result['rows'])  ? $result['rows']  : array();
+        $waves  = isset($result['waves']) ? $result['waves'] : array();
+
+        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
+        $headers              = $this->build_participants_wide_headers($rows, $waves);
+        $preview_rows         = array();
+
+        foreach (array_slice($rows, 0, $limit) as $row) {
+            $preview_rows[] = $this->build_participants_wide_row($row, $waves, $response_keys_by_wave);
+        }
+
+        return array(
+            'headers' => $headers,
+            'rows'    => $preview_rows,
+            'total'   => count($rows),
+            'columns' => count($headers),
+            'format'  => 'wide',
+        );
+    }
 }
