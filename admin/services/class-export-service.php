@@ -101,7 +101,7 @@ class EIPSI_Export_Service {
 
     /** Export longitudinal data to .xlsx, returns filename. */
     public function export_to_excel($data, $survey_id) {
-        require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php';
+        if ( ! class_exists( '\Shuchkin\SimpleXLSXGen' ) ) {     require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php'; }
 
         $headers = array(
             'Participant ID',
@@ -665,7 +665,7 @@ class EIPSI_Export_Service {
      * @return string Filename (in exports/ directory)
      */
     public function export_participants_to_excel($study_id, $filters = array()) {
-        require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php';
+        if ( ! class_exists( '\Shuchkin\SimpleXLSXGen' ) ) {     require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php'; }
 
         $result = $this->fetch_participants_data($study_id, $filters);
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
@@ -1084,7 +1084,7 @@ class EIPSI_Export_Service {
      * @return string Filename (in exports/ directory)
      */
     public function export_participants_wide_excel($study_id, $filters = array()) {
-        require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php';
+        if ( ! class_exists( '\Shuchkin\SimpleXLSXGen' ) ) {     require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php'; }
 
         $result = $this->fetch_participants_data($study_id, $filters);
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
@@ -1328,7 +1328,7 @@ class EIPSI_Export_Service {
      * @return string Filename (in exports/ directory)
      */
     public function export_participants_long_excel($study_id, $filters = array()) {
-        require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php';
+        if ( ! class_exists( '\Shuchkin\SimpleXLSXGen' ) ) {     require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php'; }
 
         $result = $this->fetch_participants_data($study_id, $filters);
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
