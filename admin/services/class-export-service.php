@@ -246,62 +246,25 @@ class EIPSI_Export_Service {
         );
         $filters = array_merge($defaults, $filters);
 
-        // --- Build WHERE clauses ---
-        $where_parts = array('p.survey_id = %d');
-        $params      = array($study_id);
-
-        if ($filters['status'] === 'active') {
-            $where_parts[] = 'p.is_active = 1';
-        } elseif ($filters['status'] === 'inactive') {
-            $where_parts[] = 'p.is_active = 0';
-        }
-
-        if (!empty($filters['search'])) {
-            $like          = '%' . $wpdb->esc_like($filters['search']) . '%';
-            $where_parts[] = '(p.email LIKE %s OR p.first_name LIKE %s OR p.last_name LIKE %s)';
-            $params[]      = $like;
-            $params[]      = $like;
-            $params[]      = $like;
-        }
-
-        if (!empty($filters['date_from'])) {
-            $where_parts[] = 'p.created_at >= %s';
-            $params[]      = $filters['date_from'] . ' 00:00:00';
-        }
-
-        if (!empty($filters['date_to'])) {
-            $where_parts[] = 'p.created_at <= %s';
-            $params[]      = $filters['date_to'] . ' 23:59:59';
-        }
-
-        $where = 'WHERE ' . implode(' AND ', $where_parts);
-
-        // --- Participant base query ---
+        // --- Step 1: Get participants from study ---
         $participants = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT
-                    p.id,
-                    p.email,
-                    p.first_name,
-                    p.last_name,
-                    p.is_active,
-                    p.created_at,
-                    p.last_login_at
-                 FROM {$wpdb->prefix}survey_participants p
-                 {$where}
-                 ORDER BY p.created_at DESC",
-                $params
+                "SELECT id, email, is_active, created_at, last_login_at
+                 FROM {$wpdb->prefix}survey_participants
+                 WHERE survey_id = %d
+                 ORDER BY created_at DESC",
+                $study_id
             )
         );
 
         if (empty($participants)) {
-            return array();
+            return array('rows' => array(), 'waves' => array());
         }
 
-        // --- Get all waves for this study ---
+        // --- Step 2: Get waves for this study ---
         $waves = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, wave_index, name, due_date, status
+                "SELECT id, wave_index, name, form_id
                  FROM {$wpdb->prefix}survey_waves
                  WHERE study_id = %d
                  ORDER BY wave_index ASC",
@@ -309,128 +272,129 @@ class EIPSI_Export_Service {
             )
         );
 
-        // Index waves by id
-        $waves_by_id = array();
+        // Index waves by wave_index and by form_id
+        $waves_by_index = array();
+        $waves_by_form_id = array();
         foreach ($waves as $w) {
-            $waves_by_id[$w->id] = $w;
+            $waves_by_index[$w->wave_index] = $w;
+            $waves_by_form_id[$w->form_id] = $w;
         }
 
-        // --- Get all assignments for participants in this study ---
-        $participant_ids = array_column($participants, 'id');
-        if (empty($participant_ids)) {
-            return array();
-        }
-
-        $ids_placeholder = implode(',', array_fill(0, count($participant_ids), '%d'));
-        $assignments     = $wpdb->get_results(
+        // --- Step 3: Get longitudinal submissions from vas_form_results ---
+        $submissions = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT participant_id, wave_id, status, submitted_at
-                 FROM {$wpdb->prefix}survey_assignments
-                 WHERE participant_id IN ({$ids_placeholder})
-                 ORDER BY wave_id ASC",
-                $participant_ids
-            )
-        );
-
-        // Group assignments by participant
-        $assignments_by_p = array();
-        foreach ($assignments as $a) {
-            $assignments_by_p[ $a->participant_id ][] = $a;
-        }
-
-        // --- NEW: Get metadata and responses from vas_form_results ---
-        $wave_responses_by_p = array();
-        $form_responses_by_p = array();
-
-        if (!function_exists('get_privacy_config')) {
-            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/privacy-config.php';
-        }
-
-        $form_metadata = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT 
-                    r.form_id, 
-                    s.participant_id, 
-                    r.form_responses, 
-                    r.submitted_at, 
-                    r.duration_seconds, 
-                    r.user_fingerprint,
-                    r.device, 
-                    r.browser, 
-                    r.os, 
-                    r.screen_width, 
-                    r.ip_address,
-                    r.wave_index
-                 FROM {$wpdb->prefix}vas_form_results r
-                 LEFT JOIN {$wpdb->prefix}survey_sessions s ON s.token = r.session_id
-                 LEFT JOIN {$wpdb->prefix}survey_participants p ON p.id = s.participant_id
-                 WHERE p.survey_id = %d",
+                "SELECT participant_id, wave_index, form_id, form_responses,
+                        submitted_at, duration_seconds, user_fingerprint,
+                        device, browser, os, screen_width, ip_address
+                 FROM {$wpdb->prefix}vas_form_results
+                 WHERE survey_id = %d
+                 AND wave_index IS NOT NULL
+                 ORDER BY submitted_at ASC",
                 $study_id
             )
         );
 
-        $privacy_configs = array();
-
-        foreach ($form_metadata as $res) {
-            $p_id = $res->participant_id;
-            $wi   = $res->wave_index;
-            $fid  = $res->form_id;
-
-            if (!$p_id) continue;
-
-            // Fallback for wave_index if not present in results table
-            if ($wi === null) {
-                foreach ($waves as $w) {
-                    if ($w->form_id == $fid) {
-                        $wi = $w->wave_index;
-                        break;
-                    }
-                }
-            }
-
-            if ($wi === null) continue;
-
-            if (!isset($privacy_configs[$fid])) {
-                $privacy_configs[$fid] = get_privacy_config($fid);
-            }
-            $privacy = $privacy_configs[$fid];
-
-            $decoded = json_decode($res->form_responses, true);
-            $wave_data = array(
-                'form_responses'   => is_array($decoded) ? $decoded : array(),
-                'submitted_at'     => $res->submitted_at,
-                'duration_seconds' => $res->duration_seconds,
-                'user_fingerprint' => $res->user_fingerprint,
-            );
-
-            // Conditional fields based on privacy config
-            if (!empty($privacy['device_type']))  $wave_data['device'] = $res->device;
-            if (!empty($privacy['browser']))      $wave_data['browser'] = $res->browser;
-            if (!empty($privacy['os']))           $wave_data['os'] = $res->os;
-            if (!empty($privacy['screen_width'])) $wave_data['screen_width'] = $res->screen_width;
-            if (!empty($privacy['ip_address']))   $wave_data['ip_address'] = $res->ip_address;
-
-            if (!isset($wave_responses_by_p[$p_id])) {
-                $wave_responses_by_p[$p_id] = array();
-                $form_responses_by_p[$p_id] = array();
-            }
-            $wave_responses_by_p[$p_id][$wi] = $wave_data;
-            $form_responses_by_p[$p_id][$wi] = $wave_data['form_responses'];
+        // Load privacy configs
+        if (!function_exists('get_privacy_config')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/privacy-config.php';
         }
 
-        // --- Build result rows ---
-        $rows = array();
-        foreach ($participants as $p) {
-            $p_assignments = isset($assignments_by_p[$p->id]) ? $assignments_by_p[$p->id] : array();
+        // Process submissions and extract emails
+        $submissions_by_participant = array();
+        $privacy_configs = array();
+        
+        foreach ($submissions as $sub) {
+            $participant_fingerprint = $sub->participant_id;
+            $wave_index = $sub->wave_index;
+            $form_id = $sub->form_id;
 
-            // Build wave status map: wave_index => status
+            // Get privacy config for this form
+            if (!isset($privacy_configs[$form_id])) {
+                $privacy_configs[$form_id] = get_privacy_config($form_id);
+            }
+            $privacy = $privacy_configs[$form_id];
+
+            // Decode form responses and extract email
+            $decoded_responses = json_decode($sub->form_responses, true);
+            $email_from_form = null;
+            
+            if (is_array($decoded_responses)) {
+                // Look for email in form responses
+                $email_from_form = $decoded_responses['email'] ?? 
+                                 $decoded_responses['correo_electronico'] ?? 
+                                 $decoded_responses['correo'] ?? null;
+            }
+
+            // Build submission data
+            $submission_data = array(
+                'participant_fingerprint' => $participant_fingerprint,
+                'email_from_form' => $email_from_form,
+                'form_responses' => is_array($decoded_responses) ? $decoded_responses : array(),
+                'submitted_at' => $sub->submitted_at,
+                'duration_seconds' => $sub->duration_seconds,
+                'user_fingerprint' => $sub->user_fingerprint,
+            );
+
+            // Add privacy-controlled fields
+            if (!empty($privacy['device_type'])) $submission_data['device'] = $sub->device;
+            if (!empty($privacy['browser'])) $submission_data['browser'] = $sub->browser;
+            if (!empty($privacy['os'])) $submission_data['os'] = $sub->os;
+            if (!empty($privacy['screen_width'])) $submission_data['screen_width'] = $sub->screen_width;
+            if (!empty($privacy['ip_address'])) $submission_data['ip_address'] = $sub->ip_address;
+
+            if (!isset($submissions_by_participant[$participant_fingerprint])) {
+                $submissions_by_participant[$participant_fingerprint] = array();
+            }
+            $submissions_by_participant[$participant_fingerprint][$wave_index] = $submission_data;
+        }
+
+        // --- Step 4: Match submissions with participants by email ---
+        $participant_by_email = array();
+        foreach ($participants as $p) {
+            $participant_by_email[strtolower($p->email)] = $p;
+        }
+
+        // --- Step 5: Get assignments for progress tracking ---
+        $participant_ids = array_column($participants, 'id');
+        if (!empty($participant_ids)) {
+            $ids_placeholder = implode(',', array_fill(0, count($participant_ids), '%d'));
+            $assignments = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT participant_id, wave_id, status, submitted_at
+                     FROM {$wpdb->prefix}survey_assignments
+                     WHERE participant_id IN ({$ids_placeholder})
+                     ORDER BY wave_id ASC",
+                    $participant_ids
+                )
+            );
+        } else {
+            $assignments = array();
+        }
+
+        // Group assignments by participant
+        $assignments_by_participant = array();
+        foreach ($assignments as $a) {
+            $assignments_by_participant[$a->participant_id][] = $a;
+        }
+
+        // --- Step 6: Build result rows ---
+        $rows = array();
+        
+        foreach ($participants as $participant) {
+            $p_id = $participant->id;
+            $email = strtolower($participant->email);
+            
+            // Get assignments for this participant
+            $p_assignments = isset($assignments_by_participant[$p_id]) ? $assignments_by_participant[$p_id] : array();
+            
+            // Build wave status map
             $wave_status_map = array();
             $submitted_count = 0;
             foreach ($p_assignments as $a) {
-                if (isset($waves_by_id[$a->wave_id])) {
-                    $wi = $waves_by_id[$a->wave_id]->wave_index;
+                if (isset($waves_by_index[$a->wave_id])) {
+                    $wi = $waves_by_index[$a->wave_id]->wave_index;
                     $wave_status_map[$wi] = array(
-                        'status'       => $a->status,
+                        'status' => $a->status,
                         'submitted_at' => $a->submitted_at,
                     );
                     if ($a->status === 'submitted') {
@@ -439,43 +403,97 @@ class EIPSI_Export_Service {
                 }
             }
 
-            // Filter by wave_index if requested (only keep participant if
-            // they have an assignment in that wave).
-            if ($filters['wave_index'] !== 'all') {
-                $wi = $filters['wave_index'];
-                if (!isset($wave_status_map[$wi])) {
-                    continue; // not assigned to this wave, skip
-                }
+            // Apply filters
+            if ($filters['status'] === 'active' && !$participant->is_active) continue;
+            if ($filters['status'] === 'inactive' && $participant->is_active) continue;
+            
+            if (!empty($filters['search'])) {
+                $search = strtolower($filters['search']);
+                if (strpos($email, $search) === false) continue;
             }
 
-            $total_waves        = count($waves);
-            $completion_percent = ($total_waves > 0)
-                ? round(($submitted_count / $total_waves) * 100)
-                : 0;
+            if ($filters['wave_index'] !== 'all') {
+                if (!isset($wave_status_map[$filters['wave_index']])) continue;
+            }
 
+            $total_waves = count($waves);
+            $completion_percent = $total_waves > 0 ? round(($submitted_count / $total_waves) * 100) : 0;
+
+            // Build participant row
             $row = array(
-                'id'                 => (int) $p->id,
-                'email'              => $p->email,
-                'first_name'         => $p->first_name,
-                'last_name'          => $p->last_name,
-                'full_name'          => trim($p->first_name . ' ' . $p->last_name),
-                'is_active'          => (bool) $p->is_active,
-                'created_at'         => $p->created_at,
-                'last_login_at'      => $p->last_login_at,
-                'waves_assigned'     => count($p_assignments),
-                'waves_submitted'    => $submitted_count,
-                'waves_total'        => $total_waves,
+                'id' => (int) $participant->id,
+                'email' => $participant->email,
+                'is_active' => (bool) $participant->is_active,
+                'created_at' => $participant->created_at,
+                'last_login_at' => $participant->last_login_at,
+                'waves_assigned' => count($p_assignments),
+                'waves_submitted' => $submitted_count,
+                'waves_total' => $total_waves,
                 'completion_percent' => $completion_percent,
-                'wave_statuses'      => $wave_status_map,
-                'form_responses'     => isset($form_responses_by_p[$p->id]) ? $form_responses_by_p[$p->id] : array(),
-                'wave_responses'     => isset($wave_responses_by_p[$p->id]) ? $wave_responses_by_p[$p->id] : array(),
+                'wave_statuses' => $wave_status_map,
+                'submissions' => array(), // Will be filled below
             );
+
+            // Find submissions for this participant by matching emails
+            foreach ($submissions_by_participant as $fingerprint => $submissions_by_wave) {
+                foreach ($submissions_by_wave as $wave_index => $submission) {
+                    $submission_email = strtolower($submission['email_from_form'] ?? '');
+                    
+                    // Match by email
+                    if ($submission_email === $email) {
+                        $row['submissions'][$wave_index] = $submission;
+                    }
+                }
+            }
 
             $rows[] = $row;
         }
 
+        // Also add rows for submissions that couldn't be matched to participants
+        foreach ($submissions_by_participant as $fingerprint => $submissions_by_wave) {
+            $has_match = false;
+            foreach ($submissions_by_wave as $submission) {
+                $submission_email = strtolower($submission['email_from_form'] ?? '');
+                if (isset($participant_by_email[$submission_email])) {
+                    $has_match = true;
+                    break;
+                }
+            }
+            
+            // If no match found, create a row with fingerprint as ID
+            if (!$has_match) {
+                // Find any submission to get email
+                $first_submission = reset($submissions_by_wave);
+                $email = $first_submission['email_from_form'] ?? '';
+                
+                $row = array(
+                    'id' => $fingerprint, // Use fingerprint as ID
+                    'email' => $email,
+                    'is_active' => null,
+                    'created_at' => null,
+                    'last_login_at' => null,
+                    'waves_assigned' => count($submissions_by_wave),
+                    'waves_submitted' => count($submissions_by_wave),
+                    'waves_total' => count($waves),
+                    'completion_percent' => 100, // All submitted waves are completed
+                    'wave_statuses' => array(),
+                    'submissions' => $submissions_by_wave,
+                );
+                
+                // Build wave statuses from submissions
+                foreach ($submissions_by_wave as $wave_index => $submission) {
+                    $row['wave_statuses'][$wave_index] = array(
+                        'status' => 'submitted',
+                        'submitted_at' => $submission['submitted_at'],
+                    );
+                }
+                
+                $rows[] = $row;
+            }
+        }
+
         return array(
-            'rows'  => $rows,
+            'rows' => $rows,
             'waves' => $waves,
         );
     }
@@ -909,8 +927,36 @@ class EIPSI_Export_Service {
             'Progreso (%)',
         );
 
-        // Extract response keys grouped by wave_index
-        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
+        // Get all unique field names from submissions across all waves
+        $all_field_names = array();
+        foreach ($rows as $row) {
+            if (isset($row['submissions'])) {
+                foreach ($row['submissions'] as $wave_index => $submission) {
+                    if (isset($submission['form_responses']) && is_array($submission['form_responses'])) {
+                        $excluded_fields = array(
+                            'eipsi_consent_accepted',
+                            'wave_id',
+                            'form_action',
+                            'nonce',
+                            'action',
+                            'current_page',
+                            'form_start_time',
+                            'form_end_time',
+                            'end_timestamp_ms',
+                            'eipsi_user_fingerprint',
+                            'eipsi_fingerprint_raw'
+                        );
+                        
+                        foreach ($submission['form_responses'] as $field_name => $value) {
+                            if (!in_array($field_name, $excluded_fields)) {
+                                $all_field_names[$field_name] = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        $unique_field_names = array_keys($all_field_names);
 
         foreach ($waves as $wave) {
             $prefix = 'T' . $wave->wave_index;
@@ -918,13 +964,14 @@ class EIPSI_Export_Service {
             $headers[] = $prefix . '_duration_seconds';
             $headers[] = $prefix . '_fingerprint_id';
             $headers[] = $prefix . '_device';
+            $headers[] = $prefix . '_browser';
+            $headers[] = $prefix . '_os';
+            $headers[] = $prefix . '_screen_width';
+            $headers[] = $prefix . '_ip_address';
 
             // Add dynamic headers for form_response fields
-            $wave_index = $wave->wave_index;
-            if (isset($response_keys_by_wave[$wave_index])) {
-                foreach ($response_keys_by_wave[$wave_index] as $field_key) {
-                    $headers[] = $prefix . '_' . $field_key;
-                }
+            foreach ($unique_field_names as $field_name) {
+                $headers[] = $prefix . '_' . $field_name;
             }
         }
 
@@ -940,9 +987,7 @@ class EIPSI_Export_Service {
      * @return array
      */
     private function build_participants_wide_row($row, $waves, $response_keys_by_wave = array()) {
-        // =====================================================================
-        // 1. Datos base del participante (SIN Nombre ni Apellido)
-        // =====================================================================
+        // Base participant data (without names)
         $data = array(
             $row['id'],
             $row['email'],
@@ -954,58 +999,74 @@ class EIPSI_Export_Service {
             $row['completion_percent'],
         );
 
-        // =====================================================================
-        // 2. Datos de waves en formato Wide
-        // =====================================================================
-        $wave_responses = isset($row['wave_responses']) ? $row['wave_responses'] : array();
-        $form_responses = isset($row['form_responses']) ? $row['form_responses'] : array();
+        // Get all unique field names (same as headers)
+        $all_field_names = array();
+        foreach ($waves as $wave) {
+            foreach ($row['submissions'] ?? array() as $wave_index => $submission) {
+                if (isset($submission['form_responses']) && is_array($submission['form_responses'])) {
+                    $excluded_fields = array(
+                        'eipsi_consent_accepted',
+                        'wave_id',
+                        'form_action',
+                        'nonce',
+                        'action',
+                        'current_page',
+                        'form_start_time',
+                        'form_end_time',
+                        'end_timestamp_ms',
+                        'eipsi_user_fingerprint',
+                        'eipsi_fingerprint_raw'
+                    );
+                    
+                    foreach ($submission['form_responses'] as $field_name => $value) {
+                        if (!in_array($field_name, $excluded_fields)) {
+                            $all_field_names[$field_name] = true;
+                        }
+                    }
+                }
+            }
+        }
+        $unique_field_names = array_keys($all_field_names);
 
+        // Add wave data for each wave
         foreach ($waves as $wave) {
             $wi = $wave->wave_index;
+            $submission = isset($row['submissions'][$wi]) ? $row['submissions'][$wi] : null;
 
-            // 2a. submitted_at
-            $submitted_at = isset($wave_responses[$wi]['submitted_at'])
-                ? date('Y-m-d H:i:s', strtotime($wave_responses[$wi]['submitted_at']))
-                : '';
-            $data[] = $submitted_at;
+            if ($submission) {
+                // Metadata fields
+                $data[] = $submission['submitted_at'] ? date('Y-m-d H:i:s', strtotime($submission['submitted_at'])) : '';
+                $data[] = $submission['duration_seconds'] ?? '';
+                $data[] = $submission['user_fingerprint'] ?? '';
+                $data[] = $submission['device'] ?? '';
+                $data[] = $submission['browser'] ?? '';
+                $data[] = $submission['os'] ?? '';
+                $data[] = $submission['screen_width'] ?? '';
+                $data[] = $submission['ip_address'] ?? '';
 
-            // 2b. duration_seconds
-            $duration = isset($wave_responses[$wi]['duration_seconds'])
-                ? (int) $wave_responses[$wi]['duration_seconds']
-                : '';
-            $data[] = $duration;
-
-            // 2c. fingerprint_id
-            $fingerprint = isset($wave_responses[$wi]['user_fingerprint'])
-                ? $wave_responses[$wi]['user_fingerprint']
-                : '';
-            $data[] = $fingerprint;
-
-            // 2d. device
-            $device = isset($wave_responses[$wi]['device'])
-                ? $wave_responses[$wi]['device']
-                : '';
-            $data[] = $device;
-
-            // 2e. Valores de form_responses para este wave
-            if (!empty($response_keys_by_wave[$wi])) {
-                $wave_form_responses = isset($form_responses[$wi]) ? $form_responses[$wi] : array();
-
-                foreach ($response_keys_by_wave[$wi] as $field_key) {
+                // Form response fields
+                $form_responses = $submission['form_responses'] ?? array();
+                foreach ($unique_field_names as $field_name) {
                     $value = '';
-
-                    if (isset($wave_form_responses[$field_key])) {
-                        $val = $wave_form_responses[$field_key];
-
-                        // Serializar arrays/objetos para CSV/Excel
+                    if (isset($form_responses[$field_name])) {
+                        $val = $form_responses[$field_name];
                         if (is_array($val) || is_object($val)) {
                             $value = json_encode($val, JSON_UNESCAPED_UNICODE);
                         } else {
                             $value = $val;
                         }
                     }
-
                     $data[] = $value;
+                }
+            } else {
+                // Empty submission - add empty columns
+                $metadata_columns = 8; // submitted_at, duration_seconds, fingerprint_id, device, browser, os, screen_width, ip_address
+                for ($i = 0; $i < $metadata_columns; $i++) {
+                    $data[] = '';
+                }
+                // Empty form response columns
+                for ($i = 0; $i < count($unique_field_names); $i++) {
+                    $data[] = '';
                 }
             }
         }
@@ -1029,12 +1090,11 @@ class EIPSI_Export_Service {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
-        $headers              = $this->build_participants_wide_headers($rows, $waves);
-        $xlsx_data            = array($headers);
+        $headers = $this->build_participants_wide_headers($rows, $waves);
+        $xlsx_data = array($headers);
 
         foreach ($rows as $row) {
-            $xlsx_data[] = $this->build_participants_wide_row($row, $waves, $response_keys_by_wave);
+            $xlsx_data[] = $this->build_participants_wide_row($row, $waves);
         }
 
         // Summary sheet row
@@ -1065,16 +1125,15 @@ class EIPSI_Export_Service {
      * @param array    $filters
      * @param resource $output   Open file handle (e.g., php://output).
      */
-    public function export_participants_wide_csv($study_id, $filters, $output) {
+    public function stream_participants_wide_csv($study_id, $filters, $output) {
         $result = $this->fetch_participants_data($study_id, $filters);
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
         fputcsv($output, $this->build_participants_wide_headers($rows, $waves));
 
         foreach ($rows as $row) {
-            fputcsv($output, $this->build_participants_wide_row($row, $waves, $response_keys_by_wave));
+            fputcsv($output, $this->build_participants_wide_row($row, $waves));
         }
     }
 
@@ -1093,12 +1152,11 @@ class EIPSI_Export_Service {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        $response_keys_by_wave = $this->extract_response_keys_by_wave($rows);
-        $headers              = $this->build_participants_wide_headers($rows, $waves);
-        $preview_rows         = array();
+        $headers = $this->build_participants_wide_headers($rows, $waves);
+        $preview_rows = array();
 
         foreach (array_slice($rows, 0, $limit) as $row) {
-            $preview_rows[] = $this->build_participants_wide_row($row, $waves, $response_keys_by_wave);
+            $preview_rows[] = $this->build_participants_wide_row($row, $waves);
         }
 
         return array(
@@ -1164,9 +1222,8 @@ class EIPSI_Export_Service {
             $wpdb->prepare(
                 "SELECT r.form_responses
                  FROM {$wpdb->prefix}vas_form_results r
-                 LEFT JOIN {$wpdb->prefix}survey_sessions s ON s.token = r.session_id
-                 LEFT JOIN {$wpdb->prefix}survey_participants p ON p.id = s.participant_id
-                 WHERE p.survey_id = %d
+                 WHERE r.survey_id = %d
+                 AND r.wave_index IS NOT NULL
                  AND r.form_responses IS NOT NULL
                  AND r.form_responses != ''",
                 $study_id
@@ -1174,11 +1231,28 @@ class EIPSI_Export_Service {
         );
 
         $all_fields = array();
+        $excluded_fields = array(
+            'eipsi_consent_accepted',
+            'wave_id',
+            'form_action',
+            'nonce',
+            'action',
+            'current_page',
+            'form_start_time',
+            'form_end_time',
+            'end_timestamp_ms',
+            'eipsi_user_fingerprint',
+            'eipsi_fingerprint_raw'
+        );
 
         foreach ($results as $json) {
             $decoded = json_decode($json, true);
             if (is_array($decoded)) {
-                $all_fields = array_merge($all_fields, array_keys($decoded));
+                foreach (array_keys($decoded) as $field_name) {
+                    if (!in_array($field_name, $excluded_fields)) {
+                        $all_fields[] = $field_name;
+                    }
+                }
             }
         }
 
@@ -1200,9 +1274,7 @@ class EIPSI_Export_Service {
     private function build_participants_long_row($participant_row, $wave, $all_unique_field_names) {
         $wi = $wave->wave_index;
 
-        // =====================================================================
-        // 1. Datos base del participante
-        // =====================================================================
+        // Base participant data
         $data = array(
             $participant_row['id'],
             $participant_row['email'],
@@ -1212,55 +1284,34 @@ class EIPSI_Export_Service {
             $wave->name, // Wave_name
         );
 
-        // =====================================================================
-        // 2. Datos de la toma específica (submitted_at, duration, fingerprint, device)
-        // =====================================================================
-        $wave_responses = isset($participant_row['wave_responses'][$wi])
-            ? $participant_row['wave_responses'][$wi]
-            : array();
+        // Get submission data for this wave
+        $submission = isset($participant_row['submissions'][$wi]) ? $participant_row['submissions'][$wi] : null;
 
-        $form_responses = isset($participant_row['form_responses'][$wi])
-            ? $participant_row['form_responses'][$wi]
-            : array();
+        if ($submission) {
+            // Metadata fields
+            $data[] = $submission['submitted_at'] ? date('Y-m-d H:i:s', strtotime($submission['submitted_at'])) : '';
+            $data[] = $submission['duration_seconds'] ?? '';
+            $data[] = $submission['user_fingerprint'] ?? '';
+            $data[] = $submission['device'] ?? '';
+        } else {
+            // Empty submission
+            for ($i = 0; $i < 4; $i++) {
+                $data[] = '';
+            }
+        }
 
-        // 2a. submitted_at
-        $data[] = isset($wave_responses['submitted_at'])
-            ? date('Y-m-d H:i:s', strtotime($wave_responses['submitted_at']))
-            : '';
-
-        // 2b. duration_seconds
-        $data[] = isset($wave_responses['duration_seconds'])
-            ? (int) $wave_responses['duration_seconds']
-            : '';
-
-        // 2c. fingerprint_id
-        $data[] = isset($wave_responses['user_fingerprint'])
-            ? $wave_responses['user_fingerprint']
-            : '';
-
-        // 2d. device
-        $data[] = isset($wave_responses['device'])
-            ? $wave_responses['device']
-            : '';
-
-        // =====================================================================
-        // 3. Valores de form_responses para esta toma (usando ALL unique field_names)
-        // =====================================================================
-        // Para cada field_name único en el estudio, buscar si existe en esta toma
+        // Form response fields (using all unique field names)
+        $form_responses = $submission ? ($submission['form_responses'] ?? array()) : array();
         foreach ($all_unique_field_names as $field_name) {
             $value = '';
-
             if (isset($form_responses[$field_name])) {
                 $val = $form_responses[$field_name];
-
-                // Serializar arrays/objetos para CSV/Excel
                 if (is_array($val) || is_object($val)) {
                     $value = json_encode($val, JSON_UNESCAPED_UNICODE);
                 } else {
                     $value = $val;
                 }
             }
-
             $data[] = $value;
         }
 
@@ -1283,21 +1334,15 @@ class EIPSI_Export_Service {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        // FIRST PASS: Collect all unique field_names from the entire study
+        // Get all unique field names across the study
         $all_unique_field_names = $this->get_all_unique_field_names($study_id);
-
-        // Build headers
         $headers = $this->build_participants_long_headers($all_unique_field_names);
         $xlsx_data = array($headers);
 
-        // Build rows: one row per participant × wave combination
-        foreach ($rows as $participant_row) {
+        // Generate one row per participant × wave combination
+        foreach ($rows as $row) {
             foreach ($waves as $wave) {
-                $xlsx_data[] = $this->build_participants_long_row(
-                    $participant_row,
-                    $wave,
-                    $all_unique_field_names
-                );
+                $xlsx_data[] = $this->build_participants_long_row($row, $wave, $all_unique_field_names);
             }
         }
 
@@ -1338,7 +1383,7 @@ class EIPSI_Export_Service {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        // FIRST PASS: Collect all unique field_names from the entire study
+        // Get all unique field names across the study
         $all_unique_field_names = $this->get_all_unique_field_names($study_id);
 
         // Write headers
@@ -1371,7 +1416,7 @@ class EIPSI_Export_Service {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        // FIRST PASS: Collect all unique field_names from the entire study
+        // Get all unique field names across the study
         $all_unique_field_names = $this->get_all_unique_field_names($study_id);
 
         // Build headers
@@ -1382,21 +1427,13 @@ class EIPSI_Export_Service {
         $count = 0;
 
         foreach ($rows as $participant_row) {
-            if ($count >= $limit) {
-                break;
-            }
-
             foreach ($waves as $wave) {
-                if ($count >= $limit) {
-                    break;
-                }
-
+                if ($count >= $limit) break 2;
                 $preview_rows[] = $this->build_participants_long_row(
                     $participant_row,
                     $wave,
                     $all_unique_field_names
                 );
-
                 $count++;
             }
         }
