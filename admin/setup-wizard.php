@@ -446,7 +446,7 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             'wave_index' => absint($wave['wave_index'] ?? ($index + 1)),
             'form_id' => absint($wave['form_template_id'] ?? 0),
             'is_mandatory' => isset($wave['is_required']) ? (int)(bool)$wave['is_required'] : 1,
-            'status' => 'draft',
+            'status' => 'active',
             'reminder_days' => $reminder_days,
             'retry_enabled' => $retry_enabled,
             'retry_days' => $retry_days,

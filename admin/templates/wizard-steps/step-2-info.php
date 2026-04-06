@@ -74,7 +74,6 @@ for ($i = 0; $i < count($waves_config); $i++) {
                     <div class="wave-item" data-wave="<?php echo $i + 1; ?>">
                         <div class="wave-header">
                             <h3>Toma <?php echo $i + 1; ?></h3>
-                            <span class="wave-status"><?php echo $waves_config[$i]['is_required'] ? 'Obligatoria' : 'Opcional'; ?></span>
                         </div>
                         
                         <div class="wave-fields">
@@ -105,37 +104,6 @@ for ($i = 0; $i < count($waves_config); $i++) {
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                            </div>
-                            
-                            <div class="field-group-inline">
-                                <div class="field-group">
-                                    <label for="wave_duration_<?php echo $i; ?>" class="form-label">
-                                        ⏱️ Duración estimada
-                                    </label>
-                                    <input type="number" 
-                                           id="wave_duration_<?php echo $i; ?>"
-                                           name="waves_config[<?php echo $i; ?>][estimated_duration]" 
-                                           class="form-input duration-input" 
-                                           value="<?php echo esc_attr($waves_config[$i]['estimated_duration']); ?>"
-                                           min="1" 
-                                           max="180"
-                                           placeholder="∞ Ilimitado"
-                                           title="Deja este campo en blanco para tiempo ilimitado, o ingresa los minutos estimados (1-180)">
-                                    <small class="field-help">En minutos. Déjalo en blanco para tiempo ilimitado.</small>
-                                </div>
-                                
-                                <div class="field-group">
-                                    <label class="form-label">
-                                        &nbsp;
-                                    </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" 
-                                               name="waves_config[<?php echo $i; ?>][is_required]"
-                                               <?php checked($waves_config[$i]['is_required'], true); ?>
-                                               value="1">
-                                        <span class="checkbox-text">Obligatoria</span>
-                                    </label>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -194,7 +162,6 @@ function eipsiGenerateWaveItem(index) {
     waveDiv.innerHTML = `
         <div class="wave-header">
             <h3>Toma ${index + 1}</h3>
-            <span class="wave-status">${isRequired ? 'Obligatoria' : 'Opcional'}</span>
         </div>
         
         <div class="wave-fields">
@@ -220,37 +187,6 @@ function eipsiGenerateWaveItem(index) {
                     <option value="">Seleccionar formulario...</option>
                     ${getAvailableFormsHTML()}
                 </select>
-            </div>
-            
-            <div class="field-group-inline">
-                <div class="field-group">
-                    <label for="wave_duration_${index}" class="form-label">
-                        ⏱️ Duración estimada
-                    </label>
-                    <input type="number" 
-                           id="wave_duration_${index}"
-                           name="waves_config[${index}][estimated_duration]" 
-                           class="form-input duration-input" 
-                           value=""
-                           min="1" 
-                           max="180"
-                           placeholder="∞ Ilimitado"
-                           title="Deja este campo en blanco para tiempo ilimitado, o ingresa los minutos estimados (1-180)">
-                    <small class="field-help">En minutos. Déjalo en blanco para tiempo ilimitado.</small>
-                </div>
-                
-                <div class="field-group">
-                    <label class="form-label">
-                        &nbsp;
-                    </label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" 
-                               name="waves_config[${index}][is_required]"
-                               ${isRequired ? 'checked' : ''}
-                               value="1">
-                        <span class="checkbox-text">Obligatoria</span>
-                    </label>
-                </div>
             </div>
         </div>
     `;

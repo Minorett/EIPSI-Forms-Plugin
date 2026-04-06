@@ -359,6 +359,17 @@
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
+                    // Handle double opt-in confirmation case
+                    if (response.data.requires_confirmation === true) {
+                        showMessage($form, 'Revisá tu bandeja de entrada para confirmar tu email', 'success');
+                        
+                        // Update step indicator to show confirmation step
+                        updateStepIndicator(2);
+                        
+                        // Don't redirect - wait for email confirmation
+                        return;
+                    }
+                    
                     showMessage($form, response.data.message, 'success');
                     
                     // Update step indicator

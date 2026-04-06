@@ -1180,7 +1180,34 @@ function eipsi_forms_submit_form_handler() {
     $longitudinal_participant_id = $authenticated_participant_id;
     
     // Capture longitudinal context (v1.4.0) - usar study_id en lugar de survey_id
+    // Prioridad: authenticated_study_id > POST > GET > fallback desde wave_id
     $study_id = $authenticated_study_id;
+    
+    // Fallback 1: POST directo (viene del formulario)
+    if (empty($study_id) && !empty($_POST['survey_id'])) {
+        $study_id = absint($_POST['survey_id']);
+    }
+    
+    // Fallback 2: GET (viene de la URL)
+    if (empty($study_id) && !empty($_GET['survey_id'])) {
+        $study_id = absint($_GET['survey_id']);
+    }
+    
+    // Fallback 3: obtener desde wave_id si está disponible
+    if (empty($study_id) && !empty($wave_id)) {
+        global $wpdb;
+        $study_id_from_wave = $wpdb->get_var($wpdb->prepare(
+            "SELECT study_id FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+            $wave_id
+        ));
+        if ($study_id_from_wave) {
+            $study_id = absint($study_id_from_wave);
+        }
+    }
+    
+    // Debug: Log para verificar survey_id
+    error_log("[EIPSI Forms] Survey ID resolution: authenticated={$authenticated_study_id}, final={$study_id}, wave_id={$wave_id}");
+    
     $wave_index = null;
 
     // Intentar obtener wave_id de múltiples fuentes
@@ -3356,7 +3383,7 @@ function eipsi_ajax_activate_study() {
     delete_transient($transient_key);
     
     // Redirect to study dashboard
-    $redirect_url = admin_url('admin.php?page=eipsi-results&study_id=' . $study_id);
+    $redirect_url = admin_url('admin.php?page=eipsi-longitudinal-study&tab=dashboard-study&study_id=' . $study_id);
     
     wp_send_json_success(array(
         'message' => 'Estudio creado exitosamente.',

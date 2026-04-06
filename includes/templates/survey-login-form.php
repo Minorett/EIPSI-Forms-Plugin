@@ -25,8 +25,8 @@ $confirmation_message = '';
 if (isset($_GET['eipsi_msg']) && $_GET['eipsi_msg'] === 'email_confirmed') {
     $confirmed_email = isset($_GET['eipsi_email']) ? sanitize_email(urldecode($_GET['eipsi_email'])) : '';
     $confirmation_message = sprintf(
-        __('¡Email confirmado! Revisá %s para el enlace de acceso al estudio.', 'eipsi-forms'),
-        !empty($confirmed_email) ? esc_html($confirmed_email) : __('tu bandeja de entrada', 'eipsi-forms')
+        __('¡Email confirmado! Ya podés ingresar al estudio con tu email.', 'eipsi-forms'),
+        !empty($confirmed_email) ? esc_html($confirmed_email) : __('tu email', 'eipsi-forms')
     );
 }
 
@@ -124,7 +124,8 @@ if ($survey_id) {
                                required
                                placeholder="ejemplo@email.com"
                                aria-label="<?php esc_attr_e('Email', 'eipsi-forms'); ?>"
-                               autocomplete="email">
+                               autocomplete="email"
+                               value="<?php echo !empty($confirmed_email) ? esc_attr($confirmed_email) : ''; ?>">
                         <span class="eipsi-valid-icon">✓</span>
                     </div>
                 </div>

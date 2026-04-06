@@ -5,13 +5,13 @@ if (!defined('ABSPATH')) {
 
 add_action('admin_init', function() {
     // Verificar si es una solicitud de eliminación
-    if (isset($_GET['page']) && $_GET['page'] === 'eipsi-results' && 
+    if (isset($_GET['page']) && $_GET['page'] === 'eipsi-results-experience' && 
         isset($_GET['action']) && $_GET['action'] === 'delete') {
         
         // Verificar permisos
         if (!current_user_can('manage_options')) {
             $redirect_url = add_query_arg(
-                array('page' => 'eipsi-results', 'error' => 'permission'),
+                array('page' => 'eipsi-results-experience', 'error' => 'permission'),
                 admin_url('admin.php')
             );
             wp_safe_redirect($redirect_url);
@@ -22,7 +22,7 @@ add_action('admin_init', function() {
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         if (!$id || !isset($_GET['_wpnonce'])) {
             $redirect_url = add_query_arg(
-                array('page' => 'eipsi-results', 'error' => 'invalid'),
+                array('page' => 'eipsi-results-experience', 'error' => 'invalid'),
                 admin_url('admin.php')
             );
             wp_safe_redirect($redirect_url);
@@ -32,7 +32,7 @@ add_action('admin_init', function() {
         // Verificar nonce de seguridad - ALIGNED with results-page.php
         if (!wp_verify_nonce($_GET['_wpnonce'], 'delete_response_' . $id)) {
             $redirect_url = add_query_arg(
-                array('page' => 'eipsi-results', 'error' => 'nonce'),
+                array('page' => 'eipsi-results-experience', 'error' => 'nonce'),
                 admin_url('admin.php')
             );
             wp_safe_redirect($redirect_url);
@@ -106,7 +106,7 @@ add_action('admin_init', function() {
             }
             
             $redirect_url = add_query_arg(
-                array('page' => 'eipsi-results', 'deleted' => '1'),
+                array('page' => 'eipsi-results-experience', 'deleted' => '1'),
                 admin_url('admin.php')
             );
         } else {
@@ -120,7 +120,7 @@ add_action('admin_init', function() {
             }
             
             $redirect_url = add_query_arg(
-                array('page' => 'eipsi-results', 'error' => 'delete'),
+                array('page' => 'eipsi-results-experience', 'error' => 'delete'),
                 admin_url('admin.php')
             );
         }
