@@ -161,32 +161,9 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
         </span>
     </div>
 
-    <!-- ─── Format selection ───────────────────────────────────────────── -->
-    <div class="eipsi-export-format-selection" id="ep-format-selection" style="display:none;">
-        <p class="ep-format-intro">
-            <?php esc_html_e('Selecciona el formato para la vista previa:', 'eipsi-forms'); ?>
-        </p>
-        <div class="ep-format-options">
-            <label class="ep-format-option">
-                <input type="radio" name="preview-format" value="wide" checked>
-                <span class="ep-format-label">
-                    <strong>📊 Wide</strong> — 
-                    <?php esc_html_e('Una fila por participante', 'eipsi-forms'); ?>
-                </span>
-            </label>
-            <label class="ep-format-option">
-                <input type="radio" name="preview-format" value="long">
-                <span class="ep-format-label">
-                    <strong>📈 Long</strong> — 
-                    <?php esc_html_e('Una fila por participante por toma', 'eipsi-forms'); ?>
-                </span>
-            </label>
-        </div>
-    </div>
-
     <!-- ─── Preview table ───────────────────────────────────────────── -->
     <div id="ep-preview-wrap" class="ep-preview-wrap" style="display:none;">
-        <h3><?php esc_html_e('Vista previa (primeras 10 filas)', 'eipsi-forms'); ?></h3>
+        <h3><?php esc_html_e('Vista previa (primeras 8 filas)', 'eipsi-forms'); ?></h3>
         <div class="ep-preview-scroll">
             <table class="widefat striped ep-preview-table">
                 <thead>
@@ -199,40 +176,13 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
 
     <!-- ─── Export action buttons ───────────────────────────────────── -->
     <div class="eipsi-export-actions" id="ep-actions" style="display:none;">
-        <p class="ep-actions-intro">
-            <?php esc_html_e('Selecciona el formato según el software estadístico que uses:', 'eipsi-forms'); ?>
-        </p>
-        
-        <div class="ep-format-section">
-            <div class="ep-format-header">
-                <span class="ep-format-icon">📊</span>
-                <strong><?php esc_html_e('Formato Wide — recomendado para SPSS:', 'eipsi-forms'); ?></strong>
-            </div>
-            <p class="ep-format-desc"><?php esc_html_e('Una fila por participante. Ideal para repeated measures y correlaciones entre tomas.', 'eipsi-forms'); ?></p>
-            <div class="ep-format-buttons">
-                <button id="ep-download-excel-wide" class="button button-primary ep-btn-download ep-btn-download--wide">
-                    📥 <?php esc_html_e('Excel Wide', 'eipsi-forms'); ?>
-                </button>
-                <button id="ep-download-csv-wide" class="button button-secondary ep-btn-download ep-btn-download--wide">
-                    📄 <?php esc_html_e('CSV Wide', 'eipsi-forms'); ?>
-                </button>
-            </div>
-        </div>
-
-        <div class="ep-format-section">
-            <div class="ep-format-header">
-                <span class="ep-format-icon">📈</span>
-                <strong><?php esc_html_e('Formato Long — recomendado para R:', 'eipsi-forms'); ?></strong>
-            </div>
-            <p class="ep-format-desc"><?php esc_html_e('Una fila por participante por toma. Ideal para modelos mixtos y ggplot2.', 'eipsi-forms'); ?></p>
-            <div class="ep-format-buttons">
-                <button id="ep-download-excel-long" class="button button-primary ep-btn-download ep-btn-download--long">
-                    📥 <?php esc_html_e('Excel Long', 'eipsi-forms'); ?>
-                </button>
-                <button id="ep-download-csv-long" class="button button-secondary ep-btn-download ep-btn-download--long">
-                    📄 <?php esc_html_e('CSV Long', 'eipsi-forms'); ?>
-                </button>
-            </div>
+        <div class="ep-format-buttons">
+            <button id="ep-download-excel-wide" class="button button-primary ep-btn-download ep-btn-download--wide">
+                📥 <?php esc_html_e('Excel Wide', 'eipsi-forms'); ?>
+            </button>
+            <button id="ep-download-csv-wide" class="button button-secondary ep-btn-download ep-btn-download--wide">
+                📄 <?php esc_html_e('CSV Wide', 'eipsi-forms'); ?>
+            </button>
         </div>
     </div>
 
@@ -405,20 +355,14 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
         $( '#ep-preview-wrap, #ep-data-summary, #ep-actions' ).hide();
 
         const filters = getFilters();
-        const selectedFormat = $( 'input[name="preview-format"]:checked' ).val() || 'wide';
-        
-        // Determine the correct action based on format
-        const action = selectedFormat === 'wide' 
-            ? 'eipsi_get_participants_wide_preview'
-            : 'eipsi_get_participants_long_preview';
 
-        console.log( 'Sending AJAX with study_id:', studyId, 'action:', action );
+        console.log( 'Sending AJAX with study_id:', studyId, 'action: eipsi_get_participants_wide_preview' );
 
         $.ajax( {
             url: ajaxurl,
             type: 'POST',
             data: Object.assign( {
-                action: action,
+                action: 'eipsi_get_participants_wide_preview',
                 nonce: nonce,
                 study_id: studyId,
             }, filters ),

@@ -1221,7 +1221,8 @@ class EIPSI_Database_Schema_Manager {
         'participant_id' => "varchar(20) DEFAULT NULL AFTER form_id",
         'survey_id' => "INT(11) DEFAULT NULL AFTER participant_id",
         'wave_index' => "INT(11) DEFAULT NULL AFTER survey_id",
-        'session_id' => "varchar(255) DEFAULT NULL AFTER wave_index",
+        'longitudinal_participant_id' => "INT(11) DEFAULT NULL AFTER wave_index",
+        'session_id' => "varchar(255) DEFAULT NULL AFTER longitudinal_participant_id",
         'user_fingerprint' => "varchar(255) DEFAULT NULL AFTER session_id",  // ← NUEVO
         'form_name' => "varchar(255) NOT NULL AFTER user_fingerprint",  // ← Cambiado: AFTER user_fingerprint
         'form_responses' => "longtext DEFAULT NULL AFTER form_name",  // ← Agregado AFTER

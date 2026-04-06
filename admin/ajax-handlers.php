@@ -1367,6 +1367,7 @@ function eipsi_forms_submit_form_handler() {
         'participant_id' => $participant_id,
         'survey_id' => $survey_id,
         'wave_index' => $wave_index,
+        'longitudinal_participant_id' => $authenticated_participant_id ?: null,
         'session_id' => $session_id,
         'user_fingerprint' => $user_fingerprint,  // ✅ v1.4.0 - Guardar fingerprint
         'form_name' => $form_name,
@@ -1436,7 +1437,7 @@ function eipsi_forms_submit_form_handler() {
         $wpdb_result = $wpdb->insert(
             $table_name,
             $data,
-            array('%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
+            array('%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
         );
         
         if ($wpdb_result === false) {
@@ -1453,7 +1454,7 @@ function eipsi_forms_submit_form_handler() {
                 $wpdb_result = $wpdb->insert(
                     $table_name,
                     $data,
-                    array('%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
+                    array('%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
                 );
                 
                 if ($wpdb_result !== false) {
