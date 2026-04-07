@@ -10,6 +10,7 @@
  * @since 1.6.0 - Enhanced participant experience
  * @since 1.6.1 - Fixed authentication detection, added login form for public view
  * @since 2.1.0 - Fixed $completed_waves scope, duplicate description, wave time limit
+ * @since 2.1.1 - Fixed time_unit respect (minutes/hours/days) in interval calculations
  *
  * Variables available from shortcode:
  * @var object $study               Study object from database
@@ -110,7 +111,19 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
         ) );
 
         if ( $last_submission ) {
-            $available_date = strtotime( $last_submission->submitted_at . ' +' . (int) $next_wave['interval_days'] . ' days' );
+            // FIX (v2.1.1): Respect time_unit setting (minutes, hours, days)
+            $interval_value  = (int) $next_wave['interval_days'];
+            $time_unit       = ! empty( $next_wave['time_unit'] ) ? $next_wave['time_unit'] : 'days';
+            
+            // Map time_unit to strtotime-compatible string
+            $unit_map = array(
+                'minutes' => 'minutes',
+                'hours'   => 'hours',
+                'days'    => 'days'
+            );
+            $strtotime_unit = isset( $unit_map[ $time_unit ] ) ? $unit_map[ $time_unit ] : 'days';
+            
+            $available_date = strtotime( $last_submission->submitted_at . ' +' . $interval_value . ' ' . $strtotime_unit );
             $now            = current_time( 'timestamp' );
 
             if ( $available_date > $now ) {
@@ -194,9 +207,28 @@ $view_class      = 'view-' . esc_attr( $view_mode );
                                     <?php if ( ! empty( $next_wave['interval_days'] ) ) : ?>
                                         <small class="lock-hint">
                                             <?php
+                                            // FIX (v2.1.1): Show correct time unit (minutes, hours, days)
+                                            $interval_value = (int) $next_wave['interval_days'];
+                                            $time_unit      = ! empty( $next_wave['time_unit'] ) ? $next_wave['time_unit'] : 'days';
+                                            
+                                            // Translators: %1$d is the number, %2$s is the time unit
+                                            $unit_text = '';
+                                            switch ( $time_unit ) {
+                                                case 'minutes':
+                                                    $unit_text = _n( 'minuto', 'minutos', $interval_value, 'eipsi-forms' );
+                                                    break;
+                                                case 'hours':
+                                                    $unit_text = _n( 'hora', 'horas', $interval_value, 'eipsi-forms' );
+                                                    break;
+                                                case 'days':
+                                                default:
+                                                    $unit_text = _n( 'día', 'días', $interval_value, 'eipsi-forms' );
+                                                    break;
+                                            }
                                             printf(
-                                                esc_html( _n( '(intervalo de %d día desde la toma anterior)', '(intervalo de %d días desde la toma anterior)', $next_wave['interval_days'], 'eipsi-forms' ) ),
-                                                (int) $next_wave['interval_days']
+                                                esc_html__( '(intervalo de %1$d %2$s desde la toma anterior)', 'eipsi-forms' ),
+                                                $interval_value,
+                                                $unit_text
                                             );
                                             ?>
                                         </small>
