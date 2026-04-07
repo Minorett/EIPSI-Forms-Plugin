@@ -254,3 +254,122 @@ function eipsi_ajax_migrate_schema() {
 }
 
 add_action( 'wp_ajax_eipsi_migrate_schema', 'eipsi_ajax_migrate_schema' );
+
+/**
+ * FIX: Eliminar foreign keys incorrectas que causan errores de constraint
+ * 
+ * Las tablas wp_survey_email_log y wp_survey_magic_links tienen FKs
+ * que apuntan a wp_posts(ID), pero el survey_id viene de wp_survey_studies.
+ * Esto causa errores: "Cannot add or update a child row: a foreign key constraint fails"
+ * 
+ * @since 1.5.6
+ * @return array Resultado de la operación
+ */
+function eipsi_fix_survey_foreign_keys() {
+    global $wpdb;
+    
+    $results = array(
+        'success' => true,
+        'dropped_constraints' => array(),
+        'errors' => array()
+    );
+    
+    // Tablas a verificar
+    $tables = array(
+        $wpdb->prefix . 'survey_email_log',
+        $wpdb->prefix . 'survey_magic_links'
+    );
+    
+    // Nombres de constraints a eliminar
+    $constraints_to_drop = array(
+        'fk_email_log_survey',
+        'fk_magic_links_survey',
+        'fk_email_log_participant',
+        'fk_magic_links_participant'
+    );
+    
+    foreach ( $tables as $table_name ) {
+        // Verificar si la tabla existe
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        if ( $table_exists !== $table_name ) {
+            continue;
+        }
+        
+        // Obtener todas las foreign keys de la tabla
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $foreign_keys = $wpdb->get_results(
+            "SELECT CONSTRAINT_NAME 
+             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+             WHERE TABLE_SCHEMA = DATABASE() 
+             AND TABLE_NAME = '{$table_name}' 
+             AND REFERENCED_TABLE_NAME IS NOT NULL"
+        );
+        
+        if ( ! empty( $foreign_keys ) ) {
+            foreach ( $foreign_keys as $fk ) {
+                $constraint_name = $fk->CONSTRAINT_NAME;
+                
+                // Intentar eliminar la constraint (solo las que apuntan a wp_posts)
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+                $result = $wpdb->query( "ALTER TABLE {$table_name} DROP FOREIGN KEY {$constraint_name}" );
+                
+                if ( $result !== false ) {
+                    $results['dropped_constraints'][] = $table_name . ':' . $constraint_name;
+                    error_log( "[EIPSI FK Fix] Dropped constraint: {$constraint_name} from {$table_name}" );
+                } else {
+                    $results['errors'][] = "Failed to drop {$constraint_name} from {$table_name}: " . $wpdb->last_error;
+                }
+            }
+        }
+    }
+    
+    return $results;
+}
+
+/**
+ * Hook para ejecutar el fix de FKs automáticamente
+ */
+add_action( 'admin_init', function() {
+    $fk_fix_version = get_option( 'eipsi_fk_fix_version', '0' );
+    
+    if ( version_compare( $fk_fix_version, '1.5.6', '<' ) ) {
+        error_log( '[EIPSI FK Fix] Running foreign key fix...' );
+        $result = eipsi_fix_survey_foreign_keys();
+        
+        if ( $result['success'] && ! empty( $result['dropped_constraints'] ) ) {
+            update_option( 'eipsi_fk_fix_version', '1.5.6' );
+            error_log( '[EIPSI FK Fix] Completed. Dropped: ' . implode( ', ', $result['dropped_constraints'] ) );
+        }
+    }
+} );
+
+/**
+ * Endpoint AJAX para ejecutar el fix manualmente
+ */
+function eipsi_ajax_fix_foreign_keys() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'No autorizado' );
+    }
+
+    $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+    if ( ! wp_verify_nonce( $nonce, 'eipsi_fix_fk_nonce' ) ) {
+        wp_send_json_error( 'Token inválido' );
+    }
+    
+    $result = eipsi_fix_survey_foreign_keys();
+    
+    if ( $result['success'] ) {
+        update_option( 'eipsi_fk_fix_version', '1.5.6' );
+        wp_send_json_success( array(
+            'message' => 'Foreign keys eliminadas correctamente',
+            'dropped' => $result['dropped_constraints'],
+            'errors' => $result['errors']
+        ) );
+    } else {
+        wp_send_json_error( array(
+            'message' => 'Error al eliminar foreign keys',
+            'errors' => $result['errors']
+        ) );
+    }
+}
+add_action( 'wp_ajax_eipsi_fix_foreign_keys', 'eipsi_ajax_fix_foreign_keys' );

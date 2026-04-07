@@ -353,9 +353,22 @@ class EIPSI_Wave_Service {
             return 'unknown';
         }
 
+        // ✅ v1.5.6 - Manejar tanto objetos como arrays
+        $start_date = null;
+        $due_date = null;
+        
+        if (is_array($wave)) {
+            $start_date = !empty($wave['start_date']) ? $wave['start_date'] : null;
+            $due_date = !empty($wave['due_date']) ? $wave['due_date'] : null;
+        } else if (is_object($wave)) {
+            $start_date = !empty($wave->start_date) ? $wave->start_date : null;
+            $due_date = !empty($wave->due_date) ? $wave->due_date : null;
+        }
+        
+        // Usar due_date como fallback para start_date
+        $start_date = $start_date ?: $due_date;
+
         $now = current_time('mysql');
-        $start_date = !empty($wave->start_date) ? $wave->start_date : $wave->due_date;
-        $due_date = !empty($wave->due_date) ? $wave->due_date : null;
 
         // If no dates set, default to active
         if (empty($start_date) && empty($due_date)) {
@@ -366,6 +379,9 @@ class EIPSI_Wave_Service {
         if (!empty($start_date) && strtotime($start_date) > strtotime($now)) {
             return 'upcoming';
         }
+
+        // Obtener el ID del wave (manejar tanto array como objeto)
+        $wave_id = is_array($wave) ? ($wave['id'] ?? 0) : ($wave->id ?? 0);
 
         // If we have due_date
         if (!empty($due_date)) {
@@ -384,7 +400,7 @@ class EIPSI_Wave_Service {
                 $has_in_progress = $wpdb->get_var($wpdb->prepare(
                     "SELECT COUNT(*) FROM {$wpdb->prefix}survey_assignments
                      WHERE wave_id = %d AND status = 'in_progress'",
-                    $wave->id
+                    $wave_id
                 ));
 
                 if ($has_in_progress > 0) {
@@ -401,7 +417,7 @@ class EIPSI_Wave_Service {
             $has_pending = $wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM {$wpdb->prefix}survey_assignments
                  WHERE wave_id = %d AND status = 'pending'",
-                $wave->id
+                $wave_id
             ));
 
             if ($has_pending > 0) {

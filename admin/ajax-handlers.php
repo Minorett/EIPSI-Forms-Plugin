@@ -1392,7 +1392,7 @@ function eipsi_forms_submit_form_handler() {
     $data = array(
         'form_id' => $stable_form_id,
         'participant_id' => $participant_id,
-        'survey_id' => $survey_id,
+        'survey_id' => $study_id,  // ✅ v1.5.6 - Corregido: era $survey_id (undefined)
         'wave_index' => $wave_index,
         'longitudinal_participant_id' => $authenticated_participant_id ?: null,
         'session_id' => $session_id,
