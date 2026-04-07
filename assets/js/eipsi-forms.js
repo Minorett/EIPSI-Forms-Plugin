@@ -3864,6 +3864,48 @@ if ( pages.length === 0 ) {
                     day: 'numeric' 
                 }) : '';
 
+                // ✅ v1.5.7: Mensaje dinámico de recordatorio basado en configuración
+                const reminderDays = nextWaveData.reminder_days !== undefined ? nextWaveData.reminder_days : 0;
+                const intervalDays = nextWaveData.interval_days !== undefined ? nextWaveData.interval_days : 7;
+                const timeUnit = nextWaveData.time_unit || 'days';
+                
+                // Generar mensaje de recordatorio inteligente
+                let reminderMessage = '';
+                if (timeUnit === 'minutes') {
+                    // Para intervalos en minutos
+                    if (intervalDays < 60) {
+                        reminderMessage = `⏱️ Disponible en ${intervalDays} minutos.`;
+                    } else if (intervalDays < 1440) {
+                        const hours = Math.floor(intervalDays / 60);
+                        const mins = intervalDays % 60;
+                        reminderMessage = mins > 0 
+                            ? `⏱️ Disponible en ${hours} horas y ${mins} minutos.`
+                            : `⏱️ Disponible en ${hours} horas.`;
+                    } else {
+                        const days = Math.floor(intervalDays / 1440);
+                        reminderMessage = `📅 Disponible en ${days} día${days > 1 ? 's' : ''}.`;
+                    }
+                } else {
+                    // Para intervalos en días
+                    if (intervalDays === 0) {
+                        reminderMessage = '⚡ Disponible inmediatamente.';
+                    } else if (intervalDays === 1) {
+                        reminderMessage = '📅 Disponible mañana.';
+                    } else {
+                        reminderMessage = `📅 Disponible en ${intervalDays} días.`;
+                    }
+                }
+                
+                // Mensaje de recordatorio por email
+                let emailReminderMessage = '';
+                if (reminderDays === 0) {
+                    emailReminderMessage = '📧 Recibirás un recordatorio por email el mismo día.';
+                } else if (reminderDays === 1) {
+                    emailReminderMessage = '📧 Recibirás un recordatorio por email 1 día antes.';
+                } else {
+                    emailReminderMessage = `📧 Recibirás un recordatorio por email ${reminderDays} días antes.`;
+                }
+
                 nextWaveHtml = `
                     <div class="eipsi-next-wave-info" style="margin: 30px 0; padding: 20px; background: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 4px;">
                         <h3 style="margin: 0 0 12px 0; font-size: 18px; color: #0369a1; display: flex; align-items: center; gap: 8px;">
@@ -3876,9 +3918,11 @@ if ( pages.length === 0 ) {
                         ${formattedDate ? `<p style="margin: 0 0 15px 0; font-size: 14px; color: #6b7280;">
                             📅 Fecha estimada: ${formattedDate}
                         </p>` : ''}
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #4b5563; display: flex; align-items: center; gap: 8px;">
+                            ${reminderMessage}
+                        </p>
                         <p style="margin: 0; font-size: 13px; color: #9ca3af; display: flex; align-items: center; gap: 8px;">
-                            <span>📧</span>
-                            Recibirás un recordatorio por email 7 días antes de la fecha.
+                            ${emailReminderMessage}
                         </p>
                     </div>
                 `;

@@ -431,9 +431,12 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
     $timing_intervals = isset($timing_config['timing_intervals']) ? $timing_config['timing_intervals'] : array();
     // Build a map: from_wave_index => interval_days
     $interval_map = array();
+    $time_unit_map = array(); // ✅ v1.5.7: Guardar también el time_unit
     foreach ($timing_intervals as $interval) {
         if (isset($interval['from_wave']) && isset($interval['days_after'])) {
             $interval_map[$interval['from_wave']] = absint($interval['days_after']);
+            // Guardar time_unit (default: 'days')
+            $time_unit_map[$interval['from_wave']] = isset($interval['time_unit']) && $interval['time_unit'] === 'minutes' ? 'minutes' : 'days';
         }
     }
 
@@ -458,8 +461,11 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
         // In wizard step 3, intervals use 0-based from_wave: interval for T2 (wave_index 2) is from_wave=1
         if ($wave_index > 1 && isset($interval_map[$wave_index - 1])) {
             $wave_data['interval_days'] = $interval_map[$wave_index - 1];
+            // Guardar también el time_unit (default: 'days')
+            $wave_data['time_unit'] = isset($time_unit_map[$wave_index - 1]) ? $time_unit_map[$wave_index - 1] : 'days';
         } else {
             $wave_data['interval_days'] = 0; // First wave has no previous wave
+            $wave_data['time_unit'] = 'days'; // Default for first wave
         }
 
         // Skip if no form_id

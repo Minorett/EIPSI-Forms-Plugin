@@ -1999,9 +1999,10 @@ class EIPSI_Database_Schema_Manager {
             );
         }
 
-        // Ensure required columns exist (v1.5.5+)
+        // Ensure required columns exist (v1.5.7+)
         $required_columns = array(
             'interval_days' => "ALTER TABLE {$table_name} ADD COLUMN interval_days INT(11) DEFAULT 7 AFTER due_date",
+            'time_unit' => "ALTER TABLE {$table_name} ADD COLUMN time_unit VARCHAR(10) DEFAULT 'days' AFTER interval_days",
         );
 
         foreach ( $required_columns as $column => $alter_sql ) {

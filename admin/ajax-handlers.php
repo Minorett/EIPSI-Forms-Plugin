@@ -1635,10 +1635,20 @@ function eipsi_forms_submit_form_handler() {
             
             if ($next_wave) {
                 $has_next_wave = true;
+                
+                // Obtener configuración de la wave (intervalo y recordatorio)
+                $wave_config = $wpdb->get_row($wpdb->prepare(
+                    "SELECT interval_days, reminder_days, time_unit FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                    $next_wave['wave_id']
+                ), ARRAY_A);
+                
                 $next_wave_data = array(
                     'wave_index' => $next_wave['wave_index'],
                     'due_date' => $next_wave['due_date'],
-                    'wave_name' => $next_wave['wave_name']
+                    'wave_name' => $next_wave['wave_name'],
+                    'interval_days' => isset($wave_config['interval_days']) ? intval($wave_config['interval_days']) : 7,
+                    'reminder_days' => isset($wave_config['reminder_days']) ? intval($wave_config['reminder_days']) : 0,
+                    'time_unit' => isset($wave_config['time_unit']) ? $wave_config['time_unit'] : 'days'
                 );
             }
         } else {
