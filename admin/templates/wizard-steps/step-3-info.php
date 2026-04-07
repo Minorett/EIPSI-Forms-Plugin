@@ -19,7 +19,7 @@ $step_2_data = isset($wizard_data['step_2']) ? $wizard_data['step_2'] : array();
 $number_of_waves = isset($step_2_data['number_of_waves']) ? intval($step_2_data['number_of_waves']) : 3;
 
 // Set default values
-$reminder_days_before = isset($step_data['reminder_days_before']) ? intval($step_data['reminder_days_before']) : 3;
+$reminder_days_before = isset($step_data['reminder_days_before']) ? intval($step_data['reminder_days_before']) : 0;
 $retry_after_days = isset($step_data['retry_after_days']) ? intval($step_data['retry_after_days']) : 7;
 $max_retries = isset($step_data['max_retries']) ? intval($step_data['max_retries']) : 3;
 $investigator_notification_days = isset($step_data['investigator_notification_days']) ? intval($step_data['investigator_notification_days']) : 14;
