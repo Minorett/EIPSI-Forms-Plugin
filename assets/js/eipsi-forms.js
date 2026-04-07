@@ -3037,6 +3037,9 @@
                         // Task 2.4B: Pasar datos de próxima toma al thank-you page
                         const nextWaveData = data.data || {};
                         
+                        // ✅ DIAGNÓSTICO: Loguear datos recibidos
+                        console.log('[EIPSI-DIAG] Datos recibidos del servidor:', nextWaveData);
+                        
                         // Show integrated thank-you page after 1.5 seconds
                         setTimeout( () => {
                             this.showIntegratedThankYouPage( form, nextWaveData );

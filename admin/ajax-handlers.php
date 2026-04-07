@@ -1564,16 +1564,31 @@ function eipsi_forms_submit_form_handler() {
         
         // v1.5.6 - Si hay contexto longitudinal (wave_id detectable), actualizar assignment
         // Usar longitudinal_participant_id (INT) y study_id en lugar de participant_id (string) y survey_id
+        
+        // ✅ DIAGNÓSTICO: Siempre loguear variables críticas
+        error_log(sprintf(
+            '[EIPSI-DIAG] Pre-check: wave_id=%s, study_id=%s, longitudinal_participant_id=%s',
+            $wave_id ?: 'NULL',
+            $study_id ?: 'NULL',
+            $longitudinal_participant_id ?: 'NULL'
+        ));
+        
         if (!empty($wave_id) && $study_id && $longitudinal_participant_id) {
             // Cargar Wave_Service
             require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/Wave_Service.php';
 
             // ✅ FIX: Si el assignment no existe, crearlo primero (fallback defensivo)
             // Cargar el servicio si no está disponible (verificar función, no clase)
-            if (!function_exists('eipsi_create_assignments_for_participant')) {
+            $func_exists_before = function_exists('eipsi_create_assignments_for_participant');
+            error_log('[EIPSI-DIAG] Función eipsi_create_assignments_for_participant existe ANTES: ' . ($func_exists_before ? 'SÍ' : 'NO'));
+            
+            if (!$func_exists_before) {
                 $assignment_service_path = EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
-                if (file_exists($assignment_service_path)) {
+                $file_exists = file_exists($assignment_service_path);
+                error_log('[EIPSI-DIAG] Archivo class-assignment-service.php existe: ' . ($file_exists ? 'SÍ' : 'NO'));
+                if ($file_exists) {
                     require_once $assignment_service_path;
+                    error_log('[EIPSI-DIAG] Archivo cargado. Función existe DESPUÉS: ' . (function_exists('eipsi_create_assignments_for_participant') ? 'SÍ' : 'NO'));
                 }
             }
             
@@ -1585,33 +1600,38 @@ function eipsi_forms_submit_form_handler() {
                 $longitudinal_participant_id
             ));
             
+            error_log(sprintf('[EIPSI-DIAG] Assignment existente para wave_id=%d, participant_id=%d: %s',
+                $wave_id, $longitudinal_participant_id, $existing_assignment ?: 'NO ENCONTRADO'
+            ));
+            
             // Si no existe, crearlo primero
             if (!$existing_assignment && function_exists('eipsi_create_assignments_for_participant')) {
+                error_log(sprintf('[EIPSI-DIAG] Creando assignments para participant_id=%d, study_id=%d', 
+                    $longitudinal_participant_id, $study_id));
                 $create_result = eipsi_create_assignments_for_participant($longitudinal_participant_id, $study_id);
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log(sprintf(
-                        '[EIPSI] Auto-created assignments for participant %d: created=%d, skipped=%d',
-                        $longitudinal_participant_id,
-                        $create_result['created'],
-                        $create_result['skipped']
-                    ));
+                error_log(sprintf(
+                    '[EIPSI-DIAG] Resultado creación: created=%d, skipped=%d, errors=%d',
+                    $create_result['created'],
+                    $create_result['skipped'],
+                    count($create_result['errors'])
+                ));
+                if (!empty($create_result['errors'])) {
+                    error_log('[EIPSI-DIAG] Errores: ' . implode(', ', $create_result['errors']));
                 }
+            } elseif (!$existing_assignment) {
+                error_log('[EIPSI-DIAG] ERROR: Función eipsi_create_assignments_for_participant NO disponible');
             }
 
             // Marcar assignment como submitted usando study_id (columna correcta en wp_survey_assignments)
+            error_log(sprintf('[EIPSI-DIAG] Marcando como submitted: participant_id=%d, study_id=%d, wave_id=%d',
+                $longitudinal_participant_id, $study_id, $wave_id));
             $marked = Wave_Service::mark_assignment_submitted($longitudinal_participant_id, $study_id, $wave_id);
-            
-            if (!$marked && defined('WP_DEBUG') && WP_DEBUG) {
-                error_log(sprintf(
-                    '[EIPSI] Warning: No se pudo marcar assignment como submitted (participant_id=%d, study_id=%d, wave_id=%d)',
-                    $longitudinal_participant_id,
-                    $study_id,
-                    $wave_id
-                ));
-            }
+            error_log('[EIPSI-DIAG] Resultado mark_assignment_submitted: ' . ($marked ? 'ÉXITO' : 'FALLÓ'));
             
             // Obtener próxima toma pendiente usando study_id
             $next_wave = Wave_Service::get_next_pending_wave($longitudinal_participant_id, $study_id);
+            
+            error_log(sprintf('[EIPSI-DIAG] Próxima wave pendiente: %s', $next_wave ? 'ENCONTRADA (index=' . $next_wave['wave_index'] . ')' : 'NO ENCONTRADA'));
             
             if ($next_wave) {
                 $has_next_wave = true;
@@ -1621,6 +1641,11 @@ function eipsi_forms_submit_form_handler() {
                     'wave_name' => $next_wave['wave_name']
                 );
             }
+        } else {
+            error_log('[EIPSI-DIAG] CONDICIÓN NO CUMPLIDA - No se procesa assignment. Faltan: ' . 
+                (empty($wave_id) ? 'wave_id ' : '') .
+                (!$study_id ? 'study_id ' : '') .
+                (!$longitudinal_participant_id ? 'longitudinal_participant_id' : ''));
         }
         
         // Preparar respuesta de éxito con información de próximas tomas

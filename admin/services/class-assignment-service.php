@@ -520,25 +520,20 @@ class EIPSI_Assignment_Service {
             $study_id
         ));
 
-        // ✅ DEBUG: Log para verificar waves encontradas
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log(sprintf(
-                '[EIPSI] Creating assignments for study %d, participant %d: found %d waves (status: active/draft)',
-                $study_id,
-                $participant_id,
-                count($active_waves)
-            ));
-            foreach ($active_waves as $w) {
-                error_log(sprintf('[EIPSI] Wave found: id=%d, wave_index=%d, name=%s, status=%s', 
-                    $w->id, $w->wave_index, $w->name, $w->status));
-            }
+        // ✅ DEBUG: Log para verificar waves encontradas (siempre activo para diagnóstico)
+        error_log(sprintf(
+            '[EIPSI-DIAG-CREATE] Buscando waves para study %d: encontradas %d waves',
+            $study_id,
+            count($active_waves)
+        ));
+        foreach ($active_waves as $w) {
+            error_log(sprintf('[EIPSI-DIAG-CREATE] Wave: id=%d, wave_index=%d, name=%s, status=%s', 
+                $w->id, $w->wave_index, $w->name, $w->status));
         }
 
         if (empty($active_waves)) {
             // No active waves - not an error, just nothing to do
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log(sprintf('[EIPSI] No active/draft waves found for study %d', $study_id));
-            }
+            error_log(sprintf('[EIPSI-DIAG-CREATE] No se encontraron waves para study %d', $study_id));
             return $result;
         }
 
@@ -586,17 +581,15 @@ class EIPSI_Assignment_Service {
             }
         }
 
-        // Log the result
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log(sprintf(
-                '[EIPSI] Created %d assignments for participant %d in study %d (skipped: %d, errors: %d)',
-                $result['created'],
-                $participant_id,
-                $study_id,
-                $result['skipped'],
-                count($result['errors'])
-            ));
-        }
+        // Log the result (siempre activo para diagnóstico)
+        error_log(sprintf(
+            '[EIPSI-DIAG-CREATE] Final: creados=%d, skipped=%d, errores=%d para participant %d, study %d',
+            $result['created'],
+            $result['skipped'],
+            count($result['errors']),
+            $participant_id,
+            $study_id
+        ));
 
         return $result;
     }
