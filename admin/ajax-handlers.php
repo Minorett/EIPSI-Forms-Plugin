@@ -1178,7 +1178,7 @@ function eipsi_forms_submit_form_handler() {
     // v1.5.6 - Para operaciones longitudinales (assignments), usar el participant_id autenticado
     // El participant_id del frontend es un fingerprint/string, pero las tablas de assignments usan INT
     $longitudinal_participant_id = $authenticated_participant_id;
-    
+
     // Capture longitudinal context (v1.4.0) - usar study_id en lugar de survey_id
     // Prioridad: authenticated_study_id > POST > GET > fallback desde wave_id
     $study_id = $authenticated_study_id;
@@ -1195,7 +1195,6 @@ function eipsi_forms_submit_form_handler() {
     
     // Fallback 3: obtener desde wave_id si está disponible
     if (empty($study_id) && !empty($wave_id)) {
-        global $wpdb;
         $study_id_from_wave = $wpdb->get_var($wpdb->prepare(
             "SELECT study_id FROM {$wpdb->prefix}survey_waves WHERE id = %d",
             $wave_id
@@ -1228,7 +1227,7 @@ function eipsi_forms_submit_form_handler() {
         if (class_exists('EIPSI_Wave_Service')) {
             $pending = EIPSI_Wave_Service::get_next_pending_wave($longitudinal_participant_id, $study_id);
             if ($pending) {
-                $wave_id = (int) $pending->id;
+                $wave_id = (int) $pending['wave_id'];
             }
         }
     }
@@ -1241,6 +1240,31 @@ function eipsi_forms_submit_form_handler() {
         ));
         if ($wave_index_val !== null) {
             $wave_index = (int) $wave_index_val;
+        }
+    }
+    
+    // ✅ FIX: Si no tenemos participant_id autenticado, intentar obtenerlo desde el email
+    // Esto debe ir DESPUÉS de que $study_id está completamente resuelto
+    if (empty($longitudinal_participant_id) && !empty($user_data['email']) && $study_id) {
+        $longitudinal_participant_id = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}survey_participants WHERE email = %s AND survey_id = %d LIMIT 1",
+            $user_data['email'],
+            $study_id
+        ));
+        if ($longitudinal_participant_id && defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf('[EIPSI] Fallback: participant_id %d obtenido desde email %s', $longitudinal_participant_id, $user_data['email']));
+        }
+    }
+    
+    // ✅ FIX: Si aún no tenemos participant_id, intentar desde el fingerprint
+    if (empty($longitudinal_participant_id) && !empty($frontend_participant_id) && $study_id) {
+        $longitudinal_participant_id = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}survey_participants WHERE fingerprint = %s AND survey_id = %d LIMIT 1",
+            $frontend_participant_id,
+            $study_id
+        ));
+        if ($longitudinal_participant_id && defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf('[EIPSI] Fallback: participant_id %d obtenido desde fingerprint %s', $longitudinal_participant_id, $frontend_participant_id));
         }
     }
 
@@ -1526,6 +1550,17 @@ function eipsi_forms_submit_form_handler() {
         // === Task 2.4B: Marcar assignment como submitted y obtener próxima toma ===
         $next_wave_data = null;
         $has_next_wave = false;
+        
+        // ✅ v1.5.6 - DEBUG: Log para verificar variables de contexto longitudinal
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                '[EIPSI] Longitudinal context check: wave_id=%s, study_id=%s, longitudinal_participant_id=%s, user_email=%s',
+                $wave_id ?: 'NULL',
+                $study_id ?: 'NULL',
+                $longitudinal_participant_id ?: 'NULL',
+                $user_data['email'] ?: 'NULL'
+            ));
+        }
         
         // v1.5.6 - Si hay contexto longitudinal (wave_id detectable), actualizar assignment
         // Usar longitudinal_participant_id (INT) y study_id en lugar de participant_id (string) y survey_id
