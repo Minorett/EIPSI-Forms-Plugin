@@ -356,13 +356,13 @@ $nonce = wp_create_nonce('eipsi_admin_nonce');
 
         const filters = getFilters();
 
-        console.log( 'Sending AJAX with study_id:', studyId, 'action: eipsi_get_participants_wide_preview' );
+        console.log( 'Sending AJAX with study_id:', studyId, 'action: eipsi_get_participant_preview' );
 
         $.ajax( {
             url: ajaxurl,
             type: 'POST',
             data: Object.assign( {
-                action: 'eipsi_get_participants_wide_preview',
+                action: 'eipsi_get_participant_preview', // Fixed: matches handler name
                 nonce: nonce,
                 study_id: studyId,
             }, filters ),

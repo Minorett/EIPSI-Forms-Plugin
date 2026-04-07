@@ -9,6 +9,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Prevent Hostinger CDN caching on dynamic admin content
+nocache_headers();
+
 // Enqueue styles and scripts
 wp_enqueue_style('eipsi-longitudinal-studies-tab', EIPSI_FORMS_PLUGIN_URL . 'assets/css/longitudinal-studies-tab.css', array(), EIPSI_FORMS_VERSION);
 wp_enqueue_style('eipsi-study-dashboard-css', EIPSI_FORMS_PLUGIN_URL . 'assets/css/study-dashboard.css', array(), EIPSI_FORMS_VERSION);
