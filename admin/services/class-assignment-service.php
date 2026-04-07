@@ -12,6 +12,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// ✅ DIAGNÓSTICO: Confirmar que se cargó este archivo
+error_log('[EIPSI-DIAG-CREATE] Archivo class-assignment-service.php CARGADO - versión 1.5.7');
+
 class EIPSI_Assignment_Service {
 
     /**
@@ -485,6 +488,10 @@ class EIPSI_Assignment_Service {
     public static function create_assignments_for_participant($participant_id, $study_id) {
         global $wpdb;
 
+        // ✅ DIAGNÓSTICO: Confirmar que se ejecutó la función
+        error_log(sprintf('[EIPSI-DIAG-CREATE] >>> FUNCIÓN create_assignments_for_participant EJECUTÁNDOSE con participant_id=%s, study_id=%s', 
+            $participant_id, $study_id));
+
         $participant_id = absint($participant_id);
         $study_id = absint($study_id);
 
@@ -512,6 +519,21 @@ class EIPSI_Assignment_Service {
 
         // Get all active waves for the study
         // ✅ v1.5.7 - Buscar TODAS las waves sin filtrar por status (las waves pueden tener cualquier estado)
+        $table_name = $wpdb->prefix . 'survey_waves';
+        
+        // ✅ DIAGNÓSTICO: Verificar si la tabla existe
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+        error_log(sprintf('[EIPSI-DIAG-CREATE] Tabla esperada: %s - Existe: %s', 
+            $table_name, 
+            $table_exists ? 'SÍ' : 'NO'
+        ));
+        
+        // Listar todas las tablas que contienen 'wave' para diagnóstico
+        $all_wave_tables = $wpdb->get_col("SHOW TABLES LIKE '%wave%'");
+        error_log(sprintf('[EIPSI-DIAG-CREATE] Tablas con "wave" encontradas: %s', 
+            implode(', ', $all_wave_tables)
+        ));
+        
         $active_waves = $wpdb->get_results($wpdb->prepare(
             "SELECT id, wave_index, name, status 
              FROM {$wpdb->prefix}survey_waves 
