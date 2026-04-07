@@ -1,14 +1,24 @@
 <?php
 /**
+ * AJAX Handlers for Study Controls (Pause, Resume, Close)
+ *
+ * @since 1.6.1
+ */
+
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
  * AJAX Handler: Pause study
  * Sets study status to 'paused' - stops reminders and new submissions
- * 
- * @since 1.6.1
  */
 add_action('wp_ajax_eipsi_pause_study', 'eipsi_pause_study_handler');
 
 function eipsi_pause_study_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+    
     if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error(array('message' => 'No tienes permisos'));
     }
@@ -41,13 +51,12 @@ function eipsi_pause_study_handler() {
 /**
  * AJAX Handler: Resume study
  * Sets study status back to 'active'
- * 
- * @since 1.6.1
  */
 add_action('wp_ajax_eipsi_resume_study', 'eipsi_resume_study_handler');
 
 function eipsi_resume_study_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+    
     if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error(array('message' => 'No tienes permisos'));
     }
@@ -80,13 +89,12 @@ function eipsi_resume_study_handler() {
 /**
  * AJAX Handler: Get study status counts for dashboard
  * Returns counts of participants by status for a study
- * 
- * @since 1.6.1
  */
 add_action('wp_ajax_eipsi_get_study_status_counts', 'eipsi_get_study_status_counts_handler');
 
 function eipsi_get_study_status_counts_handler() {
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+    
     if (!eipsi_user_can_manage_longitudinal()) {
         wp_send_json_error(array('message' => 'No tienes permisos'));
     }
@@ -106,20 +114,17 @@ function eipsi_get_study_status_counts_handler() {
     
     // Count participants by status
     $active_count = $wpdb->get_var($wpdb->prepare(
-        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants 
-         WHERE survey_id = %d AND is_active = 1",
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants WHERE survey_id = %d AND is_active = 1",
         $study_id
     ));
     
     $completed_count = $wpdb->get_var($wpdb->prepare(
-        "SELECT COUNT(DISTINCT participant_id) FROM {$wpdb->prefix}survey_assignments 
-         WHERE study_id = %d AND status = 'submitted'",
+        "SELECT COUNT(DISTINCT participant_id) FROM {$wpdb->prefix}survey_assignments WHERE study_id = %d AND status = 'submitted'",
         $study_id
     ));
     
     $paused_count = $wpdb->get_var($wpdb->prepare(
-        "SELECT COUNT(DISTINCT participant_id) FROM {$wpdb->prefix}survey_assignments 
-         WHERE study_id = %d AND status = 'paused'",
+        "SELECT COUNT(DISTINCT participant_id) FROM {$wpdb->prefix}survey_assignments WHERE study_id = %d AND status = 'paused'",
         $study_id
     ));
     
