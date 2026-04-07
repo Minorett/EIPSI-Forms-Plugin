@@ -511,11 +511,11 @@ class EIPSI_Assignment_Service {
         }
 
         // Get all active waves for the study
-        // ✅ v1.5.6 - Incluir waves en estado 'active' o 'draft' (las nuevas waves pueden estar en draft)
+        // ✅ v1.5.7 - Buscar TODAS las waves sin filtrar por status (las waves pueden tener cualquier estado)
         $active_waves = $wpdb->get_results($wpdb->prepare(
             "SELECT id, wave_index, name, status 
              FROM {$wpdb->prefix}survey_waves 
-             WHERE study_id = %d AND status IN ('active', 'draft')
+             WHERE study_id = %d
              ORDER BY wave_index ASC",
             $study_id
         ));
