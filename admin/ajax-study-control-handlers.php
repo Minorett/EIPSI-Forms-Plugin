@@ -1,4 +1,4 @@
-
+<?php
 /**
  * AJAX Handler: Pause study
  * Sets study status to 'paused' - stops reminders and new submissions
