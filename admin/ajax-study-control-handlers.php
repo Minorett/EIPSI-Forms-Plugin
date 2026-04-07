@@ -12,7 +12,6 @@ if (!defined('ABSPATH')) {
 
 /**
  * AJAX Handler: Pause study
- * Sets study status to 'paused' - stops reminders and new submissions
  */
 add_action('wp_ajax_eipsi_pause_study', 'eipsi_pause_study_handler');
 
@@ -50,7 +49,6 @@ function eipsi_pause_study_handler() {
 
 /**
  * AJAX Handler: Resume study
- * Sets study status back to 'active'
  */
 add_action('wp_ajax_eipsi_resume_study', 'eipsi_resume_study_handler');
 
@@ -87,8 +85,7 @@ function eipsi_resume_study_handler() {
 }
 
 /**
- * AJAX Handler: Get study status counts for dashboard
- * Returns counts of participants by status for a study
+ * AJAX Handler: Get study status counts
  */
 add_action('wp_ajax_eipsi_get_study_status_counts', 'eipsi_get_study_status_counts_handler');
 
@@ -106,13 +103,11 @@ function eipsi_get_study_status_counts_handler() {
     
     global $wpdb;
     
-    // Get study status
     $study_status = $wpdb->get_var($wpdb->prepare(
         "SELECT status FROM {$wpdb->prefix}survey_studies WHERE id = %d",
         $study_id
     ));
     
-    // Count participants by status
     $active_count = $wpdb->get_var($wpdb->prepare(
         "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants WHERE survey_id = %d AND is_active = 1",
         $study_id
