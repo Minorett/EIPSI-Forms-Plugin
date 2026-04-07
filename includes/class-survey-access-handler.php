@@ -112,7 +112,8 @@ class EIPSI_Survey_Access_Handler {
 
         // v1.5.7 - Create wave assignments for the participant after email confirmation
         // Load assignment service if not already loaded
-        if ( ! class_exists( 'EIPSI_Assignment_Service' ) ) {
+        // ✅ FIX: Verificar función global, no la clase (ambos están en el mismo archivo)
+        if ( ! function_exists( 'eipsi_create_assignments_for_participant' ) ) {
             $assignment_service_path = EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
             if ( file_exists( $assignment_service_path ) ) {
                 require_once $assignment_service_path;

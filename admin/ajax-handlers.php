@@ -1568,6 +1568,32 @@ function eipsi_forms_submit_form_handler() {
             // Cargar Wave_Service
             require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/Wave_Service.php';
 
+            // ✅ FIX: Si el assignment no existe, crearlo primero (fallback defensivo)
+            if (!function_exists('EIPSI_Assignment_Service')) {
+                require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
+            }
+            
+            // Verificar si existe el assignment
+            $existing_assignment = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}survey_assignments 
+                 WHERE wave_id = %d AND participant_id = %d",
+                $wave_id,
+                $longitudinal_participant_id
+            ));
+            
+            // Si no existe, crearlo primero
+            if (!$existing_assignment && function_exists('eipsi_create_assignments_for_participant')) {
+                $create_result = eipsi_create_assignments_for_participant($longitudinal_participant_id, $study_id);
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log(sprintf(
+                        '[EIPSI] Auto-created assignments for participant %d: created=%d, skipped=%d',
+                        $longitudinal_participant_id,
+                        $create_result['created'],
+                        $create_result['skipped']
+                    ));
+                }
+            }
+
             // Marcar assignment como submitted usando study_id (columna correcta en wp_survey_assignments)
             $marked = Wave_Service::mark_assignment_submitted($longitudinal_participant_id, $study_id, $wave_id);
             

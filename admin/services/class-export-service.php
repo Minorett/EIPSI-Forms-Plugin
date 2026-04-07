@@ -277,9 +277,11 @@ public function fetch_participants_data($study_id, $filters = array()) {
     // Index waves by wave_index and by form_id
     $waves_by_index = array();
     $waves_by_form_id = array();
+    $wave_id_to_index = array(); // ✅ Mapeo wave_id -> wave_index
     foreach ($waves as $w) {
         $waves_by_index[$w->wave_index] = $w;
         $waves_by_form_id[$w->form_id] = $w;
+        $wave_id_to_index[$w->id] = $w->wave_index; // Mapear ID de tabla a índice
     }
 
     // --- Step 3: Get longitudinal submissions from vas_form_results ---
@@ -389,8 +391,9 @@ public function fetch_participants_data($study_id, $filters = array()) {
             $wave_status_map = array();
             $submitted_count = 0;
             foreach ($p_assignments as $a) {
-                if (isset($waves_by_index[$a->wave_id])) {
-                    $wi = $waves_by_index[$a->wave_id]->wave_index;
+                // ✅ v1.5.6 - Usar mapeo wave_id -> wave_index
+                if (isset($wave_id_to_index[$a->wave_id])) {
+                    $wi = $wave_id_to_index[$a->wave_id];
                     $wave_status_map[$wi] = array(
                         'status' => $a->status,
                         'submitted_at' => $a->submitted_at,
