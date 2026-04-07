@@ -30,11 +30,11 @@
             <p>Esperamos que estés teniendo una buena semana.</p>
             
             <div class="highlight-box">
-                <p style="margin: 0;"><strong>Tu próxima toma es: {{wave_index}}</strong></p>
-                <p style="margin: 5px 0 0;">Fecha límite: {{due_at}}</p>
+                <p style="margin: 0;"><strong>Tu próxima evaluación está disponible: {{wave_index}}</strong></p>
+                <p style="margin: 5px 0 0; font-size: 14px;">Completarla te tomará aproximadamente <strong>{{estimated_time}} minutos</strong>.</p>
             </div>
             
-            <p>Es importante para nosotros conocer cómo has estado. Completar esta evaluación te tomará aproximadamente <strong>{{estimated_time}} minutos</strong>.</p>
+            <p>Es importante para nosotros conocer cómo has estado. Tu participación es valiosa para el estudio.</p>
             
             <p style="text-align: center; margin: 30px 0;">
                 <a href="{{magic_link}}" class="button">Responder ahora</a>

@@ -4058,6 +4058,173 @@ public static function get_schema_health_summary() {
         );
     }
 
+    /**
+     * Check if any tables need collation fix
+     * Detects tables that don't use utf8mb4_unicode_ci collation
+     * 
+     * @return array Array of tables needing collation fix with their current collations
+     * @since 1.6.1
+     */
+    public static function check_collation_issues() {
+        global $wpdb;
+        
+        $plugin_tables = array(
+            'vas_form_results',
+            'vas_form_events',
+            'eipsi_randomization_configs',
+            'eipsi_randomization_assignments',
+            'survey_studies',
+            'survey_participants',
+            'survey_sessions',
+            'survey_waves',
+            'survey_assignments',
+            'survey_magic_links',
+            'survey_email_log',
+            'survey_audit_log',
+            'survey_email_confirmations',
+            'eipsi_longitudinal_pools',
+            'eipsi_longitudinal_pool_assignments',
+            'survey_participant_access_log',
+            'eipsi_device_data'
+        );
+        
+        $issues = array();
+        $target_collation = 'utf8mb4_unicode_ci';
+        
+        foreach ($plugin_tables as $table) {
+            $full_table_name = $wpdb->prefix . $table;
+            
+            // Check if table exists
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$full_table_name}'");
+            if (empty($table_exists)) {
+                continue;
+            }
+            
+            // Get current table status
+            $status = $wpdb->get_row(
+                $wpdb->prepare(
+                    "SHOW TABLE STATUS LIKE %s",
+                    $full_table_name
+                ),
+                ARRAY_A
+            );
+            
+            if ($status && $status['Collation'] !== $target_collation) {
+                $issues[] = array(
+                    'table' => $table,
+                    'full_table_name' => $full_table_name,
+                    'current_collation' => $status['Collation'],
+                    'target_collation' => $target_collation
+                );
+            }
+        }
+        
+        return array(
+            'needs_fix' => !empty($issues),
+            'issues_count' => count($issues),
+            'issues' => $issues
+        );
+    }
+
+    /**
+     * Execute maintenance SQL statements
+     * Allows running safe maintenance queries on the database
+     * 
+     * @param array $sql_statements Array of SQL statements to execute
+     * @return array Results for each statement
+     * @since 1.6.1
+     */
+    public static function execute_maintenance_sql($sql_statements) {
+        global $wpdb;
+        
+        $results = array();
+        $wpdb->suppress_errors(true);
+        
+        foreach ($sql_statements as $index => $sql) {
+            $sql = trim($sql);
+            if (empty($sql)) {
+                continue;
+            }
+            
+            // Only allow safe maintenance statements
+            $allowed_prefixes = array(
+                'UPDATE wp_survey_',
+                'UPDATE wp_vas_form_',
+                'UPDATE wp_eipsi_',
+                'ALTER TABLE wp_survey_',
+                'ALTER TABLE wp_vas_form_',
+                'ALTER TABLE wp_eipsi_',
+                'DELETE FROM wp_survey_',
+                'DELETE FROM wp_vas_form_',
+                'DELETE FROM wp_eipsi_',
+                'SELECT * FROM wp_survey_',
+                'SELECT * FROM wp_vas_form_',
+                'SELECT * FROM wp_eipsi_',
+                'SELECT COUNT',
+                'SELECT id FROM',
+            );
+            
+            $is_allowed = false;
+            $upper_sql = strtoupper(substr($sql, 0, 100));
+            
+            foreach ($allowed_prefixes as $prefix) {
+                $upper_prefix = strtoupper($prefix);
+                if (strpos($upper_sql, $upper_prefix) !== false) {
+                    $is_allowed = true;
+                    break;
+                }
+            }
+            
+            // Additional safety check: must be related to plugin tables
+            $is_plugin_table = (
+                strpos($upper_sql, 'WP_SURVEY_') !== false ||
+                strpos($upper_sql, 'WP_VAS_FORM_') !== false ||
+                strpos($upper_sql, 'WP_EIPSI_') !== false
+            );
+            
+            if (!$is_allowed || !$is_plugin_table) {
+                $results[] = array(
+                    'index' => $index,
+                    'sql_preview' => substr($sql, 0, 60) . '...',
+                    'success' => false,
+                    'error' => 'Statement not allowed for security reasons. Only plugin table operations permitted.',
+                    'affected_rows' => 0
+                );
+                continue;
+            }
+            
+            // Execute the statement
+            $result = $wpdb->query($sql);
+            
+            if ($result !== false) {
+                $results[] = array(
+                    'index' => $index,
+                    'sql_preview' => substr($sql, 0, 60) . '...',
+                    'success' => true,
+                    'affected_rows' => $wpdb->rows_affected ?? 0,
+                    'last_error' => null
+                );
+            } else {
+                $results[] = array(
+                    'index' => $index,
+                    'sql_preview' => substr($sql, 0, 60) . '...',
+                    'success' => false,
+                    'error' => $wpdb->last_error,
+                    'affected_rows' => 0
+                );
+            }
+        }
+        
+        $wpdb->suppress_errors(false);
+        
+        return array(
+            'success' => true,
+            'total_statements' => count($sql_statements),
+            'executed' => count($results),
+            'results' => $results
+        );
+    }
+
 }
 
 // =================================================================

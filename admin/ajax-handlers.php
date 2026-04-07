@@ -1205,7 +1205,7 @@ function eipsi_forms_submit_form_handler() {
     }
     
     // Debug: Log para verificar survey_id
-    error_log("[EIPSI Forms] Survey ID resolution: authenticated={$authenticated_study_id}, final={$study_id}, wave_id={$wave_id}");
+    error_log("[EIPSI Forms] Survey ID resolution: authenticated={$authenticated_study_id}, final={$study_id}, wave_id=(pending)");
     
     $wave_index = null;
 
@@ -1227,10 +1227,14 @@ function eipsi_forms_submit_form_handler() {
         if (class_exists('EIPSI_Wave_Service')) {
             $pending = EIPSI_Wave_Service::get_next_pending_wave($longitudinal_participant_id, $study_id);
             if ($pending) {
-                $wave_id = (int) $pending['wave_id'];
+                $wave_id = $pending['wave_id'];
+                $wave_index = $pending['wave_index'];
             }
         }
     }
+    
+    // Debug: Log final con wave_id resuelto
+    error_log("[EIPSI Forms] Wave ID resolution: wave_id={$wave_id}, wave_index={$wave_index}");
 
     // Si obtuvimos wave_id, mapear wave_index desde DB
     if (!empty($wave_id)) {
@@ -3950,4 +3954,180 @@ function eipsi_fix_collations_handler() {
     
     $result = EIPSI_Database_Schema_Manager::fix_collations();
     wp_send_json_success($result);
+}
+
+/**
+ * AJAX Handler: Check if collations need fixing
+ * Returns status of collation issues without fixing them
+ * 
+ * @since 1.6.1
+ */
+add_action('wp_ajax_eipsi_check_collation_issues', 'eipsi_check_collation_issues_handler');
+
+function eipsi_check_collation_issues_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    if (!current_user_can('manage_options')) wp_send_json_error();
+    
+    // Load database schema manager if not already loaded
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
+    
+    $result = EIPSI_Database_Schema_Manager::check_collation_issues();
+    wp_send_json_success($result);
+}
+
+/**
+ * AJAX Handler: Execute maintenance SQL
+ * Allows running safe maintenance queries on plugin tables
+ * 
+ * @since 1.6.1
+ */
+add_action('wp_ajax_eipsi_execute_maintenance_sql', 'eipsi_execute_maintenance_sql_handler');
+
+function eipsi_execute_maintenance_sql_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    if (!current_user_can('manage_options')) wp_send_json_error(array('message' => 'No tienes permisos'));
+    
+    $sql_statements = isset($_POST['sql_statements']) ? $_POST['sql_statements'] : array();
+    
+    if (empty($sql_statements) || !is_array($sql_statements)) {
+        wp_send_json_error(array('message' => 'No se proporcionaron sentencias SQL'));
+    }
+    
+    // Sanitize SQL statements
+    $sanitized_statements = array_map('sanitize_textarea_field', $sql_statements);
+    
+    // Load database schema manager if not already loaded
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
+    
+    $result = EIPSI_Database_Schema_Manager::execute_maintenance_sql($sanitized_statements);
+    wp_send_json_success($result);
+}
+
+/**
+ * AJAX Handler: Check for schema issues that need auto-fix
+ * Detects common data inconsistencies
+ * 
+ * @since 1.6.1
+ */
+add_action('wp_ajax_eipsi_check_schema_issues', 'eipsi_check_schema_issues_handler');
+
+function eipsi_check_schema_issues_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    if (!current_user_can('manage_options')) wp_send_json_error();
+    
+    global $wpdb;
+    
+    $issues = array();
+    $needs_fix = false;
+    
+    // Check 1: Waves with invalid time_unit (NULL, empty, '0')
+    $invalid_time_unit = $wpdb->get_var(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_waves 
+         WHERE time_unit IS NULL OR time_unit = '' OR time_unit = '0'"
+    );
+    if ($invalid_time_unit > 0) {
+        $issues[] = array(
+            'type' => 'invalid_time_unit',
+            'description' => 'Waves con time_unit inválido',
+            'count' => intval($invalid_time_unit)
+        );
+        $needs_fix = true;
+    }
+    
+    // Check 2: Participants without proper assignments
+    $orphaned_participants = $wpdb->get_var(
+        "SELECT COUNT(DISTINCT p.id) FROM {$wpdb->prefix}survey_participants p
+         LEFT JOIN {$wpdb->prefix}survey_assignments a ON p.id = a.participant_id
+         WHERE a.id IS NULL"
+    );
+    if ($orphaned_participants > 0) {
+        $issues[] = array(
+            'type' => 'orphaned_participants',
+            'description' => 'Participantes sin assignments',
+            'count' => intval($orphaned_participants)
+        );
+        $needs_fix = true;
+    }
+    
+    wp_send_json_success(array(
+        'needs_fix' => $needs_fix,
+        'issues' => $issues,
+        'total_issues' => count($issues)
+    ));
+}
+
+/**
+ * AJAX Handler: Auto-fix schema issues
+ * Automatically fixes common data inconsistencies
+ * 
+ * @since 1.6.1
+ */
+add_action('wp_ajax_eipsi_auto_fix_schema_issues', 'eipsi_auto_fix_schema_issues_handler');
+
+function eipsi_auto_fix_schema_issues_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    if (!current_user_can('manage_options')) wp_send_json_error(array('message' => 'No tienes permisos'));
+    
+    global $wpdb;
+    
+    $fixes = array();
+    $wpdb->suppress_errors(true);
+    
+    // Fix 1: Set default time_unit = 'days' for waves with invalid values
+    $result = $wpdb->query(
+        "UPDATE {$wpdb->prefix}survey_waves 
+         SET time_unit = 'days' 
+         WHERE time_unit IS NULL OR time_unit = '' OR time_unit = '0'"
+    );
+    if ($result !== false && $wpdb->rows_affected > 0) {
+        $fixes[] = array(
+            'type' => 'time_unit_default',
+            'description' => 'Waves corregidas con time_unit = days',
+            'affected_rows' => $wpdb->rows_affected
+        );
+        error_log("[EIPSI Auto-Fix] Set time_unit='days' for {$wpdb->rows_affected} waves");
+    }
+    
+    // Fix 2: Create missing assignments for participants in active studies
+    // This is more complex - get participants without assignments and create them
+    $orphaned = $wpdb->get_results(
+        "SELECT DISTINCT p.id as participant_id, p.survey_id as study_id
+         FROM {$wpdb->prefix}survey_participants p
+         LEFT JOIN {$wpdb->prefix}survey_assignments a ON p.id = a.participant_id AND p.survey_id = a.study_id
+         WHERE a.id IS NULL AND p.status != 'inactive'"
+    );
+    
+    if (!empty($orphaned)) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
+        $created_count = 0;
+        
+        foreach ($orphaned as $orphan) {
+            if (class_exists('EIPSI_Assignment_Service')) {
+                $result = EIPSI_Assignment_Service::create_assignments_for_participant(
+                    $orphan->participant_id, 
+                    $orphan->study_id
+                );
+                if ($result['success'] && $result['created'] > 0) {
+                    $created_count += $result['created'];
+                }
+            }
+        }
+        
+        if ($created_count > 0) {
+            $fixes[] = array(
+                'type' => 'missing_assignments',
+                'description' => 'Assignments creados para participantes',
+                'affected_rows' => $created_count
+            );
+            error_log("[EIPSI Auto-Fix] Created {$created_count} missing assignments");
+        }
+    }
+    
+    $wpdb->suppress_errors(false);
+    
+    wp_send_json_success(array(
+        'success' => true,
+        'fixes' => $fixes,
+        'total_fixes' => count($fixes)
+    ));
 }

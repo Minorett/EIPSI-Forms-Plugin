@@ -31,11 +31,12 @@
             <p>¡Gracias por tu tiempo y compromiso! Tu participación es muy valiosa.</p>
             
             <div class="next-step">
-                <p style="margin: 0;"><strong>Próxima toma:</strong> {{next_wave_index}}</p>
-                <p style="margin: 5px 0 0;">Fecha estimada: {{next_due_at}}</p>
+                <p style="margin: 0;"><strong>Próximo paso:</strong> Te enviaremos un email cuando tu siguiente evaluación esté disponible.</p>
             </div>
             
-            <p style="margin-top: 20px; font-size: 14px;">Te enviaremos un recordatorio cuando esté disponible.</p>
+            <p style="margin-top: 20px; font-size: 14px; color: #666;">
+                Nota: El estudio puede pausarse o finalizar según la planificación del investigador.
+            </p>
         </div>
         <div class="footer">
             <p>Estudio: {{survey_name}}</p>

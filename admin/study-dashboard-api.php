@@ -124,9 +124,19 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants WHERE survey_id = %d",
             $study_id
         )),
+        'active' => (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants 
+             WHERE survey_id = %d AND is_active = 1",
+            $study_id
+        )),
         'completed' => (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(DISTINCT participant_id) FROM {$wpdb->prefix}survey_assignments 
              WHERE study_id = %d AND status = 'submitted'",
+            $study_id
+        )),
+        'paused' => (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT participant_id) FROM {$wpdb->prefix}survey_assignments 
+             WHERE study_id = %d AND status = 'paused'",
             $study_id
         )),
         'in_progress' => (int) $wpdb->get_var($wpdb->prepare(

@@ -37,6 +37,9 @@ $table_display_names = array(
     'survey_participant_access_log' => 'Access Log',
     'eipsi_device_data' => 'Device Data'
 );
+// Get collation issues status
+$collation_issues = EIPSI_Database_Schema_Manager::check_collation_issues();
+$needs_collation_fix = $collation_issues['needs_fix'];
 ?>
 
 <div id="schema-status-tab" class="schema-status-tab-container">
@@ -45,15 +48,40 @@ $table_display_names = array(
     <!-- Refresh Controls -->
     <div class="monitoring-controls">
         <button id="refresh-schema" class="button button-primary">🔄 Refresh Now</button>
-        <button id="fix-collations" class="button button-secondary">🔧 Corregir Collations</button>
+        <?php if ($needs_collation_fix): ?>
+        <button id="fix-collations" class="button button-secondary" data-needs-fix="true">
+            🔧 Corregir Collations 
+            <span class="collation-badge"><?php echo intval($collation_issues['issues_count']); ?></span>
+        </button>
+        <?php endif; ?>
         <label>
             <input type="checkbox" id="auto-refresh-schema" checked>
             Auto-refresh every 30s
         </label>
         <button id="export-schema-report" class="button button-secondary">📥 Export Report</button>
+        <button id="toggle-maintenance-sql" class="button button-link" style="font-size: 12px; color: #666; text-decoration: underline; margin-left: auto;">
+            Advanced ▼
+        </button>
         <span id="schema-last-update" class="monitoring-timestamp">
             Last update: <?php echo $schema_status['last_verified'] ? esc_html($schema_status['last_verified']) : 'Never'; ?>
         </span>
+    </div>
+
+    <!-- Auto-Fix Banner (shown if issues detected) -->
+    <div id="auto-fix-banner" class="auto-fix-banner" style="display: none; margin-bottom: 20px;">
+        <div class="monitoring-card" style="border-left: 4px solid #ff9800;">
+            <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; padding: 15px;">
+                <div>
+                    <strong>⚠️ Se detectaron problemas en la base de datos</strong>
+                    <p style="margin: 5px 0 0 0; color: #666; font-size: 13px;">
+                        Algunas configuraciones pueden estar incorrectas. Se recomienda ejecutar la corrección automática.
+                    </p>
+                </div>
+                <button id="auto-fix-issues" class="button button-primary" style="white-space: nowrap;">
+                    🔧 Auto-Fix Issues
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Schema Health Summary Card -->
@@ -221,6 +249,37 @@ $table_display_names = array(
             </div>
         </div>
         <?php endforeach; ?>
+    </div>
+
+    <!-- Maintenance SQL Section (Advanced - Collapsed by default) -->
+    <div id="maintenance-sql-section" class="maintenance-sql-section" style="display: none; margin-top: 20px;">
+        <div class="monitoring-card" style="border: 1px dashed #ccc;">
+            <div class="card-header" style="background: #fafafa; padding: 10px 15px;">
+                <h3 style="font-size: 14px; margin: 0; color: #666;">🛠️ Advanced: SQL Maintenance</h3>
+                <span style="font-size: 11px; color: #999;">Last resort manual tool</span>
+            </div>
+            <div class="card-body" style="padding: 15px;">
+                <p style="margin: 0 0 10px 0; color: #999; font-size: 12px;">
+                    ⚠️ <strong>Warning:</strong> For advanced users only. Use the "Auto-Fix" button above first.
+                </p>
+                
+                <textarea id="maintenance-sql-input" rows="3" style="width: 100%; font-family: monospace; font-size: 11px; padding: 8px; border: 1px solid #ddd; border-radius: 3px;" placeholder="-- SQL commands here (UPDATE, SELECT, etc.)"></textarea>
+                
+                <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+                    <button id="execute-maintenance-sql" class="button button-small" style="font-size: 11px;">
+                        ▶️ Execute
+                    </button>
+                    <button id="clear-maintenance-sql" class="button button-small" style="font-size: 11px;">
+                        Clear
+                    </button>
+                    <span id="maintenance-sql-status" style="font-size: 11px; color: #666;"></span>
+                </div>
+                
+                <div id="maintenance-sql-results" style="margin-top: 10px; display: none; font-size: 11px;">
+                    <div id="maintenance-sql-results-content" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -487,6 +546,220 @@ jQuery(document).ready(function($) {
         }
     });
     
+    // Toggle maintenance SQL section
+    $('#toggle-maintenance-sql').click(function() {
+        const section = $('#maintenance-sql-section');
+        section.toggle();
+        $(this).text(section.is(':visible') ? 'Advanced ▲' : 'Advanced ▼');
+    });
+    
+    // Auto-Fix Issues
+    $('#auto-fix-issues').click(function() {
+        if (!confirm('� Esto ejecutará correcciones automáticas para problemas comunes:\n\n' +
+                     '• Waves con time_unit inválido (0, null, vacío)\n' +
+                     '• Otras inconsistencias de datos\n\n' +
+                     '¿Deseas continuar?')) {
+            return;
+        }
+        
+        const $btn = $(this);
+        $btn.prop('disabled', true).text('⏳ Corrigiendo...');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_auto_fix_schema_issues',
+                nonce: nonce,
+            },
+            success: function(response) {
+                $btn.prop('disabled', false).text('� Auto-Fix Issues');
+                
+                if (response.success) {
+                    const result = response.data;
+                    let message = '✅ Correcciones aplicadas:\n\n';
+                    
+                    if (result.fixes.length === 0) {
+                        message = '✅ No se encontraron problemas que requieran corrección.';
+                    } else {
+                        result.fixes.forEach(function(fix) {
+                            message += `• ${fix.description}: ${fix.affected_rows} fila(s)\n`;
+                        });
+                    }
+                    
+                    alert(message);
+                    
+                    // Hide banner and refresh
+                    $('#auto-fix-banner').hide();
+                    loadSchemaStatus();
+                } else {
+                    alert('❌ Error: ' + (response.data?.message || 'Error desconocido'));
+                }
+            },
+            error: function() {
+                $btn.prop('disabled', false).text('🔧 Auto-Fix Issues');
+                alert('❌ Error de conexión');
+            }
+        });
+    });
+    
+    // Check for issues that need auto-fix
+    function checkAutoFixIssues() {
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_check_schema_issues',
+                nonce: nonce,
+            },
+            success: function(response) {
+                if (response.success && response.data.needs_fix) {
+                    $('#auto-fix-banner').show();
+                } else {
+                    $('#auto-fix-banner').hide();
+                }
+            }
+        });
+    }
+    
+    // Execute maintenance SQL
+    $('#execute-maintenance-sql').click(function() {
+        const sqlInput = $('#maintenance-sql-input').val().trim();
+        if (!sqlInput) {
+            alert('Por favor ingresa al menos una sentencia SQL');
+            return;
+        }
+        
+        // Split by semicolons and newlines, filter empty
+        const statements = sqlInput.split(/[;\n]+/)
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+        
+        if (statements.length === 0) {
+            alert('No se encontraron sentencias SQL válidas');
+            return;
+        }
+        
+        const $btn = $(this);
+        const $status = $('#maintenance-sql-status');
+        const $results = $('#maintenance-sql-results');
+        const $resultsContent = $('#maintenance-sql-results-content');
+        
+        if (!confirm(`Vas a ejecutar ${statements.length} sentencia(s) SQL.\n\n¿Estás seguro?`)) {
+            return;
+        }
+        
+        $btn.prop('disabled', true).text('⏳ Ejecutando...');
+        $status.text('Enviando consultas...');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_execute_maintenance_sql',
+                nonce: nonce,
+                sql_statements: statements
+            },
+            success: function(response) {
+                $btn.prop('disabled', false).text('▶️ Ejecutar SQL');
+                
+                if (response.success) {
+                    const result = response.data;
+                    let html = '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
+                    html += '<thead><tr style="background: #f5f5f5;">';
+                    html += '<th style="padding: 8px; border: 1px solid #ddd;">#</th>';
+                    html += '<th style="padding: 8px; border: 1px solid #ddd;">SQL</th>';
+                    html += '<th style="padding: 8px; border: 1px solid #ddd;">Estado</th>';
+                    html += '<th style="padding: 8px; border: 1px solid #ddd;">Filas Afectadas</th>';
+                    html += '</tr></thead><tbody>';
+                    
+                    let successCount = 0;
+                    let errorCount = 0;
+                    
+                    result.results.forEach(function(res) {
+                        const isSuccess = res.success;
+                        if (isSuccess) successCount++;
+                        else errorCount++;
+                        
+                        html += '<tr>';
+                        html += '<td style="padding: 8px; border: 1px solid #ddd;">' + (res.index + 1) + '</td>';
+                        html += '<td style="padding: 8px; border: 1px solid #ddd; font-family: monospace; font-size: 11px;">' + res.sql_preview + '</td>';
+                        html += '<td style="padding: 8px; border: 1px solid #ddd; color: ' + (isSuccess ? '#4CAF50' : '#f44336') + '">';
+                        html += isSuccess ? '✅ OK' : '❌ Error';
+                        if (!isSuccess && res.error) {
+                            html += '<br><small style="color: #666;">' + res.error + '</small>';
+                        }
+                        html += '</td>';
+                        html += '<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">' + (res.affected_rows || 0) + '</td>';
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table>';
+                    
+                    $resultsContent.html(html);
+                    $results.show();
+                    $status.html(`<span style="color: ${errorCount > 0 ? '#f44336' : '#4CAF50'}">✓ ${successCount} exitosas, ${errorCount} errores</span>`);
+                    
+                    // Refresh schema status after SQL execution
+                    setTimeout(loadSchemaStatus, 1000);
+                } else {
+                    $status.text('❌ Error: ' + (response.data?.message || 'Error desconocido'));
+                }
+            },
+            error: function() {
+                $btn.prop('disabled', false).text('▶️ Ejecutar SQL');
+                $status.text('❌ Error de conexión');
+            }
+        });
+    });
+    
+    // Clear maintenance SQL
+    $('#clear-maintenance-sql').click(function() {
+        $('#maintenance-sql-input').val('');
+        $('#maintenance-sql-results').hide();
+        $('#maintenance-sql-results-content').empty();
+        $('#maintenance-sql-status').text('');
+    });
+    
+    // Check collations periodically
+    function checkCollations() {
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_check_collation_issues',
+                nonce: nonce,
+            },
+            success: function(response) {
+                if (response.success) {
+                    const result = response.data;
+                    const $btn = $('#fix-collations');
+                    
+                    if (result.needs_fix) {
+                        if ($btn.length === 0) {
+                            // Button doesn't exist, create it
+                            $('<button id="fix-collations" class="button button-secondary" data-needs-fix="true">\n🔧 Corregir Collations \n<span class="collation-badge">' + result.issues_count + '</span>\n</button>')
+                                .insertAfter('#refresh-schema');
+                        } else {
+                            $btn.find('.collation-badge').text(result.issues_count);
+                            $btn.show();
+                        }
+                    } else {
+                        $btn.hide();
+                    }
+                }
+            }
+        });
+    }
+    
+    // Check collations on initial load and every 2 minutes
+    checkCollations();
+    setInterval(checkCollations, 120000);
+    
+    // Check for auto-fix issues on load and periodically
+    checkAutoFixIssues();
+    setInterval(checkAutoFixIssues, 60000); // Every minute
+    
     // Initial load
     loadSchemaStatus();
     
@@ -713,6 +986,35 @@ jQuery(document).ready(function($) {
 
 .health-summary-card {
     max-width: 100%;
+}
+
+/* Collation Badge */
+.collation-badge {
+    display: inline-block;
+    background: #ff9800;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Maintenance SQL Section */
+.maintenance-sql-section .card-header {
+    background: #fff3cd;
+    border-bottom: 1px solid #ffc107;
+}
+
+.maintenance-sql-section .card-header h3 {
+    color: #856404;
+}
+
+#maintenance-sql-results-content {
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 @media (max-width: 768px) {

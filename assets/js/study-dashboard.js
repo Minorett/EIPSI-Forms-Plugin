@@ -162,6 +162,19 @@
                 e.preventDefault();
                 self.sendMagicLinkEmail();
             });
+
+            // Study Control Buttons
+            $('#btn-pause-study').on('click', function() {
+                self.pauseStudy();
+            });
+
+            $('#btn-resume-study').on('click', function() {
+                self.resumeStudy();
+            });
+
+            $('#btn-close-study').on('click', function() {
+                self.closeStudy();
+            });
         },
 
         openDashboard: function(studyId) {
@@ -273,18 +286,27 @@
             // Study Page - show URL and actions
             this.renderStudyPage(page);
 
-            // Participant Stats
+            // Participant Stats - New format with status counts
             $('#total-participants').text(participants.total);
-            const compPct = participants.total > 0 ? Math.round((participants.completed / participants.total) * 100) : 0;
-            const progPct = participants.total > 0 ? Math.round((participants.in_progress / participants.total) * 100) : 0;
-            const inactPct = participants.total > 0 ? Math.round((participants.inactive / participants.total) * 100) : 0;
+            $('#active-participants').text(participants.active || 0);
+            $('#completed-participants').text(participants.completed || 0);
+            $('#paused-participants').text(participants.paused || 0);
 
-            $('#percent-completed').text(`${compPct}%`);
-            $('#bar-completed').css('width', `${compPct}%`);
-            $('#percent-in-progress').text(`${progPct}%`);
-            $('#bar-in-progress').css('width', `${progPct}%`);
-            $('#percent-inactive').text(`${inactPct}%`);
-            $('#bar-inactive').css('width', `${inactPct}%`);
+            // Study Control Buttons - Show/hide based on status
+            const studyStatus = general.status;
+            if (studyStatus === 'active') {
+                $('#btn-pause-study').show();
+                $('#btn-resume-study').hide();
+                $('#btn-close-study').show().prop('disabled', false);
+            } else if (studyStatus === 'paused') {
+                $('#btn-pause-study').hide();
+                $('#btn-resume-study').show();
+                $('#btn-close-study').show().prop('disabled', false);
+            } else if (studyStatus === 'completed' || studyStatus === 'closed') {
+                $('#btn-pause-study').hide();
+                $('#btn-resume-study').hide();
+                $('#btn-close-study').show().prop('disabled', true).text('🔒 Estudio Cerrado');
+            }
 
             // Waves
             const $container = $('#waves-container');
@@ -533,23 +555,20 @@
             $success.hide();
 
             // Disable submit button
-            $submitButton.prop('disabled', true).text('⏳ Procesando...');
+            $submitButton.prop('disabled', true).text('⏳ Agregando...');
 
-            // Collect form data
+            // Collect form data - ONLY email required
             const formData = {
                 action: 'eipsi_add_participant',
                 study_id: $('#add-participant-study-id').val(),
                 email: $('#participant-email').val(),
-                first_name: $('#participant-first-name').val(),
-                last_name: $('#participant-last-name').val(),
-                password: $('#participant-password').val(),
                 nonce: eipsiStudyDash.nonce
             };
 
             // Validate email format
             if (!formData.email || !formData.email.includes('@')) {
                 $error.text('Por favor ingrese un email válido').show();
-                $submitButton.prop('disabled', false).text('✉️ Crear y Enviar Invitación');
+                $submitButton.prop('disabled', false).text('✉️ Agregar y Enviar Invitación');
                 return;
             }
 
@@ -563,9 +582,7 @@
                         // Show success message
                         $success.html(
                             '<strong>✅ ¡Éxito!</strong><br>' + 
-                            (response.data.email_sent ? 
-                                'Participante creado e invitación enviada por email.' : 
-                                'Participante creado, pero hubo un problema enviando el email.')
+                            'Participante agregado e invitación enviada por email.'
                         ).show();
 
                         // Close modal after 3 seconds and refresh
@@ -583,7 +600,7 @@
                 },
                 complete: function() {
                     // Re-enable submit button
-                    $submitButton.prop('disabled', false).text('✉️ Crear y Enviar Invitación');
+                    $submitButton.prop('disabled', false).text('✉️ Agregar y Enviar Invitación');
                 }
             });
         },
@@ -1097,6 +1114,104 @@
         isValidEmail: function(email) {
             const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return re.test(email);
+        },
+
+        /**
+         * Pause Study
+         */
+        pauseStudy: function() {
+            const self = this;
+            if (!confirm('¿Estás seguro de que querés pausar este estudio?\n\nAl pausar:\n• Se detendrán los recordatorios automáticos\n• Los participantes no podrán enviar nuevas respuestas\n• El estudio puede reanudarse en cualquier momento')) {
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_pause_study',
+                    study_id: this.currentStudyId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.showToast('✅ Estudio pausado correctamente', 'success');
+                        self.loadStudyData(self.currentStudyId);
+                    } else {
+                        self.showToast('❌ Error: ' + (response.data || 'No se pudo pausar el estudio'), 'error');
+                    }
+                },
+                error: function() {
+                    self.showToast('❌ Error de conexión', 'error');
+                }
+            });
+        },
+
+        /**
+         * Resume Study
+         */
+        resumeStudy: function() {
+            const self = this;
+            if (!confirm('¿Reanudar este estudio?\n\nAl reanudar:\n• Los recordatorios automáticos se reactivarán\n• Los participantes podrán continuar con sus evaluaciones')) {
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_resume_study',
+                    study_id: this.currentStudyId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.showToast('✅ Estudio reanudado correctamente', 'success');
+                        self.loadStudyData(self.currentStudyId);
+                    } else {
+                        self.showToast('❌ Error: ' + (response.data || 'No se pudo reanudar el estudio'), 'error');
+                    }
+                },
+                error: function() {
+                    self.showToast('❌ Error de conexión', 'error');
+                }
+            });
+        },
+
+        /**
+         * Close Study permanently
+         */
+        closeStudy: function() {
+            const self = this;
+            if (!confirm('⚠️ ¿Cerrar permanentemente este estudio?\n\nEsta acción:\n• Detendrá todos los recordatorios\n• Marcará el estudio como completado\n• No se podrán agregar nuevos participantes\n• NO se pueden deshacer los cambios')) {
+                return;
+            }
+
+            // Double confirmation
+            if (!confirm('🔒 CONFIRMACIÓN FINAL\n\nUna vez cerrado, el estudio no podrá reactivarse.\n¿Continuar?')) {
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_close_study',
+                    study_id: this.currentStudyId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.showToast('✅ Estudio cerrado permanentemente', 'success');
+                        self.loadStudyData(self.currentStudyId);
+                    } else {
+                        self.showToast('❌ Error: ' + (response.data || 'No se pudo cerrar el estudio'), 'error');
+                    }
+                },
+                error: function() {
+                    self.showToast('❌ Error de conexión', 'error');
+                }
+            });
         },
 
         /**
