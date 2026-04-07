@@ -1569,8 +1569,12 @@ function eipsi_forms_submit_form_handler() {
             require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/Wave_Service.php';
 
             // ✅ FIX: Si el assignment no existe, crearlo primero (fallback defensivo)
-            if (!function_exists('EIPSI_Assignment_Service')) {
-                require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
+            // Cargar el servicio si no está disponible (verificar función, no clase)
+            if (!function_exists('eipsi_create_assignments_for_participant')) {
+                $assignment_service_path = EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
+                if (file_exists($assignment_service_path)) {
+                    require_once $assignment_service_path;
+                }
             }
             
             // Verificar si existe el assignment

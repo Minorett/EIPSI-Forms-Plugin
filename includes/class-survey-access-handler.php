@@ -113,25 +113,37 @@ class EIPSI_Survey_Access_Handler {
         // v1.5.7 - Create wave assignments for the participant after email confirmation
         // Load assignment service if not already loaded
         // ✅ FIX: Verificar función global, no la clase (ambos están en el mismo archivo)
+        $assignment_service_loaded = false;
         if ( ! function_exists( 'eipsi_create_assignments_for_participant' ) ) {
             $assignment_service_path = EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-assignment-service.php';
             if ( file_exists( $assignment_service_path ) ) {
                 require_once $assignment_service_path;
+                $assignment_service_loaded = true;
+            } else {
+                error_log( '[EIPSI] ERROR: Assignment service file not found at: ' . $assignment_service_path );
             }
+        } else {
+            $assignment_service_loaded = true;
         }
 
         // Create assignments for all active waves of the study
         if ( function_exists( 'eipsi_create_assignments_for_participant' ) ) {
             $assignment_result = eipsi_create_assignments_for_participant( $participant_id, $survey_id );
             
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( sprintf(
-                    '[EIPSI] Email confirmation: created %d assignments for participant %d (skipped: %d)',
-                    $assignment_result['created'],
-                    $participant_id,
-                    $assignment_result['skipped']
-                ) );
+            // ✅ DEBUG: Siempre loguear el resultado
+            error_log( sprintf(
+                '[EIPSI] Email confirmation: created %d assignments for participant %d (skipped: %d, errors: %d)',
+                $assignment_result['created'],
+                $participant_id,
+                $assignment_result['skipped'],
+                count( $assignment_result['errors'] )
+            ) );
+            
+            if ( ! empty( $assignment_result['errors'] ) ) {
+                error_log( '[EIPSI] Assignment creation errors: ' . implode( ', ', $assignment_result['errors'] ) );
             }
+        } else {
+            error_log( '[EIPSI] ERROR: eipsi_create_assignments_for_participant function not available!' );
         }
 
         // Send welcome email with magic link.

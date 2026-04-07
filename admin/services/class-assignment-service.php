@@ -511,16 +511,34 @@ class EIPSI_Assignment_Service {
         }
 
         // Get all active waves for the study
+        // ✅ v1.5.6 - Incluir waves en estado 'active' o 'draft' (las nuevas waves pueden estar en draft)
         $active_waves = $wpdb->get_results($wpdb->prepare(
-            "SELECT id, wave_index, name 
+            "SELECT id, wave_index, name, status 
              FROM {$wpdb->prefix}survey_waves 
-             WHERE study_id = %d AND status = 'active'
+             WHERE study_id = %d AND status IN ('active', 'draft')
              ORDER BY wave_index ASC",
             $study_id
         ));
 
+        // ✅ DEBUG: Log para verificar waves encontradas
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                '[EIPSI] Creating assignments for study %d, participant %d: found %d waves (status: active/draft)',
+                $study_id,
+                $participant_id,
+                count($active_waves)
+            ));
+            foreach ($active_waves as $w) {
+                error_log(sprintf('[EIPSI] Wave found: id=%d, wave_index=%d, name=%s, status=%s', 
+                    $w->id, $w->wave_index, $w->name, $w->status));
+            }
+        }
+
         if (empty($active_waves)) {
             // No active waves - not an error, just nothing to do
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf('[EIPSI] No active/draft waves found for study %d', $study_id));
+            }
             return $result;
         }
 
