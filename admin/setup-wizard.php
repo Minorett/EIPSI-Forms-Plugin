@@ -458,11 +458,12 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
 
         // Add interval_days: days after previous wave (0 for first wave)
         $wave_index = $wave_data['wave_index'];
-        // In wizard step 3, intervals use 0-based from_wave: interval for T2 (wave_index 2) is from_wave=1
-        if ($wave_index > 1 && isset($interval_map[$wave_index - 1])) {
-            $wave_data['interval_days'] = $interval_map[$wave_index - 1];
+        // FIXED: from_wave is 0-based: T2 uses from_wave=0, T3 uses from_wave=1, etc.
+        $interval_key = $wave_index - 2; // T2(2)→0, T3(3)→1, T4(4)→2, etc.
+        if ($wave_index > 1 && isset($interval_map[$interval_key])) {
+            $wave_data['interval_days'] = $interval_map[$interval_key];
             // Guardar también el time_unit (default: 'days')
-            $wave_data['time_unit'] = isset($time_unit_map[$wave_index - 1]) ? $time_unit_map[$wave_index - 1] : 'days';
+            $wave_data['time_unit'] = isset($time_unit_map[$interval_key]) ? $time_unit_map[$interval_key] : 'days';
         } else {
             $wave_data['interval_days'] = 0; // First wave has no previous wave
             $wave_data['time_unit'] = 'days'; // Default for first wave

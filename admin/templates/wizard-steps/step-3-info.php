@@ -26,10 +26,10 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
 
 // Default timing intervals between waves - ✅ v1.5.6: Todos 7 días por defecto (monitoreo semanal)
 $default_intervals = array(
-    array('from_wave' => 0, 'to_wave' => 1, 'days_after' => 7),  // T1 to T2: 7 days
-    array('from_wave' => 1, 'to_wave' => 2, 'days_after' => 7),  // T2 to T3: 7 days
-    array('from_wave' => 2, 'to_wave' => 3, 'days_after' => 7),  // T3 to T4: 7 days
-    array('from_wave' => 3, 'to_wave' => 4, 'days_after' => 7),  // T4 to T5: 7 days
+    array('from_wave' => 0, 'to_wave' => 1, 'days_after' => 7, 'time_unit' => 'days'),  // T1 to T2: 7 days
+    array('from_wave' => 1, 'to_wave' => 2, 'days_after' => 7, 'time_unit' => 'days'),  // T2 to T3: 7 days
+    array('from_wave' => 2, 'to_wave' => 3, 'days_after' => 7, 'time_unit' => 'days'),  // T3 to T4: 7 days
+    array('from_wave' => 3, 'to_wave' => 4, 'days_after' => 7, 'time_unit' => 'days'),  // T4 to T5: 7 days
 );
 
 $timing_intervals = isset($step_data['timing_intervals']) ? $step_data['timing_intervals'] : $default_intervals;
@@ -40,7 +40,8 @@ while (count($timing_intervals) < ($number_of_waves - 1)) {
     $timing_intervals[] = array(
         'from_wave' => $last_interval['to_wave'],
         'to_wave' => $last_interval['to_wave'] + 1,
-        'days_after' => 7 // ✅ v1.5.6: Default 7 días (no 30)
+        'days_after' => 7, // ✅ v1.5.6: Default 7 días (no 30)
+        'time_unit' => 'days' // Default time unit
     );
 }
 
