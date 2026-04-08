@@ -52,6 +52,26 @@ function eipsi_send_wave_reminders_hourly() {
         $now = current_time('Y-m-d H:i:s');
         $now_date = current_time('Y-m-d');
 
+        error_log("[EIPSI Cron] Processing study {$study->id} - Now: {$now}");
+
+        // DEBUG: First check all pending assignments for this study
+        $all_pending = $wpdb->get_results($wpdb->prepare(
+            "SELECT a.id, a.wave_id, a.participant_id, a.status, a.reminder_count,
+                    w.time_unit, w.interval_days,
+                    p.created_at as participant_created
+             FROM {$wpdb->prefix}survey_assignments a
+             JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+             JOIN {$wpdb->prefix}survey_participants p ON a.participant_id = p.id
+             WHERE a.study_id = %d
+             AND a.status = 'pending'
+             AND p.is_active = 1",
+            $study->id
+        ));
+        error_log("[EIPSI Cron] Total pending assignments: " . count($all_pending));
+        foreach ($all_pending as $pend) {
+            error_log("[EIPSI Cron] Pending: assignment_id={$pend->id}, wave_id={$pend->wave_id}, time_unit={$pend->time_unit}, interval={$pend->interval_days}, reminder_count={$pend->reminder_count}");
+        }
+
         $pending_assignments = $wpdb->get_results($wpdb->prepare(
             "SELECT a.*, w.name as wave_name, w.wave_index, w.due_date, w.time_unit, w.interval_days,
                     p.email, p.first_name, p.last_name, p.id as participant_id,
@@ -84,7 +104,10 @@ function eipsi_send_wave_reminders_hourly() {
             $max_emails
         ));
 
+        error_log("[EIPSI Cron] Assignments ready for email: " . count($pending_assignments));
+
         if (empty($pending_assignments)) {
+            error_log("[EIPSI Cron] No pending assignments ready for email");
             continue;
         }
 
@@ -99,7 +122,10 @@ function eipsi_send_wave_reminders_hourly() {
         foreach ($pending_assignments as $assignment) {
             // Check rate limiting - max 1 email per participant per wave per 24 hours
             $rate_limit_key = "eipsi_reminder_{$assignment->participant_id}_{$assignment->wave_id}";
-            if (get_transient($rate_limit_key)) {
+            $is_rate_limited = get_transient($rate_limit_key);
+            error_log("[EIPSI Cron] Checking assignment {$assignment->id} for participant {$assignment->participant_id} - rate limited: " . ($is_rate_limited ? 'YES' : 'NO'));
+            if ($is_rate_limited) {
+                error_log("[EIPSI Cron] SKIPPED: Rate limited for participant {$assignment->participant_id}, wave {$assignment->wave_id}");
                 continue;
             }
 
@@ -111,11 +137,15 @@ function eipsi_send_wave_reminders_hourly() {
                 'due_date' => $assignment->due_date
             );
 
+            error_log("[EIPSI Cron] Sending email to participant {$assignment->participant_id} ({$assignment->email}) for wave {$assignment->wave_name}");
+
             $result = EIPSI_Email_Service::send_wave_reminder_email(
                 $study->id,
                 $assignment->participant_id,
                 (object) $wave
             );
+
+            error_log("[EIPSI Cron] Email send result: " . ($result ? 'SUCCESS' : 'FAILED'));
 
             if ($result) {
                 $emails_sent++;
@@ -123,6 +153,9 @@ function eipsi_send_wave_reminders_hourly() {
                 EIPSI_Assignment_Service::increment_reminder_count($assignment->wave_id, $assignment->participant_id);
                 // Set rate limit - 24 hours
                 set_transient($rate_limit_key, true, DAY_IN_SECONDS);
+                error_log("[EIPSI Cron] Email sent and rate limit set for participant {$assignment->participant_id}");
+            } else {
+                error_log("[EIPSI Cron] EMAIL FAILED for participant {$assignment->participant_id}");
             }
         }
 
@@ -339,4 +372,79 @@ function eipsi_ajax_save_cron_reminders_config() {
     }
 
     wp_send_json_success(array('message' => __('Configuration saved successfully', 'eipsi-forms')));
+}
+
+/**
+ * AJAX handler for running reminders cron manually
+ * Useful for testing minute-based intervals
+ *
+ * @since 1.6.0
+ */
+add_action('wp_ajax_eipsi_run_reminders_cron', 'eipsi_run_reminders_cron_handler');
+
+function eipsi_run_reminders_cron_handler() {
+    check_ajax_referer('eipsi_cron_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Permission denied', 'eipsi-forms')));
+    }
+
+    error_log('[EIPSI] Manual cron execution triggered by user');
+
+    // Run the reminders function
+    eipsi_send_wave_reminders_hourly();
+
+    // Get last cron logs
+    global $wpdb;
+    $logs = $wpdb->get_results(
+        "SELECT log_id, survey_id, participant_id, email_type, status, sent_at, error_message
+         FROM {$wpdb->prefix}survey_email_log
+         WHERE email_type = 'reminder'
+         AND sent_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+         ORDER BY sent_at DESC
+         LIMIT 10"
+    );
+
+    $message = 'Cron ejecutado. Revisa los logs del servidor para detalles.';
+    if (!empty($logs)) {
+        $count = count($logs);
+        $message .= " Enviados {$count} recordatorios recientemente.";
+    }
+
+    wp_send_json_success(array(
+        'message' => $message,
+        'logs' => $logs
+    ));
+}
+
+/**
+ * AJAX handler for clearing rate limit transients
+ * Useful for testing minute-based intervals repeatedly
+ *
+ * @since 1.6.0
+ */
+add_action('wp_ajax_eipsi_clear_rate_limits', 'eipsi_clear_rate_limits_handler');
+
+function eipsi_clear_rate_limits_handler() {
+    check_ajax_referer('eipsi_cron_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Permission denied', 'eipsi-forms')));
+    }
+
+    global $wpdb;
+
+    // Delete all eipsi_reminder transients
+    $deleted = $wpdb->query(
+        "DELETE FROM {$wpdb->options}
+         WHERE option_name LIKE '_transient_eipsi_reminder_%'
+         OR option_name LIKE '_transient_timeout_eipsi_reminder_%'"
+    );
+
+    error_log('[EIPSI] Rate limits cleared by user. Deleted: ' . ($deleted !== false ? $deleted : 0));
+
+    wp_send_json_success(array(
+        'message' => __('Rate limits cleared. You can now test again.', 'eipsi-forms'),
+        'deleted' => $deleted !== false ? $deleted : 0
+    ));
 }

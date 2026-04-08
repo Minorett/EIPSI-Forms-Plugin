@@ -149,6 +149,23 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
         </form>
     </div>
 
+    <!-- Manual Cron Execution -->
+    <div style="margin: 0 0 20px 0; padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
+        <h4 style="margin: 0 0 10px 0; color: #856404;">
+            🧪 <?php _e('Prueba Manual de Recordatorios', 'eipsi-forms'); ?>
+        </h4>
+        <p style="margin: 0 0 15px 0; color: #856404; font-size: 14px;">
+            <?php _e('Ejecuta el cron de recordatorios manualmente para probar el envío de emails. Útil para depuración con intervalos en minutos.', 'eipsi-forms'); ?>
+        </p>
+        <button type="button" id="eipsi-run-reminders-cron" class="button button-secondary" style="background: #ffc107; border-color: #ffc107; color: #856404; font-weight: 600;">
+            <?php _e('▶️ Ejecutar Cron de Recordatorios Ahora', 'eipsi-forms'); ?>
+        </button>
+        <button type="button" id="eipsi-clear-rate-limits" class="button button-link" style="margin-left: 15px; color: #856404;">
+            <?php _e('🗑️ Limpiar Rate Limits (para pruebas)', 'eipsi-forms'); ?>
+        </button>
+        <span id="cron-run-status" style="margin-left: 10px; font-size: 13px; color: #666;"></span>
+    </div>
+
     <!-- Info Box -->
     <div class="notice notice-info inline" style="margin: 0 0 20px 0; padding: 15px 20px; border-left: 4px solid #3B6CAA;">
         <p style="margin: 0; font-size: 14px; line-height: 1.5;">
@@ -565,6 +582,88 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
         }
     `;
     document.head.appendChild(style);
+
+    // Manual Cron Execution Handler
+    const runCronButton = document.getElementById('eipsi-run-reminders-cron');
+    if (runCronButton) {
+        runCronButton.addEventListener('click', function() {
+            const status = document.getElementById('cron-run-status');
+            const btn = this;
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Ejecutando...';
+            status.textContent = 'Espera...';
+
+            fetch(ajaxurl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    action: 'eipsi_run_reminders_cron',
+                    nonce: '<?php echo wp_create_nonce("eipsi_cron_nonce"); ?>'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.textContent = '▶️ Ejecutar Cron de Recordatorios Ahora';
+
+                if (data.success) {
+                    status.textContent = '✅ ' + data.data.message;
+                    status.style.color = '#28a745';
+                } else {
+                    status.textContent = '❌ Error: ' + (data.data?.message || 'Error desconocido');
+                    status.style.color = '#dc3545';
+                }
+                setTimeout(() => { status.textContent = ''; }, 8000);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.textContent = '▶️ Ejecutar Cron de Recordatorios Ahora';
+                status.textContent = '❌ Error de conexión';
+                status.style.color = '#dc3545';
+                console.error('Cron run error:', err);
+            });
+        });
+    }
+
+    // Clear Rate Limits Handler
+    const clearRateBtn = document.getElementById('eipsi-clear-rate-limits');
+    if (clearRateBtn) {
+        clearRateBtn.addEventListener('click', function() {
+            const status = document.getElementById('cron-run-status');
+
+            status.textContent = 'Limpiando...';
+
+            fetch(ajaxurl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    action: 'eipsi_clear_rate_limits',
+                    nonce: '<?php echo wp_create_nonce("eipsi_cron_nonce"); ?>'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    status.textContent = '✅ Rate limits limpiados. Puedes probar de nuevo.';
+                    status.style.color = '#28a745';
+                } else {
+                    status.textContent = '❌ Error: ' + (data.data?.message || 'Error desconocido');
+                    status.style.color = '#dc3545';
+                }
+                setTimeout(() => { status.textContent = ''; }, 5000);
+            })
+            .catch(err => {
+                status.textContent = '❌ Error de conexión';
+                status.style.color = '#dc3545';
+                console.error('Clear rate limits error:', err);
+            });
+        });
+    }
 
     // Initialize tooltips or additional UI enhancements here
     console.log('EIPSI Reminders Tab Initialized');
