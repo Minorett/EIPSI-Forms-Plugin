@@ -47,9 +47,19 @@ function eipsi_send_wave_reminders_hourly() {
         // New logic: available_date = (last_submission_date OR participant_created_at) + interval (days/minutes)
         $emails_sent = 0;
 
+        // FIXED: Get pending assignments where the wave is now available
+        // Available date = last submission date + interval (with correct time_unit)
+        $now = current_time('Y-m-d H:i:s');
+        $now_date = current_time('Y-m-d');
+
         $pending_assignments = $wpdb->get_results($wpdb->prepare(
-            "SELECT a.*, w.name as wave_name, w.wave_index, w.due_date, w.time_unit, w.interval_days, 
-                    p.email, p.first_name, p.last_name, p.id as participant_id
+            "SELECT a.*, w.name as wave_name, w.wave_index, w.due_date, w.time_unit, w.interval_days,
+                    p.email, p.first_name, p.last_name, p.id as participant_id,
+                    COALESCE(
+                        (SELECT MAX(a2.submitted_at) FROM {$wpdb->prefix}survey_assignments a2
+                         WHERE a2.participant_id = p.id AND a2.study_id = a.study_id AND a2.status = 'submitted'),
+                        p.created_at
+                    ) as last_submission_date
              FROM {$wpdb->prefix}survey_assignments a
              JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
              JOIN {$wpdb->prefix}survey_participants p ON a.participant_id = p.id
@@ -57,18 +67,20 @@ function eipsi_send_wave_reminders_hourly() {
              AND a.status = 'pending'
              AND p.is_active = 1
              AND p.email IS NOT NULL
-             AND (
-                 CASE 
+             AND a.reminder_count = 0
+             HAVING (
+                 CASE
                      WHEN w.time_unit = 'minutes' THEN
-                         DATE_ADD(COALESCE(MAX(a2.submitted_at), p.created_at), INTERVAL w.interval_days MINUTE)
+                         DATE_ADD(last_submission_date, INTERVAL w.interval_days MINUTE) <= %s
                      ELSE
-                         DATE_ADD(DATE(COALESCE(MAX(a2.submitted_at), p.created_at)), INTERVAL w.interval_days DAY)
+                         DATE_ADD(DATE(last_submission_date), INTERVAL w.interval_days DAY) <= %s
                  END
-             ) = %s
+             )
              ORDER BY a.id ASC
              LIMIT %d",
             $study->id,
-            $today,
+            $now,
+            $now_date,
             $max_emails
         ));
 
@@ -76,9 +88,12 @@ function eipsi_send_wave_reminders_hourly() {
             continue;
         }
 
-        // Load email service
+        // Load required services
         if (!class_exists('EIPSI_Email_Service')) {
             require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+        }
+        if (!class_exists('EIPSI_Assignment_Service')) {
+            require_once plugin_dir_path(__FILE__) . 'services/class-assignment-service.php';
         }
 
         foreach ($pending_assignments as $assignment) {
@@ -104,6 +119,8 @@ function eipsi_send_wave_reminders_hourly() {
 
             if ($result) {
                 $emails_sent++;
+                // Increment reminder count and set last sent time
+                EIPSI_Assignment_Service::increment_reminder_count($assignment->wave_id, $assignment->participant_id);
                 // Set rate limit - 24 hours
                 set_transient($rate_limit_key, true, DAY_IN_SECONDS);
             }
