@@ -308,68 +308,37 @@
      * Generate wave item HTML
      */
     function generateWaveItem(index) {
-        const isRequired = index === 0; // First wave is required by default
         const defaultName = getDefaultWaveName(index);
-        
+
         return $(`
             <div class="wave-item" data-wave="${index + 1}">
                 <div class="wave-header">
                     <h3>Toma ${index + 1}</h3>
-                    <span class="wave-status">${isRequired ? 'Obligatoria' : 'Opcional'}</span>
                 </div>
-                
+
                 <div class="wave-fields">
                     <div class="field-group">
                         <label for="wave_name_${index}" class="form-label">
                             Nombre de la Toma
                         </label>
-                        <input type="text" 
+                        <input type="text"
                                id="wave_name_${index}"
-                               name="waves_config[${index}][name]" 
-                               class="form-input" 
+                               name="waves_config[${index}][name]"
+                               class="form-input"
                                value="${defaultName}"
                                placeholder="Ej: Evaluación inicial">
                     </div>
-                    
+
                     <div class="field-group">
                         <label for="wave_form_${index}" class="form-label">
                             Formulario a usar
                         </label>
                         <select id="wave_form_${index}"
-                                name="waves_config[${index}][form_template_id]" 
+                                name="waves_config[${index}][form_template_id]"
                                 class="form-select">
                             <option value="">Seleccionar formulario...</option>
                             ${getAvailableFormsHTML()}
                         </select>
-                    </div>
-                    
-                    <div class="field-group-inline">
-                        <div class="field-group">
-                            <label for="wave_duration_${index}" class="form-label">
-                                Duración estimada (min)
-                            </label>
-                            <input type="number" 
-                                   id="wave_duration_${index}"
-                                   name="waves_config[${index}][estimated_duration]" 
-                                   class="form-input" 
-                                   value="15"
-                                   min="1" 
-                                   max="120"
-                                   placeholder="15">
-                        </div>
-                        
-                        <div class="field-group">
-                            <label class="form-label">
-                                &nbsp;
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" 
-                                       name="waves_config[${index}][is_required]"
-                                       ${isRequired ? 'checked' : ''}
-                                       value="1">
-                                <span class="checkbox-text">Obligatoria</span>
-                            </label>
-                        </div>
                     </div>
                 </div>
             </div>
