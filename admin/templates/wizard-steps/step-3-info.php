@@ -76,11 +76,11 @@ while (count($timing_intervals) < ($number_of_waves - 1)) {
                                        min="1" 
                                        max="365"
                                        class="interval-days-input">
-                                <select name="timing_intervals[<?php echo $i; ?>][time_unit]" 
+                                <select name="timing_intervals[<?php echo $i; ?>][time_unit]"
                                         class="interval-unit-select"
                                         onchange="handleTimeUnitChange(this)">
-                                    <option value="days">días</option>
-                                    <option value="minutes">minutos</option>
+                                    <option value="days" <?php selected($timing_intervals[$i]['time_unit'] ?? 'days', 'days'); ?>>días</option>
+                                    <option value="minutes" <?php selected($timing_intervals[$i]['time_unit'] ?? '', 'minutes'); ?>>minutos</option>
                                 </select>
                                 <span class="days-label">después</span>
                                 <span class="day-equivalent" style="display: none;"></span>

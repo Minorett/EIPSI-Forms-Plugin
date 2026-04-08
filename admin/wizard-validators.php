@@ -332,19 +332,13 @@ function eipsi_sanitize_timing_config($data) {
             $time_unit = isset($interval['time_unit']) ? sanitize_text_field($interval['time_unit']) : 'days';
             $value = intval($interval['days_after']);
             
-            // Convert minutes to days if needed
-            if ($time_unit === 'minutes') {
-                $days = round($value / 1440); // 1440 minutes per day
-            } else {
-                $days = $value;
-            }
-            
+            // FIXED: Keep original value, don't convert to days
+            // The interval logic uses time_unit to calculate correctly
             $sanitized['timing_intervals'][] = array(
                 'from_wave' => intval($interval['from_wave']),
                 'to_wave' => intval($interval['to_wave']),
-                'days_after' => max(1, $days), // Ensure at least 1 day
-                'time_unit' => $time_unit, // FIXED: use 'time_unit' not 'original_unit'
-                'original_value' => $value
+                'days_after' => max(1, $value), // Keep original value (2 minutes, 7 days, etc.)
+                'time_unit' => $time_unit,
             );
         }
     }
