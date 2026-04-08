@@ -194,41 +194,129 @@ $view_class      = 'view-' . esc_attr( $view_mode );
                                 <strong class="wave-name"><?php echo esc_html( $next_wave['name'] ); ?></strong>
                             </div>
                             <?php if ( ! empty( $next_wave['is_locked'] ) ) : ?>
-                                <div class="wave-locked-message">
+                                <div class="wave-locked-message" data-eipsi-countdown data-available-timestamp="<?php echo esc_attr( $available_date ); ?>">
                                     <span class="lock-icon">🔒</span>
                                     <p class="lock-text">
                                         <?php
-                                        printf(
-                                            esc_html__( 'Tu próxima toma estará disponible el %s', 'eipsi-forms' ),
-                                            '<strong>' . esc_html( $next_wave['available_date'] ) . '</strong>'
-                                        );
+                                        // Calculate time remaining
+                                        $time_remaining = $available_date - $now;
+                                        $time_remaining_text = '';
+                                        
+                                        if ( $time_remaining > 0 ) {
+                                            $remaining_days = floor( $time_remaining / DAY_IN_SECONDS );
+                                            $remaining_hours = floor( ( $time_remaining % DAY_IN_SECONDS ) / HOUR_IN_SECONDS );
+                                            $remaining_mins = floor( ( $time_remaining % HOUR_IN_SECONDS ) / MINUTE_IN_SECONDS );
+                                            
+                                            $parts = array();
+                                            if ( $remaining_days > 0 ) {
+                                                $parts[] = sprintf( _n( '%d día', '%d días', $remaining_days, 'eipsi-forms' ), $remaining_days );
+                                            }
+                                            if ( $remaining_hours > 0 ) {
+                                                $parts[] = sprintf( _n( '%d hora', '%d horas', $remaining_hours, 'eipsi-forms' ), $remaining_hours );
+                                            }
+                                            if ( $remaining_mins > 0 && $remaining_days === 0 ) { // Only show mins if less than a day
+                                                $parts[] = sprintf( _n( '%d minuto', '%d minutos', $remaining_mins, 'eipsi-forms' ), $remaining_mins );
+                                            }
+                                            
+                                            $time_remaining_text = implode( ', ', $parts );
+                                        }
+                                        
+                                        if ( ! empty( $time_remaining_text ) ) {
+                                            printf(
+                                                esc_html__( 'Disponible en %s (el %s)', 'eipsi-forms' ),
+                                                '<strong>' . esc_html( $time_remaining_text ) . '</strong>',
+                                                '<strong>' . esc_html( $next_wave['available_date'] ) . '</strong>'
+                                            );
+                                        } else {
+                                            printf(
+                                                esc_html__( 'Tu próxima toma estará disponible el %s', 'eipsi-forms' ),
+                                                '<strong>' . esc_html( $next_wave['available_date'] ) . '</strong>'
+                                            );
+                                        }
                                         ?>
                                     </p>
                                     <?php if ( ! empty( $next_wave['interval_days'] ) ) : ?>
                                         <small class="lock-hint">
                                             <?php
                                             // FIX (v2.1.1): Show correct time unit (minutes, hours, days)
+                                            // IMPROVED (v2.2.0): Convert large minutes to human-readable format
                                             $interval_value = (int) $next_wave['interval_days'];
                                             $time_unit      = ! empty( $next_wave['time_unit'] ) ? $next_wave['time_unit'] : 'days';
                                             
-                                            // Translators: %1$d is the number, %2$s is the time unit
-                                            $unit_text = '';
-                                            switch ( $time_unit ) {
-                                                case 'minutes':
-                                                    $unit_text = _n( 'minuto', 'minutos', $interval_value, 'eipsi-forms' );
-                                                    break;
-                                                case 'hours':
-                                                    $unit_text = _n( 'hora', 'horas', $interval_value, 'eipsi-forms' );
-                                                    break;
-                                                case 'days':
-                                                default:
-                                                    $unit_text = _n( 'día', 'días', $interval_value, 'eipsi-forms' );
-                                                    break;
+                                            /**
+                                             * Convert interval to human-readable format
+                                             * - Minutes < 60: show as minutes
+                                             * - Minutes 60-1439: convert to hours
+                                             * - Minutes >= 1440: convert to days
+                                             * - Hours >= 24: convert to days
+                                             */
+                                            function eipsi_format_interval_human_readable( $value, $unit ) {
+                                                // Convert everything to minutes first
+                                                $total_minutes = $value;
+                                                if ( $unit === 'hours' ) {
+                                                    $total_minutes = $value * 60;
+                                                } elseif ( $unit === 'days' ) {
+                                                    $total_minutes = $value * 1440;
+                                                }
+                                                
+                                                // Less than 1 hour: show minutes
+                                                if ( $total_minutes < 60 ) {
+                                                    return sprintf(
+                                                        _n( '%d minuto', '%d minutos', $total_minutes, 'eipsi-forms' ),
+                                                        $total_minutes
+                                                    );
+                                                }
+                                                
+                                                // Less than 24 hours: show hours (with minutes if not exact)
+                                                if ( $total_minutes < 1440 ) {
+                                                    $hours = floor( $total_minutes / 60 );
+                                                    $mins = $total_minutes % 60;
+                                                    
+                                                    if ( $mins === 0 ) {
+                                                        return sprintf(
+                                                            _n( '%d hora', '%d horas', $hours, 'eipsi-forms' ),
+                                                            $hours
+                                                        );
+                                                    } else {
+                                                        return sprintf(
+                                                            __( '%d horas y %d minutos', 'eipsi-forms' ),
+                                                            $hours,
+                                                            $mins
+                                                        );
+                                                    }
+                                                }
+                                                
+                                                // 24 hours or more: show days (with hours if not exact)
+                                                $days = floor( $total_minutes / 1440 );
+                                                $remaining_mins = $total_minutes % 1440;
+                                                $hours = floor( $remaining_mins / 60 );
+                                                
+                                                if ( $remaining_mins === 0 ) {
+                                                    return sprintf(
+                                                        _n( '%d día', '%d días', $days, 'eipsi-forms' ),
+                                                        $days
+                                                    );
+                                                } elseif ( $hours === 0 ) {
+                                                    $mins = $remaining_mins % 60;
+                                                    return sprintf(
+                                                        __( '%d días y %d minutos', 'eipsi-forms' ),
+                                                        $days,
+                                                        $mins
+                                                    );
+                                                } else {
+                                                    return sprintf(
+                                                        __( '%d días y %d horas', 'eipsi-forms' ),
+                                                        $days,
+                                                        $hours
+                                                    );
+                                                }
                                             }
+                                            
+                                            $interval_text = eipsi_format_interval_human_readable( $interval_value, $time_unit );
+                                            
                                             printf(
-                                                esc_html__( '(intervalo de %1$d %2$s desde la toma anterior)', 'eipsi-forms' ),
-                                                $interval_value,
-                                                $unit_text
+                                                esc_html__( '(disponible después de %s)', 'eipsi-forms' ),
+                                                $interval_text
                                             );
                                             ?>
                                         </small>
@@ -601,3 +689,9 @@ $view_class      = 'view-' . esc_attr( $view_mode );
     </div>
 
 </div>
+
+<?php
+// Enqueue countdown script if there's a locked wave with future availability
+if ( ! empty( $next_wave['is_locked'] ) && ! empty( $available_date ) ) : ?>
+    <script src="<?php echo esc_url( plugins_url( 'assets/js/participant-countdown.js', dirname( dirname( __FILE__ ) ) ) ); ?>?ver=2.2.0"></script>
+<?php endif; ?>
