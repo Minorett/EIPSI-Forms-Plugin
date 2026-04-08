@@ -13,21 +13,21 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
-    background: #1a1a1a;
-    color: #ffffff;
+    background: #ffffff;
+    color: #1e293b;
     border-radius: 12px;
-    border: 2px solid #333;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 /* === PROGRESS BAR === */
 .eipsi-wizard-progress {
     margin: 2rem 0;
     padding: 1.5rem;
-    background: #2d3748;
+    background: #f8fafc;
     border-radius: 12px;
-    border: 2px solid #4a5568;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .progress-steps {
@@ -44,14 +44,14 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: #4a5568;
+    background: #e2e8f0;
     z-index: 1;
 }
 
 .progress-bar-container {
     position: relative;
     height: 4px;
-    background: #4a5568;
+    background: #e2e8f0;
     border-radius: 2px;
     overflow: hidden;
 }
@@ -80,8 +80,8 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #4a5568;
-    color: #a0aec0;
+    background: #e2e8f0;
+    color: #64748b;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -89,12 +89,12 @@
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
     transition: all 0.2s ease;
-    border: 3px solid #4a5568;
+    border: 3px solid #e2e8f0;
 }
 
 .progress-step .step-name {
     font-size: 0.8rem;
-    color: #a0aec0;
+    color: #64748b;
     font-weight: 500;
     text-align: center;
     line-height: 1.2;
@@ -111,7 +111,7 @@
 }
 
 .progress-step.active .step-name {
-    color: #60a5fa;
+    color: #3b82f6;
     font-weight: 600;
 }
 
@@ -123,7 +123,7 @@
 }
 
 .progress-step.completed .step-name {
-    color: #34d399;
+    color: #059669;
 }
 
 .progress-step.completed .step-number::after {
@@ -138,9 +138,9 @@
 }
 
 .progress-step.disabled .step-number {
-    background: #f8f9fa;
-    color: #dee2e6;
-    border-color: #f8f9fa;
+    background: #f8fafc;
+    color: #94a3b8;
+    border-color: #f8fafc;
 }
 
 /* === WIZARD CONTENT === */
@@ -171,9 +171,9 @@
     align-items: center;
     margin-top: 2rem;
     padding: 1.5rem;
-    background: #2d3748;
+    background: #f8fafc;
     border-radius: 12px;
-    border: 2px solid #4a5568;
+    border: 2px solid #e2e8f0;
 }
 
 .eipsi-wizard-navigation .button {
@@ -203,24 +203,24 @@
 }
 
 .eipsi-wizard-navigation .button-primary:disabled {
-    background: #4a5568;
-    color: #718096;
+    background: #e2e8f0;
+    color: #94a3b8;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
 }
 
 .eipsi-wizard-navigation .button-secondary {
-    background: #4a5568;
-    color: #e2e8f0;
-    border: 2px solid #718096;
+    background: #f1f5f9;
+    color: #475569;
+    border: 2px solid #e2e8f0;
     font-weight: 500;
 }
 
 .eipsi-wizard-navigation .button-secondary:hover {
-    background: #2d3748;
+    background: #e2e8f0;
     border-color: #3b82f6;
-    color: white;
+    color: #1e293b;
 }
 
 /* === FORM STYLES === */
@@ -237,7 +237,7 @@
 .eipsi-wizard-step .form-label {
     font-weight: 600;
     margin-bottom: 0.5rem;
-    color: #ffffff;
+    color: #1e293b;
     font-size: 0.95rem;
 }
 
@@ -251,13 +251,13 @@
 .eipsi-wizard-step .form-select,
 .eipsi-wizard-step .form-textarea {
     padding: 0.75rem;
-    border: 2px solid #4a5568;
+    border: 2px solid #e2e8f0;
     border-radius: 8px;
     font-size: 1rem;
     transition: all 0.2s ease;
-    background: #2d3748;
+    background: #ffffff;
     font-family: inherit;
-    color: #ffffff;
+    color: #1e293b;
 }
 
 .eipsi-wizard-step .form-input:focus,
@@ -266,13 +266,13 @@
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    background: #374151;
-    color: #ffffff;
+    background: #ffffff;
+    color: #1e293b;
 }
 
 .eipsi-wizard-step .form-input::placeholder,
 .eipsi-wizard-step .form-textarea::placeholder {
-    color: #9ca3af;
+    color: #94a3b8;
 }
 
 .eipsi-wizard-step .form-select {
@@ -289,7 +289,7 @@
 .eipsi-wizard-step .form-help {
     margin-top: 0.25rem;
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: #64748b;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -299,7 +299,7 @@
 .eipsi-wizard-step .button-link {
     background: none;
     border: none;
-    color: #60a5fa;
+    color: #2563eb;
     cursor: pointer;
     text-decoration: underline;
     font-size: 0.85rem;
@@ -308,7 +308,7 @@
 }
 
 .eipsi-wizard-step .button-link:hover {
-    color: #3b82f6;
+    color: #1d4ed8;
 }
 
 /* === CARDS & SECTIONS === */
@@ -337,10 +337,10 @@
 .waves-config,
 .timing-config,
 .participants-config {
-    background: #2d3748;
+    background: #f8fafc;
     border-radius: 12px;
-    border: 2px solid #4a5568;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* === RESPONSIVE DESIGN === */

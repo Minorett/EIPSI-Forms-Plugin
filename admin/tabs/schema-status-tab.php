@@ -45,17 +45,12 @@ $needs_collation_fix = $collation_issues['needs_fix'];
 <div id="schema-status-tab" class="schema-status-tab-container">
     <h2>💾 DATABASE SCHEMA STATUS</h2>
 
-    <!-- Refresh Controls -->
+    <!-- Refresh Controls - Simplified: Auto-fixes run silently -->
     <div class="monitoring-controls">
         <button id="refresh-schema" class="button button-primary">🔄 Refresh Now</button>
-        <?php if ($needs_collation_fix): ?>
-        <button id="fix-collations" class="button button-secondary" data-needs-fix="true">
-            🔧 Corregir Collations 
-            <span class="collation-badge"><?php echo intval($collation_issues['issues_count']); ?></span>
-        </button>
-        <?php endif; ?>
+        <!-- Collation fixes are now handled automatically -->
         <label>
-            <input type="checkbox" id="auto-refresh-schema" checked>
+            <input type="checkbox" id="auto-refresh-schema">
             Auto-refresh every 30s
         </label>
         <button id="export-schema-report" class="button button-secondary">📥 Export Report</button>
@@ -67,21 +62,9 @@ $needs_collation_fix = $collation_issues['needs_fix'];
         </span>
     </div>
 
-    <!-- Auto-Fix Banner (shown if issues detected) -->
-    <div id="auto-fix-banner" class="auto-fix-banner" style="display: none; margin-bottom: 20px;">
-        <div class="monitoring-card" style="border-left: 4px solid #ff9800;">
-            <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; padding: 15px;">
-                <div>
-                    <strong>⚠️ Se detectaron problemas en la base de datos</strong>
-                    <p style="margin: 5px 0 0 0; color: #666; font-size: 13px;">
-                        Algunas configuraciones pueden estar incorrectas. Se recomienda ejecutar la corrección automática.
-                    </p>
-                </div>
-                <button id="auto-fix-issues" class="button button-primary" style="white-space: nowrap;">
-                    🔧 Auto-Fix Issues
-                </button>
-            </div>
-        </div>
+    <!-- Auto-Fix Banner - Hidden: Issues are fixed automatically in background -->
+    <div id="auto-fix-banner" class="auto-fix-banner" style="display: none !important; margin-bottom: 20px;">
+        <!-- Banner suppressed - fixes run automatically -->
     </div>
 
     <!-- Schema Health Summary Card -->
@@ -122,9 +105,10 @@ $needs_collation_fix = $collation_issues['needs_fix'];
                 <span class="stat-value"><?php echo number_format($schema_status['total_size_mb'], 2); ?> MB</span>
             </div>
             
-            <?php if (!empty($schema_status['issues'])): ?>
+            <!-- Issues list hidden by default - collations are handled automatically -->
+            <?php if (!empty($schema_status['issues']) && defined('EIPSI_SHOW_SCHEMA_ISSUES')): ?>
             <div class="issues-list">
-                <h4>⚠️ Issues Found:</h4>
+                <h4>⚠️ Issues Found (Developer Mode):</h4>
                 <ul>
                     <?php foreach ($schema_status['issues'] as $table => $issues): ?>
                         <?php foreach ($issues as $issue): ?>
@@ -613,11 +597,8 @@ jQuery(document).ready(function($) {
                 nonce: nonce,
             },
             success: function(response) {
-                if (response.success && response.data.needs_fix) {
-                    $('#auto-fix-banner').show();
-                } else {
-                    $('#auto-fix-banner').hide();
-                }
+                // Banner suppressed - fixes run automatically in background
+                $('#auto-fix-banner').hide();
             }
         });
     }
@@ -731,34 +712,15 @@ jQuery(document).ready(function($) {
                 nonce: nonce,
             },
             success: function(response) {
-                if (response.success) {
-                    const result = response.data;
-                    const $btn = $('#fix-collations');
-                    
-                    if (result.needs_fix) {
-                        if ($btn.length === 0) {
-                            // Button doesn't exist, create it
-                            $('<button id="fix-collations" class="button button-secondary" data-needs-fix="true">\n🔧 Corregir Collations \n<span class="collation-badge">' + result.issues_count + '</span>\n</button>')
-                                .insertAfter('#refresh-schema');
-                        } else {
-                            $btn.find('.collation-badge').text(result.issues_count);
-                            $btn.show();
-                        }
-                    } else {
-                        $btn.hide();
-                    }
-                }
+                // Collation button suppressed - fixes run automatically in background
+                $('#fix-collations').hide();
             }
         });
     }
     
-    // Check collations on initial load and every 2 minutes
-    checkCollations();
-    setInterval(checkCollations, 120000);
-    
-    // Check for auto-fix issues on load and periodically
-    checkAutoFixIssues();
-    setInterval(checkAutoFixIssues, 60000); // Every minute
+    // Collation and auto-fix checks disabled - fixes run automatically in background
+    // checkCollations(); // Disabled - no UI to update
+    // checkAutoFixIssues(); // Disabled - fixes run silently
     
     // Initial load
     loadSchemaStatus();

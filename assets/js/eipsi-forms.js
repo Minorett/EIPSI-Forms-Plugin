@@ -3896,15 +3896,8 @@ if ( pages.length === 0 ) {
                     }
                 }
                 
-                // Mensaje de recordatorio por email
-                let emailReminderMessage = '';
-                if (reminderDays === 0) {
-                    emailReminderMessage = '📧 Recibirás un recordatorio por email el mismo día.';
-                } else if (reminderDays === 1) {
-                    emailReminderMessage = '📧 Recibirás un recordatorio por email 1 día antes.';
-                } else {
-                    emailReminderMessage = `📧 Recibirás un recordatorio por email ${reminderDays} días antes.`;
-                }
+                // Mensaje de recordatorio por email - SIMPLIFIED: always sent when wave is available
+                const emailReminderMessage = '📧 Recibirás un email cuando la próxima toma esté disponible.';
 
                 nextWaveHtml = `
                     <div class="eipsi-next-wave-info" style="margin: 30px 0; padding: 20px; background: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 4px;">

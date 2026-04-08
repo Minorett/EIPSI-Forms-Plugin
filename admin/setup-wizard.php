@@ -429,6 +429,8 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
 
     // Extract timing intervals between waves (from step 3)
     $timing_intervals = isset($timing_config['timing_intervals']) ? $timing_config['timing_intervals'] : array();
+    // DEBUG: Log raw timing intervals
+    error_log('[EIPSI DEBUG] Raw timing_intervals: ' . json_encode($timing_intervals));
     // Build a map: from_wave_index => interval_days
     $interval_map = array();
     $time_unit_map = array(); // ✅ v1.5.7: Guardar también el time_unit
@@ -437,8 +439,11 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             $interval_map[$interval['from_wave']] = absint($interval['days_after']);
             // Guardar time_unit (default: 'days')
             $time_unit_map[$interval['from_wave']] = isset($interval['time_unit']) && $interval['time_unit'] === 'minutes' ? 'minutes' : 'days';
+            error_log("[EIPSI DEBUG] Mapping from_wave={$interval['from_wave']}: interval={$interval['days_after']}, time_unit={$time_unit_map[$interval['from_wave']]}");
         }
     }
+    error_log('[EIPSI DEBUG] interval_map: ' . json_encode($interval_map));
+    error_log('[EIPSI DEBUG] time_unit_map: ' . json_encode($time_unit_map));
 
     $created_count = 0;
 
@@ -475,6 +480,9 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             continue;
         }
 
+        // DEBUG: Log wave data before creation
+        error_log("[EIPSI DEBUG] Creating wave {$wave_index}: interval_days={$wave_data['interval_days']}, time_unit={$wave_data['time_unit']}, interval_key={$interval_key}");
+
         // Create wave using service
         $result = EIPSI_Wave_Service::create_wave($study_id, $wave_data);
 
@@ -482,7 +490,7 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             error_log('[EIPSI] Error creating wave: ' . $result->get_error_message());
         } else {
             $created_count++;
-            error_log('[EIPSI] Created wave ID ' . $result . ' for study ' . $study_id . ' with interval_days=' . $wave_data['interval_days']);
+            error_log('[EIPSI DEBUG] Created wave ID ' . $result . ' with time_unit=' . $wave_data['time_unit']);
         }
     }
 

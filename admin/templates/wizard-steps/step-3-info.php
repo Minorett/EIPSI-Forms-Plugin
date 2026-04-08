@@ -99,16 +99,16 @@ while (count($timing_intervals) < ($number_of_waves - 1)) {
                 <div class="quick-templates">
                     <h4>Plantillas Rápidas:</h4>
                     <div class="template-buttons">
-                        <button type="button" class="template-btn" onclick="eipsiApplyTimingTemplate('monitoreo_semanal')">
+                        <button type="button" class="template-btn" onclick="eipsiApplyTimingTemplate('monitoreo_semanal', this)">
                             📅 Monitoreo Semanal (7d c/u)
                         </button>
-                        <button type="button" class="template-btn" onclick="eipsiApplyTimingTemplate('pre_post_follow')">
+                        <button type="button" class="template-btn" onclick="eipsiApplyTimingTemplate('pre_post_follow', this)">
                             📋 Pre-Post-Seguimiento (7d, 30d, 90d)
                         </button>
-                        <button type="button" class="template-btn" onclick="eipsiApplyTimingTemplate('monthly')">
+                        <button type="button" class="template-btn" onclick="eipsiApplyTimingTemplate('monthly', this)">
                             📊 Evaluaciones Mensuales
                         </button>
-                        <button type="button" class="template-btn" onclick="eipsiApplyTimingTemplate('quarterly')">
+                        <button type="button" class="template-btn" onclick="eipsiApplyTimingTemplate('quarterly', this)">
                             📈 Evaluaciones Trimestrales
                         </button>
                     </div>
@@ -122,24 +122,15 @@ while (count($timing_intervals) < ($number_of_waves - 1)) {
                 
                 <div class="reminder-config">
                     <div class="config-item">
-                        <label for="reminder_days_before" class="form-label">
-                            Enviar recordatorio
+                        <label class="form-label">
+                            📧 Recordatorio de Nueva Toma
                         </label>
-                        <div class="input-group">
-                            <input type="number" 
-                                   id="reminder_days_before"
-                                   name="reminder_days_before" 
-                                   class="config-input" 
-                                   value="<?php echo $reminder_days_before; ?>"
-                                   min="0" 
-                                   max="30">
-                            <span class="input-suffix">días ANTES del vencimiento</span>
+                        <div class="info-box">
+                            <p>Los participantes recibirán un email automático <strong>cuando la próxima toma esté disponible</strong> (según el intervalo configurado arriba).</p>
                         </div>
-                        <small class="form-help">
-                            Los participantes recibirán un email de recordatorio antes de la fecha límite.
-                        </small>
+                        <input type="hidden" name="reminder_days_before" value="0">
                     </div>
-                    
+
                     <div class="config-item">
                         <label for="retry_after_days" class="form-label">
                             Si NO responde
@@ -205,7 +196,7 @@ while (count($timing_intervals) < ($number_of_waves - 1)) {
 
 <script>
 // Quick template functions
-function eipsiApplyTimingTemplate(template) {
+function eipsiApplyTimingTemplate(template, btn) {
     const intervalsList = document.getElementById('intervals-list');
     const numberOfWaves = parseInt('<?php echo $number_of_waves; ?>');
     
@@ -255,16 +246,16 @@ function eipsiApplyTimingTemplate(template) {
         });
         
         // Visual feedback
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.textContent = '✅ Aplicado';
-        btn.style.background = '#28a745';
-        btn.style.color = 'white';
+        const button = btn || event.target;
+        const originalText = button.textContent;
+        button.textContent = '✅ Aplicado';
+        button.style.background = '#28a745';
+        button.style.color = 'white';
         
         setTimeout(() => {
-            btn.textContent = originalText;
-            btn.style.background = '';
-            btn.style.color = '';
+            button.textContent = originalText;
+            button.style.background = '';
+            button.style.color = '';
         }, 2000);
     }
 }
@@ -370,37 +361,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .timing-section,
 .reminders-section {
-    background: var(--eipsi-primary-dark);
+    background: #f8fafc;
     padding: 2rem;
     border-radius: 12px;
-    border: 2px solid #1f314a;
-    color: #ffffff;
+    border: 2px solid #e2e8f0;
+    color: #1e293b;
 }
 
 .timing-section h3,
 .reminders-section h3 {
     margin: 0 0 0.5rem 0;
-    color: #ffffff;
+    color: #1e293b;
     font-size: 1.2rem;
     font-weight: 600;
 }
 
 .section-description {
     margin: 0 0 1.5rem 0;
-    color: #ffffff;
+    color: #64748b;
     font-size: 0.95rem;
-    opacity: 0.85;
 }
 
 .timing-section .form-label,
 .reminders-section .form-label {
-    color: #ffffff;
+    color: #1e293b;
 }
 
 .timing-section .form-help,
 .reminders-section .form-help {
-    color: #ffffff;
-    opacity: 0.8;
+    color: #64748b;
 }
 
 .intervals-list {
@@ -415,10 +404,10 @@ document.addEventListener('DOMContentLoaded', function() {
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: #1f314a;
+    background: #ffffff;
     border-radius: 8px;
-    border: 1px solid #2c4a71;
-    color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
 }
 
 .interval-header {
@@ -430,12 +419,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .interval-label {
     font-weight: 600;
-    color: #ffffff;
+    color: #1e293b;
     font-size: 0.9rem;
 }
 
 .interval-arrow {
-    color: #ffffff;
+    color: #64748b;
     font-weight: bold;
     font-size: 1.1rem;
 }
@@ -449,31 +438,36 @@ document.addEventListener('DOMContentLoaded', function() {
 .interval-days-input {
     width: 80px;
     padding: 0.5rem;
-    border: 2px solid #2c4a71;
+    border: 2px solid #e2e8f0;
     border-radius: 6px;
     text-align: center;
     font-weight: 600;
-    background: #1f314a;
-    color: #ffffff;
+    background: #ffffff;
+    color: #1e293b;
+}
+
+.interval-days-input:focus {
+    outline: none;
+    border-color: #3b82f6;
 }
 
 .interval-unit-select {
     padding: 0.5rem;
-    border: 2px solid #2c4a71;
+    border: 2px solid #e2e8f0;
     border-radius: 6px;
-    background: #1f314a;
-    color: #ffffff;
+    background: #ffffff;
+    color: #1e293b;
     font-size: 0.9rem;
     cursor: pointer;
 }
 
 .interval-unit-select:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #3b82f6;
 }
 
 .days-label {
-    color: #ffffff;
+    color: #64748b;
     font-size: 0.9rem;
 }
 
@@ -489,13 +483,13 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .quick-templates {
-    border-top: 1px solid #2c4a71;
+    border-top: 1px solid #e2e8f0;
     padding-top: 1.5rem;
 }
 
 .quick-templates h4 {
     margin: 0 0 1rem 0;
-    color: #ffffff;
+    color: #1e293b;
     font-size: 1rem;
 }
 
@@ -507,20 +501,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .template-btn {
     padding: 0.5rem 1rem;
-    background: #1f314a;
-    border: 2px solid #2c4a71;
+    background: #f1f5f9;
+    border: 2px solid #e2e8f0;
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
     transition: all 0.2s ease;
     white-space: nowrap;
-    color: #ffffff;
+    color: #1e293b;
 }
 
 .template-btn:hover {
-    background: #4a6fa5;
+    background: #3b82f6;
     color: white;
-    border-color: #4a6fa5;
+    border-color: #3b82f6;
 }
 
 .reminder-config {
@@ -543,16 +537,21 @@ document.addEventListener('DOMContentLoaded', function() {
 .config-input {
     width: 100px;
     padding: 0.5rem;
-    border: 2px solid #2c4a71;
+    border: 2px solid #e2e8f0;
     border-radius: 6px;
     text-align: center;
     font-weight: 600;
-    background: #1f314a;
-    color: #ffffff;
+    background: #ffffff;
+    color: #1e293b;
+}
+
+.config-input:focus {
+    outline: none;
+    border-color: #3b82f6;
 }
 
 .input-suffix {
-    color: #ffffff;
+    color: #64748b;
     font-size: 0.9rem;
 }
 
@@ -580,42 +579,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .checkbox-text {
     font-weight: 500;
-    color: #ffffff;
+    color: #1e293b;
 }
 
-/* Dark mode support */
+/* Dark mode support - DISABLED for admin */
 @media (prefers-color-scheme: dark) {
-    .timing-section,
-    .reminders-section {
-        background: var(--eipsi-primary-dark);
-        border-color: #1f314a;
-    }
-    
-    .interval-item {
-        background: #1f314a;
-        border-color: #2c4a71;
-    }
-    
-    .interval-label,
-    .section-description,
-    .days-label,
-    .input-suffix,
-    .checkbox-text {
-        color: #ffffff;
-    }
-    
-    .interval-days-input,
-    .config-input {
-        background: #1f314a;
-        border-color: #2c4a71;
-        color: #ffffff;
-    }
-    
-    .template-btn {
-        background: #1f314a;
-        border-color: #2c4a71;
-        color: #ffffff;
-    }
+    /* Keep light theme in admin for readability */
     
     .template-btn:hover {
         background: #4a6fa5;
