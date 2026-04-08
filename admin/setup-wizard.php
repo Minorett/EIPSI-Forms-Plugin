@@ -173,6 +173,11 @@ function eipsi_save_step_submission($step_number) {
     // Sanitize step data
     $sanitized_data = eipsi_sanitize_step_data($step_number, $step_data);
     
+    // DEBUG: Log timing intervals with time_unit for step 3
+    if ($step_number === 3 && !empty($sanitized_data['timing_intervals'])) {
+        error_log('[EIPSI DEBUG] Step 3 sanitized timing_intervals: ' . json_encode($sanitized_data['timing_intervals']));
+    }
+    
     // Save to transient
     eipsi_save_wizard_step($step_number, $sanitized_data);
     

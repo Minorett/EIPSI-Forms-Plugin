@@ -50,8 +50,20 @@ if (!empty($step_3['timing_intervals'])) {
     foreach ($step_3['timing_intervals'] as $interval) {
         $from_wave = intval($interval['from_wave']) + 1;
         $to_wave = intval($interval['to_wave']) + 1;
-        $days = intval($interval['days_after']);
-        $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$days} días";
+        $value = intval($interval['days_after']);
+        $time_unit = isset($interval['time_unit']) ? $interval['time_unit'] : 'days';
+        
+        // Determine label based on time_unit
+        $unit_label = 'días';
+        if ($time_unit === 'minutes') {
+            $unit_label = $value == 1 ? 'minuto' : 'minutos';
+        } elseif ($time_unit === 'hours') {
+            $unit_label = $value == 1 ? 'hora' : 'horas';
+        } elseif ($time_unit === 'days') {
+            $unit_label = $value == 1 ? 'día' : 'días';
+        }
+        
+        $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$value} {$unit_label}";
     }
 }
 
@@ -147,22 +159,22 @@ if (!empty($step_3['timing_intervals'])) {
                     
                     <div class="timing-details">
                         <div class="detail-item">
-                            <span class="label">Recordatorio:</span>
-                            <span class="value"><?php echo intval($step_3['reminder_days_before'] ?? 3); ?> días antes</span>
+                            <span class="label">Recordatorio de vencimiento:</span>
+                            <span class="value"><?php echo intval($step_3['reminder_days_before'] ?? 3); ?> días antes del deadline</span>
                         </div>
                         <div class="detail-item">
                             <span class="label">Reintentos:</span>
                             <span class="value">
                                 <?php if (!empty($step_3['enable_retries'])): ?>
-                                    Cada <?php echo intval($step_3['retry_after_days'] ?? 7); ?> días (máx <?php echo intval($step_3['max_retries'] ?? 3); ?>)
+                                    Cada <?php echo intval($step_3['retry_after_days'] ?? 7); ?> días (máx <?php echo intval($step_3['max_retries'] ?? 3); ?> reintentos)
                                 <?php else: ?>
                                     Deshabilitados
                                 <?php endif; ?>
                             </span>
                         </div>
                         <div class="detail-item">
-                            <span class="label">Notificación investigador:</span>
-                            <span class="value"><?php echo intval($step_3['investigator_notification_days'] ?? 14); ?> días sin respuesta</span>
+                            <span class="label">Alerta al investigador:</span>
+                            <span class="value">Después de <?php echo intval($step_3['investigator_notification_days'] ?? 14); ?> días sin respuesta</span>
                         </div>
                     </div>
                 </div>
