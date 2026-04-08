@@ -113,7 +113,22 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
         if ( $last_submission ) {
             // FIX (v2.1.1): Respect time_unit setting (minutes, hours, days)
             $interval_value  = (int) $next_wave['interval_days'];
-            $time_unit       = ! empty( $next_wave['time_unit'] ) ? $next_wave['time_unit'] : 'days';
+            $raw_time_unit   = ! empty( $next_wave['time_unit'] ) ? $next_wave['time_unit'] : 'days';
+            
+            // Map numeric values to strings (if stored as 0, 1, 2)
+            $numeric_map = array(
+                '0' => 'minutes',
+                '1' => 'hours',
+                '2' => 'days'
+            );
+            
+            if ( isset( $numeric_map[ $raw_time_unit ] ) ) {
+                $time_unit = $numeric_map[ $raw_time_unit ];
+            } elseif ( in_array( $raw_time_unit, array( 'minutes', 'hours', 'days' ) ) ) {
+                $time_unit = $raw_time_unit;
+            } else {
+                $time_unit = 'days'; // default
+            }
             
             // Map time_unit to strtotime-compatible string
             $unit_map = array(
@@ -241,7 +256,22 @@ $view_class      = 'view-' . esc_attr( $view_mode );
                                             // FIX (v2.1.1): Show correct time unit (minutes, hours, days)
                                             // IMPROVED (v2.2.0): Convert large minutes to human-readable format
                                             $interval_value = (int) $next_wave['interval_days'];
-                                            $time_unit      = ! empty( $next_wave['time_unit'] ) ? $next_wave['time_unit'] : 'days';
+                                            $raw_time_unit  = ! empty( $next_wave['time_unit'] ) ? $next_wave['time_unit'] : 'days';
+                                            
+                                            // Map numeric values to strings (if stored as 0, 1, 2)
+                                            $numeric_map = array(
+                                                '0' => 'minutes',
+                                                '1' => 'hours',
+                                                '2' => 'days'
+                                            );
+                                            
+                                            if ( isset( $numeric_map[ $raw_time_unit ] ) ) {
+                                                $time_unit = $numeric_map[ $raw_time_unit ];
+                                            } elseif ( in_array( $raw_time_unit, array( 'minutes', 'hours', 'days' ) ) ) {
+                                                $time_unit = $raw_time_unit;
+                                            } else {
+                                                $time_unit = 'days'; // default
+                                            }
                                             
                                             /**
                                              * Convert interval to human-readable format

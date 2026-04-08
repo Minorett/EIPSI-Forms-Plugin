@@ -13,39 +13,43 @@
    ========================================================================== */
 
 :root {
-    /* EIPSI Clinical Color Palette */
-    --eipsi-primary: #4a6fa5;
-    --eipsi-primary-dark: #2c4a71;
-    --eipsi-primary-light: #8a9fc0;
-    --eipsi-accent: #6b8cae;
-    --eipsi-success: #4a8c5c;
-    --eipsi-warning: #d4a762;
-    --eipsi-error: #a54a4a;
-    --eipsi-text: #2c3e50;
-    --eipsi-text-light: #7f8c8d;
-    --eipsi-bg: #f8f9fa;
+    /* EIPSI Unified Color Palette */
+    --eipsi-primary: #3B6CAA;
+    --eipsi-primary-hover: #1E3A5F;
+    --eipsi-primary-dark: #1A2F4F;
+    --eipsi-primary-light: #AED6F1;
+    --eipsi-primary-lighter: #d6edff;
+    --eipsi-accent: #5D8BB8;
+    
+    --eipsi-success: #10b981;
+    --eipsi-success-dark: #059669;
+    --eipsi-warning: #ffc107;
+    --eipsi-error: #ef4444;
+    
+    --eipsi-text: #1e293b;
+    --eipsi-text-secondary: #64748b;
+    --eipsi-text-muted: #94a3b8;
+    
+    --eipsi-bg: #ffffff;
+    --eipsi-bg-subtle: #f8f9fa;
+    --eipsi-bg-muted: #f1f5f9;
     --eipsi-card-bg: #ffffff;
-    --eipsi-border: #e1e8ed;
-    --eipsi-shadow: rgba(46, 64, 83, 0.1);
-    --eipsi-shadow-lg: rgba(46, 64, 83, 0.15);
+    --eipsi-border: #e2e8f0;
+    --eipsi-border-dark: #cbd5e0;
+    
+    --eipsi-shadow: rgba(0, 0, 0, 0.08);
+    --eipsi-shadow-lg: rgba(0, 0, 0, 0.1);
+    --eipsi-glow-primary: rgba(59, 108, 170, 0.4);
     
     /* Clinical warmth */
     --clinical-warmth: #f5f3f0;
     --clinical-highlight: #e8f0f5;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --eipsi-text: #ecf0f1;
-        --eipsi-text-light: #bdc3c7;
-        --eipsi-bg: #2c3e50;
-        --eipsi-card-bg: #34495e;
-        --eipsi-border: #3d566e;
-        --clinical-warmth: #2c3e50;
-        --clinical-highlight: #34495e;
-    }
-}
+/*
+ * NOTA: Dark mode eliminado - Se utiliza paleta unificada EIPSI light.
+ * Las variables CSS ahora son consistentes en todo el wizard.
+ */
 
 /* ==========================================================================
    MAIN CONTAINER - Warm and Professional
@@ -93,9 +97,10 @@
     text-align: center;
     margin-bottom: 2rem;
     padding: 1.5rem;
-    background: var(--eipsi-primary-dark);
+    background: linear-gradient(135deg, var(--eipsi-primary-dark) 0%, var(--eipsi-primary) 100%);
     color: #ffffff;
     border-radius: 12px;
+    box-shadow: 0 6px 20px var(--eipsi-glow-primary);
 }
 
 .step-header h2 {

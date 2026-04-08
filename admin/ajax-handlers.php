@@ -1646,14 +1646,42 @@ function eipsi_forms_submit_form_handler() {
                     $next_wave['wave_id']
                 ), ARRAY_A);
                 
+                // DEBUG: Log raw values from database
+                error_log(sprintf('[EIPSI-DIAG] Raw wave_config from DB: wave_id=%d, interval_days=%s, time_unit=%s',
+                    $next_wave['wave_id'],
+                    $wave_config['interval_days'] ?? 'NULL',
+                    $wave_config['time_unit'] ?? 'NULL'
+                ));
+                
+                // FIX: Ensure time_unit is a valid string value
+                $raw_time_unit = $wave_config['time_unit'] ?? 'days';
+                $valid_time_units = array('minutes', 'hours', 'days');
+                
+                // Map numeric values to strings (if stored as 0, 1, 2)
+                $numeric_map = array(
+                    '0' => 'minutes',
+                    '1' => 'hours',
+                    '2' => 'days'
+                );
+                
+                if (isset($numeric_map[$raw_time_unit])) {
+                    $time_unit = $numeric_map[$raw_time_unit];
+                } elseif (in_array($raw_time_unit, $valid_time_units)) {
+                    $time_unit = $raw_time_unit;
+                } else {
+                    $time_unit = 'days'; // default
+                }
+                
                 $next_wave_data = array(
                     'wave_index' => $next_wave['wave_index'],
                     'due_date' => $next_wave['due_date'],
                     'wave_name' => $next_wave['wave_name'],
                     'interval_days' => isset($wave_config['interval_days']) ? intval($wave_config['interval_days']) : 7,
                     'reminder_days' => isset($wave_config['reminder_days']) ? intval($wave_config['reminder_days']) : 0,
-                    'time_unit' => isset($wave_config['time_unit']) ? $wave_config['time_unit'] : 'days'
+                    'time_unit' => $time_unit
                 );
+                
+                error_log(sprintf('[EIPSI-DIAG] Prepared next_wave_data: %s', json_encode($next_wave_data)));
             }
         } else {
             error_log('[EIPSI-DIAG] CONDICIÓN NO CUMPLIDA - No se procesa assignment. Faltan: ' . 
@@ -3893,16 +3921,31 @@ function eipsi_check_schema_issues_handler() {
     $issues = array();
     $needs_fix = false;
     
-    // Check 1: Waves with invalid time_unit (NULL, empty, '0')
+    // Check 1: Waves with invalid time_unit (NULL, empty) 
+    // Note: '0', '1', '2' are valid numeric indices for minutes/hours/days
     $invalid_time_unit = $wpdb->get_var(
         "SELECT COUNT(*) FROM {$wpdb->prefix}survey_waves 
-         WHERE time_unit IS NULL OR time_unit = '' OR time_unit = '0'"
+         WHERE time_unit IS NULL OR time_unit = ''"
     );
     if ($invalid_time_unit > 0) {
         $issues[] = array(
             'type' => 'invalid_time_unit',
-            'description' => 'Waves con time_unit inválido',
+            'description' => 'Waves con time_unit NULL o vacío',
             'count' => intval($invalid_time_unit)
+        );
+        $needs_fix = true;
+    }
+    
+    // Check 1b: Waves with numeric time_unit that should be converted to string
+    $numeric_time_unit = $wpdb->get_var(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}survey_waves 
+         WHERE time_unit IN ('0', '1', '2')"
+    );
+    if ($numeric_time_unit > 0) {
+        $issues[] = array(
+            'type' => 'numeric_time_unit',
+            'description' => 'Waves con time_unit numérico (0/1/2) - será convertido a minutes/hours/days',
+            'count' => intval($numeric_time_unit)
         );
         $needs_fix = true;
     }
@@ -3946,19 +3989,50 @@ function eipsi_auto_fix_schema_issues_handler() {
     $fixes = array();
     $wpdb->suppress_errors(true);
     
-    // Fix 1: Set default time_unit = 'days' for waves with invalid values
+    // Fix 1a: Set default time_unit = 'days' for NULL/empty values
     $result = $wpdb->query(
         "UPDATE {$wpdb->prefix}survey_waves 
          SET time_unit = 'days' 
-         WHERE time_unit IS NULL OR time_unit = '' OR time_unit = '0'"
+         WHERE time_unit IS NULL OR time_unit = ''"
     );
     if ($result !== false && $wpdb->rows_affected > 0) {
         $fixes[] = array(
             'type' => 'time_unit_default',
-            'description' => 'Waves corregidas con time_unit = days',
+            'description' => 'Waves corregidas con time_unit = days (valores NULL/vacíos)',
             'affected_rows' => $wpdb->rows_affected
         );
-        error_log("[EIPSI Auto-Fix] Set time_unit='days' for {$wpdb->rows_affected} waves");
+        error_log("[EIPSI Auto-Fix] Set time_unit='days' for {$wpdb->rows_affected} waves (NULL/empty)");
+    }
+    
+    // Fix 1b: Convert numeric time_unit to string values
+    // '0' -> 'minutes', '1' -> 'hours', '2' -> 'days'
+    $numeric_map = array(
+        '0' => 'minutes',
+        '1' => 'hours',
+        '2' => 'days'
+    );
+    
+    $converted_total = 0;
+    foreach ($numeric_map as $numeric => $string_value) {
+        $result = $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->prefix}survey_waves 
+             SET time_unit = %s 
+             WHERE time_unit = %s",
+            $string_value,
+            $numeric
+        ));
+        if ($result !== false && $wpdb->rows_affected > 0) {
+            $converted_total += $wpdb->rows_affected;
+            error_log("[EIPSI Auto-Fix] Converted time_unit '{$numeric}' to '{$string_value}' for {$wpdb->rows_affected} waves");
+        }
+    }
+    
+    if ($converted_total > 0) {
+        $fixes[] = array(
+            'type' => 'time_unit_numeric_converted',
+            'description' => 'Waves con time_unit numérico convertido a string',
+            'affected_rows' => $converted_total
+        );
     }
     
     // Fix 2: Create missing assignments for participants in active studies
