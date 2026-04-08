@@ -55,102 +55,9 @@ if (empty($investigator_email)) {
     $investigator_email = get_option('admin_email');
 }
 $config['investigator_alert_email'] = $investigator_email;
-
-// Get global notifications settings
-$notification_defaults = array(
-    'enabled' => true,
-    'default_days_before' => 3,
-    'daily_send_time' => '09:00',
-    'max_per_run' => 150
-);
-$notifications_settings = wp_parse_args(get_option('eipsi_global_notifications_settings', array()), $notification_defaults);
-$notifications_message = '';
-
-// Handle form submission for global settings
-if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_notifications_nonce'], 'eipsi_notifications_settings')) {
-    $notifications_settings = array(
-        'enabled' => isset($_POST['notifications_enabled']),
-        'default_days_before' => max(1, absint($_POST['default_days_before'] ?? 3)),
-        'daily_send_time' => sanitize_text_field($_POST['daily_send_time'] ?? '09:00'),
-        'max_per_run' => max(1, absint($_POST['max_per_run'] ?? 150))
-    );
-    update_option('eipsi_global_notifications_settings', $notifications_settings);
-    $notifications_message = __('Configuración de recordatorios globales guardada.', 'eipsi-forms');
-}
 ?>
 
 <div class="eipsi-cron-reminders-tab">
-
-    <!-- Global Notifications Settings -->
-    <div class="eipsi-global-notifications-section" style="margin: 0 0 30px 0; padding: 25px; background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 8px;">
-        <h3 style="margin-top: 0; margin-bottom: 15px; color: #2c3e50; font-size: 18px; display: flex; align-items: center; gap: 10px;">
-            ⚙️ <?php _e('Configuración Global de Notificaciones', 'eipsi-forms'); ?>
-        </h3>
-        <p style="margin: 0 0 20px 0; color: #666; font-size: 14px; line-height: 1.5;">
-            <?php _e('Estos son los valores por defecto para todos los estudios longitudinales. Cada estudio puede personalizar estos ajustes individualmente.', 'eipsi-forms'); ?>
-        </p>
-
-        <?php if (!empty($notifications_message)): ?>
-            <div class="notice notice-success inline" style="margin: 0 0 20px 0;">
-                <p><?php echo esc_html($notifications_message); ?></p>
-            </div>
-        <?php endif; ?>
-
-        <form method="post" style="background: #ffffff; padding: 20px; border-radius: 6px; border: 1px solid #e0e0e0;">
-            <?php wp_nonce_field('eipsi_notifications_settings', 'eipsi_notifications_nonce'); ?>
-            <table class="form-table" role="presentation">
-                <tbody>
-                    <tr>
-                        <th scope="row">
-                            <?php _e('Recordatorios activos', 'eipsi-forms'); ?>
-                        </th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="notifications_enabled" value="1" <?php checked($notifications_settings['enabled']); ?>>
-                                <?php _e('Enviar recordatorios globales por defecto', 'eipsi-forms'); ?>
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">
-                            <label for="default_days_before">
-                                <?php _e('Tiempo antes del vencimiento', 'eipsi-forms'); ?>
-                            </label>
-                        </th>
-                        <td>
-                            <input type="number" id="default_days_before" name="default_days_before" value="<?php echo esc_attr($notifications_settings['default_days_before']); ?>" min="1" max="30" class="small-text">
-                            <p class="description" style="margin-top: 5px; color: #666; font-size: 12px;">
-                                <?php _e('Días antes del vencimiento. Para estudios con intervalos en minutos/horas, los recordatorios se envían cuando la wave está disponible.', 'eipsi-forms'); ?>
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">
-                            <label for="daily_send_time">
-                                <?php _e('Hora diaria de envío', 'eipsi-forms'); ?>
-                            </label>
-                        </th>
-                        <td>
-                            <input type="time" id="daily_send_time" name="daily_send_time" value="<?php echo esc_attr($notifications_settings['daily_send_time']); ?>">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">
-                            <label for="max_per_run">
-                                <?php _e('Máximo de envíos por ejecución', 'eipsi-forms'); ?>
-                            </label>
-                        </th>
-                        <td>
-                            <input type="number" id="max_per_run" name="max_per_run" value="<?php echo esc_attr($notifications_settings['max_per_run']); ?>" min="1" max="500" class="small-text">
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            <button type="submit" class="button button-primary">
-                <?php _e('Guardar configuración global', 'eipsi-forms'); ?>
-            </button>
-        </form>
-    </div>
 
     <!-- Manual Cron Execution -->
     <div style="margin: 0 0 20px 0; padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
@@ -158,7 +65,7 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
             🧪 <?php _e('Prueba Manual de Recordatorios', 'eipsi-forms'); ?>
         </h4>
         <p style="margin: 0 0 15px 0; color: #856404; font-size: 14px;">
-            <?php _e('Ejecuta el cron de recordatorios manualmente para probar el envío de emails. Útil para depuración con intervalos en minutos.', 'eipsi-forms'); ?>
+            <?php _e('Ejecuta el cron de recordatorios manualmente para el estudio seleccionado arriba. Envía recordatorios a participantes con waves pendientes y un email de prueba al investigador asignado.', 'eipsi-forms'); ?>
         </p>
         <button type="button" id="eipsi-run-reminders-cron" class="button button-secondary" style="background: #ffc107; border-color: #ffc107; color: #856404; font-weight: 600;">
             <?php _e('▶️ Ejecutar Cron de Recordatorios Ahora', 'eipsi-forms'); ?>
@@ -592,10 +499,21 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
         runCronButton.addEventListener('click', function() {
             const status = document.getElementById('cron-run-status');
             const btn = this;
+            
+            // Get selected study ID
+            const studyIdInput = document.getElementById('selected_study_id');
+            const studyId = studyIdInput ? studyIdInput.value : '';
+            
+            // Validate study selection
+            if (!studyId) {
+                status.textContent = '⚠️ Por favor selecciona un estudio longitudinal primero';
+                status.style.color = '#f0ad4e';
+                return;
+            }
 
             btn.disabled = true;
             btn.textContent = '⏳ Ejecutando...';
-            status.textContent = 'Espera...';
+            status.textContent = 'Enviando recordatorios y email de prueba...';
 
             fetch(ajaxurl, {
                 method: 'POST',
@@ -604,7 +522,8 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
                 },
                 body: new URLSearchParams({
                     action: 'eipsi_run_reminders_cron',
-                    nonce: '<?php echo wp_create_nonce("eipsi_cron_nonce"); ?>'
+                    nonce: '<?php echo wp_create_nonce("eipsi_cron_nonce"); ?>',
+                    study_id: studyId
                 })
             })
             .then(response => response.json())

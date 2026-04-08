@@ -18,15 +18,24 @@ if (!defined('ABSPATH')) {
  *
  * @since 1.4.2
  */
-function eipsi_send_wave_reminders_hourly() {
-    error_log('[EIPSI Cron] Starting hourly wave reminders');
+function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
+    error_log('[EIPSI Cron] Starting hourly wave reminders' . ($specific_study_id ? " for study {$specific_study_id}" : ' for all studies'));
 
     global $wpdb;
 
-    // Get all active studies with reminders enabled
-    $studies = $wpdb->get_results(
-        "SELECT id, study_name, config FROM {$wpdb->prefix}survey_studies WHERE status = 'active'"
-    );
+    // Get studies to process
+    if ($specific_study_id) {
+        // Process only specific study (from manual cron)
+        $studies = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, study_name, config FROM {$wpdb->prefix}survey_studies WHERE id = %d AND status = 'active'",
+            $specific_study_id
+        ));
+    } else {
+        // Get all active studies with reminders enabled (automated cron)
+        $studies = $wpdb->get_results(
+            "SELECT id, study_name, config FROM {$wpdb->prefix}survey_studies WHERE status = 'active'"
+        );
+    }
 
     if (empty($studies)) {
         error_log('[EIPSI Cron] No active studies found');
@@ -179,7 +188,13 @@ function eipsi_send_wave_reminders_hourly() {
         }
     }
 
-    error_log('[EIPSI Cron] Completed hourly wave reminders');
+    error_log('[EIPSI Cron] Completed hourly wave reminders' . ($specific_study_id ? " for study {$specific_study_id}" : ''));
+    
+    // Return summary for manual cron
+    return array(
+        'processed_studies' => count($studies),
+        'total_emails_sent' => $emails_sent
+    );
 }
 add_action('eipsi_send_wave_reminders_hourly', 'eipsi_send_wave_reminders_hourly');
 
@@ -389,15 +404,64 @@ function eipsi_run_reminders_cron_handler() {
         wp_send_json_error(array('message' => __('Permission denied', 'eipsi-forms')));
     }
 
-    error_log('[EIPSI] Manual cron execution triggered by user');
+    // Get selected study ID from request
+    $study_id = isset($_POST['study_id']) ? intval($_POST['study_id']) : 0;
+    
+    error_log('[EIPSI] Manual cron execution triggered by user' . ($study_id ? " for study {$study_id}" : ''));
 
-    // Run the reminders function
-    eipsi_send_wave_reminders_hourly();
+    global $wpdb;
+    
+    // Get study info for test email
+    $study_info = null;
+    $investigator_email = null;
+    if ($study_id) {
+        $study_info = $wpdb->get_row($wpdb->prepare(
+            "SELECT study_name, study_code, investigator_email, config 
+             FROM {$wpdb->prefix}survey_studies 
+             WHERE id = %d",
+            $study_id
+        ));
+        if ($study_info) {
+            $config = !empty($study_info->config) ? json_decode($study_info->config, true) : array();
+            $investigator_email = !empty($config['investigator_alert_email']) 
+                ? $config['investigator_alert_email'] 
+                : ($study_info->investigator_email ?? get_option('admin_email'));
+        }
+    }
+
+    // Run the reminders function for specific study (or all if no study selected)
+    $result = eipsi_send_wave_reminders_hourly($study_id > 0 ? $study_id : null);
+
+    // Send test email to investigator
+    $test_email_sent = false;
+    if ($study_info && $investigator_email) {
+        $test_subject = "[EIPSI Forms] Prueba de Recordatorio - {$study_info->study_name}";
+        $test_message = sprintf(
+            "Este es un email de prueba del sistema EIPSI Forms.\n\n" .
+            "Estudio: %s (%s)\n" .
+            "ID de Estudio: %d\n" .
+            "Fecha/Hora: %s\n" .
+            "Ejecutado por: %s\n\n" .
+            "Resumen de ejecución:\n" .
+            "- Estudios procesados: %d\n" .
+            "- Emails enviados a participantes: %d\n\n" .
+            "Si recibiste este email, el sistema de recordatorios está funcionando correctamente.",
+            $study_info->study_name,
+            $study_info->study_code,
+            $study_id,
+            date('Y-m-d H:i:s'),
+            wp_get_current_user()->display_name,
+            $result['processed_studies'] ?? 0,
+            $result['total_emails_sent'] ?? 0
+        );
+        
+        $test_email_sent = wp_mail($investigator_email, $test_subject, $test_message);
+        error_log("[EIPSI] Test email sent to investigator: {$investigator_email} - Result: " . ($test_email_sent ? 'SUCCESS' : 'FAILED'));
+    }
 
     // Get last cron logs
-    global $wpdb;
     $logs = $wpdb->get_results(
-        "SELECT log_id, survey_id, participant_id, email_type, status, sent_at, error_message
+        "SELECT id, survey_id, participant_id, email_type, status, sent_at, error_message
          FROM {$wpdb->prefix}survey_email_log
          WHERE email_type = 'reminder'
          AND sent_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
@@ -405,15 +469,28 @@ function eipsi_run_reminders_cron_handler() {
          LIMIT 10"
     );
 
-    $message = 'Cron ejecutado. Revisa los logs del servidor para detalles.';
+    // Build response message
+    if ($study_info) {
+        $message = sprintf('Cron ejecutado para estudio "%s".', $study_info->study_name);
+    } else {
+        $message = 'Cron ejecutado para todos los estudios activos.';
+    }
+    
     if (!empty($logs)) {
         $count = count($logs);
-        $message .= " Enviados {$count} recordatorios recientemente.";
+        $message .= " Enviados {$count} recordatorios a participantes.";
+    }
+    
+    if ($test_email_sent) {
+        $message .= " Email de prueba enviado a {$investigator_email}.";
     }
 
     wp_send_json_success(array(
         'message' => $message,
-        'logs' => $logs
+        'logs' => $logs,
+        'study_id' => $study_id,
+        'test_email_sent' => $test_email_sent,
+        'investigator_email' => $investigator_email
     ));
 }
 
