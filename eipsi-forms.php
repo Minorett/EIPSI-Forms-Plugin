@@ -105,7 +105,7 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-migration.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/configuration.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers-wizard.php';
-require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-study-control-handlers.php';
+// Note: Study control handlers now included in ajax-handlers-wizard.php
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-email-log-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-reminders-handler.php';
