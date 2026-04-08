@@ -2384,7 +2384,7 @@
 	function renderWaves( waves ) {
 		let html = '';
 
-		waves.forEach( function ( wave ) {
+		waves.forEach( function ( wave, index ) {
 			const statusBadge = getStatusBadge( wave.status );
 			let progressColor = 'orange';
 			if ( wave.progress >= 75 ) {
@@ -2393,9 +2393,21 @@
 				progressColor = 'blue';
 			}
 
-			// v2.1.2: Simplified wave card - read-only progress info
-			// Removed: deadline display (not applicable with auto-intervals)
-			// Removed: action buttons (extend deadline, send reminder)
+			// v2.1.2: Build interval display for visual verification
+			// Shows: "20 días y 2 horas después de T1" or "Disponible inmediatamente"
+			let intervalDisplay = '';
+			if ( index === 0 ) {
+				intervalDisplay = '<span class="interval-badge first">📅 Disponible inmediatamente</span>';
+			} else if ( wave.interval_days > 0 ) {
+				const timeUnit = wave.time_unit || 'days';
+				// v2.1.3: Use human-readable format (converts 28934 min to "20 días y 2 horas")
+				const readableInterval = formatIntervalHumanReadable( wave.interval_days, timeUnit );
+				const prevWaveNum = index; // T1=0, T2=1, so prev is same as current index
+				intervalDisplay = `<span class="interval-badge ${timeUnit}">⏱️ ${readableInterval} después de T${prevWaveNum}</span>`;
+			}
+
+			// v2.1.2: Simplified wave card with interval info
+			// Shows interval configuration for debugging "minutes = minutes"
 			html +=
 				'<div class="wave-summary-card" data-wave-id="' +
 				wave.id +
@@ -2406,6 +2418,7 @@
 				'</h4>' +
 				statusBadge +
 				'</div>' +
+				intervalDisplay +
 				'<div class="wave-progress-bar">' +
 				'<div class="progress-fill ' +
 				progressColor +
@@ -2428,6 +2441,62 @@
 		} );
 
 		$( '#waves-container' ).html( html );
+	}
+
+	/**
+	 * Format interval in human-readable format
+	 * - Large minutes (>60) convert to hours/days for readability
+	 * - Shows "1 minuto", "2 horas", "3 días y 4 horas"
+	 */
+	function formatIntervalHumanReadable( value, unit ) {
+		// Convert to minutes first
+		let totalMinutes = value;
+		if ( unit === 'hours' ) {
+			totalMinutes = value * 60;
+		} else if ( unit === 'days' ) {
+			totalMinutes = value * 1440;
+		}
+
+		// Less than 1 hour: show minutes
+		if ( totalMinutes < 60 ) {
+			return totalMinutes === 1 ? '1 minuto' : totalMinutes + ' minutos';
+		}
+
+		// Less than 24 hours: show hours (with minutes if not exact)
+		if ( totalMinutes < 1440 ) {
+			const hours = Math.floor( totalMinutes / 60 );
+			const mins = totalMinutes % 60;
+			if ( mins === 0 ) {
+				return hours === 1 ? '1 hora' : hours + ' horas';
+			} else {
+				return hours + ' horas y ' + mins + ' minutos';
+			}
+		}
+
+		// 24 hours or more: show days and hours
+		const days = Math.floor( totalMinutes / 1440 );
+		const remainingMins = totalMinutes % 1440;
+		const hours = Math.floor( remainingMins / 60 );
+
+		if ( remainingMins === 0 ) {
+			return days === 1 ? '1 día' : days + ' días';
+		} else if ( hours === 0 ) {
+			const mins = remainingMins % 60;
+			if ( mins === 0 ) {
+				return days === 1 ? '1 día' : days + ' días';
+			} else {
+				return days + ( days === 1 ? ' día y ' : ' días y ' ) + mins + ' minutos';
+			}
+		} else {
+			return days + ( days === 1 ? ' día y ' : ' días y ' ) + hours + ( hours === 1 ? ' hora' : ' horas' );
+		}
+	}
+
+	/**
+	 * Legacy function - kept for compatibility
+	 */
+	function formatTimeUnit( value, unit ) {
+		return formatIntervalHumanReadable( value, unit );
 	}
 
 	function loadEmailLogs( studyId ) {

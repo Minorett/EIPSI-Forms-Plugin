@@ -168,7 +168,8 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             $wave->id
         ));
         
-        // Usar nombres de columnas correctos según el schema
+        // v2.1.2: Add interval configuration for visual verification
+        // This helps confirm that "minutes = minutes" and not accidentally "days"
         $waves_stats[] = array(
             'id' => $wave->id,
             'wave_name' => $wave->name,
@@ -178,7 +179,9 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             'total' => $total_assignments,
             'completed' => $completed_assignments,
             'progress' => ($total_assignments > 0) ? round(($completed_assignments / $total_assignments) * 100) : 0,
-            'reminders_sent' => 0 // TODO: Implement reminder tracking
+            'reminders_sent' => 0, // TODO: Implement reminder tracking
+            'interval_days' => isset($wave->interval_days) ? intval($wave->interval_days) : 0,
+            'time_unit' => isset($wave->time_unit) ? $wave->time_unit : 'days'
         );
     }
 
