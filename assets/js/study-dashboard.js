@@ -73,11 +73,6 @@
                 self.addParticipant();
             });
 
-            // Delete study
-            $('#action-delete-study').on('click', function() {
-                self.deleteStudy();
-            });
-
             // View participants
             $('#action-view-participants').on('click', function() {
                 self.openParticipantsList();
@@ -190,49 +185,6 @@
             $('html, body').animate({
                 scrollTop: $(modalSelector).offset().top - 50
             }, 300);
-        },
-
-        deleteStudy: function() {
-            const self = this;
-            
-            if (!confirm('¿Estás seguro de que querés eliminar este estudio?\n\n⚠️ Esta acción eliminará TODOS los datos relacionados:\n• Participantes\n• Waves\n• Asignaciones\n• Emails enviados\n• Sesiones\n\nEsta acción NO SE PUEDE DESHACER.')) {
-                return;
-            }
-
-            // Double confirmation for safety
-            if (!confirm('⚠️ ÚLTIMA ADVERTENCIA ⚠️\n\nEl estudio será eliminado permanentemente.\n¿Continuar?')) {
-                return;
-            }
-
-            $.ajax({
-                url: eipsiStudyDash.ajaxUrl,
-                type: 'POST',
-                data: {
-                    action: 'eipsi_delete_study',
-                    study_id: this.currentStudyId,
-                    nonce: eipsiStudyDash.nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Close modal
-                        $('#eipsi-study-dashboard-modal').fadeOut();
-                        self.stopAutoRefresh();
-                        
-                        // Show success message
-                        self.showToast(response.data.message || 'Estudio eliminado correctamente', 'success');
-                        
-                        // Reload page after short delay
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 1500);
-                    } else {
-                        self.showToast('Error: ' + (response.data || 'No se pudo eliminar el estudio'), 'error');
-                    }
-                },
-                error: function() {
-                    self.showToast('Error de conexión al intentar eliminar el estudio', 'error');
-                }
-            });
         },
 
         loadStudyData: function(studyId) {

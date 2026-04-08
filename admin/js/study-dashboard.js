@@ -356,7 +356,17 @@
 					'Esta acción NO se puede deshacer.',
 				confirmText: 'Sí, eliminar',
 				onConfirm() {
-					deleteStudy( currentStudyId );
+					// Second confirmation for safety
+					showConfirmationDialog( {
+						title: '⚠️ ÚLTIMA ADVERTENCIA',
+						message:
+							'El estudio será eliminado PERMANENTEMENTE.\n\n' +
+							'¿Estás COMPLETAMENTE SEGURO?',
+						confirmText: 'Eliminar permanentemente',
+						onConfirm() {
+							deleteStudy( currentStudyId );
+						},
+					} );
 				},
 			} );
 		} );
