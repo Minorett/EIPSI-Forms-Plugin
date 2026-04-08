@@ -140,27 +140,9 @@ $config['investigator_alert_email'] = $investigator_email;
                         </div>
                     </label>
 
-                    <div class="eipsi-input-group" style="margin: 15px 0; padding: 18px; background: #fafbfc; border-left: 3px solid #3B6CAA; border-radius: 0 4px 4px 0;">
-                        <label for="reminder_days_before" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
-                            📅 <?php _e('Tiempo antes de vencimiento para enviar recordatorios', 'eipsi-forms'); ?>
-                        </label>
-                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                            <input type="number"
-                                   id="reminder_days_before"
-                                   name="reminder_days_before"
-                                   value="<?php echo esc_attr(intval($config['reminder_days_before'])); ?>"
-                                   min="1"
-                                   max="30"
-                                   aria-describedby="reminder_days_before_help"
-                                   style="width: 120px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 500;">
-                            <span style="color: #666; font-size: 13px; background: #e8ecef; padding: 4px 10px; border-radius: 12px;">
-                                <?php _e('Unidades: días (ajustar según intervalos del estudio)', 'eipsi-forms'); ?>
-                            </span>
-                        </div>
-                        <p id="reminder_days_before_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
-                            <?php _e('¿Con cuánta anticipación (en días) quieres que se envíen los recordatorios? Nota: Para estudios con intervalos en minutos, los recordatorios se envían automáticamente cuando la wave está disponible.', 'eipsi-forms'); ?>
-                        </p>
-                    </div>
+                    <!-- REMOVED: reminder_days_before setting - not applicable to longitudinal studies -->
+                    <!-- For longitudinal studies, reminders are sent when waves become available, not before due date -->
+                    <input type="hidden" name="reminder_days_before" value="0">
 
                     <div class="eipsi-input-group" style="margin: 15px 0; padding: 18px; background: #fafbfc; border-left: 3px solid #3B6CAA; border-radius: 0 4px 4px 0;">
                         <label for="max_reminder_emails" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">

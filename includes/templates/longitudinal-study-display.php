@@ -35,6 +35,12 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Ensure Wave_Service is loaded for time_unit normalization
+// v2.1.2: Prevents empty(0) bug when time_unit = 0 (minutes)
+if ( ! class_exists( 'Wave_Service' ) ) {
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/Wave_Service.php';
+}
+
 // =========================================================================
 // Bootstrap variables
 // =========================================================================
@@ -111,32 +117,23 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
         ) );
 
         if ( $last_submission ) {
-            // FIX (v2.1.1): Respect time_unit setting (minutes, hours, days)
+            // FIX (v2.1.2): Use Wave_Service helper to safely normalize time_unit
+            // This prevents the empty(0) === true bug that treated minutes as days
             $interval_value  = (int) $next_wave['interval_days'];
-            $raw_time_unit   = ! empty( $next_wave['time_unit'] ) ? $next_wave['time_unit'] : 'days';
+            
+            // CRITICAL: Use Wave_Service::normalize_time_unit() to safely handle
+            // all possible values: 0, '0', 1, '1', 2, '2', 'minutes', 'hours', 'days'
+            // The empty() function treats 0 as empty, causing the minutes bug
+            $time_unit = Wave_Service::normalize_time_unit( $next_wave['time_unit'] ?? null );
             
             // DEBUG: Log values for troubleshooting
-            error_log(sprintf('[EIPSI-DISPLAY] wave_id=%d, raw_time_unit=%s, interval_value=%d, submitted_at=%s',
+            error_log(sprintf('[EIPSI-DISPLAY] wave_id=%d, raw_time_unit=%s, normalized_time_unit=%s, interval_value=%d, submitted_at=%s',
                 $next_wave['id'],
-                $raw_time_unit,
+                $next_wave['time_unit'] ?? 'NULL',
+                $time_unit,
                 $interval_value,
                 $last_submission->submitted_at
             ));
-            
-            // Map numeric values to strings (if stored as 0, 1, 2)
-            $numeric_map = array(
-                '0' => 'minutes',
-                '1' => 'hours',
-                '2' => 'days'
-            );
-            
-            if ( isset( $numeric_map[ $raw_time_unit ] ) ) {
-                $time_unit = $numeric_map[ $raw_time_unit ];
-            } elseif ( in_array( $raw_time_unit, array( 'minutes', 'hours', 'days' ) ) ) {
-                $time_unit = $raw_time_unit;
-            } else {
-                $time_unit = 'days'; // default
-            }
             
             // Map time_unit to strtotime-compatible string
             $unit_map = array(

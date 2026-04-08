@@ -440,9 +440,14 @@ function eipsi_run_reminders_cron_handler() {
     // Run the reminders function for specific study (or all if no study selected)
     $result = eipsi_send_wave_reminders_hourly($study_id > 0 ? $study_id : null);
 
-    // Send test email to investigator
+    // Send test email to investigator using EIPSI_Email_Service (with SMTP)
     $test_email_sent = false;
     if ($study_info && $investigator_email) {
+        // Ensure email service is loaded
+        if (!class_exists('EIPSI_Email_Service')) {
+            require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+        }
+        
         $test_subject = "[EIPSI Forms] Prueba de Recordatorio - {$study_info->study_name}";
         $test_message = sprintf(
             "Este es un email de prueba del sistema EIPSI Forms.\n\n" .
@@ -463,7 +468,16 @@ function eipsi_run_reminders_cron_handler() {
             $result['total_emails_sent'] ?? 0
         );
         
-        $test_email_sent = wp_mail($investigator_email, $test_subject, $test_message);
+        // Use EIPSI_Email_Service instead of raw wp_mail() to ensure SMTP is used
+        $test_email_sent = EIPSI_Email_Service::send_email(
+            $study_id,
+            0, // participant_id = 0 for test email
+            $investigator_email,
+            'test', // email_type
+            $test_subject,
+            $test_message
+        );
+        
         error_log("[EIPSI] Test email sent to investigator: {$investigator_email} - Result: " . ($test_email_sent ? 'SUCCESS' : 'FAILED'));
     }
 

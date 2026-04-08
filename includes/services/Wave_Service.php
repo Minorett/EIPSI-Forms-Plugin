@@ -202,4 +202,66 @@ class Wave_Service {
         
         return $status;
     }
+
+    /**
+     * NORMALIZAR time_unit de forma segura
+     * 
+     * CRITICAL: Esta función evita el bug de empty(0) === true
+     * que causaba que '0' (minutos) se tratara como vacío.
+     * 
+     * Acepta: '0', '1', '2', 0, 1, 2, 'minutes', 'hours', 'days'
+     * Retorna siempre: 'minutes', 'hours', o 'days'
+     * 
+     * @param mixed $raw_value Valor crudo de time_unit (puede ser int, string, null)
+     * @return string 'minutes', 'hours', o 'days' (default: 'days')
+     */
+    public static function normalize_time_unit($raw_value) {
+        // Mapeo de valores numéricos a strings
+        $numeric_map = array(
+            '0' => 'minutes',
+            '1' => 'hours',
+            '2' => 'days',
+            0   => 'minutes',
+            1   => 'hours',
+            2   => 'days'
+        );
+        
+        // Si es null o empty string (pero NO 0), usar default
+        if ($raw_value === null || $raw_value === '') {
+            return 'days';
+        }
+        
+        // Si es numérico (0, 1, 2, '0', '1', '2')
+        if (isset($numeric_map[$raw_value])) {
+            return $numeric_map[$raw_value];
+        }
+        
+        // Si ya es string válido
+        $valid_strings = array('minutes', 'hours', 'days');
+        if (in_array($raw_value, $valid_strings, true)) {
+            return $raw_value;
+        }
+        
+        // Default fallback
+        error_log("[EIPSI WARNING] Unrecognized time_unit value: " . var_export($raw_value, true) . ", using 'days'");
+        return 'days';
+    }
+
+    /**
+     * VALIDAR time_unit al guardar una wave
+     * 
+     * Usar esta función antes de insertar/actualizar waves para
+     * asegurar que time_unit siempre se almacene como string válido.
+     * 
+     * @param array $wave_data Datos de la wave
+     * @return array Datos con time_unit normalizado
+     */
+    public static function validate_wave_time_unit($wave_data) {
+        if (isset($wave_data['time_unit'])) {
+            $wave_data['time_unit'] = self::normalize_time_unit($wave_data['time_unit']);
+        } else {
+            $wave_data['time_unit'] = 'days'; // default
+        }
+        return $wave_data;
+    }
 }
