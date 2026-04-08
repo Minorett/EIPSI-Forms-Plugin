@@ -159,8 +159,8 @@ if (!empty($step_3['timing_intervals'])) {
                     
                     <div class="timing-details">
                         <div class="detail-item">
-                            <span class="label">Recordatorio de vencimiento:</span>
-                            <span class="value"><?php echo intval($step_3['reminder_days_before'] ?? 3); ?> días antes del deadline</span>
+                            <span class="label">Notificación de nueva toma:</span>
+                            <span class="value">Email automático el mismo día que esté disponible</span>
                         </div>
                         <div class="detail-item">
                             <span class="label">Reintentos:</span>
