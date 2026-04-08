@@ -273,9 +273,10 @@
 					// Open edit modal
 					openEditStudyModal( currentStudyId );
 				} else {
-					// Redirect to waves manager for non-draft studies
+					// v2.1.2: Waves Manager removed - redirect to wizard for editing
+					// Note: Only cosmetic edits allowed for active studies (name, description)
 					window.location.href =
-						'?page=eipsi-results&tab=waves-manager&study_id=' +
+						'?page=eipsi-longitudinal-study&tab=create-study&edit=' +
 						currentStudyId;
 				}
 			}
@@ -2392,6 +2393,9 @@
 				progressColor = 'blue';
 			}
 
+			// v2.1.2: Simplified wave card - read-only progress info
+			// Removed: deadline display (not applicable with auto-intervals)
+			// Removed: action buttons (extend deadline, send reminder)
 			html +=
 				'<div class="wave-summary-card" data-wave-id="' +
 				wave.id +
@@ -2419,34 +2423,11 @@
 				'</strong>/' +
 				wave.total +
 				' completados</span>' +
-				'<span class="deadline">Vence: ' +
-				( wave.deadline ? formatDate( wave.deadline ) : 'Sin fecha' ) +
-				'</span>' +
-				'</div>' +
-				'<div class="wave-actions-row">' +
-				'<button class="button button-small extend-deadline" data-wave-id="' +
-				wave.id +
-				'">📅 Extender</button>' +
-				'<button class="button button-small send-reminder" data-wave-id="' +
-				wave.id +
-				'">📧 Recordatorio</button>' +
 				'</div>' +
 				'</div>';
 		} );
 
 		$( '#waves-container' ).html( html );
-
-		// Bind wave action buttons
-		$( '.extend-deadline' ).on( 'click', function () {
-			const waveId = $( this ).data( 'wave-id' );
-			$( '#extend-wave-id' ).val( waveId );
-			$( '#eipsi-extend-deadline-modal' ).fadeIn( 200 );
-		} );
-
-		$( '.send-reminder' ).on( 'click', function () {
-			const waveId = $( this ).data( 'wave-id' );
-			sendWaveReminder( waveId );
-		} );
 	}
 
 	function loadEmailLogs( studyId ) {

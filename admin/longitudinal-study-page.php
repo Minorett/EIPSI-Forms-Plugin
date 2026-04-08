@@ -1,14 +1,19 @@
 <?php
 /**
- * Longitudinal Study Page
+ * Longitudinal Study Admin Page
+ *
  * Admin page with tabs:
  * - Create Study
  * - Dashboard Study
- * - Waves Manager
  * - Recordatorios y Notificaciones
  * - Email Log & Dropout
  * - Longitudinal Pools
  * - Pool Analytics
+ * - Export
+ *
+ * @package EIPSI_Forms
+ * @since 1.4.0
+ * @since 2.1.2 - Removed Waves Manager tab (merged into Dashboard)
  */
 
 if (!defined('ABSPATH')) {
@@ -24,7 +29,7 @@ function eipsi_display_longitudinal_study_page() {
     $allowed_tabs = array(
         'create-study',
         'dashboard-study',
-        'waves-manager',
+        // REMOVED: 'waves-manager' - functionality merged into Dashboard
         'reminders',
         'email-log',
         'longitudinal-pools',
@@ -51,11 +56,7 @@ function eipsi_display_longitudinal_study_page() {
                data-tab="dashboard-study">
                 📚 <?php esc_html_e('Dashboard Study', 'eipsi-forms'); ?>
             </a>
-            <a href="?page=eipsi-longitudinal-study&tab=waves-manager"
-               class="nav-tab <?php echo esc_attr(($active_tab === 'waves-manager') ? 'nav-tab-active' : ''); ?>"
-               data-tab="waves-manager">
-                🌊 <?php esc_html_e('Waves Manager', 'eipsi-forms'); ?>
-            </a>
+            <!-- REMOVED: Waves Manager tab - functionality merged into Dashboard -->
             <a href="?page=eipsi-longitudinal-study&tab=reminders"
                class="nav-tab <?php echo esc_attr(($active_tab === 'reminders') ? 'nav-tab-active' : ''); ?>"
                data-tab="reminders">
@@ -101,11 +102,7 @@ function eipsi_display_longitudinal_study_page() {
             </div>
         <?php endif; ?>
 
-        <?php if ($active_tab === 'waves-manager'): ?>
-            <div class="tab-content" data-tab="waves-manager">
-                <?php include dirname(__FILE__) . '/tabs/waves-manager-tab.php'; ?>
-            </div>
-        <?php endif; ?>
+        <!-- REMOVED: waves-manager tab content - functionality merged into Dashboard -->
 
         <?php if ($active_tab === 'reminders'): ?>
             <div class="tab-content" data-tab="reminders">

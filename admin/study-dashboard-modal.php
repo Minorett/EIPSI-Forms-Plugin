@@ -32,7 +32,7 @@ if (!defined('ABSPATH')) {
                         <div class="card-body">
                             <p><strong><?php esc_html_e('Estado:', 'eipsi-forms'); ?></strong> <span id="study-status-badge" class="eipsi-badge"></span></p>
                             <p><strong><?php esc_html_e('Creado:', 'eipsi-forms'); ?></strong> <span id="study-created-at"></span></p>
-                            <p><strong><?php esc_html_e('Estimado Finalización:', 'eipsi-forms'); ?></strong> <span id="study-estimated-end"></span></p>
+                            <!-- REMOVED: Estimated end date - not applicable with auto-intervals -->
                             <p><strong><?php esc_html_e('ID Interno:', 'eipsi-forms'); ?></strong> <code id="study-id-display"></code></p>
                         </div>
                     </div>
