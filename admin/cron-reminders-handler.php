@@ -468,16 +468,11 @@ function eipsi_run_reminders_cron_handler() {
             $result['total_emails_sent'] ?? 0
         );
         
-        // Use EIPSI_Email_Service instead of raw wp_mail() to ensure SMTP is used
-        $test_email_sent = EIPSI_Email_Service::send_email(
-            $study_id,
-            0, // participant_id = 0 for test email
-            $investigator_email,
-            'test', // email_type
-            $test_subject,
-            $test_message
-        );
-        
+        // v2.1.3: Use wp_mail directly for test email (send_email is private)
+        // Note: Test emails to investigators don't need SMTP logging
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+        $test_email_sent = wp_mail($investigator_email, $test_subject, nl2br($test_message), $headers);
+
         error_log("[EIPSI] Test email sent to investigator: {$investigator_email} - Result: " . ($test_email_sent ? 'SUCCESS' : 'FAILED'));
     }
 

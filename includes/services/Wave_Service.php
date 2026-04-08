@@ -147,8 +147,97 @@ class Wave_Service {
                 $result
             ));
         }
-        
+
+        // v2.1.3: Trigger immediate email for minute-based intervals
+        // If next wave has minutes interval and is immediately available, send email now
+        if ($result !== false) {
+            self::maybe_send_immediate_wave_reminder($participant_id, $study_id, $wave_id);
+        }
+
         return true; // Devolvemos true aunque result sea 0 (ya estaba submitted)
+    }
+
+    /**
+     * Send immediate reminder if next wave has minute-based interval
+     * This ensures emails arrive immediately for short intervals (testing/production)
+     *
+     * @param int $participant_id
+     * @param int $study_id
+     * @param int $completed_wave_id
+     */
+    private static function maybe_send_immediate_wave_reminder($participant_id, $study_id, $completed_wave_id) {
+        global $wpdb;
+
+        // Get the completed wave info
+        $completed_wave = $wpdb->get_row($wpdb->prepare(
+            "SELECT wave_index FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+            $completed_wave_id
+        ));
+
+        if (!$completed_wave) {
+            return;
+        }
+
+        // Find next wave
+        $next_wave = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}survey_waves
+             WHERE study_id = %d AND wave_index = %d
+             ORDER BY wave_index ASC LIMIT 1",
+            $study_id,
+            $completed_wave->wave_index + 1
+        ));
+
+        if (!$next_wave) {
+            error_log('[Wave_Service] No next wave found after wave ' . $completed_wave->wave_index);
+            return;
+        }
+
+        // Check if interval is in minutes (send immediately) or hours/days (let cron handle)
+        $time_unit = self::normalize_time_unit($next_wave->time_unit);
+
+        if ($time_unit !== 'minutes') {
+            error_log("[Wave_Service] Next wave has {$time_unit} interval - letting cron handle email");
+            return;
+        }
+
+        // For minutes: send email immediately
+        error_log("[Wave_Service] Next wave has MINUTES interval - triggering immediate email");
+
+        // Check if EIPSI_Email_Service is available
+        if (!class_exists('EIPSI_Email_Service')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-email-service.php';
+        }
+
+        if (!method_exists('EIPSI_Email_Service', 'send_wave_reminder_email')) {
+            error_log('[Wave_Service] EIPSI_Email_Service::send_wave_reminder_email not available');
+            return;
+        }
+
+        // Send the reminder email
+        $result = EIPSI_Email_Service::send_wave_reminder_email(
+            $study_id,
+            $participant_id,
+            $next_wave
+        );
+
+        if ($result) {
+            error_log("[Wave_Service] ✅ Immediate reminder email sent to participant {$participant_id} for wave {$next_wave->id}");
+
+            // Increment reminder count to prevent cron from sending duplicate
+            $wpdb->update(
+                $wpdb->prefix . 'survey_assignments',
+                array('reminder_count' => 1),
+                array(
+                    'participant_id' => $participant_id,
+                    'study_id' => $study_id,
+                    'wave_id' => $next_wave->id
+                ),
+                array('%d'),
+                array('%d', '%d', '%d')
+            );
+        } else {
+            error_log("[Wave_Service] ❌ Failed to send immediate reminder to participant {$participant_id}");
+        }
     }
     
     /**
