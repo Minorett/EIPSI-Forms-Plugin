@@ -1672,13 +1672,32 @@ function eipsi_forms_submit_form_handler() {
                     $time_unit = 'days'; // default
                 }
                 
+                // Calculate exact available timestamp for countdown
+                $interval_value = isset($wave_config['interval_days']) ? intval($wave_config['interval_days']) : 7;
+                $submitted_at = current_time('timestamp');
+                $available_at = $submitted_at;
+                
+                switch ($time_unit) {
+                    case 'minutes':
+                        $available_at = strtotime("+{$interval_value} minutes", $submitted_at);
+                        break;
+                    case 'hours':
+                        $available_at = strtotime("+{$interval_value} hours", $submitted_at);
+                        break;
+                    case 'days':
+                    default:
+                        $available_at = strtotime("+{$interval_value} days", $submitted_at);
+                        break;
+                }
+                
                 $next_wave_data = array(
                     'wave_index' => $next_wave['wave_index'],
                     'due_date' => $next_wave['due_date'],
                     'wave_name' => $next_wave['wave_name'],
-                    'interval_days' => isset($wave_config['interval_days']) ? intval($wave_config['interval_days']) : 7,
+                    'interval_days' => $interval_value,
                     'reminder_days' => isset($wave_config['reminder_days']) ? intval($wave_config['reminder_days']) : 0,
-                    'time_unit' => $time_unit
+                    'time_unit' => $time_unit,
+                    'available_at' => $available_at * 1000 // Convert to milliseconds for JS
                 );
                 
                 error_log(sprintf('[EIPSI-DIAG] Prepared next_wave_data: %s', json_encode($next_wave_data)));

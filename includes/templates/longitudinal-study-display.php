@@ -159,7 +159,15 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
 
             if ( $available_date > $now ) {
                 // Next wave is locked - interval not yet passed
-                $next_wave['available_date'] = date_i18n( get_option( 'date_format' ), $available_date );
+                // Format date as "8 de abril, 18:00" (no year if same year)
+                $current_year = date('Y');
+                $available_year = date('Y', $available_date);
+                if ( $available_year === $current_year ) {
+                    $next_wave['available_date'] = date_i18n( 'j \d\e F, H:i', $available_date );
+                } else {
+                    $next_wave['available_date'] = date_i18n( 'j \d\e F Y, H:i', $available_date );
+                }
+                $next_wave['available_timestamp'] = $available_date;
                 $next_wave['is_locked']      = true;
             }
         }
@@ -225,47 +233,45 @@ $view_class      = 'view-' . esc_attr( $view_mode );
                                 <strong class="wave-name"><?php echo esc_html( $next_wave['name'] ); ?></strong>
                             </div>
                             <?php if ( ! empty( $next_wave['is_locked'] ) ) : ?>
-                                <div class="wave-locked-message" data-eipsi-countdown data-available-timestamp="<?php echo esc_attr( $available_date ); ?>">
+                                <div class="wave-locked-message" data-eipsi-countdown data-available-timestamp="<?php echo esc_attr( $next_wave['available_timestamp'] ); ?>">
                                     <span class="lock-icon">🔒</span>
-                                    <p class="lock-text">
+                                    <div class="lock-content" style="flex: 1;">
                                         <?php
-                                        // Calculate time remaining
-                                        $time_remaining = $available_date - $now;
-                                        $time_remaining_text = '';
+                                        // Calculate time remaining for countdown
+                                        $time_remaining = $next_wave['available_timestamp'] - $now;
+                                        $countdown_parts = array();
                                         
                                         if ( $time_remaining > 0 ) {
                                             $remaining_days = floor( $time_remaining / DAY_IN_SECONDS );
                                             $remaining_hours = floor( ( $time_remaining % DAY_IN_SECONDS ) / HOUR_IN_SECONDS );
                                             $remaining_mins = floor( ( $time_remaining % HOUR_IN_SECONDS ) / MINUTE_IN_SECONDS );
                                             
-                                            $parts = array();
                                             if ( $remaining_days > 0 ) {
-                                                $parts[] = sprintf( _n( '%d día', '%d días', $remaining_days, 'eipsi-forms' ), $remaining_days );
+                                                $countdown_parts[] = $remaining_days . 'd';
                                             }
-                                            if ( $remaining_hours > 0 ) {
-                                                $parts[] = sprintf( _n( '%d hora', '%d horas', $remaining_hours, 'eipsi-forms' ), $remaining_hours );
+                                            if ( $remaining_hours > 0 || $remaining_days > 0 ) {
+                                                $countdown_parts[] = $remaining_hours . 'h';
                                             }
-                                            if ( $remaining_mins > 0 && $remaining_days === 0 ) { // Only show mins if less than a day
-                                                $parts[] = sprintf( _n( '%d minuto', '%d minutos', $remaining_mins, 'eipsi-forms' ), $remaining_mins );
+                                            if ( $remaining_mins > 0 || ( $remaining_days === 0 && $remaining_hours === 0 ) ) {
+                                                $countdown_parts[] = $remaining_mins . 'm';
                                             }
-                                            
-                                            $time_remaining_text = implode( ', ', $parts );
                                         }
-                                        
-                                        if ( ! empty( $time_remaining_text ) ) {
-                                            printf(
-                                                esc_html__( 'Disponible en %s (el %s)', 'eipsi-forms' ),
-                                                '<strong>' . esc_html( $time_remaining_text ) . '</strong>',
-                                                '<strong>' . esc_html( $next_wave['available_date'] ) . '</strong>'
-                                            );
-                                        } else {
-                                            printf(
-                                                esc_html__( 'Tu próxima toma estará disponible el %s', 'eipsi-forms' ),
-                                                '<strong>' . esc_html( $next_wave['available_date'] ) . '</strong>'
-                                            );
-                                        }
+                                        $countdown_text = implode( ' ', $countdown_parts );
                                         ?>
-                                    </p>
+                                        <p class="lock-text" style="margin: 0 0 4px 0; font-weight: 500;">
+                                            📅 <?php 
+                                            printf(
+                                                esc_html__( 'Disponible el %s', 'eipsi-forms' ),
+                                                esc_html( $next_wave['available_date'] )
+                                            ); 
+                                            ?>
+                                        </p>
+                                        <?php if ( ! empty( $countdown_text ) ) : ?>
+                                            <p class="countdown-text" style="margin: 0; font-size: 13px; color: #0284c7;">
+                                                ⏳ <?php printf( esc_html__( 'Quedan %s', 'eipsi-forms' ), esc_html( $countdown_text ) ); ?>
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
                                     <?php if ( ! empty( $next_wave['interval_days'] ) ) : ?>
                                         <small class="lock-hint">
                                             <?php

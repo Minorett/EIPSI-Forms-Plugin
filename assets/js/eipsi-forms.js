@@ -3856,47 +3856,68 @@ if ( pages.length === 0 ) {
                 const nextWave = nextWaveData.next_wave;
                 const waveIndex = nextWave.wave_index || '';
                 const waveName = nextWave.wave_name || `Toma ${waveIndex}`;
-                const dueAt = nextWave.due_at || '';
+                const availableAt = nextWave.available_at || null;
                 
-                const formattedDate = dueAt ? new Date(dueAt).toLocaleDateString('es-ES', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                }) : '';
-
-                // ✅ v1.5.7: Mensaje dinámico de recordatorio basado en configuración
-                const reminderDays = nextWaveData.reminder_days !== undefined ? nextWaveData.reminder_days : 0;
-                const intervalDays = nextWaveData.interval_days !== undefined ? nextWaveData.interval_days : 7;
-                const timeUnit = nextWaveData.time_unit || 'days';
+                // Format date and calculate countdown
+                let dateDisplay = '';
+                let countdownDisplay = '';
                 
-                // Generar mensaje de recordatorio inteligente
-                let reminderMessage = '';
-                if (timeUnit === 'minutes') {
-                    // Para intervalos en minutos
-                    if (intervalDays < 60) {
-                        reminderMessage = `⏱️ Disponible en ${intervalDays} minutos.`;
-                    } else if (intervalDays < 1440) {
+                if ( availableAt ) {
+                    const availableDate = new Date(availableAt);
+                    const now = new Date();
+                    const diffMs = availableDate - now;
+                    
+                    // Format date: "8 de abril, 18:00" (no year if same year)
+                    const year = availableDate.getFullYear();
+                    const currentYear = now.getFullYear();
+                    const dateOptions = { 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    };
+                    if ( year !== currentYear ) {
+                        dateOptions.year = 'numeric';
+                    }
+                    const formattedDate = availableDate.toLocaleDateString('es-ES', dateOptions);
+                    
+                    // Calculate countdown
+                    if ( diffMs > 0 ) {
+                        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                        
+                        const parts = [];
+                        if ( days > 0 ) parts.push(`${days}d`);
+                        if ( hours > 0 || days > 0 ) parts.push(`${hours}h`);
+                        if ( minutes > 0 || (days === 0 && hours === 0) ) parts.push(`${minutes}m`);
+                        
+                        countdownDisplay = parts.join(' ');
+                    } else {
+                        countdownDisplay = 'disponible ahora';
+                    }
+                    
+                    dateDisplay = `📅 Disponible el ${formattedDate}`;
+                } else {
+                    // Fallback to interval message if no exact timestamp
+                    const intervalDays = nextWave.interval_days || 7;
+                    const timeUnit = nextWave.time_unit || 'days';
+                    
+                    if (timeUnit === 'minutes' && intervalDays < 60) {
+                        dateDisplay = `⏱️ Disponible en ${intervalDays} minutos`;
+                        countdownDisplay = `${intervalDays}m`;
+                    } else if (timeUnit === 'minutes' && intervalDays < 1440) {
                         const hours = Math.floor(intervalDays / 60);
                         const mins = intervalDays % 60;
-                        reminderMessage = mins > 0 
-                            ? `⏱️ Disponible en ${hours} horas y ${mins} minutos.`
-                            : `⏱️ Disponible en ${hours} horas.`;
+                        dateDisplay = `⏱️ Disponible en ${hours}h ${mins}m`;
+                        countdownDisplay = `${hours}h ${mins}m`;
                     } else {
-                        const days = Math.floor(intervalDays / 1440);
-                        reminderMessage = `📅 Disponible en ${days} día${days > 1 ? 's' : ''}.`;
-                    }
-                } else {
-                    // Para intervalos en días
-                    if (intervalDays === 0) {
-                        reminderMessage = '⚡ Disponible inmediatamente.';
-                    } else if (intervalDays === 1) {
-                        reminderMessage = '📅 Disponible mañana.';
-                    } else {
-                        reminderMessage = `📅 Disponible en ${intervalDays} días.`;
+                        dateDisplay = `📅 Disponible en ${intervalDays} ${timeUnit === 'days' ? 'días' : 'horas'}`;
+                        countdownDisplay = `${intervalDays}${timeUnit === 'days' ? 'd' : 'h'}`;
                     }
                 }
                 
-                // Mensaje de recordatorio por email - SIMPLIFIED: always sent when wave is available
+                // Mensaje de recordatorio por email
                 const emailReminderMessage = '📧 Recibirás un email cuando la próxima toma esté disponible.';
 
                 nextWaveHtml = `
@@ -3908,12 +3929,14 @@ if ( pages.length === 0 ) {
                         <p style="margin: 0 0 8px 0; font-size: 15px; color: #374151; line-height: 1.5;">
                             <strong>${this.escapeHtml(waveName)}</strong>
                         </p>
-                        ${formattedDate ? `<p style="margin: 0 0 15px 0; font-size: 14px; color: #6b7280;">
-                            📅 Fecha estimada: ${formattedDate}
-                        </p>` : ''}
-                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #4b5563; display: flex; align-items: center; gap: 8px;">
-                            ${reminderMessage}
-                        </p>
+                        <div style="margin: 12px 0; padding: 12px; background: #ffffff; border-radius: 6px; border: 1px solid #e0f2fe;">
+                            <p style="margin: 0 0 4px 0; font-size: 15px; color: #0c4a6e; font-weight: 500;">
+                                ${dateDisplay}
+                            </p>
+                            ${countdownDisplay ? `<p style="margin: 0; font-size: 13px; color: #0284c7;">
+                                ⏳ Quedan ${countdownDisplay}
+                            </p>` : ''}
+                        </div>
                         <p style="margin: 0; font-size: 13px; color: #9ca3af; display: flex; align-items: center; gap: 8px;">
                             ${emailReminderMessage}
                         </p>

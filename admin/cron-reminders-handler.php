@@ -39,8 +39,13 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
 
     if (empty($studies)) {
         error_log('[EIPSI Cron] No active studies found');
-        return;
+        return array(
+            'processed_studies' => 0,
+            'total_emails_sent' => 0
+        );
     }
+
+    $total_emails_sent = 0;
 
     foreach ($studies as $study) {
         // Guard against null config (json_decode(null) is deprecated in PHP 8.1+)
@@ -169,6 +174,9 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         }
 
         error_log("[EIPSI Cron] Study {$study->study_name}: {$emails_sent} reminder emails sent");
+        
+        // Accumulate total emails sent
+        $total_emails_sent += $emails_sent;
 
         // Send investigator alert if enabled
         if (!empty($config['investigator_alert_enabled']) && $emails_sent > 0) {
@@ -193,7 +201,7 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
     // Return summary for manual cron
     return array(
         'processed_studies' => count($studies),
-        'total_emails_sent' => $emails_sent
+        'total_emails_sent' => $total_emails_sent
     );
 }
 add_action('eipsi_send_wave_reminders_hourly', 'eipsi_send_wave_reminders_hourly');
@@ -416,7 +424,7 @@ function eipsi_run_reminders_cron_handler() {
     $investigator_email = null;
     if ($study_id) {
         $study_info = $wpdb->get_row($wpdb->prepare(
-            "SELECT study_name, study_code, investigator_email, config 
+            "SELECT study_name, study_code, config 
              FROM {$wpdb->prefix}survey_studies 
              WHERE id = %d",
             $study_id
@@ -425,7 +433,7 @@ function eipsi_run_reminders_cron_handler() {
             $config = !empty($study_info->config) ? json_decode($study_info->config, true) : array();
             $investigator_email = !empty($config['investigator_alert_email']) 
                 ? $config['investigator_alert_email'] 
-                : ($study_info->investigator_email ?? get_option('admin_email'));
+                : get_option('admin_email');
         }
     }
 

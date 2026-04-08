@@ -59,7 +59,8 @@ $config['investigator_alert_email'] = $investigator_email;
 
 <div class="eipsi-cron-reminders-tab">
 
-    <!-- Manual Cron Execution -->
+    <?php if ( $selected_study_id ) : ?>
+    <!-- Manual Cron Execution - Only shown when study is selected -->
     <div style="margin: 0 0 20px 0; padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
         <h4 style="margin: 0 0 10px 0; color: #856404;">
             🧪 <?php _e('Prueba Manual de Recordatorios', 'eipsi-forms'); ?>
@@ -75,6 +76,7 @@ $config['investigator_alert_email'] = $investigator_email;
         </button>
         <span id="cron-run-status" style="margin-left: 10px; font-size: 13px; color: #666;"></span>
     </div>
+    <?php endif; ?>
 
     <!-- Info Box -->
     <div class="notice notice-info inline" style="margin: 0 0 20px 0; padding: 15px 20px; border-left: 4px solid #3B6CAA;">
