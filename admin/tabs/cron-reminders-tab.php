@@ -114,11 +114,14 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
                     <tr>
                         <th scope="row">
                             <label for="default_days_before">
-                                <?php _e('Días antes del vencimiento', 'eipsi-forms'); ?>
+                                <?php _e('Tiempo antes del vencimiento', 'eipsi-forms'); ?>
                             </label>
                         </th>
                         <td>
                             <input type="number" id="default_days_before" name="default_days_before" value="<?php echo esc_attr($notifications_settings['default_days_before']); ?>" min="1" max="30" class="small-text">
+                            <p class="description" style="margin-top: 5px; color: #666; font-size: 12px;">
+                                <?php _e('Días antes del vencimiento. Para estudios con intervalos en minutos/horas, los recordatorios se envían cuando la wave está disponible.', 'eipsi-forms'); ?>
+                            </p>
                         </td>
                     </tr>
                     <tr>
@@ -221,16 +224,16 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
                                 <?php _e('Enviar recordatorios automáticos de waves pendientes', 'eipsi-forms'); ?>
                             </strong>
                             <span style="color: #666; font-size: 13px; display: block;">
-                                <?php _e('Los participantes recibirán correos recordando completar sus waves pendientes cuando falten X días para el vencimiento.', 'eipsi-forms'); ?>
+                                <?php _e('Los participantes recibirán correos cuando una wave esté disponible según el intervalo configurado (minutos, horas o días).', 'eipsi-forms'); ?>
                                 <br>
-                                <em style="color: #3B6CAA;"><?php _e('Ejecución: cada hora', 'eipsi-forms'); ?></em>
+                                <em style="color: #3B6CAA;"><?php _e('Ejecución: cada hora (compatible con intervalos en minutos)', 'eipsi-forms'); ?></em>
                             </span>
                         </div>
                     </label>
 
                     <div class="eipsi-input-group" style="margin: 15px 0; padding: 18px; background: #fafbfc; border-left: 3px solid #3B6CAA; border-radius: 0 4px 4px 0;">
                         <label for="reminder_days_before" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
-                            📅 <?php _e('Días antes de vencimiento para enviar recordatorios', 'eipsi-forms'); ?>
+                            📅 <?php _e('Tiempo antes de vencimiento para enviar recordatorios', 'eipsi-forms'); ?>
                         </label>
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <input type="number"
@@ -242,11 +245,11 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
                                    aria-describedby="reminder_days_before_help"
                                    style="width: 120px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 500;">
                             <span style="color: #666; font-size: 13px; background: #e8ecef; padding: 4px 10px; border-radius: 12px;">
-                                <?php _e('Rango: 1-30 días', 'eipsi-forms'); ?>
+                                <?php _e('Unidades: días (ajustar según intervalos del estudio)', 'eipsi-forms'); ?>
                             </span>
                         </div>
                         <p id="reminder_days_before_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
-                            <?php _e('¿Con cuánta anticipación quieres que se envíen los recordatorios?', 'eipsi-forms'); ?>
+                            <?php _e('¿Con cuánta anticipación (en días) quieres que se envíen los recordatorios? Nota: Para estudios con intervalos en minutos, los recordatorios se envían automáticamente cuando la wave está disponible.', 'eipsi-forms'); ?>
                         </p>
                     </div>
 
@@ -286,7 +289,7 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
                                 <?php _e('Activar recuperación de participantes inactivos', 'eipsi-forms'); ?>
                             </strong>
                             <span style="color: #666; font-size: 13px; display: block;">
-                                <?php _e('Envía un mensaje "Te extrañamos" a participantes que no han completado waves vencidas después de X días.', 'eipsi-forms'); ?>
+                                <?php _e('Envía un mensaje "Te extrañamos" a participantes que no han completado waves después del tiempo de intervalo configurado.', 'eipsi-forms'); ?>
                                 <br>
                                 <em style="color: #f0ad4e;">💌 <?php _e('Template: Mensaje de recuperación personalizado', 'eipsi-forms'); ?></em>
                             </span>
@@ -295,7 +298,7 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
 
                     <div class="eipsi-input-group" style="margin: 15px 0; padding: 18px; background: #ffffff; border-left: 3px solid #f0ad4e; border-radius: 0 4px 4px 0;">
                         <label for="dropout_recovery_days" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
-                            📆 <?php _e('Días después de vencimiento para considerar dropout', 'eipsi-forms'); ?>
+                            📆 <?php _e('Tiempo después del intervalo para considerar dropout', 'eipsi-forms'); ?>
                         </label>
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <input type="number"
@@ -311,7 +314,7 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
                             </span>
                         </div>
                         <p id="dropout_recovery_days_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
-                            <?php _e('¿Cuántos días después del vencimiento quieres que se envíe el mensaje de recuperación?', 'eipsi-forms'); ?>
+                            <?php _e('¿Cuánto tiempo después del intervalo configurado quieres que se envíe el mensaje de recuperación?', 'eipsi-forms'); ?>
                         </p>
                     </div>
 
@@ -401,15 +404,15 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
                 <ul style="margin: 0 0 20px 0; padding-left: 25px; color: #495057; font-size: 14px; line-height: 1.7;">
                     <li style="margin-bottom: 12px;">
                         <strong style="color: #3B6CAA;">⏰ Recordatorios de waves:</strong>
-                        <?php _e('Se envían automáticamente a participantes con waves pendientes cuando faltan X días para el vencimiento.', 'eipsi-forms'); ?>
+                        <?php _e('Se envían automáticamente cuando una wave está disponible según el intervalo configurado (minutos, horas o días). Para intervalos cortos (minutos), usa el botón "Ejecutar Cron de Recordatorios Ahora".', 'eipsi-forms'); ?>
                     </li>
                     <li style="margin-bottom: 12px;">
                         <strong style="color: #f0ad4e;">💔 Recuperación de dropouts:</strong>
-                        <?php _e('Se envía un mensaje "Te extrañamos" a participantes que no han completado waves vencidas después de X días.', 'eipsi-forms'); ?>
+                        <?php _e('Se envía un mensaje "Te extrañamos" a participantes que no completaron waves después del intervalo configurado más el tiempo de gracia.', 'eipsi-forms'); ?>
                     </li>
                     <li style="margin-bottom: 12px;">
                         <strong style="color: #17a2b8;">🛡️ Rate limiting:</strong>
-                        <?php _e('Cada participante recibe máximo 1 email por cada wave en 24 horas (usando transients de WordPress).', 'eipsi-forms'); ?>
+                        <?php _e('Cada participante recibe máximo 1 email por cada wave en 24 horas. Para pruebas con intervalos en minutos, usa "Limpiar Rate Limits".', 'eipsi-forms'); ?>
                     </li>
                     <li style="margin-bottom: 12px;">
                         <strong style="color: #dc3545;">📊 Max emails por ejecución:</strong>
@@ -417,13 +420,13 @@ if (isset($_POST['eipsi_notifications_nonce']) && wp_verify_nonce($_POST['eipsi_
                     </li>
                     <li style="margin-bottom: 12px;">
                         <strong style="color: #28a745;">📧 Alertas al investigador:</strong>
-                        <?php _e('Recibes un resumen por email después de cada ejecución de cron que envió emails.', 'eipsi-forms'); ?>
+                        <?php _e('Recibes un resumen por email después de cada ejecución, incluyendo cantidad enviada y errores. Útil para monitorear estudios con intervalos frecuentes.', 'eipsi-forms'); ?>
                     </li>
                 </ul>
                 <div style="padding: 15px; background: #ffffff; border: 1px solid #dee2e6; border-radius: 6px;">
                     <p style="margin: 0; font-size: 13px; color: #495057; line-height: 1.6;">
                         <strong>⚠️ <?php _e('Importante:', 'eipsi-forms'); ?></strong>
-                        <?php _e('Los cron jobs de WP-Cron se ejecutan cada hora. Asegúrate de que tu sitio tenga visitas frecuentes para que WP-Cron funcione correctamente, o configura un cron job real en tu servidor.', 'eipsi-forms'); ?>
+                        <?php _e('Los cron jobs de WP-Cron se ejecutan cada hora. Para estudios con intervalos en minutos, usa el botón "Ejecutar Cron Ahora". Configura un cron job real en tu servidor para mayor confiabilidad.', 'eipsi-forms'); ?>
                     </p>
                 </div>
             </div>

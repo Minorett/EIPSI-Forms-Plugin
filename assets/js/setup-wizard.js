@@ -541,30 +541,6 @@
 
     /**
      * Save current step
-     */
-    window.eipsiSaveCurrentStep = function(step, callback) {
-        const form = $('#eipsi-wizard-form');
-        const formData = new FormData(form[0]);
-        
-        // Add wizard-specific data
-        formData.append('action', 'eipsi_save_wizard_step');
-        formData.append('current_step', step);
-        formData.append('eipsi_wizard_nonce', eipsiWizard.nonce);
-        
-        // Show loading state
-        showLoadingState(true);
-        
-        fetch(eipsiWizard.ajaxUrl, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            showLoadingState(false);
-            
-            if (data.success) {
-                wizardState.isDirty = false;
-                markFormDirty(false);
                 wizardState.lastSaveTime = new Date();
                 
                 if (callback) {

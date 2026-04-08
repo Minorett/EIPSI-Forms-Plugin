@@ -35,6 +35,11 @@ function eipsi_save_wizard_step_handler() {
     
     $current_step = isset($_POST['current_step']) ? intval($_POST['current_step']) : 1;
     
+    // DEBUG: Log raw POST data for step 3
+    if ($current_step === 3 && isset($_POST['timing_intervals'])) {
+        error_log('[EIPSI DEBUG] Step 3 POST data: ' . json_encode($_POST['timing_intervals']));
+    }
+    
     // Include validators if not already loaded
     if (!function_exists('eipsi_validate_step_data')) {
         require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/wizard-validators.php';

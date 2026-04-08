@@ -325,12 +325,20 @@ function eipsi_validate_timing_config($data) {
 function eipsi_sanitize_timing_config($data) {
     $sanitized = array();
     
+    // DEBUG: Log raw timing intervals data
+    if (!empty($data['timing_intervals'])) {
+        error_log('[EIPSI DEBUG] Raw timing_intervals: ' . json_encode($data['timing_intervals']));
+    }
+    
     // Sanitize timing intervals
     if (!empty($data['timing_intervals']) && is_array($data['timing_intervals'])) {
         $sanitized['timing_intervals'] = array();
-        foreach ($data['timing_intervals'] as $interval) {
+        foreach ($data['timing_intervals'] as $index => $interval) {
             $time_unit = isset($interval['time_unit']) ? sanitize_text_field($interval['time_unit']) : 'days';
             $value = intval($interval['days_after']);
+            
+            // DEBUG: Log each interval processing
+            error_log("[EIPSI DEBUG] Interval {$index}: time_unit={$time_unit}, value={$value}");
             
             // FIXED: Keep original value, don't convert to days
             // The interval logic uses time_unit to calculate correctly
