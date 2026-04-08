@@ -115,6 +115,14 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
             $interval_value  = (int) $next_wave['interval_days'];
             $raw_time_unit   = ! empty( $next_wave['time_unit'] ) ? $next_wave['time_unit'] : 'days';
             
+            // DEBUG: Log values for troubleshooting
+            error_log(sprintf('[EIPSI-DISPLAY] wave_id=%d, raw_time_unit=%s, interval_value=%d, submitted_at=%s',
+                $next_wave['id'],
+                $raw_time_unit,
+                $interval_value,
+                $last_submission->submitted_at
+            ));
+            
             // Map numeric values to strings (if stored as 0, 1, 2)
             $numeric_map = array(
                 '0' => 'minutes',
@@ -139,6 +147,14 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
             $strtotime_unit = isset( $unit_map[ $time_unit ] ) ? $unit_map[ $time_unit ] : 'days';
             
             $available_date = strtotime( $last_submission->submitted_at . ' +' . $interval_value . ' ' . $strtotime_unit );
+            
+            // DEBUG: Log calculated date
+            error_log(sprintf('[EIPSI-DISPLAY] Calculated available_date=%d (%s), strtotime_unit=%s, time_unit=%s',
+                $available_date,
+                date('Y-m-d H:i:s', $available_date),
+                $strtotime_unit,
+                $time_unit
+            ));
             $now            = current_time( 'timestamp' );
 
             if ( $available_date > $now ) {
