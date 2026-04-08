@@ -343,7 +343,7 @@ function eipsi_sanitize_timing_config($data) {
                 'from_wave' => intval($interval['from_wave']),
                 'to_wave' => intval($interval['to_wave']),
                 'days_after' => max(1, $days), // Ensure at least 1 day
-                'original_unit' => $time_unit,
+                'time_unit' => $time_unit, // FIXED: use 'time_unit' not 'original_unit'
                 'original_value' => $value
             );
         }
