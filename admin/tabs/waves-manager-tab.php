@@ -130,7 +130,7 @@ $available_forms = get_posts(array(
         <div class="notice notice-warning" style="padding: 15px; border-left: 4px solid #f59e0b;">
             <p><?php esc_html_e('Por favor, selecciona o crea un estudio primero para gestionar sus ondas.', 'eipsi-forms'); ?></p>
             <p>
-                <a href="?page=eipsi-new-study" class="button button-primary">
+                <a href="?page=eipsi-longitudinal-study&tab=create-study" class="button button-primary">
                     ➕ <?php esc_html_e('Crear Nuevo Estudio', 'eipsi-forms'); ?>
                 </a>
             </p>

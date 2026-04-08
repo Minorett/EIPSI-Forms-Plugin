@@ -120,7 +120,7 @@ $success_message = isset($message) ? $message : '';
 function eipsiNavigateToStep(step) {
     // Save current step before navigating
     eipsiSaveCurrentStep(<?php echo $current_step; ?>, function() {
-        window.location.href = '<?php echo admin_url('admin.php?page=eipsi-new-study&step='); ?>' + step;
+        window.location.href = '<?php echo admin_url('admin.php?page=eipsi-longitudinal-study&tab=create-study&step='); ?>' + step;
     });
 }
 
@@ -143,7 +143,7 @@ function eipsiSaveCurrentStep(step, callback) {
             callback();
         } else if (data.success) {
             // Navigate to next step automatically
-            window.location.href = '<?php echo admin_url('admin.php?page=eipsi-new-study&step='); ?>' + (step + 1);
+            window.location.href = '<?php echo admin_url('admin.php?page=eipsi-longitudinal-study&tab=create-study&step='); ?>' + (step + 1);
         } else {
             // Handle validation errors or generic errors
             let errorMessage = 'Unknown error';
