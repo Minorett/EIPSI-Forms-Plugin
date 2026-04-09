@@ -67,6 +67,18 @@
                 self.openAddParticipant();
             });
 
+            // Delete study button
+            $('#action-delete-study').on('click', function() {
+                if (!self.currentStudyId) {
+                    return;
+                }
+                if (confirm('⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️\n\n¿Estás seguro de ELIMINAR este estudio?\n\n• Se eliminarán TODOS los participantes\n• Se eliminarán TODAS las respuestas\n• Se eliminarán TODOS los waves\n• Se eliminarán TODOS los emails\n\nEsta acción NO se puede deshacer.\n\nPresiona OK para confirmar.')) {
+                    if (confirm('⚠️ ÚLTIMA ADVERTENCIA\n\nEl estudio será eliminado PERMANENTEMENTE.\n\n¿Estás COMPLETAMENTE SEGURO?')) {
+                        self.deleteStudy(self.currentStudyId);
+                    }
+                }
+            });
+
             // Add participant form submit
             $('#add-participant-form').on('submit', function(e) {
                 e.preventDefault();
@@ -1158,6 +1170,38 @@
                         self.loadStudyData(self.currentStudyId);
                     } else {
                         self.showToast('❌ Error: ' + (response.data || 'No se pudo cerrar el estudio'), 'error');
+                    }
+                },
+                error: function() {
+                    self.showToast('❌ Error de conexión', 'error');
+                }
+            });
+        },
+
+        /**
+         * Delete Study permanently
+         */
+        deleteStudy: function(studyId) {
+            const self = this;
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_delete_study',
+                    study_id: studyId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.showToast('✅ Estudio eliminado permanentemente', 'success');
+                        // Close modal and reload page to refresh study list
+                        $('#eipsi-study-dashboard-modal').fadeOut();
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        self.showToast('❌ Error: ' + (response.data || 'No se pudo eliminar el estudio'), 'error');
                     }
                 },
                 error: function() {
