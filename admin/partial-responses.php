@@ -72,76 +72,50 @@ class EIPSI_Partial_Responses {
         }
         
         $responses_json = wp_json_encode($responses);
-        
-        // Check if record exists
-        $existing = $wpdb->get_row($wpdb->prepare(
-            "SELECT id FROM $table_name 
-            WHERE form_id = %s AND participant_id = %s AND session_id = %s AND completed = 0",
+        $now = current_time('mysql');
+
+        // v2.1.3 Fix: Use INSERT...ON DUPLICATE KEY UPDATE to prevent race conditions
+        // This is atomic and handles concurrent requests gracefully
+        $sql = $wpdb->prepare(
+            "INSERT INTO $table_name
+            (form_id, participant_id, session_id, page_index, responses_json, completed, created_at, updated_at)
+            VALUES (%s, %s, %s, %d, %s, 0, %s, %s)
+            ON DUPLICATE KEY UPDATE
+            page_index = VALUES(page_index),
+            responses_json = VALUES(responses_json),
+            updated_at = VALUES(updated_at)",
+            $form_id,
+            $participant_id,
+            $session_id,
+            $page_index,
+            $responses_json,
+            $now,
+            $now
+        );
+
+        $result = $wpdb->query($sql);
+
+        if ($result === false) {
+            return array(
+                'success' => false,
+                'error' => $wpdb->last_error
+            );
+        }
+
+        // Get the ID (either inserted or updated)
+        $record_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM $table_name
+            WHERE form_id = %s AND participant_id = %s AND session_id = %s",
             $form_id,
             $participant_id,
             $session_id
         ));
-        
-        $now = current_time('mysql');
-        
-        if ($existing) {
-            // Update existing record
-            $result = $wpdb->update(
-                $table_name,
-                array(
-                    'page_index' => $page_index,
-                    'responses_json' => $responses_json,
-                    'updated_at' => $now
-                ),
-                array(
-                    'id' => $existing->id
-                ),
-                array('%d', '%s', '%s'),
-                array('%d')
-            );
-            
-            if ($result === false) {
-                return array(
-                    'success' => false,
-                    'error' => $wpdb->last_error
-                );
-            }
-            
-            return array(
-                'success' => true,
-                'action' => 'updated',
-                'id' => $existing->id
-            );
-        } else {
-            // Insert new record
-            $result = $wpdb->insert(
-                $table_name,
-                array(
-                    'form_id' => $form_id,
-                    'participant_id' => $participant_id,
-                    'session_id' => $session_id,
-                    'page_index' => $page_index,
-                    'responses_json' => $responses_json,
-                    'completed' => 0,
-                    'created_at' => $now,
-                    'updated_at' => $now
-                ),
-                array('%s', '%s', '%s', '%d', '%s', '%d', '%s', '%s')
-            );
-            
-            if ($result === false) {
-                return array(
-                    'success' => false,
-                    'error' => $wpdb->last_error
-                );
-            }
-            
-            return array(
-                'success' => true,
-                'action' => 'created',
-                'id' => $wpdb->insert_id
-            );
-        }
+
+        return array(
+            'success' => true,
+            'action' => $record_id ? ($result > 0 ? 'inserted' : 'updated') : 'updated',
+            'id' => $record_id
+        );
     }
     
     /**
