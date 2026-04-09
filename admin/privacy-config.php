@@ -41,6 +41,20 @@ function get_privacy_defaults() {
         'movement_tracking' => false,
         'mood_tracking' => false,
         'research_consent' => false,
+
+        // v2.1.3 - Exportación de metadatos extendidos (opcional, OFF por default)
+        'export_canvas_fingerprint' => false,
+        'export_webgl_renderer' => false,
+        'export_screen_resolution' => false,
+        'export_screen_depth' => false,
+        'export_pixel_ratio' => false,
+        'export_timezone' => false,
+        'export_language' => false,
+        'export_cpu_cores' => false,
+        'export_ram' => false,
+        'export_plugins' => false,
+        'export_touch_support' => false,
+        'export_cookies_enabled' => false,
     );
 }
 
@@ -58,7 +72,20 @@ function get_global_privacy_defaults() {
             'os' => false,
             'screen_width' => false,
             'device_type' => true,
-            'fingerprint_enabled' => true  // ✅ v1.5.4 - ON por default
+            'fingerprint_enabled' => true,  // ✅ v1.5.4 - ON por default
+            // v2.1.3 - Metadatos extendidos OFF por default
+            'export_canvas_fingerprint' => false,
+            'export_webgl_renderer' => false,
+            'export_screen_resolution' => false,
+            'export_screen_depth' => false,
+            'export_pixel_ratio' => false,
+            'export_timezone' => false,
+            'export_language' => false,
+            'export_cpu_cores' => false,
+            'export_ram' => false,
+            'export_plugins' => false,
+            'export_touch_support' => false,
+            'export_cookies_enabled' => false,
         );
     }
 
@@ -81,7 +108,20 @@ function save_global_privacy_defaults($config) {
         'os',
         'screen_width',
         'ip_address',
-        'fingerprint_enabled'  // ✅ v1.5.4 - Toggle de fingerprint completo
+        'fingerprint_enabled',  // ✅ v1.5.4 - Toggle de fingerprint completo
+        // v2.1.3 - Metadatos extendidos para exportación
+        'export_canvas_fingerprint',
+        'export_webgl_renderer',
+        'export_screen_resolution',
+        'export_screen_depth',
+        'export_pixel_ratio',
+        'export_timezone',
+        'export_language',
+        'export_cpu_cores',
+        'export_ram',
+        'export_plugins',
+        'export_touch_support',
+        'export_cookies_enabled',
     );
 
     foreach ($config as $key => $value) {
@@ -136,7 +176,20 @@ function save_privacy_config($form_id, $config) {
         'os',
         'screen_width',
         'ip_address',
-        'fingerprint_enabled'  // ✅ v1.5.4 - Toggle de fingerprint completo
+        'fingerprint_enabled',  // ✅ v1.5.4 - Toggle de fingerprint completo
+        // v2.1.3 - Metadatos extendidos para exportación
+        'export_canvas_fingerprint',
+        'export_webgl_renderer',
+        'export_screen_resolution',
+        'export_screen_depth',
+        'export_pixel_ratio',
+        'export_timezone',
+        'export_language',
+        'export_cpu_cores',
+        'export_ram',
+        'export_plugins',
+        'export_touch_support',
+        'export_cookies_enabled',
     );
 
     foreach ($config as $key => $value) {

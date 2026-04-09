@@ -112,11 +112,16 @@ function eipsi_export_to_excel() {
         if (empty($results)) {
             wp_die(__('No data to export.', 'eipsi-forms'));
         }
-    
+
     // Get privacy config for first form (assuming same config per form_name)
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/privacy-config.php';
     $first_form_id = !empty($results[0]->form_id) ? $results[0]->form_id : export_generate_stable_form_id($results[0]->form_name);
     $privacy_config = get_privacy_config($first_form_id);
+
+    // v2.1.3 - Load Device Data Service for extended metadata export
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-device-data-service.php';
+    $submission_ids = array_column($results, 'id');
+    $device_data_batch = EIPSI_Device_Data_Service::get_device_data_batch($submission_ids);
 
     // Obtener todas las preguntas únicas para crear columnas (excluir campos internos)
     $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id', 'eipsi_consent_accepted');
@@ -242,9 +247,47 @@ function eipsi_export_to_excel() {
         $headers[] = 'Total Duration(s)';
     }
 
+    // v2.1.3 - Extended Device Metadata Headers (optional, based on privacy config)
+    if ($privacy_config['export_canvas_fingerprint'] ?? false) {
+        $headers[] = 'Canvas Fingerprint';
+    }
+    if ($privacy_config['export_webgl_renderer'] ?? false) {
+        $headers[] = 'WebGL Renderer';
+    }
+    if ($privacy_config['export_screen_resolution'] ?? false) {
+        $headers[] = 'Screen Resolution';
+    }
+    if ($privacy_config['export_screen_depth'] ?? false) {
+        $headers[] = 'Screen Depth';
+    }
+    if ($privacy_config['export_pixel_ratio'] ?? false) {
+        $headers[] = 'Pixel Ratio';
+    }
+    if ($privacy_config['export_timezone'] ?? false) {
+        $headers[] = 'Timezone';
+    }
+    if ($privacy_config['export_language'] ?? false) {
+        $headers[] = 'Language';
+    }
+    if ($privacy_config['export_cpu_cores'] ?? false) {
+        $headers[] = 'CPU Cores';
+    }
+    if ($privacy_config['export_ram'] ?? false) {
+        $headers[] = 'RAM (GB)';
+    }
+    if ($privacy_config['export_plugins'] ?? false) {
+        $headers[] = 'Browser Plugins';
+    }
+    if ($privacy_config['export_touch_support'] ?? false) {
+        $headers[] = 'Touch Support';
+    }
+    if ($privacy_config['export_cookies_enabled'] ?? false) {
+        $headers[] = 'Cookies Enabled';
+    }
+
     $headers = array_merge($headers, $all_questions);
     $data[] = $headers;
-    
+
     foreach ($results as $row) {
         $form_data = $row->form_responses ? json_decode($row->form_responses, true) : [];
         
@@ -371,6 +414,65 @@ function eipsi_export_to_excel() {
         if ($has_page_timings || $has_field_timings) {
             $total_duration = $metadata['page_timings']['total_duration'] ?? '';
             $row_data[] = $total_duration;
+        }
+
+        // v2.1.3 - Extended Device Metadata Values (optional, based on privacy config)
+        $device_data = $device_data_batch[$row->id] ?? null;
+        if ($device_data) {
+            if ($privacy_config['export_canvas_fingerprint'] ?? false) {
+                $row_data[] = $device_data->canvas_fingerprint ?? '';
+            }
+            if ($privacy_config['export_webgl_renderer'] ?? false) {
+                $row_data[] = $device_data->webgl_renderer ?? '';
+            }
+            if ($privacy_config['export_screen_resolution'] ?? false) {
+                $row_data[] = $device_data->screen_resolution ?? '';
+            }
+            if ($privacy_config['export_screen_depth'] ?? false) {
+                $row_data[] = $device_data->screen_depth ?? '';
+            }
+            if ($privacy_config['export_pixel_ratio'] ?? false) {
+                $row_data[] = $device_data->pixel_ratio ?? '';
+            }
+            if ($privacy_config['export_timezone'] ?? false) {
+                $row_data[] = $device_data->timezone ?? '';
+            }
+            if ($privacy_config['export_language'] ?? false) {
+                $row_data[] = $device_data->language ?? '';
+            }
+            if ($privacy_config['export_cpu_cores'] ?? false) {
+                $row_data[] = $device_data->cpu_cores ?? '';
+            }
+            if ($privacy_config['export_ram'] ?? false) {
+                $row_data[] = $device_data->ram ?? '';
+            }
+            if ($privacy_config['export_plugins'] ?? false) {
+                $row_data[] = $device_data->plugins ?? '';
+            }
+            if ($privacy_config['export_touch_support'] ?? false) {
+                $row_data[] = $device_data->touch_support ?? '';
+            }
+            if ($privacy_config['export_cookies_enabled'] ?? false) {
+                $row_data[] = $device_data->cookies_enabled ?? '';
+            }
+        } else {
+            // Add empty values if no device data available
+            $extended_metadata_count = 0;
+            if ($privacy_config['export_canvas_fingerprint'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_webgl_renderer'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_screen_resolution'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_screen_depth'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_pixel_ratio'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_timezone'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_language'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_cpu_cores'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_ram'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_plugins'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_touch_support'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_cookies_enabled'] ?? false) $extended_metadata_count++;
+            for ($i = 0; $i < $extended_metadata_count; $i++) {
+                $row_data[] = '';
+            }
         }
 
         // Agregar respuestas en el orden de las preguntas (excluir campos internos)

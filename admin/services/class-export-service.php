@@ -592,10 +592,10 @@ public function fetch_participants_data($study_id, $filters = array()) {
     /**
      * Build the wide header array for participant export.
      *
-     * Estructura Wide:
+     * Estructura Wide (v2.1.3):
      * - Columnas base: ID, Email, Estado, Registrado, Último acceso, Ondas asignadas, Ondas completadas, Progreso (%)
-     * - Por cada wave: T{n}_submitted_at, T{n}_duration_seconds, T{n}_fingerprint_id, T{n}_device, T{n}_{field_name}
-     * - SIN columnas Nombre ni Apellido
+     * - Por cada wave: T{n}_submitted_at, T{n}_duration_seconds, T{n}_device, T{n}_browser, T{n}_os, T{n}_screen_width, T{n}_ip_address, T{n}_{field_name}
+     * - SIN columnas: Nombre, Apellido, fingerprint_id (el investigador lo construye si lo necesita)
      *
      * @param array $rows  List of participant rows.
      * @param array $waves List of wave objects.
@@ -650,7 +650,7 @@ public function fetch_participants_data($study_id, $filters = array()) {
             $prefix = 'T' . $wave->wave_index;
             $headers[] = $prefix . '_submitted_at';
             $headers[] = $prefix . '_duration_seconds';
-            $headers[] = $prefix . '_fingerprint_id';
+            // v2.1.3: Removed fingerprint_id - researchers should construct this if needed
             $headers[] = $prefix . '_device';
             $headers[] = $prefix . '_browser';
             $headers[] = $prefix . '_os';
@@ -725,9 +725,9 @@ public function fetch_participants_data($study_id, $filters = array()) {
 
             if ($submission) {
                 // Metadata fields
+                // v2.1.3: Removed fingerprint_id from export
                 $data[] = $submission['submitted_at'] ? date('Y-m-d H:i:s', strtotime($submission['submitted_at'])) : '';
                 $data[] = $submission['duration_seconds'] ?? '';
-                $data[] = $submission['user_fingerprint'] ?? '';
                 $data[] = $submission['device'] ?? '';
                 $data[] = $submission['browser'] ?? '';
                 $data[] = $submission['os'] ?? '';
@@ -750,7 +750,8 @@ public function fetch_participants_data($study_id, $filters = array()) {
                 }
             } else {
                 // Empty submission - add empty columns
-                $metadata_columns = 8; // submitted_at, duration_seconds, fingerprint_id, device, browser, os, screen_width, ip_address
+                // v2.1.3: 7 columns (removed fingerprint_id)
+                $metadata_columns = 7; // submitted_at, duration_seconds, device, browser, os, screen_width, ip_address
                 for ($i = 0; $i < $metadata_columns; $i++) {
                     $data[] = '';
                 }

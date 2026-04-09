@@ -942,7 +942,7 @@ function eipsi_download_assignments_excel() {
     global $wpdb;
 
     try {
-        // Query base
+        // v2.1.3: Enhanced query with submission data from vas_form_results
         $query = "
             SELECT
                 ra.randomization_id,
@@ -950,8 +950,16 @@ function eipsi_download_assignments_excel() {
                 ra.assigned_form_id,
                 ra.assigned_at,
                 ra.last_access,
-                ra.access_count
+                ra.access_count,
+                r.id as submission_id,
+                r.submitted_at,
+                r.duration_seconds,
+                r.form_responses,
+                r.duration
             FROM {$wpdb->prefix}eipsi_randomization_assignments ra
+            LEFT JOIN {$wpdb->prefix}vas_form_results r 
+                ON r.participant_id = ra.user_fingerprint 
+                AND r.form_id = ra.assigned_form_id
             WHERE ra.randomization_id = %s
         ";
 
@@ -975,7 +983,7 @@ function eipsi_download_assignments_excel() {
         // Generar HTML para Excel
         $html = '<table border="1">';
 
-        // Headers
+        // Headers - v2.1.3: Enhanced with submission data
         $html .= '<thead><tr>';
         $headers = array(
             'Randomization ID',
@@ -986,7 +994,11 @@ function eipsi_download_assignments_excel() {
             'Last Access',
             'Access Count',
             'Days Since',
-            'Status'
+            'Status',
+            'Submission ID',
+            'Completed At',
+            'Duration (seconds)',
+            'Form Data' // v2.1.3: Key form responses
         );
         foreach ($headers as $header) {
             $html .= '<th style="background-color:#4CAF50;color:white;padding:10px;">' . esc_html($header) . '</th>';
@@ -1025,6 +1037,32 @@ function eipsi_download_assignments_excel() {
             // Formatear fechas
             $assigned_at = wp_date('Y-m-d H:i:s', strtotime($row->assigned_at));
             $last_access = $row->last_access ? wp_date('Y-m-d H:i:s', strtotime($row->last_access)) : '';
+            $completed_at = $row->submitted_at ? wp_date('Y-m-d H:i:s', strtotime($row->submitted_at)) : '';
+
+            // v2.1.3: Extract key form responses (first 5 fields max to avoid clutter)
+            $form_data_summary = '';
+            if (!empty($row->form_responses)) {
+                $form_responses = json_decode($row->form_responses, true);
+                if (is_array($form_responses)) {
+                    // Filter out internal fields and limit to first 5
+                    $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id', 'eipsi_consent_accepted');
+                    $filtered = array_diff_key($form_responses, array_flip($internal_fields));
+                    $limited = array_slice($filtered, 0, 5, true);
+                    $parts = array();
+                    foreach ($limited as $key => $value) {
+                        $clean_key = str_replace('_', ' ', $key);
+                        $clean_value = is_array($value) ? json_encode($value) : substr($value, 0, 50);
+                        $parts[] = $clean_key . ': ' . $clean_value;
+                    }
+                    $form_data_summary = implode(' | ', $parts);
+                    if (count($filtered) > 5) {
+                        $form_data_summary .= ' ... (' . (count($filtered) - 5) . ' more)';
+                    }
+                }
+            }
+
+            // Duration: prefer duration_seconds, fallback to duration field
+            $duration = !empty($row->duration_seconds) ? intval($row->duration_seconds) : (!empty($row->duration) ? intval($row->duration) : '');
 
             $html .= '<tr>';
             $html .= '<td style="padding:8px;">' . esc_html($row->randomization_id) . '</td>';
@@ -1036,6 +1074,11 @@ function eipsi_download_assignments_excel() {
             $html .= '<td style="padding:8px;text-align:center;">' . intval($row->access_count) . '</td>';
             $html .= '<td style="padding:8px;text-align:center;">' . $days_diff . '</td>';
             $html .= '<td style="padding:8px;">' . esc_html($completed_status) . '</td>';
+            // v2.1.3: New columns
+            $html .= '<td style="padding:8px;text-align:center;">' . ($row->submission_id ? intval($row->submission_id) : '-') . '</td>';
+            $html .= '<td style="padding:8px;">' . esc_html($completed_at) . '</td>';
+            $html .= '<td style="padding:8px;text-align:center;">' . ($duration !== '' ? $duration : '-') . '</td>';
+            $html .= '<td style="padding:8px;font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;" title="' . esc_attr($form_data_summary) . '">' . esc_html($form_data_summary) . '</td>';
             $html .= '</tr>';
         }
         $html .= '</tbody></table>';

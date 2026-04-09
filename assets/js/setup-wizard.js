@@ -219,8 +219,8 @@
      */
     function initializeStep3() {
         // Timing template functions
-        window.eipsiApplyTimingTemplate = function(template) {
-            applyTimingTemplate(template);
+        window.eipsiApplyTimingTemplate = function(template, btn) {
+            applyTimingTemplate(template, btn);
         };
         
         // Handle retry checkbox
@@ -343,34 +343,8 @@
                         </select>
                     </div>
                     
-                    <div class="field-group-inline">
-                        <div class="field-group">
-                            <label for="wave_duration_${index}" class="form-label">
-                                Duración estimada (min)
-                            </label>
-                            <input type="number" 
-                                   id="wave_duration_${index}"
-                                   name="waves_config[${index}][estimated_duration]" 
-                                   class="form-input" 
-                                   value="15"
-                                   min="1" 
-                                   max="120"
-                                   placeholder="15">
-                        </div>
-                        
-                        <div class="field-group">
-                            <label class="form-label">
-                                &nbsp;
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" 
-                                       name="waves_config[${index}][is_required]"
-                                       ${isRequired ? 'checked' : ''}
-                                       value="1">
-                                <span class="checkbox-text">Obligatoria</span>
-                            </label>
-                        </div>
-                    </div>
+                    <input type="hidden" name="waves_config[${index}][estimated_duration]" value="">
+                    <input type="hidden" name="waves_config[${index}][is_required]" value="${isRequired ? '1' : '0'}">
                 </div>
             </div>
         `);
@@ -411,9 +385,16 @@
 
     /**
      * Apply timing template
+     * v2.1.3: Added btn parameter and monitoreo_semanal template
      */
-    function applyTimingTemplate(template) {
+    function applyTimingTemplate(template, btn) {
         const templates = {
+            'monitoreo_semanal': {
+                2: [7],
+                3: [7, 7],
+                4: [7, 7, 7],
+                5: [7, 7, 7, 7]
+            },
             'pre_post_follow': {
                 2: [7],
                 3: [7, 30],
@@ -433,32 +414,34 @@
                 5: [90, 90, 90, 90]
             }
         };
-        
+
         const numberOfWaves = parseInt($('#number_of_waves').val()) || 3;
-        
+
         if (templates[template] && templates[template][numberOfWaves]) {
             const intervals = templates[template][numberOfWaves];
             const inputs = $('input[name$="[days_after]"]');
-            
+
             intervals.forEach((days, index) => {
                 if (inputs[index]) {
                     $(inputs[index]).val(days);
                 }
             });
-            
-            // Visual feedback
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.textContent = '✅ Aplicado';
-            btn.style.background = '#28a745';
-            btn.style.color = 'white';
-            
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.style.background = '';
-                btn.style.color = '';
-            }, 2000);
-            
+
+            // v2.1.3: Use btn parameter instead of event.target
+            const button = btn || (typeof event !== 'undefined' && event.target);
+            if (button) {
+                const originalText = button.textContent;
+                button.textContent = '✅ Aplicado';
+                button.style.background = '#28a745';
+                button.style.color = 'white';
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                    button.style.color = '';
+                }, 2000);
+            }
+
             wizardState.isDirty = true;
             markFormDirty(true);
         }
