@@ -44,6 +44,31 @@ if (!empty($step_4['invitation_methods'])) {
     }
 }
 
+// Helper function to format minutes into human-readable duration
+function eipsi_format_minutes_human_readable($minutes) {
+    if ($minutes < 60) {
+        return $minutes . ' minutos';
+    }
+    
+    $days = floor($minutes / 1440);
+    $remaining = $minutes % 1440;
+    $hours = floor($remaining / 60);
+    $mins = $remaining % 60;
+    
+    $parts = array();
+    if ($days > 0) {
+        $parts[] = $days . ' día' . ($days > 1 ? 's' : '');
+    }
+    if ($hours > 0) {
+        $parts[] = $hours . ' hora' . ($hours > 1 ? 's' : '');
+    }
+    if ($mins > 0) {
+        $parts[] = $mins . ' minuto' . ($mins > 1 ? 's' : '');
+    }
+    
+    return implode(', ', $parts);
+}
+
 // Format timing summary
 $timing_summary = array();
 if (!empty($step_3['timing_intervals'])) {
@@ -53,17 +78,20 @@ if (!empty($step_3['timing_intervals'])) {
         $value = intval($interval['days_after']);
         $time_unit = isset($interval['time_unit']) ? $interval['time_unit'] : 'days';
         
-        // Determine label based on time_unit
-        $unit_label = 'días';
+        // Format based on time_unit
         if ($time_unit === 'minutes') {
-            $unit_label = $value == 1 ? 'minuto' : 'minutos';
+            // v2.1.3: Show human-readable format for minutes (e.g., "3 días, 8 horas, 33 minutos")
+            $formatted = eipsi_format_minutes_human_readable($value);
+            $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$formatted}";
         } elseif ($time_unit === 'hours') {
             $unit_label = $value == 1 ? 'hora' : 'horas';
+            $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$value} {$unit_label}";
         } elseif ($time_unit === 'days') {
             $unit_label = $value == 1 ? 'día' : 'días';
+            $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$value} {$unit_label}";
+        } else {
+            $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$value} días";
         }
-        
-        $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$value} {$unit_label}";
     }
 }
 
