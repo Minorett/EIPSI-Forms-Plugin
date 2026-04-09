@@ -30,8 +30,17 @@ function eipsi_display_longitudinal_pools_page() {
     $active_pool_id = isset( $_GET['pool_id'] ) ? absint( $_GET['pool_id'] ) : 0;
 
     if ( isset( $_GET['action'] ) && $_GET['action'] === 'delete' && $active_pool_id ) {
+        // v2.1.3: Added capability check
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'No tenés permisos para eliminar pools.', 'eipsi-forms' ), '', array( 'response' => 403 ) );
+        }
+
         $delete_nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
         if ( wp_verify_nonce( $delete_nonce, 'eipsi_delete_longitudinal_pool_' . $active_pool_id ) ) {
+            // v2.1.3: First delete related assignments to avoid FK constraint issues
+            $assignments_table = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
+            $wpdb->delete( $assignments_table, array( 'pool_id' => $active_pool_id ), array( '%d' ) );
+
             $deleted = $wpdb->delete(
                 $table_name,
                 array( 'id' => $active_pool_id ),

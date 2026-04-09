@@ -11,7 +11,7 @@
 
 ---
 
-## 📋 Versión Actual: 2.1.0
+## 📋 Versión Actual: 2.1.3
 
 **Compatibilidad:** WordPress 5.8+ | PHP 7.4+ | Tested up to WP 6.7
 
@@ -81,13 +81,12 @@ Sistema de aleatorización completo para ensayos clínicos controlados.
 
 **Características:**
 - **Configuración de brazos:** Múltiples brazos con probabilidades custom
-- **Fingerprinting robusto:** Canvas, WebGL, Screen, Timezone, Audio, Fonts
+- **Fingerprinting robusto:** Canvas, WebGL, Screen, Timezone, Language, Hardware (CPU, RAM) ⚠️ *Audio/Fonts: No implementado*
 - **Métodos de aleatorización:**
   - `seeded` - Reproducible para auditoría
   - `pure-random` - Aleatoriedad criptográfica
 - **Dashboard en tiempo real:** Estadísticas de asignación por brazo
 - **Manual overrides:** Asignación manual para casos especiales
-- **Prevención de duplicados:** Un participante = una asignación
 
 **Shortcodes:**
 ```
@@ -112,7 +111,7 @@ Asignación automática de participantes a estudios con probabilidades configura
 [eipsi_pool_join pool_id="789"]  // Página de unión al pool
 ```
 
-**Estado:** Parte 1-4 implementadas (lógica de asignación + dashboard)
+**Estado:** ✅ Parte 1-4 implementadas. ⚠️ *Fix reciente (v2.1.3): Ahora se pueden eliminar pools correctamente incluso si los estudios vinculados fueron borrados.*
 
 ---
 
@@ -219,9 +218,9 @@ Lógica condicional potente para formularios dinámicos.
 
 **Operadores:** AND / OR
 **Acciones:**
-- `jump_to_page` - Saltar a página específica
-- `show/hide` - Mostrar/ocultar campos
-- `conditional required` - Campos obligatorios condicionales
+- `jump_to_page` - Saltar a página específica ✅
+- `show/hide` - Mostrar/ocultar campos ⚠️ *Parcial: funciona entre páginas, no dentro de la misma página*
+- `conditional required` - Campos obligatorios condicionales ✅
 
 **Compatibilidad:** Funciona con todos los tipos de campo
 
@@ -242,6 +241,16 @@ Sistema de guardado automático para formularios largos.
 
 ## 📋 Changelog Reciente
 
+### v2.1.3 (2025-04-09) - Privacy & Metadata Fixes + Pool Deletion
+
+**Fixes recientes:**
+- ✅ Extended Metadata Export: Ahora funciona correctamente el guardado de configuración
+- ✅ Privacy & Metadata UI: Nueva sección "Exportación Extendida" con checkboxes funcionales
+- ✅ Pool Deletion: Arreglado error de permisos y foreign keys al eliminar pools
+- ✅ Randomization Excel Export: Ahora incluye submission ID, duration, completed at, form responses
+- ✅ Wizard UI: Eliminados campos innecesarios (Duración estimada) y arreglado botón Monitoreo Semanal
+- ✅ Wide Export: Removida columna fingerprint_id (el investigador debe construirlo si lo necesita)
+
 ### v2.1.0 (2025-02-24) - Phase 3: Researcher Data Confidence
 
 **Epic:** Researcher Data Confidence
@@ -250,16 +259,13 @@ Sistema de guardado automático para formularios largos.
 - ✅ Participant Access Log Export (IRB compliance)
 - ✅ Completion Rate Verification
 - ✅ Wave-Level Timestamps (`wave_started_at`, `wave_completed_at`, `time_to_complete`)
+- ✅ **v2.1.3**: Extended Metadata Export (Canvas, WebGL, Hardware) - Configurable vía Privacy & Metadata
+- ✅ **v2.1.3**: Randomization Excel Export con submission data, duration, form responses
 
 #### 3B - Monitoring Upgrades
 - ✅ Per-Participant Progress View (Timeline)
 - ✅ Failed Email Alerts Dashboard
 - ✅ Cron Health Indicator
-
-#### 3C - GDPR Deletion Foundation
-- ✅ Participant Data Request Portal
-- ✅ Admin-Initiated Anonymization
-- ✅ Retention Policy Enforcement
 
 ---
 
@@ -270,6 +276,7 @@ Sistema de guardado automático para formularios largos.
 - ✅ Pool Dashboard con monitoreo de asignaciones
 - ✅ Pool Join Shortcode
 - ✅ Múltiples fixes de UI/UX
+- ✅ **v2.1.3**: Fix de permisos para eliminar pools con foreign keys
 
 ---
 
@@ -463,9 +470,9 @@ npm run lint:css
 ### 🚧 En Progreso / Próximos
 
 - [ ] **Integrated completion page** (misma URL forever, sin redirects externos)
-- [ ] **Conditional field visibility** (dentro de la misma página)
+- [ ] **Conditional field visibility** (dentro de la misma página - actualmente solo funciona entre páginas)
 - [ ] **Clinical templates** (PHQ-9, GAD-7, PCL-5, AUDIT, DASS-21) con scoring automático
-- [ ] **Fingerprint ID → Datos RAW** (opcional en export para análisis forense)
+- [x] **Fingerprint ID → Datos RAW** ✅ *Implementado en v2.1.3: Sección "Exportación Extendida" en Privacy & Metadata*
 
 ### 📅 Futuro (Nice-to-have)
 
