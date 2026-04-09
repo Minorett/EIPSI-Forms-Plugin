@@ -153,59 +153,59 @@ function render_privacy_dashboard($form_id = null) {
                 </div>
 
                 <!-- v2.1.3 - EXPORTACIÓN DE METADATOS EXTENDIDOS -->
-                <div class="eipsi-toggle-group" style="background: #fefce8; border: 2px solid #eab308; padding: 16px; border-radius: 8px; margin-top: 20px;">
-                    <h3>📊 Exportación Extendida (Opcional)</h3>
-                    <p class="section-description" style="margin-bottom: 12px; font-size: 13px; color: #854d0e;">
-                        ⚠️ <strong>Datos sensibles adicionales</strong> - OFF por defecto. Activa solo si necesitas estos datos para investigación.
+                <div class="eipsi-toggle-group" style="background: #f0fdf4; border: 2px solid #22c55e; padding: 16px; border-radius: 8px; margin-top: 20px;">
+                    <h3>📊 Exportación Extendida</h3>
+                    <p class="section-description" style="margin-bottom: 12px; font-size: 13px; color: #166534;">
+                        ✅ <strong>ON por defecto</strong> - Estos datos se incluyen en el Excel de exportación. Desactiva los que no necesites.
                     </p>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_canvas_fingerprint" <?php checked($global_config['export_canvas_fingerprint'] ?? false); ?>>
+                            <input type="checkbox" name="export_canvas_fingerprint" <?php checked($global_config['export_canvas_fingerprint'] ?? true); ?>>
                             Canvas Fingerprint
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_webgl_renderer" <?php checked($global_config['export_webgl_renderer'] ?? false); ?>>
+                            <input type="checkbox" name="export_webgl_renderer" <?php checked($global_config['export_webgl_renderer'] ?? true); ?>>
                             WebGL Renderer
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_screen_resolution" <?php checked($global_config['export_screen_resolution'] ?? false); ?>>
+                            <input type="checkbox" name="export_screen_resolution" <?php checked($global_config['export_screen_resolution'] ?? true); ?>>
                             Screen Resolution
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_screen_depth" <?php checked($global_config['export_screen_depth'] ?? false); ?>>
+                            <input type="checkbox" name="export_screen_depth" <?php checked($global_config['export_screen_depth'] ?? true); ?>>
                             Screen Depth
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_pixel_ratio" <?php checked($global_config['export_pixel_ratio'] ?? false); ?>>
+                            <input type="checkbox" name="export_pixel_ratio" <?php checked($global_config['export_pixel_ratio'] ?? true); ?>>
                             Pixel Ratio
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_timezone" <?php checked($global_config['export_timezone'] ?? false); ?>>
+                            <input type="checkbox" name="export_timezone" <?php checked($global_config['export_timezone'] ?? true); ?>>
                             Timezone
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_language" <?php checked($global_config['export_language'] ?? false); ?>>
+                            <input type="checkbox" name="export_language" <?php checked($global_config['export_language'] ?? true); ?>>
                             Language
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_cpu_cores" <?php checked($global_config['export_cpu_cores'] ?? false); ?>>
+                            <input type="checkbox" name="export_cpu_cores" <?php checked($global_config['export_cpu_cores'] ?? true); ?>>
                             CPU Cores
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_ram" <?php checked($global_config['export_ram'] ?? false); ?>>
+                            <input type="checkbox" name="export_ram" <?php checked($global_config['export_ram'] ?? true); ?>>
                             RAM (GB)
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_plugins" <?php checked($global_config['export_plugins'] ?? false); ?>>
+                            <input type="checkbox" name="export_plugins" <?php checked($global_config['export_plugins'] ?? true); ?>>
                             Browser Plugins
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_touch_support" <?php checked($global_config['export_touch_support'] ?? false); ?>>
+                            <input type="checkbox" name="export_touch_support" <?php checked($global_config['export_touch_support'] ?? true); ?>>
                             Touch Support
                         </label>
                         <label style="font-size: 13px;">
-                            <input type="checkbox" name="export_cookies_enabled" <?php checked($global_config['export_cookies_enabled'] ?? false); ?>>
+                            <input type="checkbox" name="export_cookies_enabled" <?php checked($global_config['export_cookies_enabled'] ?? true); ?>>
                             Cookies Enabled
                         </label>
                     </div>
@@ -302,7 +302,66 @@ function render_privacy_dashboard($form_id = null) {
                     <span class="eipsi-tooltip">(mobile/desktop/tablet)</span>
                 </label>
             </div>
-            
+
+            <!-- v2.1.3 - EXPORTACIÓN DE METADATOS EXTENDIDOS -->
+            <div class="eipsi-toggle-group" style="background: #f0fdf4; border: 2px solid #22c55e; padding: 16px; border-radius: 8px; margin-top: 20px;">
+                <h3>📊 Exportación Extendida</h3>
+                <p class="section-description" style="margin-bottom: 12px; font-size: 13px; color: #166534;">
+                    ✅ <strong>ON por defecto</strong> - Estos datos se incluyen en el Excel. Desactiva los que no necesites.
+                </p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_canvas_fingerprint" <?php checked($privacy_config['export_canvas_fingerprint'] ?? true); ?>>
+                        Canvas Fingerprint
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_webgl_renderer" <?php checked($privacy_config['export_webgl_renderer'] ?? true); ?>>
+                        WebGL Renderer
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_screen_resolution" <?php checked($privacy_config['export_screen_resolution'] ?? true); ?>>
+                        Screen Resolution
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_screen_depth" <?php checked($privacy_config['export_screen_depth'] ?? true); ?>>
+                        Screen Depth
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_pixel_ratio" <?php checked($privacy_config['export_pixel_ratio'] ?? true); ?>>
+                        Pixel Ratio
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_timezone" <?php checked($privacy_config['export_timezone'] ?? true); ?>>
+                        Timezone
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_language" <?php checked($privacy_config['export_language'] ?? true); ?>>
+                        Language
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_cpu_cores" <?php checked($privacy_config['export_cpu_cores'] ?? true); ?>>
+                        CPU Cores
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_ram" <?php checked($privacy_config['export_ram'] ?? true); ?>>
+                        RAM (GB)
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_plugins" <?php checked($privacy_config['export_plugins'] ?? true); ?>>
+                        Browser Plugins
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_touch_support" <?php checked($privacy_config['export_touch_support'] ?? true); ?>>
+                        Touch Support
+                    </label>
+                    <label style="font-size: 13px;">
+                        <input type="checkbox" name="export_cookies_enabled" <?php checked($privacy_config['export_cookies_enabled'] ?? true); ?>>
+                        Cookies Enabled
+                    </label>
+                </div>
+            </div>
+
             <button type="submit" class="button button-primary">💾 Guardar Configuración para este Formulario</button>
         </form>
     <?php else: ?>

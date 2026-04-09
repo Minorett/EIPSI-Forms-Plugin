@@ -995,7 +995,21 @@ function eipsi_save_privacy_config_handler() {
         'browser' => isset($_POST['browser']),
         'os' => isset($_POST['os']),
         'screen_width' => isset($_POST['screen_width']),
-        'ip_address' => isset($_POST['ip_address'])
+        'ip_address' => isset($_POST['ip_address']),
+        'fingerprint_enabled' => isset($_POST['fingerprint_enabled']),
+        // v2.1.3: Extended metadata export fields
+        'export_canvas_fingerprint' => isset($_POST['export_canvas_fingerprint']),
+        'export_webgl_renderer' => isset($_POST['export_webgl_renderer']),
+        'export_screen_resolution' => isset($_POST['export_screen_resolution']),
+        'export_screen_depth' => isset($_POST['export_screen_depth']),
+        'export_pixel_ratio' => isset($_POST['export_pixel_ratio']),
+        'export_timezone' => isset($_POST['export_timezone']),
+        'export_language' => isset($_POST['export_language']),
+        'export_cpu_cores' => isset($_POST['export_cpu_cores']),
+        'export_ram' => isset($_POST['export_ram']),
+        'export_plugins' => isset($_POST['export_plugins']),
+        'export_touch_support' => isset($_POST['export_touch_support']),
+        'export_cookies_enabled' => isset($_POST['export_cookies_enabled'])
     );
     
     $result = save_privacy_config($form_id, $config);
@@ -1021,7 +1035,21 @@ function eipsi_save_global_privacy_config_handler() {
         'browser' => isset($_POST['browser']),
         'os' => isset($_POST['os']),
         'screen_width' => isset($_POST['screen_width']),
-        'ip_address' => isset($_POST['ip_address'])
+        'ip_address' => isset($_POST['ip_address']),
+        'fingerprint_enabled' => isset($_POST['fingerprint_enabled']),
+        // v2.1.3: Extended metadata export fields
+        'export_canvas_fingerprint' => isset($_POST['export_canvas_fingerprint']),
+        'export_webgl_renderer' => isset($_POST['export_webgl_renderer']),
+        'export_screen_resolution' => isset($_POST['export_screen_resolution']),
+        'export_screen_depth' => isset($_POST['export_screen_depth']),
+        'export_pixel_ratio' => isset($_POST['export_pixel_ratio']),
+        'export_timezone' => isset($_POST['export_timezone']),
+        'export_language' => isset($_POST['export_language']),
+        'export_cpu_cores' => isset($_POST['export_cpu_cores']),
+        'export_ram' => isset($_POST['export_ram']),
+        'export_plugins' => isset($_POST['export_plugins']),
+        'export_touch_support' => isset($_POST['export_touch_support']),
+        'export_cookies_enabled' => isset($_POST['export_cookies_enabled'])
     );
     
     $result = save_global_privacy_defaults($config);

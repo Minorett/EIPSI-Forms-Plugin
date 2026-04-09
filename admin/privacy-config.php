@@ -73,19 +73,19 @@ function get_global_privacy_defaults() {
             'screen_width' => false,
             'device_type' => true,
             'fingerprint_enabled' => true,  // ✅ v1.5.4 - ON por default
-            // v2.1.3 - Metadatos extendidos OFF por default
-            'export_canvas_fingerprint' => false,
-            'export_webgl_renderer' => false,
-            'export_screen_resolution' => false,
-            'export_screen_depth' => false,
-            'export_pixel_ratio' => false,
-            'export_timezone' => false,
-            'export_language' => false,
-            'export_cpu_cores' => false,
-            'export_ram' => false,
-            'export_plugins' => false,
-            'export_touch_support' => false,
-            'export_cookies_enabled' => false,
+            // v2.1.3 - Metadatos extendidos ON por default (user request)
+            'export_canvas_fingerprint' => true,
+            'export_webgl_renderer' => true,
+            'export_screen_resolution' => true,
+            'export_screen_depth' => true,
+            'export_pixel_ratio' => true,
+            'export_timezone' => true,
+            'export_language' => true,
+            'export_cpu_cores' => true,
+            'export_ram' => true,
+            'export_plugins' => true,
+            'export_touch_support' => true,
+            'export_cookies_enabled' => true,
         );
     }
 
