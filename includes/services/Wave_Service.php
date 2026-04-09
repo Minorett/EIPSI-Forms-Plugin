@@ -194,14 +194,52 @@ class Wave_Service {
 
         // Check if interval is in minutes (send immediately) or hours/days (let cron handle)
         $time_unit = self::normalize_time_unit($next_wave->time_unit);
+        $interval_value = (int) ($next_wave->interval_days ?? 0);
 
         if ($time_unit !== 'minutes') {
             error_log("[Wave_Service] Next wave has {$time_unit} interval - letting cron handle email");
             return;
         }
 
-        // For minutes: send email immediately
-        error_log("[Wave_Service] Next wave has MINUTES interval - triggering immediate email");
+        // v2.1.3 Fix: Check if the wave is ACTUALLY available before sending
+        // Get the submission time of the completed wave
+        $completed_assignment = $wpdb->get_row($wpdb->prepare(
+            "SELECT submitted_at FROM {$wpdb->prefix}survey_assignments 
+             WHERE participant_id = %d AND study_id = %d AND wave_id = %d AND status = 'submitted'
+             ORDER BY submitted_at DESC LIMIT 1",
+            $participant_id,
+            $study_id,
+            $completed_wave_id
+        ));
+
+        if (!$completed_assignment || !$completed_assignment->submitted_at) {
+            error_log("[Wave_Service] Could not find submission time for completed wave {$completed_wave_id}");
+            return;
+        }
+
+        // Calculate when the next wave becomes available
+        $submitted_at = strtotime($completed_assignment->submitted_at);
+        $available_at = $submitted_at + ($interval_value * 60); // interval in minutes * 60 seconds
+        $now = current_time('timestamp');
+
+        // Log the calculation for debugging
+        error_log(sprintf(
+            '[Wave_Service] Next wave availability check: submitted_at=%s, interval=%d min, available_at=%s, now=%s',
+            date('Y-m-d H:i:s', $submitted_at),
+            $interval_value,
+            date('Y-m-d H:i:s', $available_at),
+            date('Y-m-d H:i:s', $now)
+        ));
+
+        // Only send if the wave is actually available now
+        if ($now < $available_at) {
+            $wait_minutes = ceil(($available_at - $now) / 60);
+            error_log("[Wave_Service] Next wave not available yet. Waiting {$wait_minutes} minutes. Cron will handle it.");
+            return;
+        }
+
+        // For minutes: send email immediately (now that we've verified it's time)
+        error_log("[Wave_Service] Next wave is NOW available - triggering immediate email");
 
         // Check if EIPSI_Email_Service is available
         if (!class_exists('EIPSI_Email_Service')) {
