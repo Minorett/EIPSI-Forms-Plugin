@@ -25,13 +25,13 @@ $selected_study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
 
 // Get configuration for selected study from study config JSON
 $config = array(
-    'reminders_enabled' => false,
-    'reminder_days_before' => 3,
+    'reminders_enabled' => true,  // ✅ Default ON for wave reminders
+    'reminder_days_before' => 0,  // Not used for longitudinal (waves use intervals instead)
     'max_reminder_emails' => 100,
-    'dropout_recovery_enabled' => false,
+    'dropout_recovery_enabled' => false,  // Optional feature, keep OFF by default
     'dropout_recovery_days' => 7,
     'max_recovery_emails' => 50,
-    'investigator_alert_enabled' => false,
+    'investigator_alert_enabled' => true,  // ✅ Default ON for investigator alerts
     'investigator_alert_email' => get_option('admin_email'),
 );
 

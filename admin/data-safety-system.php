@@ -347,10 +347,61 @@ function eipsi_auto_sync_participant_fields($data, $insert_id) {
     global $wpdb;
     
     try {
-        // Extraer participant_id de los datos
-        $participant_id = $data['participant_id'] ?? null;
+        // ✅ DEBUG: Ver qué datos estamos recibiendo
+        error_log('[EIPSI SYNC-DEBUG] Data received: participant_id=' . ($data['participant_id'] ?? 'NULL') . 
+                  ', longitudinal_id=' . ($data['longitudinal_participant_id'] ?? 'NULL') . 
+                  ', survey_id=' . ($data['survey_id'] ?? 'NULL'));
+        
+        // ✅ FIX: Usar longitudinal_participant_id (ID real de tabla) en lugar de participant_id (fingerprint)
+        $participant_id = $data['longitudinal_participant_id'] ?? null;
+        
+        // Si no hay longitudinal ID, buscar por email en survey_participants
+        $form_responses = json_decode($data['form_responses'] ?? '{}', true);
+        $email = $form_responses['email'] ?? $form_responses['correo'] ?? $form_responses['correo_electronico'] ?? '';
+        
+        if (empty($participant_id) && !empty($email)) {
+            $participant_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}survey_participants WHERE email = %s",
+                sanitize_email($email)
+            ));
+            if ($participant_id) {
+                error_log('[EIPSI SYNC] Found participant by email: ' . $participant_id);
+            }
+        }
+        
+        // Si aún no hay participant_id, intentar buscar por fingerprint (para formularios individuales)
+        if (empty($participant_id) && !empty($data['participant_id'])) {
+            $fingerprint = $data['participant_id']; // ej: p-71f2e28c2a47
+            
+            // Buscar si existe un participante con este fingerprint en alguna columna
+            $participant_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}survey_participants WHERE fingerprint = %s OR participant_id = %s OR external_id = %s",
+                $fingerprint, $fingerprint, $fingerprint
+            ));
+            
+            // Si no existe y tenemos email, crear nuevo participante
+            if (empty($participant_id) && !empty($email)) {
+                $insert_result = $wpdb->insert(
+                    $wpdb->prefix . 'survey_participants',
+                    array(
+                        'email' => sanitize_email($email),
+                        'name' => $form_responses['nombre'] ?? $form_responses['name'] ?? '',
+                        'fingerprint' => $fingerprint,
+                        'created_at' => current_time('mysql'),
+                        'updated_at' => current_time('mysql')
+                    ),
+                    array('%s', '%s', '%s', '%s', '%s')
+                );
+                
+                if ($insert_result) {
+                    $participant_id = $wpdb->insert_id;
+                    error_log('[EIPSI SYNC] Created new participant with ID: ' . $participant_id);
+                }
+            }
+        }
+        
         if (empty($participant_id)) {
-            error_log('[EIPSI SYNC] No participant_id found, skipping sync');
+            error_log('[EIPSI SYNC] No participant_id found (tried longitudinal_id, email, fingerprint, and creation), skipping sync');
             return;
         }
         
@@ -564,3 +615,19 @@ function eipsi_safety_health_check_ajax() {
     ));
 }
 add_action('wp_ajax_eipsi_safety_health_check', 'eipsi_safety_health_check_ajax');
+
+/**
+ * Desactiva validación estricta de bloques para permitir importación sin warnings
+ * Esto evita mensajes de "contenido inesperado" al importar formularios con bloques
+ * de versiones anteriores del plugin.
+ */
+add_filter('block_editor_settings_all', 'eipsi_disable_block_validation', 999);
+
+function eipsi_disable_block_validation($settings) {
+    // Solo aplicar en nuestros CPTs de formularios
+    $screen = get_current_screen();
+    if ($screen && ($screen->post_type === 'eipsi_form' || $screen->post_type === 'eipsi_wave')) {
+        $settings['__experimentalDisableBlockValidation'] = true;
+    }
+    return $settings;
+}

@@ -1652,6 +1652,7 @@ function eipsi_forms_submit_form_handler() {
         $insert_id = $safety_result['insert_id'] ?? null;
         $storage_type = $safety_result['storage'] ?? 'unknown';
         $emergency_mode = $safety_result['emergency_mode'] ?? false;
+        $used_fallback = $safety_result['fallback_used'] ?? false;
         
         // ✅ DATA SAFETY: Verificación post-submit
         $verified = eipsi_safety_verify_submission($insert_id, $storage_type, $data);

@@ -2931,6 +2931,12 @@
                 return;
             }
 
+            // ✅ FIX: Enable all disabled inputs before submission
+            // This ensures data from all form pages (including inactive ones) is sent
+            form.querySelectorAll( 'input[disabled], select[disabled], textarea[disabled]' ).forEach( ( el ) => {
+                el.removeAttribute( 'disabled' );
+            } );
+
             const submitButton = form.querySelector( 'button[type="submit"]' );
             const prevButton = form.querySelector( '.eipsi-prev-button' );
             const nextButton = form.querySelector( '.eipsi-next-button' );

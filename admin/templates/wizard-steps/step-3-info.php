@@ -18,12 +18,6 @@ $step_data = isset($wizard_data['step_3']) ? $wizard_data['step_3'] : array();
 $step_2_data = isset($wizard_data['step_2']) ? $wizard_data['step_2'] : array();
 $number_of_waves = isset($step_2_data['number_of_waves']) ? intval($step_2_data['number_of_waves']) : 3;
 
-// Set default values
-$reminder_days_before = isset($step_data['reminder_days_before']) ? intval($step_data['reminder_days_before']) : 0;
-$retry_after_days = isset($step_data['retry_after_days']) ? intval($step_data['retry_after_days']) : 7;
-$max_retries = isset($step_data['max_retries']) ? intval($step_data['max_retries']) : 3;
-$investigator_notification_days = isset($step_data['investigator_notification_days']) ? intval($step_data['investigator_notification_days']) : 14;
-
 // Default timing intervals between waves - ✅ v1.5.6: Todos 7 días por defecto (monitoreo semanal)
 $default_intervals = array(
     array('from_wave' => 0, 'to_wave' => 1, 'days_after' => 7, 'time_unit' => 'days'),  // T1 to T2: 7 days
