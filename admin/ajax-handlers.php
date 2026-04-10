@@ -1229,6 +1229,9 @@ function eipsi_forms_submit_form_handler() {
     $os_raw = isset($_POST['os']) ? sanitize_text_field($_POST['os']) : '';
     $screen_width_raw = isset($_POST['screen_width']) ? sanitize_text_field($_POST['screen_width']) : '';
     
+    // ✅ v2.1.3 - Store raw device data for saving to database
+    $device_data_raw = null;
+    
     // Fuente 2: eipsi_device_data JSON (current approach)
     // Si no tenemos datos individuales, extraer del JSON del fingerprint
     if (empty($device) || empty($browser_raw) || empty($os_raw)) {
@@ -1236,6 +1239,9 @@ function eipsi_forms_submit_form_handler() {
         if (!empty($device_data_json)) {
             $device_data = json_decode($device_data_json, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($device_data)) {
+                // ✅ Guardar datos completos para almacenar en DB
+                $device_data_raw = $device_data;
+                
                 // Extraer device type desde user agent
                 if (empty($device) && !empty($device_data['user_agent'])) {
                     $device = eipsi_detect_device_type($device_data['user_agent']);
@@ -1659,6 +1665,12 @@ function eipsi_forms_submit_form_handler() {
         
         if (!$verified && !$emergency_mode) {
             error_log(sprintf('[EIPSI SAFETY] Post-submit verification failed for ID: %s', $insert_id));
+        }
+        
+        // ✅ v2.1.3 - Guardar device data extendido en tabla separada
+        if ($insert_id && !empty($device_data_raw)) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-device-data-service.php';
+            EIPSI_Device_Data_Service::save_device_data($insert_id, $device_data_raw);
         }
         
         // Marcar partial response como completado

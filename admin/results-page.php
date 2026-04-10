@@ -4,8 +4,9 @@
  * Main admin page with tabs:
  * 1. Submissions (form responses)
  * 2. Completion Message (global thank-you config)
- * 3. Privacy & Metadata (per-form toggles)
- * 4. Randomization (RCT settings)
+ * 3. Randomization (RCT settings)
+ * 
+ * Privacy & Settings moved to Configuration > privacy-security
  */
 
 if (!defined('ABSPATH')) {
@@ -21,9 +22,15 @@ function eipsi_display_results_experience_page() {
     $allowed_tabs = array(
         'submissions',
         'completion',
-        'privacy',
         'randomization'
     );
+
+    // ✅ v2.1.4 - Privacy tab moved to Configuration > privacy-security
+    // Redirect legacy privacy tab URLs to Configuration
+    if ($active_tab === 'privacy') {
+        wp_safe_redirect(admin_url('admin.php?page=eipsi-configuration&tab=privacy-security'));
+        exit;
+    }
 
     if (!in_array($active_tab, $allowed_tabs, true)) {
         $active_tab = 'submissions';
@@ -46,11 +53,6 @@ function eipsi_display_results_experience_page() {
                data-tab="completion">
                 ✅ <?php esc_html_e('Finalización', 'eipsi-forms'); ?>
             </a>
-            <a href="?page=eipsi-results-experience&tab=privacy"
-               class="nav-tab <?php echo esc_attr(($active_tab === 'privacy') ? 'nav-tab-active' : ''); ?>"
-               data-tab="privacy">
-                🔒 <?php esc_html_e('Privacy & Metadata', 'eipsi-forms'); ?>
-            </a>
             <a href="?page=eipsi-results-experience&tab=randomization"
                class="nav-tab <?php echo esc_attr(($active_tab === 'randomization') ? 'nav-tab-active' : ''); ?>"
                data-tab="randomization">
@@ -69,12 +71,6 @@ function eipsi_display_results_experience_page() {
         <?php if ($active_tab === 'completion'): ?>
             <div class="tab-content" data-tab="completion">
                 <?php include dirname(__FILE__) . '/tabs/completion-message-tab.php'; ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($active_tab === 'privacy'): ?>
-            <div class="tab-content" data-tab="privacy">
-                <?php include dirname(__FILE__) . '/tabs/privacy-metadata-tab.php'; ?>
             </div>
         <?php endif; ?>
 

@@ -3853,4 +3853,241 @@ noscript .eipsi-header .eipsi-toggle {
   }
 }
 
+/* ========================================
+   MOBILE RESPONSIVE - Portrait (< 480px)
+   ======================================== */
+
+@media (max-width: 480px) {
+
+  /* Fix 1: VAS Slider - Hide floating labels, show mobile labels */
+  .vas-multi-labels {
+    display: none !important;
+  }
+
+  .vas-slider-container::after {
+    content: none;
+  }
+
+  .vas-labels-mobile {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding: 0 4px;
+  }
+
+  .vas-labels-mobile span {
+    font-size: 11px;
+    color: var(--eipsi-color-text-muted, #64748b);
+    text-align: center;
+    flex: 1;
+    line-height: 1.2;
+  }
+
+  .vas-slider-container .vas-slider {
+    width: 100%;
+  }
+
+  /* Fix 2: Likert Scale - Vertical layout */
+  .likert-list,
+  .wp-block-eipsi-likert-scale .likert-list {
+    flex-direction: column !important;
+    gap: 6px !important;
+  }
+
+  .likert-item,
+  .wp-block-eipsi-likert-scale .likert-item {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .likert-label-wrapper,
+  .wp-block-eipsi-likert-scale .likert-label-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--eipsi-color-border, #64748b);
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .likert-label-wrapper:has(input:checked),
+  .likert-item.selected .likert-label-wrapper {
+    background: var(--eipsi-color-secondary, #e3f2fd);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
+  }
+
+  .likert-label-wrapper input[type="radio"],
+  .wp-block-eipsi-likert-scale input[type="radio"] {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--eipsi-color-primary, #3B6CAA);
+    margin: 0;
+  }
+
+  .likert-label-text,
+  .wp-block-eipsi-likert-scale .likert-label-text {
+    font-size: 15px;
+    line-height: 1.4;
+    text-align: left;
+  }
+
+  /* Fix 3: General spacing and padding */
+  .wp-block-eipsi-form-container.eipsi-form,
+  .eipsi-form {
+    --eipsi-spacing-container-padding: 1rem;
+    --eipsi-spacing-field-gap: 1rem;
+    --eipsi-spacing-section-gap: 1.25rem;
+  }
+
+  .eipsi-form-content {
+    padding: 0;
+  }
+
+  .page-header {
+    padding: 1rem 1rem 0.5rem;
+  }
+
+  .page-header-title {
+    font-size: 1.25rem;
+  }
+
+  .eipsi-page-content {
+    padding: 0.75rem 1rem 1rem;
+  }
+
+  /* Fix 4: Navigation sticky at bottom */
+  .form-navigation {
+    padding: 0.75rem 1rem;
+    position: sticky;
+    bottom: 0;
+    background: var(--eipsi-color-background, #fff);
+    border-top: 1px solid rgba(100, 116, 139, 0.2);
+    z-index: 10;
+    margin-top: 1rem;
+  }
+
+  .form-nav-right {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .eipsi-next-button,
+  .eipsi-submit-button,
+  .eipsi-prev-button {
+    min-height: 48px;
+    font-size: 16px;
+    width: 100%;
+  }
+
+  /* Fix 5: Text inputs - Critical: 16px prevents iOS zoom */
+  .eipsi-field input[type="text"],
+  .eipsi-field input[type="number"],
+  .eipsi-field input[type="email"],
+  .eipsi-field input[type="tel"],
+  .eipsi-field input[type="url"],
+  .eipsi-field input[type="date"],
+  .eipsi-field textarea,
+  .eipsi-field select {
+    font-size: 16px;
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .eipsi-field label {
+    font-size: 15px;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .form-group {
+    margin-bottom: var(--eipsi-spacing-field-gap);
+  }
+
+  /* Fix 6: Multiple choice / Checkboxes */
+  .checkbox-list,
+  .eipsi-checkbox-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .checkbox-label-wrapper,
+  .eipsi-checkbox-label-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--eipsi-color-border, #64748b);
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+    cursor: pointer;
+    line-height: 1.4;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .checkbox-label-wrapper:has(input:checked),
+  .checkbox-label-wrapper.checked {
+    background: var(--eipsi-color-secondary, #e3f2fd);
+    border-color: var(--eipsi-color-primary, #3B6CAA);
+  }
+
+  .checkbox-label-wrapper input[type="checkbox"],
+  .eipsi-checkbox-label-wrapper input[type="checkbox"] {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    accent-color: var(--eipsi-color-primary, #3B6CAA);
+  }
+
+  .checkbox-label-text,
+  .eipsi-checkbox-label-text {
+    font-size: 15px;
+  }
+
+  /* Fix 7: Consent block */
+  .eipsi-consent-body {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .eipsi-consent-checkbox-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 1rem;
+    padding: 12px;
+    border: 1px solid var(--eipsi-color-border, #64748b);
+    border-radius: var(--eipsi-border-radius-sm, 8px);
+  }
+
+  .eipsi-consent-checkbox {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    accent-color: var(--eipsi-color-primary, #3B6CAA);
+  }
+
+  .eipsi-consent-checkbox-wrapper label {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* Fix 8: Pagination indicators */
+  .eipsi-pagination {
+    padding: 0.5rem 0;
+  }
+
+  .eipsi-pagination-step {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+}
+
 /*# sourceMappingURL=theme-toggle.css.map */

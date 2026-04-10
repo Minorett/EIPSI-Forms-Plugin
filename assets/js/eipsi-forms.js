@@ -1963,6 +1963,55 @@
                     } );
                 }
             } );
+
+            // ✅ MOBILE FIX: Create mobile labels below slider for small screens
+            this.createMobileVasLabels( form );
+        },
+
+        /**
+         * Create mobile-friendly labels below VAS sliders on small screens
+         * Only creates if not already present and on mobile viewport
+         */
+        createMobileVasLabels( form ) {
+            // Only proceed if we're on mobile (< 480px)
+            if ( window.innerWidth > 480 ) {
+                return;
+            }
+
+            const sliderContainers = form.querySelectorAll( '.vas-slider-container' );
+
+            sliderContainers.forEach( ( container ) => {
+                // Skip if already has mobile labels
+                if ( container.querySelector( '.vas-labels-mobile' ) ) {
+                    return;
+                }
+
+                const labelsEl = container.querySelector( '.vas-multi-labels' );
+                if ( ! labelsEl ) {
+                    return;
+                }
+
+                // Extract labels text from existing floating labels
+                const labels = Array.from(
+                    labelsEl.querySelectorAll( '.vas-multi-label' )
+                ).map( ( el ) => el.textContent.trim() );
+
+                if ( labels.length === 0 ) {
+                    return;
+                }
+
+                // Create mobile labels container
+                const mobileLabels = document.createElement( 'div' );
+                mobileLabels.className = 'vas-labels-mobile';
+
+                labels.forEach( ( text ) => {
+                    const span = document.createElement( 'span' );
+                    span.textContent = text;
+                    mobileLabels.appendChild( span );
+                } );
+
+                container.appendChild( mobileLabels );
+            } );
         },
 
         initLikertFields( form ) {
@@ -2149,6 +2198,10 @@
             form.dataset.currentPage = sanitizedPage;
 
             this.updatePaginationDisplay( form, sanitizedPage, totalPages );
+
+            // ✅ MOBILE FIX: Create mobile VAS labels when page becomes visible
+            // This ensures labels are created after page visibility change
+            this.createMobileVasLabels( form );
 
             if (
                 trackChange &&

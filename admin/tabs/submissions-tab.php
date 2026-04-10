@@ -135,7 +135,7 @@ $colspan = $show_form_column ? 8 : 7;
     <?php endif; ?>
     
     <div class="notice notice-info" style="margin: 20px 0;">
-        <p><strong><?php _e('Privacy Notice:', 'eipsi-forms'); ?></strong> <?php _e('This table displays session metadata only. Complete responses with questionnaire answers are available via CSV/Excel export below. Configure what data is captured in the "Privacy & Metadata" tab.', 'eipsi-forms'); ?></p>
+        <p><strong><?php _e('Privacy Notice:', 'eipsi-forms'); ?></strong> <?php _e('This table displays session metadata only. Complete responses with questionnaire answers are available via CSV/Excel export below. Configure what data is captured in Configuration > Privacidad & Seguridad.', 'eipsi-forms'); ?></p>
     </div>
     
     <!-- Filters & Export -->
