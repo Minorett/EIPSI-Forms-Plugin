@@ -171,33 +171,37 @@ function eipsi_detect_os($user_agent) {
     
     $ua = strtolower($user_agent);
     
-    // Windows
-    if (preg_match('/windows nt 10/', $ua)) {
+    // Windows - múltiples formatos para compatibilidad moderna
+    if (preg_match('/windows nt 10\.0/', $ua) || preg_match('/windows nt 10/', $ua)) {
         return 'Windows 10/11';
     }
-    if (preg_match('/windows nt 6.3/', $ua)) {
+    if (preg_match('/windows nt 6\.3/', $ua)) {
         return 'Windows 8.1';
     }
-    if (preg_match('/windows nt 6.2/', $ua)) {
+    if (preg_match('/windows nt 6\.2/', $ua)) {
         return 'Windows 8';
     }
-    if (preg_match('/windows nt 6.1/', $ua)) {
+    if (preg_match('/windows nt 6\.1/', $ua)) {
         return 'Windows 7';
     }
-    if (preg_match('/windows/', $ua)) {
+    if (preg_match('/windows nt 6\.0/', $ua)) {
+        return 'Windows Vista';
+    }
+    if (preg_match('/windows nt 5\.[12]/', $ua)) {
+        return 'Windows XP/2003';
+    }
+    // Formatos alternativos (Win64, Win32 sin NT version)
+    if (preg_match('/win64|win32|windows/', $ua)) {
         return 'Windows';
     }
     
     // macOS
-    if (preg_match('/macintosh|mac os x/', $ua)) {
+    if (preg_match('/macintosh|mac os x|macos/', $ua)) {
         return 'macOS';
     }
     
-    // iOS
-    if (preg_match('/iphone/', $ua)) {
-        return 'iOS';
-    }
-    if (preg_match('/ipad/', $ua)) {
+    // iOS (iPhone/iPad)
+    if (preg_match('/iphone|ipad|ipod/', $ua)) {
         return 'iOS';
     }
     
@@ -206,9 +210,14 @@ function eipsi_detect_os($user_agent) {
         return 'Android';
     }
     
-    // Linux
+    // Linux y variantes
     if (preg_match('/linux/', $ua)) {
         return 'Linux';
+    }
+    
+    // Chrome OS
+    if (preg_match('/cros|chrome os|chromeos/', $ua)) {
+        return 'Chrome OS';
     }
     
     return 'unknown';
@@ -1237,8 +1246,10 @@ function eipsi_forms_submit_form_handler() {
                 }
                 // Extraer OS desde platform o user agent
                 if (empty($os_raw)) {
-                    if (!empty($device_data['platform'])) {
-                        $os_raw = $device_data['platform'];
+                    $platform = $device_data['platform'] ?? '';
+                    // Usar platform solo si tiene valor real (no vacío, no "unknown", no null)
+                    if (!empty($platform) && strtolower($platform) !== 'unknown' && strlen(trim($platform)) > 2) {
+                        $os_raw = trim($platform);
                     } elseif (!empty($device_data['user_agent'])) {
                         $os_raw = eipsi_detect_os($device_data['user_agent']);
                     }

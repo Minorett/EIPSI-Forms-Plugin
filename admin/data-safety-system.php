@@ -76,6 +76,10 @@ function eipsi_safety_save_with_retry($data, $max_retries = 3) {
                     $attempt,
                     $result['insert_id'] ?? 'unknown'
                 ));
+                
+                // ✅ AUTO-SYNC: Sincronizar campos del formulario a survey_participants
+                eipsi_auto_sync_participant_fields($data, $result['insert_id']);
+                
                 return $result;
             }
             
@@ -336,6 +340,152 @@ function eipsi_safety_verify_submission($insert_id, $storage_type, $data) {
 }
 
 /**
+ * AUTO-SYNC: Sincroniza automáticamente campos del formulario a survey_participants
+ * Detecta todos los campos del JSON y crea columnas dinámicas T{wave}_{field}
+ */
+function eipsi_auto_sync_participant_fields($data, $insert_id) {
+    global $wpdb;
+    
+    try {
+        // Extraer participant_id de los datos
+        $participant_id = $data['participant_id'] ?? null;
+        if (empty($participant_id)) {
+            error_log('[EIPSI SYNC] No participant_id found, skipping sync');
+            return;
+        }
+        
+        // Determinar wave desde wave_id o inferir desde el contexto
+        $wave_id = $data['wave_id'] ?? null;
+        $wave_number = 1; // Default a T1
+        
+        if ($wave_id) {
+            // Buscar wave_index desde la tabla
+            $wave_index = $wpdb->get_var($wpdb->prepare(
+                "SELECT wave_index FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                $wave_id
+            ));
+            if ($wave_index !== null) {
+                $wave_number = intval($wave_index) + 1; // 0-based a 1-based
+            }
+        }
+        
+        // Parsear form_responses JSON
+        $form_responses = $data['form_responses'] ?? '{}';
+        $responses = json_decode($form_responses, true);
+        if (json_last_error() !== JSON_ERROR_NONE || empty($responses)) {
+            error_log('[EIPSI SYNC] Invalid form_responses JSON, skipping sync');
+            return;
+        }
+        
+        // Verificar que existe el participante
+        $participant_table = $wpdb->prefix . 'survey_participants';
+        $participant_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$participant_table} WHERE id = %d",
+            $participant_id
+        ));
+        
+        if (!$participant_exists) {
+            error_log('[EIPSI SYNC] Participant not found: ' . $participant_id);
+            return;
+        }
+        
+        // Preparar columnas y valores a sincronizar
+        $update_data = array();
+        $column_types = array();
+        
+        foreach ($responses as $field_name => $field_value) {
+            // Sanitizar nombre de campo (alphanumeric + underscore only)
+            $safe_field = preg_replace('/[^a-zA-Z0-9_]/', '_', $field_name);
+            $safe_field = substr($safe_field, 0, 50); // Limitar longitud
+            
+            // Construir nombre de columna: T1_email, T1_nombre, etc.
+            $column_name = 'T' . $wave_number . '_' . $safe_field;
+            
+            // Asegurar que la columna existe (crear si no)
+            eipsi_ensure_participant_column_exists($column_name);
+            
+            // Preparar valor
+            if (is_array($field_value)) {
+                $update_data[$column_name] = json_encode($field_value);
+            } else {
+                $update_data[$column_name] = sanitize_text_field($field_value);
+            }
+            
+            $column_types[] = $column_name;
+        }
+        
+        // Agregar campos de metadata del formulario
+        $metadata_fields = array('device', 'browser', 'os', 'screen_width', 'duration', 'ip_address');
+        foreach ($metadata_fields as $meta_field) {
+            if (!empty($data[$meta_field])) {
+                $column_name = 'T' . $wave_number . '_' . $meta_field;
+                eipsi_ensure_participant_column_exists($column_name);
+                $update_data[$column_name] = sanitize_text_field($data[$meta_field]);
+            }
+        }
+        
+        // Agregar timestamp de submission
+        $submitted_at_column = 'T' . $wave_number . '_submitted_at';
+        eipsi_ensure_participant_column_exists($submitted_at_column, 'DATETIME');
+        $update_data[$submitted_at_column] = current_time('mysql');
+        
+        // Ejecutar UPDATE si hay datos
+        if (!empty($update_data)) {
+            $result = $wpdb->update(
+                $participant_table,
+                $update_data,
+                array('id' => $participant_id),
+                null, // WordPress determinará formatos
+                array('%d')
+            );
+            
+            if ($result !== false) {
+                error_log(sprintf(
+                    '[EIPSI SYNC] Successfully synced %d fields for participant %d (T%d)',
+                    count($update_data),
+                    $participant_id,
+                    $wave_number
+                ));
+            } else {
+                error_log('[EIPSI SYNC] Failed to update participant: ' . $wpdb->last_error);
+            }
+        }
+        
+    } catch (Exception $e) {
+        error_log('[EIPSI SYNC] Exception during sync: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Asegura que una columna exista en survey_participants (la crea si no existe)
+ */
+function eipsi_ensure_participant_column_exists($column_name, $data_type = 'VARCHAR(255)') {
+    global $wpdb;
+    
+    $table_name = $wpdb->prefix . 'survey_participants';
+    
+    // Verificar si la columna existe
+    $column_exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+         WHERE TABLE_NAME = %s AND COLUMN_NAME = %s",
+        $table_name,
+        $column_name
+    ));
+    
+    if (!$column_exists) {
+        // Crear la columna
+        $sql = "ALTER TABLE {$table_name} ADD COLUMN {$column_name} {$data_type} NULL";
+        $result = $wpdb->query($sql);
+        
+        if ($result !== false) {
+            error_log("[EIPSI SYNC] Created column: {$column_name}");
+        } else {
+            error_log("[EIPSI SYNC] Failed to create column {$column_name}: " . $wpdb->last_error);
+        }
+    }
+}
+
+/**
  * Dashboard de salud para admin
  */
 function eipsi_safety_get_health_status() {
@@ -376,6 +526,20 @@ function eipsi_safety_get_health_status() {
     
     $status['stats']['unresolved_emergencies'] = $unresolved;
     $status['stats']['recent_empty_responses'] = $recent_empty;
+    
+    // Verificar sincronizaciones recientes (silencioso - solo para diagnóstico)
+    $last_sync_check = get_transient('eipsi_last_sync_check');
+    if ($last_sync_check === false) {
+        // Contar participantes con datos sincronizados recientemente
+        $synced_count = $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants 
+             WHERE updated_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)"
+        );
+        set_transient('eipsi_last_sync_check', $synced_count, 300); // Cache 5 min
+        $status['stats']['recent_syncs'] = intval($synced_count);
+    } else {
+        $status['stats']['recent_syncs'] = intval($last_sync_check);
+    }
     
     return $status;
 }
