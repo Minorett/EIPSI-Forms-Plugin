@@ -110,6 +110,9 @@ class EIPSI_Database_Schema_Manager {
             // Device Data RAW (v2.1.0) - replaces fingerprint hash with raw device data
             $device_data_sync = self::sync_local_device_data_table();
             
+            // Emergency Submissions table (v1.5.0+) - for data safety backup
+            $emergency_sync = self::sync_local_emergency_submissions_table();
+            
             $results['results_table'] = $results_sync;
             $results['events_table'] = $events_sync;
             $results['randomization_configs_table'] = $rct_configs_sync;
@@ -129,6 +132,7 @@ class EIPSI_Database_Schema_Manager {
             $results['longitudinal_pool_assignments_table'] = $longitudinal_pool_assignments_sync;
             $results['survey_participant_access_log_table'] = $participant_access_log_sync;
             $results['device_data_table'] = $device_data_sync;
+            $results['emergency_submissions_table'] = $emergency_sync;
             
             if ( ! $results_sync['success'] || ! $events_sync['success'] || 
                  ! $rct_configs_sync['success'] || ! $rct_assignments_sync['success'] ||
@@ -139,7 +143,8 @@ class EIPSI_Database_Schema_Manager {
                  ! $audit_log_sync['success'] || 
                  ! $longitudinal_pools_sync['success'] || ! $longitudinal_pool_assignments_sync['success'] ||
                  ! $participant_access_log_sync['success'] ||
-                 ! $device_data_sync['success'] ) {
+                 ! $device_data_sync['success'] ||
+                 ! $emergency_sync['success'] ) {
                 $results['success'] = false;
                 if ( ! $results_sync['success'] ) {
                     $results['errors'][] = $results_sync['error'];
@@ -189,6 +194,9 @@ class EIPSI_Database_Schema_Manager {
                 if ( ! $participant_access_log_sync['success'] ||
                  ! $device_data_sync['success'] ) {
                     $results['errors'][] = $participant_access_log_sync['error'];
+                }
+                if ( ! $emergency_sync['success'] ) {
+                    $results['errors'][] = $emergency_sync['error'];
                 }
             }
         }
@@ -4223,6 +4231,79 @@ public static function get_schema_health_summary() {
             'executed' => count($results),
             'results' => $results
         );
+    }
+
+    /**
+     * Sync emergency_submissions table in local WordPress database
+     * Stores backup submissions when main table fails
+     */
+    private static function sync_local_emergency_submissions_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'eipsi_emergency_submissions';
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+
+        if ( ! $result['exists'] ) {
+            // Create table
+            $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                form_id varchar(50) DEFAULT NULL,
+                participant_id varchar(255) DEFAULT NULL,
+                session_id varchar(255) DEFAULT NULL,
+                survey_id bigint(20) DEFAULT NULL,
+                wave_id bigint(20) DEFAULT NULL,
+                form_responses longtext DEFAULT NULL,
+                form_data longtext DEFAULT NULL,
+                metadata longtext DEFAULT NULL,
+                device varchar(100) DEFAULT NULL,
+                browser varchar(100) DEFAULT NULL,
+                os varchar(100) DEFAULT NULL,
+                screen_width int(11) DEFAULT NULL,
+                duration int(11) DEFAULT NULL,
+                ip_address varchar(45) DEFAULT NULL,
+                user_agent text DEFAULT NULL,
+                error_message text DEFAULT NULL,
+                error_code varchar(50) DEFAULT NULL,
+                db_type varchar(20) DEFAULT 'wordpress',
+                resolved tinyint(1) DEFAULT 0,
+                resolved_at datetime DEFAULT NULL,
+                created_at datetime DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY form_id (form_id),
+                KEY participant_id (participant_id),
+                KEY session_id (session_id),
+                KEY survey_id (survey_id),
+                KEY resolved (resolved),
+                KEY created_at (created_at)
+            ) {$charset_collate};";
+
+            require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+            dbDelta( $sql );
+
+            // Verify table was created
+            $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+            if ( ! empty( $table_exists ) ) {
+                $result['created'] = true;
+                $result['exists'] = true;
+            } else {
+                $result['success'] = false;
+                $result['error'] = 'Failed to create emergency submissions table';
+            }
+        }
+
+        return $result;
     }
 
 }
