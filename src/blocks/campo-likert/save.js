@@ -27,10 +27,27 @@ export default function Save( { attributes } ) {
 	// Calcular el máximo actual
 	const maxValue = calculateMaxValue( labels, minValue );
 
-	const effectiveFieldName =
-		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
-			? fieldName.trim()
-			: fieldKey;
+	// Generate automatic fieldName if not provided
+	const generateFieldName = () => {
+		if ( fieldName && typeof fieldName === 'string' && fieldName.trim() !== '' ) {
+			return fieldName.trim();
+		}
+		if ( fieldKey && typeof fieldKey === 'string' && fieldKey.trim() !== '' ) {
+			return fieldKey.trim();
+		}
+		if ( label && typeof label === 'string' && label.trim() !== '' ) {
+			const sanitized = label.trim()
+				.toLowerCase()
+				.replace( /[^a-z0-9]/g, '_' )
+				.replace( /_+/g, '_' )
+				.replace( /^_|_$/g, '' )
+				.substring( 0, 30 );
+			return sanitized || 'field_' + Date.now();
+		}
+		return 'field_' + Date.now();
+	};
+
+	const effectiveFieldName = generateFieldName();
 
 	const blockPropsData = {
 		className: `form-group eipsi-field eipsi-likert-field${

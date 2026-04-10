@@ -118,6 +118,83 @@ $needs_collation_fix = $collation_issues['needs_fix'];
         </div>
     </div>
 
+    <!-- 🔒 Data Safety Status Card -->
+    <?php
+    // Load Data Safety System for monitoring
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/data-safety-system.php';
+    $safety_health = eipsi_safety_get_health_status();
+    $emergency_table = $wpdb->prefix . 'eipsi_emergency_submissions';
+    $emergency_count = $wpdb->get_var("SELECT COUNT(*) FROM {$emergency_table}");
+    $unresolved_count = $wpdb->get_var("SELECT COUNT(*) FROM {$emergency_table} WHERE resolved = 0");
+    $recent_empty = $wpdb->get_var(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}vas_form_results 
+         WHERE submitted_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+         AND (form_responses IS NULL OR form_responses = '[]' OR form_responses = '{}')"
+    );
+    $has_safety_issues = !$safety_health['healthy'] || $unresolved_count > 0 || $recent_empty > 0;
+    ?>
+    <div class="monitoring-card data-safety-card <?php echo $has_safety_issues ? 'has-issues' : ''; ?>">
+        <div class="card-header">
+            <h3>
+                <?php if ($has_safety_issues): ?>
+                    <span class="status-dot error">❌</span>
+                <?php else: ?>
+                    <span class="status-dot ok">✅</span>
+                <?php endif; ?>
+                🔒 DATA SAFETY STATUS
+            </h3>
+            <span class="status-indicator <?php echo $has_safety_issues ? 'error' : 'ok'; ?>">●</span>
+        </div>
+        <div class="card-body">
+            <div class="stat-row">
+                <span class="stat-label">Status:</span>
+                <span class="stat-value <?php echo $has_safety_issues ? 'error' : 'success'; ?>">
+                    <?php echo $has_safety_issues ? 'ATENCIÓN REQUERIDA' : 'TODOS LOS SISTEMAS OK'; ?>
+                </span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Submissions (24h):</span>
+                <span class="stat-value"><?php echo number_format($wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}vas_form_results WHERE submitted_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)")); ?></span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Respuestas vacías (24h):</span>
+                <span class="stat-value <?php echo $recent_empty > 0 ? 'error' : 'success'; ?>">
+                    <?php echo intval($recent_empty); ?>
+                    <?php if ($recent_empty > 0): ?>
+                        <span title="Posible problema con field names en formularios">⚠️</span>
+                    <?php endif; ?>
+                </span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Emergencias pendientes:</span>
+                <span class="stat-value <?php echo $unresolved_count > 0 ? 'error' : 'success'; ?>">
+                    <?php echo intval($unresolved_count); ?>/<?php echo intval($emergency_count); ?>
+                </span>
+            </div>
+            
+            <?php if ($has_safety_issues): ?>
+            <div class="issues-list" style="display: block !important;">
+                <h4>⚠️ Problemas detectados:</h4>
+                <ul>
+                    <?php foreach ($safety_health['issues'] as $issue): ?>
+                    <li><?php echo esc_html($issue); ?></li>
+                    <?php endforeach; ?>
+                    <?php if ($recent_empty > 0): ?>
+                    <li>Hay submissions con respuestas vacías - revisar field names de formularios</li>
+                    <?php endif; ?>
+                    <?php if ($unresolved_count > 0): ?>
+                    <li>Hay <?php echo $unresolved_count; ?> emergencia(s) sin resolver - revisar tabla wp_eipsi_emergency_submissions</li>
+                    <?php endif; ?>
+                </ul>
+                <p style="margin-top: 10px; font-size: 12px;">
+                    <strong>Solución:</strong> Si hay respuestas vacías, re-guardar los formularios (npm run build + Update en editor). 
+                    Para emergencias, revisar logs con [EIPSI SAFETY] prefix.
+                </p>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- Table Cards Grid -->
     <div class="tables-grid">
         <?php foreach ($all_tables as $table_name => $table): ?>

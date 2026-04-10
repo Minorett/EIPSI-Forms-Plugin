@@ -33,12 +33,30 @@ export default function Save( { attributes } ) {
 		gradientType,
 		gradientColorStart,
 		gradientColorEnd,
+		fieldKey,
 	} = attributes;
 
-	const normalizedFieldName =
-		fieldName && typeof fieldName === 'string' && fieldName.trim() !== ''
-			? fieldName.trim()
-			: undefined;
+	// Generate automatic fieldName if not provided
+	const generateFieldName = () => {
+		if ( fieldName && typeof fieldName === 'string' && fieldName.trim() !== '' ) {
+			return fieldName.trim();
+		}
+		if ( fieldKey && typeof fieldKey === 'string' && fieldKey.trim() !== '' ) {
+			return fieldKey.trim();
+		}
+		if ( label && typeof label === 'string' && label.trim() !== '' ) {
+			const sanitized = label.trim()
+				.toLowerCase()
+				.replace( /[^a-z0-9]/g, '_' )
+				.replace( /_+/g, '_' )
+				.replace( /^_|_$/g, '' )
+				.substring( 0, 30 );
+			return sanitized || 'field_' + Date.now();
+		}
+		return 'field_' + Date.now();
+	};
+
+	const normalizedFieldName = generateFieldName();
 
 	// ✅ FIX v1.3.19: Move variable declarations BEFORE usage to avoid TDZ error
 	const safeStep = step && step > 0 ? step : 1;

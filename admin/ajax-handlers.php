@@ -95,6 +95,125 @@ function eipsi_get_study_status_for_form_name($form_name) {
     return ($status === 'closed') ? 'closed' : 'open';
 }
 
+/**
+ * Device type detection from User Agent
+ * 
+ * @param string $user_agent
+ * @return string 'desktop', 'mobile', 'tablet', or 'unknown'
+ */
+function eipsi_detect_device_type($user_agent) {
+    if (empty($user_agent)) {
+        return 'unknown';
+    }
+    
+    $ua = strtolower($user_agent);
+    
+    // Tablet detection
+    if (preg_match('/(tablet|ipad|android(?!.*mobile)|kindle|silk|playbook)/', $ua)) {
+        return 'tablet';
+    }
+    
+    // Mobile detection
+    if (preg_match('/(mobile|iphone|ipod|android|blackberry|windows phone|palm|operamini|opera mini)/', $ua)) {
+        return 'mobile';
+    }
+    
+    // Desktop (default)
+    return 'desktop';
+}
+
+/**
+ * Browser detection from User Agent
+ * 
+ * @param string $user_agent
+ * @return string Browser name or 'unknown'
+ */
+function eipsi_detect_browser($user_agent) {
+    if (empty($user_agent)) {
+        return 'unknown';
+    }
+    
+    $ua = strtolower($user_agent);
+    
+    // Common browsers in order of specificity
+    if (preg_match('/edg\//', $ua)) {
+        return 'Edge';
+    }
+    if (preg_match('/opr|opera/', $ua)) {
+        return 'Opera';
+    }
+    if (preg_match('/firefox/', $ua)) {
+        return 'Firefox';
+    }
+    if (preg_match('/safari/', $ua) && !preg_match('/chrome|chromium/', $ua)) {
+        return 'Safari';
+    }
+    if (preg_match('/chrome|chromium/', $ua)) {
+        return 'Chrome';
+    }
+    if (preg_match('/msie|trident/', $ua)) {
+        return 'IE';
+    }
+    
+    return 'unknown';
+}
+
+/**
+ * OS detection from User Agent
+ * 
+ * @param string $user_agent
+ * @return string OS name or 'unknown'
+ */
+function eipsi_detect_os($user_agent) {
+    if (empty($user_agent)) {
+        return 'unknown';
+    }
+    
+    $ua = strtolower($user_agent);
+    
+    // Windows
+    if (preg_match('/windows nt 10/', $ua)) {
+        return 'Windows 10/11';
+    }
+    if (preg_match('/windows nt 6.3/', $ua)) {
+        return 'Windows 8.1';
+    }
+    if (preg_match('/windows nt 6.2/', $ua)) {
+        return 'Windows 8';
+    }
+    if (preg_match('/windows nt 6.1/', $ua)) {
+        return 'Windows 7';
+    }
+    if (preg_match('/windows/', $ua)) {
+        return 'Windows';
+    }
+    
+    // macOS
+    if (preg_match('/macintosh|mac os x/', $ua)) {
+        return 'macOS';
+    }
+    
+    // iOS
+    if (preg_match('/iphone/', $ua)) {
+        return 'iOS';
+    }
+    if (preg_match('/ipad/', $ua)) {
+        return 'iOS';
+    }
+    
+    // Android
+    if (preg_match('/android/', $ua)) {
+        return 'Android';
+    }
+    
+    // Linux
+    if (preg_match('/linux/', $ua)) {
+        return 'Linux';
+    }
+    
+    return 'unknown';
+}
+
 function generateStableFingerprint($user_data) {
     $components = array(
         'email' => strtolower(trim($user_data['email'] ?? '')),
@@ -1067,6 +1186,10 @@ function eipsi_forms_submit_form_handler() {
     global $wpdb;
     $wpdb->suppress_errors(true);
     
+    // ✅ EIPSI DATA SAFETY SYSTEM v2.1.0
+    // Carga el sistema crítico de seguridad de datos
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/data-safety-system.php';
+    
     // v1.5.6 - Obtener participante autenticado desde la sesión
     // Esto corrige el bug donde participant_id llegaba como 0 desde el frontend
     $authenticated_participant_id = 0;
@@ -1090,13 +1213,44 @@ function eipsi_forms_submit_form_handler() {
         ), 403);
     }
     
+    // ✅ v2.0.1 - Capturar datos del dispositivo desde múltiples fuentes
+    // Fuente 1: Campos individuales (legacy)
     $device = isset($_POST['device']) ? sanitize_text_field($_POST['device']) : '';
-    
-    // Capturar otros campos del frontend (siempre los recibimos)
     $browser_raw = isset($_POST['browser']) ? sanitize_text_field($_POST['browser']) : '';
     $os_raw = isset($_POST['os']) ? sanitize_text_field($_POST['os']) : '';
-    // Screen puede venir como "1920" o "1920x1080"
     $screen_width_raw = isset($_POST['screen_width']) ? sanitize_text_field($_POST['screen_width']) : '';
+    
+    // Fuente 2: eipsi_device_data JSON (current approach)
+    // Si no tenemos datos individuales, extraer del JSON del fingerprint
+    if (empty($device) || empty($browser_raw) || empty($os_raw)) {
+        $device_data_json = isset($_POST['eipsi_device_data']) ? wp_unslash($_POST['eipsi_device_data']) : '';
+        if (!empty($device_data_json)) {
+            $device_data = json_decode($device_data_json, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($device_data)) {
+                // Extraer device type desde user agent
+                if (empty($device) && !empty($device_data['user_agent'])) {
+                    $device = eipsi_detect_device_type($device_data['user_agent']);
+                }
+                // Extraer browser desde user agent
+                if (empty($browser_raw) && !empty($device_data['user_agent'])) {
+                    $browser_raw = eipsi_detect_browser($device_data['user_agent']);
+                }
+                // Extraer OS desde platform o user agent
+                if (empty($os_raw)) {
+                    if (!empty($device_data['platform'])) {
+                        $os_raw = $device_data['platform'];
+                    } elseif (!empty($device_data['user_agent'])) {
+                        $os_raw = eipsi_detect_os($device_data['user_agent']);
+                    }
+                }
+                // Extraer screen width
+                if (empty($screen_width_raw) && !empty($device_data['screen_resolution'])) {
+                    // screen_resolution viene como "1920x1080", extraer ancho
+                    $screen_width_raw = explode('x', $device_data['screen_resolution'])[0] ?? '';
+                }
+            }
+        }
+    }
     
     // Capturar IP del participante con detección de proxy
     $ip_address_raw = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
@@ -1473,108 +1627,41 @@ function eipsi_forms_submit_form_handler() {
         'rct_randomization_id' => $rct_randomization_id
     );
     
-    // Check if external database is configured
-    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
-    $db_helper = new EIPSI_External_Database();
-    
-    $external_db_enabled = $db_helper->is_enabled();
-    $used_fallback = false;
-    $error_info = null;
-    
-    if ($external_db_enabled) {
-        // Try external database first
-        $result = $db_helper->insert_form_submission($data);
-        
-        if ($result['success']) {
-            // External DB insert succeeded
-            EIPSI_Partial_Responses::mark_completed($form_name, $participant_id, $session_id);
-            wp_send_json_success(array(
-                'message' => __('Form submitted successfully!', 'eipsi-forms'),
-                'external_db' => true,
-                'insert_id' => $result['insert_id']
-            ));
-        } else {
-            // External DB failed, record error and fall back to WordPress DB
-            $error_info = array(
-                'error' => $result['error'],
-                'error_code' => $result['error_code'],
-                'mysql_errno' => isset($result['mysql_errno']) ? $result['mysql_errno'] : null
-            );
-            
-            // Record error for admin diagnostics
-            $db_helper->record_error($result['error'], $result['error_code']);
-            
-            // Log the fallback
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('EIPSI Forms: External DB insert failed, falling back to WordPress DB - ' . $result['error']);
-            }
-            
-            $used_fallback = true;
-        }
+    // ✅ DATA SAFETY: Pre-flight validation
+    $safety_check = eipsi_safety_validate_submission($data);
+    if (!$safety_check['valid']) {
+        error_log('[EIPSI SAFETY] CRITICAL: Pre-flight validation failed: ' . implode(', ', $safety_check['errors']));
+        // Aún intentamos guardar en modo emergencia
     }
     
-    // Use WordPress database (either as default or as fallback)
-    if (!$external_db_enabled || $used_fallback) {
-        $table_name = $wpdb->prefix . 'vas_form_results';
+    // ✅ DATA SAFETY: Guardar con sistema de seguridad (retry + emergencia)
+    $safety_result = eipsi_safety_save_with_retry($data, 3);
+    
+    if ($safety_result['success']) {
+        $insert_id = $safety_result['insert_id'] ?? null;
+        $storage_type = $safety_result['storage'] ?? 'unknown';
+        $emergency_mode = $safety_result['emergency_mode'] ?? false;
         
-        $wpdb_result = $wpdb->insert(
-            $table_name,
-            $data,
-            array('%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
-        );
+        // ✅ DATA SAFETY: Verificación post-submit
+        $verified = eipsi_safety_verify_submission($insert_id, $storage_type, $data);
         
-        if ($wpdb_result === false) {
-            // Check if it's an "Unknown column" error (schema issue)
-            $wpdb_error = $wpdb->last_error;
-            
-            if (strpos($wpdb_error, 'Unknown column') !== false || strpos($wpdb_error, "doesn't exist") !== false) {
-                // Emergency schema repair
-                error_log('[EIPSI Forms] Detected schema error, triggering auto-repair: ' . $wpdb_error);
-                
-                EIPSI_Database_Schema_Manager::repair_local_schema();
-                
-                // Retry insert once after repair
-                $wpdb_result = $wpdb->insert(
-                    $table_name,
-                    $data,
-                    array('%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%f', '%d', '%d', '%s', '%s', '%s')
-                );
-                
-                if ($wpdb_result !== false) {
-                    // Success after repair!
-                    error_log('[EIPSI Forms] Auto-repaired schema and recovered data insertion');
-                    $insert_id = $wpdb->insert_id;
-                    EIPSI_Partial_Responses::mark_completed($form_name, $participant_id, $session_id);
-
-                    wp_send_json_success(array(
-                        'message' => __('Form submitted successfully!', 'eipsi-forms'),
-                        'external_db' => false,
-                        'schema_repaired' => true,
-                        'insert_id' => $insert_id
-                    ));
-                } else {
-                    // Still failed after repair
-                    error_log('[EIPSI Forms CRITICAL] Schema repair failed: ' . $wpdb->last_error);
-                    wp_send_json_error(array(
-                        'message' => __('Database error (recovery attempted)', 'eipsi-forms'),
-                        'external_db_error' => $error_info,
-                        'wordpress_db_error' => $wpdb->last_error
-                    ));
-                }
-            } else {
-                // Other database error (not schema-related)
-                error_log('EIPSI Forms: WordPress DB insert failed - ' . $wpdb_error);
-                
-                wp_send_json_error(array(
-                    'message' => __('Failed to submit form. Please try again.', 'eipsi-forms'),
-                    'external_db_error' => $error_info,
-                    'wordpress_db_error' => $wpdb_error
-                ));
-            }
-            return;
+        if (!$verified && !$emergency_mode) {
+            error_log(sprintf('[EIPSI SAFETY] Post-submit verification failed for ID: %s', $insert_id));
         }
         
-        $insert_id = $wpdb->insert_id;
+        // Marcar partial response como completado
+        EIPSI_Partial_Responses::mark_completed($form_name, $participant_id, $session_id);
+        
+        // Si fue modo emergencia, notificar al usuario pero confirmar éxito
+        if ($emergency_mode) {
+            wp_send_json_success(array(
+                'message' => $safety_result['message'],
+                'emergency_mode' => true,
+                'emergency_id' => $safety_result['emergency_id'],
+                'insert_id' => $insert_id,
+                'verified' => $verified
+            ));
+        }
         
         // Mark partial response as completed
         EIPSI_Partial_Responses::mark_completed($form_name, $participant_id, $session_id);
@@ -1751,6 +1838,10 @@ function eipsi_forms_submit_form_handler() {
             $success_response['completion_message'] = __('All waves completed!', 'eipsi-forms');
         }
         
+        // ✅ DATA SAFETY: Agregar info de verificación a la respuesta
+        $success_response['verified'] = $verified;
+        $success_response['storage_type'] = $storage_type;
+        
         if ($used_fallback) {
             // Fallback succeeded - inform user with warning
             $success_response['fallback_used'] = true;
@@ -1759,6 +1850,16 @@ function eipsi_forms_submit_form_handler() {
         }
         
         wp_send_json_success($success_response);
+        
+    } else {
+        // ✅ DATA SAFETY: Fallo crítico - todos los intentos fallaron incluyendo modo emergencia
+        error_log('[EIPSI SAFETY] CRITICAL: All save attempts failed including emergency mode');
+        
+        wp_send_json_error(array(
+            'message' => __('Error crítico: No se pudo guardar la respuesta. Por favor, contacte al administrador inmediatamente.', 'eipsi-forms'),
+            'error_code' => 'SAFETY_SYSTEM_FAILURE',
+            'contact_admin' => true
+        ), 500);
     }
 }
 
