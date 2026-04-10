@@ -121,11 +121,22 @@ $needs_collation_fix = $collation_issues['needs_fix'];
     <!-- 🔒 Data Safety Status Card -->
     <?php
     // Load Data Safety System for monitoring
+    global $wpdb;
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/data-safety-system.php';
     $safety_health = eipsi_safety_get_health_status();
     $emergency_table = $wpdb->prefix . 'eipsi_emergency_submissions';
-    $emergency_count = $wpdb->get_var("SELECT COUNT(*) FROM {$emergency_table}");
-    $unresolved_count = $wpdb->get_var("SELECT COUNT(*) FROM {$emergency_table} WHERE resolved = 0");
+    
+    // Check if emergency table exists (suppress errors if not)
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$emergency_table}'") === $emergency_table;
+    
+    if ($table_exists) {
+        $emergency_count = $wpdb->get_var("SELECT COUNT(*) FROM {$emergency_table}");
+        $unresolved_count = $wpdb->get_var("SELECT COUNT(*) FROM {$emergency_table} WHERE resolved = 0");
+    } else {
+        $emergency_count = 0;
+        $unresolved_count = 0;
+    }
+    
     $recent_empty = $wpdb->get_var(
         "SELECT COUNT(*) FROM {$wpdb->prefix}vas_form_results 
          WHERE submitted_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
