@@ -1127,20 +1127,57 @@
 
         collectResponses() {
             const responses = {};
-            const formData = new FormData( this.form );
 
-            formData.forEach( ( value, key ) => {
+            // v2.1.3 Fix: Use querySelectorAll to capture ALL fields including disabled ones
+            // FormData only includes enabled fields, which causes data loss when pages are hidden
+            const fields = this.form.querySelectorAll( 'input[name], select[name], textarea[name]' );
+
+            fields.forEach( ( field ) => {
+                const key = field.name;
+
                 if ( EXCLUDED_FIELDS.has( key ) ) {
                     return;
                 }
 
-                // Por ahora no guardamos archivos como parte del borrador.
-                if ( value instanceof File ) {
+                // Skip file inputs for now
+                if ( field.type === 'file' ) {
                     return;
                 }
 
-                const normalizedRaw =
-                    typeof value === 'string' ? value : `${ value }`;
+                // Skip hidden inputs (form metadata)
+                if ( field.type === 'hidden' ) {
+                    return;
+                }
+
+                let value;
+
+                if ( field.type === 'checkbox' ) {
+                    // For checkboxes, get all checked values in the group
+                    const checkboxes = this.form.querySelectorAll( `input[type="checkbox"][name="${ key }"]` );
+                    const checkedValues = Array.from( checkboxes )
+                        .filter( ( cb ) => cb.checked )
+                        .map( ( cb ) => cb.value );
+
+                    if ( checkedValues.length === 0 ) {
+                        return; // No value, skip
+                    } else if ( checkedValues.length === 1 ) {
+                        value = checkedValues[ 0 ];
+                    } else {
+                        value = checkedValues;
+                    }
+                } else if ( field.type === 'radio' ) {
+                    // For radios, get the checked one
+                    const checkedRadio = this.form.querySelector( `input[type="radio"][name="${ key }"]:checked` );
+                    if ( ! checkedRadio ) {
+                        return; // No value, skip
+                    }
+                    value = checkedRadio.value;
+                } else {
+                    // For other fields (text, select, textarea, range, etc.)
+                    value = field.value;
+                }
+
+                const normalizedRaw = typeof value === 'string' ? value : `${ value }`;
                 const normalized = normalizedRaw.trim();
 
                 // Clave: un formulario "sin intervención" no debe generar borrador.

@@ -190,11 +190,6 @@ function eipsi_export_to_excel() {
     // ONLY include metadata columns if privacy config allows
     $headers = array('Form ID', 'Participant ID', 'Form Name', 'Date', 'Time', 'Duration(s)', 'Start Time (UTC)', 'End Time (UTC)');
 
-    // ✅ v1.5.4 - Fingerprint ID (si fingerprint_enabled está activado)
-    if ($privacy_config['fingerprint_enabled'] ?? true) {
-        $headers[] = 'Fingerprint ID';
-    }
-
     // === Columnas de Aleatorización (Fase 1) - Solo si hay datos reales ===
     if ($has_randomization) {
         $headers[] = 'Assignment Form';
@@ -247,41 +242,41 @@ function eipsi_export_to_excel() {
         $headers[] = 'Total Duration(s)';
     }
 
-    // v2.1.3 - Extended Device Metadata Headers (optional, based on privacy config)
-    if ($privacy_config['export_canvas_fingerprint'] ?? false) {
+    // v2.1.3 - Extended Device Metadata Headers (ON by default based on privacy config)
+    if ($privacy_config['export_canvas_fingerprint'] ?? true) {
         $headers[] = 'Canvas Fingerprint';
     }
-    if ($privacy_config['export_webgl_renderer'] ?? false) {
+    if ($privacy_config['export_webgl_renderer'] ?? true) {
         $headers[] = 'WebGL Renderer';
     }
-    if ($privacy_config['export_screen_resolution'] ?? false) {
+    if ($privacy_config['export_screen_resolution'] ?? true) {
         $headers[] = 'Screen Resolution';
     }
-    if ($privacy_config['export_screen_depth'] ?? false) {
+    if ($privacy_config['export_screen_depth'] ?? true) {
         $headers[] = 'Screen Depth';
     }
-    if ($privacy_config['export_pixel_ratio'] ?? false) {
+    if ($privacy_config['export_pixel_ratio'] ?? true) {
         $headers[] = 'Pixel Ratio';
     }
-    if ($privacy_config['export_timezone'] ?? false) {
+    if ($privacy_config['export_timezone'] ?? true) {
         $headers[] = 'Timezone';
     }
-    if ($privacy_config['export_language'] ?? false) {
+    if ($privacy_config['export_language'] ?? true) {
         $headers[] = 'Language';
     }
-    if ($privacy_config['export_cpu_cores'] ?? false) {
+    if ($privacy_config['export_cpu_cores'] ?? true) {
         $headers[] = 'CPU Cores';
     }
-    if ($privacy_config['export_ram'] ?? false) {
+    if ($privacy_config['export_ram'] ?? true) {
         $headers[] = 'RAM (GB)';
     }
-    if ($privacy_config['export_plugins'] ?? false) {
+    if ($privacy_config['export_plugins'] ?? true) {
         $headers[] = 'Browser Plugins';
     }
-    if ($privacy_config['export_touch_support'] ?? false) {
+    if ($privacy_config['export_touch_support'] ?? true) {
         $headers[] = 'Touch Support';
     }
-    if ($privacy_config['export_cookies_enabled'] ?? false) {
+    if ($privacy_config['export_cookies_enabled'] ?? true) {
         $headers[] = 'Cookies Enabled';
     }
 
@@ -328,9 +323,6 @@ function eipsi_export_to_excel() {
             $end_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->end_timestamp_ms / 1000));
         }
 
-        // ✅ v1.5.4 - Obtener fingerprint_id
-        $fingerprint_id = !empty($row->user_fingerprint) ? $row->user_fingerprint : '';
-
         // === Obtener datos de aleatorización (solo si hay randomización real) ===
         $row_data = array(
             $form_id,
@@ -342,11 +334,6 @@ function eipsi_export_to_excel() {
             $start_time_utc,
             $end_time_utc,
         );
-
-        // ✅ v1.5.4 - Agregar fingerprint_id a la fila (si fingerprint_enabled está activado)
-        if ($privacy_config['fingerprint_enabled'] ?? true) {
-            $row_data[] = $fingerprint_id;
-        }
 
         // Solo agregar datos de aleatorización si hay randomización real
         if ($has_randomization) {
@@ -416,60 +403,60 @@ function eipsi_export_to_excel() {
             $row_data[] = $total_duration;
         }
 
-        // v2.1.3 - Extended Device Metadata Values (optional, based on privacy config)
+        // v2.1.3 - Extended Device Metadata Values (ON by default based on privacy config)
         $device_data = $device_data_batch[$row->id] ?? null;
         if ($device_data) {
-            if ($privacy_config['export_canvas_fingerprint'] ?? false) {
+            if ($privacy_config['export_canvas_fingerprint'] ?? true) {
                 $row_data[] = $device_data->canvas_fingerprint ?? '';
             }
-            if ($privacy_config['export_webgl_renderer'] ?? false) {
+            if ($privacy_config['export_webgl_renderer'] ?? true) {
                 $row_data[] = $device_data->webgl_renderer ?? '';
             }
-            if ($privacy_config['export_screen_resolution'] ?? false) {
+            if ($privacy_config['export_screen_resolution'] ?? true) {
                 $row_data[] = $device_data->screen_resolution ?? '';
             }
-            if ($privacy_config['export_screen_depth'] ?? false) {
+            if ($privacy_config['export_screen_depth'] ?? true) {
                 $row_data[] = $device_data->screen_depth ?? '';
             }
-            if ($privacy_config['export_pixel_ratio'] ?? false) {
+            if ($privacy_config['export_pixel_ratio'] ?? true) {
                 $row_data[] = $device_data->pixel_ratio ?? '';
             }
-            if ($privacy_config['export_timezone'] ?? false) {
+            if ($privacy_config['export_timezone'] ?? true) {
                 $row_data[] = $device_data->timezone ?? '';
             }
-            if ($privacy_config['export_language'] ?? false) {
+            if ($privacy_config['export_language'] ?? true) {
                 $row_data[] = $device_data->language ?? '';
             }
-            if ($privacy_config['export_cpu_cores'] ?? false) {
+            if ($privacy_config['export_cpu_cores'] ?? true) {
                 $row_data[] = $device_data->cpu_cores ?? '';
             }
-            if ($privacy_config['export_ram'] ?? false) {
+            if ($privacy_config['export_ram'] ?? true) {
                 $row_data[] = $device_data->ram ?? '';
             }
-            if ($privacy_config['export_plugins'] ?? false) {
+            if ($privacy_config['export_plugins'] ?? true) {
                 $row_data[] = $device_data->plugins ?? '';
             }
-            if ($privacy_config['export_touch_support'] ?? false) {
+            if ($privacy_config['export_touch_support'] ?? true) {
                 $row_data[] = $device_data->touch_support ?? '';
             }
-            if ($privacy_config['export_cookies_enabled'] ?? false) {
+            if ($privacy_config['export_cookies_enabled'] ?? true) {
                 $row_data[] = $device_data->cookies_enabled ?? '';
             }
         } else {
             // Add empty values if no device data available
             $extended_metadata_count = 0;
-            if ($privacy_config['export_canvas_fingerprint'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_webgl_renderer'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_screen_resolution'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_screen_depth'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_pixel_ratio'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_timezone'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_language'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_cpu_cores'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_ram'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_plugins'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_touch_support'] ?? false) $extended_metadata_count++;
-            if ($privacy_config['export_cookies_enabled'] ?? false) $extended_metadata_count++;
+            if ($privacy_config['export_canvas_fingerprint'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_webgl_renderer'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_screen_resolution'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_screen_depth'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_pixel_ratio'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_timezone'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_language'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_cpu_cores'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_ram'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_plugins'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_touch_support'] ?? true) $extended_metadata_count++;
+            if ($privacy_config['export_cookies_enabled'] ?? true) $extended_metadata_count++;
             for ($i = 0; $i < $extended_metadata_count; $i++) {
                 $row_data[] = '';
             }
@@ -715,9 +702,6 @@ function eipsi_export_to_csv() {
             $end_time_utc = gmdate('Y-m-d\TH:i:s.v\Z', intval($row->end_timestamp_ms / 1000));
         }
 
-        // ✅ v1.5.4 - Obtener fingerprint_id
-        $fingerprint_id = !empty($row->user_fingerprint) ? $row->user_fingerprint : '';
-
         // === Obtener datos de aleatorización (solo si hay randomización real) ===
         $row_data = array(
             $form_id,
@@ -729,11 +713,6 @@ function eipsi_export_to_csv() {
             $start_time_utc,
             $end_time_utc,
         );
-
-        // ✅ v1.5.4 - Agregar fingerprint_id a la fila (si fingerprint_enabled está activado)
-        if ($privacy_config['fingerprint_enabled'] ?? true) {
-            $row_data[] = $fingerprint_id;
-        }
 
         // Solo agregar datos de aleatorización si hay randomización real
         if ($has_randomization) {

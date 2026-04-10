@@ -126,16 +126,16 @@ function render_privacy_dashboard($form_id = null) {
                 <!-- FINGERPRINT LIVIANO DEL DISPOSITIVO -->
                 <div class="eipsi-toggle-group">
                     <h3>🖥️ Fingerprint Liviano del Dispositivo</h3>
-                    <p class="eipsi-section-description">⚠️ Estos datos son <strong>opcionales</strong> y están <strong>desactivados por defecto</strong>. Útiles para distinguir pacientes con IP compartida.</p>
+                    <p class="eipsi-section-description">✅ Estos datos son <strong>opcionales</strong> y están <strong>activados por defecto</strong>. Útiles para distinguir pacientes con IP compartida.</p>
                     
                     <label>
-                        <input type="checkbox" name="browser" <?php checked($global_config['browser']); ?>>
+                        <input type="checkbox" name="browser" <?php checked($global_config['browser'] ?? true); ?>>
                         <strong>Capturar navegador y sistema operativo</strong>
                         <span class="eipsi-tooltip">(ej: Chrome 131, Firefox 132, Windows 10)</span>
                     </label>
                     
                     <label>
-                        <input type="checkbox" name="screen_width" <?php checked($global_config['screen_width']); ?>>
+                        <input type="checkbox" name="screen_width" <?php checked($global_config['screen_width'] ?? true); ?>>
                         <strong>Capturar tamaño de pantalla</strong>
                         <span class="eipsi-tooltip">(ej: 1920x1080, 1080x2400)</span>
                     </label>
@@ -277,16 +277,16 @@ function render_privacy_dashboard($form_id = null) {
             <!-- FINGERPRINT LIVIANO DEL DISPOSITIVO -->
             <div class="eipsi-toggle-group">
                 <h3>🖥️ Fingerprint Liviano del Dispositivo</h3>
-                <p class="eipsi-section-description">⚠️ Estos datos son <strong>opcionales</strong> y están <strong>desactivados por defecto</strong>. Útiles para distinguir pacientes con IP compartida.</p>
+                <p class="eipsi-section-description">✅ Estos datos son <strong>opcionales</strong> y están <strong>activados por defecto</strong>. Útiles para distinguir pacientes con IP compartida.</p>
 
                 <label>
-                    <input type="checkbox" name="browser" <?php checked($privacy_config['browser'] ?? false); ?>>
+                    <input type="checkbox" name="browser" <?php checked($privacy_config['browser'] ?? true); ?>>
                     <strong>Capturar navegador y sistema operativo</strong>
                     <span class="eipsi-tooltip">(ej: Chrome 131, Firefox 132, Windows 10)</span>
                 </label>
 
                 <label>
-                    <input type="checkbox" name="screen_width" <?php checked($privacy_config['screen_width'] ?? false); ?>>
+                    <input type="checkbox" name="screen_width" <?php checked($privacy_config['screen_width'] ?? true); ?>>
                     <strong>Capturar tamaño de pantalla</strong>
                     <span class="eipsi-tooltip">(ej: 1920x1080, 1080x2400)</span>
                 </label>

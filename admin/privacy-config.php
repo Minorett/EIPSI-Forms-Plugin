@@ -27,10 +27,10 @@ function get_privacy_defaults() {
         // ✅ v1.5.4 - FINGERPRINT COMPLETO - ON por default
         'fingerprint_enabled' => true,
 
-        // DISPOSITIVO - OFF por default (opcional)
-        'browser' => false,
-        'os' => false,
-        'screen_width' => false,
+        // DISPOSITIVO - ON por default (user expectation matches UI)
+        'browser' => true,
+        'os' => true,
+        'screen_width' => true,
 
         // EXCLUIDOS (por privacidad y alcance)
         'screen_size' => false,
@@ -68,9 +68,9 @@ function get_global_privacy_defaults() {
         // Si no existe configuración global, usar defaults estándar
         return array(
             'ip_address' => true,
-            'browser' => false,
-            'os' => false,
-            'screen_width' => false,
+            'browser' => true,
+            'os' => true,
+            'screen_width' => true,
             'device_type' => true,
             'fingerprint_enabled' => true,  // ✅ v1.5.4 - ON por default
             // v2.1.3 - Metadatos extendidos ON por default (user request)

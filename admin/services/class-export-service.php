@@ -287,7 +287,7 @@ public function fetch_participants_data($study_id, $filters = array()) {
     // --- Step 3: Get longitudinal submissions from vas_form_results ---
     $submissions = $wpdb->get_results(
         $wpdb->prepare(
-            "SELECT r.longitudinal_participant_id, r.wave_index, r.form_id, r.form_responses,
+            "SELECT r.id, r.longitudinal_participant_id, r.wave_index, r.form_id, r.form_responses,
                     r.submitted_at, r.duration_seconds, r.user_fingerprint,
                     r.device, r.browser, r.os, r.screen_width, r.ip_address,
                     r.participant_id as fingerprint_participant_id
@@ -303,6 +303,11 @@ public function fetch_participants_data($study_id, $filters = array()) {
     if (!function_exists('get_privacy_config')) {
         require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/privacy-config.php';
     }
+
+    // v2.1.3 - Load Device Data Service for extended metadata
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-device-data-service.php';
+    $submission_ids = array_column($submissions, 'id');
+    $device_data_batch = EIPSI_Device_Data_Service::get_device_data_batch($submission_ids);
 
     // Process submissions and organize by participant
     $submissions_by_participant = array();
@@ -339,6 +344,23 @@ public function fetch_participants_data($study_id, $filters = array()) {
         if (!empty($privacy['os'])) $submission_data['os'] = $sub->os;
         if (!empty($privacy['screen_width'])) $submission_data['screen_width'] = $sub->screen_width;
         if (!empty($privacy['ip_address'])) $submission_data['ip_address'] = $sub->ip_address;
+
+        // v2.1.3 - Add extended device metadata
+        $device_data = $device_data_batch[$sub->id] ?? null;
+        if ($device_data) {
+            $submission_data['canvas_fingerprint'] = ($privacy['export_canvas_fingerprint'] ?? true) ? ($device_data->canvas_fingerprint ?? '') : '';
+            $submission_data['webgl_renderer'] = ($privacy['export_webgl_renderer'] ?? true) ? ($device_data->webgl_renderer ?? '') : '';
+            $submission_data['screen_resolution'] = ($privacy['export_screen_resolution'] ?? true) ? ($device_data->screen_resolution ?? '') : '';
+            $submission_data['screen_depth'] = ($privacy['export_screen_depth'] ?? true) ? ($device_data->screen_depth ?? '') : '';
+            $submission_data['pixel_ratio'] = ($privacy['export_pixel_ratio'] ?? true) ? ($device_data->pixel_ratio ?? '') : '';
+            $submission_data['timezone'] = ($privacy['export_timezone'] ?? true) ? ($device_data->timezone ?? '') : '';
+            $submission_data['language'] = ($privacy['export_language'] ?? true) ? ($device_data->language ?? '') : '';
+            $submission_data['cpu_cores'] = ($privacy['export_cpu_cores'] ?? true) ? ($device_data->cpu_cores ?? '') : '';
+            $submission_data['ram'] = ($privacy['export_ram'] ?? true) ? ($device_data->ram ?? '') : '';
+            $submission_data['plugins'] = ($privacy['export_plugins'] ?? true) ? ($device_data->plugins ?? '') : '';
+            $submission_data['touch_support'] = ($privacy['export_touch_support'] ?? true) ? ($device_data->touch_support ?? '') : '';
+            $submission_data['cookies_enabled'] = ($privacy['export_cookies_enabled'] ?? true) ? ($device_data->cookies_enabled ?? '') : '';
+        }
 
         // Organize by longitudinal participant ID (integer)
         if ($longitudinal_participant_id) {
@@ -594,7 +616,7 @@ public function fetch_participants_data($study_id, $filters = array()) {
      *
      * Estructura Wide (v2.1.3):
      * - Columnas base: ID, Email, Estado, Registrado, Último acceso, Ondas asignadas, Ondas completadas, Progreso (%)
-     * - Por cada wave: T{n}_submitted_at, T{n}_duration_seconds, T{n}_device, T{n}_browser, T{n}_os, T{n}_screen_width, T{n}_ip_address, T{n}_{field_name}
+     * - Por cada wave: T{n}_submitted_at, T{n}_duration_seconds, T{n}_device, T{n}_browser, T{n}_os, T{n}_screen_width, T{n}_ip_address, T{n}_canvas_fingerprint, T{n}_webgl_renderer, T{n}_screen_resolution, T{n}_screen_depth, T{n}_pixel_ratio, T{n}_timezone, T{n}_language, T{n}_cpu_cores, T{n}_ram, T{n}_plugins, T{n}_touch_support, T{n}_cookies_enabled, T{n}_{field_name}
      * - SIN columnas: Nombre, Apellido, fingerprint_id (el investigador lo construye si lo necesita)
      *
      * @param array $rows  List of participant rows.
@@ -656,6 +678,19 @@ public function fetch_participants_data($study_id, $filters = array()) {
             $headers[] = $prefix . '_os';
             $headers[] = $prefix . '_screen_width';
             $headers[] = $prefix . '_ip_address';
+            // v2.1.3: Extended device metadata columns (ON by default)
+            $headers[] = $prefix . '_canvas_fingerprint';
+            $headers[] = $prefix . '_webgl_renderer';
+            $headers[] = $prefix . '_screen_resolution';
+            $headers[] = $prefix . '_screen_depth';
+            $headers[] = $prefix . '_pixel_ratio';
+            $headers[] = $prefix . '_timezone';
+            $headers[] = $prefix . '_language';
+            $headers[] = $prefix . '_cpu_cores';
+            $headers[] = $prefix . '_ram';
+            $headers[] = $prefix . '_plugins';
+            $headers[] = $prefix . '_touch_support';
+            $headers[] = $prefix . '_cookies_enabled';
 
             // Add dynamic headers for form_response fields
             foreach ($unique_field_names as $field_name) {
@@ -733,6 +768,19 @@ public function fetch_participants_data($study_id, $filters = array()) {
                 $data[] = $submission['os'] ?? '';
                 $data[] = $submission['screen_width'] ?? '';
                 $data[] = $submission['ip_address'] ?? '';
+                // v2.1.3: Extended device metadata values (12 columns)
+                $data[] = $submission['canvas_fingerprint'] ?? '';
+                $data[] = $submission['webgl_renderer'] ?? '';
+                $data[] = $submission['screen_resolution'] ?? '';
+                $data[] = $submission['screen_depth'] ?? '';
+                $data[] = $submission['pixel_ratio'] ?? '';
+                $data[] = $submission['timezone'] ?? '';
+                $data[] = $submission['language'] ?? '';
+                $data[] = $submission['cpu_cores'] ?? '';
+                $data[] = $submission['ram'] ?? '';
+                $data[] = $submission['plugins'] ?? '';
+                $data[] = $submission['touch_support'] ?? '';
+                $data[] = $submission['cookies_enabled'] ?? '';
 
                 // Form response fields
                 $form_responses = $submission['form_responses'] ?? array();
@@ -750,8 +798,8 @@ public function fetch_participants_data($study_id, $filters = array()) {
                 }
             } else {
                 // Empty submission - add empty columns
-                // v2.1.3: 7 columns (removed fingerprint_id)
-                $metadata_columns = 7; // submitted_at, duration_seconds, device, browser, os, screen_width, ip_address
+                // v2.1.3: 19 columns (7 basic + 12 extended, fingerprint_id removed)
+                $metadata_columns = 19; // submitted_at, duration_seconds, device, browser, os, screen_width, ip_address, canvas_fingerprint, webgl_renderer, screen_resolution, screen_depth, pixel_ratio, timezone, language, cpu_cores, ram, plugins, touch_support, cookies_enabled
                 for ($i = 0; $i < $metadata_columns; $i++) {
                     $data[] = '';
                 }
@@ -768,7 +816,8 @@ public function fetch_participants_data($study_id, $filters = array()) {
     /**
      * Export participant roster to Excel in WIDE format, returns filename.
      *
-     * Estructura Wide: una fila por participante con columnas por cada wave.
+     * Estructura Wide (v2.1.3): una fila por participante con columnas por cada wave.
+     * Incluye 19 columnas de metadatos por wave (7 básicas + 12 extendidas, sin fingerprint_id).
      *
      * @param int   $study_id
      * @param array $filters
@@ -843,19 +892,48 @@ public function fetch_participants_data($study_id, $filters = array()) {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        $headers = $this->build_participants_wide_headers($rows, $waves);
+        // Build full headers for column count, but create limited preview headers
+        $full_headers = $this->build_participants_wide_headers($rows, $waves);
+        $preview_headers = $this->build_participants_wide_preview_headers($rows, $waves, count($full_headers));
         $preview_rows = array();
 
         foreach (array_slice($rows, 0, $limit) as $row) {
-            $preview_rows[] = $this->build_participants_wide_row($row, $waves);
+            $full_row = $this->build_participants_wide_row($row, $waves);
+            // Extract only preview columns (base columns + first wave basic data)
+            $preview_rows[] = $this->extract_preview_columns($full_row, $full_headers, $preview_headers);
         }
 
         return array(
-            'headers' => $headers,
+            'headers' => $preview_headers,
             'rows'    => $preview_rows,
             'total'   => count($rows),
-            'columns' => count($headers),
+            'columns' => count($full_headers), // Show actual total columns
             'format'  => 'wide',
+            'is_preview' => true,
         );
+    }
+
+    /**
+     * Build limited headers for preview (base columns only).
+     */
+    private function build_participants_wide_preview_headers($rows, $waves, $full_headers_count = 0) {
+        return array(
+            'ID',
+            'Email',
+            'Estado',
+            'Registrado',
+            'Último acceso',
+            'Ondas asignadas',
+            'Ondas completadas',
+            'Progreso (%)',
+        );
+    }
+
+    /**
+     * Extract preview columns from full row data (first 8 base columns only).
+     */
+    private function extract_preview_columns($full_row, $full_headers, $preview_headers) {
+        // Return only the first 8 columns (base columns: ID, Email, Estado, etc.)
+        return array_slice($full_row, 0, 8);
     }
 }

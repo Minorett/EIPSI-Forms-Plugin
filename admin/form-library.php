@@ -474,3 +474,43 @@ function eipsi_limit_blocks_by_context($allowed_block_types, $editor_context) {
     return array_values($allowed_block_types);
 }
 add_filter('allowed_block_types_all', 'eipsi_limit_blocks_by_context', 10, 2);
+
+/**
+ * Pre-populate new form templates with default EIPSI form container block
+ * Fixes the "Add New" button creating empty pages
+ */
+function eipsi_set_default_form_content($post_id, $post, $update) {
+    // Only for our CPT and only on initial creation (not updates)
+    if ($post->post_type !== 'eipsi_form_template' || $update) {
+        return;
+    }
+    
+    // Avoid infinite loops
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    
+    // Only if content is empty
+    if (!empty($post->post_content)) {
+        return;
+    }
+    
+    // Generate unique form ID
+    $form_id = 'form_' . time();
+    
+    // Build default content with EIPSI form container and one empty page
+    $default_content = '<!-- wp:eipsi/form-container {"formId":"' . $form_id . '","preset":"clinical-blue"} -->
+<div class="wp-block-eipsi-form-container eipsi-form" data-preset="Clinical Blue"><form class="vas-form eipsi-form-element" data-form-id="' . $form_id . '"><input type="hidden" name="form_id" value="' . $form_id . '"/><input type="hidden" name="form_action" value="eipsi_forms_submit_form"/><input type="hidden" name="eipsi_nonce" value=""/><div class="eipsi-form eipsi-form-content"><!-- wp:eipsi/form-page {"title":"Página 1"} -->
+<div class="wp-block-eipsi-form-page eipsi-page" data-page="1" data-page-type="standard"><div class="page-header"><div class="page-header-content"><h3 class="page-header-title">Página 1</h3></div></div><div class="eipsi-page-content"><!-- wp:paragraph {"placeholder":"Agregá tu primer campo aquí..."} -->
+<p></p>
+<!-- /wp:paragraph --></div></div>
+<!-- /wp:eipsi/form-page --></div><div class="form-navigation"><div class="form-nav-left"><button type="button" class="eipsi-prev-button is-hidden">Anterior</button></div><div class="form-nav-right"><button type="button" class="eipsi-next-button is-hidden">Siguiente</button><button type="submit" class="eipsi-submit-button">Enviar</button></div></div></form></div>
+<!-- /wp:eipsi/form-container -->';
+    
+    // Update the post with default content
+    wp_update_post(array(
+        'ID' => $post_id,
+        'post_content' => $default_content,
+    ));
+}
+add_action('wp_insert_post', 'eipsi_set_default_form_content', 10, 3);

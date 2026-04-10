@@ -163,6 +163,7 @@
             this.fieldCache = new Map();
             this.history = [];
             this.visitedPages = new Set();
+            this.skippedPages = new Set(); // v2.1.3 Fix: missing initialization
         }
 
         parseConditionalLogic( jsonString ) {
@@ -2557,8 +2558,19 @@
 
                 if ( pageNumber === currentPage ) {
                     page.style.display = '';
+                    // v2.1.3 Fix: Enable fields in visible page
+                    page.querySelectorAll( 'input, select, textarea, button' ).forEach( ( el ) => {
+                        el.disabled = false;
+                    } );
                 } else {
                     page.style.display = 'none';
+                    // v2.1.3 Fix: Disable fields in hidden pages to prevent validation errors
+                    page.querySelectorAll( 'input, select, textarea, button' ).forEach( ( el ) => {
+                        // Don't disable hidden inputs that are needed for form logic
+                        if ( el.type !== 'hidden' ) {
+                            el.disabled = true;
+                        }
+                    } );
                 }
             } );
 

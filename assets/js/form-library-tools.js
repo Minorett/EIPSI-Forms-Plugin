@@ -25,6 +25,7 @@
 
 		/**
 		 * Export form as JSON (download)
+		 * Simplified: no modal, direct export in lite mode
 		 */
 		bindExportActions() {
 			$( document ).on( 'click', '.eipsi-export-form', function ( e ) {
@@ -34,10 +35,11 @@
 				const templateId = $link.data( 'template-id' );
 				const templateName = $link.data( 'template-name' );
 
-				// Show export mode selection modal
-				FormLibraryTools.showExportModeModal(
+				// Direct export in lite mode (simplified format)
+				FormLibraryTools.performExport(
 					templateId,
 					templateName,
+					'lite',
 					$link
 				);
 			} );
@@ -179,13 +181,11 @@
 							response.data.filename
 						);
 
-						const modeLabel =
-							mode === 'lite' ? ' (simplificado)' : ' (completo)';
 						FormLibraryTools.showNotice(
 							eipsiFormTools.strings.exportSuccess +
 								': ' +
 								templateName +
-								modeLabel,
+								' (v2.0 structure)',
 							'success'
 						);
 					} else {

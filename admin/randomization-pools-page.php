@@ -64,8 +64,10 @@ function eipsi_display_longitudinal_pools_page() {
         $pool_name = sanitize_text_field( wp_unslash( $_POST['pool_name'] ?? '' ) );
         $pool_description = sanitize_textarea_field( wp_unslash( $_POST['pool_description'] ?? '' ) );
         $method = sanitize_text_field( wp_unslash( $_POST['method'] ?? 'seeded' ) );
-        $selected_studies = isset( $_POST['studies'] ) ? array_map( 'absint', (array) $_POST['studies'] ) : array();
-        $input_probabilities = isset( $_POST['probabilities'] ) ? (array) $_POST['probabilities'] : array();
+        // v2.1.3: Process new JSON format for pool studies
+        $pool_studies_data = isset( $_POST['pool_studies_data'] ) ? json_decode( wp_unslash( $_POST['pool_studies_data'] ), true ) : array();
+        $selected_studies = isset( $pool_studies_data['studies'] ) ? array_map( 'absint', (array) $pool_studies_data['studies'] ) : array();
+        $input_probabilities = isset( $pool_studies_data['probabilities'] ) ? (array) $pool_studies_data['probabilities'] : array();
 
         $allowed_methods = array( 'seeded', 'pure-random' );
         if ( ! in_array( $method, $allowed_methods, true ) ) {
@@ -300,37 +302,40 @@ function eipsi_display_longitudinal_pools_page() {
                     <?php if ( empty( $studies ) ) : ?>
                         <p><?php esc_html_e( 'No hay estudios longitudinales disponibles. Crea un estudio antes de armar un pool.', 'eipsi-forms' ); ?></p>
                     <?php else : ?>
-                        <table class="widefat fixed">
-                            <thead>
-                                <tr>
-                                    <th><?php esc_html_e( 'Seleccionar', 'eipsi-forms' ); ?></th>
-                                    <th><?php esc_html_e( 'Estudio', 'eipsi-forms' ); ?></th>
-                                    <th><?php esc_html_e( 'Código', 'eipsi-forms' ); ?></th>
-                                    <th><?php esc_html_e( 'Probabilidad (%)', 'eipsi-forms' ); ?></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ( $studies as $study ) : ?>
-                                    <?php
-                                    $is_selected = in_array( (int) $study->id, $selected_studies, true );
-                                    $probability_value = isset( $selected_probabilities[ $study->id ] ) ? (float) $selected_probabilities[ $study->id ] : '';
-                                    ?>
-                                    <tr>
-                                        <td>
-                                            <input type="checkbox" name="studies[]" value="<?php echo esc_attr( $study->id ); ?>" <?php checked( $is_selected ); ?>>
-                                        </td>
-                                        <td><?php echo esc_html( $study->study_name ); ?></td>
-                                        <td><code><?php echo esc_html( $study->study_code ); ?></code></td>
-                                        <td>
-                                            <input type="number" name="probabilities[<?php echo esc_attr( $study->id ); ?>]" value="<?php echo esc_attr( $probability_value ); ?>" min="0" max="100" step="0.01">
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                        <div id="eipsi-pool-studies-container" class="eipsi-pool-studies-container">
+                            <!-- Dynamic rows will be added here -->
+                        </div>
+
+                        <div class="eipsi-pool-actions">
+                            <button type="button" class="button button-secondary" id="eipsi-add-study-row">
+                                + <?php esc_html_e( 'Agregar estudio', 'eipsi-forms' ); ?>
+                            </button>
+                            <button type="button" class="button button-secondary" id="eipsi-distribute-probabilities">
+                                🔀 <?php esc_html_e( 'Distribuir equitativamente', 'eipsi-forms' ); ?>
+                            </button>
+                        </div>
+
+                        <div class="eipsi-pool-total" id="eipsi-pool-total">
+                            <span class="eipsi-total-label"><?php esc_html_e( 'Total:', 'eipsi-forms' ); ?></span>
+                            <span class="eipsi-total-value" id="eipsi-probability-total">0%</span>
+                            <span class="eipsi-total-status" id="eipsi-probability-status">❌</span>
+                        </div>
+
                         <p class="description">
-                            <?php esc_html_e( 'Recordá que la suma de probabilidades debe ser 100%.', 'eipsi-forms' ); ?>
+                            <?php esc_html_e( 'La suma de probabilidades debe ser exactamente 100%.', 'eipsi-forms' ); ?>
                         </p>
+
+                        <!-- Hidden input to store final data -->
+                        <input type="hidden" name="pool_studies_data" id="pool-studies-data" value="">
+
+                        <script>
+                            // Available studies data
+                            const eipsiAvailableStudies = <?php echo wp_json_encode( array_map( function( $s ) {
+                                return array( 'id' => $s->id, 'name' => $s->study_name, 'code' => $s->study_code );
+                            }, $studies ) ); ?>;
+                            const eipsiInitialStudies = <?php echo wp_json_encode( $selected_studies ); ?>;
+                            const eipsiInitialProbabilities = <?php echo wp_json_encode( $selected_probabilities ); ?>;
+                        </script>
                     <?php endif; ?>
 
                     <p>
@@ -509,6 +514,262 @@ function eipsi_display_longitudinal_pools_page() {
             user-select: all;
             cursor: text;
         }
+
+        /* Dynamic pool studies UI */
+        .eipsi-pool-studies-container {
+            margin-bottom: 16px;
+        }
+
+        .eipsi-pool-study-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .eipsi-pool-study-row:hover {
+            border-color: #cbd5e1;
+        }
+
+        .eipsi-pool-study-row select {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .eipsi-pool-study-row input[type="number"] {
+            width: 100px;
+            text-align: right;
+        }
+
+        .eipsi-pool-study-row .eipsi-remove-row {
+            color: #dc2626;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .eipsi-pool-study-row .eipsi-remove-row:hover {
+            background: #fee2e2;
+        }
+
+        .eipsi-pool-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .eipsi-pool-total {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .eipsi-total-label {
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .eipsi-total-value {
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .eipsi-total-value.valid {
+            color: #16a34a;
+        }
+
+        .eipsi-total-value.invalid {
+            color: #dc2626;
+        }
+
+        .eipsi-total-status {
+            font-size: 16px;
+        }
     </style>
+
+    <script>
+    (function() {
+        'use strict';
+
+        const container = document.getElementById('eipsi-pool-studies-container');
+        const addBtn = document.getElementById('eipsi-add-study-row');
+        const distributeBtn = document.getElementById('eipsi-distribute-probabilities');
+        const totalEl = document.getElementById('eipsi-probability-total');
+        const statusEl = document.getElementById('eipsi-probability-status');
+        const hiddenInput = document.getElementById('pool-studies-data');
+
+        let selectedStudies = [];
+
+        function init() {
+            // Load initial data if editing
+            if (eipsiInitialStudies && eipsiInitialStudies.length > 0) {
+                eipsiInitialStudies.forEach(function(studyId) {
+                    const prob = eipsiInitialProbabilities[studyId] || 0;
+                    addRow(studyId, prob);
+                });
+            }
+
+            updateTotal();
+
+            // Event listeners
+            if (addBtn) {
+                addBtn.addEventListener('click', function() {
+                    addRow();
+                });
+            }
+
+            if (distributeBtn) {
+                distributeBtn.addEventListener('click', distributeEqually);
+            }
+
+            // Form submission
+            const form = document.querySelector('.eipsi-pools-form form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    if (!validateBeforeSubmit()) {
+                        e.preventDefault();
+                        alert('<?php echo esc_js( __( 'La suma de probabilidades debe ser exactamente 100%.', 'eipsi-forms' ) ); ?>');
+                        return false;
+                    }
+                    saveDataToHiddenInput();
+                });
+            }
+        }
+
+        function addRow(studyId, probability) {
+            studyId = studyId || '';
+            probability = probability || '';
+
+            const row = document.createElement('div');
+            row.className = 'eipsi-pool-study-row';
+
+            // Build select options
+            let optionsHtml = '<option value=""><?php echo esc_js( __( 'Seleccionar estudio...', 'eipsi-forms' ) ); ?></option>';
+            eipsiAvailableStudies.forEach(function(study) {
+                const selected = study.id == studyId ? 'selected' : '';
+                optionsHtml += '<option value="' + study.id + '" ' + selected + '>' + escapeHtml(study.name) + ' (' + escapeHtml(study.code) + ')</option>';
+            });
+
+            row.innerHTML = 
+                '<select name="study_select[]" required>' + optionsHtml + '</select>' +
+                '<input type="number" name="study_probability[]" value="' + probability + '" min="0" max="100" step="0.01" placeholder="%" required>' +
+                '<span class="eipsi-remove-row" title="<?php echo esc_js( __( 'Eliminar', 'eipsi-forms' ) ); ?>">×</span>';
+
+            // Remove button handler
+            row.querySelector('.eipsi-remove-row').addEventListener('click', function() {
+                row.remove();
+                updateTotal();
+            });
+
+            // Input change handlers
+            row.querySelector('select').addEventListener('change', updateTotal);
+            row.querySelector('input').addEventListener('input', updateTotal);
+
+            container.appendChild(row);
+        }
+
+        function distributeEqually() {
+            const rows = container.querySelectorAll('.eipsi-pool-study-row');
+            const count = rows.length;
+
+            if (count === 0) {
+                alert('<?php echo esc_js( __( 'Primero agregá al menos un estudio.', 'eipsi-forms' ) ); ?>');
+                return;
+            }
+
+            const equalProb = (100 / count).toFixed(2);
+
+            rows.forEach(function(row) {
+                const input = row.querySelector('input[type="number"]');
+                input.value = equalProb;
+            });
+
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const rows = container.querySelectorAll('.eipsi-pool-study-row');
+            let total = 0;
+
+            rows.forEach(function(row) {
+                const input = row.querySelector('input[type="number"]');
+                const val = parseFloat(input.value) || 0;
+                total += val;
+            });
+
+            total = Math.round(total * 100) / 100;
+
+            totalEl.textContent = total.toFixed(2) + '%';
+
+            if (total === 100) {
+                totalEl.classList.add('valid');
+                totalEl.classList.remove('invalid');
+                statusEl.textContent = '✅';
+            } else {
+                totalEl.classList.add('invalid');
+                totalEl.classList.remove('valid');
+                statusEl.textContent = '❌';
+            }
+        }
+
+        function validateBeforeSubmit() {
+            const rows = container.querySelectorAll('.eipsi-pool-study-row');
+            let total = 0;
+
+            rows.forEach(function(row) {
+                const input = row.querySelector('input[type="number"]');
+                const val = parseFloat(input.value) || 0;
+                total += val;
+            });
+
+            return Math.round(total * 100) / 100 === 100;
+        }
+
+        function saveDataToHiddenInput() {
+            const rows = container.querySelectorAll('.eipsi-pool-study-row');
+            const data = {
+                studies: [],
+                probabilities: {}
+            };
+
+            rows.forEach(function(row) {
+                const select = row.querySelector('select');
+                const input = row.querySelector('input[type="number"]');
+                const studyId = select.value;
+                const probability = parseFloat(input.value) || 0;
+
+                if (studyId) {
+                    data.studies.push(studyId);
+                    data.probabilities[studyId] = probability;
+                }
+            });
+
+            hiddenInput.value = JSON.stringify(data);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
     <?php
 }
