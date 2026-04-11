@@ -1952,6 +1952,7 @@ class EIPSI_Database_Schema_Manager {
             status ENUM('draft', 'active', 'completed', 'paused') DEFAULT 'draft',
             is_mandatory TINYINT(1) DEFAULT 1,
             follow_up_reminders_enabled TINYINT(1) DEFAULT 0,
+            nudge_config TEXT DEFAULT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
@@ -2012,6 +2013,7 @@ class EIPSI_Database_Schema_Manager {
         $required_columns = array(
             'interval_days' => "ALTER TABLE {$table_name} ADD COLUMN interval_days INT(11) DEFAULT 7 AFTER due_date",
             'time_unit' => "ALTER TABLE {$table_name} ADD COLUMN time_unit VARCHAR(10) DEFAULT 'days' AFTER interval_days",
+            'nudge_config' => "ALTER TABLE {$table_name} ADD COLUMN nudge_config TEXT DEFAULT NULL AFTER follow_up_reminders_enabled",
         );
 
         foreach ( $required_columns as $column => $alter_sql ) {
