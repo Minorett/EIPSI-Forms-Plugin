@@ -416,9 +416,11 @@ public function fetch_participants_data($study_id, $filters = array()) {
     // v2.1.3 - Always load Device Data Service for extended metadata (even for wide exports)
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-device-data-service.php';
     $submission_ids = array_column($submissions, 'id');
+    error_log("[EIPSI-EXPORT-DIAG] fetch_participants_data: submissions_count=" . count($submissions) . ", submission_ids=" . implode(',', $submission_ids));
     $device_data_batch = !empty($submission_ids) 
         ? EIPSI_Device_Data_Service::get_device_data_batch($submission_ids) 
         : array();
+    error_log("[EIPSI-EXPORT-DIAG] fetch_participants_data: device_data_batch count=" . count($device_data_batch) . ", keys=" . implode(',', array_keys($device_data_batch)));
 
     // Process submissions and organize by participant
     $submissions_by_participant = array();
@@ -459,6 +461,12 @@ public function fetch_participants_data($study_id, $filters = array()) {
         // v2.1.3 - Add extended device metadata
         $device_data = $device_data_batch[$sub->id] ?? null;
         if ($device_data) {
+            error_log("[EIPSI-EXPORT-DIAG] Processing device_data for submission_id={$sub->id}, device_data_type=" . gettype($device_data));
+            if (is_object($device_data)) {
+                error_log("[EIPSI-EXPORT-DIAG] Device data object properties: " . implode(',', array_keys(get_object_vars($device_data))));
+            } elseif (is_array($device_data)) {
+                error_log("[EIPSI-EXPORT-DIAG] Device data array keys: " . implode(',', array_keys($device_data)));
+            }
             $submission_data['canvas_fingerprint'] = ($privacy['export_canvas_fingerprint'] ?? true) ? ($device_data->canvas_fingerprint ?? '') : '';
             $submission_data['webgl_renderer'] = ($privacy['export_webgl_renderer'] ?? true) ? ($device_data->webgl_renderer ?? '') : '';
             $submission_data['screen_resolution'] = ($privacy['export_screen_resolution'] ?? true) ? ($device_data->screen_resolution ?? '') : '';
@@ -471,6 +479,9 @@ public function fetch_participants_data($study_id, $filters = array()) {
             $submission_data['plugins'] = ($privacy['export_plugins'] ?? true) ? ($device_data->plugins ?? '') : '';
             $submission_data['touch_support'] = ($privacy['export_touch_support'] ?? true) ? ($device_data->touch_support ?? '') : '';
             $submission_data['cookies_enabled'] = ($privacy['export_cookies_enabled'] ?? true) ? ($device_data->cookies_enabled ?? '') : '';
+            error_log("[EIPSI-EXPORT-DIAG] Set extended fields: canvas=" . substr($submission_data['canvas_fingerprint'], 0, 15) . ", webgl=" . substr($submission_data['webgl_renderer'], 0, 15) . ", ram=" . $submission_data['ram']);
+        } else {
+            error_log("[EIPSI-EXPORT-DIAG] NO device_data found for submission_id={$sub->id}");
         }
 
         // Organize by longitudinal participant ID (integer)
@@ -821,6 +832,8 @@ public function fetch_participants_data($study_id, $filters = array()) {
      * @return array
      */
     private function build_participants_wide_row($row, $waves, $response_keys_by_wave = array()) {
+        error_log("[EIPSI-EXPORT-DIAG] build_participants_wide_row START: participant_id=" . ($row['id'] ?? 'N/A') . ", submissions_count=" . count($row['submissions'] ?? array()));
+
         // Base participant data (without names)
         $data = array(
             $row['id'],
@@ -870,6 +883,11 @@ public function fetch_participants_data($study_id, $filters = array()) {
             $submission = isset($row['submissions'][$wi]) ? $row['submissions'][$wi] : null;
 
             if ($submission) {
+                error_log("[EIPSI-EXPORT-DIAG] Processing submission for wave_index={$wi}, submission_id=" . ($submission['id'] ?? 'N/A'));
+                error_log("[EIPSI-EXPORT-DIAG] Extended fields in submission: canvas=" . (isset($submission['canvas_fingerprint']) ? substr($submission['canvas_fingerprint'], 0, 10) : 'NOTSET') . 
+                    ", webgl=" . (isset($submission['webgl_renderer']) ? substr($submission['webgl_renderer'], 0, 10) : 'NOTSET') .
+                    ", ram=" . (isset($submission['ram']) ? $submission['ram'] : 'NOTSET'));
+
                 // Metadata fields
                 // v2.1.3: Removed fingerprint_id from export
                 $data[] = $submission['submitted_at'] ? date('Y-m-d H:i:s', strtotime($submission['submitted_at'])) : '';
@@ -880,18 +898,33 @@ public function fetch_participants_data($study_id, $filters = array()) {
                 $data[] = $submission['screen_width'] ?? '';
                 $data[] = $submission['ip_address'] ?? '';
                 // v2.1.3: Extended device metadata values (12 columns)
-                $data[] = $submission['canvas_fingerprint'] ?? '';
-                $data[] = $submission['webgl_renderer'] ?? '';
-                $data[] = $submission['screen_resolution'] ?? '';
-                $data[] = $submission['screen_depth'] ?? '';
-                $data[] = $submission['pixel_ratio'] ?? '';
-                $data[] = $submission['timezone'] ?? '';
-                $data[] = $submission['language'] ?? '';
-                $data[] = $submission['cpu_cores'] ?? '';
-                $data[] = $submission['ram'] ?? '';
-                $data[] = $submission['plugins'] ?? '';
-                $data[] = $submission['touch_support'] ?? '';
-                $data[] = $submission['cookies_enabled'] ?? '';
+                $canvas_fp = $submission['canvas_fingerprint'] ?? '';
+                $webgl = $submission['webgl_renderer'] ?? '';
+                $screen_res = $submission['screen_resolution'] ?? '';
+                $screen_depth = $submission['screen_depth'] ?? '';
+                $pixel_ratio = $submission['pixel_ratio'] ?? '';
+                $timezone = $submission['timezone'] ?? '';
+                $language = $submission['language'] ?? '';
+                $cpu_cores = $submission['cpu_cores'] ?? '';
+                $ram = $submission['ram'] ?? '';
+                $plugins = $submission['plugins'] ?? '';
+                $touch = $submission['touch_support'] ?? '';
+                $cookies = $submission['cookies_enabled'] ?? '';
+
+                error_log("[EIPSI-EXPORT-DIAG] Writing to Excel: canvas={$canvas_fp}, webgl={$webgl}, screen_res={$screen_res}, ram={$ram}");
+
+                $data[] = $canvas_fp;
+                $data[] = $webgl;
+                $data[] = $screen_res;
+                $data[] = $screen_depth;
+                $data[] = $pixel_ratio;
+                $data[] = $timezone;
+                $data[] = $language;
+                $data[] = $cpu_cores;
+                $data[] = $ram;
+                $data[] = $plugins;
+                $data[] = $touch;
+                $data[] = $cookies;
 
                 // Form response fields
                 $form_responses = $submission['form_responses'] ?? array();

@@ -25,9 +25,11 @@ class EIPSI_Device_Data_Service {
         global $wpdb;
         $table_name = $wpdb->prefix . 'eipsi_device_data';
 
+        error_log("[EIPSI-DEVICE-DATA] SAVE START: submission_id={$submission_id}, data_keys=" . implode(',', array_keys($device_data)));
+
         // Ensure table exists
         if (!self::ensure_table_exists()) {
-            error_log('[EIPSI Forms] Device data table does not exist');
+            error_log('[EIPSI-DEVICE-DATA] ERROR: Device data table does not exist');
             return false;
         }
 
@@ -117,10 +119,13 @@ class EIPSI_Device_Data_Service {
         $result = $wpdb->insert($table_name, $data, $format);
 
         if ($result === false) {
-            error_log('[EIPSI Forms] Failed to save device data: ' . $wpdb->last_error);
+            error_log('[EIPSI-DEVICE-DATA] SAVE ERROR: ' . $wpdb->last_error);
+            error_log('[EIPSI-DEVICE-DATA] SAVE ERROR DATA: ' . print_r($data, true));
             return false;
         }
 
+        error_log("[EIPSI-DEVICE-DATA] SAVE SUCCESS: submission_id={$submission_id}, insert_id={$wpdb->insert_id}");
+        error_log("[EIPSI-DEVICE-DATA] SAVE VALUES: canvas=" . substr($data['canvas_fingerprint'] ?? 'NULL', 0, 20) . "..., webgl=" . substr($data['webgl_renderer'] ?? 'NULL', 0, 20) . "...");
         return $wpdb->insert_id;
     }
 
@@ -151,11 +156,14 @@ class EIPSI_Device_Data_Service {
         $table_name = $wpdb->prefix . 'eipsi_device_data';
 
         if (empty($submission_ids)) {
+            error_log('[EIPSI-DEVICE-DATA] BATCH: Empty submission_ids array');
             return array();
         }
 
         $ids = array_map('absint', $submission_ids);
         $ids_placeholder = implode(',', array_fill(0, count($ids), '%d'));
+
+        error_log("[EIPSI-DEVICE-DATA] BATCH: Fetching data for " . count($ids) . " submissions: " . implode(',', $ids));
 
         $results = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$table_name} WHERE submission_id IN ({$ids_placeholder})",
@@ -163,8 +171,18 @@ class EIPSI_Device_Data_Service {
         ));
 
         $data = array();
+        error_log("[EIPSI-DEVICE-DATA] BATCH: Found " . count($results) . " rows from DB");
         foreach ($results as $row) {
             $data[$row->submission_id] = $row;
+            error_log("[EIPSI-DEVICE-DATA] BATCH: Row for submission_id={$row->submission_id}, type=" . gettype($row) . ", canvas=" . (isset($row->canvas_fingerprint) ? substr($row->canvas_fingerprint, 0, 20) : 'NOTSET'));
+        }
+
+        if (empty($data)) {
+            error_log("[EIPSI-DEVICE-DATA] BATCH WARNING: No device data found for any of the requested submissions");
+            // Try direct query to diagnose
+            $sample_id = $ids[0];
+            $exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table_name} WHERE submission_id = %d", $sample_id));
+            error_log("[EIPSI-DEVICE-DATA] BATCH DIAG: Direct check for submission_id={$sample_id}, exists={$exists}");
         }
 
         return $data;

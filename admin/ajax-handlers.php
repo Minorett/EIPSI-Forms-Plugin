@@ -1306,12 +1306,26 @@ function eipsi_forms_submit_form_handler() {
     // Capturar metadata del frontend incluyendo page_transitions
     $frontend_metadata = isset($_POST['metadata']) ? wp_unslash($_POST['metadata']) : '';
     $metadata_array = null;
-    
+
+    error_log("[EIPSI-SUBMIT-DIAG] RAW metadata received: " . substr($frontend_metadata, 0, 200));
+
     if (!empty($frontend_metadata)) {
         $metadata_decoded = json_decode($frontend_metadata, true);
         if (json_last_error() === JSON_ERROR_NONE) {
             $metadata_array = $metadata_decoded;
+            error_log("[EIPSI-SUBMIT-DIAG] Metadata decoded successfully, keys=" . implode(',', array_keys($metadata_array)));
+            if (isset($metadata_array['device_data'])) {
+                error_log("[EIPSI-SUBMIT-DIAG] Device data keys=" . implode(',', array_keys($metadata_array['device_data'])));
+                error_log("[EIPSI-SUBMIT-DIAG] Canvas: " . substr($metadata_array['device_data']['canvas_fingerprint'] ?? 'NULL', 0, 20));
+                error_log("[EIPSI-SUBMIT-DIAG] WebGL: " . substr($metadata_array['device_data']['webgl_renderer'] ?? 'NULL', 0, 20));
+            } else {
+                error_log("[EIPSI-SUBMIT-DIAG] WARNING: No device_data in metadata");
+            }
+        } else {
+            error_log("[EIPSI-SUBMIT-DIAG] ERROR decoding metadata: " . json_last_error_msg());
         }
+    } else {
+        error_log("[EIPSI-SUBMIT-DIAG] WARNING: No metadata received from frontend");
     }
     
     $form_responses = array();
@@ -1668,8 +1682,11 @@ function eipsi_forms_submit_form_handler() {
         }
         
         // ✅ v2.1.3 - Guardar device data extendido en tabla separada
+        error_log("[EIPSI-SUBMIT-DIAG] CHECK save_device_data: insert_id={$insert_id}, has_device_data=" . (isset($metadata_array['device_data']) ? 'YES' : 'NO') . ", class_exists=" . (class_exists('EIPSI_Device_Data_Service') ? 'YES' : 'NO'));
         if ($insert_id && !empty($metadata_array['device_data']) && class_exists('EIPSI_Device_Data_Service')) {
-            EIPSI_Device_Data_Service::save_device_data($insert_id, $metadata_array['device_data']);
+            error_log("[EIPSI-SUBMIT-DIAG] CALLING save_device_data with insert_id={$insert_id}, device_data_keys=" . implode(',', array_keys($metadata_array['device_data'])));
+            $result = EIPSI_Device_Data_Service::save_device_data($insert_id, $metadata_array['device_data']);
+            error_log("[EIPSI-SUBMIT-DIAG] save_device_data result: " . ($result ? "SUCCESS (insert_id={$result})" : "FAILED"));
         }
         
         // Marcar partial response como completado

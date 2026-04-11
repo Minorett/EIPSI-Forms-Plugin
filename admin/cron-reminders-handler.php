@@ -131,8 +131,9 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         foreach ($nudge_zero_assignments as $assignment) {
             error_log("[EIPSI Cron] NUDGE 0 CHECK: assignment_id={$assignment->id}, participant_id={$assignment->participant_id}, wave_id={$assignment->wave_id}, wave_name={$assignment->wave_name}, last_submission_date={$assignment->last_submission_date}, interval_days={$assignment->interval_days}, time_unit={$assignment->time_unit}");
             if (!empty($assignment->last_submission_date)) {
-                $time_unit = ($assignment->time_unit === 'minutes') ? 'minutes' : 'days';
-                $available_at = strtotime("+{$assignment->interval_days} {$time_unit}", strtotime($assignment->last_submission_date));
+                // time_unit: 0 = minutes, 1 = days (from database)
+                $time_unit_str = (intval($assignment->time_unit) === 0) ? 'minutes' : 'days';
+                $available_at = strtotime("+{$assignment->interval_days} {$time_unit_str}", strtotime($assignment->last_submission_date));
                 error_log("[EIPSI Cron] NUDGE 0 CALC: assignment_id={$assignment->id}, available_at_timestamp={$available_at}, available_at_formatted=" . ($available_at ? date('Y-m-d H:i:s', $available_at) : 'INVALID') . ", now={$now}, condition_met=" . ($available_at && $now >= $available_at ? 'YES' : 'NO'));
                 if ($available_at && $now >= $available_at) {
                     $available_now_assignments[] = $assignment;
