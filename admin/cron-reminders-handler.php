@@ -95,10 +95,11 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         // Nudges 1-4: reminder_count >= 1 AND < 5
 
         // FIRST: Handle Nudge 0 - Initial availability emails
+        // v2.3.0: Nudge 0 is ALWAYS enabled (immediate availability email)
         // Get pending assignments where reminder_count = 0 AND wave is now available
         $nudge_zero_assignments = $wpdb->get_results($wpdb->prepare(
             "SELECT a.*, w.name as wave_name, w.wave_index, w.due_date, w.follow_up_reminders_enabled,
-             w.time_unit, w.interval_days,
+             w.time_unit, w.interval_days, w.nudge_config,
              p.email, p.first_name, p.last_name, p.id as participant_id,
              (SELECT submitted_at FROM {$wpdb->prefix}survey_assignments a2
               WHERE a2.participant_id = a.participant_id AND a2.wave_id = w.id - 1 AND a2.status = 'submitted'
@@ -111,7 +112,6 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
              AND p.is_active = 1
              AND p.email IS NOT NULL
              AND a.reminder_count = 0
-             AND w.follow_up_reminders_enabled = 1
              HAVING last_submission_date IS NOT NULL
              ORDER BY a.id ASC
              LIMIT %d",
