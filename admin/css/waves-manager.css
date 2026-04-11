@@ -823,3 +823,244 @@
         align-items: stretch;
     }
 }
+
+/* ==========================================================================
+   v2.3.0 - WAVE CARDS (Study Dashboard)
+   Estilos para las wave cards en el dashboard de estudio
+   ========================================================================== */
+
+/* Wave Item Card - Base */
+.wave-item-card {
+    position: relative;
+    background: #fff;
+    border: 1px solid #c5c5c5;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.wave-item-card .wave-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.wave-item-card .wave-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Wave Footer - Due date & controls */
+.wave-item-card .wave-footer {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.wave-item-card .due-date-display {
+    margin-bottom: 6px;
+    color: #646970;
+}
+
+.wave-item-card .due-date-display strong {
+    color: #1d2327;
+}
+
+/* Nudge 0 Status */
+.wave-item-card .nudge-0-info {
+    margin-bottom: 8px;
+    color: #646970;
+}
+
+.wave-item-card .nudge-0-info .badge-sent {
+    background: #c6e1c6;
+    color: #5b841b;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Toggle Switch - Follow-up reminders */
+.wave-item-card .follow-up-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 6px 0;
+    user-select: none;
+    font-size: 12px;
+}
+
+.wave-item-card .follow-up-toggle input[type="checkbox"] {
+    display: none;
+}
+
+.wave-item-card .follow-up-toggle .toggle-slider {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: #c5c5c5;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+
+.wave-item-card .follow-up-toggle .toggle-slider::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.wave-item-card .follow-up-toggle.toggle-active .toggle-slider {
+    background: #2271b1;
+}
+
+.wave-item-card .follow-up-toggle.toggle-active .toggle-slider::before {
+    transform: translateX(16px);
+}
+
+.wave-item-card .follow-up-toggle .toggle-label {
+    color: #646970;
+    font-weight: 500;
+}
+
+.wave-item-card .follow-up-toggle.toggle-active .toggle-label {
+    color: #2271b1;
+}
+
+/* Timeline de recordatorios */
+.wave-item-card .reminder-timeline {
+    margin-top: 6px;
+    padding: 4px 8px;
+    background: #f0f6fc;
+    border-left: 3px solid #2271b1;
+    border-radius: 0 3px 3px 0;
+    font-size: 11px;
+    color: #2271b1;
+}
+
+.wave-item-card .reminder-timeline.hidden {
+    display: none;
+}
+
+/* Wave Actions */
+.wave-item-card .wave-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.wave-item-card .wave-actions .button {
+    flex: 1;
+    justify-content: center;
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+/* Responsive para wave cards */
+@media (max-width: 782px) {
+    .wave-item-card .wave-actions {
+        flex-direction: column;
+    }
+    
+    .wave-item-card .wave-actions .button {
+        width: 100%;
+    }
+}
+
+/* v2.3.0 - Nudge Configuration Panel */
+.nudge-config-panel {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f6f7f7;
+    border: 1px solid #c5c5c5;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.nudge-config-panel.hidden {
+    display: none;
+}
+
+.nudge-config-panel small {
+    display: block;
+    margin-bottom: 8px;
+    color: #1d2327;
+}
+
+/* Reference point selector row */
+.nudge-reference-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 6px 0;
+    border-bottom: 2px solid #c5c5c5;
+}
+
+.nudge-reference-row label {
+    font-weight: 600;
+    color: #2271b1;
+    font-size: 12px;
+}
+
+.nudge-reference-row select {
+    padding: 4px 8px;
+    border: 1px solid #2271b1;
+    border-radius: 3px;
+    font-size: 12px;
+    background: #fff;
+    color: #1d2327;
+    cursor: pointer;
+}
+
+.nudge-config-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 4px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.nudge-config-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.nudge-config-row label {
+    font-weight: 600;
+    min-width: 60px;
+    color: #1d2327;
+}
+
+.nudge-config-row input[type="number"] {
+    padding: 3px 6px;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.nudge-config-row select {
+    padding: 3px 6px;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
+    font-size: 12px;
+    min-width: 70px;
+}
+
+.nudge-config-row .timing-text {
+    color: #646970;
+    font-size: 11px;
+}

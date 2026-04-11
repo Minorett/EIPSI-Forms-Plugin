@@ -170,18 +170,62 @@ function wp_ajax_eipsi_get_study_overview_handler() {
         
         // v2.1.2: Add interval configuration for visual verification
         // This helps confirm that "minutes = minutes" and not accidentally "days"
+        
+        // v2.3.0 - Wave Manager Enhancement: Configuración de recordatorios
+        $due_date_formatted = !empty($wave->due_date) 
+            ? date_i18n(get_option('date_format'), strtotime($wave->due_date))
+            : __('Sin fecha límite', 'eipsi-forms');
+        
+        // Timeline de recordatorios según configuración
+        $reminder_days = !empty($wave->reminder_days) ? $wave->reminder_days : '';
+        $timeline = '';
+        if (!empty($wave->due_date) && !empty($reminder_days)) {
+            $days_array = array_map('intval', explode(',', $reminder_days));
+            sort($days_array);
+            $timeline = implode('d → ', $days_array) . 'd';
+        } else {
+            $timeline = '3d → 7d → 14d → 30d'; // Default SIN due_date
+        }
+        
+        // v2.3.0 - Nudge configuration JSON (default OFF for follow-ups)
+        $nudge_config_raw = isset($wave->nudge_config) ? $wave->nudge_config : '';
+        $nudge_config = !empty($nudge_config_raw) ? json_decode($nudge_config_raw, true) : array();
+        
+        // Ensure all nudges have defaults if not set
+        $default_nudge_config = array(
+            'nudge_1' => array('enabled' => false, 'value' => 24, 'unit' => 'hours'),
+            'nudge_2' => array('enabled' => false, 'value' => 72, 'unit' => 'hours'),
+            'nudge_3' => array('enabled' => false, 'value' => 168, 'unit' => 'hours'),
+            'nudge_4' => array('enabled' => false, 'value' => 336, 'unit' => 'hours'),
+        );
+        
+        $nudge_config = wp_parse_args($nudge_config, $default_nudge_config);
+        
+        // Check if any follow-up is enabled (for toggle display)
+        $follow_ups_enabled = $nudge_config['nudge_1']['enabled'] || 
+                              $nudge_config['nudge_2']['enabled'] || 
+                              $nudge_config['nudge_3']['enabled'] || 
+                              $nudge_config['nudge_4']['enabled'];
+        
         $waves_stats[] = array(
             'id' => $wave->id,
             'wave_name' => $wave->name,
             'form_id' => $wave->form_id,
             'deadline' => $wave->due_date,
+            'deadline_formatted' => $due_date_formatted,
             'status' => $wave->status,
             'total' => $total_assignments,
             'completed' => $completed_assignments,
             'progress' => ($total_assignments > 0) ? round(($completed_assignments / $total_assignments) * 100) : 0,
             'reminders_sent' => 0, // TODO: Implement reminder tracking
             'interval_days' => isset($wave->interval_days) ? intval($wave->interval_days) : 0,
-            'time_unit' => isset($wave->time_unit) ? $wave->time_unit : 'days'
+            'time_unit' => isset($wave->time_unit) ? $wave->time_unit : 'days',
+            // v2.3.0 - Nuevos campos para wave manager
+            'follow_up_reminders_enabled' => $follow_ups_enabled,
+            'reminder_days' => $reminder_days,
+            'reminder_timeline' => $timeline,
+            'has_due_date' => !empty($wave->due_date),
+            'nudge_config' => $nudge_config // Granular configuration per nudge
         );
     }
 

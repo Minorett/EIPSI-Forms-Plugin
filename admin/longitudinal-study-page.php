@@ -67,7 +67,7 @@ function eipsi_display_longitudinal_study_page() {
                data-tab="email-log">
                 📧 <?php esc_html_e('Email Log & Dropout', 'eipsi-forms'); ?>
             </a>
-            <a href="?page=eipsi-pool-hub"
+            <a href="?page=eipsi-longitudinal-study&tab=pool-hub"
                class="nav-tab <?php echo esc_attr(($active_tab === 'pool-hub' || $active_tab === 'longitudinal-pools' || $active_tab === 'pool-analytics') ? 'nav-tab-active' : ''); ?>"
                data-tab="pool-hub">
                 🏊 <?php esc_html_e('Pool Hub', 'eipsi-forms'); ?>
@@ -176,6 +176,28 @@ function eipsi_display_longitudinal_study_page() {
                     eipsi_render_pool_analytics_tab();
                 } else {
                     echo '<div class="notice notice-error"><p>' . esc_html__('Error: La funcionalidad de Pool Analytics no está disponible.', 'eipsi-forms') . '</p></div>';
+                }
+                ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($active_tab === 'pool-hub'): ?>
+            <div class="tab-content" data-tab="pool-hub">
+                <?php
+                // Pool Hub - Combines Longitudinal Pools and Pool Analytics
+                require_once dirname(__FILE__) . '/tabs/longitudinal-pools-tab.php';
+                require_once dirname(__FILE__) . '/tabs/pool-analytics-tab.php';
+                
+                if (function_exists('eipsi_render_longitudinal_pools_tab')) {
+                    echo '<div class="pool-hub-section">';
+                    eipsi_render_longitudinal_pools_tab();
+                    echo '</div>';
+                }
+                
+                if (function_exists('eipsi_render_pool_analytics_tab')) {
+                    echo '<div class="pool-hub-section" style="margin-top: 40px;">';
+                    eipsi_render_pool_analytics_tab();
+                    echo '</div>';
                 }
                 ?>
             </div>

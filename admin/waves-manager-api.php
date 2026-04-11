@@ -867,3 +867,115 @@ function eipsi_save_reminder_config_handler() {
     ));
 }
 add_action('wp_ajax_eipsi_save_reminder_config', 'eipsi_save_reminder_config_handler');
+
+/**
+ * Toggle ON/OFF for follow-up reminders (Nudges 1-4)
+ * Nudge 0 always sends, this controls follow-ups only
+ * 
+ * @since 2.3.0
+ * @return void
+ */
+function eipsi_toggle_follow_up_reminders_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+    
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => __('Permisos insuficientes', 'eipsi-forms')));
+    }
+    
+    $wave_id = isset($_POST['wave_id']) ? intval($_POST['wave_id']) : 0;
+    $enabled = isset($_POST['enabled']) ? filter_var($_POST['enabled'], FILTER_VALIDATE_BOOLEAN) : false;
+    
+    if ($wave_id <= 0) {
+        wp_send_json_error(array('message' => __('ID de wave inválido', 'eipsi-forms')));
+    }
+    
+    global $wpdb;
+    
+    // Update the wave record
+    $updated = $wpdb->update(
+        $wpdb->prefix . 'survey_waves',
+        array('follow_up_reminders_enabled' => $enabled ? 1 : 0),
+        array('id' => $wave_id),
+        array('%d'),
+        array('%d')
+    );
+    
+    if ($updated === false) {
+        wp_send_json_error(array('message' => __('Error al actualizar configuración', 'eipsi-forms')));
+    }
+    
+    wp_send_json_success(array(
+        'message' => $enabled 
+            ? __('Recordatorios de seguimiento activados', 'eipsi-forms')
+            : __('Recordatorios de seguimiento desactivados', 'eipsi-forms'),
+        'enabled' => $enabled
+    ));
+}
+add_action('wp_ajax_eipsi_toggle_follow_up_reminders', 'eipsi_toggle_follow_up_reminders_handler');
+
+/**
+ * Extend deadline for a wave (emergency use)
+ * 
+ * @since 2.3.0
+ * @return void
+ */
+function eipsi_extend_wave_deadline_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+    
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => __('Permisos insuficientes', 'eipsi-forms')));
+    }
+    
+    $wave_id = isset($_POST['wave_id']) ? intval($_POST['wave_id']) : 0;
+    $days_to_add = isset($_POST['days']) ? intval($_POST['days']) : 7;
+    $new_date = isset($_POST['new_date']) ? sanitize_text_field($_POST['new_date']) : null;
+    
+    if ($wave_id <= 0) {
+        wp_send_json_error(array('message' => __('ID de wave inválido', 'eipsi-forms')));
+    }
+    
+    global $wpdb;
+    
+    // Get current wave
+    $wave = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+        $wave_id
+    ));
+    
+    if (!$wave) {
+        wp_send_json_error(array('message' => __('Wave no encontrada', 'eipsi-forms')));
+    }
+    
+    // Calculate new deadline
+    if ($new_date) {
+        // Use provided date
+        $new_deadline = $new_date;
+    } else {
+        // Add days to existing or create new
+        $current_deadline = !empty($wave->due_date) ? $wave->due_date : current_time('Y-m-d');
+        $new_deadline = date('Y-m-d', strtotime($current_deadline . ' + ' . $days_to_add . ' days'));
+    }
+    
+    // Update wave
+    $updated = $wpdb->update(
+        $wpdb->prefix . 'survey_waves',
+        array('due_date' => $new_deadline),
+        array('id' => $wave_id),
+        array('%s'),
+        array('%d')
+    );
+    
+    if ($updated === false) {
+        wp_send_json_error(array('message' => __('Error al extender fecha límite', 'eipsi-forms')));
+    }
+    
+    // Format for display
+    $formatted_date = date_i18n(get_option('date_format'), strtotime($new_deadline));
+    
+    wp_send_json_success(array(
+        'message' => sprintf(__('Fecha límite extendida al %s', 'eipsi-forms'), $formatted_date),
+        'new_deadline' => $new_deadline,
+        'formatted_date' => $formatted_date
+    ));
+}
+add_action('wp_ajax_eipsi_extend_wave_deadline', 'eipsi_extend_wave_deadline_handler');

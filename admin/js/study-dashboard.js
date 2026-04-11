@@ -2394,22 +2394,74 @@
 			}
 
 			// v2.1.2: Build interval display for visual verification
-			// Shows: "20 días y 2 horas después de T1" or "Disponible inmediatamente"
 			let intervalDisplay = '';
 			if ( index === 0 ) {
 				intervalDisplay = '<span class="interval-badge first">📅 Disponible inmediatamente</span>';
 			} else if ( wave.interval_days > 0 ) {
 				const timeUnit = wave.time_unit || 'days';
-				// v2.1.3: Use human-readable format (converts 28934 min to "20 días y 2 horas")
 				const readableInterval = formatIntervalHumanReadable( wave.interval_days, timeUnit );
-				const prevWaveNum = index; // T1=0, T2=1, so prev is same as current index
+				const prevWaveNum = index;
 				intervalDisplay = `<span class="interval-badge ${timeUnit}">⏱️ ${readableInterval} después de T${prevWaveNum}</span>`;
 			}
 
-			// v2.1.2: Simplified wave card with interval info
-			// Shows interval configuration for debugging "minutes = minutes"
+			// v2.3.0: Wave Manager Enhancement - Configuración de recordatorios
+			const dueDateText = wave.deadline_formatted || 'Sin fecha límite';
+			const nudgeConfig = wave.nudge_config || {};
+			
+			// Check if any follow-up is enabled (default OFF)
+			const followUpEnabled = nudgeConfig.nudge_1?.enabled || 
+									nudgeConfig.nudge_2?.enabled || 
+									nudgeConfig.nudge_3?.enabled || 
+									nudgeConfig.nudge_4?.enabled || false;
+			
+			const toggleChecked = followUpEnabled ? 'checked' : '';
+			const toggleClass = followUpEnabled ? 'toggle-active' : 'toggle-inactive';
+			
+			// Build nudge config panel HTML
+			let nudgeConfigHtml = '';
+			
+			// Reference point selector (only show if has due_date)
+			const hasDueDate = wave.has_due_date || false;
+			if ( hasDueDate ) {
+				const referencePoint = nudgeConfig.nudge_1?.reference_point || 'due_date';
+				const refOptions = [
+					{ value: 'wave_availability', label: 'después de disponible' },
+					{ value: 'due_date', label: 'antes de vencimiento' }
+				].map( opt => 
+					`<option value="${opt.value}" ${referencePoint === opt.value ? 'selected' : ''}>${opt.label}</option>`
+				).join( '' );
+				
+				nudgeConfigHtml += `
+					<div class="nudge-reference-row">
+						<label>Basado en:</label>
+						<select class="nudge-reference-point">${refOptions}</select>
+					</div>
+				`;
+			}
+			
+			[1, 2, 3, 4].forEach( stage => {
+				const nudgeKey = `nudge_${stage}`;
+				const config = nudgeConfig[nudgeKey] || { enabled: false, value: stage === 1 ? 24 : stage * 24, unit: 'hours', reference_point: 'wave_availability' };
+				const unitOptions = ['minutes', 'hours', 'days'].map( unit => 
+					`<option value="${unit}" ${config.unit === unit ? 'selected' : ''}>${unit}</option>`
+				).join( '' );
+				
+				const referencePoint = config.reference_point || 'wave_availability';
+				const timingText = referencePoint === 'due_date' ? 'antes de vencimiento' : 'después de disponible';
+				
+				nudgeConfigHtml += `
+					<div class="nudge-config-row" data-nudge="${stage}">
+						<label>Nudge ${stage}:</label>
+						<input type="number" class="nudge-${stage}-value" value="${config.value}" min="1" style="width: 60px;">
+						<select class="nudge-${stage}-unit">${unitOptions}</select>
+						<span class="timing-text">${timingText}</span>
+					</div>
+				`;
+			} );
+			
+			// v2.3.0: Wave Card completa con due date y configuración granular
 			html +=
-				'<div class="wave-summary-card" data-wave-id="' +
+				'<div class="wave-summary-card wave-item-card" data-wave-id="' +
 				wave.id +
 				'">' +
 				'<div class="wave-header">' +
@@ -2437,10 +2489,201 @@
 				wave.total +
 				' completados</span>' +
 				'</div>' +
+				// v2.3.0: Footer con due date y configuración de recordatorios
+				'<div class="wave-footer">' +
+				'<div class="due-date-display">' +
+				'<small>📅 Vence: <strong>' + dueDateText + '</strong></small>' +
+				'</div>' +
+				// Primer mail siempre (Nudge 0) - no es configurable
+				'<div class="nudge-0-info">' +
+				'<small>📧 Email de disponibilidad: <span class="badge-sent">automático</span></small>' +
+				'</div>' +
+				// Toggle para seguimientos (Nudges 1-4) - DEFAULT OFF
+				'<label class="follow-up-toggle ' + toggleClass + '" data-wave-id="' + wave.id + '">' +
+				'<input type="checkbox" ' + toggleChecked + ' data-wave-id="' + wave.id + '" class="toggle-follow-up">' +
+				'<span class="toggle-slider"></span>' +
+				'<span class="toggle-label">' + (followUpEnabled ? '✅' : '⛔') + ' Recordatorios de seguimiento</span>' +
+				'</label>' +
+				// Panel de configuración granular (solo visible si toggle ON)
+				'<div class="nudge-config-panel ' + (followUpEnabled ? '' : 'hidden') + '" data-wave-id="' + wave.id + '">' +
+				'<small><strong>Configuración de recordatorios:</strong></small>' +
+				nudgeConfigHtml +
+				'</div>' +
+				'</div>' +
+				// v2.3.0: Acciones disponibles (solo 📅 Extender, sin 📧)
+				'<div class="wave-actions">' +
+				'<button class="button button-small extend-deadline" data-wave-id="' + wave.id + '" data-current-deadline="' + (wave.deadline || '') + '">' +
+				'📅 Extender' +
+				'</button>' +
+				'</div>' +
 				'</div>';
 		} );
 
 		$( '#waves-container' ).html( html );
+		
+		// v2.3.0: Inicializar handlers de los nuevos controles
+		initWaveCardHandlers();
+	}
+
+	/**
+	 * v2.3.0 - Initialize handlers for wave card controls
+	 * Toggle ON/OFF, Extend deadline, Config modal
+	 */
+	function initWaveCardHandlers() {
+		// Toggle ON/OFF for follow-up reminders (applies to ALL nudges 1-4)
+		$( '.toggle-follow-up' ).off( 'change' ).on( 'change', function() {
+			const waveId = $( this ).data( 'wave-id' );
+			const enabled = $( this ).is( ':checked' );
+			const $toggle = $( this ).closest( '.follow-up-toggle' );
+			const $configPanel = $( this ).closest( '.wave-item-card' ).find( '.nudge-config-panel' );
+			const $label = $toggle.find( '.toggle-label' );
+			
+			// Visual feedback
+			$toggle.toggleClass( 'toggle-active', enabled ).toggleClass( 'toggle-inactive', ! enabled );
+			$label.html( ( enabled ? '✅' : '⛔' ) + ' Recordatorios de seguimiento' );
+			$configPanel.toggleClass( 'hidden', ! enabled );
+			
+				// Get reference point if available
+			const referencePoint = $configPanel.find( '.nudge-reference-point' ).val() || 'wave_availability';
+			
+			// Build nudge config based on current input values
+			const nudgeConfig = {};
+			[1, 2, 3, 4].forEach( stage => {
+				const value = $configPanel.find( `.nudge-${stage}-value` ).val() || (stage === 1 ? 24 : stage * 24);
+				const unit = $configPanel.find( `.nudge-${stage}-unit` ).val() || 'hours';
+				nudgeConfig[`nudge_${stage}`] = {
+					enabled: enabled,
+					value: parseInt( value, 10 ),
+					unit: unit,
+					reference_point: referencePoint
+				};
+			} );
+			
+			// AJAX call to save setting
+			$.ajax( {
+				url: ajaxurl,
+				type: 'POST',
+				data: {
+					action: 'eipsi_save_wave_nudge_config',
+					nonce: eipsiStudyDash.nonce,
+					wave_id: waveId,
+					nudge_config: nudgeConfig,
+				},
+				success( response ) {
+					if ( ! response.success ) {
+						// Revert on error
+						$( this ).prop( 'checked', ! enabled );
+						$toggle.toggleClass( 'toggle-active', ! enabled ).toggleClass( 'toggle-inactive', enabled );
+						$configPanel.toggleClass( 'hidden', enabled );
+						alert( 'Error: ' + ( response.data.message || 'No se pudo guardar' ) );
+					}
+				},
+				error() {
+					// Revert on error
+					$( this ).prop( 'checked', ! enabled );
+					$toggle.toggleClass( 'toggle-active', ! enabled ).toggleClass( 'toggle-inactive', enabled );
+					$configPanel.toggleClass( 'hidden', enabled );
+					alert( 'Error de conexión al guardar configuración' );
+				},
+			} );
+		} );
+
+		// Individual nudge config changes (value or unit)
+		$( '.nudge-config-panel input, .nudge-config-panel select' ).off( 'change' ).on( 'change', function() {
+			const $panel = $( this ).closest( '.nudge-config-panel' );
+			const waveId = $panel.data( 'wave-id' );
+			
+			// Get reference point if available
+			const referencePoint = $panel.find( '.nudge-reference-point' ).val() || 'wave_availability';
+			
+			// Build nudge config from current panel state
+			const nudgeConfig = {};
+			[1, 2, 3, 4].forEach( stage => {
+				const value = $panel.find( `.nudge-${stage}-value` ).val() || (stage === 1 ? 24 : stage * 24);
+				const unit = $panel.find( `.nudge-${stage}-unit` ).val() || 'hours';
+				const enabled = $panel.closest( '.wave-item-card' ).find( '.toggle-follow-up' ).is( ':checked' );
+				nudgeConfig[`nudge_${stage}`] = {
+					enabled: enabled,
+					value: parseInt( value, 10 ),
+					unit: unit,
+					reference_point: referencePoint
+				};
+			} );
+			
+			// Debounced save
+			clearTimeout( window.nudgeSaveTimeout );
+			window.nudgeSaveTimeout = setTimeout( () => {
+				$.ajax( {
+					url: ajaxurl,
+					type: 'POST',
+					data: {
+						action: 'eipsi_save_wave_nudge_config',
+						nonce: eipsiStudyDash.nonce,
+						wave_id: waveId,
+						nudge_config: nudgeConfig,
+					},
+					success( response ) {
+						if ( ! response.success ) {
+							console.error( 'Error saving nudge config:', response.data );
+						}
+					},
+					error() {
+						console.error( 'Connection error saving nudge config' );
+					},
+				} );
+			}, 500 );
+		} );
+
+		// Reference point selector change - update timing text
+		$( '.nudge-reference-point' ).off( 'change' ).on( 'change', function() {
+			const referencePoint = $( this ).val();
+			const $panel = $( this ).closest( '.nudge-config-panel' );
+			const timingText = referencePoint === 'due_date' ? 'antes de vencimiento' : 'después de disponible';
+			
+			// Update all timing text labels
+			$panel.find( '.timing-text' ).text( timingText );
+			
+			// Trigger save
+			$panel.find( 'input, select' ).first().trigger( 'change' );
+		} );
+
+		// Extend deadline button
+		$( '.extend-deadline' ).off( 'click' ).on( 'click', function( e ) {
+			e.preventDefault();
+			const waveId = $( this ).data( 'wave-id' );
+			const currentDeadline = $( this ).data( 'current-deadline' );
+			
+			// Simple prompt for days to add (can be replaced with modal later)
+			const daysToAdd = prompt( 
+				'¿Cuántos días extender la fecha límite?', 
+				'7' 
+			);
+			
+			if ( daysToAdd === null ) return; // Cancelled
+			
+			$.ajax( {
+				url: ajaxurl,
+				type: 'POST',
+				data: {
+					action: 'eipsi_extend_wave_deadline',
+					nonce: eipsiStudyDash.nonce,
+					wave_id: waveId,
+					days: parseInt( daysToAdd, 10 ) || 7,
+				},
+				success( response ) {
+					if ( response.success ) {
+						alert( response.data.message );
+						// Reload dashboard to show new deadline
+						loadStudyOverview( $( '#study-dashboard-modal' ).data( 'study-id' ) );
+					} else {
+						alert( 'Error: ' + ( response.data.message || 'No se pudo extender' ) );
+					}
+				},
+				error() {
+					alert( 'Error de conexión al extender fecha' );
+				},
+			} );
+		} );
 	}
 
 	/**

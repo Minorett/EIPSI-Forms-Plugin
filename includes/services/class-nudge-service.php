@@ -201,13 +201,17 @@ class EIPSI_Nudge_Service {
      * @return bool Whether nudge should be sent
      */
     public static function should_send_nudge($assignment, $wave, $current_stage, $custom_config = null) {
-        // Stage 0 is always sent immediately (handled separately)
-        if ($current_stage === self::NUDGE_AVAILABLE) {
+        // Stage 0 (NUDGE_AVAILABLE) is always sent immediately when wave becomes available
+        // This is the INITIAL availability email, NOT a follow-up reminder
+        if ((int)$current_stage === self::NUDGE_AVAILABLE) {
+            error_log("[EIPSI Nudge] Stage 0 (NUDGE_AVAILABLE) - always sending immediately");
             return true;
         }
         
-        // Check if follow-up reminders are enabled for this wave
+        // For stages 1-4 (follow-up reminders), check if follow_up_reminders_enabled
+        error_log("[EIPSI Nudge] Stage {$current_stage} - checking follow_up_reminders_enabled: " . (isset($wave->follow_up_reminders_enabled) ? $wave->follow_up_reminders_enabled : 'NOT SET'));
         if (empty($wave->follow_up_reminders_enabled)) {
+            error_log("[EIPSI Nudge] Stage {$current_stage} - BLOCKED: follow_up_reminders_enabled is empty");
             return false;
         }
         
@@ -218,13 +222,27 @@ class EIPSI_Nudge_Service {
             $config = $custom_config[$current_stage];
             $timing_value = isset($config['hours']) ? intval($config['hours']) : 24;
             $timing_unit = isset($config['unit']) ? $config['unit'] : 'hours';
+            // v2.3.0 - Support reference_point: wave_availability or due_date
+            $reference_point = isset($config['reference_point']) ? $config['reference_point'] : 'wave_availability';
         } else {
-            $config = self::get_nudge_config($current_stage, $has_due_date);
-            if (!$config) {
-                return false;
+            // Get config from wave's nudge_config JSON
+            $nudge_config = isset($wave->nudge_config) ? json_decode($wave->nudge_config, true) : array();
+            $nudge_key = "nudge_{$current_stage}";
+            if (isset($nudge_config[$nudge_key])) {
+                $config = $nudge_config[$nudge_key];
+                $timing_value = isset($config['value']) ? intval($config['value']) : 24;
+                $timing_unit = isset($config['unit']) ? $config['unit'] : 'hours';
+                $reference_point = isset($config['reference_point']) ? $config['reference_point'] : 'wave_availability';
+            } else {
+                // Fallback to defaults
+                $config = self::get_nudge_config($current_stage, $has_due_date);
+                if (!$config) {
+                    return false;
+                }
+                $timing_value = $config['timing_days'];
+                $timing_unit = 'days';
+                $reference_point = 'wave_availability';
             }
-            $timing_value = $config['timing_days'];
-            $timing_unit = 'days';
         }
         
         // Convert to seconds for calculation
@@ -232,20 +250,27 @@ class EIPSI_Nudge_Service {
         
         $now = current_time('timestamp');
         
-        if ($has_due_date) {
-            // Calculate based on due date
+        // v2.3.0 - Support dual reference points
+        if ($reference_point === 'due_date' && $has_due_date) {
+            // Calculate based on due date (before deadline)
             $due_ts = strtotime($wave->due_date);
+            $trigger_ts = $due_ts - $timing_seconds;
             
-            if (isset($config['timing']) && $config['timing'] === 'days_before') {
-                $trigger_ts = $due_ts - $timing_seconds;
-                // Send if we're within the trigger window (±12 hours for cron hourly)
-                return ($now >= $trigger_ts && $now < $due_ts);
-            } else {
-                $trigger_ts = $due_ts + $timing_seconds;
-                return ($now >= $trigger_ts);
-            }
+            error_log("[EIPSI Nudge] Stage {$current_stage} - due_date mode: trigger at " . date('Y-m-d H:i:s', $trigger_ts) . " ({$timing_value} {$timing_unit} before deadline)");
+            
+            // Send if we're within the trigger window (±1 hour for cron hourly)
+            // AND we haven't passed the due date
+            return ($now >= $trigger_ts && $now < $due_ts);
+        } elseif ($reference_point === 'wave_availability') {
+            // Calculate based on available date (after wave becomes available)
+            $available_ts = strtotime($assignment->available_at);
+            $trigger_ts = $available_ts + $timing_seconds;
+            
+            error_log("[EIPSI Nudge] Stage {$current_stage} - wave_availability mode: trigger at " . date('Y-m-d H:i:s', $trigger_ts) . " ({$timing_value} {$timing_unit} after available)");
+            
+            return ($now >= $trigger_ts);
         } else {
-            // Calculate based on available date
+            // Fallback: if due_date requested but not set, use available_at
             $available_ts = strtotime($assignment->available_at);
             $trigger_ts = $available_ts + $timing_seconds;
             

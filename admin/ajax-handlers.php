@@ -4009,6 +4009,91 @@ function eipsi_export_schema_report_handler() {
 }
 
 /**
+ * AJAX Handler: Save granular nudge configuration for a wave
+ * Allows per-nudge customization with minutes/hours/days units
+ * Supports dual modes: wave_availability (after) or due_date (before)
+ * 
+ * @since 2.3.0
+ * @return void
+ */
+function eipsi_save_wave_nudge_config_handler() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Permisos insuficientes', 'eipsi-forms')));
+    }
+    
+    $wave_id = isset($_POST['wave_id']) ? intval($_POST['wave_id']) : 0;
+    $nudge_config = isset($_POST['nudge_config']) ? $_POST['nudge_config'] : array();
+    
+    if ($wave_id <= 0) {
+        wp_send_json_error(array('message' => __('ID de wave inválido', 'eipsi-forms')));
+    }
+    
+    // Get wave to check if due_date exists
+    global $wpdb;
+    $wave = $wpdb->get_row($wpdb->prepare(
+        "SELECT due_date FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+        $wave_id
+    ));
+    
+    $has_due_date = !empty($wave->due_date);
+    
+    // Validate and sanitize nudge config
+    $valid_units = array('minutes', 'hours', 'days');
+    $valid_reference_points = array('wave_availability', 'due_date');
+    $sanitized_config = array();
+    
+    foreach (array('nudge_1', 'nudge_2', 'nudge_3', 'nudge_4') as $nudge_key) {
+        if (isset($nudge_config[$nudge_key])) {
+            $nudge = $nudge_config[$nudge_key];
+            
+            // Auto-set reference_point based on due_date presence
+            // If due_date exists, default to 'due_date' (before deadline)
+            // If no due_date, default to 'wave_availability' (after available)
+            $reference_point = isset($nudge['reference_point']) && in_array($nudge['reference_point'], $valid_reference_points) 
+                ? $nudge['reference_point'] 
+                : ($has_due_date ? 'due_date' : 'wave_availability');
+            
+            $sanitized_config[$nudge_key] = array(
+                'enabled' => !empty($nudge['enabled']),
+                'value' => intval($nudge['value']),
+                'unit' => in_array($nudge['unit'], $valid_units) ? $nudge['unit'] : 'hours',
+                'reference_point' => $reference_point
+            );
+        } else {
+            // Default OFF if not provided
+            $sanitized_config[$nudge_key] = array(
+                'enabled' => false,
+                'value' => 24,
+                'unit' => 'hours',
+                'reference_point' => $has_due_date ? 'due_date' : 'wave_availability'
+            );
+        }
+    }
+    
+    // Save as JSON in nudge_config column
+    $updated = $wpdb->update(
+        $wpdb->prefix . 'survey_waves',
+        array('nudge_config' => wp_json_encode($sanitized_config)),
+        array('id' => $wave_id),
+        array('%s'),
+        array('%d')
+    );
+    
+    if ($updated === false) {
+        wp_send_json_error(array('message' => __('Error al guardar configuración', 'eipsi-forms')));
+    }
+    
+    wp_send_json_success(array(
+        'message' => __('Configuración de recordatorios guardada', 'eipsi-forms'),
+        'nudge_config' => $sanitized_config,
+        'auto_activated' => $has_due_date // Tell frontend if we auto-switched to due_date mode
+    ));
+}
+add_action('wp_ajax_eipsi_save_wave_nudge_config', 'eipsi_save_wave_nudge_config_handler');
+
+/**
  * AJAX Handler: Fix collations
  * 
  * Fixes collations for all plugin tables to ensure utf8mb4_unicode_ci
