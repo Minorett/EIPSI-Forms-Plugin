@@ -32,6 +32,7 @@ function eipsi_display_longitudinal_study_page() {
         // REMOVED: 'waves-manager' - functionality merged into Dashboard
         'reminders',
         'email-log',
+        'pool-hub',
         'longitudinal-pools',
         'pool-analytics',
         'export'
