@@ -33,6 +33,7 @@
         initLogout();
         initWaveInteractions();
         initProgressAnimation();
+        initCountdown();
     });
 
     /**
@@ -133,6 +134,72 @@
                 $step.addClass('animate');
             }, index * 200);
         });
+    }
+
+    /**
+     * Initialize countdown timers for locked waves
+     */
+    function initCountdown() {
+        document.querySelectorAll('.eipsi-countdown').forEach(renderCountdown);
+    }
+
+    /**
+     * Render countdown for a single element
+     */
+    function renderCountdown(el) {
+        var ts = parseInt(el.dataset.availableTimestamp, 10) * 1000;
+        var unit = el.dataset.unit;
+        var numEl = el.querySelector('.eipsi-countdown-num');
+        var unitEl = el.querySelector('.eipsi-countdown-unit');
+
+        function update() {
+            var diff = ts - Date.now();
+            if (diff <= 0) {
+                numEl.textContent = window.eipsiCountdownStrings?.available || 'Ya disponible';
+                unitEl.textContent = '';
+                el.closest('.eipsi-cta--locked').classList.add('eipsi-cta--ready');
+                return;
+            }
+
+            var totalSecs = Math.floor(diff / 1000);
+            var totalMins = Math.floor(diff / 60000);
+            var totalHours = Math.floor(diff / 3600000);
+            var totalDays = Math.floor(diff / 86400000);
+
+            if (totalMins < 60) {
+                // Timer en vivo: MM:SS
+                var m = Math.floor(totalSecs / 60);
+                var s = totalSecs % 60;
+                numEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+                unitEl.textContent = window.eipsiCountdownStrings?.mins || 'min : seg';
+                el.closest('.eipsi-dash-cta').style.setProperty('--cta-color', '#856404');
+                el.closest('.eipsi-dash-cta').style.setProperty('--cta-bg', '#fff8e5');
+                el.closest('.eipsi-dash-cta').style.setProperty('--cta-border', '#ffc107');
+                setTimeout(update, 1000);
+            } else if (totalHours < 48) {
+                // Estático: Xh Ym
+                var h = totalHours;
+                var mins = Math.floor((diff % 3600000) / 60000);
+                numEl.textContent = h + 'h ' + mins + 'm';
+                unitEl.textContent = window.eipsiCountdownStrings?.hours || 'horas';
+                el.closest('.eipsi-dash-cta').style.setProperty('--cta-color', '#856404');
+                el.closest('.eipsi-dash-cta').style.setProperty('--cta-bg', '#fff8e5');
+                el.closest('.eipsi-dash-cta').style.setProperty('--cta-border', '#ffc107');
+            } else {
+                // Días + fecha aproximada
+                var fecha = new Date(ts);
+                var meses = window.eipsiCountdownStrings?.months || ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                var fechaStr = '~' + fecha.getDate() + ' ' + meses[fecha.getMonth()] + ' ' + fecha.getFullYear();
+                numEl.textContent = totalDays + ' días';
+                unitEl.textContent = fechaStr;
+                // Color neutro cuando no hay urgencia
+                el.closest('.eipsi-dash-cta').style.setProperty('--cta-color', '#64748b');
+                el.closest('.eipsi-dash-cta').style.setProperty('--cta-bg', '#f8f9fa');
+                el.closest('.eipsi-dash-cta').style.setProperty('--cta-border', '#e2e8f0');
+            }
+        }
+
+        update();
     }
 
     /**

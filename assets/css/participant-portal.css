@@ -1298,3 +1298,149 @@ body.eipsi-dark-mode .eipsi-modal-title {
 body.eipsi-dark-mode .eipsi-modal-message {
     color: #6c757d;
 }
+
+/* =================================================================
+   PARTICIPANT DASHBOARD - NEW DESIGN
+   ================================================================= */
+
+.eipsi-dash-header { margin-bottom: 20px; }
+.eipsi-dash-greeting { font-size: 18px; font-weight: 500; color: #2c3e50; margin-bottom: 3px; }
+.eipsi-dash-study { font-size: 13px; color: #64748b; }
+
+.eipsi-dash-timeline {
+  display: flex;
+  align-items: flex-start;
+  margin: 20px 0 0;
+}
+
+.eipsi-dash-toma {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.eipsi-toma-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  border: 2px solid transparent;
+  flex-shrink: 0;
+}
+
+.eipsi-toma--done .eipsi-toma-circle {
+  background: #e8f5e9;
+  border-color: #008080;
+  color: #006666;
+}
+.eipsi-toma--ready .eipsi-toma-circle {
+  background: #3B6CAA;
+  border-color: #3B6CAA;
+  color: #fff;
+}
+.eipsi-toma--locked .eipsi-toma-circle,
+.eipsi-toma--future .eipsi-toma-circle {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+}
+
+.eipsi-toma-label {
+  font-size: 11px;
+  margin-top: 6px;
+  text-align: center;
+  color: #64748b;
+  line-height: 1.3;
+}
+.eipsi-toma-label strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+.eipsi-toma--done .eipsi-toma-label strong { color: #006666; }
+.eipsi-toma--ready .eipsi-toma-label strong { color: #3B6CAA; }
+.eipsi-toma--locked .eipsi-toma-label strong,
+.eipsi-toma--future .eipsi-toma-label strong { color: #94a3b8; }
+
+.eipsi-toma-status-text {
+  display: block;
+  font-size: 10px;
+  margin-top: 2px;
+}
+.eipsi-toma--ready .eipsi-toma-status-text { color: #3B6CAA; font-weight: 500; }
+
+.eipsi-dash-connector {
+  flex: 1;
+  height: 2px;
+  background: #e2e8f0;
+  margin-top: 17px;
+}
+.eipsi-connector--done { background: #008080; }
+
+.eipsi-dash-cta {
+  background: var(--cta-bg, #f0f6fc);
+  border: 1.5px solid var(--cta-border, #3B6CAA);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-top: 12px;
+}
+
+.eipsi-cta--locked {
+  --cta-bg: #fff8e5;
+  --cta-border: #ffc107;
+  --cta-color: #856404;
+}
+.eipsi-cta--ready {
+  --cta-bg: #f0f6fc;
+  --cta-border: #3B6CAA;
+  --cta-color: #1E3A5F;
+}
+.eipsi-cta--complete {
+  --cta-bg: #e8f5e9;
+  --cta-border: #008080;
+  --cta-color: #006666;
+  text-align: center;
+}
+
+.eipsi-cta-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.eipsi-cta-badge {
+  background: #3B6CAA;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 4px;
+}
+.eipsi-cta-name { font-size: 15px; font-weight: 500; color: #2c3e50; }
+.eipsi-cta-desc { font-size: 12px; color: #64748b; margin-bottom: 16px; line-height: 1.5; }
+.eipsi-cta-meta { margin-top: 10px; font-size: 11px; color: #64748b; text-align: center; }
+
+.eipsi-countdown { text-align: right; }
+.eipsi-countdown-num {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--cta-color, #856404);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.eipsi-countdown-unit { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+.eipsi-cta-complete-title { font-size: 16px; font-weight: 500; color: #006666; margin-bottom: 6px; }
+.eipsi-cta-complete-sub { font-size: 13px; color: #64748b; }
+
+/* Mobile */
+@media (max-width: 480px) {
+  .eipsi-toma-label { font-size: 10px; }
+  .eipsi-toma-label strong { font-size: 11px; }
+  .eipsi-dash-connector { margin-top: 17px; }
+}

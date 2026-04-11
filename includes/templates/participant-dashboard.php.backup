@@ -137,78 +137,41 @@ function eipsi_calculate_due_status($due_date) {
 
 // Obtener URL del investigador
 $investigator_email = get_option('eipsi_investigator_email', '');
-
-/**
- * Rediseño del Dashboard del Participante
- * Versión 2.1.4 - Nueva estructura con timeline y estados visuales
- */
-
-// Preparar datos de waves para el timeline
-$waves_timeline = array();
-$all_done = true;
-$next_ready_index = -1;
-
-foreach ($all_waves as $index => $wave) {
-    $wave_id = $wave['id'];
-    $assignment = isset($wave_assignments[$wave_id]) ? $wave_assignments[$wave_id] : null;
-    
-    // Determinar status
-    if ($assignment && $assignment['status'] === 'submitted') {
-        $status = 'done';
-        $status_text = 'Completada';
-    } elseif ($next_ready_index === -1 && (!$assignment || $assignment['status'] !== 'submitted')) {
-        // Es la próxima wave disponible
-        $next_ready_index = $index;
-        
-        // Verificar si está bloqueada por intervalo
-        if (isset($wave['is_locked']) && $wave['is_locked']) {
-            $status = 'locked';
-            $status_text = 'Pendiente';
-            $all_done = false;
-        } else {
-            $status = 'ready';
-            $status_text = 'Lista ahora';
-            $all_done = false;
-        }
-    } else {
-        $status = 'future';
-        $status_text = 'Pendiente';
-        $all_done = false;
-    }
-    
-    $waves_timeline[] = array(
-        'index' => $index + 1,
-        'label' => sprintf(__('Toma %d', 'eipsi-forms'), $index + 1),
-        'name' => $wave['name'],
-        'status' => $status,
-        'status_text' => $status_text,
-        'form_id' => isset($wave['form_id']) ? $wave['form_id'] : '',
-        'wave_id' => $wave_id,
-        'available_timestamp' => isset($wave['available_timestamp']) ? $wave['available_timestamp'] : '',
-        'interval_unit' => isset($wave['interval_unit']) ? $wave['interval_unit'] : 'days'
-    );
-}
-
-// Determinar la wave actual para mostrar en la CTA
-$current_wave = null;
-$current_status = '';
-if (!$all_done && $next_ready_index >= 0) {
-    $current_wave = $waves_timeline[$next_ready_index];
-    $current_status = $current_wave['status'];
-}
 ?>
 
 <div class="eipsi-participant-dashboard">
+    <!-- Sección 1: Bienvenida y Progreso -->
+    <div class="eipsi-dashboard-header">
+        <div class="eipsi-welcome-section">
+            <h1 class="eipsi-dashboard-title">
+                <span class="welcome-emoji">👋</span>
+                <?php printf(__('¡Hola, %s!', 'eipsi-forms'), esc_html($participant_name)); ?>
+            </h1>
+            <p class="eipsi-dashboard-subtitle">
+                <?php esc_html_e('Este es tu progreso en el estudio', 'eipsi-forms'); ?>
+            </p>
+        </div>
+        
+        <!-- Progress Bar -->
+        <?php if ($total_waves > 0): ?>
+        <div class="eipsi-progress-section">
+            <div class="eipsi-progress-header">
+                <span class="eipsi-progress-label"><?php esc_html_e('Progreso del estudio', 'eipsi-forms'); ?></span>
+                <span class="eipsi-progress-percentage"><?php echo esc_html($progress_percentage); ?>%</span>
+            </div>
+            <div class="eipsi-progress-bar">
+                <div class="eipsi-progress-fill" style="width: <?php echo esc_attr($progress_percentage); ?>%"></div>
+            </div>
+            <div class="eipsi-progress-stats">
+                <span class="stat-completed">✅ <?php printf(__('%d completadas', 'eipsi-forms'), $completed_waves); ?></span>
+                <span class="stat-pending">⏳ <?php printf(__('%d pendientes', 'eipsi-forms'), $pending_waves); ?></span>
+                <span class="stat-total">📊 <?php printf(__('%d total', 'eipsi-forms'), $total_waves); ?></span>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
 
-    <!-- Header de bienvenida -->
-    <div class="eipsi-dash-header">
-        <p class="eipsi-dash-greeting">
-            <?php 
-            printf(
-                /* translators: %s: Participant first name */
-                esc_html__('Hola de nuevo, %s', 'eipsi-forms'),
-                esc_html($participant_name)
-            );
+    <!-- Sección 2: Próxima Toma (CTA Principal) -->
     <div class="eipsi-dashboard-section eipsi-section-highlight">
         <h2 class="eipsi-section-title">
             <span class="section-icon">📋</span>
@@ -302,76 +265,92 @@ if (!$all_done && $next_ready_index >= 0) {
                             $status_text = esc_html__('No iniciada', 'eipsi-forms');
                             $status_class = 'status-not-started';
                             $status_icon = '⚪';
-            <?php endif; ?>
-        <?php endforeach; ?>
-    </div>
-
-    <?php if ($all_done) : ?>
-        <!-- Estado 3: Estudio completado -->
-        <div class="eipsi-dash-cta eipsi-cta--complete">
-            <p class="eipsi-cta-complete-title"><?php esc_html_e('Estudio completado', 'eipsi-forms'); ?></p>
-            <p class="eipsi-cta-complete-sub">
-                <?php esc_html_e('Gracias por tu participación. Tus respuestas han sido registradas.', 'eipsi-forms'); ?>
-            </p>
-        </div>
-    <?php elseif ($current_status === 'locked') : ?>
-        <!-- Estado 1: Toma bloqueada (hay intervalo de espera) -->
-        <div class="eipsi-dash-cta eipsi-cta--locked">
-            <div class="eipsi-cta-top">
-                <span class="eipsi-cta-badge"><?php echo esc_html($current_wave['label']); ?></span>
-                <span class="eipsi-cta-name"><?php echo esc_html($current_wave['name']); ?></span>
+                            
+                            if ($assignment) {
+                                switch ($assignment['status']) {
+                                    case 'submitted':
+                                        $status = 'completed';
+                                        $status_text = esc_html__('Completada', 'eipsi-forms');
+                                        $status_class = 'status-completed';
+                                        $status_icon = '✅';
+                                        break;
+                                    case 'in_progress':
+                                        $status = 'in_progress';
+                                        $status_text = esc_html__('En progreso', 'eipsi-forms');
+                                        $status_class = 'status-in-progress';
+                                        $status_icon = '⏳';
+                                        break;
+                                    case 'pending':
+                                        $status = 'pending';
+                                        $status_text = esc_html__('Pendiente', 'eipsi-forms');
+                                        $status_class = 'status-pending';
+                                        $status_icon = '⏰';
+                                        break;
+                                }
+                            }
+                            
+                            $form_title = get_the_title($wave['form_id']) ?: sprintf(__('Toma %d', 'eipsi-forms'), $wave['wave_index']);
+                            $submitted_at = $assignment['submitted_at'] ?? null;
+                            $duration_seconds = $assignment['submission_duration'] ?? null;
+                            $due_status = eipsi_calculate_due_status($wave['due_date']);
+                            ?>
+                            
+                            <tr class="<?php echo esc_attr($status_class); ?>">
+                                <td class="eipsi-wave-cell">
+                                    <div class="wave-info-compact">
+                                        <span class="eipsi-wave-index">T<?php echo absint($wave['wave_index']); ?></span>
+                                        <span class="eipsi-wave-name"><?php echo esc_html($form_title); ?></span>
+                                    </div>
+                                </td>
+                                <td class="eipsi-status-cell">
+                                    <span class="eipsi-status-badge <?php echo esc_attr($status_class); ?>" title="<?php echo esc_attr($status_text); ?>">
+                                        <span class="status-icon"><?php echo esc_html($status_icon); ?></span>
+                                        <span class="status-text"><?php echo esc_html($status_text); ?></span>
+                                    </span>
+                                </td>
+                                <td class="eipsi-due-cell <?php echo esc_attr($due_status['class']); ?>">
+                                    <?php echo esc_html($due_status['text']); ?>
+                                </td>
+                                <td class="eipsi-submitted-cell">
+                                    <?php echo esc_html(eipsi_format_date($submitted_at, '-')); ?>
+                                </td>
+                                <td class="eipsi-duration-cell">
+                                    <?php echo esc_html(eipsi_format_duration($duration_seconds)); ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
-            <p class="eipsi-cta-desc"><?php esc_html_e('Esta toma estará disponible en', 'eipsi-forms'); ?></p>
-            <div class="eipsi-countdown"
-                 data-available-timestamp="<?php echo esc_attr($current_wave['available_timestamp']); ?>"
-                 data-unit="<?php echo esc_attr($current_wave['interval_unit']); ?>">
-                <span class="eipsi-countdown-num">--</span>
-                <span class="eipsi-countdown-unit"></span>
+        <?php else: ?>
+            <div class="eipsi-no-data eipsi-empty-state">
+                <div class="empty-icon">📭</div>
+                <p><?php esc_html_e('No hay tomas asignadas aún.', 'eipsi-forms'); ?></p>
+                <p class="empty-hint"><?php esc_html_e('El investigador las configurará pronto.', 'eipsi-forms'); ?></p>
             </div>
-            <p class="eipsi-cta-meta"><?php esc_html_e('Te notificaremos cuando esté disponible.', 'eipsi-forms'); ?></p>
-        </div>
-    <?php elseif ($current_status === 'ready') : ?>
-        <!-- Estado 2: Toma disponible (puede comenzar) -->
-        <div class="eipsi-dash-cta eipsi-cta--ready">
-            <div class="eipsi-cta-top">
-                <span class="eipsi-cta-badge"><?php echo esc_html($current_wave['label']); ?></span>
-                <span class="eipsi-cta-name"><?php echo esc_html($current_wave['name']); ?></span>
-            </div>
-            <p class="eipsi-cta-desc">
-                <?php esc_html_e('Esta toma ya está disponible. Podés completarla ahora o en cualquier momento antes de que se cierre la ventana de respuesta.', 'eipsi-forms'); ?>
-            </p>
-            <form action="" method="get">
-                <input type="hidden" name="form_id" value="<?php echo esc_attr($current_wave['form_id']); ?>">
-                <input type="hidden" name="wave_id" value="<?php echo esc_attr($current_wave['wave_id']); ?>">
-                <button
-                    type="submit"
-                    class="eipsi-cta-btn"
-                    style="background-color:#3B6CAA;color:#ffffff;border:none;border-radius:8px;padding:14px 20px;font-size:15px;font-weight:600;width:100%;cursor:pointer;display:block;text-align:center;"
-                    onmouseover="this.style.backgroundColor='#1E3A5F'"
-                    onmouseout="this.style.backgroundColor='#3B6CAA'"
-                    onclick="this.style.backgroundColor='#1E3A5F';this.textContent='<?php echo esc_js(__('Cargando...', 'eipsi-forms')); ?>'"
-                >
-                    <?php esc_html_e('Comenzar toma →', 'eipsi-forms'); ?>
-                </button>
-            </form>
-            <p class="eipsi-cta-meta"><?php esc_html_e('Duración estimada: 8–12 min · Podés pausar y retomar', 'eipsi-forms'); ?></p>
-        </div>
-    <?php endif; ?>
-
-    <!-- Sección de contacto -->
-    <div class="eipsi-dash-contact">
-        <p><?php esc_html_e('Si tenés alguna pregunta o problema con el estudio, no dudes en contactar al investigador.', 'eipsi-forms'); ?></p>
-        <?php if ($investigator_email): ?>
-            <a href="mailto:<?php echo esc_attr($investigator_email); ?>?subject=<?php echo urlencode(__('Consulta sobre el estudio', 'eipsi-forms')); ?>" 
-               class="eipsi-contact-link">
-                <span class="contact-icon">📧</span>
-                <?php echo esc_html($investigator_email); ?>
-            </a>
         <?php endif; ?>
     </div>
 
-    <!-- Pie -->
-    <div class="eipsi-dash-footer">
+    <!-- Sección 4: Información de Contacto -->
+    <div class="eipsi-dashboard-section eipsi-contact-section">
+        <h2 class="eipsi-section-title">
+            <span class="section-icon">💬</span>
+            <?php esc_html_e('¿Necesitás ayuda?', 'eipsi-forms'); ?>
+        </h2>
+        <div class="eipsi-contact-info">
+            <p><?php esc_html_e('Si tenés alguna pregunta o problema con el estudio, no dudes en contactar al investigador.', 'eipsi-forms'); ?></p>
+            <?php if ($investigator_email): ?>
+                <a href="mailto:<?php echo esc_attr($investigator_email); ?>?subject=<?php echo urlencode(__('Consulta sobre el estudio', 'eipsi-forms')); ?>" 
+                   class="eipsi-contact-link">
+                    <span class="contact-icon">📧</span>
+                    <?php echo esc_html($investigator_email); ?>
+                </a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Sección 5: Pie -->
+    <div class="eipsi-dashboard-footer">
         <div class="eipsi-footer-actions">
             <button type="button" class="eipsi-button-logout" id="eipsi-logout-button" data-nonce="<?php echo wp_create_nonce('eipsi_participant_logout'); ?>">
                 <span class="btn-icon">🚪</span>
