@@ -127,14 +127,21 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         error_log("[EIPSI Cron] NUDGE 0 DIAGNOSTIC: Found " . count($nudge_zero_assignments) . " pending assignments with reminder_count=0");
         $available_now_assignments = array();
         $now = current_time('timestamp');
+        error_log("[EIPSI Cron] NUDGE 0 FILTER: Current time (timestamp)={$now}, formatted=" . date('Y-m-d H:i:s', $now));
         foreach ($nudge_zero_assignments as $assignment) {
+            error_log("[EIPSI Cron] NUDGE 0 CHECK: assignment_id={$assignment->id}, participant_id={$assignment->participant_id}, wave_id={$assignment->wave_id}, wave_name={$assignment->wave_name}, last_submission_date={$assignment->last_submission_date}, interval_days={$assignment->interval_days}, time_unit={$assignment->time_unit}");
             if (!empty($assignment->last_submission_date)) {
                 $time_unit = ($assignment->time_unit === 'minutes') ? 'minutes' : 'days';
                 $available_at = strtotime("+{$assignment->interval_days} {$time_unit}", strtotime($assignment->last_submission_date));
+                error_log("[EIPSI Cron] NUDGE 0 CALC: assignment_id={$assignment->id}, available_at_timestamp={$available_at}, available_at_formatted=" . ($available_at ? date('Y-m-d H:i:s', $available_at) : 'INVALID') . ", now={$now}, condition_met=" . ($available_at && $now >= $available_at ? 'YES' : 'NO'));
                 if ($available_at && $now >= $available_at) {
                     $available_now_assignments[] = $assignment;
                     error_log("[EIPSI Cron] Nudge 0 READY: participant={$assignment->participant_id}, wave={$assignment->wave_name}, available_at=" . date('Y-m-d H:i:s', $available_at));
+                } else {
+                    error_log("[EIPSI Cron] NUDGE 0 BLOCKED: assignment_id={$assignment->id}, reason=NOT_YET_AVAILABLE, available_at=" . ($available_at ? date('Y-m-d H:i:s', $available_at) : 'N/A') . ", now=" . date('Y-m-d H:i:s', $now));
                 }
+            } else {
+                error_log("[EIPSI Cron] NUDGE 0 BLOCKED: assignment_id={$assignment->id}, reason=NO_LAST_SUBMISSION_DATE");
             }
         }
 
