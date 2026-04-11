@@ -162,8 +162,9 @@ class EIPSI_Wave_Availability_Email_Service {
             return true;
         }
 
-        $time_unit = ($wave->time_unit === 'minutes') ? 'minutes' : 'days';
-        $available_at = strtotime("+{$wave->interval_days} {$time_unit}", strtotime($assignment->last_submission_date));
+        // time_unit: 0 = minutes, 1 = days (from database)
+        $time_unit_str = (intval($wave->time_unit) === 0) ? 'minutes' : 'days';
+        $available_at = strtotime("+{$wave->interval_days} {$time_unit_str}", strtotime($assignment->last_submission_date));
         $now = current_time('timestamp');
 
         return $now >= $available_at;

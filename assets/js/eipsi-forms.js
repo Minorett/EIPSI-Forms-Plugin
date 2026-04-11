@@ -3032,10 +3032,29 @@
             if ( window.eipsiMetadata ) {
                 // Fusionar metadata existente con metadata de timing
                 const timingMetadata = getTimingMetadata();
+
+                // ✅ FIX: Agregar device_data desde el input oculto o window
+                let deviceData = null;
+                const deviceDataInput = form.querySelector( 'input[name="eipsi_device_data"]' );
+                if ( deviceDataInput && deviceDataInput.value ) {
+                    try {
+                        deviceData = JSON.parse( deviceDataInput.value );
+                    } catch ( e ) {
+                        console.error( '[EIPSI Forms] Error parsing device_data:', e );
+                    }
+                }
+                if ( ! deviceData && window.eipsiDeviceData ) {
+                    deviceData = window.eipsiDeviceData;
+                }
+
                 const finalMetadata = {
                     ...window.eipsiMetadata,
                     ...timingMetadata,
+                    device_data: deviceData,
                 };
+
+                console.log( '[EIPSI Forms] Final metadata device_data keys:', deviceData ? Object.keys( deviceData ).join( ',' ) : 'NULL' );
+
                 formData.append( 'metadata', JSON.stringify( finalMetadata ) );
             }
 
