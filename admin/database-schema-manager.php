@@ -1951,6 +1951,7 @@ class EIPSI_Database_Schema_Manager {
             completion_time_limit INT DEFAULT NULL,
             status ENUM('draft', 'active', 'completed', 'paused') DEFAULT 'draft',
             is_mandatory TINYINT(1) DEFAULT 1,
+            follow_up_reminders_enabled TINYINT(1) DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),

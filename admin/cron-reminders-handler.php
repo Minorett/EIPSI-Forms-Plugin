@@ -86,14 +86,15 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
             error_log("[EIPSI Cron] Pending: assignment_id={$pend->id}, wave_id={$pend->wave_id}, time_unit={$pend->time_unit}, interval={$pend->interval_days}, reminder_count={$pend->reminder_count}");
         }
 
+        // v2.2.0: Get pending assignments for follow-up nudges (stages 1-4)
+        // Nudge 0 is handled immediately by Wave_Service when wave becomes available
+        // This cron handles nudges 1-4 based on due_date or days since available
         $pending_assignments = $wpdb->get_results($wpdb->prepare(
-            "SELECT a.*, w.name as wave_name, w.wave_index, w.due_date, w.time_unit, w.interval_days,
-                    p.email, p.first_name, p.last_name, p.id as participant_id,
-                    COALESCE(
-                        (SELECT MAX(a2.submitted_at) FROM {$wpdb->prefix}survey_assignments a2
-                         WHERE a2.participant_id = p.id AND a2.study_id = a.study_id AND a2.status = 'submitted'),
-                        p.created_at
-                    ) as last_submission_date
+            "SELECT a.*, w.name as wave_name, w.wave_index, w.due_date, w.follow_up_reminders_enabled,
+             p.email, p.first_name, p.last_name, p.id as participant_id,
+             (SELECT submitted_at FROM {$wpdb->prefix}survey_assignments a2 
+              WHERE a2.participant_id = a.participant_id AND a2.wave_id = w.id - 1 AND a2.status = 'submitted' 
+              ORDER BY a2.submitted_at DESC LIMIT 1) as last_submission_date
              FROM {$wpdb->prefix}survey_assignments a
              JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
              JOIN {$wpdb->prefix}survey_participants p ON a.participant_id = p.id
@@ -101,20 +102,12 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
              AND a.status = 'pending'
              AND p.is_active = 1
              AND p.email IS NOT NULL
-             AND a.reminder_count = 0
-             HAVING (
-                 CASE
-                     WHEN w.time_unit = 'minutes' THEN
-                         DATE_ADD(last_submission_date, INTERVAL w.interval_days MINUTE) <= %s
-                     ELSE
-                         DATE_ADD(DATE(last_submission_date), INTERVAL w.interval_days DAY) <= %s
-                 END
-             )
+             AND a.reminder_count >= 1
+             AND a.reminder_count < 5
+             AND w.follow_up_reminders_enabled = 1
              ORDER BY a.id ASC
              LIMIT %d",
             $study->id,
-            $now,
-            $now_date,
             $max_emails
         ));
 
@@ -132,14 +125,33 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         if (!class_exists('EIPSI_Assignment_Service')) {
             require_once plugin_dir_path(__FILE__) . 'services/class-assignment-service.php';
         }
+        if (!class_exists('EIPSI_Nudge_Service')) {
+            require_once plugin_dir_path(__FILE__) . '../includes/services/class-nudge-service.php';
+        }
 
         foreach ($pending_assignments as $assignment) {
+            $current_stage = (int) $assignment->reminder_count;
+            $has_due_date = !empty($assignment->due_date);
+            
+            // Check if we should send this nudge now
+            if (!EIPSI_Nudge_Service::should_send_nudge($assignment, (object) $assignment, $current_stage)) {
+                error_log("[EIPSI Cron] SKIPPED: Nudge {$current_stage} not yet due for participant {$assignment->participant_id}");
+                continue;
+            }
+            
             // Check rate limiting - max 1 email per participant per wave per 24 hours
-            $rate_limit_key = "eipsi_reminder_{$assignment->participant_id}_{$assignment->wave_id}";
+            $rate_limit_key = "eipsi_reminder_{$assignment->participant_id}_{$assignment->wave_id}_{$current_stage}";
             $is_rate_limited = get_transient($rate_limit_key);
-            error_log("[EIPSI Cron] Checking assignment {$assignment->id} for participant {$assignment->participant_id} - rate limited: " . ($is_rate_limited ? 'YES' : 'NO'));
+            error_log("[EIPSI Cron] Checking assignment {$assignment->id} for participant {$assignment->participant_id} - nudge {$current_stage} - rate limited: " . ($is_rate_limited ? 'YES' : 'NO'));
             if ($is_rate_limited) {
-                error_log("[EIPSI Cron] SKIPPED: Rate limited for participant {$assignment->participant_id}, wave {$assignment->wave_id}");
+                error_log("[EIPSI Cron] SKIPPED: Rate limited for participant {$assignment->participant_id}, wave {$assignment->wave_id}, nudge {$current_stage}");
+                continue;
+            }
+
+            // Get nudge config
+            $nudge_config = EIPSI_Nudge_Service::get_nudge_config($current_stage, $has_due_date);
+            if (!$nudge_config) {
+                error_log("[EIPSI Cron] ERROR: Invalid nudge stage {$current_stage}");
                 continue;
             }
 
@@ -151,25 +163,26 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
                 'due_date' => $assignment->due_date
             );
 
-            error_log("[EIPSI Cron] Sending email to participant {$assignment->participant_id} ({$assignment->email}) for wave {$assignment->wave_name}");
+            error_log("[EIPSI Cron] Sending Nudge {$current_stage} ({$nudge_config['label']}) to participant {$assignment->participant_id} ({$assignment->email}) for wave {$assignment->wave_name}");
 
             $result = EIPSI_Email_Service::send_wave_reminder_email(
                 $study->id,
                 $assignment->participant_id,
-                (object) $wave
+                (object) $wave,
+                $current_stage // Pass stage for template selection
             );
 
             error_log("[EIPSI Cron] Email send result: " . ($result ? 'SUCCESS' : 'FAILED'));
 
             if ($result) {
                 $emails_sent++;
-                // Increment reminder count and set last sent time
+                // Increment reminder count (stage) for next nudge
                 EIPSI_Assignment_Service::increment_reminder_count($assignment->wave_id, $assignment->participant_id);
-                // Set rate limit - 24 hours
+                // Set rate limit - 24 hours per stage
                 set_transient($rate_limit_key, true, DAY_IN_SECONDS);
-                error_log("[EIPSI Cron] Email sent and rate limit set for participant {$assignment->participant_id}");
+                error_log("[EIPSI Cron] Nudge {$current_stage} sent and rate limit set for participant {$assignment->participant_id}");
             } else {
-                error_log("[EIPSI Cron] EMAIL FAILED for participant {$assignment->participant_id}");
+                error_log("[EIPSI Cron] NUDGE {$current_stage} FAILED for participant {$assignment->participant_id}");
             }
         }
 
