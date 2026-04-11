@@ -20,6 +20,35 @@ function eipsi_render_pool_hub_v2() {
     }
 
     global $wpdb;
+
+    // Handle pool deletion
+    if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['pool_id'])) {
+        $pool_id = intval($_GET['pool_id']);
+        $nonce = isset($_GET['_wpnonce']) ? $_GET['_wpnonce'] : '';
+
+        if (!wp_verify_nonce($nonce, 'eipsi_delete_longitudinal_pool_' . $pool_id)) {
+            wp_die(__('Nonce verification failed.', 'eipsi-forms'));
+        }
+
+        if (!eipsi_user_can_manage_longitudinal()) {
+            wp_die(__('You do not have permission to delete pools.', 'eipsi-forms'));
+        }
+
+        $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+        $assignments_table = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
+
+        // Delete related assignments first (foreign key constraint)
+        $wpdb->delete($assignments_table, ['pool_id' => $pool_id], ['%d']);
+
+        // Delete the pool
+        $result = $wpdb->delete($pools_table, ['id' => $pool_id], ['%d']);
+
+        if ($result !== false) {
+            // Redirect to avoid re-deletion on refresh
+            wp_redirect(admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_deleted'));
+            exit;
+        }
+    }
     $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
     $assignments_table = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
 
@@ -246,7 +275,7 @@ function eipsi_render_pool_hub_v2() {
                                 </div>
                             </div>
                             <div class="eipsi-pool-card-body">
-                                <p class="eipsi-pool-description"><?php echo esc_html($pool['description'] ?: __('Sin descripción', 'eipsi-forms')); ?></p>
+                                <p class="eipsi-pool-description"><?php echo esc_html(isset($pool['description']) && $pool['description'] ? $pool['description'] : __('Sin descripción', 'eipsi-forms')); ?></p>
                                 <div class="eipsi-pool-meta">
                                     <span class="eipsi-pool-method">
                                         <?php echo $pool['method'] === 'seeded' ? '🎲 ' . __('Seeded', 'eipsi-forms') : '🎰 ' . __('Random', 'eipsi-forms'); ?>
@@ -1397,10 +1426,10 @@ function eipsi_render_pool_hub_v2() {
                 <select name="study_select[]" required>
                     <option value=""><?php _e('Seleccionar estudio...', 'eipsi-forms'); ?></option>
                     <?php 
-                    $all_studies = $wpdb->get_results("SELECT id, name, code FROM {$wpdb->prefix}survey_studies ORDER BY name", ARRAY_A);
+                    $all_studies = $wpdb->get_results("SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies ORDER BY study_name", ARRAY_A);
                     foreach ($all_studies as $study) : ?>
                         <option value="<?php echo $study['id']; ?>" ${studyId == <?php echo $study['id']; ?> ? 'selected' : ''}>
-                            <?php echo esc_html($study['name'] . ' (' . $study['code'] . ')'); ?>
+                            <?php echo esc_html($study['study_name'] . ' (' . $study['study_code'] . ')'); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
