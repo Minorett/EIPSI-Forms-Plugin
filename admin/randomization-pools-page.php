@@ -48,8 +48,9 @@ function eipsi_display_longitudinal_pools_page() {
             );
 
             if ( false !== $deleted ) {
-                $messages[] = __( 'Pool eliminado correctamente.', 'eipsi-forms' );
-                $active_pool_id = 0;
+                // Redirect to clean URL to prevent re-submission on refresh
+                wp_redirect( admin_url( 'admin.php?page=eipsi-longitudinal-pools&message=deleted' ) );
+                exit;
             } else {
                 $errors[] = __( 'No se pudo eliminar el pool. Intenta nuevamente.', 'eipsi-forms' );
             }
