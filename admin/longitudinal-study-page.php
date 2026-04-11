@@ -185,20 +185,13 @@ function eipsi_display_longitudinal_study_page() {
         <?php if ($active_tab === 'pool-hub'): ?>
             <div class="tab-content" data-tab="pool-hub">
                 <?php
-                // Pool Hub - Combines Longitudinal Pools and Pool Analytics
-                require_once dirname(__FILE__) . '/tabs/longitudinal-pools-tab.php';
-                require_once dirname(__FILE__) . '/tabs/pool-analytics-tab.php';
+                // Pool Hub v2.0 - Redesigned with sub-tabs
+                require_once dirname(__FILE__) . '/tabs/pool-hub-v2.php';
                 
-                if (function_exists('eipsi_render_longitudinal_pools_tab')) {
-                    echo '<div class="pool-hub-section">';
-                    eipsi_render_longitudinal_pools_tab();
-                    echo '</div>';
-                }
-                
-                if (function_exists('eipsi_render_pool_analytics_tab')) {
-                    echo '<div class="pool-hub-section" style="margin-top: 40px;">';
-                    eipsi_render_pool_analytics_tab();
-                    echo '</div>';
+                if (function_exists('eipsi_render_pool_hub_v2')) {
+                    eipsi_render_pool_hub_v2();
+                } else {
+                    echo '<div class="error"><p>' . esc_html__('Error: Pool Hub v2 no está disponible.', 'eipsi-forms') . '</p></div>';
                 }
                 ?>
             </div>

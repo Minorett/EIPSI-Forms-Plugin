@@ -30,8 +30,8 @@ function eipsi_display_longitudinal_pools_page() {
     $active_pool_id = isset( $_GET['pool_id'] ) ? absint( $_GET['pool_id'] ) : 0;
 
     if ( isset( $_GET['action'] ) && $_GET['action'] === 'delete' && $active_pool_id ) {
-        // v2.1.3: Added capability check
-        if ( ! current_user_can( 'manage_options' ) ) {
+        // v2.1.3: Added capability check using consistent function
+        if ( ! function_exists( 'eipsi_user_can_manage_longitudinal' ) || ! eipsi_user_can_manage_longitudinal() ) {
             wp_die( esc_html__( 'No tenés permisos para eliminar pools.', 'eipsi-forms' ), '', array( 'response' => 403 ) );
         }
 
@@ -48,8 +48,8 @@ function eipsi_display_longitudinal_pools_page() {
             );
 
             if ( false !== $deleted ) {
-                // Redirect to clean URL to prevent re-submission on refresh
-                wp_redirect( admin_url( 'admin.php?page=eipsi-longitudinal-pools&message=deleted' ) );
+                // Redirect to pool-hub tab to prevent re-submission on refresh
+                wp_redirect( admin_url( 'admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_deleted' ) );
                 exit;
             } else {
                 $errors[] = __( 'No se pudo eliminar el pool. Intenta nuevamente.', 'eipsi-forms' );
