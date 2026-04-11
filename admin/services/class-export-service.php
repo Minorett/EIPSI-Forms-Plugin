@@ -51,6 +51,7 @@ class EIPSI_Export_Service {
                     ELSE sp.id
                 END as participant_id,
                 sw.wave_index,
+                sr.id as submission_id,
                 sr.submitted_at,
                 TIMESTAMPDIFF(SECOND, sr.created_at, sr.submitted_at) as response_time_seconds,
                 sr.response_data,
@@ -103,6 +104,11 @@ class EIPSI_Export_Service {
     public function export_to_excel($data, $survey_id) {
         if ( ! class_exists( '\Shuchkin\SimpleXLSXGen' ) ) {     require_once EIPSI_FORMS_PLUGIN_DIR . 'lib/SimpleXLSXGen.php'; }
 
+        // Ensure device data service is available
+        if (!class_exists('EIPSI_Device_Data_Service')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-device-data-service.php';
+        }
+
         $headers = array(
             'Participant ID',
             'Wave',
@@ -111,6 +117,23 @@ class EIPSI_Export_Service {
             'Status',
             'User Fingerprint',
         );
+
+        // Add extended device data headers (12 fields)
+        $device_headers = array(
+            'Canvas Fingerprint',
+            'WebGL Renderer',
+            'Screen Resolution',
+            'Screen Depth',
+            'Pixel Ratio',
+            'Timezone',
+            'Language',
+            'CPU Cores',
+            'RAM (GB)',
+            'Browser Plugins',
+            'Touch Support',
+            'Cookies Enabled',
+        );
+        $headers = array_merge($headers, $device_headers);
 
         if (!empty($data)) {
             $response_data = json_decode($data[0]->response_data, true);
@@ -123,11 +146,30 @@ class EIPSI_Export_Service {
 
         $xlsx_data   = array($headers);
 
+        // Get all submission IDs for batch device data retrieval
+        $submission_ids = array();
+        foreach ($data as $item) {
+            if (!empty($item->submission_id)) {
+                $submission_ids[] = $item->submission_id;
+            }
+        }
+
+        // Fetch all device data in one query
+        $device_data_batch = array();
+        if (!empty($submission_ids) && class_exists('EIPSI_Device_Data_Service')) {
+            $device_data_batch = EIPSI_Device_Data_Service::get_device_data_batch($submission_ids);
+        }
+
         foreach ($data as $item) {
             $response_data = json_decode($item->response_data, true);
             if (!is_array($response_data)) {
                 $response_data = array();
             }
+
+            // Get device data for this submission
+            $device_data = isset($device_data_batch[$item->submission_id]) 
+                ? $device_data_batch[$item->submission_id] 
+                : array();
 
             $row = array(
                 $item->participant_id,
@@ -136,6 +178,19 @@ class EIPSI_Export_Service {
                 round($item->response_time_seconds / 60, 2),
                 $item->status,
                 $item->user_fingerprint,
+                // Device data fields (12 fields)
+                isset($device_data['canvas_fingerprint']) ? $device_data['canvas_fingerprint'] : '',
+                isset($device_data['webgl_renderer']) ? $device_data['webgl_renderer'] : '',
+                isset($device_data['screen_resolution']) ? $device_data['screen_resolution'] : '',
+                isset($device_data['screen_depth']) ? $device_data['screen_depth'] : '',
+                isset($device_data['pixel_ratio']) ? $device_data['pixel_ratio'] : '',
+                isset($device_data['timezone']) ? $device_data['timezone'] : '',
+                isset($device_data['language']) ? $device_data['language'] : '',
+                isset($device_data['cpu_cores']) ? $device_data['cpu_cores'] : '',
+                isset($device_data['ram_gb']) ? $device_data['ram_gb'] : '',
+                isset($device_data['browser_plugins']) ? $device_data['browser_plugins'] : '',
+                isset($device_data['touch_support']) ? $device_data['touch_support'] : '',
+                isset($device_data['cookies_enabled']) ? $device_data['cookies_enabled'] : '',
             );
 
             foreach ($response_data as $value) {
@@ -168,6 +223,11 @@ class EIPSI_Export_Service {
         $file_path = $export_dir . '/' . $filename;
         $file      = fopen($file_path, 'w');
 
+        // Ensure device data service is available
+        if (!class_exists('EIPSI_Device_Data_Service')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-device-data-service.php';
+        }
+
         $headers = array(
             'Participant ID',
             'Wave',
@@ -176,6 +236,23 @@ class EIPSI_Export_Service {
             'Status',
             'User Fingerprint',
         );
+
+        // Add extended device data headers (12 fields)
+        $device_headers = array(
+            'Canvas Fingerprint',
+            'WebGL Renderer',
+            'Screen Resolution',
+            'Screen Depth',
+            'Pixel Ratio',
+            'Timezone',
+            'Language',
+            'CPU Cores',
+            'RAM (GB)',
+            'Browser Plugins',
+            'Touch Support',
+            'Cookies Enabled',
+        );
+        $headers = array_merge($headers, $device_headers);
 
         if (!empty($data)) {
             $response_data = json_decode($data[0]->response_data, true);
@@ -188,11 +265,30 @@ class EIPSI_Export_Service {
 
         fputcsv($file, $headers);
 
+        // Get all submission IDs for batch device data retrieval
+        $submission_ids = array();
+        foreach ($data as $item) {
+            if (!empty($item->submission_id)) {
+                $submission_ids[] = $item->submission_id;
+            }
+        }
+
+        // Fetch all device data in one query
+        $device_data_batch = array();
+        if (!empty($submission_ids) && class_exists('EIPSI_Device_Data_Service')) {
+            $device_data_batch = EIPSI_Device_Data_Service::get_device_data_batch($submission_ids);
+        }
+
         foreach ($data as $item) {
             $response_data = json_decode($item->response_data, true);
             if (!is_array($response_data)) {
                 $response_data = array();
             }
+
+            // Get device data for this submission
+            $device_data = isset($device_data_batch[$item->submission_id]) 
+                ? $device_data_batch[$item->submission_id] 
+                : array();
 
             $row = array(
                 $item->participant_id,
@@ -201,6 +297,19 @@ class EIPSI_Export_Service {
                 round($item->response_time_seconds / 60, 2),
                 $item->status,
                 $item->user_fingerprint,
+                // Device data fields (12 fields)
+                isset($device_data['canvas_fingerprint']) ? $device_data['canvas_fingerprint'] : '',
+                isset($device_data['webgl_renderer']) ? $device_data['webgl_renderer'] : '',
+                isset($device_data['screen_resolution']) ? $device_data['screen_resolution'] : '',
+                isset($device_data['screen_depth']) ? $device_data['screen_depth'] : '',
+                isset($device_data['pixel_ratio']) ? $device_data['pixel_ratio'] : '',
+                isset($device_data['timezone']) ? $device_data['timezone'] : '',
+                isset($device_data['language']) ? $device_data['language'] : '',
+                isset($device_data['cpu_cores']) ? $device_data['cpu_cores'] : '',
+                isset($device_data['ram_gb']) ? $device_data['ram_gb'] : '',
+                isset($device_data['browser_plugins']) ? $device_data['browser_plugins'] : '',
+                isset($device_data['touch_support']) ? $device_data['touch_support'] : '',
+                isset($device_data['cookies_enabled']) ? $device_data['cookies_enabled'] : '',
             );
 
             foreach ($response_data as $value) {
@@ -304,10 +413,12 @@ public function fetch_participants_data($study_id, $filters = array()) {
         require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/privacy-config.php';
     }
 
-    // v2.1.3 - Load Device Data Service for extended metadata
+    // v2.1.3 - Always load Device Data Service for extended metadata (even for wide exports)
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-device-data-service.php';
     $submission_ids = array_column($submissions, 'id');
-    $device_data_batch = EIPSI_Device_Data_Service::get_device_data_batch($submission_ids);
+    $device_data_batch = !empty($submission_ids) 
+        ? EIPSI_Device_Data_Service::get_device_data_batch($submission_ids) 
+        : array();
 
     // Process submissions and organize by participant
     $submissions_by_participant = array();

@@ -67,15 +67,10 @@ function eipsi_display_longitudinal_study_page() {
                data-tab="email-log">
                 📧 <?php esc_html_e('Email Log & Dropout', 'eipsi-forms'); ?>
             </a>
-            <a href="?page=eipsi-longitudinal-study&tab=longitudinal-pools"
-               class="nav-tab <?php echo esc_attr(($active_tab === 'longitudinal-pools') ? 'nav-tab-active' : ''); ?>"
-               data-tab="longitudinal-pools">
-                🏊 <?php esc_html_e('Longitudinal Pools', 'eipsi-forms'); ?>
-            </a>
-            <a href="?page=eipsi-longitudinal-study&tab=pool-analytics"
-               class="nav-tab <?php echo esc_attr(($active_tab === 'pool-analytics') ? 'nav-tab-active' : ''); ?>"
-               data-tab="pool-analytics">
-                📊 <?php esc_html_e('Pool Analytics', 'eipsi-forms'); ?>
+            <a href="?page=eipsi-pool-hub"
+               class="nav-tab <?php echo esc_attr(($active_tab === 'pool-hub' || $active_tab === 'longitudinal-pools' || $active_tab === 'pool-analytics') ? 'nav-tab-active' : ''); ?>"
+               data-tab="pool-hub">
+                🏊 <?php esc_html_e('Pool Hub', 'eipsi-forms'); ?>
             </a>
             <a href="?page=eipsi-longitudinal-study&tab=export"
                class="nav-tab <?php echo esc_attr(($active_tab === 'export') ? 'nav-tab-active' : ''); ?>"
