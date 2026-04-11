@@ -303,12 +303,12 @@ class EIPSI_Wave_Availability_Email_Service {
 
         // Preparar datos del email
         $to = $participant->email;
-        $subject = sprintf(__('Tu siguiente evaluación está disponible - %s', 'eipsi-forms'), $wave->name);
+        $subject = sprintf(__('Tu siguiente evaluación está disponible - %s', 'eipsi-forms'), $assignment->wave_name);
         
         // Generar magic link
         $magic_link = '';
         if (class_exists('EIPSI_MagicLinksService')) {
-            $link_data = EIPSI_MagicLinksService::generate_link($assignment->participant_id);
+            $link_data = EIPSI_MagicLinksService::generate_magic_link($assignment->participant_id);
             if ($link_data['success']) {
                 $magic_link = $link_data['link'];
             }

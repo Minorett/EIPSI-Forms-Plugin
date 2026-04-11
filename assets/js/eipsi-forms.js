@@ -3035,7 +3035,8 @@
 
                 // ✅ FIX: Agregar device_data desde el input oculto o window
                 let deviceData = null;
-                const deviceDataInput = form.querySelector( 'input[name="eipsi_device_data"]' );
+                // Buscar en todo el documento (el input se agrega al body, no al form)
+                const deviceDataInput = document.querySelector( 'input[name="eipsi_device_data"]' );
                 if ( deviceDataInput && deviceDataInput.value ) {
                     try {
                         deviceData = JSON.parse( deviceDataInput.value );
