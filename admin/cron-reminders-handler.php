@@ -133,8 +133,18 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
             $current_stage = (int) $assignment->reminder_count;
             $has_due_date = !empty($assignment->due_date);
             
+            // Load custom nudge config if exists
+            $custom_config = get_post_meta($assignment->wave_id, '_eipsi_reminder_config', true);
+            $custom_config = $custom_config ? json_decode($custom_config, true) : null;
+            
+            // Check if stage is enabled in custom config
+            if ($custom_config && isset($custom_config[$current_stage]) && empty($custom_config[$current_stage]['enabled'])) {
+                error_log("[EIPSI Cron] SKIPPED: Nudge {$current_stage} disabled in custom config for participant {$assignment->participant_id}");
+                continue;
+            }
+            
             // Check if we should send this nudge now
-            if (!EIPSI_Nudge_Service::should_send_nudge($assignment, (object) $assignment, $current_stage)) {
+            if (!EIPSI_Nudge_Service::should_send_nudge($assignment, (object) $assignment, $current_stage, $custom_config)) {
                 error_log("[EIPSI Cron] SKIPPED: Nudge {$current_stage} not yet due for participant {$assignment->participant_id}");
                 continue;
             }

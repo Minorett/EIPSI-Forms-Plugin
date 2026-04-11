@@ -183,29 +183,48 @@
 			} );
 		} );
 
-		// Send Reminders
-		$( document ).on( 'click', '.eipsi-send-reminder-btn', function () {
+		// Toggle follow-up reminders
+		$( document ).on( 'change', '.eipsi-follow-up-toggle', function () {
 			const waveId = $( this ).data( 'wave-id' );
-			showConfirmationDialog( {
-				title: 'Enviar recordatorios',
-				message:
-					'¿Enviar recordatorios a todos los participantes pendientes de esta onda?',
-				confirmText: 'Sí, enviar',
-				onConfirm() {
-					sendReminders( waveId );
+			const enabled = $( this ).is( ':checked' ) ? 1 : 0;
+			const $toggle = $( this );
+
+			$.ajax( {
+				url:
+					eipsiWavesManagerData.ajaxUrl ||
+					typeof ajaxurl !== 'undefined'
+						? ajaxurl
+						: '/wp-admin/admin-ajax.php',
+				type: 'POST',
+				data: {
+					action: 'eipsi_toggle_follow_up_reminders',
+					wave_id: waveId,
+					enabled: enabled,
+					nonce: eipsiWavesManagerData.nonce || eipsiFormsData.nonce,
+				},
+				success: function ( response ) {
+					if ( response.success ) {
+						showNotification( response.data.message, 'success' );
+					} else {
+						showNotification(
+							response.data.message || 'Error al actualizar',
+							'error'
+						);
+						$toggle.prop( 'checked', ! enabled ); // Revert on error
+					}
+				},
+				error: function () {
+					showNotification( 'Error de conexión', 'error' );
+					$toggle.prop( 'checked', ! enabled ); // Revert on error
 				},
 			} );
 		} );
 
-		// Send Manual Reminders
-		$( document ).on(
-			'click',
-			'.eipsi-send-manual-reminder-btn',
-			function () {
-				const waveId = $( this ).data( 'wave-id' );
-				openManualReminderModal( waveId );
-			}
-		);
+		// Config reminders button
+		$( document ).on( 'click', '.eipsi-config-reminders-btn', function () {
+			const waveId = $( this ).data( 'wave-id' );
+			openReminderConfigModal( waveId );
+		} );
 	}
 
 	// ===========================
@@ -2180,4 +2199,153 @@
 		);
 		$( '#eipsi-validation-warning-modal' ).fadeIn( 200 );
 	}
+
+	// ===========================
+	// REMINDER CONFIG MODAL
+	// ===========================
+
+	let currentConfigWaveId = null;
+	let defaultNudgeConfig = {
+		1: { enabled: true, hours: 24, unit: 'hours', subject: '' },
+		2: { enabled: true, hours: 48, unit: 'hours', subject: '' },
+		3: { enabled: true, hours: 72, unit: 'hours', subject: '' },
+		4: { enabled: true, hours: 96, unit: 'hours', subject: '' }
+	};
+
+	// Translate units for display
+	function translateUnit(unit) {
+		const translations = {
+			'minutes': 'minutos',
+			'hours': 'horas',
+			'days': 'días'
+		};
+		return translations[unit] || unit;
+	}
+
+	/**
+	 * Open reminder configuration modal
+	 * @param {number} waveId
+	 */
+	function openReminderConfigModal( waveId ) {
+		currentConfigWaveId = waveId;
+		$( '#config-wave-id' ).val( waveId );
+		
+		// Load existing configuration
+		loadNudgeConfig( waveId );
+		
+		$( '#eipsi-reminder-config-modal' ).fadeIn( 200 );
+	}
+
+	/**
+	 * Load nudge configuration for a wave
+	 * @param {number} waveId
+	 */
+	function loadNudgeConfig( waveId ) {
+		$.ajax( {
+			url:
+				eipsiWavesManagerData.ajaxUrl ||
+				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+				type: 'POST',
+				data: {
+					action: 'eipsi_get_reminder_config',
+					wave_id: waveId,
+					nonce: eipsiWavesManagerData.nonce || eipsiFormsData.nonce,
+				},
+				success: function ( response ) {
+					if ( response.success && response.data.config ) {
+						populateNudgeForm( response.data.config );
+					} else {
+						// Use defaults
+						populateNudgeForm( defaultNudgeConfig );
+					}
+				},
+				error: function () {
+					populateNudgeForm( defaultNudgeConfig );
+				},
+			} );
+	}
+
+	/**
+	 * Populate form with nudge configuration
+	 * @param {Object} config
+	 */
+	function populateNudgeForm( config ) {
+		for ( let stage = 1; stage <= 4; stage++ ) {
+			const stageConfig = config[ stage ] || defaultNudgeConfig[ stage ];
+			$( '#nudge-' + stage + '-enabled' ).prop( 'checked', stageConfig.enabled );
+			$( '#nudge-' + stage + '-hours' ).val( stageConfig.hours );
+			$( '#nudge-' + stage + '-unit' ).val( stageConfig.unit );
+			$( '#nudge-' + stage + '-subject' ).val( stageConfig.subject || '' );
+		}
+	}
+
+	/**
+	 * Save nudge configuration
+	 */
+	function saveNudgeConfig() {
+		if ( ! currentConfigWaveId ) return;
+
+		const config = {};
+		for ( let stage = 1; stage <= 4; stage++ ) {
+			config[ stage ] = {
+				enabled: $( '#nudge-' + stage + '-enabled' ).is( ':checked' ),
+				hours: parseInt( $( '#nudge-' + stage + '-hours' ).val() ) || 24,
+				unit: $( '#nudge-' + stage + '-unit' ).val(),
+				subject: $( '#nudge-' + stage + '-subject' ).val().trim(),
+			};
+		}
+
+		$.ajax( {
+			url:
+				eipsiWavesManagerData.ajaxUrl ||
+				( typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php' ),
+			type: 'POST',
+			data: {
+				action: 'eipsi_save_reminder_config',
+				wave_id: currentConfigWaveId,
+				config: JSON.stringify( config ),
+				nonce: eipsiWavesManagerData.nonce || eipsiFormsData.nonce,
+			},
+			success: function ( response ) {
+				if ( response.success ) {
+					showNotification( response.data.message, 'success' );
+					$( '#eipsi-reminder-config-modal' ).fadeOut( 200 );
+				} else {
+					showNotification(
+						response.data.message || 'Error al guardar',
+						'error'
+					);
+				}
+			},
+			error: function () {
+				showNotification( 'Error de conexión', 'error' );
+			},
+		} );
+	}
+
+	/**
+	 * Reset nudge configuration to defaults
+	 */
+	function resetNudgeConfig() {
+		populateNudgeForm( defaultNudgeConfig );
+		showNotification( 'Valores restaurados a por defecto', 'info' );
+	}
+
+	// Event handlers for reminder config modal
+	$( document ).on( 'click', '#save-reminder-config-btn', saveNudgeConfig );
+	$( document ).on( 'click', '#reset-reminder-config-btn', resetNudgeConfig );
+	$( document ).on(
+		'click',
+		'#eipsi-reminder-config-modal .eipsi-close-modal, #eipsi-reminder-config-modal .eipsi-close-modal-btn',
+		function () {
+			$( '#eipsi-reminder-config-modal' ).fadeOut( 200 );
+		}
+	);
+
+	// Close modal on escape key
+	$( document ).on( 'keydown', function ( e ) {
+		if ( e.key === 'Escape' ) {
+			$( '#eipsi-reminder-config-modal' ).fadeOut( 200 );
+		}
+	} );
 } )( window.jQuery );

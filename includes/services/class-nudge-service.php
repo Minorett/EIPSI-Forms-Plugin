@@ -173,14 +173,34 @@ class EIPSI_Nudge_Service {
     }
     
     /**
+     * Convert any time unit to seconds for calculations
+     * 
+     * @param int $value Time value
+     * @param string $unit Unit: minutes, hours, days
+     * @return int Seconds
+     */
+    public static function convert_to_seconds($value, $unit = 'days') {
+        switch ($unit) {
+            case 'minutes':
+                return $value * 60;
+            case 'hours':
+                return $value * 3600;
+            case 'days':
+            default:
+                return $value * 86400;
+        }
+    }
+    
+    /**
      * Check if a nudge should be sent now
      * 
      * @param object $assignment Assignment data
      * @param object $wave Wave data
      * @param int $current_stage Current reminder stage
+     * @param array $custom_config Optional custom config with unit support
      * @return bool Whether nudge should be sent
      */
-    public static function should_send_nudge($assignment, $wave, $current_stage) {
+    public static function should_send_nudge($assignment, $wave, $current_stage, $custom_config = null) {
         // Stage 0 is always sent immediately (handled separately)
         if ($current_stage === self::NUDGE_AVAILABLE) {
             return true;
@@ -192,11 +212,23 @@ class EIPSI_Nudge_Service {
         }
         
         $has_due_date = !empty($wave->due_date);
-        $config = self::get_nudge_config($current_stage, $has_due_date);
         
-        if (!$config) {
-            return false;
+        // Use custom config if provided (from modal), otherwise use defaults
+        if ($custom_config && isset($custom_config[$current_stage])) {
+            $config = $custom_config[$current_stage];
+            $timing_value = isset($config['hours']) ? intval($config['hours']) : 24;
+            $timing_unit = isset($config['unit']) ? $config['unit'] : 'hours';
+        } else {
+            $config = self::get_nudge_config($current_stage, $has_due_date);
+            if (!$config) {
+                return false;
+            }
+            $timing_value = $config['timing_days'];
+            $timing_unit = 'days';
         }
+        
+        // Convert to seconds for calculation
+        $timing_seconds = self::convert_to_seconds($timing_value, $timing_unit);
         
         $now = current_time('timestamp');
         
@@ -204,18 +236,18 @@ class EIPSI_Nudge_Service {
             // Calculate based on due date
             $due_ts = strtotime($wave->due_date);
             
-            if ($config['timing'] === 'days_before') {
-                $trigger_ts = strtotime("-{$config['timing_days']} days", $due_ts);
+            if (isset($config['timing']) && $config['timing'] === 'days_before') {
+                $trigger_ts = $due_ts - $timing_seconds;
                 // Send if we're within the trigger window (±12 hours for cron hourly)
                 return ($now >= $trigger_ts && $now < $due_ts);
             } else {
-                $trigger_ts = strtotime("+{$config['timing_days']} days", $due_ts);
+                $trigger_ts = $due_ts + $timing_seconds;
                 return ($now >= $trigger_ts);
             }
         } else {
             // Calculate based on available date
             $available_ts = strtotime($assignment->available_at);
-            $trigger_ts = strtotime("+{$config['timing_days']} days", $available_ts);
+            $trigger_ts = $available_ts + $timing_seconds;
             
             return ($now >= $trigger_ts);
         }

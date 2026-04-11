@@ -907,4 +907,295 @@ participante4@ejemplo.com; participante5@ejemplo.com', 'eipsi-forms'); ?>"></tex
         </div>
     </div>
 </div>
+
+<!-- Reminder Config Modal -->
+<div id="eipsi-reminder-config-modal" class="eipsi-modal" style="display: none;">
+    <div class="eipsi-modal-content eipsi-modal-large">
+        <span class="eipsi-close-modal">&times;</span>
+        <h3><?php esc_html_e('Configuración de Recordatorios', 'eipsi-forms'); ?></h3>
+        <p class="description">
+            <?php esc_html_e('Personaliza el timing y los mensajes de cada recordatorio automático para esta toma.', 'eipsi-forms'); ?>
+        </p>
+        
+        <input type="hidden" id="config-wave-id" value="">
+        
+        <div class="eipsi-nudge-config-section">
+            <h4><?php esc_html_e('Nudge 0 - Disponibilidad inmediata', 'eipsi-forms'); ?></h4>
+            <p class="description"><?php esc_html_e('Se envía automáticamente cuando la toma se hace disponible. No se puede desactivar.', 'eipsi-forms'); ?></p>
+            <div class="form-group">
+                <label><?php esc_html_e('Asunto del email:', 'eipsi-forms'); ?></label>
+                <input type="text" id="nudge-0-subject" value="Tu siguiente evaluación está disponible" class="regular-text">
+            </div>
+        </div>
+        
+        <div class="eipsi-nudge-config-section">
+            <h4><?php esc_html_e('Nudge 1 - Primer recordatorio', 'eipsi-forms'); ?></h4>
+            <div class="form-group">
+                <label class="eipsi-checkbox-label">
+                    <input type="checkbox" id="nudge-1-enabled" checked>
+                    <?php esc_html_e('Activar este recordatorio', 'eipsi-forms'); ?>
+                </label>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label><?php esc_html_e('Enviar después de:', 'eipsi-forms'); ?></label>
+                    <input type="number" id="nudge-1-hours" value="24" min="1" max="10080">
+                    <select id="nudge-1-unit">
+                        <option value="minutes"><?php esc_html_e('minutos', 'eipsi-forms'); ?></option>
+                        <option value="hours" selected><?php esc_html_e('horas', 'eipsi-forms'); ?></option>
+                        <option value="days"><?php esc_html_e('días', 'eipsi-forms'); ?></option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label><?php esc_html_e('Asunto personalizado (opcional):', 'eipsi-forms'); ?></label>
+                <input type="text" id="nudge-1-subject" value="" placeholder="Recordatorio amable - {{survey_name}}" class="regular-text">
+            </div>
+        </div>
+        
+        <div class="eipsi-nudge-config-section">
+            <h4><?php esc_html_e('Nudge 2 - Segundo recordatorio', 'eipsi-forms'); ?></h4>
+            <div class="form-group">
+                <label class="eipsi-checkbox-label">
+                    <input type="checkbox" id="nudge-2-enabled" checked>
+                    <?php esc_html_e('Activar este recordatorio', 'eipsi-forms'); ?>
+                </label>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label><?php esc_html_e('Enviar después de:', 'eipsi-forms'); ?></label>
+                    <input type="number" id="nudge-2-hours" value="48" min="1" max="10080">
+                    <select id="nudge-2-unit">
+                        <option value="minutes"><?php esc_html_e('minutos', 'eipsi-forms'); ?></option>
+                        <option value="hours" selected><?php esc_html_e('horas', 'eipsi-forms'); ?></option>
+                        <option value="days"><?php esc_html_e('días', 'eipsi-forms'); ?></option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label><?php esc_html_e('Asunto personalizado (opcional):', 'eipsi-forms'); ?></label>
+                <input type="text" id="nudge-2-subject" value="" placeholder="Recordatorio importante - {{survey_name}}" class="regular-text">
+            </div>
+        </div>
+        
+        <div class="eipsi-nudge-config-section">
+            <h4><?php esc_html_e('Nudge 3 - Tercer recordatorio (urgente)', 'eipsi-forms'); ?></h4>
+            <div class="form-group">
+                <label class="eipsi-checkbox-label">
+                    <input type="checkbox" id="nudge-3-enabled" checked>
+                    <?php esc_html_e('Activar este recordatorio', 'eipsi-forms'); ?>
+                </label>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label><?php esc_html_e('Enviar después de:', 'eipsi-forms'); ?></label>
+                    <input type="number" id="nudge-3-hours" value="72" min="1" max="10080">
+                    <select id="nudge-3-unit">
+                        <option value="minutes"><?php esc_html_e('minutos', 'eipsi-forms'); ?></option>
+                        <option value="hours" selected><?php esc_html_e('horas', 'eipsi-forms'); ?></option>
+                        <option value="days"><?php esc_html_e('días', 'eipsi-forms'); ?></option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label><?php esc_html_e('Asunto personalizado (opcional):', 'eipsi-forms'); ?></label>
+                <input type="text" id="nudge-3-subject" value="" placeholder="Urgente: Evaluación pendiente - {{survey_name}}" class="regular-text">
+            </div>
+        </div>
+        
+        <div class="eipsi-nudge-config-section">
+            <h4><?php esc_html_e('Nudge 4 - Último recordatorio', 'eipsi-forms'); ?></h4>
+            <div class="form-group">
+                <label class="eipsi-checkbox-label">
+                    <input type="checkbox" id="nudge-4-enabled" checked>
+                    <?php esc_html_e('Activar este recordatorio', 'eipsi-forms'); ?>
+                </label>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label><?php esc_html_e('Enviar después de:', 'eipsi-forms'); ?></label>
+                    <input type="number" id="nudge-4-hours" value="96" min="1" max="10080">
+                    <select id="nudge-4-unit">
+                        <option value="minutes"><?php esc_html_e('minutos', 'eipsi-forms'); ?></option>
+                        <option value="hours" selected><?php esc_html_e('horas', 'eipsi-forms'); ?></option>
+                        <option value="days"><?php esc_html_e('días', 'eipsi-forms'); ?></option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label><?php esc_html_e('Asunto personalizado (opcional):', 'eipsi-forms'); ?></label>
+                <input type="text" id="nudge-4-subject" value="" placeholder="ÚLTIMO recordatorio - {{survey_name}}" class="regular-text">
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="button button-primary" id="save-reminder-config-btn">
+                <?php esc_html_e('Guardar Configuración', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="button eipsi-close-modal-btn">
+                <?php esc_html_e('Cancelar', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="button button-link" id="reset-reminder-config-btn">
+                <?php esc_html_e('Restaurar valores por defecto', 'eipsi-forms'); ?>
+            </button>
+        </div>
+    </div>
+</div>
 <?php endif; ?>
+
+<style>
+/* Toggle switch para seguimiento de recordatorios */
+.eipsi-reminder-toggle-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 5px;
+    padding: 5px 10px;
+    background: #f0f0f1;
+    border-radius: 4px;
+}
+
+.eipsi-toggle-label {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    cursor: pointer;
+}
+
+.eipsi-toggle-label input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.eipsi-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .3s;
+    border-radius: 22px;
+}
+
+.eipsi-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+.eipsi-toggle-label input:checked + .eipsi-toggle-slider {
+    background-color: #2271b1;
+}
+
+.eipsi-toggle-label input:checked + .eipsi-toggle-slider:before {
+    transform: translateX(18px);
+}
+
+.eipsi-toggle-text {
+    font-size: 12px;
+    color: #3c434a;
+    white-space: nowrap;
+}
+
+.eipsi-config-reminders-btn {
+    padding: 0 5px !important;
+    min-height: auto !important;
+    line-height: 1 !important;
+}
+
+/* Timeline preview en wave cards */
+.eipsi-nudge-timeline {
+    margin-top: 15px;
+    padding: 10px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    border-left: 3px solid #2271b1;
+}
+
+.eipsi-nudge-timeline-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #3c434a;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.eipsi-nudge-stage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    margin: 4px 0;
+    color: #646970;
+}
+
+.eipsi-nudge-stage.active {
+    color: #2271b1;
+    font-weight: 500;
+}
+
+.eipsi-nudge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #dcdcde;
+}
+
+.eipsi-nudge-stage.active .eipsi-nudge-dot {
+    background: #2271b1;
+}
+
+/* Nudge config modal sections */
+.eipsi-nudge-config-section {
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #fff;
+}
+
+.eipsi-nudge-config-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #1d2327;
+}
+
+.eipsi-nudge-config-section .description {
+    font-size: 12px;
+    color: #646970;
+    margin-bottom: 10px;
+}
+
+.eipsi-nudge-config-section .form-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.eipsi-nudge-config-section input[type="number"] {
+    width: 70px;
+}
+
+.eipsi-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.eipsi-checkbox-label input[type="checkbox"] {
+    margin: 0;
+}
+</style>

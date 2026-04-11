@@ -418,18 +418,19 @@ class EIPSI_Email_Service {
     }
 
     /**
-     * Send wave reminder email.
+     * Send wave reminder email (nudge system).
      *
-     * Template: includes/emails/wave-reminder.php
+     * Templates: includes/emails/wave-nudge-0.php to wave-nudge-4.php
      *
      * @param int        $survey_id Survey ID.
      * @param int        $participant_id Participant ID.
      * @param int|object $wave Wave object or ID.
+     * @param int        $nudge_stage Nudge stage (0-4), default 0.
      * @return bool True si enviado, false si error.
      * @since 1.4.1
      * @access public
      */
-    public static function send_wave_reminder_email($survey_id, $participant_id, $wave) {
+    public static function send_wave_reminder_email($survey_id, $participant_id, $wave, $nudge_stage = 0) {
         $participant = self::get_participant($participant_id);
         if (!$participant) return false;
 
@@ -465,20 +466,50 @@ class EIPSI_Email_Service {
 
         // Calculate due date formatted
         $due_date = !empty($wave->due_date) ? date_i18n(get_option('date_format'), strtotime($wave->due_date)) : 'Pronto';
+        
+        // Build due date HTML block for templates
+        if (!empty($wave->due_date)) {
+            $due_date_html = '<div class="due-box">';
+            $due_date_html .= '<p style="margin: 0;"><strong>Fecha límite: ' . $due_date . '</strong></p>';
+            $due_date_html .= '<p style="margin: 5px 0 0; font-size: 13px;">Por favor completa la evaluación antes de esta fecha.</p>';
+            $due_date_html .= '</div>';
+        } else {
+            $due_date_html = '';
+        }
 
         $placeholders = array(
             'first_name' => $participant->first_name,
             'survey_name' => $survey_name,
             'wave_index' => isset($wave->wave_index) ? "Toma " . $wave->wave_index : $wave->name,
             'due_at' => $due_date,
+            'due_date_html' => $due_date_html,
             'magic_link' => $magic_link,
             'estimated_time' => isset($wave->estimated_time) ? $wave->estimated_time : '10-15',
             'investigator_name' => get_option('eipsi_investigator_name', 'Equipo de Investigación'),
             'investigator_email' => get_option('eipsi_investigator_email', get_option('admin_email')),
         );
 
-        $subject = "Recordatorio: Tu próxima toma en {$survey_name}";
-        $content = self::render_template('wave-reminder', $placeholders);
+        // Select template based on nudge stage
+        $stage = intval($nudge_stage);
+        $template_name = 'wave-nudge-' . $stage;
+        
+        // Fallback to wave-reminder if nudge template doesn't exist
+        $template_file = plugin_dir_path(dirname(dirname(__FILE__))) . 'includes/emails/' . $template_name . '.php';
+        if (!file_exists($template_file)) {
+            $template_name = 'wave-reminder';
+        }
+        
+        // Subject based on stage
+        $subjects = array(
+            0 => "Tu siguiente evaluación está disponible - {$survey_name}",
+            1 => "Recordatorio amable - {$survey_name}",
+            2 => "Recordatorio importante - {$survey_name}",
+            3 => "Urgente: Evaluación pendiente - {$survey_name}",
+            4 => "ÚLTIMO recordatorio - {$survey_name}",
+        );
+        $subject = isset($subjects[$stage]) ? $subjects[$stage] : "Recordatorio - {$survey_name}";
+        
+        $content = self::render_template($template_name, $placeholders);
 
         return self::send_email($survey_id, $participant_id, $participant->email, 'reminder', $subject, $content);
     }
