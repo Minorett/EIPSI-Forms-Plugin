@@ -1668,9 +1668,8 @@ function eipsi_forms_submit_form_handler() {
         }
         
         // ✅ v2.1.3 - Guardar device data extendido en tabla separada
-        if ($insert_id && !empty($device_data_raw)) {
-            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-device-data-service.php';
-            EIPSI_Device_Data_Service::save_device_data($insert_id, $device_data_raw);
+        if ($insert_id && !empty($metadata_array['device_data']) && class_exists('EIPSI_Device_Data_Service')) {
+            EIPSI_Device_Data_Service::save_device_data($insert_id, $metadata_array['device_data']);
         }
         
         // Marcar partial response como completado

@@ -248,12 +248,22 @@ $available_forms = get_posts(array(
                                 <button type="button" class="button button-secondary eipsi-extend-deadline-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
                                     📅 <?php esc_html_e('Extender', 'eipsi-forms'); ?>
                                 </button>
-                                <button type="button" class="button button-secondary eipsi-send-reminder-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
-                                    📧 <?php esc_html_e('Recordatorio', 'eipsi-forms'); ?>
-                                </button>
-                                <button type="button" class="button button-secondary eipsi-send-manual-reminder-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
-                                    ✉️ <?php esc_html_e('Manual', 'eipsi-forms'); ?>
-                                </button>
+                                
+                                <!-- Toggle seguimiento automático -->
+                                <div class="eipsi-reminder-toggle-wrapper">
+                                    <label class="eipsi-toggle-label">
+                                        <input type="checkbox" 
+                                               class="eipsi-follow-up-toggle" 
+                                               data-wave-id="<?php echo esc_attr($wave['id']); ?>"
+                                               <?php checked(!empty($wave['follow_up_reminders_enabled'])); ?>>
+                                        <span class="eipsi-toggle-slider"></span>
+                                    </label>
+                                    <span class="eipsi-toggle-text">🔔 <?php esc_html_e('Seguimiento', 'eipsi-forms'); ?></span>
+                                    <button type="button" class="button button-link eipsi-config-reminders-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>" title="<?php esc_attr_e('Configurar recordatorios', 'eipsi-forms'); ?>">
+                                        ⚙️
+                                    </button>
+                                </div>
+                                
                                 <button type="button" class="button button-link-delete eipsi-delete-wave-btn" data-wave-id="<?php echo esc_attr($wave['id']); ?>">
                                     🗑️ <?php esc_html_e('Eliminar', 'eipsi-forms'); ?>
                                 </button>

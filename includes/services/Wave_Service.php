@@ -8,8 +8,14 @@
  * @since 1.4.0
  */
 
+// Prevent direct access
 if (!defined('ABSPATH')) {
     exit;
+}
+
+// Ensure email service is available for reminder functions
+if (!class_exists('EIPSI_Email_Service')) {
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
 }
 
 class Wave_Service {
