@@ -21,34 +21,6 @@ function eipsi_render_pool_hub_v2() {
 
     global $wpdb;
 
-    // Handle pool deletion
-    if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['pool_id'])) {
-        $pool_id = intval($_GET['pool_id']);
-        $nonce = isset($_GET['_wpnonce']) ? $_GET['_wpnonce'] : '';
-
-        if (!wp_verify_nonce($nonce, 'eipsi_delete_longitudinal_pool_' . $pool_id)) {
-            wp_die(__('Nonce verification failed.', 'eipsi-forms'));
-        }
-
-        if (!eipsi_user_can_manage_longitudinal()) {
-            wp_die(__('You do not have permission to delete pools.', 'eipsi-forms'));
-        }
-
-        $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
-        $assignments_table = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
-
-        // Delete related assignments first (foreign key constraint)
-        $wpdb->delete($assignments_table, ['pool_id' => $pool_id], ['%d']);
-
-        // Delete the pool
-        $result = $wpdb->delete($pools_table, ['id' => $pool_id], ['%d']);
-
-        if ($result !== false) {
-            // Redirect to avoid re-deletion on refresh
-            wp_redirect(admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_deleted'));
-            exit;
-        }
-    }
     $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
     $assignments_table = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
 
@@ -77,7 +49,6 @@ function eipsi_render_pool_hub_v2() {
     ?>
 
     <div class="wrap eipsi-pool-hub-v2">
-        <h1>🏊 Pool Hub</h1>
         
         <?php if ($message === 'pool_deleted') : ?>
             <div class="notice notice-success is-dismissible">
@@ -97,13 +68,15 @@ function eipsi_render_pool_hub_v2() {
             <!-- Empty State - No pools created yet -->
             <div class="eipsi-empty-state-full">
                 <div class="eipsi-empty-icon">🏊</div>
-                <h2><?php _e('No hay pools creados', 'eipsi-forms'); ?></h2>
-                <p><?php _e('Los pools te permiten distribuir participantes entre múltiples estudios longitudinales con probabilidades configurables.', 'eipsi-forms'); ?></p>
+                <h2><?php _e('Bienvenido a Pool Hub', 'eipsi-forms'); ?></h2>
+                <p><?php _e('Los pools te permiten distribuir participantes entre multiples estudios longitudinales con probabilidades configurables. Crea tu primer pool para empezar.', 'eipsi-forms'); ?></p>
                 <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create">
                     + <?php _e('Crear mi primer pool', 'eipsi-forms'); ?>
                 </button>
             </div>
         <?php else : ?>
+            <h1>🏊 Pool Hub</h1>
+            
             <!-- Sub-tabs -->
             <h2 class="nav-tab-wrapper eipsi-sub-tabs">
                 <a href="#overview" class="nav-tab nav-tab-active" data-subtab="overview">
@@ -334,80 +307,6 @@ function eipsi_render_pool_hub_v2() {
                 <div class="eipsi-empty-state-small">
                     <p><?php _e('Seleccioná un pool para ver analytics detallados.', 'eipsi-forms'); ?></p>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Create/Edit Pool Modal -->
-    <div class="eipsi-modal-overlay" id="eipsi-pool-modal" style="display: none;">
-        <div class="eipsi-modal">
-            <div class="eipsi-modal-header">
-                <h2 id="eipsi-modal-title"><?php _e('Crear nuevo pool', 'eipsi-forms'); ?></h2>
-                <button class="eipsi-modal-close" type="button">&times;</button>
-            </div>
-            <div class="eipsi-modal-body">
-                <form id="eipsi-pool-form" method="post" action="<?php echo admin_url('admin-post.php'); ?>">
-                    <input type="hidden" name="action" value="eipsi_save_pool">
-                    <input type="hidden" name="pool_id" id="eipsi-pool-id" value="0">
-                    <?php wp_nonce_field('eipsi_save_pool_nonce', 'pool_nonce'); ?>
-
-                    <table class="form-table">
-                        <tr>
-                            <th><label for="eipsi-pool-name"><?php _e('Nombre del pool', 'eipsi-forms'); ?></label></th>
-                            <td>
-                                <input type="text" name="pool_name" id="eipsi-pool-name" class="regular-text" required>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><label for="eipsi-pool-description"><?php _e('Descripción', 'eipsi-forms'); ?></label></th>
-                            <td>
-                                <textarea name="pool_description" id="eipsi-pool-description" class="large-text" rows="3"></textarea>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><label for="eipsi-pool-method"><?php _e('Método', 'eipsi-forms'); ?></label></th>
-                            <td>
-                                <select name="method" id="eipsi-pool-method">
-                                    <option value="seeded">🎲 <?php _e('Seeded (mismo participante = misma asignación)', 'eipsi-forms'); ?></option>
-                                    <option value="pure-random">🎰 <?php _e('Pure-random (cada acceso es nuevo)', 'eipsi-forms'); ?></option>
-                                </select>
-                                <p class="description">
-                                    <?php _e('Seeded: El participante siempre va al mismo estudio. Random: Distribución completamente aleatoria.', 'eipsi-forms'); ?>
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <h3><?php _e('Estudios y probabilidades', 'eipsi-forms'); ?></h3>
-                    <p class="description">
-                        <?php _e('Agregá los estudios al pool y asigná probabilidades. La suma debe ser exactamente 100%.', 'eipsi-forms'); ?>
-                    </p>
-
-                    <div id="eipsi-pool-studies-rows">
-                        <!-- Dynamic rows added via JS -->
-                    </div>
-
-                    <div class="eipsi-pool-actions">
-                        <button type="button" class="button button-secondary" id="eipsi-add-study-row">
-                            + <?php _e('Agregar estudio', 'eipsi-forms'); ?>
-                        </button>
-                        <button type="button" class="button button-secondary" id="eipsi-distribute-probabilities">
-                            🔀 <?php _e('Distribuir equitativamente', 'eipsi-forms'); ?>
-                        </button>
-                    </div>
-
-                    <div class="eipsi-probability-total" id="eipsi-probability-total-display">
-                        <span class="eipsi-total-label"><?php _e('Total:', 'eipsi-forms'); ?></span>
-                        <span class="eipsi-total-value" id="eipsi-total-value">0</span>%
-                        <span class="eipsi-total-status" id="eipsi-total-status">❌</span>
-                    </div>
-
-                    <input type="hidden" name="pool_studies_data" id="eipsi-pool-studies-data" value="">
-                </form>
-            </div>
-            <div class="eipsi-modal-footer">
-                <button type="button" class="button button-secondary eipsi-modal-cancel"><?php _e('Cancelar', 'eipsi-forms'); ?></button>
-                <button type="button" class="button button-primary" id="eipsi-save-pool-btn"><?php _e('Guardar pool', 'eipsi-forms'); ?></button>
             </div>
         </div>
     </div>
@@ -1599,6 +1498,81 @@ function eipsi_render_pool_hub_v2() {
     </script>
 
     <?php endif; // End if (empty($pools)) ?>
+
+    <!-- Create/Edit Pool Modal (available in both empty state and with pools) -->
+    <div class="eipsi-modal-overlay" id="eipsi-pool-modal" style="display: none;">
+        <div class="eipsi-modal">
+            <div class="eipsi-modal-header">
+                <h2 id="eipsi-modal-title"><?php _e('Crear nuevo pool', 'eipsi-forms'); ?></h2>
+                <button class="eipsi-modal-close" type="button">&times;</button>
+            </div>
+            <div class="eipsi-modal-body">
+                <form id="eipsi-pool-form" method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+                    <input type="hidden" name="action" value="eipsi_save_pool">
+                    <input type="hidden" name="pool_id" id="eipsi-pool-id" value="0">
+                    <?php wp_nonce_field('eipsi_save_pool_nonce', 'pool_nonce'); ?>
+
+                    <table class="form-table">
+                        <tr>
+                            <th><label for="eipsi-pool-name"><?php _e('Nombre del pool', 'eipsi-forms'); ?></label></th>
+                            <td>
+                                <input type="text" name="pool_name" id="eipsi-pool-name" class="regular-text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label for="eipsi-pool-description"><?php _e('Descripción', 'eipsi-forms'); ?></label></th>
+                            <td>
+                                <textarea name="pool_description" id="eipsi-pool-description" class="large-text" rows="3"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label for="eipsi-pool-method"><?php _e('Método', 'eipsi-forms'); ?></label></th>
+                            <td>
+                                <select name="method" id="eipsi-pool-method">
+                                    <option value="seeded">🎲 <?php _e('Seeded (mismo participante = misma asignación)', 'eipsi-forms'); ?></option>
+                                    <option value="pure-random">🎰 <?php _e('Pure-random (cada acceso es nuevo)', 'eipsi-forms'); ?></option>
+                                </select>
+                                <p class="description">
+                                    <?php _e('Seeded: El participante siempre va al mismo estudio. Random: Distribución completamente aleatoria.', 'eipsi-forms'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <h3><?php _e('Estudios y probabilidades', 'eipsi-forms'); ?></h3>
+                    <p class="description">
+                        <?php _e('Agregá los estudios al pool y asigná probabilidades. La suma debe ser exactamente 100%.', 'eipsi-forms'); ?>
+                    </p>
+
+                    <div id="eipsi-pool-studies-rows">
+                        <!-- Dynamic rows added via JS -->
+                    </div>
+
+                    <div class="eipsi-pool-actions">
+                        <button type="button" class="button button-secondary" id="eipsi-add-study-row">
+                            + <?php _e('Agregar estudio', 'eipsi-forms'); ?>
+                        </button>
+                        <button type="button" class="button button-secondary" id="eipsi-distribute-probabilities">
+                            🔀 <?php _e('Distribuir equitativamente', 'eipsi-forms'); ?>
+                        </button>
+                    </div>
+
+                    <div class="eipsi-probability-total" id="eipsi-probability-total-display">
+                        <span class="eipsi-total-label"><?php _e('Total:', 'eipsi-forms'); ?></span>
+                        <span class="eipsi-total-value" id="eipsi-total-value">0</span>%
+                        <span class="eipsi-total-status" id="eipsi-total-status">❌</span>
+                    </div>
+
+                    <input type="hidden" name="pool_studies_data" id="eipsi-pool-studies-data" value="">
+                </form>
+            </div>
+            <div class="eipsi-modal-footer">
+                <button type="button" class="button button-secondary eipsi-modal-cancel"><?php _e('Cancelar', 'eipsi-forms'); ?></button>
+                <button type="button" class="button button-primary" id="eipsi-save-pool-btn"><?php _e('Guardar pool', 'eipsi-forms'); ?></button>
+            </div>
+        </div>
+    </div>
+
     </div><!-- End wrap -->
 
     <?php

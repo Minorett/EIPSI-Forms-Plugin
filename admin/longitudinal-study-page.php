@@ -25,6 +25,29 @@ function eipsi_display_longitudinal_study_page() {
         wp_die(__('Unauthorized', 'eipsi-forms'));
     }
 
+    global $wpdb;
+
+    // Handle pool deletion early (before any output)
+    if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['pool_id']) && isset($_GET['tab']) && $_GET['tab'] === 'pool-hub') {
+        $pool_id = intval($_GET['pool_id']);
+        $nonce = isset($_GET['_wpnonce']) ? $_GET['_wpnonce'] : '';
+
+        if (wp_verify_nonce($nonce, 'eipsi_delete_longitudinal_pool_' . $pool_id) && eipsi_user_can_manage_longitudinal()) {
+            $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+            $assignments_table = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
+
+            // Delete related assignments first (foreign key constraint)
+            $wpdb->delete($assignments_table, ['pool_id' => $pool_id], ['%d']);
+
+            // Delete the pool
+            $wpdb->delete($pools_table, ['id' => $pool_id], ['%d']);
+
+            // Redirect to avoid re-deletion on refresh
+            wp_redirect(admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_deleted'));
+            exit;
+        }
+    }
+
     $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'dashboard-study';
     $allowed_tabs = array(
         'create-study',
