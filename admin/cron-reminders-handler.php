@@ -53,9 +53,13 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
     foreach ($studies as $study) {
         // Guard against null config (json_decode(null) is deprecated in PHP 8.1+)
         $config = !empty($study->config) ? json_decode($study->config, true) : array();
-        if (!is_array($config) || empty($config['reminders_enabled'])) {
-            continue;
+        if (!is_array($config)) {
+            $config = array();
         }
+
+        // Nudge 0 (available) always sends regardless of reminders_enabled setting
+        // Nudges 1-4 depend on reminders_enabled configuration
+        $reminders_enabled = !empty($config['reminders_enabled']);
 
         $today = current_time('Y-m-d');
         $max_emails = isset($config['max_reminder_emails']) ? intval($config['max_reminder_emails']) : 100;
@@ -120,6 +124,7 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         ));
 
         // Filter Nudge 0 assignments to only those where wave is NOW available
+        error_log("[EIPSI Cron] NUDGE 0 DIAGNOSTIC: Found " . count($nudge_zero_assignments) . " pending assignments with reminder_count=0");
         $available_now_assignments = array();
         $now = current_time('timestamp');
         foreach ($nudge_zero_assignments as $assignment) {
@@ -230,9 +235,19 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
                     // Increment reminder_count to stop trying
                     EIPSI_Assignment_Service::increment_reminder_count($assignment->id);
                     error_log("[EIPSI Cron] Max retries reached, marking as attempted");
+                } else {
+                    // Log why Nudge 0 was not sent
+                    $reason = isset($result['reason']) ? $result['reason'] : 'unknown';
+                    error_log("[EIPSI Cron] Nudge 0 NOT SENT for participant={$assignment->participant_id}, wave={$assignment->wave_id}, reason={$reason}");
                 }
                 
                 continue; // Skip old logic for Nudge 0
+            }
+
+            // Nudges 1-4 only send if reminders_enabled is set
+            if (!$reminders_enabled) {
+                error_log("[EIPSI Cron] SKIPPED: Nudge {$current_stage} - reminders disabled for study {$study->id}");
+                continue;
             }
             
             // Check rate limiting - max 1 email per participant per wave per 24 hours
@@ -305,6 +320,11 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         }
     }
 
+    error_log("[EIPSI Cron] ========== RESUMEN NUDGE 0 ==========");
+    error_log("[EIPSI Cron] Estudios procesados: " . count($studies));
+    error_log("[EIPSI Cron] Total emails enviados (Nudge 0 + otros): {$total_emails_sent}");
+    error_log("[EIPSI Cron] Verificar en base de datos: SELECT * FROM wp_survey_assignments WHERE reminder_count = 0 AND status = 'pending'");
+    error_log("[EIPSI Cron] ==================================");
     error_log('[EIPSI Cron] Completed hourly wave reminders' . ($specific_study_id ? " for study {$specific_study_id}" : ''));
     
     // Return summary for manual cron
