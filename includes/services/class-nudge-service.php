@@ -201,10 +201,16 @@ class EIPSI_Nudge_Service {
      * @return bool Whether nudge should be sent
      */
     public static function should_send_nudge($assignment, $wave, $current_stage, $custom_config = null) {
+        $assignment_id = isset($assignment->id) ? $assignment->id : 'unknown';
+        $participant_id = isset($assignment->participant_id) ? $assignment->participant_id : 'unknown';
+        $wave_id = isset($wave->id) ? $wave->id : 'unknown';
+        $wave_name = isset($wave->name) ? $wave->name : 'unknown';
+        
         // Stage 0 (NUDGE_AVAILABLE) is always sent immediately when wave becomes available
         // This is the INITIAL availability email, NOT a follow-up reminder
         if ((int)$current_stage === self::NUDGE_AVAILABLE) {
-            error_log("[EIPSI Nudge] Stage 0 (NUDGE_AVAILABLE) - always sending immediately");
+            $available_at = isset($assignment->available_at) ? $assignment->available_at : 'not_set';
+            error_log("[EIPSI Nudge] CHECK NUDGE 0: assignment_id={$assignment_id}, participant_id={$participant_id}, wave_id={$wave_id}, wave_name={$wave_name}, available_at={$available_at}, result=ALLOWED");
             return true;
         }
         
