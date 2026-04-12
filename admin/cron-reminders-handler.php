@@ -117,7 +117,7 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
              AND p.email IS NOT NULL
              AND a.reminder_count = 0
              HAVING last_submission_date IS NOT NULL
-             ORDER BY a.id ASC
+             ORDER BY a.id DESC
              LIMIT %d",
             $study->id,
             $max_emails
@@ -165,7 +165,7 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
              AND a.reminder_count >= 1
              AND a.reminder_count < 5
              AND w.follow_up_reminders_enabled = 1
-             ORDER BY a.id ASC
+             ORDER BY a.id DESC
              LIMIT %d",
             $study->id,
             $max_emails
@@ -239,6 +239,8 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
                     // Set rate limit to prevent duplicate in next cron run
                     $rate_limit_key = "eipsi_reminder_{$assignment->participant_id}_{$assignment->wave_id}_0";
                     set_transient($rate_limit_key, true, 24 * HOUR_IN_SECONDS);
+                    // v2.2.1 - Delay SMTP para evitar rate limiting (2 segundos entre emails)
+                    sleep(2);
                 } elseif ($result['reason'] === 'max_retries_reached') {
                     // Increment reminder_count to stop trying
                     EIPSI_Assignment_Service::increment_reminder_count($assignment->id);
@@ -390,7 +392,7 @@ function eipsi_send_dropout_recovery_hourly() {
                   WHERE a2.participant_id = p.id AND a2.study_id = a.study_id AND a2.status = 'submitted'),
                  p.created_at
              )), INTERVAL (w.interval_days + %d) DAY) <= %s
-             ORDER BY a.id ASC
+             ORDER BY a.id DESC
              LIMIT %d",
             $study->id,
             $dropout_days,

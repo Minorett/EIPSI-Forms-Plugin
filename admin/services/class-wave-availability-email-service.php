@@ -204,7 +204,7 @@ class EIPSI_Wave_Availability_Email_Service {
         // MÉTODO 2 (BACKUP): Verificar si el usuario ya interactuó con la wave
         // Esto previene duplicados incluso si el email_log se borra o el metadata falla
         $already_accessed = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_submissions 
+            "SELECT COUNT(*) FROM {$wpdb->prefix}eipsi_form_submissions 
              WHERE participant_id = %d AND wave_id = %d",
             $participant_id, 
             $wave_id

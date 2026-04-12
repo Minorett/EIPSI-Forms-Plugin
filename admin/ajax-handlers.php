@@ -1713,6 +1713,8 @@ function eipsi_forms_submit_form_handler() {
         // === Task 2.4B: Marcar assignment como submitted y obtener próxima toma ===
         $next_wave_data = null;
         $has_next_wave = false;
+        $nudge_0_sent = false;
+        $nudge_0_message = '';
         
         // ✅ v1.5.6 - DEBUG: Log para verificar variables de contexto longitudinal
         if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -1860,6 +1862,35 @@ function eipsi_forms_submit_form_handler() {
                 );
                 
                 error_log(sprintf('[EIPSI-DIAG] Prepared next_wave_data: %s', json_encode($next_wave_data)));
+                
+                // v2.2.2 - TRIGGER INMEDIATO: Enviar Nudge 0 ahora si la siguiente toma YA está disponible
+                // (evita esperar al cron hourly cuando interval=0 o el tiempo ya pasó)
+                $available_timestamp = intval($available_at);
+                $current_timestamp = current_time('timestamp');
+                if ($available_timestamp <= $current_timestamp) {
+                    error_log(sprintf('[EIPSI-DIAG] NEXT WAVE AVAILABLE NOW: wave_id=%d, available_at=%s, current=%s - Triggering immediate Nudge 0 email', 
+                        $next_wave['wave_id'], date('Y-m-d H:i:s', $available_timestamp), date('Y-m-d H:i:s', $current_timestamp)));
+                    
+                    // Asegurar que la clase esté cargada
+                    if (!class_exists('EIPSI_Wave_Availability_Email_Service')) {
+                        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-wave-availability-email-service.php';
+                    }
+                    
+                    if (class_exists('EIPSI_Wave_Availability_Email_Service')) {
+                        $email_result = EIPSI_Wave_Availability_Email_Service::ensure_wave_availability_email_sent(
+                            $longitudinal_participant_id,
+                            $study_id,
+                            $next_wave['wave_id']
+                        );
+                        error_log(sprintf('[EIPSI-DIAG] Immediate Nudge 0 email result: %s', json_encode($email_result)));
+                        
+                        // Guardar para agregar al success_response después
+                        if ($email_result['success'] && $email_result['sent']) {
+                            $nudge_0_sent = true;
+                            $nudge_0_message = __('Email de siguiente toma enviado inmediatamente', 'eipsi-forms');
+                        }
+                    }
+                }
             }
         } else {
             error_log('[EIPSI-DIAG] CONDICIÓN NO CUMPLIDA - No se procesa assignment. Faltan: ' . 
@@ -1891,6 +1922,12 @@ function eipsi_forms_submit_form_handler() {
             $success_response['fallback_used'] = true;
             $success_response['warning'] = __('Form was saved to local database (external database temporarily unavailable).', 'eipsi-forms');
             $success_response['error_code'] = $error_info['error_code'];
+        }
+        
+        // v2.2.2 - Agregar info de email Nudge 0 si se envió inmediatamente
+        if (!empty($nudge_0_sent)) {
+            $success_response['nudge_0_sent'] = true;
+            $success_response['nudge_0_message'] = $nudge_0_message;
         }
         
         wp_send_json_success($success_response);
