@@ -721,14 +721,14 @@ function eipsi_forms_activate() {
     }
 
     // === Cron Reminders Scheduling (Task 4.2 - Longitudinal) ===
-    // Schedule hourly wave reminders
+    // Schedule wave reminders every 5 minutes (for faster email delivery when waves become available)
     if (!wp_next_scheduled('eipsi_send_wave_reminders_hourly')) {
-        wp_schedule_event(time(), 'hourly', 'eipsi_send_wave_reminders_hourly');
+        wp_schedule_event(time(), 'every_5_minutes', 'eipsi_send_wave_reminders_hourly');
     }
 
-    // Schedule hourly dropout recovery
+    // Schedule dropout recovery every 5 minutes
     if (!wp_next_scheduled('eipsi_send_dropout_recovery_hourly')) {
-        wp_schedule_event(time(), 'hourly', 'eipsi_send_dropout_recovery_hourly');
+        wp_schedule_event(time(), 'every_5_minutes', 'eipsi_send_dropout_recovery_hourly');
     }
     
     // Phase 2: Schedule daily purge of access logs (GDPR compliance)
@@ -917,6 +917,14 @@ add_filter('cron_schedules', function($schedules) {
         $schedules['eipsi_monthly'] = array(
             'interval' => 30 * DAY_IN_SECONDS,
             'display' => __('Once Monthly (EIPSI)', 'eipsi-forms'),
+        );
+    }
+    
+    // v2.2.2 - Intervalo cada 5 minutos para emails de waves disponibles
+    if (!isset($schedules['every_5_minutes'])) {
+        $schedules['every_5_minutes'] = array(
+            'interval' => 5 * MINUTE_IN_SECONDS,
+            'display' => __('Every 5 Minutes', 'eipsi-forms'),
         );
     }
     
