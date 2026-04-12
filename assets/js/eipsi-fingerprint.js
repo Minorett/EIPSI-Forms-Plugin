@@ -295,6 +295,9 @@
                 deviceDataInput.value = JSON.stringify( deviceData );
             } );
 
+            // Guardar en variable global para acceso rápido desde eipsi-forms.js
+            window.eipsiDeviceData = deviceData;
+
             // eslint-disable-next-line no-console
             console.log(
                 '[EIPSI Forms] Device data captured:',

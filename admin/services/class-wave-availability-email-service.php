@@ -308,7 +308,7 @@ class EIPSI_Wave_Availability_Email_Service {
         // Generar magic link
         $magic_link = '';
         if (class_exists('EIPSI_MagicLinksService')) {
-            $link_data = EIPSI_MagicLinksService::generate_magic_link($assignment->participant_id);
+            $link_data = EIPSI_MagicLinksService::generate_magic_link($study_id, $assignment->participant_id);
             if ($link_data['success']) {
                 $magic_link = $link_data['link'];
             }

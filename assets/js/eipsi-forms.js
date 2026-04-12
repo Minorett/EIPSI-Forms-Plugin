@@ -3033,28 +3033,33 @@
                 // Fusionar metadata existente con metadata de timing
                 const timingMetadata = getTimingMetadata();
 
-                // ✅ FIX: Agregar device_data desde el input oculto o window
+                // ✅ FIX: Agregar device_data desde window (ya recolectado por eipsi-fingerprint.js) o input oculto
                 let deviceData = null;
-                // Buscar en todo el documento (el input se agrega al body, no al form)
-                const deviceDataInput = document.querySelector( 'input[name="eipsi_device_data"]' );
-                if ( deviceDataInput && deviceDataInput.value ) {
-                    try {
-                        deviceData = JSON.parse( deviceDataInput.value );
-                    } catch ( e ) {
-                        console.error( '[EIPSI Forms] Error parsing device_data:', e );
-                    }
-                }
-                if ( ! deviceData && window.eipsiDeviceData ) {
+                // Primero intentar obtener de window (datos ya procesados por eipsi-fingerprint.js)
+                if ( window.eipsiDeviceData && Object.keys( window.eipsiDeviceData ).length > 0 ) {
                     deviceData = window.eipsiDeviceData;
+                    console.log( '[EIPSI Forms] Using deviceData from window.eipsiDeviceData' );
+                } else {
+                    // Fallback: buscar en el input oculto
+                    const deviceDataInput = document.querySelector( 'input[name="eipsi_device_data"]' );
+                    if ( deviceDataInput && deviceDataInput.value ) {
+                        try {
+                            deviceData = JSON.parse( deviceDataInput.value );
+                            console.log( '[EIPSI Forms] Using deviceData from input field' );
+                        } catch ( e ) {
+                            console.error( '[EIPSI Forms] Error parsing device_data:', e );
+                        }
+                    }
                 }
 
                 const finalMetadata = {
                     ...window.eipsiMetadata,
                     ...timingMetadata,
-                    device_data: deviceData,
+                    ...(deviceData && Object.keys(deviceData).length > 0 ? { device_data: deviceData } : {}),
                 };
 
                 console.log( '[EIPSI Forms] Final metadata device_data keys:', deviceData ? Object.keys( deviceData ).join( ',' ) : 'NULL' );
+                console.log( '[EIPSI Forms] Metadata being sent:', JSON.stringify( finalMetadata ).substring( 0, 500 ) + '...' );
 
                 formData.append( 'metadata', JSON.stringify( finalMetadata ) );
             }
