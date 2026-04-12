@@ -308,9 +308,13 @@ class EIPSI_Wave_Availability_Email_Service {
         // Generar magic link
         $magic_link = '';
         if (class_exists('EIPSI_MagicLinksService')) {
-            $link_data = EIPSI_MagicLinksService::generate_magic_link($study_id, $assignment->participant_id);
-            if ($link_data['success']) {
-                $magic_link = $link_data['link'];
+            $token = EIPSI_MagicLinksService::generate_magic_link($study_id, $assignment->participant_id);
+            if ($token !== false) {
+                // Construir el magic link URL
+                $magic_link = add_query_arg(array(
+                    'eipsi_token' => $token,
+                    'survey_id' => $study_id
+                ), home_url('/eipsi-survey/'));
             }
         }
 
