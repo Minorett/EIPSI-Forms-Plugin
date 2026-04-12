@@ -331,7 +331,7 @@ class EIPSI_Wave_Availability_Email_Service {
         
         if ($sent) {
             // Log exitoso
-            $log_id = self::log_email_success($study_id, $assignment->participant_id, $wave->id);
+            $log_id = self::log_email_success($study_id, $assignment->participant_id, $wave->id, $to);
             
             return array(
                 'success' => true,
@@ -354,8 +354,17 @@ class EIPSI_Wave_Availability_Email_Service {
     /**
      * Log de email exitoso
      */
-    private static function log_email_success($survey_id, $participant_id, $wave_id) {
+    private static function log_email_success($survey_id, $participant_id, $wave_id, $recipient_email = '') {
         global $wpdb;
+        
+        // Usar el email pasado como parámetro, o buscarlo si no se proporcionó
+        if (empty($recipient_email)) {
+            $participant = $wpdb->get_row($wpdb->prepare(
+                "SELECT email FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+                $participant_id
+            ));
+            $recipient_email = $participant ? $participant->email : '';
+        }
         
         $result = $wpdb->insert(
             $wpdb->prefix . 'survey_email_log',
@@ -363,7 +372,7 @@ class EIPSI_Wave_Availability_Email_Service {
                 'survey_id' => $survey_id,
                 'participant_id' => $participant_id,
                 'email_type' => 'reminder',
-                'recipient_email' => EIPSI_Email_Service::get_participant_email($participant_id),
+                'recipient_email' => $recipient_email,
                 'subject' => 'Tu siguiente evaluación está disponible',
                 'status' => 'sent',
                 'sent_at' => current_time('mysql'),

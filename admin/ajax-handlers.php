@@ -3700,6 +3700,7 @@ function eipsi_add_participant_magic_link_handler() {
     // Cargar servicios
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-service.php';
     require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-device-data-service.php';
     
     // Generar password automático seguro
     $password = wp_generate_password(16, true, true);
