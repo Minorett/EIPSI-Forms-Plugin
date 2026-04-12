@@ -1682,6 +1682,10 @@ function eipsi_forms_submit_form_handler() {
         }
         
         // ✅ v2.1.3 - Guardar device data extendido en tabla separada
+        // Asegurar que la clase esté cargada
+        if (!class_exists('EIPSI_Device_Data_Service')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-device-data-service.php';
+        }
         error_log("[EIPSI-SUBMIT-DIAG] CHECK save_device_data: insert_id={$insert_id}, has_device_data=" . (isset($metadata_array['device_data']) ? 'YES' : 'NO') . ", class_exists=" . (class_exists('EIPSI_Device_Data_Service') ? 'YES' : 'NO'));
         if ($insert_id && !empty($metadata_array['device_data']) && class_exists('EIPSI_Device_Data_Service')) {
             error_log("[EIPSI-SUBMIT-DIAG] CALLING save_device_data with insert_id={$insert_id}, device_data_keys=" . implode(',', array_keys($metadata_array['device_data'])));

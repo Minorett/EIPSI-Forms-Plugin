@@ -10,8 +10,17 @@
  */
 
 $participant_name = trim($participant->first_name . ' ' . $participant->last_name);
-$wave_name = $wave->name;
-$wave_index = $wave->wave_index;
+// Manejar diferentes formatos de $wave (objeto o array)
+if (is_object($wave)) {
+    $wave_name = isset($wave->name) ? $wave->name : (isset($wave->wave_name) ? $wave->wave_name : 'Siguiente evaluación');
+    $wave_index = isset($wave->wave_index) ? $wave->wave_index : (isset($wave->index) ? $wave->index : 1);
+} elseif (is_array($wave)) {
+    $wave_name = isset($wave['name']) ? $wave['name'] : (isset($wave['wave_name']) ? $wave['wave_name'] : 'Siguiente evaluación');
+    $wave_index = isset($wave['wave_index']) ? $wave['wave_index'] : (isset($wave['index']) ? $wave['index'] : 1);
+} else {
+    $wave_name = 'Siguiente evaluación';
+    $wave_index = 1;
+}
 ?>
 <!DOCTYPE html>
 <html>
