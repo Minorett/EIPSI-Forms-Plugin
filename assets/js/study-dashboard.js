@@ -219,6 +219,194 @@
         },
 
         /**
+         * Open dashboard modal and load study data
+         */
+        openDashboard: function(studyId) {
+            console.log('[FUNC] openDashboard called, studyId:', studyId);
+            this.currentStudyId = studyId;
+            $('#eipsi-study-dashboard-modal').fadeIn(200);
+            this.loadStudyData(studyId);
+            this.startAutoRefresh();
+        },
+
+        /**
+         * Load study data via AJAX
+         */
+        loadStudyData: function(studyId) {
+            console.log('[FUNC] loadStudyData called, studyId:', studyId);
+            const self = this;
+
+            if (!studyId) {
+                console.error('[ERROR] loadStudyData: studyId is null or undefined');
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'GET',
+                data: {
+                    action: 'eipsi_get_study_overview',
+                    study_id: studyId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    console.log('[LOAD] AJAX success, response:', response);
+                    if (response.success) {
+                        self.renderDashboard(response.data);
+                    } else {
+                        console.error('[LOAD] Server error:', response.data);
+                        self.showToast('Error al cargar datos del estudio', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[LOAD] AJAX error:', status, error);
+                    self.showToast('Error de conexión al cargar datos', 'error');
+                }
+            });
+        },
+
+        /**
+         * Render dashboard with study data
+         */
+        renderDashboard: function(data) {
+            console.log('[FUNC] renderDashboard called, data:', data);
+            const general = data.general;
+            const participants = data.participants;
+            const waves = data.waves;
+            const emails = data.emails;
+            const page = data.page;
+
+            // Header info
+            const studyDisplayId = general.study_code || general.id;
+            $('#study-name-display').text(general.study_name || 'Estudio sin nombre');
+            $('#study-status-pill').text(general.status === 'active' ? 'Activo' : general.status === 'paused' ? 'Pausado' : 'Cerrado');
+            $('#study-status-pill').attr('class', 'pill pill-' + (general.status === 'active' ? 'active' : general.status === 'paused' ? 'paused' : 'closed'));
+
+            const created = new Date(general.created_at);
+            const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+            $('#study-meta-display').text(
+                'Creado ' + created.getDate() + ' ' + months[created.getMonth()] + ' ' + created.getFullYear() +
+                ' · ID: ' + general.id +
+                ' · ' + waves.length + ' tomas' +
+                ' · ' + participants.total + ' participantes'
+            );
+
+            // Shortcode
+            const shortcode = page && page.shortcode ? page.shortcode : '[eipsi_longitudinal_study study_code="' + studyDisplayId + '"]';
+            $('#shortcode-display').text(shortcode);
+
+            // Page URL
+            if (page && page.url) {
+                $('#study-page-url').val(page.url);
+                $('#view-study-page, #edit-study-page').show();
+            } else {
+                $('#study-page-url').val('');
+                $('#view-study-page, #edit-study-page').hide();
+            }
+
+            // KPIs
+            $('#kpi-total').text(participants.total || 0);
+            $('#kpi-active').text(participants.active || 0);
+            $('#kpi-completed').text(participants.completed || 0);
+            $('#kpi-emails').text(emails.sent_today || 0);
+
+            // Control buttons visibility
+            if (general.status === 'active') {
+                $('#btn-pause-study').show();
+                $('#btn-resume-study').hide();
+            } else if (general.status === 'paused') {
+                $('#btn-pause-study').hide();
+                $('#btn-resume-study').show();
+            } else {
+                $('#btn-pause-study, #btn-resume-study').hide();
+            }
+
+            // Emails stats
+            $('#emails-today').text(emails.sent_today || 0);
+            $('#emails-failed').text(emails.failed || 0);
+            $('#emails-pending').text(emails.pending || 0);
+
+            // Render waves
+            this.renderWaves(waves);
+        },
+
+        /**
+         * Render waves cards
+         */
+        renderWaves: function(waves) {
+            console.log('[FUNC] renderWaves called, waves count:', waves.length);
+            const container = $('#waves-container');
+            container.empty();
+
+            if (!waves || waves.length === 0) {
+                container.html('<p style="color:#666;padding:20px;">No hay tomas configuradas</p>');
+                return;
+            }
+
+            waves.forEach(function(wave, index) {
+                const waveNum = index + 1;
+                const progress = wave.progress || 0;
+                const completed = wave.completed || 0;
+                const total = wave.total || 0;
+
+                let deadlineText = 'Sin fecha límite';
+                if (wave.has_due_date && wave.deadline) {
+                    const d = new Date(wave.deadline);
+                    deadlineText = 'Vence: ' + d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+                }
+
+                const html = `
+                    <div class="wave-card" data-wave-id="${wave.id}">
+                        <div class="wave-header">
+                            <h4>${wave.name || 'Toma ' + waveNum}</h4>
+                            <span class="wave-status status-${wave.status || 'active'}">${wave.status === 'active' ? 'Activa' : 'Pausada'}</span>
+                        </div>
+                        <div class="wave-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progress}%"></div>
+                            </div>
+                            <span class="progress-text">${completed}/${total} (${progress}%)</span>
+                        </div>
+                        <div class="wave-meta">
+                            <span>${deadlineText}</span>
+                            ${wave.has_due_date ? `<button class="button button-small extend-deadline" data-wave-id="${wave.id}" data-deadline="${wave.deadline}">Extender</button>` : ''}
+                        </div>
+                        <div class="wave-actions">
+                            <button class="button button-small send-reminder" data-wave-id="${wave.id}">Enviar recordatorio</button>
+                        </div>
+                    </div>
+                `;
+                container.append(html);
+            });
+        },
+
+        /**
+         * Start auto-refresh interval
+         */
+        startAutoRefresh: function() {
+            console.log('[FUNC] startAutoRefresh called');
+            const self = this;
+            this.stopAutoRefresh();
+            this.autoRefreshInterval = setInterval(function() {
+                if (self.currentStudyId) {
+                    console.log('[AUTO] Refreshing study data...');
+                    self.loadStudyData(self.currentStudyId);
+                }
+            }, 30000); // 30 seconds
+        },
+
+        /**
+         * Stop auto-refresh interval
+         */
+        stopAutoRefresh: function() {
+            console.log('[FUNC] stopAutoRefresh called');
+            if (this.autoRefreshInterval) {
+                clearInterval(this.autoRefreshInterval);
+                this.autoRefreshInterval = null;
+            }
+        },
+
+        /**
          * Generate Magic Link (show in UI, don't send email)
          */
         generateMagicLink: function() {

@@ -913,7 +913,7 @@ function eipsi_render_pool_hub_v2() {
         }
 
         .eipsi-modal {
-            background: white;
+            background: white !important;
             border-radius: 8px;
             width: 90%;
             max-width: 700px;
@@ -921,6 +921,43 @@ function eipsi_render_pool_hub_v2() {
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            color: #1e293b !important;
+        }
+
+        /* Force light mode for all modal contents */
+        .eipsi-force-light-mode,
+        .eipsi-force-light-mode .eipsi-modal,
+        .eipsi-force-light-mode select,
+        .eipsi-force-light-mode input,
+        .eipsi-force-light-mode textarea {
+            background: white !important;
+            color: #1e293b !important;
+            border-color: #c3c4c7 !important;
+        }
+
+        .eipsi-force-light-mode select option {
+            background: white !important;
+            color: #1e293b !important;
+        }
+
+        .eipsi-force-light-mode th,
+        .eipsi-force-light-mode label,
+        .eipsi-force-light-mode .description {
+            color: #374151 !important;
+        }
+
+        /* Form table select styling - ensure visibility */
+        .eipsi-modal .form-table select {
+            background: white !important;
+            color: #1e293b !important;
+            border: 1px solid #c3c4c7 !important;
+            border-radius: 4px;
+            padding: 6px 8px;
+            font-size: 14px;
+            min-height: 36px;
+            display: inline-block;
+            visibility: visible;
+            opacity: 1;
         }
 
         .eipsi-modal-small {
@@ -964,6 +1001,9 @@ function eipsi_render_pool_hub_v2() {
             padding: 20px;
             overflow-y: auto;
             flex: 1;
+            max-height: calc(90vh - 140px);
+            background: white !important;
+            color: #1e293b !important;
         }
 
         .eipsi-modal-footer {
@@ -1622,8 +1662,8 @@ function eipsi_render_pool_hub_v2() {
     <?php endif; // End if (empty($pools)) ?>
 
     <!-- Create/Edit Pool Modal (available in both empty state and with pools) -->
-    <div class="eipsi-modal-overlay" id="eipsi-pool-modal" style="display: none;">
-        <div class="eipsi-modal">
+    <div class="eipsi-modal-overlay eipsi-force-light-mode" id="eipsi-pool-modal" style="display: none;">
+        <div class="eipsi-modal eipsi-force-light-mode">
             <div class="eipsi-modal-header">
                 <h2 id="eipsi-modal-title"><?php _e('Crear nuevo pool', 'eipsi-forms'); ?></h2>
                 <button class="eipsi-modal-close" type="button">&times;</button>
