@@ -784,9 +784,9 @@ class EIPSI_Email_Service {
      * @param string $content Email HTML content.
      * @return bool True si enviado.
      * @since 1.4.1
-     * @access private
+     * @access public
      */
-    private static function send_email($survey_id, $participant_id, $to, $type, $subject, $content) {
+    public static function send_email($survey_id, $participant_id, $to, $type, $subject, $content) {
         $headers = array('Content-Type: text/html; charset=UTF-8');
 
         try {
