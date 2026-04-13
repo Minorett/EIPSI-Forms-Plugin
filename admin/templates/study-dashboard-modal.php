@@ -2084,3 +2084,153 @@ function sendIndividualReminderConfirmed() {
 
 })(jQuery);
 </script>
+
+<!-- FALLBACK HANDLERS for buttons (in case external JS is cached) -->
+<script>
+(function($) {
+    'use strict';
+    
+    $(document).ready(function() {
+        // Add Participant
+        $('#action-add-participant').off('click').on('click', function() {
+            if (typeof openAddParticipantModal === 'function') {
+                openAddParticipantModal();
+            } else if (typeof StudyDashboard !== 'undefined' && StudyDashboard.openAddParticipant) {
+                StudyDashboard.openAddParticipant();
+            } else {
+                $('#eipsi-add-participant-modal').fadeIn(200);
+            }
+        });
+        
+        // View Participants
+        $('#action-view-participants').off('click').on('click', function() {
+            if (typeof openParticipantsModal === 'function') {
+                openParticipantsModal();
+            } else if (typeof StudyDashboard !== 'undefined' && StudyDashboard.openParticipantsModal) {
+                StudyDashboard.openParticipantsModal();
+            } else {
+                $('#eipsi-participants-list-modal').fadeIn(200);
+                $('#participants-loading').show();
+            }
+        });
+        
+        // Import CSV
+        $('#action-import-csv').off('click').on('click', function() {
+            $('#eipsi-csv-import-modal').fadeIn(200);
+        });
+        
+        // Download Data - redirect to export tab
+        $('#action-download-data').off('click').on('click', function() {
+            const studyId = window.currentStudyId || $('#study-id-display').text();
+            if (studyId) {
+                window.location.href = 'admin.php?page=eipsi-longitudinal-study&tab=export&study_id=' + studyId;
+            }
+        });
+        
+        // Copy Shortcode
+        $('#copy-shortcode').off('click').on('click', function() {
+            const text = $('#shortcode-display').text();
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Shortcode copiado al portapapeles');
+            });
+        });
+        
+        // Copy Page URL
+        $('#copy-page-url').off('click').on('click', function() {
+            const text = $('#study-page-url').val();
+            navigator.clipboard.writeText(text).then(function() {
+                alert('URL copiada al portapapeles');
+            });
+        });
+        
+        // Send Global Reminder
+        $('#send-global-reminder').off('click').on('click', function() {
+            if (typeof StudyDashboard !== 'undefined' && StudyDashboard.sendGlobalReminder) {
+                StudyDashboard.sendGlobalReminder();
+            } else {
+                alert('Enviando recordatorio global...');
+            }
+        });
+    });
+})(jQuery);
+</script>
+
+<!-- FORCE EIPSI WAVE FORMAT - Overrides any other renderWaves -->
+<script>
+(function($) {
+    'use strict';
+    
+    // Override renderWaves to ensure EIPSI format is always used
+    if (typeof window.StudyDashboard !== 'undefined') {
+        const originalRender = window.StudyDashboard.renderWaves || function() {};
+        
+        window.StudyDashboard.renderWaves = function(waves) {
+            const $container = $('#waves-container');
+            if (!$container.length) return;
+            
+            $container.empty();
+            
+            if (!waves || !waves.length) {
+                $container.html('<div style="padding:20px;text-align:center;color:#64748b">No hay tomas configuradas</div>');
+                return;
+            }
+            
+            waves.forEach(function(wave, index) {
+                const waveNum = index + 1;
+                const progress = wave.progress || 0;
+                const completed = wave.completed || 0;
+                const total = wave.total || 0;
+                const hasDeadline = wave.has_due_date && wave.deadline;
+                const deadlineFormatted = wave.deadline_formatted || 'sin fecha límite';
+                const isActive = wave.status === 'active';
+                
+                const nudgeConfig = wave.nudge_config || {};
+                const nudgesEnabled = (nudgeConfig.nudge_1 && nudgeConfig.nudge_1.enabled) || 
+                                     (nudgeConfig.nudge_2 && nudgeConfig.nudge_2.enabled) || false;
+                
+                const html = '<div class="wave-card" data-wave-id="' + wave.id + '">' +
+                    '<div class="wave-card-head">' +
+                        '<div class="wave-left">' +
+                            '<span class="wave-idx">T' + waveNum + '</span>' +
+                            '<div>' +
+                                '<div class="wave-name">' + (wave.wave_name || 'Toma ' + waveNum) + '</div>' +
+                                '<div class="wave-sub">' + (wave.interval_text || '') + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="wave-right">' +
+                            '<span class="pill ' + (isActive ? 'pill-active' : '') + '">' + (isActive ? 'Activo' : 'Inactivo') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="wave-body">' +
+                        '<div class="prog-row">' +
+                            '<div class="prog-track"><div class="prog-fill ' + (progress === 100 ? 'fill-green' : progress > 0 ? 'fill-blue' : 'fill-gray') + '" style="width:' + progress + '%"></div></div>' +
+                            '<span class="prog-lbl" style="color:' + (progress === 100 ? '#006666' : '#2c3e50') + '">' + completed + '/' + total + ' · ' + progress + '%</span>' +
+                        '</div>' +
+                        '<div class="deadline-row">' +
+                            '<span>Plazo:</span>' +
+                            '<span class="deadline-val ' + (hasDeadline ? '' : 'none') + '">' + deadlineFormatted + '</span>' +
+                            '<button class="btn-link" onclick="toggleDeadlineEditor(\'de' + wave.id + '\', this)">' + (hasDeadline ? 'Cambiar' : 'Asignar plazo') + '</button>' +
+                            (hasDeadline ? '<button class="btn-link btn-link-red" onclick="removeDeadline(' + wave.id + ')">Quitar</button>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="nudge-section">' +
+                        '<div class="nudge-toggle-row" onclick="toggleNudgePanel(\'n' + wave.id + '\')">' +
+                            '<span class="nudge-lbl ' + (nudgesEnabled ? 'on' : '') + '" id="nl' + wave.id + '">' + 
+                                (nudgesEnabled ? 'Recordatorios activados' : 'Recordatorios desactivados') + 
+                            '</span>' +
+                            '<label class="toggle" onclick="event.stopPropagation()">' +
+                                '<input type="checkbox" ' + (nudgesEnabled ? 'checked' : '') + ' onchange="toggleNudgePanel(\'n' + wave.id + '\')">' +
+                                '<span class="tslider"></span>' +
+                            '</label>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+                
+                $container.append(html);
+            });
+        };
+    }
+})(jQuery);
+</script>
+
+</div>

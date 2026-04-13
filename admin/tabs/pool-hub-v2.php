@@ -19,6 +19,9 @@ function eipsi_render_pool_hub_v2() {
         wp_die(__('Unauthorized', 'eipsi-forms'));
     }
 
+    // Ensure jQuery is loaded
+    wp_enqueue_script('jquery');
+
     global $wpdb;
 
     $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
@@ -1202,22 +1205,16 @@ function eipsi_render_pool_hub_v2() {
         });
 
         // Create pool buttons - v2.2.3: Fixed to work with empty state
-        document.querySelectorAll('.eipsi-create-pool-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const modalTitle = document.getElementById('eipsi-modal-title');
-                const poolIdInput = document.getElementById('eipsi-pool-id');
-                const poolForm = document.getElementById('eipsi-pool-form');
-                
-                if (modalTitle) modalTitle.textContent = '<?php _e("Crear nuevo pool", "eipsi-forms"); ?>';
-                if (poolIdInput) poolIdInput.value = '0';
-                if (poolForm) poolForm.reset();
-                document.getElementById('eipsi-pool-studies-rows').innerHTML = '';
+        // Using jQuery delegation for dynamically added buttons
+        $(document).on('click', '.eipsi-create-pool-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const modalType = $(this).data('open-modal');
+            if (modalType === 'create' && poolModal) {
                 updateProbabilityTotal();
                 openModal(poolModal);
-            });
+            }
         });
 
         // Edit pool
