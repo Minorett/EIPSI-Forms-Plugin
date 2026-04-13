@@ -668,6 +668,141 @@
         },
 
         /**
+         * Open Email Logs Modal
+         */
+        openEmailLogs: function() {
+            console.log('[FUNC] openEmailLogs called');
+            this.loadEmailLogs(1);
+            $('#eipsi-email-logs-modal').fadeIn(200);
+        },
+
+        /**
+         * Load Email Logs via AJAX
+         */
+        loadEmailLogs: function(page) {
+            console.log('[FUNC] loadEmailLogs called, page:', page);
+            const self = this;
+            const studyId = this.currentStudyId;
+
+            if (!studyId) {
+                console.error('[ERROR] loadEmailLogs: studyId is null');
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'GET',
+                data: {
+                    action: 'eipsi_get_email_logs',
+                    study_id: studyId,
+                    page: page,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    console.log('[EMAIL-LOGS] AJAX success:', response);
+                    if (response.success) {
+                        self.renderEmailLogs(response.data);
+                    } else {
+                        self.showToast('Error al cargar logs de email', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[EMAIL-LOGS] AJAX error:', status, error);
+                    self.showToast('Error de conexión al cargar logs', 'error');
+                }
+            });
+        },
+
+        /**
+         * Render Email Logs in modal
+         */
+        renderEmailLogs: function(data) {
+            console.log('[FUNC] renderEmailLogs called, data:', data);
+            const $tbody = $('#email-logs-table tbody');
+            $tbody.empty();
+
+            if (!data.logs || data.logs.length === 0) {
+                $tbody.append('<tr><td colspan="6" style="text-align:center;padding:20px;">No hay emails registrados</td></tr>');
+                return;
+            }
+
+            data.logs.forEach(function(log) {
+                const statusClass = log.status === 'sent' ? 'status-sent' : 'status-failed';
+                const statusText = log.status === 'sent' ? 'Enviado' : 'Fallido';
+                const row = `
+                    <tr>
+                        <td>${log.participant_email || '-'}</td>
+                        <td>${log.email_type || '-'}</td>
+                        <td><span class="email-status ${statusClass}">${statusText}</span></td>
+                        <td>${log.sent_at || '-'}</td>
+                        <td>${log.opened_at || '-'}</td>
+                        <td>${log.error_message || '-'}</td>
+                    </tr>
+                `;
+                $tbody.append(row);
+            });
+        },
+
+        /**
+         * Send Reminder for a wave
+         */
+        sendReminder: function(waveId) {
+            console.log('[FUNC] sendReminder called, waveId:', waveId);
+            const self = this;
+            const studyId = this.currentStudyId;
+
+            if (!studyId || !waveId) {
+                console.error('[ERROR] sendReminder: missing studyId or waveId');
+                return;
+            }
+
+            if (!confirm('¿Enviar recordatorio a todos los participantes pendientes de esta toma?')) {
+                console.log('[REMINDER] User cancelled');
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_send_wave_reminder',
+                    study_id: studyId,
+                    wave_id: waveId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                beforeSend: function() {
+                    console.log('[REMINDER] Sending AJAX request...');
+                },
+                success: function(response) {
+                    console.log('[REMINDER] AJAX success:', response);
+                    if (response.success) {
+                        self.showToast('✅ Recordatorios enviados: ' + (response.data.sent_count || 0), 'success');
+                        self.loadStudyData(studyId);
+                    } else {
+                        self.showToast('❌ Error: ' + (response.data.message || 'No se pudieron enviar los recordatorios'), 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[REMINDER] AJAX error:', status, error);
+                    self.showToast('Error de conexión al enviar recordatorios', 'error');
+                }
+            });
+        },
+
+        /**
+         * Open Add Participant Modal
+         */
+        openAddParticipant: function() {
+            console.log('[FUNC] openAddParticipant called');
+            $('#add-participant-study-id').val(this.currentStudyId);
+            $('#participant-email').val('');
+            $('#add-participant-error').hide();
+            $('#add-participant-success').hide();
+            $('#eipsi-add-participant-modal').fadeIn(200);
+            $('#participant-email').focus();
+        },
+
+        /**
          * Delete Study permanently
          */
         deleteStudy: function(studyId) {

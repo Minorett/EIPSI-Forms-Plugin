@@ -15,7 +15,6 @@ nocache_headers();
 // Enqueue styles and scripts
 wp_enqueue_style('eipsi-longitudinal-studies-tab', EIPSI_FORMS_PLUGIN_URL . 'assets/css/longitudinal-studies-tab.css', array(), EIPSI_FORMS_VERSION);
 wp_enqueue_style('eipsi-study-dashboard-css', EIPSI_FORMS_PLUGIN_URL . 'assets/css/study-dashboard.css', array(), EIPSI_FORMS_VERSION);
-wp_enqueue_style('eipsi-high-contrast', EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-high-contrast.css', array('eipsi-longitudinal-studies-tab', 'eipsi-study-dashboard-css'), EIPSI_FORMS_VERSION);
 wp_enqueue_script('eipsi-study-dashboard', EIPSI_FORMS_PLUGIN_URL . 'assets/js/study-dashboard.js', array('jquery'), time(), true);
 
 // Localize data for JS
@@ -67,6 +66,82 @@ $completed_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}survey_st
 $paused_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}survey_studies WHERE status = 'paused'");
 
 ?>
+
+<style>
+/* Force Light Mode for Studies Table - Ensure high contrast */
+.eipsi-longitudinal-studies-wrap table.wp-list-table {
+    background: #ffffff !important;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table thead th {
+    background: #f8f9fa !important;
+    color: #0f172a !important;
+    font-weight: 700;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody td {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody td strong,
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody td a {
+    color: #0f172a !important;
+    font-weight: 600;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody tr:nth-child(even) td {
+    background: #f8fafc !important;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table tbody tr:hover td {
+    background: #f1f5f9 !important;
+}
+
+.eipsi-longitudinal-studies-wrap table.wp-list-table code {
+    background: #f1f5f9 !important;
+    color: #1e3a5f !important;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Badges with high contrast */
+.eipsi-badge {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.eipsi-badge.badge-active {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    border: 2px solid #059669;
+}
+
+.eipsi-badge.badge-completed {
+    background: #3b82f6 !important;
+    color: #ffffff !important;
+    border: 2px solid #2563eb;
+}
+
+.eipsi-badge.badge-paused {
+    background: #f59e0b !important;
+    color: #ffffff !important;
+    border: 2px solid #d97706;
+}
+
+.eipsi-badge.badge-closed {
+    background: #6b7280 !important;
+    color: #ffffff !important;
+    border: 2px solid #4b5563;
+}
+</style>
 
 <div class="eipsi-longitudinal-studies-wrap eipsi-force-light-mode">
     

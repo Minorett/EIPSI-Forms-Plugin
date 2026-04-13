@@ -122,7 +122,7 @@ $study_data = isset($study_data) ? $study_data : array();
 
 <!-- CSS EIPSI Dashboard -->
 <style>
-/* Force Light Mode - Override any dark mode from theme */
+/* Soft Light Mode - Better contrast without harsh white */
 .eipsi-force-light-mode,
 .eipsi-force-light-mode .eipsi-modal-content,
 .eipsi-force-light-mode .wave-card,
@@ -130,13 +130,35 @@ $study_data = isset($study_data) ? $study_data : array();
 .eipsi-force-light-mode tbody,
 .eipsi-force-light-mode tr,
 .eipsi-force-light-mode td {
-    background: #ffffff !important;
+    background: #f8fafc !important;
     color: #1e293b !important;
+}
+
+/* Main content area slightly lighter */
+.eipsi-force-light-mode .eipsi-modal-content {
+    background: #ffffff !important;
+}
+
+/* Cards with subtle background */
+.eipsi-force-light-mode .wave-card {
+    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0;
+}
+
+/* Table styling */
+.eipsi-force-light-mode table {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0;
 }
 
 .eipsi-force-light-mode table tbody td {
     color: #1e293b !important;
     background: #ffffff !important;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.eipsi-force-light-mode table tbody tr:nth-child(even) td {
+    background: #f8fafc !important;
 }
 
 .eipsi-force-light-mode table tbody tr:hover td {
@@ -146,7 +168,10 @@ $study_data = isset($study_data) ? $study_data : array();
 
 .eipsi-force-light-mode code {
     background: #f1f5f9 !important;
-    color: #1e293b !important;
+    color: #1e3a5f !important;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 2px 6px;
 }
 
 /* Header */
