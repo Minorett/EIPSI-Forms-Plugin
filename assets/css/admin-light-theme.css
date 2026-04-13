@@ -716,6 +716,180 @@ textarea::placeholder {
 }
 
 /* ==========================================================================
+   FORCE HIGH CONTRAST - Override dark mode themes
+   Ensures all text is readable on light backgrounds
+   ========================================================================== */
+
+/* Force dark text on light backgrounds for all EIPSI tables */
+.eipsi-results-page table,
+.eipsi-config-wrap table,
+.eipsi-longitudinal-page table,
+.wp-list-table.eipsi-table,
+.form-table.eipsi-form-table,
+.eipsi-table {
+    background-color: #ffffff !important;
+}
+
+.eipsi-results-page table td,
+.eipsi-results-page table th,
+.eipsi-config-wrap table td,
+.eipsi-config-wrap table th,
+.eipsi-longitudinal-page table td,
+.eipsi-longitudinal-page table th,
+.wp-list-table.eipsi-table td,
+.wp-list-table.eipsi-table th,
+.form-table.eipsi-form-table td,
+.form-table.eipsi-form-table th,
+.eipsi-table td,
+.eipsi-table th {
+    color: #1e293b !important;
+    background-color: #ffffff !important;
+}
+
+/* Force dark text on all links within tables */
+.eipsi-results-page table a,
+.eipsi-config-wrap table a,
+.eipsi-longitudinal-page table a,
+.wp-list-table.eipsi-table a,
+.eipsi-table a {
+    color: #1e3a5f !important;
+}
+
+.eipsi-results-page table a:hover,
+.eipsi-config-wrap table a:hover,
+.eipsi-longitudinal-page table a:hover,
+.wp-list-table.eipsi-table a:hover,
+.eipsi-table a:hover {
+    color: #3b6caa !important;
+}
+
+/* Force labels and descriptions to be dark */
+.eipsi-results-page label,
+.eipsi-config-wrap label,
+.eipsi-longitudinal-page label,
+.form-table th label,
+.eipsi-form-group label {
+    color: #1e293b !important;
+}
+
+.eipsi-results-page .description,
+.eipsi-config-wrap .description,
+.eipsi-longitudinal-page .description,
+.form-table .description {
+    color: #4b5563 !important;
+}
+
+/* Force heading colors */
+.eipsi-results-page h1,
+.eipsi-results-page h2,
+.eipsi-results-page h3,
+.eipsi-results-page h4,
+.eipsi-results-page h5,
+.eipsi-results-page h6,
+.eipsi-config-wrap h1,
+.eipsi-config-wrap h2,
+.eipsi-config-wrap h3,
+.eipsi-config-wrap h4,
+.eipsi-config-wrap h5,
+.eipsi-config-wrap h6,
+.eipsi-longitudinal-page h1,
+.eipsi-longitudinal-page h2,
+.eipsi-longitudinal-page h3,
+.eipsi-longitudinal-page h4,
+.eipsi-longitudinal-page h5,
+.eipsi-longitudinal-page h6,
+.eipsi-wizard-container h1,
+.eipsi-wizard-container h2,
+.eipsi-wizard-container h3,
+.eipsi-wizard-container h4,
+.eipsi-wizard-container h5,
+.eipsi-wizard-container h6 {
+    color: #0f172a !important;
+}
+
+/* Force all paragraph and text content */
+.eipsi-results-page p,
+.eipsi-results-page span:not(.button):not(.dashicons),
+.eipsi-config-wrap p,
+.eipsi-config-wrap span:not(.button):not(.dashicons),
+.eipsi-longitudinal-page p,
+.eipsi-longitudinal-page span:not(.button):not(.dashicons),
+.eipsi-wizard-container p,
+.eipsi-wizard-container span:not(.button):not(.dashicons) {
+    color: #1e293b !important;
+}
+
+/* Specific fix for study names in dashboard tables */
+td[data-colname="Nombre del Estudio"] a,
+td strong a,
+td a strong,
+.study-name-link,
+.eipsi-study-name,
+.wp-list-table td.column-title a {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+}
+
+/* Force light backgrounds on alternating rows */
+.eipsi-results-page tr:nth-child(even),
+.eipsi-config-wrap tr:nth-child(even),
+.eipsi-longitudinal-page tr:nth-child(even) {
+    background-color: #f8fafc !important;
+}
+
+.eipsi-results-page tr:nth-child(even) td,
+.eipsi-config-wrap tr:nth-child(even) td,
+.eipsi-longitudinal-page tr:nth-child(even) td {
+    color: #1e293b !important;
+}
+
+/* Input fields - ensure visible text */
+.eipsi-results-page input[type="text"],
+.eipsi-results-page input[type="email"],
+.eipsi-results-page input[type="number"],
+.eipsi-results-page input[type="search"],
+.eipsi-results-page textarea,
+.eipsi-results-page select,
+.eipsi-config-wrap input[type="text"],
+.eipsi-config-wrap input[type="email"],
+.eipsi-config-wrap input[type="number"],
+.eipsi-config-wrap input[type="search"],
+.eipsi-config-wrap textarea,
+.eipsi-config-wrap select,
+.eipsi-longitudinal-page input[type="text"],
+.eipsi-longitudinal-page input[type="email"],
+.eipsi-longitudinal-page input[type="number"],
+.eipsi-longitudinal-page input[type="search"],
+.eipsi-longitudinal-page textarea,
+.eipsi-longitudinal-page select {
+    color: #1e293b !important;
+    background-color: #ffffff !important;
+    border-color: #cbd5e0 !important;
+}
+
+/* Placeholder text */
+::placeholder {
+    color: #64748b !important;
+    opacity: 1;
+}
+
+/* Tab navigation - force visible */
+.nav-tab-wrapper a,
+.eipsi-nav-tabs a,
+.nav-tab {
+    color: #475569 !important;
+    background-color: #f1f5f9 !important;
+}
+
+.nav-tab-wrapper a.nav-tab-active,
+.eipsi-nav-tabs a.active,
+.nav-tab.nav-tab-active {
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    border-bottom-color: #ffffff !important;
+}
+
+/* ==========================================================================
    PRINT STYLES
    ========================================================================== */
 @media print {
