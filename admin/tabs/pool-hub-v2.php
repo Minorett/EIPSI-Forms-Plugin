@@ -131,6 +131,7 @@ function eipsi_render_pool_hub_v2() {
                     <button
                         class="button button-primary eipsi-create-pool-btn"
                         data-open-modal="create"
+                        onclick="jQuery('#pool-modal').css('display', 'flex'); jQuery('#pool-modal-overlay').show();"
                         style="
                             background: var(--eipsi-primary);
                             color: #ffffff;
@@ -216,7 +217,7 @@ function eipsi_render_pool_hub_v2() {
                             <div class="eipsi-empty-icon">🏊</div>
                             <h3><?php _e('No hay pools aún', 'eipsi-forms'); ?></h3>
                             <p><?php _e('Crea tu primer pool para comenzar a asignar participantes.', 'eipsi-forms'); ?></p>
-                            <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create">
+                            <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#pool-modal').css('display', 'flex'); jQuery('#pool-modal-overlay').show();">
                                 <?php _e('Crear primer pool', 'eipsi-forms'); ?>
                             </button>
                         </div>
@@ -265,7 +266,7 @@ function eipsi_render_pool_hub_v2() {
         <div class="eipsi-subtab-content" id="subtab-pools" style="display: none;">
             <div class="eipsi-pools-header">
                 <h2><?php _e('Gestión de Pools', 'eipsi-forms'); ?></h2>
-                <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create">
+                <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#pool-modal').css('display', 'flex'); jQuery('#pool-modal-overlay').show();">
                     + <?php _e('Nuevo Pool', 'eipsi-forms'); ?>
                 </button>
             </div>
@@ -275,7 +276,7 @@ function eipsi_render_pool_hub_v2() {
                     <div class="eipsi-empty-icon">🏊</div>
                     <h3><?php _e('No hay pools creados', 'eipsi-forms'); ?></h3>
                     <p><?php _e('Los pools te permiten distribuir participantes entre múltiples estudios con probabilidades configurables.', 'eipsi-forms'); ?></p>
-                    <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create">
+                    <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#pool-modal').css('display', 'flex'); jQuery('#pool-modal-overlay').show();">
                         <?php _e('Crear mi primer pool', 'eipsi-forms'); ?>
                     </button>
                 </div>

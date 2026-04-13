@@ -57,13 +57,66 @@
             });
 
             // Refresh button
-            $('#refresh-dashboard').on('click', function() {
+            $('#refresh-dashboard').off('click').on('click', function() {
+                console.log('[BUTTON] refresh-dashboard clicked, studyId:', self.currentStudyId);
                 self.loadStudyData(self.currentStudyId);
             });
 
             // Email logs
-            $('#view-email-logs').on('click', function() {
+            $('#view-email-logs').off('click').on('click', function() {
+                console.log('[BUTTON] view-email-logs clicked');
                 self.openEmailLogs();
+            });
+
+            // Send global reminder
+            $('#send-global-reminder').off('click').on('click', function() {
+                console.log('[BUTTON] send-global-reminder clicked');
+                self.sendGlobalReminder();
+            });
+
+            // Import CSV
+            $('#action-import-csv').off('click').on('click', function() {
+                console.log('[BUTTON] action-import-csv clicked');
+                $('#eipsi-csv-import-modal').fadeIn(200);
+            });
+
+            // Download data
+            $('#action-download-data').off('click').on('click', function() {
+                console.log('[BUTTON] action-download-data clicked, studyId:', self.currentStudyId);
+                if (self.currentStudyId) {
+                    window.location.href = 'admin.php?page=eipsi-longitudinal-study&tab=export&study_id=' + self.currentStudyId;
+                }
+            });
+
+            // Copy shortcode
+            $('#copy-shortcode').off('click').on('click', function() {
+                const text = $('#shortcode-display').text();
+                console.log('[BUTTON] copy-shortcode clicked, text:', text);
+                navigator.clipboard.writeText(text).then(function() {
+                    alert('Shortcode copiado al portapapeles');
+                });
+            });
+
+            // Copy page URL
+            $('#copy-page-url').off('click').on('click', function() {
+                const text = $('#study-page-url').val();
+                console.log('[BUTTON] copy-page-url clicked, text:', text);
+                navigator.clipboard.writeText(text).then(function() {
+                    alert('URL copiada al portapapeles');
+                });
+            });
+
+            // View study page
+            $('#view-study-page').off('click').on('click', function() {
+                const url = $('#study-page-url').val();
+                console.log('[BUTTON] view-study-page clicked, url:', url);
+                if (url) window.open(url, '_blank');
+            });
+
+            // Edit study page
+            $('#edit-study-page').off('click').on('click', function() {
+                console.log('[BUTTON] edit-study-page clicked');
+                alert('Función editar página no implementada aún');
             });
 
             // Manual reminder
@@ -87,12 +140,15 @@
 
             // Add participant button - .off() prevents duplicate handlers
             $('#action-add-participant').off('click').on('click', function() {
+                console.log('[BUTTON] action-add-participant clicked');
                 self.openAddParticipant();
             });
 
             // Delete study button - .off() prevents duplicate handlers
             $('#action-delete-study').off('click').on('click', function() {
+                console.log('[BUTTON] action-delete-study clicked, studyId:', self.currentStudyId);
                 if (!self.currentStudyId) {
+                    console.error('[ERROR] No currentStudyId defined');
                     return;
                 }
                 if (confirm('⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️\n\n¿Estás seguro de ELIMINAR este estudio?\n\n• Se eliminarán TODOS los participantes\n• Se eliminarán TODAS las respuestas\n• Se eliminarán TODOS los waves\n• Se eliminarán TODOS los emails\n\nEsta acción NO se puede deshacer.\n\nPresiona OK para confirmar.')) {
@@ -109,7 +165,8 @@
             });
 
             // View participants
-            $('#action-view-participants').on('click', function() {
+            $('#action-view-participants').off('click').on('click', function() {
+                console.log('[BUTTON] action-view-participants clicked');
                 self.openParticipantsList();
             });
 
@@ -131,17 +188,20 @@
             $(document).on('click', '.toggle-participant-status', function() {
                 const participantId = $(this).data('participant-id');
                 const isActive = $(this).data('is-active');
+                console.log('[BUTTON] toggle-participant-status clicked, participantId:', participantId, 'isActive:', isActive);
                 self.toggleParticipantStatus(participantId, isActive);
             });
 
             // Delete participant
             $(document).on('click', '.delete-participant-btn', function() {
                 const participantId = $(this).data('participant-id');
+                console.log('[BUTTON] delete-participant-btn clicked, participantId:', participantId);
                 self.deleteParticipant(participantId);
             });
 
             // Resend email dropdown toggle
             $(document).on('click', '.resend-email-btn', function(e) {
+                console.log('[BUTTON] resend-email-btn clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 const $dropdown = $(this).siblings('.resend-email-dropdown');
@@ -164,6 +224,7 @@
                 const emailType = $(this).data('email-type');
                 const participantEmail = $(this).data('participant-email');
                 const waveId = $(this).data('wave-id') || null;
+                console.log('[BUTTON] resend-email-option clicked, participantId:', participantId, 'emailType:', emailType);
                 
                 $(this).closest('.resend-email-dropdown').hide();
                 
@@ -171,19 +232,22 @@
             });
 
             // Magic Link Form - Generate link button
-            $('#generate-magic-link').on('click', function(e) {
+            $('#generate-magic-link').off('click').on('click', function(e) {
+                console.log('[BUTTON] generate-magic-link clicked');
                 e.preventDefault();
                 self.generateMagicLink();
             });
 
             // Magic Link Form - Send email button
-            $('#send-magic-link').on('click', function(e) {
+            $('#send-magic-link').off('click').on('click', function(e) {
+                console.log('[BUTTON] send-magic-link clicked');
                 e.preventDefault();
                 self.sendMagicLinkEmail();
             });
 
             // Magic Link Form - Copy link button
-            $('#copy-magic-link').on('click', function() {
+            $('#copy-magic-link').off('click').on('click', function() {
+                console.log('[BUTTON] copy-magic-link clicked');
                 self.copyMagicLink();
             });
 
@@ -195,14 +259,17 @@
 
             // Study Control Buttons - .off() prevents duplicate handlers
             $('#btn-pause-study').off('click').on('click', function() {
+                console.log('[BUTTON] btn-pause-study clicked');
                 self.pauseStudy();
             });
 
             $('#btn-resume-study').off('click').on('click', function() {
+                console.log('[BUTTON] btn-resume-study clicked');
                 self.resumeStudy();
             });
 
             $('#btn-close-study').off('click').on('click', function() {
+                console.log('[BUTTON] btn-close-study clicked');
                 self.closeStudy();
             });
         },
@@ -223,6 +290,7 @@
         },
 
         loadStudyData: function(studyId) {
+            console.log('[FUNC] loadStudyData called, studyId:', studyId);
             const self = this;
             $('#eipsi-dashboard-loading').show();
             $('#eipsi-dashboard-content').hide();
@@ -251,6 +319,7 @@
         },
 
         renderDashboard: function(data) {
+            console.log('[FUNC] renderDashboard called', data);
             const self = this;
             const general = data.general;
             const participants = data.participants;
@@ -525,6 +594,7 @@
         },
 
         sendReminder: function(waveId) {
+            console.log('[FUNC] sendReminder called, waveId:', waveId);
             if (!confirm(eipsiStudyDash.strings.confirmReminder)) return;
 
             $.ajax({
@@ -541,6 +611,41 @@
                     } else {
                         alert('Error: ' + response.data);
                     }
+                }
+            });
+        },
+
+        sendGlobalReminder: function() {
+            console.log('[FUNC] sendGlobalReminder called, studyId:', this.currentStudyId);
+            if (!this.currentStudyId) {
+                console.error('[ERROR] No currentStudyId for sendGlobalReminder');
+                alert('Error: No se ha seleccionado un estudio');
+                return;
+            }
+            
+            if (!confirm('¿Enviar recordatorio global a todos los participantes activos?')) {
+                return;
+            }
+
+            const self = this;
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_send_global_reminder',
+                    study_id: this.currentStudyId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.data.message || 'Recordatorios enviados correctamente');
+                        self.loadStudyData(self.currentStudyId);
+                    } else {
+                        alert('Error: ' + (response.data || 'No se pudieron enviar los recordatorios'));
+                    }
+                },
+                error: function() {
+                    alert('Error de conexión al enviar recordatorios');
                 }
             });
         },
@@ -578,6 +683,7 @@
         },
 
         openAddParticipant: function() {
+            console.log('[FUNC] openAddParticipant called, studyId:', this.currentStudyId);
             // Reset form
             $('#add-participant-form')[0].reset();
             $('#add-participant-study-id').val(this.currentStudyId);
@@ -686,6 +792,7 @@
          * Open participants list modal
          */
         openParticipantsList: function() {
+            console.log('[FUNC] openParticipantsList called');
             $('#eipsi-participants-list-modal').fadeIn();
             this.scrollToModal('#eipsi-participants-list-modal');
             this.loadParticipantsList(1);
