@@ -1249,7 +1249,7 @@ function sendIndividualReminderConfirmed() {
                 <div class="csv-upload-area" id="csv-upload-area">
                     <div class="csv-upload-icon">📁</div>
                     <p class="csv-upload-text">Arrastra tu archivo CSV aquí o haz clic para seleccionar</p>
-                    <p class="csv-upload-hint">Formato: email, first_name, last_name (máx. 500 participantes)</p>
+                    <p class="csv-upload-hint">Formato: email (una columna, un email por línea)</p>
                     <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none;">
                 </div>
                 <div style="margin-top:12px;text-align:center;">
@@ -1269,7 +1269,6 @@ function sendIndividualReminderConfirmed() {
                             <tr style="background:#f8f9fa;">
                                 <th style="padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;">#</th>
                                 <th style="padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;">Email</th>
-                                <th style="padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;">Nombre</th>
                                 <th style="padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid #e2e8f0;">Estado</th>
                             </tr>
                         </thead>
@@ -1414,25 +1413,27 @@ function sendIndividualReminderConfirmed() {
         const lines = content.split(/\r?\n/);
         const participants = [];
         let isFirstLine = true;
-        
+
         for (const line of lines) {
             const trimmed = line.trim();
             if (!trimmed) continue;
-            
-            const cols = trimmed.split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
-            
+
+            // Remove commas and get email
+            let email = trimmed;
+
             // Skip header row
-            if (isFirstLine && cols[0].toLowerCase().includes('email')) {
+            if (isFirstLine) {
                 isFirstLine = false;
-                continue;
+                if (email.toLowerCase().includes('email')) continue;
             }
             isFirstLine = false;
-            
-            if (cols[0] && cols[0].includes('@')) {
+
+            // Clean email (remove quotes, trim)
+            email = email.replace(/^["']|["']$/g, '').trim();
+
+            if (email && email.includes('@')) {
                 participants.push({
-                    email: cols[0],
-                    first_name: cols[1] || '',
-                    last_name: cols[2] || '',
+                    email: email,
                     status: 'pending'
                 });
             }
@@ -1444,13 +1445,12 @@ function sendIndividualReminderConfirmed() {
         $('#csv-preview-count').text(participants.length + ' participantes encontrados');
         const tbody = $('#csv-preview-tbody');
         tbody.empty();
-        
+
         participants.forEach((p, i) => {
             tbody.append(`
                 <tr>
                     <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;">${i + 1}</td>
                     <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;"><code>${p.email}</code></td>
-                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;">${p.first_name} ${p.last_name}</td>
                     <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;"><span class="eipsi-badge badge-pending">Pendiente</span></td>
                 </tr>
             `);
@@ -1615,7 +1615,7 @@ function sendIndividualReminderConfirmed() {
     // Download template
     $('#download-csv-template').on('click', function(e) {
         e.preventDefault();
-        const template = 'email,first_name,last_name\nparticipante1@email.com,Juan,Pérez\nparticipante2@email.com,María,García';
+        const template = 'email\nparticipante1@email.com\nparticipante2@email.com';
         const blob = new Blob([template], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
