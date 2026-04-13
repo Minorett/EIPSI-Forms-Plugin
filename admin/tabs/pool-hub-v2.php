@@ -131,7 +131,20 @@ function eipsi_render_pool_hub_v2() {
                     <button
                         class="button button-primary eipsi-create-pool-btn"
                         data-open-modal="create"
-                        onclick="jQuery('#pool-modal').css('display', 'flex'); jQuery('#pool-modal-overlay').show();"
+                        onclick="
+                            console.log('[POOL-HUB] Botón Crear primer pool clickeado');
+                            console.log('[POOL-HUB] Verificando elementos:');
+                            console.log('  - #pool-modal existe:', jQuery('#pool-modal').length > 0);
+                            console.log('  - #pool-modal-overlay existe:', jQuery('#pool-modal-overlay').length > 0);
+                            console.log('  - jQuery disponible:', typeof jQuery !== 'undefined');
+                            try {
+                                jQuery('#pool-modal').css('display', 'flex');
+                                jQuery('#pool-modal-overlay').show();
+                                console.log('[POOL-HUB] Modal abierto exitosamente');
+                            } catch(e) {
+                                console.error('[POOL-HUB] Error al abrir modal:', e);
+                                alert('Error al abrir modal: ' + e.message);
+                            }"
                         style="
                             background: var(--eipsi-primary);
                             color: #ffffff;
@@ -1124,8 +1137,12 @@ function eipsi_render_pool_hub_v2() {
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('[POOL-HUB-INIT] DOMContentLoaded - Script Pool Hub iniciando...');
+
         const subTabs = document.querySelectorAll('.eipsi-sub-tabs .nav-tab');
         const subContents = document.querySelectorAll('.eipsi-subtab-content');
+        console.log('[POOL-HUB-INIT] Sub-tabs encontrados:', subTabs.length);
+        console.log('[POOL-HUB-INIT] Sub-contents encontrados:', subContents.length);
 
         // Sub-tab switching
         subTabs.forEach(tab => {
@@ -1183,12 +1200,32 @@ function eipsi_render_pool_hub_v2() {
         const shortcodeModal = document.getElementById('eipsi-shortcode-modal');
         const deleteModal = document.getElementById('eipsi-delete-modal');
 
+        // Verificación inicial de elementos
+        console.log('[POOL-HUB-INIT] Verificando elementos DOM:');
+        console.log('  - eipsi-pool-modal:', poolModal ? 'EXISTS' : 'NOT FOUND');
+        console.log('  - eipsi-shortcode-modal:', shortcodeModal ? 'EXISTS' : 'NOT FOUND');
+        console.log('  - eipsi-delete-modal:', deleteModal ? 'EXISTS' : 'NOT FOUND');
+        console.log('  - #pool-modal:', document.getElementById('pool-modal') ? 'EXISTS' : 'NOT FOUND');
+        console.log('  - #pool-modal-overlay:', document.getElementById('pool-modal-overlay') ? 'EXISTS' : 'NOT FOUND');
+
         function openModal(modal) {
-            if (modal) modal.style.display = 'flex';
+            console.log('[POOL-HUB] openModal llamado, modal:', modal ? modal.id || 'unnamed' : 'null');
+            if (modal) {
+                modal.style.display = 'flex';
+                console.log('[POOL-HUB] Modal abierto:', modal.id || 'unnamed');
+            } else {
+                console.error('[POOL-HUB] openModal: modal es null o undefined');
+            }
         }
 
         function closeModal(modal) {
-            if (modal) modal.style.display = 'none';
+            console.log('[POOL-HUB] closeModal llamado, modal:', modal ? modal.id || 'unnamed' : 'null');
+            if (modal) {
+                modal.style.display = 'none';
+                console.log('[POOL-HUB] Modal cerrado:', modal.id || 'unnamed');
+            } else {
+                console.error('[POOL-HUB] closeModal: modal es null o undefined');
+            }
         }
 
         document.querySelectorAll('.eipsi-modal-close, .eipsi-modal-cancel').forEach(btn => {
@@ -1208,13 +1245,20 @@ function eipsi_render_pool_hub_v2() {
         // Create pool buttons - v2.2.3: Fixed to work with empty state
         // Using jQuery delegation for dynamically added buttons
         $(document).on('click', '.eipsi-create-pool-btn', function(e) {
+            console.log('[POOL-HUB-JQ] Handler jQuery activado para .eipsi-create-pool-btn');
             e.preventDefault();
             e.stopPropagation();
-            
+
             const modalType = $(this).data('open-modal');
+            console.log('[POOL-HUB-JQ] modalType:', modalType, '| poolModal existe:', !!poolModal);
+
             if (modalType === 'create' && poolModal) {
+                console.log('[POOL-HUB-JQ] Abriendo modal de creación...');
                 updateProbabilityTotal();
                 openModal(poolModal);
+                console.log('[POOL-HUB-JQ] Modal abierto vía jQuery');
+            } else {
+                console.error('[POOL-HUB-JQ] No se pudo abrir modal:', {modalType, poolModalExists: !!poolModal});
             }
         });
 
@@ -1574,6 +1618,8 @@ function eipsi_render_pool_hub_v2() {
             }
             window.location.href = ajaxurl + '?action=eipsi_export_pool_csv&pool_id=' + poolId + '&nonce=<?php echo wp_create_nonce("eipsi_forms_nonce"); ?>';
         });
+
+        console.log('[POOL-HUB-INIT] Script Pool Hub cargado completamente');
     }); // End DOMContentLoaded
     </script>
 

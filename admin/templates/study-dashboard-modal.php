@@ -1122,11 +1122,6 @@ function removeParticipant(hardDelete) {
     });
 }
 
-// Global variables for participants (accessible to all handlers)
-let currentParticipantsPage = 1;
-let currentParticipantsFilter = 'all';
-let currentParticipantsSearch = '';
-
 // Event handlers for participants
 jQuery('#action-view-participants').on('click', function() {
     if (window.currentStudyId) {
@@ -1324,13 +1319,15 @@ function sendIndividualReminderConfirmed() {
     let csvParticipants = [];
     let csvValidated = [];
     
-    // Upload area click
-    $('#csv-upload-area').on('click', function() {
+    // Upload area click - prevent bubbling from file input
+    $('#csv-upload-area').on('click', function(e) {
+        if (e.target.id === 'csv-file-input') return;
         $('#csv-file-input').trigger('click');
     });
-    
+
     // File input change
     $('#csv-file-input').on('change', function(e) {
+        e.stopPropagation();
         if (e.target.files.length > 0) {
             handleCsvFile(e.target.files[0]);
         }
@@ -1967,7 +1964,11 @@ function sendIndividualReminderConfirmed() {
     });
 
     function loadEmailLogs(page) {
-        if (!currentStudyId) return;
+        const studyId = window.currentStudyId || (window.StudyDashboard && window.StudyDashboard.currentStudyId);
+        if (!studyId) {
+            console.error('[ERROR] loadEmailLogs: No studyId available');
+            return;
+        }
         currentEmailLogPage = page;
 
         const status = $('#email-log-status-filter').val();
@@ -1981,7 +1982,7 @@ function sendIndividualReminderConfirmed() {
             data: {
                 action: 'eipsi_get_email_logs',
                 nonce: eipsi_dashboard_nonce,
-                study_id: currentStudyId,
+                study_id: studyId,
                 page: page,
                 per_page: 20,
                 status: status,
@@ -2106,10 +2107,10 @@ function sendIndividualReminderConfirmed() {
         $('#action-view-participants').off('click').on('click', function() {
             if (typeof openParticipantsModal === 'function') {
                 openParticipantsModal();
-            } else if (typeof StudyDashboard !== 'undefined' && StudyDashboard.openParticipantsModal) {
-                StudyDashboard.openParticipantsModal();
+            } else if (typeof StudyDashboard !== 'undefined' && StudyDashboard.openParticipantsList) {
+                StudyDashboard.openParticipantsList();
             } else {
-                $('#eipsi-participants-list-modal').fadeIn(200);
+                $('#eipsi-participants-modal').fadeIn(200);
                 $('#participants-loading').show();
             }
         });

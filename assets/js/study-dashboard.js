@@ -276,6 +276,8 @@
 
         openDashboard: function(studyId) {
             this.currentStudyId = studyId;
+            window.currentStudyId = studyId; // Expose globally for inline scripts
+            console.log('[FUNC] openDashboard, studyId:', studyId);
             $('#eipsi-study-dashboard-modal').fadeIn();
             this.scrollToModal('#eipsi-study-dashboard-modal');
             this.loadStudyData(studyId);
@@ -284,9 +286,30 @@
 
         scrollToModal: function(modalSelector) {
             // Scroll modal into view with smooth animation
-            $('html, body').animate({
-                scrollTop: $(modalSelector).offset().top - 50
-            }, 300);
+            const $modal = $(modalSelector);
+            if ($modal.length && $modal.offset()) {
+                $('html, body').animate({
+                    scrollTop: $modal.offset().top - 50
+                }, 300);
+            }
+        },
+
+        /**
+         * Get wave interval text description
+         */
+        getWaveIntervalText: function(wave) {
+            if (!wave.interval_value || !wave.interval_unit) {
+                return 'Sin intervalo definido';
+            }
+            const unitLabels = {
+                'minutes': 'minutos',
+                'hours': 'horas',
+                'days': 'días',
+                'weeks': 'semanas',
+                'months': 'meses'
+            };
+            const unit = unitLabels[wave.interval_unit] || wave.interval_unit;
+            return `${wave.interval_value} ${unit} después de la toma anterior`;
         },
 
         loadStudyData: function(studyId) {
@@ -793,8 +816,8 @@
          */
         openParticipantsList: function() {
             console.log('[FUNC] openParticipantsList called');
-            $('#eipsi-participants-list-modal').fadeIn();
-            this.scrollToModal('#eipsi-participants-list-modal');
+            $('#eipsi-participants-modal').fadeIn();
+            this.scrollToModal('#eipsi-participants-modal');
             this.loadParticipantsList(1);
         },
 
