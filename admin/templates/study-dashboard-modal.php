@@ -611,15 +611,18 @@ input:checked + .tslider:before { transform: translateX(14px); }
 <script>
 (function($) {
     'use strict';
-    
+
     let currentStudyId = null;
     let currentStudyData = null;
-    
+
+    // Define nonce from localized data
+    const eipsi_dashboard_nonce = (typeof eipsiStudyDash !== 'undefined' && eipsiStudyDash.nonce) ? eipsiStudyDash.nonce : '';
+
     // Load study data
     function loadStudyData(studyId) {
         currentStudyId = studyId;
         window.currentStudyId = studyId; // Expose globally for handlers outside IIFE
-        
+
         $.ajax({
             url: ajaxurl,
             type: 'GET',
@@ -691,12 +694,15 @@ input:checked + .tslider:before { transform: translateX(14px); }
         }
         
         // Emails card
-        $('#emails-today').text(emails.sent_today);
-        $('#emails-failed').text(emails.failed);
+        $('#emails-today').text(emails.sent_today || 0);
+        $('#emails-failed').text(emails.failed || 0);
         $('#emails-pending').text(emails.pending || 0);
         if (emails.last_sent) {
             const last = new Date(emails.last_sent);
-            $('#emails-last-label').text('· último envío: ' + last.getDate() + '/' + (last.getMonth()+1));
+            const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+            $('#emails-last-label').text('· último envío: ' + last.getDate() + ' ' + months[last.getMonth()]);
+        } else {
+            $('#emails-last-label').text('· último envío: -');
         }
         
         // Render waves

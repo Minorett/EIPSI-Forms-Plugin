@@ -477,10 +477,45 @@
                 $container.append(waveHtml);
             });
 
-            // Emails
-            $('#emails-sent-today').text(emails.sent_today);
-            $('#emails-failed').text(emails.failed);
-            $('#emails-last-sent').text(emails.last_sent ? this.formatRelativeTime(emails.last_sent) : 'Nunca');
+            // Emails - usar IDs que coinciden con el HTML
+            $('#emails-today').text(emails.sent_today || 0);
+            $('#emails-failed').text(emails.failed || 0);
+            $('#emails-pending').text(emails.pending || 0);
+            if (emails.last_sent) {
+                const last = new Date(emails.last_sent);
+                const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                $('#emails-last-label').text('· último envío: ' + last.getDate() + ' ' + months[last.getMonth()]);
+            } else {
+                $('#emails-last-label').text('· último envío: -');
+            }
+        },
+
+        /**
+         * Render nudge rows for a wave
+         */
+        renderNudgeRows: function(config, waveId) {
+            const defaults = [
+                { value: 24, unit: 'hours' },
+                { value: 72, unit: 'hours' },
+                { value: 168, unit: 'hours' }
+            ];
+
+            let html = '';
+            for (let i = 1; i <= 4; i++) {
+                const nudge = config['nudge_' + i] || defaults[i-1] || { value: 24, unit: 'hours' };
+                html += `
+                    <div class="nudge-row">
+                        <span class="nudge-num">${i}</span>
+                        <input type="number" value="${nudge.value}" id="nudge-${waveId}-${i}-val" min="1">
+                        <select id="nudge-${waveId}-${i}-unit">
+                            <option value="hours" ${nudge.unit === 'hours' ? 'selected' : ''}>horas</option>
+                            <option value="days" ${nudge.unit === 'days' ? 'selected' : ''}>días</option>
+                        </select>
+                        <span>después de disponible</span>
+                    </div>
+                `;
+            }
+            return html;
         },
 
         /**

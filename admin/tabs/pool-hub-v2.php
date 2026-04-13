@@ -134,12 +134,10 @@ function eipsi_render_pool_hub_v2() {
                         onclick="
                             console.log('[POOL-HUB] Botón Crear primer pool clickeado');
                             console.log('[POOL-HUB] Verificando elementos:');
-                            console.log('  - #pool-modal existe:', jQuery('#pool-modal').length > 0);
-                            console.log('  - #pool-modal-overlay existe:', jQuery('#pool-modal-overlay').length > 0);
+                            console.log('  - #eipsi-pool-modal existe:', jQuery('#eipsi-pool-modal').length > 0);
                             console.log('  - jQuery disponible:', typeof jQuery !== 'undefined');
                             try {
-                                jQuery('#pool-modal').css('display', 'flex');
-                                jQuery('#pool-modal-overlay').show();
+                                jQuery('#eipsi-pool-modal').css('display', 'flex');
                                 console.log('[POOL-HUB] Modal abierto exitosamente');
                             } catch(e) {
                                 console.error('[POOL-HUB] Error al abrir modal:', e);
@@ -230,7 +228,7 @@ function eipsi_render_pool_hub_v2() {
                             <div class="eipsi-empty-icon">🏊</div>
                             <h3><?php _e('No hay pools aún', 'eipsi-forms'); ?></h3>
                             <p><?php _e('Crea tu primer pool para comenzar a asignar participantes.', 'eipsi-forms'); ?></p>
-                            <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#pool-modal').css('display', 'flex'); jQuery('#pool-modal-overlay').show();">
+                            <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#eipsi-pool-modal').css('display', 'flex');">
                                 <?php _e('Crear primer pool', 'eipsi-forms'); ?>
                             </button>
                         </div>
@@ -279,7 +277,7 @@ function eipsi_render_pool_hub_v2() {
         <div class="eipsi-subtab-content" id="subtab-pools" style="display: none;">
             <div class="eipsi-pools-header">
                 <h2><?php _e('Gestión de Pools', 'eipsi-forms'); ?></h2>
-                <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#pool-modal').css('display', 'flex'); jQuery('#pool-modal-overlay').show();">
+                <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#eipsi-pool-modal').css('display', 'flex');">
                     + <?php _e('Nuevo Pool', 'eipsi-forms'); ?>
                 </button>
             </div>
@@ -289,7 +287,7 @@ function eipsi_render_pool_hub_v2() {
                     <div class="eipsi-empty-icon">🏊</div>
                     <h3><?php _e('No hay pools creados', 'eipsi-forms'); ?></h3>
                     <p><?php _e('Los pools te permiten distribuir participantes entre múltiples estudios con probabilidades configurables.', 'eipsi-forms'); ?></p>
-                    <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#pool-modal').css('display', 'flex'); jQuery('#pool-modal-overlay').show();">
+                    <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#eipsi-pool-modal').css('display', 'flex');">
                         <?php _e('Crear mi primer pool', 'eipsi-forms'); ?>
                     </button>
                 </div>
@@ -1205,8 +1203,6 @@ function eipsi_render_pool_hub_v2() {
         console.log('  - eipsi-pool-modal:', poolModal ? 'EXISTS' : 'NOT FOUND');
         console.log('  - eipsi-shortcode-modal:', shortcodeModal ? 'EXISTS' : 'NOT FOUND');
         console.log('  - eipsi-delete-modal:', deleteModal ? 'EXISTS' : 'NOT FOUND');
-        console.log('  - #pool-modal:', document.getElementById('pool-modal') ? 'EXISTS' : 'NOT FOUND');
-        console.log('  - #pool-modal-overlay:', document.getElementById('pool-modal-overlay') ? 'EXISTS' : 'NOT FOUND');
 
         function openModal(modal) {
             console.log('[POOL-HUB] openModal llamado, modal:', modal ? modal.id || 'unnamed' : 'null');
