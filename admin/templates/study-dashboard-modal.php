@@ -618,6 +618,7 @@ input:checked + .tslider:before { transform: translateX(14px); }
     // Load study data
     function loadStudyData(studyId) {
         currentStudyId = studyId;
+        window.currentStudyId = studyId; // Expose globally for handlers outside IIFE
         
         $.ajax({
             url: ajaxurl,
@@ -825,6 +826,13 @@ input:checked + .tslider:before { transform: translateX(14px); }
         if (currentStudyId) loadStudyData(currentStudyId);
     });
     
+    // Download data - redirect to export tab
+    $('#action-download-data').on('click', function() {
+        if (currentStudyId) {
+            window.location.href = '?page=eipsi-results&tab=export&study_id=' + currentStudyId;
+        }
+    });
+    
     $('#copy-shortcode').on('click', function() {
         const shortcode = $('#shortcode-display').attr('data-shortcode') || $('#shortcode-display').text();
         navigator.clipboard.writeText(shortcode);
@@ -841,6 +849,24 @@ input:checked + .tslider:before { transform: translateX(14px); }
     
     // Expose functions globally
     window.eipsiLoadStudyDashboard = loadStudyData;
+    
+    // Event handlers for participants (movidos dentro del IIFE para acceder a currentStudyId)
+    $('#action-view-participants').on('click', function() {
+        if (currentStudyId) {
+            loadParticipants(currentStudyId);
+            $('#eipsi-participants-modal').show();
+        }
+    });
+    
+    $('#participant-status-filter').on('change', function() {
+        currentParticipantsFilter = $(this).val();
+        loadParticipants(currentStudyId, 1);
+    });
+    
+    $('#participant-search').on('input', function() {
+        currentParticipantsSearch = $(this).val();
+        loadParticipants(currentStudyId, 1);
+    });
     
 })(jQuery);
 
@@ -1096,22 +1122,31 @@ function removeParticipant(hardDelete) {
     });
 }
 
+// Global variables for participants (accessible to all handlers)
+let currentParticipantsPage = 1;
+let currentParticipantsFilter = 'all';
+let currentParticipantsSearch = '';
+
 // Event handlers for participants
 jQuery('#action-view-participants').on('click', function() {
-    if (currentStudyId) {
-        loadParticipants(currentStudyId);
+    if (window.currentStudyId) {
+        loadParticipants(window.currentStudyId);
         jQuery('#eipsi-participants-modal').show();
     }
 });
 
 jQuery('#participant-status-filter').on('change', function() {
     currentParticipantsFilter = jQuery(this).val();
-    loadParticipants(currentStudyId, 1);
+    if (window.currentStudyId) {
+        loadParticipants(window.currentStudyId, 1);
+    }
 });
 
 jQuery('#participant-search').on('input', function() {
     currentParticipantsSearch = jQuery(this).val();
-    loadParticipants(currentStudyId, 1);
+    if (window.currentStudyId) {
+        loadParticipants(window.currentStudyId, 1);
+    }
 });
 
 // CSV Import Modal Handler
@@ -1766,3 +1801,286 @@ function sendIndividualReminderConfirmed() {
     background: #f8f9fa;
 }
 </style>
+
+<!-- Add Participant Modal EIPSI -->
+<div id="eipsi-add-participant-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content" style="max-width:450px;">
+        <div class="eipsi-modal-header" style="border-bottom:1px solid #e2e8f0;padding:16px 20px;">
+            <h2 style="font-size:16px;font-weight:600;color:#2c3e50;margin:0;">Agregar Participante</h2>
+            <button class="eipsi-modal-close" style="background:none;border:none;font-size:20px;color:#64748b;cursor:pointer;">&times;</button>
+        </div>
+        <div class="eipsi-modal-body" style="padding:20px;">
+            <form id="add-participant-form">
+                <input type="hidden" id="add-participant-study-id">
+                <div style="margin-bottom:12px;">
+                    <label style="display:block;font-size:12px;font-weight:500;color:#2c3e50;margin-bottom:4px;">Email *</label>
+                    <input type="email" id="participant-email" required style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="participante@email.com">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:500;color:#2c3e50;margin-bottom:4px;">Nombre</label>
+                        <input type="text" id="participant-first-name" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="Juan">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:500;color:#2c3e50;margin-bottom:4px;">Apellido</label>
+                        <input type="text" id="participant-last-name" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="Pérez">
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="display:block;font-size:12px;font-weight:500;color:#2c3e50;margin-bottom:4px;">Contraseña temporal (opcional)</label>
+                    <input type="text" id="participant-password" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="Se generará automáticamente si se deja vacío">
+                </div>
+                <div id="add-participant-error" style="display:none;margin-bottom:12px;padding:10px;background:#fee2e2;border:1px solid #dc2626;border-radius:6px;color:#dc2626;font-size:12px;"></div>
+                <div id="add-participant-success" style="display:none;margin-bottom:12px;padding:10px;background:#d1fae5;border:1px solid #059669;border-radius:6px;color:#065f46;font-size:12px;"></div>
+            </form>
+        </div>
+        <div class="eipsi-modal-footer" style="border-top:1px solid #e2e8f0;padding:16px 20px;display:flex;justify-content:flex-end;gap:8px;">
+            <button class="btn-sm" id="cancel-add-participant">Cancelar</button>
+            <button class="btn-sm btn-primary" id="submit-add-participant">Agregar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Email Logs Modal EIPSI -->
+<div id="eipsi-email-logs-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100001;">
+    <div class="eipsi-modal-content" style="max-width:700px;max-height:80vh;display:flex;flex-direction:column;">
+        <div class="eipsi-modal-header" style="border-bottom:1px solid #e2e8f0;padding:16px 20px;">
+            <h2 style="font-size:16px;font-weight:600;color:#2c3e50;margin:0;">Log de Emails</h2>
+            <button class="eipsi-modal-close" style="background:none;border:none;font-size:20px;color:#64748b;cursor:pointer;">&times;</button>
+        </div>
+        <div class="eipsi-modal-body" style="padding:20px;flex:1;overflow:auto;">
+            <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <label style="font-size:12px;color:#64748b;">Estado:</label>
+                    <select id="email-log-status-filter" style="padding:5px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;">
+                        <option value="all">Todos</option>
+                        <option value="sent">Enviado</option>
+                        <option value="delivered">Entregado</option>
+                        <option value="clicked">Click</option>
+                        <option value="failed">Fallido</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:150px;">
+                    <label style="font-size:12px;color:#64748b;">Buscar:</label>
+                    <input type="text" id="email-log-search" placeholder="Email..." style="flex:1;padding:5px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;">
+                </div>
+                <button class="btn-sm" id="refresh-email-logs">Actualizar</button>
+            </div>
+            <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+                <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead>
+                        <tr style="background:#f8f9fa;">
+                            <th style="padding:10px 12px;text-align:left;font-weight:600;color:#2c3e50;border-bottom:1px solid #e2e8f0;">Fecha</th>
+                            <th style="padding:10px 12px;text-align:left;font-weight:600;color:#2c3e50;border-bottom:1px solid #e2e8f0;">Para</th>
+                            <th style="padding:10px 12px;text-align:left;font-weight:600;color:#2c3e50;border-bottom:1px solid #e2e8f0;">Tipo</th>
+                            <th style="padding:10px 12px;text-align:left;font-weight:600;color:#2c3e50;border-bottom:1px solid #e2e8f0;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="email-logs-tbody">
+                        <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:30px;">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="email-logs-pagination" style="margin-top:12px;display:flex;justify-content:center;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional JS for Add Participant and Email Logs -->
+<script>
+(function($) {
+    // Add Participant Modal Handlers
+    $('#action-add-participant').on('click', function() {
+        $('#add-participant-study-id').val(currentStudyId);
+        $('#add-participant-form')[0].reset();
+        $('#add-participant-error').hide();
+        $('#add-participant-success').hide();
+        $('#eipsi-add-participant-modal').show();
+        $('#participant-email').focus();
+    });
+
+    $('#cancel-add-participant, #eipsi-add-participant-modal .eipsi-modal-close').on('click', function() {
+        $('#eipsi-add-participant-modal').hide();
+    });
+
+    $('#submit-add-participant').on('click', function() {
+        const $btn = $(this);
+        const originalText = $btn.text();
+        $btn.text('Guardando...').prop('disabled', true);
+
+        $('#add-participant-error').hide();
+        $('#add-participant-success').hide();
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_add_participant',
+                nonce: eipsi_dashboard_nonce,
+                study_id: $('#add-participant-study-id').val(),
+                email: $('#participant-email').val(),
+                first_name: $('#participant-first-name').val(),
+                last_name: $('#participant-last-name').val(),
+                password: $('#participant-password').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    let message = response.data?.message || 'Participante agregado correctamente.';
+                    if (response.data?.temporary_password) {
+                        message += '<br><strong>Contraseña temporal:</strong> ' + response.data.temporary_password;
+                    }
+                    $('#add-participant-success').html(message).show();
+                    $('#add-participant-form')[0].reset();
+                    // Refresh dashboard
+                    if (currentStudyId) loadStudyData(currentStudyId);
+                } else {
+                    $('#add-participant-error').text(response.data?.message || 'Error al agregar participante').show();
+                }
+            },
+            error: function() {
+                $('#add-participant-error').text('Error de conexión').show();
+            },
+            complete: function() {
+                $btn.text(originalText).prop('disabled', false);
+            }
+        });
+    });
+
+    // Email Logs Modal Handlers
+    let currentEmailLogPage = 1;
+
+    $('#view-email-logs').on('click', function() {
+        $('#eipsi-email-logs-modal').show();
+        loadEmailLogs(1);
+    });
+
+    $('#eipsi-email-logs-modal .eipsi-modal-close').on('click', function() {
+        $('#eipsi-email-logs-modal').hide();
+    });
+
+    $('#refresh-email-logs').on('click', function() {
+        loadEmailLogs(1);
+    });
+
+    $('#email-log-status-filter, #email-log-search').on('change input', function() {
+        loadEmailLogs(1);
+    });
+
+    function loadEmailLogs(page) {
+        if (!currentStudyId) return;
+        currentEmailLogPage = page;
+
+        const status = $('#email-log-status-filter').val();
+        const search = $('#email-log-search').val();
+
+        $('#email-logs-tbody').html('<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:30px;">Cargando...</td></tr>');
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'GET',
+            data: {
+                action: 'eipsi_get_email_logs',
+                nonce: eipsi_dashboard_nonce,
+                study_id: currentStudyId,
+                page: page,
+                per_page: 20,
+                status: status,
+                search: search
+            },
+            success: function(response) {
+                if (response.success && response.data) {
+                    renderEmailLogs(response.data);
+                } else {
+                    $('#email-logs-tbody').html('<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:30px;">' + (response.data || 'No hay logs') + '</td></tr>');
+                }
+            },
+            error: function() {
+                $('#email-logs-tbody').html('<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:30px;">Error de conexión</td></tr>');
+            }
+        });
+    }
+
+    function renderEmailLogs(data) {
+        const logs = data.logs || [];
+        const tbody = $('#email-logs-tbody');
+        tbody.empty();
+
+        if (logs.length === 0) {
+            tbody.append('<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:30px;">No hay emails registrados</td></tr>');
+            $('#email-logs-pagination').empty();
+            return;
+        }
+
+        logs.forEach(function(log) {
+            const statusColors = {
+                sent: '#3B6CAA',
+                delivered: '#008080',
+                clicked: '#059669',
+                failed: '#dc2626',
+                opened: '#856404'
+            };
+            const statusLabels = {
+                sent: 'Enviado',
+                delivered: 'Entregado',
+                clicked: 'Click',
+                failed: 'Fallido',
+                opened: 'Abierto'
+            };
+            const color = statusColors[log.status] || '#64748b';
+            const label = statusLabels[log.status] || log.status;
+
+            const date = new Date(log.sent_at);
+            const dateStr = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+            tbody.append(`
+                <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:10px 12px;font-size:11px;color:#64748b;">${dateStr}<br>${timeStr}</td>
+                    <td style="padding:10px 12px;"><code style="font-size:11px;">${log.recipient_email || '-'}</code></td>
+                    <td style="padding:10px 12px;font-size:11px;color:#64748b;">${log.email_type || '-'}</td>
+                    <td style="padding:10px 12px;"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${color}20;color:${color};">${label}</span></td>
+                </tr>
+            `);
+        });
+
+        // Pagination
+        const totalPages = data.total_pages || 1;
+        const currentPage = data.current_page || 1;
+        renderEmailLogsPagination(totalPages, currentPage);
+    }
+
+    function renderEmailLogsPagination(totalPages, currentPage) {
+        const container = $('#email-logs-pagination');
+        if (totalPages <= 1) {
+            container.empty();
+            return;
+        }
+
+        let html = '<div class="pagination">';
+        for (let i = 1; i <= totalPages; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            html += `<button class="page-btn ${activeClass}" data-page="${i}">${i}</button>`;
+        }
+        html += '</div>';
+        container.html(html);
+
+        container.find('.page-btn').on('click', function() {
+            loadEmailLogs($(this).data('page'));
+        });
+    }
+
+    // Close modals on ESC and outside click
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            $('.eipsi-modal:visible').hide();
+        }
+    });
+
+    $(document).on('click', '.eipsi-modal', function(e) {
+        if (e.target === this) {
+            $(this).hide();
+        }
+    });
+
+})(jQuery);
+</script>

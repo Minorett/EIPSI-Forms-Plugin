@@ -1167,54 +1167,53 @@ function eipsi_render_pool_hub_v2() {
             });
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Dropdown cleanup on any click
-            document.addEventListener('click', function() {
-                document.querySelectorAll('.eipsi-pool-menu-dropdown').forEach(d => {
-                    d.classList.remove('is-open');
-                });
+        // Dropdown cleanup on any click
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.eipsi-pool-menu-dropdown').forEach(d => {
+                d.classList.remove('is-open');
             });
+        });
 
-            // Modal handling
-            const poolModal = document.getElementById('eipsi-pool-modal');
-            const shortcodeModal = document.getElementById('eipsi-shortcode-modal');
-            const deleteModal = document.getElementById('eipsi-delete-modal');
+        // Modal handling
+        const poolModal = document.getElementById('eipsi-pool-modal');
+        const shortcodeModal = document.getElementById('eipsi-shortcode-modal');
+        const deleteModal = document.getElementById('eipsi-delete-modal');
 
-            function openModal(modal) {
-                if (modal) modal.style.display = 'flex';
-            }
+        function openModal(modal) {
+            if (modal) modal.style.display = 'flex';
+        }
 
-            function closeModal(modal) {
-                if (modal) modal.style.display = 'none';
-            }
+        function closeModal(modal) {
+            if (modal) modal.style.display = 'none';
+        }
 
-            document.querySelectorAll('.eipsi-modal-close, .eipsi-modal-cancel').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    closeModal(this.closest('.eipsi-modal-overlay'));
-                });
+        document.querySelectorAll('.eipsi-modal-close, .eipsi-modal-cancel').forEach(btn => {
+            btn.addEventListener('click', function() {
+                closeModal(this.closest('.eipsi-modal-overlay'));
             });
+        });
 
-            document.querySelectorAll('.eipsi-modal-overlay').forEach(overlay => {
-                overlay.addEventListener('click', function(e) {
-                    if (e.target === this) {
-                        closeModal(this);
-                    }
-                });
+        document.querySelectorAll('.eipsi-modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal(this);
+                }
             });
+        });
 
-            // Create pool buttons - v2.2.3: Fixed to work with empty state
-            document.querySelectorAll('.eipsi-create-pool-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const modalTitle = document.getElementById('eipsi-modal-title');
-                    const poolIdInput = document.getElementById('eipsi-pool-id');
-                    const poolForm = document.getElementById('eipsi-pool-form');
-                    
-                    if (modalTitle) modalTitle.textContent = '<?php _e("Crear nuevo pool", "eipsi-forms"); ?>';
-                    if (poolIdInput) poolIdInput.value = '0';
-                    if (poolForm) poolForm.reset();
+        // Create pool buttons - v2.2.3: Fixed to work with empty state
+        document.querySelectorAll('.eipsi-create-pool-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const modalTitle = document.getElementById('eipsi-modal-title');
+                const poolIdInput = document.getElementById('eipsi-pool-id');
+                const poolForm = document.getElementById('eipsi-pool-form');
+                
+                if (modalTitle) modalTitle.textContent = '<?php _e("Crear nuevo pool", "eipsi-forms"); ?>';
+                if (poolIdInput) poolIdInput.value = '0';
+                if (poolForm) poolForm.reset();
                 document.getElementById('eipsi-pool-studies-rows').innerHTML = '';
                 updateProbabilityTotal();
                 openModal(poolModal);

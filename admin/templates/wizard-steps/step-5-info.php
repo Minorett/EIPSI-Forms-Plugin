@@ -158,9 +158,6 @@ if (!empty($step_3['timing_intervals'])) {
                                 </div>
                                 <div style="display:flex;align-items:center;gap:12px;">
                                     <span style="font-size:12px;color:#64748b;"><?php echo $duration; ?> min</span>
-                                    <span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;<?php echo $is_required ? 'background:#dc3545;color:white;' : 'background:#008080;color:white;'; ?>">
-                                        <?php echo $is_required ? 'Obligatoria' : 'Opcional'; ?>
-                                    </span>
                                 </div>
                             </div>
                         <?php endforeach; ?>

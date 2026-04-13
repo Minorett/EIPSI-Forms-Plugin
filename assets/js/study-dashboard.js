@@ -25,11 +25,34 @@
                 self.openDashboard(studyId);
             });
 
-            // Close modals
+            // Close modal buttons
             $('.eipsi-modal-close').on('click', function() {
                 $(this).closest('.eipsi-modal').fadeOut();
                 if ($(this).closest('#eipsi-study-dashboard-modal').length) {
                     self.stopAutoRefresh();
+                }
+            });
+
+            // Close modal on ESC key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const openModal = $('.eipsi-modal:visible');
+                    if (openModal.length) {
+                        openModal.fadeOut();
+                        if (openModal.is('#eipsi-study-dashboard-modal')) {
+                            self.stopAutoRefresh();
+                        }
+                    }
+                }
+            });
+
+            // Close modal when clicking outside (on overlay)
+            $(document).on('click', '.eipsi-modal', function(e) {
+                if (e.target === this) {
+                    $(this).fadeOut();
+                    if ($(this).is('#eipsi-study-dashboard-modal')) {
+                        self.stopAutoRefresh();
+                    }
                 }
             });
 
@@ -237,24 +260,31 @@
 
             // General Info - usar study_code si existe, sino id
             const studyDisplayId = general.study_code || general.id;
-            $('#study-modal-title').text(`${studyDisplayId}: ${general.study_name}`);
-            $('#study-id-display').text(general.id);
-            $('#study-created-at').text(general.created_at);
-            $('#study-estimated-end').text(general.estimated_end_date || 'Sin fecha definida');
-            $('#study-status-badge').text(general.status).attr('class', `eipsi-badge badge-${general.status}`);
+            $('#study-name-display').text(general.study_name || 'Estudio sin nombre');
+            $('#study-status-pill').text(general.status === 'active' ? 'Activo' : general.status === 'paused' ? 'Pausado' : 'Cerrado');
+            $('#study-status-pill').attr('class', 'pill pill-' + (general.status === 'active' ? 'active' : general.status === 'paused' ? 'paused' : 'closed'));
+
+            const created = new Date(general.created_at);
+            const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+            $('#study-meta-display').text(
+                'Creado ' + created.getDate() + ' ' + months[created.getMonth()] + ' ' + created.getFullYear() +
+                ' · ID: ' + general.id +
+                ' · ' + waves.length + ' tomas' +
+                ' · ' + participants.total + ' participantes'
+            );
 
             // Shortcode - generar con study_code o id
             const shortcode = page && page.shortcode ? page.shortcode : `[eipsi_longitudinal_study study_code="${studyDisplayId}"]`;
-            $('#study-shortcode-display').text(shortcode);
+            $('#shortcode-display').text(shortcode);
 
             // Study Page - show URL and actions
             this.renderStudyPage(page);
 
-            // Participant Stats - New format with status counts
-            $('#total-participants').text(participants.total);
-            $('#active-participants').text(participants.active || 0);
-            $('#completed-participants').text(participants.completed || 0);
-            $('#paused-participants').text(participants.paused || 0);
+            // KPIs
+            $('#kpi-total').text(participants.total);
+            $('#kpi-active').text(participants.active || 0);
+            $('#kpi-completed').text(participants.completed || 0);
+            $('#kpi-emails').text(emails.sent_today || 0);
 
             // Study Control Buttons - Show/hide based on status
             const studyStatus = general.status;
