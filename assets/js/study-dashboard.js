@@ -85,13 +85,13 @@
                 self.saveExtendedDeadline();
             });
 
-            // Add participant button
-            $('#action-add-participant').on('click', function() {
+            // Add participant button - .off() prevents duplicate handlers
+            $('#action-add-participant').off('click').on('click', function() {
                 self.openAddParticipant();
             });
 
-            // Delete study button
-            $('#action-delete-study').on('click', function() {
+            // Delete study button - .off() prevents duplicate handlers
+            $('#action-delete-study').off('click').on('click', function() {
                 if (!self.currentStudyId) {
                     return;
                 }
@@ -193,16 +193,16 @@
                 self.sendMagicLinkEmail();
             });
 
-            // Study Control Buttons
-            $('#btn-pause-study').on('click', function() {
+            // Study Control Buttons - .off() prevents duplicate handlers
+            $('#btn-pause-study').off('click').on('click', function() {
                 self.pauseStudy();
             });
 
-            $('#btn-resume-study').on('click', function() {
+            $('#btn-resume-study').off('click').on('click', function() {
                 self.resumeStudy();
             });
 
-            $('#btn-close-study').on('click', function() {
+            $('#btn-close-study').off('click').on('click', function() {
                 self.closeStudy();
             });
         },
@@ -302,31 +302,83 @@
                 $('#btn-close-study').show().prop('disabled', true).text('🔒 Estudio Cerrado');
             }
 
-            // Waves
+            // Waves - EIPSI redesigned cards
             const $container = $('#waves-container');
             $container.empty();
 
-            waves.forEach(wave => {
-                const deadlineText = wave.deadline || 'Sin fecha límite';
+            waves.forEach((wave, index) => {
+                const waveNum = index + 1;
+                const progress = wave.progress || 0;
+                const completed = wave.completed || 0;
+                const total = wave.total || 0;
+                const hasDeadline = wave.has_due_date && wave.deadline;
+                const deadlineFormatted = wave.deadline_formatted || 'sin fecha límite';
+
+                // Nudge config
+                const nudgeConfig = wave.nudge_config || {};
+                const nudgesEnabled = nudgeConfig.nudge_1?.enabled || nudgeConfig.nudge_2?.enabled || false;
+                const nudgeCount = [nudgeConfig.nudge_1, nudgeConfig.nudge_2, nudgeConfig.nudge_3, nudgeConfig.nudge_4]
+                    .filter(n => n && n.enabled).length;
+
                 const waveHtml = `
-                    <div class="wave-item-card">
-                        <div class="wave-header">
-                            <span class="wave-name">${wave.wave_name}</span>
-                            <span class="eipsi-badge badge-${wave.status}">${wave.status}</span>
+                    <div class="wave-card" data-wave-id="${wave.id}">
+                        <div class="wave-card-head">
+                            <div class="wave-left">
+                                <span class="wave-idx">T${waveNum}</span>
+                                <div>
+                                    <div class="wave-name">${wave.wave_name || 'Toma ' + waveNum}</div>
+                                    <div class="wave-sub">${self.getWaveIntervalText(wave)}</div>
+                                </div>
+                            </div>
+                            <div class="wave-right">
+                                <span class="pill ${wave.status === 'active' ? 'pill-active' : ''}">${wave.status === 'active' ? 'Activo' : 'Inactivo'}</span>
+                            </div>
                         </div>
-                        <div class="wave-stats">
-                            <small>${wave.form_id}</small><br>
-                            <strong>${wave.completed}/${wave.total}</strong> completados (${wave.progress}%)
+                        <div class="wave-body">
+                            <div class="prog-row">
+                                <div class="prog-track"><div class="prog-fill ${progress === 100 ? 'fill-green' : progress > 0 ? 'fill-blue' : 'fill-gray'}" style="width:${progress}%"></div></div>
+                                <span class="prog-lbl" style="color:${progress === 100 ? '#006666' : '#2c3e50'}">${completed}/${total} · ${progress}%</span>
+                            </div>
+                            <div class="deadline-row">
+                                <span>Plazo:</span>
+                                <span class="deadline-val ${hasDeadline ? '' : 'none'}">${deadlineFormatted}</span>
+                                <button class="btn-link" onclick="toggleDeadlineEditor('de${wave.id}', this)">${hasDeadline ? 'Cambiar' : 'Asignar plazo'}</button>
+                                ${hasDeadline ? `<button class="btn-link btn-link-red" onclick="removeDeadline(${wave.id})">Quitar</button>` : ''}
+                            </div>
+                            <div class="deadline-editor" id="de${wave.id}">
+                                <div class="de-label">Fecha límite para completar esta toma</div>
+                                <div class="de-row">
+                                    <input type="date" id="de${wave.id}-date" value="${wave.deadline || ''}">
+                                </div>
+                                <div class="de-footer">
+                                    <button class="btn-sm" onclick="toggleDeadlineEditor('de${wave.id}', null)">Cancelar</button>
+                                    <button class="btn-sm btn-primary" onclick="saveDeadline(${wave.id}, 'de${wave.id}')">Guardar</button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="progress-bar-bg" style="margin: 8px 0;">
-                            <div class="progress-bar-fill blue" style="width: ${wave.progress}%"></div>
-                        </div>
-                        <div class="wave-footer">
-                            <small>Vence: ${deadlineText}</small>
-                        </div>
-                        <div class="wave-actions">
-                            <button class="button button-small send-reminder" data-wave-id="${wave.id}">📧</button>
-                            <button class="button button-small extend-deadline" data-wave-id="${wave.id}" data-deadline="${wave.deadline || ''}">📅</button>
+                        <div class="nudge-section">
+                            <div class="nudge-toggle-row" onclick="toggleNudgePanel('n${wave.id}')">
+                                <span class="nudge-lbl ${nudgesEnabled ? 'on' : ''}" id="nl${wave.id}">
+                                    ${nudgesEnabled ? `Recordatorios activados · ${nudgeCount} nudges` : 'Recordatorios desactivados'}
+                                </span>
+                                <label class="toggle" onclick="event.stopPropagation()">
+                                    <input type="checkbox" ${nudgesEnabled ? 'checked' : ''} onchange="toggleNudgePanel('n${wave.id}')">
+                                    <span class="tslider"></span>
+                                </label>
+                            </div>
+                            <div class="nudge-panel ${nudgesEnabled ? 'open' : ''}" id="n${wave.id}">
+                                ${!hasDeadline ? '<div class="info-note">Asigná un plazo arriba para habilitar el modo "antes de vencimiento".</div>' : ''}
+                                <div class="nudge-ref-row">
+                                    Basado en: momento de disponibilidad
+                                </div>
+                                <div class="nudge-rows">
+                                    ${self.renderNudgeRows(nudgeConfig, wave.id)}
+                                </div>
+                                <div class="nudge-footer">
+                                    <button class="btn-sm" onclick="toggleNudgePanel('n${wave.id}')">Cancelar</button>
+                                    <button class="btn-sm btn-primary" onclick="saveNudgeConfig(${wave.id})">Guardar</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
