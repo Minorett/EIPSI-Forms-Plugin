@@ -326,8 +326,8 @@ class EIPSI_Wave_Availability_Email_Service {
         // Headers
         $headers = array('Content-Type: text/html; charset=UTF-8');
 
-        // Intentar enviar
-        $sent = wp_mail($to, $subject, $message, $headers);
+        // Intentar enviar usando EIPSI_Email_Service para respetar configuración SMTP
+        $sent = EIPSI_Email_Service::send_email($to, $subject, $message, $headers);
         
         if ($sent) {
             // Log exitoso
@@ -339,14 +339,11 @@ class EIPSI_Wave_Availability_Email_Service {
                 'message' => 'Email enviado correctamente'
             );
         } else {
-            // Log fallido
-            global $phpmailer;
-            $error = isset($phpmailer) ? $phpmailer->ErrorInfo : 'Error desconocido en wp_mail';
-            
+            // Log fallido - EIPSI_Email_Service maneja el error internamente
             return array(
                 'success' => false,
-                'error' => $error,
-                'message' => 'Fallo al enviar email: ' . $error
+                'error' => 'smtp_error',
+                'message' => 'Fallo al enviar email via SMTP'
             );
         }
     }

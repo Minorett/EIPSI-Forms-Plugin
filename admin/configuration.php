@@ -295,88 +295,54 @@ function eipsi_display_configuration_page() {
                         <?php endif; ?>
                     </div>
                     
-                    <!-- Local Table Status Details -->
-                    <div class="eipsi-local-table-status" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
-                        <h4 style="margin-top: 0; margin-bottom: 12px;">
-                            <span class="dashicons dashicons-database-view"></span>
-                            <?php echo esc_html__('Estado de tablas locales', 'eipsi-forms'); ?>
-                        </h4>
-                                            
-                        <!-- RCT Configs Table -->
-                        <div class="status-detail-row" style="margin-bottom: 8px;">
-                            <span class="detail-label" style="min-width: 200px;">
-                                <?php echo esc_html__('RCT Configs:', 'eipsi-forms'); ?>
-                            </span>
-                            <span class="detail-value">
-                                <?php if ($local_table_status['randomization_configs_table']['exists']): ?>
-                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-                                    <?php echo esc_html__('Existe', 'eipsi-forms'); ?>
-                                    <span style="color: #666; font-size: 12px;">
-                                        (<?php echo number_format_i18n($local_table_status['randomization_configs_table']['row_count']); ?> <?php echo esc_html__('configs', 'eipsi-forms'); ?>)
-                                    </span>
-                                <?php else: ?>
-                                    <span class="dashicons dashicons-dismiss" style="color: #dc3232;"></span>
-                                    <?php echo esc_html__('No existe', 'eipsi-forms'); ?>
-                                <?php endif; ?>
-                            </span>
+                    <!-- Local Data Summary with Schema Status Link -->
+                    <div class="eipsi-db-summary" style="margin-top: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #2271b1;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4 style="margin: 0; font-size: 14px; color: #2c3e50;">
+                                <span class="dashicons dashicons-chart-pie" style="font-size: 16px; vertical-align: middle;"></span>
+                                <?php echo esc_html__('Resumen de datos EIPSI', 'eipsi-forms'); ?>
+                            </h4>
+                            <a href="?page=eipsi-configuration&tab=schema-status" class="button button-small" style="display: inline-flex; align-items: center; gap: 4px;">
+                                <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+                                <?php echo esc_html__('Análisis completo', 'eipsi-forms'); ?>
+                            </a>
                         </div>
                         
-                        <!-- RCT Assignments Table -->
-                        <div class="status-detail-row" style="margin-bottom: 8px;">
-                            <span class="detail-label" style="min-width: 200px;">
-                                <?php echo esc_html__('RCT Assignments:', 'eipsi-forms'); ?>
-                            </span>
-                            <span class="detail-value">
-                                <?php if ($local_table_status['randomization_assignments_table']['exists']): ?>
-                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-                                    <?php echo esc_html__('Existe', 'eipsi-forms'); ?>
-                                    <span style="color: #666; font-size: 12px;">
-                                        (<?php echo number_format_i18n($local_table_status['randomization_assignments_table']['row_count']); ?> <?php echo esc_html__('asignaciones', 'eipsi-forms'); ?>)
-                                    </span>
-                                <?php else: ?>
-                                    <span class="dashicons dashicons-dismiss" style="color: #dc3232;"></span>
-                                    <?php echo esc_html__('No existe', 'eipsi-forms'); ?>
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        
-                        <!-- Longitudinal Tables -->
-                        <?php if (!empty($local_table_status['longitudinal_tables'])): ?>
-                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-                            <h5 style="margin-top: 0; margin-bottom: 10px; color: #666;">
-                                <?php echo esc_html__('Tablas longitudinales (v1.4.0+)', 'eipsi-forms'); ?>
-                            </h5>
-                            <?php foreach ($local_table_status['longitudinal_tables'] as $key => $table_info): ?>
-                            <div class="status-detail-row" style="margin-bottom: 6px;">
-                                <span class="detail-label" style="min-width: 200px; font-size: 12px;">
-                                    <?php 
-                                    $table_labels = array(
-                                        'survey_studies' => __('Estudios:', 'eipsi-forms'),
-                                        'survey_participants' => __('Participantes:', 'eipsi-forms'),
-                                        'survey_sessions' => __('Sesiones:', 'eipsi-forms'),
-                                        'survey_waves' => __('Tomas:', 'eipsi-forms'),
-                                        'survey_assignments' => __('Asignaciones:', 'eipsi-forms'),
-                                        'survey_magic_links' => __('Magic Links:', 'eipsi-forms'),
-                                        'survey_email_log' => __('Email Log:', 'eipsi-forms'),
-                                        'survey_audit_log' => __('Audit Log:', 'eipsi-forms'),
-                                    );
-                                    echo esc_html($table_labels[$key] ?? $key . ':');
-                                    ?>
-                                </span>
-                                <span class="detail-value" style="font-size: 12px;">
-                                    <?php if ($table_info['exists']): ?>
-                                        <span class="dashicons dashicons-yes-alt" style="color: #46b450; font-size: 14px;"></span>
-                                        <span style="color: #666;">
-                                            (<?php echo number_format_i18n($table_info['row_count']); ?>)
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="dashicons dashicons-dismiss" style="color: #dc3232; font-size: 14px;"></span>
-                                    <?php endif; ?>
-                                </span>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                            <div style="text-align: center; padding: 12px; background: #fff; border-radius: 6px;">
+                                <div style="font-size: 24px; font-weight: 600; color: #2271b1;">
+                                    <?php echo number_format_i18n($local_table_status['longitudinal_tables']['survey_studies']['row_count'] ?? 0); ?>
+                                </div>
+                                <div style="font-size: 12px; color: #64748b;"><?php echo esc_html__('Estudios', 'eipsi-forms'); ?></div>
                             </div>
-                            <?php endforeach; ?>
+                            <div style="text-align: center; padding: 12px; background: #fff; border-radius: 6px;">
+                                <div style="font-size: 24px; font-weight: 600; color: #2271b1;">
+                                    <?php echo number_format_i18n($local_table_status['longitudinal_tables']['survey_participants']['row_count'] ?? 0); ?>
+                                </div>
+                                <div style="font-size: 12px; color: #64748b;"><?php echo esc_html__('Participantes', 'eipsi-forms'); ?></div>
+                            </div>
+                            <div style="text-align: center; padding: 12px; background: #fff; border-radius: 6px;">
+                                <div style="font-size: 24px; font-weight: 600; color: #2271b1;">
+                                    <?php echo number_format_i18n($local_table_status['longitudinal_tables']['survey_magic_links']['row_count'] ?? 0); ?>
+                                </div>
+                                <div style="font-size: 12px; color: #64748b;"><?php echo esc_html__('Magic Links', 'eipsi-forms'); ?></div>
+                            </div>
                         </div>
-                        <?php endif; ?>
+                        
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; gap: 16px; font-size: 12px; color: #64748b; flex-wrap: wrap;">
+                            <span>
+                                <span class="dashicons dashicons-yes-alt" style="color: #46b450; font-size: 12px;"></span>
+                                <?php echo number_format_i18n($local_table_status['longitudinal_tables']['survey_waves']['row_count'] ?? 0); ?> <?php echo esc_html__('Tomas', 'eipsi-forms'); ?>
+                            </span>
+                            <span>
+                                <span class="dashicons dashicons-yes-alt" style="color: #46b450; font-size: 12px;"></span>
+                                <?php echo number_format_i18n($local_table_status['longitudinal_tables']['survey_assignments']['row_count'] ?? 0); ?> <?php echo esc_html__('Asignaciones', 'eipsi-forms'); ?>
+                            </span>
+                            <span>
+                                <span class="dashicons dashicons-yes-alt" style="color: #46b450; font-size: 12px;"></span>
+                                <?php echo number_format_i18n($local_table_status['longitudinal_tables']['survey_email_log']['row_count'] ?? 0); ?> <?php echo esc_html__('Emails enviados', 'eipsi-forms'); ?>
+                            </span>
+                        </div>
                     </div>
                     <?php endif; ?>
                     
@@ -407,191 +373,6 @@ function eipsi_display_configuration_page() {
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
-                    </div>
-
-                    <!-- Schema Verification Status -->
-                    <div class="eipsi-schema-status-box" style="margin-top: 20px;">
-                    <h3>
-                        <span class="dashicons dashicons-database-view"></span>
-                        <?php echo esc_html__('Database Schema Status', 'eipsi-forms'); ?>
-                    </h3>
-                    <?php
-                    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
-                    $schema_status = EIPSI_Database_Schema_Manager::get_verification_status();
-                    ?>
-                    <div class="eipsi-schema-details">
-                        <?php if (!empty($schema_status['last_verified'])): ?>
-                        <div class="status-detail-row">
-                            <span class="detail-label"><?php echo esc_html__('Last Verified:', 'eipsi-forms'); ?></span>
-                            <span class="detail-value"><?php echo esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $schema_status['last_verified'])); ?></span>
-                        </div>
-                        <?php endif; ?>
-
-                        <?php if (!empty($schema_status['last_sync_result'])): ?>
-                        <?php $sync = $schema_status['last_sync_result']; ?>
-                        <div class="status-detail-row">
-                            <span class="detail-label"><?php echo esc_html__('Results Table:', 'eipsi-forms'); ?></span>
-                            <span class="detail-value">
-                                <?php if ($sync['results_table']['exists']): ?>
-                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-                                    <?php echo esc_html__('Exists', 'eipsi-forms'); ?>
-                                    <?php if ($sync['results_table']['created']): ?>
-                                        <em>(<?php echo esc_html__('created during last sync', 'eipsi-forms'); ?>)</em>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
-                                    <?php echo esc_html__('Missing', 'eipsi-forms'); ?>
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <div class="status-detail-row">
-                            <span class="detail-label"><?php echo esc_html__('Events Table:', 'eipsi-forms'); ?></span>
-                            <span class="detail-value">
-                                <?php if ($sync['events_table']['exists']): ?>
-                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-                                    <?php echo esc_html__('Exists', 'eipsi-forms'); ?>
-                                    <?php if ($sync['events_table']['created']): ?>
-                                        <em>(<?php echo esc_html__('created during last sync', 'eipsi-forms'); ?>)</em>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
-                                    <?php echo esc_html__('Missing', 'eipsi-forms'); ?>
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <div class="status-detail-row">
-                            <span class="detail-label"><?php echo esc_html__('RCT Configs Table:', 'eipsi-forms'); ?></span>
-                            <span class="detail-value">
-                                <?php if ($sync['randomization_configs_table']['exists']): ?>
-                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-                                    <?php echo esc_html__('Exists', 'eipsi-forms'); ?>
-                                    <?php if ($sync['randomization_configs_table']['created']): ?>
-                                        <em>(<?php echo esc_html__('created during last sync', 'eipsi-forms'); ?>)</em>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
-                                    <?php echo esc_html__('Missing', 'eipsi-forms'); ?>
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <div class="status-detail-row">
-                            <span class="detail-label"><?php echo esc_html__('RCT Assignments Table:', 'eipsi-forms'); ?></span>
-                            <span class="detail-value">
-                                <?php if ($sync['randomization_assignments_table']['exists']): ?>
-                                    <span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-                                    <?php echo esc_html__('Exists', 'eipsi-forms'); ?>
-                                    <?php if ($sync['randomization_assignments_table']['created']): ?>
-                                        <em>(<?php echo esc_html__('created during last sync', 'eipsi-forms'); ?>)</em>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
-                                    <?php echo esc_html__('Missing', 'eipsi-forms'); ?>
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <?php if (!empty($sync['results_table']['columns_added']) || !empty($sync['events_table']['columns_added']) || !empty($sync['randomization_configs_table']['columns_added']) || !empty($sync['randomization_assignments_table']['columns_added'])): ?>
-                        <div class="status-detail-row">
-                            <span class="detail-label"><?php echo esc_html__('Columns Added:', 'eipsi-forms'); ?></span>
-                            <span class="detail-value">
-                                <?php
-                                $total_columns = count($sync['results_table']['columns_added']) + count($sync['events_table']['columns_added']) + count($sync['randomization_configs_table']['columns_added']) + count($sync['randomization_assignments_table']['columns_added']);
-                                echo esc_html(sprintf(__('%d columns synced', 'eipsi-forms'), $total_columns));
-                                ?>
-                            </span>
-                        </div>
-                        <?php endif; ?>
-                        <?php if (!empty($sync['randomization_assignments_table']['columns_added']) && in_array('config_id', $sync['randomization_assignments_table']['columns_added'])): ?>
-                        <div class="status-detail-row" style="background-color: #e8f5e8; padding: 8px; border-radius: 4px; margin-top: 8px;">
-                            <span class="detail-label" style="font-weight: bold;"><?php echo esc_html__('🔧 CRITICAL FIX APPLIED:', 'eipsi-forms'); ?></span>
-                            <span class="detail-value">
-                                <?php echo esc_html__('config_id column added to RCT Assignments table - randomization queries now functional', 'eipsi-forms'); ?>
-                            </span>
-                        </div>
-                        <?php endif; ?>
-                        <?php endif; ?>
-
-                        <?php if ($status['connected']): ?>
-                        <!-- External Database Schema Verification -->
-                        <div style="margin-bottom: 15px;">
-                            <h4 style="margin-top: 0; margin-bottom: 10px; color: #666;">
-                                <?php echo esc_html__('Base de datos externa:', 'eipsi-forms'); ?>
-                            </h4>
-                            <button type="button" id="eipsi-verify-schema" class="button button-secondary" style="margin-top: 10px;">
-                                <span class="dashicons dashicons-update"></span>
-                                <?php echo esc_html__('Verify & Repair Schema', 'eipsi-forms'); ?>
-                            </button>
-                            <p class="description">
-                                <?php echo esc_html__('Manually verify database schema and create any missing tables or columns.', 'eipsi-forms'); ?>
-                            </p>
-                        </div>
-                        <?php endif; ?>
-
-                        <!-- Local WordPress Database Schema Verification -->
-                        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
-                            <h4 style="margin-top: 0; margin-bottom: 10px; color: #666;">
-                                <?php echo esc_html__('Base de datos local de WordPress:', 'eipsi-forms'); ?>
-                            </h4>
-                            <button type="button" id="eipsi-verify-local-schema" class="button button-secondary" style="margin-top: 10px;">
-                                <span class="dashicons dashicons-update"></span>
-                                <?php echo esc_html__('Verificar y reparar esquema local', 'eipsi-forms'); ?>
-                            </button>
-                            <p class="description">
-                                <?php echo esc_html__('Verifica el esquema de la base de datos de WordPress y crea las tablas o columnas que falten.', 'eipsi-forms'); ?>
-                            </p>
-
-                            <!-- Local Schema Results Container -->
-                            <div id="eipsi-local-schema-results" style="display: none; margin-top: 15px; padding: 16px; background: var(--eipsi-primary-lighter, #f0f6fc); border-radius: 6px; border-left: 4px solid var(--eipsi-primary, #2271b1); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                <h4 style="margin-top: 0; margin-bottom: 12px; color: var(--eipsi-text, #2c3e50); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                                    <span class="dashicons dashicons-info-outline" style="font-size: 16px; width: 16px; height: 16px; color: var(--eipsi-primary, #2271b1);"></span>
-                                    <?php echo esc_html__('Resultados de verificación', 'eipsi-forms'); ?>
-                                </h4>
-                                <div id="eipsi-local-schema-content"></div>
-                            </div>
-                        </div>
-                    </div>
-                    </div>
-
-                    <!-- Table Status Section -->
-                    <div class="eipsi-table-status-box" style="margin-top: 20px;">
-                        <h3>
-                            <span class="dashicons dashicons-database-view"></span>
-                            <?php echo esc_html__('Database Table Status', 'eipsi-forms'); ?>
-                        </h3>
-
-                        <div id="eipsi-table-status-content">
-                            <?php if ($status['connected']): ?>
-                            <!-- External Database Table Status -->
-                            <div style="margin-bottom: 20px;">
-                                <h4 style="margin-top: 0; margin-bottom: 10px; color: #666;">
-                                    <?php echo esc_html__('Base de datos externa:', 'eipsi-forms'); ?>
-                                </h4>
-                                <p class="description">
-                                    <?php echo esc_html__('Check if required database tables exist in the external database.', 'eipsi-forms'); ?>
-                                </p>
-                                <button type="button" id="eipsi-check-table-status" class="button button-secondary" style="margin-top: 10px;">
-                                    <span class="dashicons dashicons-search"></span>
-                                    <?php echo esc_html__('Check Table Status', 'eipsi-forms'); ?>
-                                </button>
-                            </div>
-                            <?php endif; ?>
-
-                            <!-- Local WordPress Database Table Status -->
-                            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
-                                <h4 style="margin-top: 0; margin-bottom: 10px; color: #666;">
-                                    <?php echo esc_html__('Base de datos local de WordPress:', 'eipsi-forms'); ?>
-                                </h4>
-                                <p class="description">
-                                    <?php echo esc_html__('Verifica el estado detallado de las tablas en la base de datos de WordPress.', 'eipsi-forms'); ?>
-                                </p>
-                                <button type="button" id="eipsi-check-local-table-status" class="button button-secondary" style="margin-top: 10px;">
-                                    <span class="dashicons dashicons-search"></span>
-                                    <?php echo esc_html__('Verificar estado de tablas locales', 'eipsi-forms'); ?>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Table Status Results (populated via AJAX) -->
-                        <div id="eipsi-table-status-results" style="display: none; margin-top: 15px;"></div>
                     </div>
 
                     <!-- Help Section -->

@@ -243,7 +243,7 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
                     sleep(2);
                 } elseif ($result['reason'] === 'max_retries_reached') {
                     // Increment reminder_count to stop trying
-                    EIPSI_Assignment_Service::increment_reminder_count($assignment->id);
+                    EIPSI_Assignment_Service::increment_reminder_count($assignment->wave_id, $assignment->participant_id);
                     error_log("[EIPSI Cron] Max retries reached, marking as attempted");
                 } else {
                     // Log why Nudge 0 was not sent

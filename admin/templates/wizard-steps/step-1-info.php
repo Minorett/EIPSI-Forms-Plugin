@@ -30,84 +30,87 @@ if (empty($study_code) && !empty($study_name)) {
     <form id="eipsi-wizard-form" method="post">
         <input type="hidden" name="step_number" value="1">
         
-        <div class="step-header">
-            <h2>📋 INFORMACIÓN BÁSICA</h2>
-            <p>Proporciona la información esencial de tu estudio de investigación.</p>
+        <!-- Header del step -->
+        <div class="eipsi-wiz-step-header">
+            <p class="eipsi-wiz-step-title">Información básica</p>
+            <p class="eipsi-wiz-step-sub">Proporciona la información esencial de tu estudio de investigación.</p>
         </div>
         
-        <div class="form-grid">
-            <div class="form-row">
-                <label for="study_name" class="form-label required">
-                    Nombre del Estudio
-                </label>
-                <input type="text" 
-                       id="study_name" 
-                       name="study_name" 
-                       class="form-input" 
-                       value="<?php echo esc_attr($study_name); ?>"
-                       placeholder="Ej: Efectividad de Intervención Cognitivo-Conductual"
-                       required>
-                <small class="form-help">
-                    Un nombre descriptivo que identifique claramente tu investigación.
-                </small>
-            </div>
-            
-            <div class="form-row">
-                <label for="study_code" class="form-label required">
-                    Código del Estudio (ID)
-                </label>
-                <input type="text" 
-                       id="study_code" 
-                       name="study_code" 
-                       class="form-input" 
-                       value="<?php echo esc_attr($study_code); ?>"
-                       placeholder="Se generará automáticamente"
-                       required
-                       maxlength="50">
-                <small class="form-help">
-                    Código único para identificar el estudio. Se usará en URLs y bases de datos.
-                    <button type="button" class="button-link" onclick="eipsiRegenerateCode()">
-                        🔄 Regenerar
-                    </button>
-                </small>
-            </div>
-            
-            <div class="form-row">
-                <label for="description" class="form-label">
-                    Descripción (para participantes)
-                </label>
-                <textarea id="description" 
-                          name="description" 
-                          class="form-textarea" 
-                          rows="4"
-                          placeholder="Describe brevemente el propósito del estudio y qué se espera de los participantes..."><?php echo esc_textarea($description); ?></textarea>
-                <small class="form-help">
-                    Esta descripción será visible para los participantes en los formularios de consentimiento.
-                </small>
-            </div>
-            
-            <div class="form-row">
-                <label for="principal_investigator_id" class="form-label required">
-                    Investigador Principal
-                </label>
-                <select id="principal_investigator_id" 
-                        name="principal_investigator_id" 
-                        class="form-select" 
-                        required>
-                    <option value="">Seleccionar investigador...</option>
-                    <?php foreach ($admin_users as $user): ?>
-                        <option value="<?php echo $user->ID; ?>" 
-                                <?php selected($principal_investigator_id, $user->ID); ?>>
-                            <?php echo esc_html($user->display_name . ' (' . $user->user_email . ')'); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <small class="form-help">
-                    Usuario administrador responsable del estudio.
-                </small>
-            </div>
+        <!-- Campos de formulario -->
+        <div class="eipsi-wiz-field">
+            <label for="study_name" class="eipsi-wiz-label">Nombre del Estudio<span class="eipsi-req">*</span></label>
+            <input type="text" 
+                   id="study_name" 
+                   name="study_name" 
+                   class="eipsi-wiz-input" 
+                   value="<?php echo esc_attr($study_name); ?>"
+                   placeholder="Ej: Efectividad de Intervención Cognitivo-Conductual"
+                   required>
+            <span class="eipsi-wiz-help">Un nombre descriptivo que identifique claramente tu investigación.</span>
+        </div>
+        
+        <div class="eipsi-wiz-field">
+            <label for="study_code" class="eipsi-wiz-label">Código del Estudio (ID)<span class="eipsi-req">*</span></label>
+            <input type="text" 
+                   id="study_code" 
+                   name="study_code" 
+                   class="eipsi-wiz-input" 
+                   value="<?php echo esc_attr($study_code); ?>"
+                   placeholder="Se generará automáticamente"
+                   required
+                   maxlength="50">
+            <span class="eipsi-wiz-help">
+                Código único para identificar el estudio. Se usará en URLs y bases de datos.
+                <button type="button" 
+                    style="background:none;border:none;color:#3B6CAA;cursor:pointer;text-decoration:underline;font-size:11px;padding:0;margin-left:8px;"
+                    onmouseover="this.style.color='#1E3A5F'"
+                    onmouseout="this.style.color='#3B6CAA'"
+                    onclick="eipsiRegenerateCode()">
+                    Regenerar
+                </button>
+            </span>
+        </div>
+        
+        <div class="eipsi-wiz-field">
+            <label for="description" class="eipsi-wiz-label">Descripción (para participantes)</label>
+            <textarea id="description" 
+                      name="description" 
+                      class="eipsi-wiz-textarea" 
+                      rows="4"
+                      placeholder="Describe brevemente el propósito del estudio y qué se espera de los participantes..."><?php echo esc_textarea($description); ?></textarea>
+            <span class="eipsi-wiz-help">Esta descripción será visible para los participantes en los formularios de consentimiento.</span>
+        </div>
+        
+        <div class="eipsi-wiz-field">
+            <label for="principal_investigator_id" class="eipsi-wiz-label">Investigador Principal<span class="eipsi-req">*</span></label>
+            <select id="principal_investigator_id" 
+                    name="principal_investigator_id" 
+                    class="eipsi-wiz-select" 
+                    required>
+                <option value="">Seleccionar investigador...</option>
+                <?php foreach ($admin_users as $user): ?>
+                    <option value="<?php echo $user->ID; ?>" 
+                            <?php selected($principal_investigator_id, $user->ID); ?>>
+                        <?php echo esc_html($user->display_name . ' (' . $user->user_email . ')'); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <span class="eipsi-wiz-help">Usuario administrador responsable del estudio.</span>
         </div>
     </form>
+    
+    <!-- Autosave hint -->
+    <div class="eipsi-wiz-autosave" id="eipsi-autosave-hint"></div>
+    
+    <!-- Tip box -->
+    <div style="background:#f0f6fc;border:1px solid #AED6F1;border-radius:8px;padding:14px 16px;margin-top:16px;">
+        <p style="font-size:12px;font-weight:500;color:#1E3A5F;margin-bottom:8px;">Consejos para tu estudio</p>
+        <ul style="padding-left:16px;margin:0;">
+            <li style="font-size:12px;color:#64748b;margin-bottom:4px;line-height:1.4;">Usá nombres claros para identificar tu investigación</li>
+            <li style="font-size:12px;color:#64748b;margin-bottom:4px;line-height:1.4;">El código se usará en URLs y base de datos</li>
+            <li style="font-size:12px;color:#64748b;line-height:1.4;">Podés modificar esta información más adelante</li>
+        </ul>
+    </div>
 </div>
 
 <script>
@@ -174,119 +177,11 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-.eipsi-wizard-step {
-    max-width: 800px;
-    margin: 0 auto;
+/* Espaciado aumentado entre campos del wizard */
+.eipsi-wiz-field {
+    margin-bottom: 24px !important;
 }
-
-.step-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: var(--eipsi-primary-dark);
-    color: #ffffff;
-    border-radius: 12px;
-}
-
-.step-header h2 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #ffffff;
-}
-
-.step-header p {
-    margin: 0;
-    opacity: 0.9;
-    font-size: 1rem;
-    color: #ffffff;
-}
-
-.form-grid {
-    display: grid;
-    gap: 1.5rem;
-}
-
-.form-row {
-    display: flex;
-    flex-direction: column;
-}
-
-.form-label {
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #2c3e50;
-    font-size: 0.95rem;
-}
-
-.form-label.required::after {
-    content: ' *';
-    color: #e74c3c;
-}
-
-.form-input,
-.form-select,
-.form-textarea {
-    padding: 0.75rem;
-    border: 2px solid #e1e5e9;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.2s ease;
-    background: white;
-}
-
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-textarea {
-    resize: vertical;
-    min-height: 100px;
-}
-
-.form-help {
-    margin-top: 0.25rem;
-    font-size: 0.85rem;
-    color: #6c757d;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.button-link {
-    background: none;
-    border: none;
-    color: #667eea;
-    cursor: pointer;
-    text-decoration: underline;
-    font-size: 0.85rem;
-    padding: 0;
-}
-
-.button-link:hover {
-    color: #5a6fd8;
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .form-input,
-    .form-select,
-    .form-textarea {
-        background: #2c3e50;
-        border-color: #34495e;
-        color: #ecf0f1;
-    }
-    
-    .form-label {
-        color: #ecf0f1;
-    }
-    
-    .form-help {
-        color: #95a5a6;
-    }
+.eipsi-wiz-field:last-child {
+    margin-bottom: 0 !important;
 }
 </style>

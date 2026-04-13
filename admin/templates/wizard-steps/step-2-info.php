@@ -23,7 +23,7 @@ while (count($waves_config) < $number_of_waves) {
     $waves_config[] = array(
         'name' => '',
         'form_template_id' => '',
-        'estimated_duration' => '', // Empty = Infinite (no time limit)
+        'estimated_duration' => '',
         'is_required' => true
     );
 }
@@ -42,79 +42,80 @@ for ($i = 0; $i < count($waves_config); $i++) {
     <form id="eipsi-wizard-form" method="post">
         <input type="hidden" name="step_number" value="2">
         
-        <div class="step-header">
-            <h2>📊 Configuración de Waves</h2>
-            <p>Define cuántas evaluaciones realizarás y qué formularios usarás para cada una.</p>
+        <!-- Header del step -->
+        <div class="eipsi-wiz-step-header">
+            <p class="eipsi-wiz-step-title">Waves</p>
+            <p class="eipsi-wiz-step-sub">Define cuántas evaluaciones realizarás y qué formularios usarás para cada una.</p>
         </div>
         
-        <div class="waves-config">
-            <div class="number-of-waves">
-                <label for="number_of_waves" class="form-label required">
-                    ¿Cuántas tomas realizarás?
-                </label>
-                <div class="waves-counter">
-                    <button type="button" class="counter-btn" onclick="eipsiDecreaseWaves()">−</button>
-                    <input type="number" 
-                           id="number_of_waves" 
-                           name="number_of_waves" 
-                           class="waves-input" 
-                           value="<?php echo $number_of_waves; ?>"
-                           min="1" 
-                           max="10"
-                           readonly>
-                    <button type="button" class="counter-btn" onclick="eipsiIncreaseWaves()">+</button>
-                </div>
-                <small class="form-help">
-                    Típicamente: baseline (pre), post-tratamiento, y seguimiento a 1-6 meses.
-                </small>
+        <!-- Contador de waves -->
+        <div class="eipsi-wiz-counter-wrap">
+            <label class="eipsi-wiz-label">Cantidad de tomas<span class="eipsi-req">*</span></label>
+            <div class="eipsi-wiz-counter">
+                <button type="button" class="eipsi-wiz-counter-btn" onclick="eipsiDecreaseWaves()">−</button>
+                <input type="number" id="number_of_waves" name="number_of_waves" class="eipsi-wiz-counter-input" value="<?php echo $number_of_waves; ?>" min="1" max="10" readonly>
+                <button type="button" class="eipsi-wiz-counter-btn" onclick="eipsiIncreaseWaves()">+</button>
             </div>
-            
-            <div class="waves-list" id="waves-list">
-                <?php for ($i = 0; $i < $number_of_waves; $i++): ?>
-                    <div class="wave-item" data-wave="<?php echo $i + 1; ?>">
-                        <div class="wave-header">
-                            <h3>Toma <?php echo $i + 1; ?></h3>
+            <span class="eipsi-wiz-help">Típicamente: baseline, post-tratamiento, seguimiento.</span>
+        </div>
+        
+        <!-- Lista de waves -->
+        <div class="waves-list" id="waves-list">
+            <?php for ($i = 0; $i < $number_of_waves; $i++): ?>
+                <div class="eipsi-wave-card" data-wave="<?php echo $i + 1; ?>">
+                    <div class="eipsi-wave-card-header">
+                        <span class="eipsi-wave-num">T<?php echo $i + 1; ?></span>
+                        <span class="eipsi-wave-card-title"><?php echo esc_html($waves_config[$i]['name'] ?: 'Toma ' . ($i + 1)); ?></span>
+                        <span class="eipsi-wave-required <?php echo $i === 0 ? 'required' : 'optional'; ?>">
+                            <?php echo $i === 0 ? 'Obligatoria' : 'Opcional'; ?>
+                        </span>
+                    </div>
+                    <div class="eipsi-wave-card-body">
+                        <div class="eipsi-wiz-field">
+                            <label for="wave_name_<?php echo $i; ?>" class="eipsi-wiz-label">Nombre de la toma</label>
+                            <input type="text" 
+                                   id="wave_name_<?php echo $i; ?>"
+                                   name="waves_config[<?php echo $i; ?>][name]" 
+                                   class="eipsi-wiz-input" 
+                                   value="<?php echo esc_attr($waves_config[$i]['name']); ?>"
+                                   placeholder="Ej: Evaluación inicial">
                         </div>
-                        
-                        <div class="wave-fields">
-                            <div class="field-group">
-                                <label for="wave_name_<?php echo $i; ?>" class="form-label">
-                                    Nombre de la Toma
-                                </label>
-                                <input type="text" 
-                                       id="wave_name_<?php echo $i; ?>"
-                                       name="waves_config[<?php echo $i; ?>][name]" 
-                                       class="form-input" 
-                                       value="<?php echo esc_attr($waves_config[$i]['name']); ?>"
-                                       placeholder="Ej: Evaluación inicial">
-                            </div>
-                            
-                            <div class="field-group">
-                                <label for="wave_form_<?php echo $i; ?>" class="form-label">
-                                    Formulario a usar
-                                </label>
-                                <select id="wave_form_<?php echo $i; ?>"
-                                        name="waves_config[<?php echo $i; ?>][form_template_id]" 
-                                        class="form-select">
-                                    <option value="">Seleccionar formulario...</option>
-                                    <?php foreach ($available_forms as $form): ?>
-                                        <option value="<?php echo esc_attr($form['ID']); ?>"
-                                                <?php selected($waves_config[$i]['form_template_id'], $form['ID']); ?>>
-                                            <?php echo esc_html($form['post_title']); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
+                        <div class="eipsi-wiz-field">
+                            <label for="wave_form_<?php echo $i; ?>" class="eipsi-wiz-label">Formulario a usar</label>
+                            <select id="wave_form_<?php echo $i; ?>"
+                                    name="waves_config[<?php echo $i; ?>][form_template_id]" 
+                                    class="eipsi-wiz-select">
+                                <option value="">Seleccionar formulario...</option>
+                                <?php foreach ($available_forms as $form): ?>
+                                    <option value="<?php echo esc_attr($form['ID']); ?>"
+                                            <?php selected($waves_config[$i]['form_template_id'], $form['ID']); ?>>
+                                        <?php echo esc_html($form['post_title']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
-                <?php endfor; ?>
-            </div>
+                </div>
+            <?php endfor; ?>
         </div>
     </form>
+    
+    <!-- Autosave hint -->
+    <div class="eipsi-wiz-autosave" id="eipsi-autosave-hint"></div>
+    
+    <!-- Tip box -->
+    <div style="background:#f0f6fc;border:1px solid #AED6F1;border-radius:8px;padding:14px 16px;margin-top:16px;">
+        <p style="font-size:12px;font-weight:500;color:#1E3A5F;margin-bottom:8px;">Consejos para tus tomas</p>
+        <ul style="padding-left:16px;margin:0;">
+            <li style="font-size:12px;color:#64748b;margin-bottom:4px;line-height:1.4;">Usá nombres claros para tus tomas: "Línea base", "Seguimiento 1", "Final"</li>
+            <li style="font-size:12px;color:#64748b;margin-bottom:4px;line-height:1.4;">Programá recordatorios para mejorar la tasa de respuesta</li>
+            <li style="font-size:12px;color:#64748b;line-height:1.4;">Podés agregar participantes después de activar el estudio</li>
+        </ul>
+    </div>
 </div>
 
 <script>
-// Wave management functions
+// Wave management functions - MANTENER TAL CUAL
 function eipsiIncreaseWaves() {
     const input = document.getElementById('number_of_waves');
     const currentValue = parseInt(input.value);
@@ -151,39 +152,38 @@ function eipsiUpdateWavesList() {
     }
 }
 
+// ACTUALIZADO: Template con nuevas clases EIPSI
 function eipsiGenerateWaveItem(index) {
     const waveDiv = document.createElement('div');
-    waveDiv.className = 'wave-item';
+    waveDiv.className = 'eipsi-wave-card';
     waveDiv.setAttribute('data-wave', index + 1);
     
-    const isRequired = index === 0 ? true : false; // First wave is required by default
+    const isRequired = index === 0;
+    const requiredClass = isRequired ? 'required' : 'optional';
+    const requiredText = isRequired ? 'Obligatoria' : 'Opcional';
     const defaultName = getDefaultWaveName(index);
     
     waveDiv.innerHTML = `
-        <div class="wave-header">
-            <h3>Toma ${index + 1}</h3>
+        <div class="eipsi-wave-card-header">
+            <span class="eipsi-wave-num">T${index + 1}</span>
+            <span class="eipsi-wave-card-title">${defaultName}</span>
+            <span class="eipsi-wave-required ${requiredClass}">${requiredText}</span>
         </div>
-        
-        <div class="wave-fields">
-            <div class="field-group">
-                <label for="wave_name_${index}" class="form-label">
-                    Nombre de la Toma
-                </label>
+        <div class="eipsi-wave-card-body">
+            <div class="eipsi-wiz-field">
+                <label for="wave_name_${index}" class="eipsi-wiz-label">Nombre de la toma</label>
                 <input type="text" 
                        id="wave_name_${index}"
                        name="waves_config[${index}][name]" 
-                       class="form-input" 
+                       class="eipsi-wiz-input" 
                        value="${defaultName}"
                        placeholder="Ej: Evaluación inicial">
             </div>
-            
-            <div class="field-group">
-                <label for="wave_form_${index}" class="form-label">
-                    Formulario a usar
-                </label>
+            <div class="eipsi-wiz-field">
+                <label for="wave_form_${index}" class="eipsi-wiz-label">Formulario a usar</label>
                 <select id="wave_form_${index}"
                         name="waves_config[${index}][form_template_id]" 
-                        class="form-select">
+                        class="eipsi-wiz-select">
                     <option value="">Seleccionar formulario...</option>
                     ${getAvailableFormsHTML()}
                 </select>
@@ -223,190 +223,3 @@ document.addEventListener('DOMContentLoaded', function() {
     numberInput.addEventListener('change', eipsiUpdateWavesList);
 });
 </script>
-
-<style>
-.waves-config {
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-.number-of-waves {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: #f8f9fa;
-    border-radius: 12px;
-    border: 2px solid #e9ecef;
-}
-
-.waves-counter {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 1rem 0;
-}
-
-.counter-btn {
-    width: 40px;
-    height: 40px;
-    border: 2px solid #667eea;
-    background: white;
-    color: #667eea;
-    border-radius: 50%;
-    font-size: 1.2rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.counter-btn:hover {
-    background: #667eea;
-    color: white;
-}
-
-.waves-input {
-    width: 80px;
-    height: 40px;
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: 600;
-    border: 2px solid #667eea;
-    border-radius: 8px;
-    background: white;
-}
-
-.waves-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.wave-item {
-    background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: all 0.2s ease;
-}
-
-.wave-item:hover {
-    border-color: #667eea;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
-}
-
-.wave-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid #dee2e6;
-}
-
-.wave-header h3 {
-    margin: 0;
-    color: #495057;
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.wave-status {
-    padding: 0.25rem 0.75rem;
-    background: #667eea;
-    color: white;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.wave-fields {
-    padding: 1.5rem;
-    display: grid;
-    gap: 1.5rem;
-}
-
-.field-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.field-group-inline {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    margin-top: 1.75rem;
-}
-
-.checkbox-label input[type="checkbox"] {
-    margin-right: 0.5rem;
-    transform: scale(1.2);
-}
-
-.checkbox-text {
-    font-weight: 500;
-    color: #495057;
-}
-
-.field-help {
-    display: block;
-    margin-top: 4px;
-    font-size: 0.8rem;
-    color: #6c757d;
-    font-style: italic;
-}
-
-.duration-input {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 6v6l4 2'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    padding-right: 35px;
-}
-
-.duration-input::placeholder {
-    color: #28a745;
-    font-weight: 500;
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .number-of-waves {
-        background: #2c3e50;
-        border-color: #34495e;
-    }
-    
-    .wave-item {
-        background: #2c3e50;
-        border-color: #34495e;
-    }
-    
-    .wave-header {
-        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-        border-color: #4a5f7a;
-    }
-    
-    .wave-header h3 {
-        color: #ecf0f1;
-    }
-    
-    .counter-btn {
-        background: #2c3e50;
-        border-color: #667eea;
-        color: #667eea;
-    }
-    
-    .waves-input {
-        background: #2c3e50;
-        border-color: #667eea;
-        color: #ecf0f1;
-    }
-    
-    .checkbox-text {
-        color: #ecf0f1;
-    }
-}
-</style>

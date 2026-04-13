@@ -31,153 +31,160 @@ if (empty($consent_message)) {
     <form id="eipsi-wizard-form" method="post">
         <input type="hidden" name="step_number" value="4">
         
-        <div class="step-header">
-            <h2>👥 CONFIGURACIÓN DE PARTICIPANTES</h2>
-            <p>Selecciona cómo invitarás a los participantes y qué información mostrarás antes de comenzar.</p>
+        <!-- Header del step -->
+        <div class="eipsi-wiz-step-header">
+            <p class="eipsi-wiz-step-title">Participantes</p>
+            <p class="eipsi-wiz-step-sub">Selecciona cómo invitarás a los participantes y qué información mostrarás antes de comenzar.</p>
         </div>
         
         <div class="participants-config">
             <!-- Invitation Methods -->
-            <div class="invitation-section">
-                <h3>📬 Métodos de Invitación</h3>
-                <p class="section-description">Elige cómo deseas invitar a los participantes a tu estudio.</p>
+            <div class="invitation-section" style="background:#f8f9fa;padding:20px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:20px;">
+                <h3 style="margin:0 0 8px 0;color:#2c3e50;font-size:15px;font-weight:600;">Métodos de Invitación</h3>
+                <p style="margin:0 0 16px 0;color:#64748b;font-size:13px;">Elige cómo deseas invitar a los participantes a tu estudio.</p>
                 
                 <div class="invitation-methods">
-                    <div class="method-card <?php echo in_array('magic_links', $invitation_methods) ? 'selected' : ''; ?>">
-                        <div class="method-header">
+                    <!-- Method Card 1 -->
+                    <div class="eipsi-method-card <?php echo in_array('magic_links', $invitation_methods) ? 'selected' : ''; ?>">
+                        <div class="eipsi-method-header">
                             <input type="checkbox" 
                                    name="invitation_methods[]" 
                                    value="magic_links"
                                    <?php checked(in_array('magic_links', $invitation_methods)); ?>
                                    id="magic_links">
-                            <label for="magic_links" class="method-title">
-                                🔗 Magic Links por Email
-                            </label>
+                            <label for="magic_links" class="eipsi-method-title">Magic Links por Email</label>
                         </div>
-                        <div class="method-description">
+                        <div class="eipsi-method-desc">
                             Enviar un enlace único personalizado por email a cada participante.
-                            <div class="method-features">
-                                ✓ Enlaces únicos y seguros<br>
-                                ✓ Seguimiento de accesos<br>
-                                ✓ No requiere registro previo
-                            </div>
+                            <ul style="margin:8px 0 0 0;padding-left:16px;list-style:none;">
+                                <li style="font-size:12px;color:#008080;margin-bottom:3px;">✓ Enlaces únicos y seguros</li>
+                                <li style="font-size:12px;color:#008080;margin-bottom:3px;">✓ Seguimiento de accesos</li>
+                                <li style="font-size:12px;color:#008080;">✓ No requiere registro previo</li>
+                            </ul>
                         </div>
                     </div>
                     
-                    <div class="method-card <?php echo in_array('csv_upload', $invitation_methods) ? 'selected' : ''; ?>">
-                        <div class="method-header">
+                    <!-- Method Card 2 -->
+                    <div class="eipsi-method-card <?php echo in_array('csv_upload', $invitation_methods) ? 'selected' : ''; ?>">
+                        <div class="eipsi-method-header">
                             <input type="checkbox" 
                                    name="invitation_methods[]" 
                                    value="csv_upload"
                                    <?php checked(in_array('csv_upload', $invitation_methods)); ?>
                                    id="csv_upload">
-                            <label for="csv_upload" class="method-title">
-                                📄 Subir Lista CSV
-                            </label>
+                            <label for="csv_upload" class="eipsi-method-title">Subir Lista CSV</label>
                         </div>
-                        <div class="method-description">
+                        <div class="eipsi-method-desc">
                             Subir un archivo CSV con emails de participantes para envío masivo.
-                            <div class="method-features">
-                                ✓ Envío masivo<br>
-                                ✓ Plantilla CSV incluida<br>
-                                ✓ Validación de emails
-                            </div>
+                            <ul style="margin:8px 0 0 0;padding-left:16px;list-style:none;">
+                                <li style="font-size:12px;color:#008080;margin-bottom:3px;">✓ Envío masivo</li>
+                                <li style="font-size:12px;color:#008080;margin-bottom:3px;">✓ Plantilla CSV incluida</li>
+                                <li style="font-size:12px;color:#008080;">✓ Validación de emails</li>
+                            </ul>
                         </div>
                     </div>
                     
-                    <div class="method-card <?php echo in_array('public_registration', $invitation_methods) ? 'selected' : ''; ?>">
-                        <div class="method-header">
+                    <!-- Method Card 3 -->
+                    <div class="eipsi-method-card <?php echo in_array('public_registration', $invitation_methods) ? 'selected' : ''; ?>">
+                        <div class="eipsi-method-header">
                             <input type="checkbox" 
                                    name="invitation_methods[]" 
                                    value="public_registration"
                                    <?php checked(in_array('public_registration', $invitation_methods)); ?>
                                    id="public_registration">
-                            <label for="public_registration" class="method-title">
-                                🌐 Registro Público
-                            </label>
+                            <label for="public_registration" class="eipsi-method-title">Registro Público</label>
                         </div>
-                        <div class="method-description">
+                        <div class="eipsi-method-desc">
                             Crear una página pública donde los participantes se registran voluntariamente.
-                            <div class="method-features">
-                                ✓ Sin límites de invitación<br>
-                                ✓ Página web personalizada<br>
-                                ✓ Auto-registro
-                            </div>
+                            <ul style="margin:8px 0 0 0;padding-left:16px;list-style:none;">
+                                <li style="font-size:12px;color:#008080;margin-bottom:3px;">✓ Sin límites de invitación</li>
+                                <li style="font-size:12px;color:#008080;margin-bottom:3px;">✓ Página web personalizada</li>
+                                <li style="font-size:12px;color:#008080;">✓ Auto-registro</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
             
             <!-- Consent & Privacy -->
-            <div class="consent-section">
-                <h3>📋 Consentimiento Informado</h3>
-                <p class="section-description">Configura la información que verán los participantes antes de comenzar.</p>
+            <div class="consent-section" style="background:#f8f9fa;padding:20px;border-radius:10px;border:1px solid #e2e8f0;">
+                <h3 style="margin:0 0 8px 0;color:#2c3e50;font-size:15px;font-weight:600;">Consentimiento Informado</h3>
+                <p style="margin:0 0 16px 0;color:#64748b;font-size:13px;">Configura la información que verán los participantes antes de comenzar.</p>
                 
                 <div class="consent-config">
-                    <div class="config-item">
-                        <label class="checkbox-label">
+                    <div class="eipsi-wiz-check-row">
+                        <label class="eipsi-wiz-check">
                             <input type="checkbox" 
                                    name="require_consent"
                                    <?php checked($require_consent, true); ?>
                                    value="1">
-                            <span class="checkbox-text">
-                                <strong>Requerir consentimiento informado</strong><br>
-                                Los participantes deben aceptar antes de continuar
+                            <span class="eipsi-wiz-check-text">
+                                <strong>Requerir consentimiento informado</strong>
+                                <span class="eipsi-wiz-check-sub">Los participantes deben aceptar antes de continuar</span>
                             </span>
                         </label>
                     </div>
                     
-                    <div class="config-item">
-                        <label class="checkbox-label">
+                    <div class="eipsi-wiz-check-row">
+                        <label class="eipsi-wiz-check">
                             <input type="checkbox" 
                                    name="show_privacy_notice"
                                    <?php checked($show_privacy_notice, true); ?>
                                    value="1">
-                            <span class="checkbox-text">
-                                <strong>Mostrar aviso de privacidad</strong><br>
-                                Información sobre protección de datos
+                            <span class="eipsi-wiz-check-text">
+                                <strong>Mostrar aviso de privacidad</strong>
+                                <span class="eipsi-wiz-check-sub">Información sobre protección de datos</span>
                             </span>
                         </label>
                     </div>
                     
-                    <div class="config-item">
-                        <label class="checkbox-label">
+                    <div class="eipsi-wiz-check-row">
+                        <label class="eipsi-wiz-check">
                             <input type="checkbox" 
                                    name="auto_removal_inactive"
                                    <?php checked($auto_removal_inactive, false); ?>
                                    value="1">
-                            <span class="checkbox-text">
-                                <strong>Auto-remove participantes inactivos</strong><br>
-                                Eliminar automáticamente participantes sin actividad después de 30 días
+                            <span class="eipsi-wiz-check-text">
+                                <strong>Auto-remove participantes inactivos</strong>
+                                <span class="eipsi-wiz-check-sub">Eliminar automáticamente participantes sin actividad después de 30 días</span>
                             </span>
                         </label>
                     </div>
                 </div>
                 
-                <div class="consent-message-editor">
-                    <label for="consent_message" class="form-label">
-                        Mensaje de Consentimiento
-                    </label>
+                <div class="consent-message-editor" style="margin-top:20px;padding-top:20px;border-top:1px solid #e2e8f0;">
+                    <label for="consent_message" class="eipsi-wiz-label">Mensaje de Consentimiento</label>
                     <textarea id="consent_message" 
                               name="consent_message" 
-                              class="form-textarea" 
+                              class="eipsi-wiz-textarea" 
                               rows="8"
                               placeholder="Escribe el mensaje que verán los participantes..."><?php echo esc_textarea($consent_message); ?></textarea>
-                    <small class="form-help">
-                        Este texto aparecerá antes del primer formulario. Debe explicar el propósito del estudio y los derechos del participante.
-                    </small>
+                    <span class="eipsi-wiz-help">Este texto aparecerá antes del primer formulario. Debe explicar el propósito del estudio y los derechos del participante.</span>
                     
-                    <div class="consent-templates">
-                        <h4>Plantillas de Consentimiento:</h4>
-                        <div class="template-buttons">
-                            <button type="button" class="template-btn" onclick="eipsiApplyConsentTemplate('general')">
-                                📋 Consentimiento General
+                    <!-- Plantillas -->
+                    <div style="margin-top:16px;">
+                        <h4 style="margin:0 0 12px 0;color:#2c3e50;font-size:13px;">Plantillas de Consentimiento:</h4>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <button type="button"
+                                style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
+                                onmouseover="this.style.backgroundColor='#d6edff';this.style.borderColor='#3B6CAA';this.style.color='#1E3A5F'"
+                                onmouseout="this.style.backgroundColor='#f1f5f9';this.style.borderColor='#e2e8f0';this.style.color='#2c3e50'"
+                                onclick="eipsiApplyConsentTemplate('general')">
+                                Consentimiento General
                             </button>
-                            <button type="button" class="template-btn" onclick="eipsiApplyConsentTemplate('clinical')">
-                                🏥 Consentimiento Clínico
+                            <button type="button"
+                                style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
+                                onmouseover="this.style.backgroundColor='#d6edff';this.style.borderColor='#3B6CAA';this.style.color='#1E3A5F'"
+                                onmouseout="this.style.backgroundColor='#f1f5f9';this.style.borderColor='#e2e8f0';this.style.color='#2c3e50'"
+                                onclick="eipsiApplyConsentTemplate('clinical')">
+                                Consentimiento Clínico
                             </button>
-                            <button type="button" class="template-btn" onclick="eipsiApplyConsentTemplate('research')">
-                                🔬 Consentimiento Investigación
+                            <button type="button"
+                                style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
+                                onmouseover="this.style.backgroundColor='#d6edff';this.style.borderColor='#3B6CAA';this.style.color='#1E3A5F'"
+                                onmouseout="this.style.backgroundColor='#f1f5f9';this.style.borderColor='#e2e8f0';this.style.color='#2c3e50'"
+                                onclick="eipsiApplyConsentTemplate('research')">
+                                Consentimiento Investigación
                             </button>
                         </div>
                     </div>
@@ -185,10 +192,23 @@ if (empty($consent_message)) {
             </div>
         </div>
     </form>
+    
+    <!-- Autosave hint -->
+    <div class="eipsi-wiz-autosave" id="eipsi-autosave-hint"></div>
+    
+    <!-- Tip box -->
+    <div style="background:#f0f6fc;border:1px solid #AED6F1;border-radius:8px;padding:14px 16px;margin-top:16px;">
+        <p style="font-size:12px;font-weight:500;color:#1E3A5F;margin-bottom:8px;">Sobre el consentimiento informado</p>
+        <ul style="padding-left:16px;margin:0;">
+            <li style="font-size:12px;color:#64748b;margin-bottom:4px;line-height:1.4;">El participante debe ver y aceptar el consentimiento antes de responder</li>
+            <li style="font-size:12px;color:#64748b;margin-bottom:4px;line-height:1.4;">Podés personalizar el texto según las necesidades de tu estudio</li>
+            <li style="font-size:12px;color:#64748b;line-height:1.4;">El Magic Link es el método más seguro para invitar participantes identificados</li>
+        </ul>
+    </div>
 </div>
 
 <script>
-// Consent template functions
+// Consent template functions - MANTENER TAL CUAL
 function eipsiApplyConsentTemplate(template) {
     const consentTextarea = document.getElementById('consent_message');
     
@@ -203,24 +223,26 @@ function eipsiApplyConsentTemplate(template) {
     if (templates[template] && consentTextarea) {
         consentTextarea.value = templates[template];
         
-        // Visual feedback
+        // Visual feedback - ACTUALIZADO a color EIPSI
         const btn = event.target;
         const originalText = btn.textContent;
-        btn.textContent = '✅ Aplicada';
-        btn.style.background = '#28a745';
+        btn.textContent = 'Aplicada';
+        btn.style.background = '#008080';
         btn.style.color = 'white';
+        btn.style.borderColor = '#008080';
         
         setTimeout(() => {
             btn.textContent = originalText;
-            btn.style.background = '';
-            btn.style.color = '';
+            btn.style.background = '#f1f5f9';
+            btn.style.color = '#2c3e50';
+            btn.style.borderColor = '#e2e8f0';
         }, 2000);
     }
 }
 
-// Handle method card selection
+// Handle method card selection - ACTUALIZADO para usar nuevas clases
 document.addEventListener('DOMContentLoaded', function() {
-    const methodCards = document.querySelectorAll('.method-card');
+    const methodCards = document.querySelectorAll('.eipsi-method-card');
     const checkboxes = document.querySelectorAll('input[name="invitation_methods[]"]');
     
     methodCards.forEach((card, index) => {
@@ -241,213 +263,88 @@ document.addEventListener('DOMContentLoaded', function() {
 function eipsiUpdateMethodCard(card, isSelected) {
     if (isSelected) {
         card.classList.add('selected');
-        card.style.borderColor = '#3b82f6';
-        card.style.backgroundColor = '#eff6ff';
+        card.style.borderColor = '#3B6CAA';
+        card.style.backgroundColor = '#f0f6fc';
+        card.style.boxShadow = '0 0 0 3px rgba(59,108,170,0.1)';
     } else {
         card.classList.remove('selected');
         card.style.borderColor = '#e2e8f0';
         card.style.backgroundColor = '#ffffff';
+        card.style.boxShadow = 'none';
     }
 }
 </script>
 
 <style>
-.participants-config {
-    max-width: 1000px;
-    margin: 0 auto;
-    display: grid;
-    gap: 2rem;
-}
-
-.invitation-section,
-.consent-section {
-    background: #f8fafc;
-    padding: 2rem;
-    border-radius: 12px;
-    border: 2px solid #1f314a;
-    color: #1e293b;
-}
-
-.invitation-section h3,
-.consent-section h3 {
-    margin: 0 0 0.5rem 0;
-    color: #1e293b;
-    font-size: 1.2rem;
-    font-weight: 600;
-}
-
-.section-description {
-    margin: 0 0 1.5rem 0;
-    color: #64748b;
-    font-size: 0.95rem;
-    opacity: 0.85;
-}
-
-.invitation-methods {
-    display: grid;
-    gap: 1rem;
-}
-
-.method-card {
+/* Tarjetas de método con estilos inline por defecto */
+.eipsi-method-card {
     border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 1.5rem;
+    border-radius: 10px;
+    padding: 18px;
     background: #ffffff;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: #1e293b;
+    margin-bottom: 12px;
 }
-
-.method-card:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+.eipsi-method-card:hover {
+    border-color: #3B6CAA;
 }
-
-.method-card.selected {
-    border-color: #3b82f6;
-    background: #eff6ff;
+.eipsi-method-card.selected {
+    border-color: #3B6CAA;
+    background: #f0f6fc;
+    box-shadow: 0 0 0 3px rgba(59,108,170,0.1);
 }
-
-.method-header {
+.eipsi-method-header {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 12px;
+    margin-bottom: 10px;
 }
-
-.method-header input[type="checkbox"] {
-    transform: scale(1.2);
-}
-
-.method-title {
-    font-size: 1.1rem;
+.eipsi-method-title {
+    font-size: 14px;
     font-weight: 600;
-    color: #1e293b;
+    color: #2c3e50;
     cursor: pointer;
 }
-
-.method-description {
+.eipsi-method-desc {
     color: #64748b;
-    font-size: 0.9rem;
+    font-size: 13px;
     line-height: 1.4;
+    padding-left: 32px;
 }
 
-.method-features {
-    margin-top: 0.5rem;
-    font-size: 0.8rem;
-    color: #0ea5e9;
-}
-
-.consent-config {
-    margin-bottom: 2rem;
-}
-
-.config-item {
-    margin-bottom: 1rem;
-    padding: 1rem;
-    background: #f8fafc;
+/* Checkboxes con estructura EIPSI */
+.eipsi-wiz-check-row {
+    margin-bottom: 14px;
+    padding: 14px;
+    background: #ffffff;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
 }
-
-.checkbox-label {
+.eipsi-wiz-check {
     display: flex;
     align-items: flex-start;
     cursor: pointer;
-    gap: 0.75rem;
+    gap: 12px;
 }
-
-.checkbox-label input[type="checkbox"] {
-    margin-top: 0.2rem;
-    transform: scale(1.1);
+.eipsi-wiz-check input[type="checkbox"] {
+    margin-top: 2px;
+    transform: scale(1.2);
+    flex-shrink: 0;
 }
-
-.checkbox-text {
-    line-height: 1.4;
-    color: #1e293b;
-}
-
-.consent-message-editor {
-    border-top: 1px solid #e2e8f0;
-    padding-top: 1.5rem;
-}
-
-.consent-message-editor .form-label {
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #1e293b;
-    display: block;
-}
-
-.consent-message-editor .form-textarea {
-    background: #ffffff;
-    border-color: #e2e8f0;
-    color: #1e293b;
-}
-
-.consent-message-editor .form-textarea::placeholder {
-    color: rgba(30, 41, 59, 0.6);
-}
-
-.consent-section .form-help {
-    color: #64748b;
-    opacity: 0.8;
-}
-
-.consent-templates {
-    margin-top: 1rem;
-}
-
-.consent-templates h4 {
-    margin: 0 0 1rem 0;
-    color: #1e293b;
-    font-size: 1rem;
-}
-
-.template-buttons {
+.eipsi-wiz-check-text {
     display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    line-height: 1.4;
+    color: #2c3e50;
 }
-
-.template-btn {
-    padding: 0.5rem 1rem;
-    background: #f8fafc;
-    border: 2px solid #e2e8f0;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    color: #1e293b;
+.eipsi-wiz-check-text strong {
+    font-weight: 600;
+    font-size: 13px;
 }
-
-.template-btn:hover {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-}
-
-/* Dark mode support - DISABLED for admin */
-@media (prefers-color-scheme: dark) {
-    /* Keep light theme in admin */
-    }
-    
-    .config-item {
-        background: #1f314a;
-        border-color: #2c4a71;
-    }
-    
-    .template-btn {
-        background: #1f314a;
-        border-color: #2c4a71;
-        color: #ffffff;
-    }
-    
-    .template-btn:hover {
-        background: #4a6fa5;
-        border-color: #4a6fa5;
-        color: white;
-    }
+.eipsi-wiz-check-sub {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
 }
 </style>

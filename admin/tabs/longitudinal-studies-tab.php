@@ -168,5 +168,5 @@ $paused_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}survey_studi
 
 <?php 
 // Include the modal template
-include dirname(__FILE__) . '/../study-dashboard-modal.php'; 
+include dirname(__FILE__) . '/../templates/study-dashboard-modal.php'; 
 ?>

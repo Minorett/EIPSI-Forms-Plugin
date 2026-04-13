@@ -65,14 +65,88 @@ function eipsi_render_pool_hub_v2() {
         <?php endif; ?>
 
         <?php if (empty($pools)) : ?>
-            <!-- Empty State - No pools created yet -->
-            <div class="eipsi-empty-state-full">
-                <div class="eipsi-empty-icon">🏊</div>
-                <h2><?php _e('Bienvenido a Pool Hub', 'eipsi-forms'); ?></h2>
-                <p><?php _e('Los pools te permiten distribuir participantes entre multiples estudios longitudinales con probabilidades configurables. Crea tu primer pool para empezar.', 'eipsi-forms'); ?></p>
-                <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create">
-                    + <?php _e('Crear mi primer pool', 'eipsi-forms'); ?>
-                </button>
+            <!-- Empty State - No pools created yet (v2.2.3: EIPSI Design System) -->
+            <div class="eipsi-pool-hub-page" style="padding: var(--eipsi-space-xl);">
+
+                <!-- Page header -->
+                <div style="margin-bottom: var(--eipsi-space-xl);">
+                    <h1 style="font-size: 22px; font-weight: 500; color: var(--eipsi-text); margin: 0 0 4px 0;">Pool Hub</h1>
+                    <p style="font-size: 14px; color: var(--eipsi-text-muted); margin: 0;"><?php _e('Distribuye participantes entre estudios longitudinales', 'eipsi-forms'); ?></p>
+                </div>
+
+                <!-- Empty state -->
+                <div style="
+                    background: var(--eipsi-bg-subtle);
+                    border: 1.5px dashed var(--eipsi-border);
+                    border-radius: var(--eipsi-radius-lg);
+                    padding: var(--eipsi-space-xl) var(--eipsi-space-xl);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                    min-height: 340px;
+                ">
+
+                    <!-- Icon container -->
+                    <div style="
+                        width: 56px;
+                        height: 56px;
+                        background: var(--eipsi-bg-muted);
+                        border: 1px solid var(--eipsi-border);
+                        border-radius: var(--eipsi-radius-lg);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin-bottom: var(--eipsi-space-lg);
+                    ">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--eipsi-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                    </div>
+
+                    <!-- Title -->
+                    <h2 style="
+                        font-size: 18px;
+                        font-weight: 500;
+                        color: var(--eipsi-text);
+                        margin: 0 0 var(--eipsi-space-sm) 0;
+                    "><?php _e('Ningún pool creado todavía', 'eipsi-forms'); ?></h2>
+
+                    <!-- Description -->
+                    <p style="
+                        font-size: 14px;
+                        color: var(--eipsi-text-muted);
+                        max-width: 380px;
+                        line-height: 1.6;
+                        margin: 0 0 var(--eipsi-space-lg) 0;
+                    "><?php _e('Los pools distribuyen participantes entre estudios longitudinales según probabilidades configurables.', 'eipsi-forms'); ?></p>
+
+                    <!-- CTA button -->
+                    <button
+                        class="button button-primary eipsi-create-pool-btn"
+                        data-open-modal="create"
+                        style="
+                            background: var(--eipsi-primary);
+                            color: #ffffff;
+                            border: none;
+                            border-radius: var(--eipsi-radius);
+                            padding: 10px 24px;
+                            font-size: 14px;
+                            font-weight: 500;
+                            cursor: pointer;
+                            box-shadow: var(--eipsi-shadow-sm);
+                            transition: background 0.15s ease;
+                        "
+                        onmouseover="this.style.background='var(--eipsi-primary-hover)'"
+                        onmouseout="this.style.background='var(--eipsi-primary)'"
+                    >
+                        + <?php _e('Crear primer pool', 'eipsi-forms'); ?>
+                    </button>
+
+                </div>
             </div>
         <?php else : ?>
             <h1>🏊 Pool Hub</h1>
@@ -1093,45 +1167,54 @@ function eipsi_render_pool_hub_v2() {
             });
         });
 
-        document.addEventListener('click', function() {
-            document.querySelectorAll('.eipsi-pool-menu-dropdown').forEach(d => {
-                d.classList.remove('is-open');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Dropdown cleanup on any click
+            document.addEventListener('click', function() {
+                document.querySelectorAll('.eipsi-pool-menu-dropdown').forEach(d => {
+                    d.classList.remove('is-open');
+                });
             });
-        });
 
-        // Modal handling
-        const poolModal = document.getElementById('eipsi-pool-modal');
-        const shortcodeModal = document.getElementById('eipsi-shortcode-modal');
-        const deleteModal = document.getElementById('eipsi-delete-modal');
+            // Modal handling
+            const poolModal = document.getElementById('eipsi-pool-modal');
+            const shortcodeModal = document.getElementById('eipsi-shortcode-modal');
+            const deleteModal = document.getElementById('eipsi-delete-modal');
 
-        function openModal(modal) {
-            modal.style.display = 'flex';
-        }
+            function openModal(modal) {
+                if (modal) modal.style.display = 'flex';
+            }
 
-        function closeModal(modal) {
-            modal.style.display = 'none';
-        }
+            function closeModal(modal) {
+                if (modal) modal.style.display = 'none';
+            }
 
-        document.querySelectorAll('.eipsi-modal-close, .eipsi-modal-cancel').forEach(btn => {
-            btn.addEventListener('click', function() {
-                closeModal(this.closest('.eipsi-modal-overlay'));
+            document.querySelectorAll('.eipsi-modal-close, .eipsi-modal-cancel').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    closeModal(this.closest('.eipsi-modal-overlay'));
+                });
             });
-        });
 
-        document.querySelectorAll('.eipsi-modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeModal(this);
-                }
+            document.querySelectorAll('.eipsi-modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeModal(this);
+                    }
+                });
             });
-        });
 
-        // Create pool buttons
-        document.querySelectorAll('.eipsi-create-pool-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.getElementById('eipsi-modal-title').textContent = '<?php _e("Crear nuevo pool", "eipsi-forms"); ?>';
-                document.getElementById('eipsi-pool-id').value = '0';
-                document.getElementById('eipsi-pool-form').reset();
+            // Create pool buttons - v2.2.3: Fixed to work with empty state
+            document.querySelectorAll('.eipsi-create-pool-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const modalTitle = document.getElementById('eipsi-modal-title');
+                    const poolIdInput = document.getElementById('eipsi-pool-id');
+                    const poolForm = document.getElementById('eipsi-pool-form');
+                    
+                    if (modalTitle) modalTitle.textContent = '<?php _e("Crear nuevo pool", "eipsi-forms"); ?>';
+                    if (poolIdInput) poolIdInput.value = '0';
+                    if (poolForm) poolForm.reset();
                 document.getElementById('eipsi-pool-studies-rows').innerHTML = '';
                 updateProbabilityTotal();
                 openModal(poolModal);
@@ -1494,7 +1577,7 @@ function eipsi_render_pool_hub_v2() {
             }
             window.location.href = ajaxurl + '?action=eipsi_export_pool_csv&pool_id=' + poolId + '&nonce=<?php echo wp_create_nonce("eipsi_forms_nonce"); ?>';
         });
-    });
+    }); // End DOMContentLoaded
     </script>
 
     <?php endif; // End if (empty($pools)) ?>

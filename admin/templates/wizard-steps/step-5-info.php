@@ -78,9 +78,7 @@ if (!empty($step_3['timing_intervals'])) {
         $value = intval($interval['days_after']);
         $time_unit = isset($interval['time_unit']) ? $interval['time_unit'] : 'days';
         
-        // Format based on time_unit
         if ($time_unit === 'minutes') {
-            // v2.1.3: Show human-readable format for minutes (e.g., "3 días, 8 horas, 33 minutos")
             $formatted = eipsi_format_minutes_human_readable($value);
             $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$formatted}";
         } elseif ($time_unit === 'hours') {
@@ -100,189 +98,195 @@ if (!empty($step_3['timing_intervals'])) {
     <form id="eipsi-wizard-form" method="post">
         <input type="hidden" name="step_number" value="5">
         
-        <div class="step-header">
-            <h2>✅ RESUMEN Y CONFIRMACIÓN</h2>
-            <p>Revisa toda la configuración antes de activar tu estudio longitudinal.</p>
+        <!-- Header del step -->
+        <div class="eipsi-wiz-step-header">
+            <p class="eipsi-wiz-step-title">Resumen y Confirmación</p>
+            <p class="eipsi-wiz-step-sub">Revisa toda la configuración antes de activar tu estudio longitudinal.</p>
         </div>
         
         <div class="summary-container">
             <!-- Study Information -->
-            <div class="summary-section">
-                <h3>📋 INFORMACIÓN DEL ESTUDIO</h3>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <span class="label">Nombre:</span>
-                        <span class="value"><?php echo esc_html($step_1['study_name'] ?? 'No especificado'); ?></span>
+            <div class="eipsi-summary-section">
+                <h3 style="margin:0 0 16px 0;color:#2c3e50;font-size:14px;font-weight:600;">Información del Estudio</h3>
+                <div class="eipsi-summary-grid">
+                    <div class="eipsi-summary-row">
+                        <span class="eipsi-summary-label">Nombre:</span>
+                        <span class="eipsi-summary-value"><?php echo esc_html($step_1['study_name'] ?? 'No especificado'); ?></span>
                     </div>
-                    <div class="summary-item">
-                        <span class="label">Código:</span>
-                        <span class="value code"><?php echo esc_html($step_1['study_code'] ?? 'No especificado'); ?></span>
+                    <div class="eipsi-summary-row">
+                        <span class="eipsi-summary-label">Código:</span>
+                        <span class="eipsi-summary-value code"><?php echo esc_html($step_1['study_code'] ?? 'No especificado'); ?></span>
                     </div>
-                    <div class="summary-item">
-                        <span class="label">Investigador:</span>
-                        <span class="value"><?php echo esc_html($investigator_name); ?></span>
+                    <div class="eipsi-summary-row">
+                        <span class="eipsi-summary-label">Investigador:</span>
+                        <span class="eipsi-summary-value"><?php echo esc_html($investigator_name); ?></span>
                     </div>
-                    <div class="summary-item">
-                        <span class="label">Estado:</span>
-                        <span class="value status pending">Pendiente de activación</span>
+                    <div class="eipsi-summary-row">
+                        <span class="eipsi-summary-label">Estado:</span>
+                        <span class="eipsi-summary-value" style="color:#ffc107;font-weight:600;">Pendiente de activación</span>
                     </div>
                 </div>
                 
                 <?php if (!empty($step_1['description'])): ?>
-                    <div class="summary-description">
-                        <span class="label">Descripción:</span>
-                        <p><?php echo nl2br(esc_html($step_1['description'])); ?></p>
+                    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e2e8f0;">
+                        <span class="eipsi-summary-label">Descripción:</span>
+                        <p style="margin:8px 0 0 0;color:#64748b;font-size:13px;line-height:1.5;"><?php echo nl2br(esc_html($step_1['description'])); ?></p>
                     </div>
                 <?php endif; ?>
             </div>
             
             <!-- Waves Configuration -->
-            <div class="summary-section">
-                <h3>📊 Configuración de Waves</h3>
-                <div class="waves-summary">
-                    <div class="waves-count">
-                        <strong><?php echo intval($step_2['number_of_waves'] ?? 0); ?> Tomas configuradas</strong>
-                    </div>
-                    
-                    <?php if (!empty($step_2['waves_config'])): ?>
-                        <div class="waves-list">
-                            <?php foreach ($step_2['waves_config'] as $index => $wave): ?>
-                                <?php 
-                                $wave_num = $index + 1;
-                                $wave_name = esc_html($wave['name'] ?? "Toma {$wave_num}");
-                                $duration = intval($wave['estimated_duration'] ?? 15);
-                                $is_required = isset($wave['is_required']) ? (bool)$wave['is_required'] : true;
-                                ?>
-                                <div class="wave-summary-item">
-                                    <div class="wave-info">
-                                        <span class="wave-number">T<?php echo $wave_num; ?></span>
-                                        <span class="wave-name"><?php echo $wave_name; ?></span>
-                                    </div>
-                                    <div class="wave-details">
-                                        <span class="wave-duration"><?php echo $duration; ?> min</span>
-                                        <span class="wave-status <?php echo $is_required ? 'required' : 'optional'; ?>">
-                                            <?php echo $is_required ? 'Obligatoria' : 'Opcional'; ?>
-                                        </span>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
+            <div class="eipsi-summary-section">
+                <h3 style="margin:0 0 16px 0;color:#2c3e50;font-size:14px;font-weight:600;">Configuración de Waves</h3>
+                <div style="padding:12px;background:#f8f9fa;border-radius:8px;text-align:center;font-weight:600;color:#2c3e50;font-size:13px;margin-bottom:16px;">
+                    <?php echo intval($step_2['number_of_waves'] ?? 0); ?> Tomas configuradas
                 </div>
+                
+                <?php if (!empty($step_2['waves_config'])): ?>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <?php foreach ($step_2['waves_config'] as $index => $wave): ?>
+                            <?php 
+                            $wave_num = $index + 1;
+                            $wave_name = esc_html($wave['name'] ?? "Toma {$wave_num}");
+                            $duration = intval($wave['estimated_duration'] ?? 15);
+                            $is_required = isset($wave['is_required']) ? (bool)$wave['is_required'] : true;
+                            ?>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f8f9fa;border-radius:8px;border:1px solid #e2e8f0;">
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <span style="background:#3B6CAA;color:white;padding:2px 8px;border-radius:4px;font-weight:600;font-size:12px;">T<?php echo $wave_num; ?></span>
+                                    <span style="font-weight:600;color:#2c3e50;font-size:13px;"><?php echo $wave_name; ?></span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:12px;">
+                                    <span style="font-size:12px;color:#64748b;"><?php echo $duration; ?> min</span>
+                                    <span style="padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;<?php echo $is_required ? 'background:#dc3545;color:white;' : 'background:#008080;color:white;'; ?>">
+                                        <?php echo $is_required ? 'Obligatoria' : 'Opcional'; ?>
+                                    </span>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
             
             <!-- Timing Configuration -->
-            <div class="summary-section">
-                <h3>⏰ Programación Temporal</h3>
-                <div class="timing-summary">
+            <div class="eipsi-summary-section">
+                <h3 style="margin:0 0 16px 0;color:#2c3e50;font-size:14px;font-weight:600;">Programación Temporal</h3>
+                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
                     <?php if (!empty($timing_summary)): ?>
-                        <div class="intervals-list">
-                            <?php foreach ($timing_summary as $interval): ?>
-                                <div class="interval-item">
-                                    <span class="interval-text"><?php echo $interval; ?></span>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
+                        <?php foreach ($timing_summary as $interval): ?>
+                            <div style="padding:10px;background:#f8f9fa;border-radius:6px;text-align:center;font-weight:500;color:#2c3e50;font-size:13px;">
+                                <?php echo $interval; ?>
+                            </div>
+                        <?php endforeach; ?>
                     <?php endif; ?>
-                    
-                    <div class="timing-details">
-                        <div class="detail-item">
-                            <span class="label">Notificación de nueva toma:</span>
-                            <span class="value">Email automático el mismo día que esté disponible</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">Reintentos:</span>
-                            <span class="value">
-                                <?php if (!empty($step_3['enable_retries'])): ?>
-                                    Cada <?php echo intval($step_3['retry_after_days'] ?? 7); ?> días (máx <?php echo intval($step_3['max_retries'] ?? 3); ?> reintentos)
-                                <?php else: ?>
-                                    Deshabilitados
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">Alerta al investigador:</span>
-                            <span class="value">Después de <?php echo intval($step_3['investigator_notification_days'] ?? 14); ?> días sin respuesta</span>
-                        </div>
+                </div>
+                
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <div class="eipsi-summary-row">
+                        <span class="eipsi-summary-label">Notificación de nueva toma:</span>
+                        <span class="eipsi-summary-value">Email automático el mismo día que esté disponible</span>
+                    </div>
+                    <div class="eipsi-summary-row">
+                        <span class="eipsi-summary-label">Reintentos:</span>
+                        <span class="eipsi-summary-value">
+                            <?php if (!empty($step_3['enable_retries'])): ?>
+                                Cada <?php echo intval($step_3['retry_after_days'] ?? 7); ?> días (máx <?php echo intval($step_3['max_retries'] ?? 3); ?> reintentos)
+                            <?php else: ?>
+                                Deshabilitados
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                    <div class="eipsi-summary-row">
+                        <span class="eipsi-summary-label">Alerta al investigador:</span>
+                        <span class="eipsi-summary-value">Después de <?php echo intval($step_3['investigator_notification_days'] ?? 14); ?> días sin respuesta</span>
                     </div>
                 </div>
             </div>
             
             <!-- Participants Configuration -->
-            <div class="summary-section">
-                <h3>👥 PARTICIPANTES</h3>
-                <div class="participants-summary">
-                    <?php if (!empty($selected_methods)): ?>
-                        <div class="methods-list">
-                            <span class="label">Métodos de invitación:</span>
+            <div class="eipsi-summary-section">
+                <h3 style="margin:0 0 16px 0;color:#2c3e50;font-size:14px;font-weight:600;">Participantes</h3>
+                
+                <?php if (!empty($selected_methods)): ?>
+                    <div style="margin-bottom:16px;">
+                        <span class="eipsi-summary-label">Métodos de invitación:</span>
+                        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
                             <?php foreach ($selected_methods as $method): ?>
-                                <span class="method-tag"><?php echo $method; ?></span>
+                                <span style="display:inline-block;padding:4px 12px;background:#3B6CAA;color:white;border-radius:20px;font-size:12px;font-weight:500;"><?php echo $method; ?></span>
                             <?php endforeach; ?>
                         </div>
-                    <?php endif; ?>
-                    
-                    <div class="consent-summary">
-                        <div class="detail-item">
-                            <span class="label">Consentimiento:</span>
-                            <span class="value <?php echo !empty($step_4['require_consent']) ? 'enabled' : 'disabled'; ?>">
-                                <?php echo !empty($step_4['require_consent']) ? 'Requerido' : 'Opcional'; ?>
-                            </span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">Aviso privacidad:</span>
-                            <span class="value <?php echo !empty($step_4['show_privacy_notice']) ? 'enabled' : 'disabled'; ?>">
-                                <?php echo !empty($step_4['show_privacy_notice']) ? 'Mostrado' : 'Oculto'; ?>
-                            </span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="label">Auto-remove inactivos:</span>
-                            <span class="value <?php echo !empty($step_4['auto_removal_inactive']) ? 'enabled' : 'disabled'; ?>">
-                                <?php echo !empty($step_4['auto_removal_inactive']) ? 'Activado' : 'Desactivado'; ?>
-                            </span>
-                        </div>
+                    </div>
+                <?php endif; ?>
+                
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <div class="eipsi-summary-row">
+                        <span class="eipsi-summary-label">Consentimiento:</span>
+                        <span class="eipsi-summary-value" style="<?php echo !empty($step_4['require_consent']) ? 'color:#008080;font-weight:600;' : 'color:#6c757d;'; ?>">
+                            <?php echo !empty($step_4['require_consent']) ? 'Requerido' : 'Opcional'; ?>
+                        </span>
+                    </div>
+                    <div class="eipsi-summary-row">
+                        <span class="eipsi-summary-label">Aviso privacidad:</span>
+                        <span class="eipsi-summary-value" style="<?php echo !empty($step_4['show_privacy_notice']) ? 'color:#008080;font-weight:600;' : 'color:#6c757d;'; ?>">
+                            <?php echo !empty($step_4['show_privacy_notice']) ? 'Mostrado' : 'Oculto'; ?>
+                        </span>
+                    </div>
+                    <div class="eipsi-summary-row">
+                        <span class="eipsi-summary-label">Auto-remove inactivos:</span>
+                        <span class="eipsi-summary-value" style="<?php echo !empty($step_4['auto_removal_inactive']) ? 'color:#008080;font-weight:600;' : 'color:#6c757d;'; ?>">
+                            <?php echo !empty($step_4['auto_removal_inactive']) ? 'Activado' : 'Desactivado'; ?>
+                        </span>
                     </div>
                 </div>
             </div>
             
             <!-- Important Notice -->
-            <div class="important-notice">
-                <h4>⚠️ IMPORTANTE - ANTES DE ACTIVAR</h4>
-                <ul>
-                    <li><strong>Estructura permanente:</strong> Una vez activado, cambiar la configuración de tomas será muy difícil.</li>
-                    <li><strong>Invitaciones inmediatas:</strong> Podrás empezar a invitar participantes inmediatamente después.</li>
-                    <li><strong>URLs generadas:</strong> Se crearán automáticamente los enlaces para participantes.</li>
+            <div class="eipsi-wiz-notice" style="background:linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);border:1px solid #ffc107;border-radius:10px;padding:18px;">
+                <h4 style="margin:0 0 12px 0;color:#856404;font-size:13px;font-weight:600;">IMPORTANTE - ANTES DE ACTIVAR</h4>
+                <ul style="margin:0;padding-left:18px;color:#856404;font-size:13px;line-height:1.6;">
+                    <li style="margin-bottom:6px;"><strong>Estructura permanente:</strong> Una vez activado, cambiar la configuración de tomas será muy difícil.</li>
+                    <li style="margin-bottom:6px;"><strong>Invitaciones inmediatas:</strong> Podrás empezar a invitar participantes inmediatamente después.</li>
+                    <li style="margin-bottom:6px;"><strong>URLs generadas:</strong> Se crearán automáticamente los enlaces para participantes.</li>
                     <li><strong>Monitoreo:</strong> Podrás seguir el progreso desde el panel de control del estudio.</li>
                 </ul>
             </div>
             
             <!-- Confirmation -->
-            <div class="activation-confirmation">
-                <label class="confirmation-checkbox">
-                    <input type="checkbox" 
-                           id="activation_confirmed"
-                           name="activation_confirmed" 
-                           value="1">
-                    <span class="checkbox-mark">✓</span>
-                    <span class="checkbox-text">
+            <div style="background:white;border:2px solid #008080;border-radius:10px;padding:24px;text-align:center;">
+                <label style="display:flex;align-items:flex-start;gap:14px;cursor:pointer;text-align:left;max-width:600px;margin:0 auto;">
+                    <input type="checkbox" id="activation_confirmed" name="activation_confirmed" value="1" style="margin-top:4px;transform:scale(1.3);">
+                    <span style="color:#2c3e50;line-height:1.5;font-size:14px;">
                         <strong>Entiendo y confirmo:</strong> Deseo activar este estudio longitudinal con la configuración mostrada arriba.
                     </span>
                 </label>
             </div>
         </div>
     </form>
+    
+    <!-- Autosave hint -->
+    <div class="eipsi-wiz-autosave" id="eipsi-autosave-hint"></div>
 </div>
 
 <script>
-// Disable/enable activation button based on confirmation
+// Disable/enable activation button based on confirmation - ACTUALIZADO
+// El botón de activación está en la navegación, manejado por setup-wizard.php
 document.addEventListener('DOMContentLoaded', function() {
     const confirmationCheckbox = document.getElementById('activation_confirmed');
-    const activationButton = document.querySelector('.study-navigation .button-primary');
+    
+    // El botón de activación tiene el ID definido en setup-wizard.php
+    const activationButton = document.getElementById('eipsi-activate-btn');
     
     if (confirmationCheckbox && activationButton) {
         const updateActivationState = () => {
             const isChecked = confirmationCheckbox.checked;
             activationButton.disabled = !isChecked;
             activationButton.style.opacity = isChecked ? '1' : '0.5';
+            
+            // Actualizar color del borde del contenedor según estado
+            const container = confirmationCheckbox.closest('div');
+            if (container) {
+                container.style.borderColor = isChecked ? '#008080' : '#e2e8f0';
+            }
         };
 
         updateActivationState();
@@ -297,376 +301,55 @@ function eipsiPrintSummary() {
 
 // Download summary function
 function eipsiDownloadSummary() {
-    // TODO: Implement PDF/CSV export of study configuration
     alert('Función de descarga próximamente disponible.');
 }
 </script>
 
 <style>
-.summary-container {
-    max-width: 900px;
-    margin: 0 auto;
-    display: grid;
-    gap: 2rem;
-}
-
-.summary-section {
+/* Summary sections EIPSI */
+.eipsi-summary-section {
     background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
 }
-
-.summary-section h3 {
-    margin: 0 0 1rem 0;
-    color: #495057;
-    font-size: 1.1rem;
-    font-weight: 600;
+.eipsi-summary-grid {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 10px;
 }
-
-.summary-grid {
-    display: grid;
-    gap: 0.75rem;
+.eipsi-summary-row {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
 }
-
-.summary-item {
-    display: grid;
-    grid-template-columns: 120px 1fr;
-    gap: 1rem;
-    align-items: center;
-}
-
-.summary-item .label {
+.eipsi-summary-label {
     font-weight: 600;
-    color: #6c757d;
-    font-size: 0.9rem;
+    color: #64748b;
+    font-size: 13px;
+    min-width: 120px;
 }
-
-.summary-item .value {
-    color: #495057;
+.eipsi-summary-value {
+    color: #2c3e50;
     font-weight: 500;
+    font-size: 13px;
 }
-
-.summary-item .value.code {
+.eipsi-summary-value.code {
     font-family: 'Courier New', monospace;
-    background: #ffffff;
-    color: #000000;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
-
-.summary-item .value.status.pending {
-    color: #ffc107;
-    font-weight: 600;
-}
-
-.summary-description {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #dee2e6;
-}
-
-.summary-description .label {
-    font-weight: 600;
-    color: #6c757d;
-    font-size: 0.9rem;
-    display: block;
-    margin-bottom: 0.5rem;
-}
-
-.summary-description p {
-    margin: 0;
-    color: #495057;
-    line-height: 1.5;
-}
-
-.waves-summary {
-    display: grid;
-    gap: 1rem;
-}
-
-.waves-count {
-    padding: 0.75rem;
     background: #f8f9fa;
-    border-radius: 8px;
-    text-align: center;
-    font-weight: 600;
-    color: #495057;
-}
-
-.waves-list {
-    display: grid;
-    gap: 0.75rem;
-}
-
-.wave-summary-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-
-.wave-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.wave-number {
-    background: #667eea;
-    color: white;
-    padding: 0.25rem 0.5rem;
+    padding: 2px 8px;
     border-radius: 4px;
-    font-weight: 600;
-    font-size: 0.8rem;
+    font-size: 12px;
 }
 
-.wave-name {
-    font-weight: 600;
-    color: #495057;
+/* Notice EIPSI */
+.eipsi-wiz-notice {
+    margin-bottom: 20px;
 }
 
-.wave-details {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.wave-duration {
-    font-size: 0.85rem;
-    color: #6c757d;
-}
-
-.wave-status {
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.wave-status.required {
-    background: #dc3545;
-    color: white;
-}
-
-.wave-status.optional {
-    background: #28a745;
-    color: white;
-}
-
-.timing-summary .intervals-list {
-    display: grid;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.interval-item {
-    padding: 0.5rem;
-    background: #f8f9fa;
-    border-radius: 6px;
-    text-align: center;
-    font-weight: 500;
-    color: #495057;
-}
-
-.timing-details {
-    display: grid;
-    gap: 0.75rem;
-}
-
-.detail-item {
-    display: grid;
-    grid-template-columns: 160px 1fr;
-    gap: 1rem;
-    align-items: center;
-}
-
-.detail-item .label {
-    font-weight: 600;
-    color: #6c757d;
-    font-size: 0.9rem;
-}
-
-.detail-item .value {
-    color: #495057;
-    font-weight: 500;
-}
-
-.detail-item .value.enabled {
-    color: #28a745;
-    font-weight: 600;
-}
-
-.detail-item .value.disabled {
-    color: #6c757d;
-}
-
-.participants-summary .methods-list {
-    margin-bottom: 1rem;
-}
-
-.participants-summary .label {
-    font-weight: 600;
-    color: #6c757d;
-    font-size: 0.9rem;
-    margin-right: 1rem;
-}
-
-.method-tag {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background: #667eea;
-    color: white;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    margin-right: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.important-notice {
-    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-    border: 2px solid #ffc107;
-    border-radius: 12px;
-    padding: 1.5rem;
-}
-
-.important-notice h4 {
-    margin: 0 0 1rem 0;
-    color: #856404;
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.important-notice ul {
-    margin: 0;
-    padding-left: 1.5rem;
-    color: #856404;
-}
-
-.important-notice li {
-    margin-bottom: 0.5rem;
-    line-height: 1.4;
-}
-
-.activation-confirmation {
-    background: white;
-    border: 2px solid #28a745;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-}
-
-.confirmation-checkbox {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    cursor: pointer;
-    text-align: left;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.confirmation-checkbox input[type="checkbox"] {
-    display: none;
-}
-
-.checkbox-mark {
-    width: 24px;
-    height: 24px;
-    border: 2px solid #28a745;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: transparent;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-    margin-top: 0.2rem;
-}
-
-.confirmation-checkbox input[type="checkbox"]:checked + .checkbox-mark {
-    background: #28a745;
-    color: white;
-}
-
-.checkbox-text {
-    color: #495057;
-    line-height: 1.5;
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .summary-section {
-        background: #2c3e50;
-        border-color: #34495e;
-    }
-    
-    .summary-section h3 {
-        color: #ecf0f1;
-    }
-    
-    .summary-item .label {
-        color: #95a5a6;
-    }
-    
-    .summary-item .value {
-        color: #ecf0f1;
-    }
-    
-    .summary-description p {
-        color: #ecf0f1;
-    }
-    
-    .waves-count,
-    .wave-summary-item,
-    .interval-item {
-        background: #34495e;
-        border-color: #4a5f7a;
-    }
-    
-    .wave-name {
-        color: #ecf0f1;
-    }
-    
-    .detail-item .label {
-        color: #95a5a6;
-    }
-    
-    .detail-item .value {
-        color: #ecf0f1;
-    }
-    
-    .method-tag {
-        background: #667eea;
-        color: white;
-    }
-    
-    .important-notice {
-        background: linear-gradient(135deg, #856404 0%, #6c5800 100%);
-        border-color: #ffc107;
-    }
-    
-    .important-notice h4,
-    .important-notice li {
-        color: #fff3cd;
-    }
-    
-    .checkbox-text {
-        color: #ecf0f1;
-    }
-    
-    .activation-confirmation {
-        background: #2c3e50;
-        border-color: #28a745;
-    }
+/* Contenedor de confirmación - transición de borde */
+#step-5 .summary-container > div:last-of-type {
+    transition: border-color 0.2s ease;
 }
 </style>

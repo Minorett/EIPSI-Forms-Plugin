@@ -37,7 +37,7 @@ function eipsi_display_randomization() {
     $back_to_results_url = admin_url('admin.php?page=eipsi-results-experience&tab=randomization');
     ?>
     
-    <div class="wrap eipsi-randomization eipsi-force-light-mode">
+    <div class="wrap eipsi-randomization">
         <div class="rct-header">
             <div class="rct-header-left">
                 <?php if (!empty($auto_load_config)) : ?>
@@ -51,7 +51,7 @@ function eipsi_display_randomization() {
                 <?php endif; ?>
 
                 <h1>
-                    🎲 <?php esc_html_e('Randomization Dashboard', 'eipsi-forms'); ?>
+                    <span class="dashicons dashicons-randomize"></span> <?php esc_html_e('Randomization Dashboard', 'eipsi-forms'); ?>
                     <?php if (!empty($auto_load_config)) : ?>
                         <span class="config-id-badge">
                             <?php esc_html_e('Config:', 'eipsi-forms'); ?>
@@ -67,7 +67,7 @@ function eipsi_display_randomization() {
             </div>
             <div class="rct-actions">
                 <button type="button" id="refresh-rct-data" class="button button-secondary">
-                    🔄 <?php esc_html_e('Actualizar', 'eipsi-forms'); ?>
+                    <span class="dashicons dashicons-update"></span> <?php esc_html_e('Actualizar', 'eipsi-forms'); ?>
                 </button>
                 <span class="last-updated">
                     <?php esc_html_e('Última actualización:', 'eipsi-forms'); ?> 
@@ -78,19 +78,6 @@ function eipsi_display_randomization() {
 
         <!-- Mensajes -->
         <div id="rct-message-container"></div>
-
-        <!-- Modal para detalles -->
-        <div id="rct-details-modal" class="eipsi-modal" style="display: none;">
-            <div class="eipsi-modal-content">
-                <div class="eipsi-modal-header">
-                    <h3 id="modal-title">Detalles</h3>
-                    <button type="button" class="eipsi-modal-close">&times;</button>
-                </div>
-                <div class="eipsi-modal-body">
-                    <div id="modal-body"></div>
-                </div>
-            </div>
-        </div>
 
         <!-- Dashboard Container -->
         <div id="rct-dashboard" class="rct-dashboard">
@@ -585,7 +572,8 @@ function eipsi_display_randomization() {
 
             function renderRCtCard(rct) {
                 const statusClass = rct.is_active ? 'status-active' : 'status-inactive';
-                const statusText = rct.is_active ? '🟢 Activa' : '🔴 Inactiva';
+                const statusText = rct.is_active ? 'Activa' : 'Inactiva';
+                const statusIcon = rct.is_active ? '<span class="dashicons dashicons-yes-alt" style="color: #22c55e; font-size: 14px; vertical-align: middle;"></span>' : '<span class="dashicons dashicons-no-alt" style="color: #ef4444; font-size: 14px; vertical-align: middle;"></span>';
                 
                 let distributionHtml = '';
                 if (rct.distribution && rct.distribution.length > 0) {
@@ -611,9 +599,9 @@ function eipsi_display_randomization() {
                             <div>
                                 <h3 class="rct-card-title">${escapeHtml(rct.randomization_id)}</h3>
                                 <div class="rct-card-meta">
-                                    <span>📅 ${escapeHtml(rct.created_formatted)}</span>
-                                    <span>🎯 ${escapeHtml(rct.method.toUpperCase())}</span>
-                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                    <span><span class="dashicons dashicons-calendar-alt" style="font-size: 14px; vertical-align: middle;"></span> ${escapeHtml(rct.created_formatted)}</span>
+                                    <span><span class="dashicons dashicons-randomize" style="font-size: 14px; vertical-align: middle;"></span> ${escapeHtml(rct.method.toUpperCase())}</span>
+                                    <span class="status-badge ${statusClass}">${statusIcon} ${statusText}</span>
                                 </div>
                             </div>
                         </div>
@@ -648,19 +636,16 @@ function eipsi_display_randomization() {
 
                         <div class="rct-actions-buttons">
                             <button type="button" class="rct-button rct-button-primary rct-view-details" data-randomization-id="${escapeHtml(rct.randomization_id)}">
-                                👁️ Ver Detalles
-                            </button>
-                            <button type="button" class="rct-button rct-button-analysis" onclick="showDistributionAnalysis('${escapeHtml(rct.randomization_id)}')">
-                                📊 Análisis Distribución
+                                <span class="dashicons dashicons-visibility"></span> Ver Detalles
                             </button>
                             <button type="button" class="rct-button rct-button-export" onclick="downloadAssignmentsCSV('${escapeHtml(rct.randomization_id)}')">
-                                📥 Exportar CSV
+                                <span class="dashicons dashicons-download"></span> CSV
                             </button>
                             <button type="button" class="rct-button rct-button-export" onclick="downloadAssignmentsExcel('${escapeHtml(rct.randomization_id)}')">
-                                📊 Exportar Excel
+                                <span class="dashicons dashicons-media-spreadsheet"></span> Excel
                             </button>
                             <button type="button" class="rct-button" onclick="copyRCTId('${escapeHtml(rct.randomization_id)}')">
-                                📋 Copiar ID
+                                <span class="dashicons dashicons-admin-page"></span> Copiar ID
                             </button>
                         </div>
                     </div>
@@ -742,14 +727,38 @@ function eipsi_display_randomization() {
             function getEmptyState() {
                 return `
                     <div class="empty-state">
-                        <div class="empty-state-icon">🎲</div>
+                        <div class="empty-state-icon"><span class="dashicons dashicons-randomize" style="font-size: 48px; color: #94a3b8;"></span></div>
                         <h3 class="empty-state-title">No hay aleatorizaciones aún</h3>
-                        <p class="empty-state-description">Cuando crees estudios RCT, aparecerán aquí para monitoreo.</p>
-                        <button type="button" class="rct-button rct-button-primary" onclick="window.open('<?php echo admin_url('post-new.php?post_type=page'); ?>', '_blank')">
-                            ➕ Crear Aleatorización
+                        <button type="button" class="rct-button rct-button-primary" onclick="createRCTPage()">
+                            <span class="dashicons dashicons-plus"></span> Crear Aleatorización
                         </button>
                     </div>
                 `;
+            }
+
+            function createRCTPage() {
+                showMessage('Creando página con bloque de aleatorización...', 'success');
+                
+                $.ajax({
+                    url: RCT_ANALYTICS.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'eipsi_create_rct_page',
+                        nonce: RCT_ANALYTICS.nonce
+                    },
+                    success: function(response) {
+                        if (response.success && response.data.edit_url) {
+                            window.open(response.data.edit_url, '_blank');
+                            showMessage('Página creada. Configura el bloque y guarda como borrador.', 'success');
+                            $('#rct-details-modal').hide();
+                        } else {
+                            showMessage('Error al crear la página: ' + (response.data || 'Error desconocido'), 'error');
+                        }
+                    },
+                    error: function() {
+                        showMessage('Error de conexión al crear la página', 'error');
+                    }
+                });
             }
 
             function escapeHtml(text) {
@@ -859,5 +868,43 @@ function eipsi_display_randomization() {
         });
     </script>
     <?php
+}
+
+/**
+ * AJAX Handler: Crear página con bloque de randomization
+ * Crea una página en borrador con el bloque EIPSI Randomization insertado
+ */
+add_action('wp_ajax_eipsi_create_rct_page', 'eipsi_create_rct_page_handler');
+
+function eipsi_create_rct_page_handler() {
+    check_ajax_referer('eipsi_randomization_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(__('Unauthorized', 'eipsi-forms'));
+    }
+
+    // Crear la página en borrador
+    $page_data = array(
+        'post_title'   => sprintf(__('Aleatorización %s', 'eipsi-forms'), wp_date('Y-m-d H:i')),
+        'post_content' => '<!-- wp:eipsi/randomization {"randomizationId":""} /-->',
+        'post_status'  => 'draft',
+        'post_type'    => 'page',
+        'post_author'  => get_current_user_id(),
+    );
+
+    $page_id = wp_insert_post($page_data, true);
+
+    if (is_wp_error($page_id)) {
+        wp_send_json_error($page_id->get_error_message());
+    }
+
+    // Generar URL de edición
+    $edit_url = get_edit_post_link($page_id, 'raw');
+
+    wp_send_json_success(array(
+        'page_id'  => $page_id,
+        'edit_url' => $edit_url,
+        'message'  => __('Página creada exitosamente', 'eipsi-forms')
+    ));
 }
 ?>
