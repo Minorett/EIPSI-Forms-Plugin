@@ -365,7 +365,7 @@ function eipsi_enqueue_randomization_assets($hook) {
                 'eipsi-study-dashboard-js',
                 EIPSI_FORMS_PLUGIN_URL . 'assets/js/study-dashboard.js',
                 array('jquery'),
-                EIPSI_FORMS_VERSION,
+                time(),
                 true
             );
 

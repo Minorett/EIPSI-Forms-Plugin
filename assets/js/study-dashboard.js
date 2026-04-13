@@ -909,12 +909,12 @@
             $('#participants-count').text(`${data.total} participantes`);
 
             if (data.participants.length === 0) {
-                $tbody.append('<tr><td colspan="4" style="text-align:center;">No se encontraron participantes</td></tr>');
+                $tbody.append('<tr><td colspan="3" style="text-align:center;padding:20px;">No se encontraron participantes</td></tr>');
                 return;
             }
 
             data.participants.forEach(function(p) {
-                const statusBadge = p.is_active 
+                const statusBadge = p.is_active
                     ? '<span class="eipsi-badge badge-active">Activo</span>'
                     : '<span class="eipsi-badge badge-inactive">Inactivo</span>';
 
@@ -924,33 +924,32 @@
                 const row = `
                     <tr data-participant-id="${p.id}">
                         <td><code>${p.email}</code></td>
-                        <td>${p.first_name || ''} ${p.last_name || ''}</td>
                         <td>${statusBadge}</td>
                         <td>
                             <div class="participants-actions-row">
-                                <button type="button" 
-                                        class="button button-small toggle-participant-status ${toggleClass}" 
-                                        data-participant-id="${p.id}" 
+                                <button type="button"
+                                        class="button button-small toggle-participant-status ${toggleClass}"
+                                        data-participant-id="${p.id}"
                                         data-is-active="${p.is_active ? '1' : '0'}"
                                         title="${toggleText}">
-                                    ${p.is_active ? '🔒' : '🔓'}
+                                    ${p.is_active ? '�' : '�'}
                                 </button>
                                 <button type="button" class="button button-small delete-participant-btn" data-participant-id="${p.id}" title="Eliminar">
                                     🗑️
                                 </button>
                                 <div class="resend-email-wrapper" style="position: relative; display: inline-block;">
                                     <button type="button" class="button button-small resend-email-btn" title="Reenviar email">
-                                        📧
+                                        ✉️
                                     </button>
                                     <div class="resend-email-dropdown" style="display:none; position:absolute; right:0; top:100%; background:#fff; border:1px solid #ccc; border-radius:4px; box-shadow:0 2px 5px rgba(0,0,0,0.15); z-index:1000; min-width:180px;">
                                         <a href="#" class="resend-email-option" data-participant-id="${p.id}" data-email-type="magic_link" data-participant-email="${p.email}" style="display:block; padding:8px 12px; text-decoration:none; color:#333;">
-                                            ✨ Enviar Magic Link
+                                            🔗 Magic Link
                                         </a>
                                         <a href="#" class="resend-email-option" data-participant-id="${p.id}" data-email-type="welcome" data-participant-email="${p.email}" style="display:block; padding:8px 12px; text-decoration:none; color:#333;">
-                                            👋 Email de Bienvenida
+                                            👋 Bienvenida
                                         </a>
                                         <a href="#" class="resend-email-option" data-participant-id="${p.id}" data-email-type="reminder" data-participant-email="${p.email}" style="display:block; padding:8px 12px; text-decoration:none; color:#333;">
-                                            🔔 Recordatorio de Onda
+                                            ⏰ Recordatorio
                                         </a>
                                     </div>
                                 </div>
@@ -973,7 +972,9 @@
             const $pagination = $('#participants-pagination');
             $pagination.empty();
 
-            if (totalPages <= 1) return;
+            // Fallback if totalPages is not provided
+            const total = totalPages || 1;
+            if (total <= 1) return;
 
             let html = '<div class="pagination-links">';
 
@@ -981,9 +982,9 @@
                 html += `<button class="button button-small" data-page="${currentPage - 1}">← Anterior</button>`;
             }
 
-            html += `<span style="margin: 0 10px;">Página ${currentPage} de ${totalPages}</span>`;
+            html += `<span style="margin: 0 10px;">Página ${currentPage} de ${total}</span>`;
 
-            if (currentPage < totalPages) {
+            if (currentPage < total) {
                 html += `<button class="button button-small" data-page="${currentPage + 1}">Siguiente →</button>`;
             }
 

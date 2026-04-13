@@ -122,6 +122,33 @@ $study_data = isset($study_data) ? $study_data : array();
 
 <!-- CSS EIPSI Dashboard -->
 <style>
+/* Force Light Mode - Override any dark mode from theme */
+.eipsi-force-light-mode,
+.eipsi-force-light-mode .eipsi-modal-content,
+.eipsi-force-light-mode .wave-card,
+.eipsi-force-light-mode table,
+.eipsi-force-light-mode tbody,
+.eipsi-force-light-mode tr,
+.eipsi-force-light-mode td {
+    background: #ffffff !important;
+    color: #1e293b !important;
+}
+
+.eipsi-force-light-mode table tbody td {
+    color: #1e293b !important;
+    background: #ffffff !important;
+}
+
+.eipsi-force-light-mode table tbody tr:hover td {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+.eipsi-force-light-mode code {
+    background: #f1f5f9 !important;
+    color: #1e293b !important;
+}
+
 /* Header */
 .dash-header {
     display: flex;
@@ -615,8 +642,9 @@ input:checked + .tslider:before { transform: translateX(14px); }
     let currentStudyId = null;
     let currentStudyData = null;
 
-    // Define nonce from localized data
-    const eipsi_dashboard_nonce = (typeof eipsiStudyDash !== 'undefined' && eipsiStudyDash.nonce) ? eipsiStudyDash.nonce : '';
+    // Define nonce from localized data - expose globally for inline handlers
+    window.eipsi_dashboard_nonce = (typeof eipsiStudyDash !== 'undefined' && eipsiStudyDash.nonce) ? eipsiStudyDash.nonce : '';
+    const eipsi_dashboard_nonce = window.eipsi_dashboard_nonce;
 
     // Load study data
     function loadStudyData(studyId) {
@@ -775,7 +803,6 @@ input:checked + .tslider:before { transform: translateX(14px); }
                             </label>
                         </div>
                         <div class="nudge-panel ${nudgesEnabled ? 'open' : ''}" id="n${wave.id}">
-                            ${!hasDeadline ? '<div class="info-note">Asigná un plazo arriba para habilitar el modo "antes de vencimiento".</div>' : ''}
                             <div class="nudge-ref-row">
                                 Basado en: momento de disponibilidad
                             </div>
@@ -1633,7 +1660,7 @@ function sendIndividualReminderConfirmed() {
                         <tr style="background:#f8f9fa;">
                             <th style="padding:10px 12px;text-align:left;font-weight:600;color:#2c3e50;border-bottom:1px solid #e2e8f0;">Email</th>
                             <th style="padding:10px 12px;text-align:left;font-weight:600;color:#2c3e50;border-bottom:1px solid #e2e8f0;">Estado</th>
-                            <th style="padding:10px 12px;text-align:left;font-weight:600;color:#2c3e50;border-bottom:1px solid #e2e8f0;width:120px;">Acciones</th>
+                            <th style="padding:10px 12px;text-align:left;font-weight:600;color:#2c3e50;border-bottom:1px solid #e2e8f0;width:140px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="participants-tbody">
@@ -1745,6 +1772,58 @@ function sendIndividualReminderConfirmed() {
     color: #dc2626;
 }
 
+/* Email Log Badges */
+.badge-sent {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.badge-delivered {
+    background: #dcfce7;
+    color: #166534;
+}
+.badge-clicked {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+.badge-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.badge-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Table Styles - Better Contrast */
+table tbody td {
+    color: #1e293b;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+table tbody tr:hover {
+    background: #f1f5f9;
+}
+table tbody tr:hover td {
+    color: #0f172a;
+}
+
+/* Participants Table - High Contrast */
+#participants-tbody td {
+    color: #0f172a !important;
+    font-weight: 500;
+}
+#participants-tbody td code {
+    color: #1e40af !important;
+    background: #eff6ff !important;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+#participants-tbody tr:hover td {
+    color: #020617 !important;
+    background: #e2e8f0;
+}
+
 /* Participant Actions */
 .participant-actions {
     display: flex;
@@ -1818,20 +1897,6 @@ function sendIndividualReminderConfirmed() {
                 <div style="margin-bottom:12px;">
                     <label style="display:block;font-size:12px;font-weight:500;color:#2c3e50;margin-bottom:4px;">Email *</label>
                     <input type="email" id="participant-email" required style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="participante@email.com">
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-                    <div>
-                        <label style="display:block;font-size:12px;font-weight:500;color:#2c3e50;margin-bottom:4px;">Nombre</label>
-                        <input type="text" id="participant-first-name" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="Juan">
-                    </div>
-                    <div>
-                        <label style="display:block;font-size:12px;font-weight:500;color:#2c3e50;margin-bottom:4px;">Apellido</label>
-                        <input type="text" id="participant-last-name" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="Pérez">
-                    </div>
-                </div>
-                <div style="margin-bottom:12px;">
-                    <label style="display:block;font-size:12px;font-weight:500;color:#2c3e50;margin-bottom:4px;">Contraseña temporal (opcional)</label>
-                    <input type="text" id="participant-password" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;" placeholder="Se generará automáticamente si se deja vacío">
                 </div>
                 <div id="add-participant-error" style="display:none;margin-bottom:12px;padding:10px;background:#fee2e2;border:1px solid #dc2626;border-radius:6px;color:#dc2626;font-size:12px;"></div>
                 <div id="add-participant-success" style="display:none;margin-bottom:12px;padding:10px;background:#d1fae5;border:1px solid #059669;border-radius:6px;color:#065f46;font-size:12px;"></div>
@@ -1914,6 +1979,13 @@ function sendIndividualReminderConfirmed() {
         $('#add-participant-error').hide();
         $('#add-participant-success').hide();
 
+        const email = $('#participant-email').val();
+        if (!email) {
+            $('#add-participant-error').text('El email es obligatorio').show();
+            $btn.text(originalText).prop('disabled', false);
+            return;
+        }
+
         $.ajax({
             url: ajaxurl,
             type: 'POST',
@@ -1921,10 +1993,7 @@ function sendIndividualReminderConfirmed() {
                 action: 'eipsi_add_participant',
                 nonce: eipsi_dashboard_nonce,
                 study_id: $('#add-participant-study-id').val(),
-                email: $('#participant-email').val(),
-                first_name: $('#participant-first-name').val(),
-                last_name: $('#participant-last-name').val(),
-                password: $('#participant-password').val()
+                email: email
             },
             success: function(response) {
                 if (response.success) {
