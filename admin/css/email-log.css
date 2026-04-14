@@ -235,25 +235,26 @@
 }
 
 /* ==========================================================================
-   EMAIL LOG TABLE
+   EMAIL LOG TABLE - Light Mode (same style as Dashboard Study)
    ========================================================================== */
 .eipsi-email-log-table-wrapper {
     background: var(--eipsi-bg);
     border: 1px solid var(--eipsi-border);
-    border-radius: var(--eipsi-radius);
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: var(--eipsi-shadow);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .eipsi-email-log-table {
     margin: 0;
     width: 100%;
     border-collapse: collapse;
+    background: var(--eipsi-bg);
 }
 
 .eipsi-email-log-table thead th {
     background: var(--eipsi-primary);
-    color: #ffffff;
+    color: #ffffff !important;
     border-bottom: none;
     padding: 14px 15px;
     font-weight: 600;
@@ -267,10 +268,23 @@
     vertical-align: middle;
     border-bottom: 1px solid var(--eipsi-border);
     color: var(--eipsi-text);
+    background: var(--eipsi-bg);
+}
+
+.eipsi-email-log-table tbody tr:nth-child(even) {
+    background: var(--eipsi-bg-subtle);
+}
+
+.eipsi-email-log-table tbody tr:nth-child(even) td {
+    background: var(--eipsi-bg-subtle);
 }
 
 .eipsi-email-log-table tbody tr:hover {
-    background: var(--eipsi-bg-subtle);
+    background: var(--eipsi-bg-subtle) !important;
+}
+
+.eipsi-email-log-table tbody tr:hover td {
+    background: var(--eipsi-bg-subtle) !important;
 }
 
 .eipsi-email-log-table tbody tr:last-child td {
@@ -426,25 +440,26 @@
 }
 
 /* ==========================================================================
-   DROPOUT TABLE
+   DROPOUT TABLE - Light Mode (same style as Dashboard Study)
    ========================================================================== */
 .eipsi-dropout-table-wrapper {
     background: var(--eipsi-bg);
     border: 1px solid var(--eipsi-border);
-    border-radius: var(--eipsi-radius);
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: var(--eipsi-shadow);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .eipsi-dropout-table {
     margin: 0;
     width: 100%;
     border-collapse: collapse;
+    background: var(--eipsi-bg);
 }
 
 .eipsi-dropout-table thead th {
     background: var(--eipsi-primary);
-    color: #ffffff;
+    color: #ffffff !important;
     border-bottom: none;
     padding: 14px 15px;
     font-weight: 600;
@@ -458,10 +473,23 @@
     vertical-align: middle;
     border-bottom: 1px solid var(--eipsi-border);
     color: var(--eipsi-text);
+    background: var(--eipsi-bg);
+}
+
+.eipsi-dropout-table tbody tr:nth-child(even) {
+    background: var(--eipsi-bg-subtle);
+}
+
+.eipsi-dropout-table tbody tr:nth-child(even) td {
+    background: var(--eipsi-bg-subtle);
 }
 
 .eipsi-dropout-table tbody tr:hover {
-    background: var(--eipsi-bg-subtle);
+    background: var(--eipsi-bg-subtle) !important;
+}
+
+.eipsi-dropout-table tbody tr:hover td {
+    background: var(--eipsi-bg-subtle) !important;
 }
 
 /* ==========================================================================
@@ -707,4 +735,58 @@
 *:focus-visible {
     outline: 2px solid var(--eipsi-primary);
     outline-offset: 2px;
+}
+
+/* ==========================================================================
+   FORCE LIGHT MODE - Override dark mode from WordPress admin
+   ========================================================================== */
+.eipsi-email-log-wrap,
+.eipsi-email-log-wrap * {
+    --eipsi-bg: #ffffff !important;
+    --eipsi-bg-subtle: #f8f9fa !important;
+    --eipsi-bg-muted: #f1f5f9 !important;
+    --eipsi-text: #1e293b !important;
+    --eipsi-text-muted: #64748b !important;
+    --eipsi-text-light: #94a3b8 !important;
+    --eipsi-border: #e2e8f0 !important;
+    --eipsi-border-dark: #cbd5e0 !important;
+    --eipsi-primary: #3B6CAA !important;
+    --eipsi-primary-hover: #1E3A5F !important;
+    --eipsi-primary-light: #AED6F1 !important;
+    --eipsi-primary-lighter: #e0f2fe !important;
+    --eipsi-success: #008080 !important;
+    --eipsi-success-bg: #e8f5e9 !important;
+    --eipsi-error: #800000 !important;
+    --eipsi-error-bg: #fff5f5 !important;
+    --eipsi-warning: #ffc107 !important;
+    --eipsi-warning-bg: #fff8e5 !important;
+    --eipsi-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    --eipsi-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    --eipsi-radius: 8px !important;
+}
+
+/* Force light backgrounds on specific elements */
+.eipsi-email-log-wrap .eipsi-stat-card {
+    background: #ffffff !important;
+    color: #1e293b !important;
+}
+
+.eipsi-email-log-wrap .eipsi-stat-card .stat-value {
+    color: #1e293b !important;
+}
+
+.eipsi-email-log-wrap .eipsi-stat-card .stat-label {
+    color: #64748b !important;
+}
+
+.eipsi-email-log-wrap .eipsi-filters-toolbar {
+    background: #f8f9fa !important;
+    border-color: #e2e8f0 !important;
+}
+
+.eipsi-email-log-wrap .eipsi-filter-select,
+.eipsi-email-log-wrap .eipsi-filter-input {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-color: #e2e8f0 !important;
 }

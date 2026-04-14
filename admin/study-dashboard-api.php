@@ -163,13 +163,29 @@ function wp_ajax_eipsi_get_study_overview_handler() {
     ));
 
     $waves_stats = array();
-    foreach ($waves as $wave) {
-        $total_assignments = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d",
-            $wave->id
-        ));
+    $previous_wave_completed_ids = null; // Track who completed previous wave
+    
+    foreach ($waves as $index => $wave) {
         $completed_assignments = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d AND status = 'submitted'",
+            $wave->id
+        ));
+        
+        // Calculate eligible participants (those who can actually do this wave)
+        if ($index === 0) {
+            // First wave: all active participants are eligible
+            $eligible_participants = $participants_stats['active'];
+        } else {
+            // Subsequent waves: only those who completed the previous wave
+            $eligible_participants = count($previous_wave_completed_ids);
+        }
+        
+        // Pending = eligible - completed (those who should do it but haven't)
+        $pending_participants = max(0, $eligible_participants - $completed_assignments);
+        
+        // Get participant IDs who completed this wave (for next iteration)
+        $previous_wave_completed_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT participant_id FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d AND status = 'submitted'",
             $wave->id
         ));
         
@@ -219,9 +235,11 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             'deadline' => $wave->due_date,
             'deadline_formatted' => $due_date_formatted,
             'status' => $wave->status,
-            'total' => $total_assignments,
+            // Logical calculation: only count those who are actually eligible
+            'total' => $eligible_participants, // Total eligible (can do this wave)
             'completed' => $completed_assignments,
-            'progress' => ($total_assignments > 0) ? round(($completed_assignments / $total_assignments) * 100) : 0,
+            'pending' => $pending_participants, // Those who should do it but haven't
+            'progress' => ($eligible_participants > 0) ? round(($completed_assignments / $eligible_participants) * 100) : 0,
             'reminders_sent' => 0, // TODO: Implement reminder tracking
             'interval_days' => isset($wave->interval_days) ? intval($wave->interval_days) : 0,
             'time_unit' => isset($wave->time_unit) ? $wave->time_unit : 'days',
@@ -364,14 +382,18 @@ function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
     try {
         global $wpdb;
 
-        // Get study_id from wave (study_id is the survey_id in other tables)
+        // Get study_id and form_id from wave (study_id is the survey_id in other tables)
         $wave = $wpdb->get_row($wpdb->prepare(
-            "SELECT study_id FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+            "SELECT study_id, form_id FROM {$wpdb->prefix}survey_waves WHERE id = %d",
             $wave_id
         ));
 
         if (!$wave || empty($wave->study_id)) {
             wp_send_json_error('Wave not found or missing survey association');
+        }
+
+        if (empty($wave->form_id)) {
+            wp_send_json_error('Wave is not associated with a form');
         }
 
         $survey_id = (int) $wave->study_id;

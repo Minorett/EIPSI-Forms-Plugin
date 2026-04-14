@@ -184,7 +184,8 @@ $colspan = $show_form_column ? 8 : 7;
     </div>
     
     <!-- Submissions Table -->
-    <table class="wp-list-table widefat fixed striped">
+    <div class="eipsi-table-wrapper">
+        <table class="wp-list-table widefat fixed striped">
         <thead>
             <tr>
                 <?php if ($show_form_column): ?>
@@ -284,8 +285,8 @@ $colspan = $show_form_column ? 8 : 7;
                 <?php endforeach; ?>
             <?php endif; ?>
         </tbody>
-    </table>
-    
+        </table>
+    </div>
 </div>
 
 <!-- Modal para View Metadata -->

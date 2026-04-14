@@ -912,10 +912,14 @@ function eipsi_render_pool_hub_v2() {
             background: rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(2px);
             z-index: 100000;
-            display: flex;
+            display: none; /* Hidden by default, shown via JS */
             align-items: center;
             justify-content: center;
             padding: 40px 20px;
+        }
+        
+        .eipsi-modal-overlay.active {
+            display: flex !important;
         }
 
         /* Modal Container */
@@ -1382,7 +1386,8 @@ function eipsi_render_pool_hub_v2() {
         function openModal(modal) {
             console.log('[POOL-HUB] openModal llamado, modal:', modal ? modal.id || 'unnamed' : 'null');
             if (modal) {
-                modal.style.display = 'flex';
+                modal.classList.add('active');
+                modal.style.display = 'flex'; // Fallback for older browsers
                 console.log('[POOL-HUB] Modal abierto:', modal.id || 'unnamed');
             } else {
                 console.error('[POOL-HUB] openModal: modal es null o undefined');
@@ -1392,6 +1397,7 @@ function eipsi_render_pool_hub_v2() {
         function closeModal(modal) {
             console.log('[POOL-HUB] closeModal llamado, modal:', modal ? modal.id || 'unnamed' : 'null');
             if (modal) {
+                modal.classList.remove('active');
                 modal.style.display = 'none';
                 console.log('[POOL-HUB] Modal cerrado:', modal.id || 'unnamed');
             } else {
@@ -1726,19 +1732,22 @@ function eipsi_render_pool_hub_v2() {
             const progressLabel = progressText.querySelector('span:first-child');
             progressLabel.textContent = total.toFixed(2) + '% / 100%';
             
-            if (total === 100) {
+            // Allow ±1% tolerance for rounding (99% to 101% is valid)
+            const isValid = total >= 99 && total <= 101;
+            
+            if (isValid) {
                 progressFill.classList.remove('invalid');
                 progressFill.classList.add('valid');
                 progressText.classList.remove('invalid');
                 progressText.classList.add('valid');
                 progressStatus.textContent = '✅ Completo';
-                console.log('[POOL-HUB] Probability total is valid (100%)');
+                console.log('[POOL-HUB] Probability total is valid:', total + '%');
             } else {
                 progressFill.classList.remove('valid');
                 progressFill.classList.add('invalid');
                 progressText.classList.remove('valid');
                 progressText.classList.add('invalid');
-                progressStatus.textContent = total < 100 ? '❌ Incompleto' : '❌ Excedido';
+                progressStatus.textContent = total < 99 ? '❌ Incompleto' : '❌ Excedido';
                 console.log('[POOL-HUB] Probability total is INVALID:', total);
             }
             
@@ -1759,9 +1768,11 @@ function eipsi_render_pool_hub_v2() {
                 total += parseFloat(input.value) || 0;
             });
             
-            const isValid = Math.round(total * 100) / 100 === 100 && rows.length > 0;
+            // Allow ±1% tolerance (99% to 101% is valid)
+            const roundedTotal = Math.round(total * 100) / 100;
+            const isValid = roundedTotal >= 99 && roundedTotal <= 101 && rows.length > 0;
             savePoolBtn.disabled = !isValid;
-            console.log('[POOL-HUB] updateSaveButtonState - isValid:', isValid, 'total:', total);
+            console.log('[POOL-HUB] updateSaveButtonState - isValid:', isValid, 'total:', roundedTotal + '%');
         }
         
         // Initial state
@@ -1801,8 +1812,9 @@ function eipsi_render_pool_hub_v2() {
             
             console.log('[POOL-HUB] Total probability:', total);
             
-            if (Math.round(total * 100) / 100 !== 100) {
-                showToast('<?php _e("La suma de probabilidades debe ser exactamente 100%", "eipsi-forms"); ?>', 'error');
+            // Allow ±1% tolerance for rounding errors
+            if (total < 99 || total > 101) {
+                showToast('<?php _e("La suma de probabilidades debe ser 100% (±1% tolerancia)", "eipsi-forms"); ?>', 'error');
                 return;
             }
             
@@ -1904,8 +1916,8 @@ function eipsi_render_pool_hub_v2() {
     <?php endif; // End if (empty($pools)) ?>
 
     <!-- Create/Edit Pool Modal - REDESIGNED -->
-    <div class="eipsi-modal-overlay eipsi-force-light-mode" id="eipsi-pool-modal" style="display: none;">
-        <div class="eipsi-modal eipsi-force-light-mode">
+    <div class="eipsi-modal-overlay" id="eipsi-pool-modal" style="display: none;">
+        <div class="eipsi-modal">
             <div class="eipsi-modal-header">
                 <h2 id="eipsi-modal-title"><?php _e('Crear nuevo pool', 'eipsi-forms'); ?></h2>
                 <button class="eipsi-modal-close" type="button">&times;</button>
@@ -1941,7 +1953,7 @@ function eipsi_render_pool_hub_v2() {
                     <!-- Studies Section -->
                     <h3 class="eipsi-section-title"><?php _e('Estudios y probabilidades', 'eipsi-forms'); ?></h3>
                     <p class="eipsi-section-desc">
-                        <?php _e('Agregá los estudios al pool y asigná probabilidades. La suma debe ser exactamente 100%.', 'eipsi-forms'); ?>
+                        <?php _e('Agregá los estudios al pool y asigná probabilidades. La suma debe ser 100% (±1% tolerancia permitida).', 'eipsi-forms'); ?>
                     </p>
 
                     <div id="eipsi-pool-studies-rows">

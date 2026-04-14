@@ -105,8 +105,25 @@
 }
 
 /* ==========================================================================
-   TABLES - Enhanced Readability
+   TABLES - Enhanced Readability (Light Mode)
    ========================================================================== */
+
+/* Table wrapper for consistent light mode styling */
+.eipsi-table-wrapper {
+    background: var(--eipsi-bg);
+    border: 1px solid var(--eipsi-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.eipsi-table-wrapper .wp-list-table {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+}
+
 .wp-list-table {
     border: 1px solid var(--eipsi-border);
     border-radius: var(--eipsi-radius);

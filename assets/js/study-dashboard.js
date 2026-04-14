@@ -308,6 +308,9 @@
                 console.error('[ERROR] loadStudyData: studyId is null or undefined');
                 return;
             }
+            
+            // Update currentStudyId
+            this.currentStudyId = studyId;
 
             $.ajax({
                 url: eipsiStudyDash.ajaxUrl,
@@ -317,6 +320,7 @@
                     study_id: studyId,
                     nonce: eipsiStudyDash.nonce
                 },
+                timeout: 30000, // 30 seconds timeout
                 success: function(response) {
                     console.log('[EIPSI DASHBOARD] API response:', JSON.stringify(response, null, 2));
                     if (response.success) {
@@ -344,7 +348,13 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('[LOAD] AJAX error:', status, error);
-                    self.showToast('Error de conexión al cargar datos', 'error');
+                    if (status === 'timeout') {
+                        self.showToast('⏱️ El servidor está tardando demasiado. Intentá de nuevo.', 'error');
+                    } else if (xhr.status === 504) {
+                        self.showToast('⚠️ Error 504: Gateway timeout. El servidor está sobrecargado.', 'error');
+                    } else {
+                        self.showToast('Error de conexión al cargar datos', 'error');
+                    }
                 }
             });
         },
@@ -455,12 +465,14 @@
                 const completed = wave.completed || 0;
                 const total = wave.total || 0;
                 const isActive = wave.status === 'active';
-                const pendientes = total - completed;
+                // Use pending from API (logically calculated: eligible - completed)
+                const pendientes = (typeof wave.pending !== 'undefined') ? wave.pending : Math.max(0, total - completed);
                 
-                console.log('[EIPSI DASHBOARD] Renderizando wave card:', wave.name || 'Toma ' + waveNum, '- pendientes:', pendientes);
+                console.log('[EIPSI DASHBOARD] Renderizando wave card:', wave.wave_name || 'Toma ' + waveNum, 
+                    '- elegibles:', total, '- completados:', completed, '- pendientes:', pendientes);
                 
                 // Wave name and subtitle
-                const waveName = wave.name || 'Toma ' + waveNum;
+                const waveName = wave.wave_name || wave.name || 'Toma ' + waveNum;
                 const waveSub = self.getIntervaloTexto(wave, index);
                 
                 // Progress classes
@@ -482,9 +494,13 @@
                     : 'Recordatorios desactivados';
                 
                 // Generate nudge rows HTML
+                // Handle nudge_config object from API
+                const nudgeConfig = wave.nudge_config || wave.nudges || {};
                 let nudgeRowsHtml = '';
                 for (let i = 1; i <= 4; i++) {
-                    const nudge = (wave.nudges && wave.nudges[i-1]) || { value: i === 1 ? 24 : i === 2 ? 72 : i === 3 ? 168 : 336, unit: 'hours' };
+                    const nudgeKey = 'nudge_' + i;
+                    const nudgeData = nudgeConfig[nudgeKey];
+                    const nudge = nudgeData || { value: i === 1 ? 24 : i === 2 ? 72 : i === 3 ? 168 : 336, unit: 'hours' };
                     nudgeRowsHtml += 
                         '<div class="nudge-row">' +
                             '<span class="nudge-num">' + i + '</span>' +
@@ -604,7 +620,7 @@
          */
         toggleDeadlineEditor: function(waveId) {
             console.log('[FUNC] toggleDeadlineEditor called, waveId:', waveId);
-            const $editor = $(`#de${waveId}`);
+            const $editor = $(`#de-${waveId}`);
             console.log('[DEADLINE] Editor found:', $editor.length > 0);
             console.log('[DEADLINE] Editor current display:', $editor.css('display'));
             const isVisible = $editor.is(':visible');
@@ -623,7 +639,7 @@
          */
         saveDeadline: function(waveId, $editor) {
             console.log('[FUNC] saveDeadline called, waveId:', waveId);
-            const date = $editor.find(`#de${waveId}-date`).val();
+            const date = $editor.find(`#de-input-${waveId}`).val();
             
             console.log('[DEADLINE] Date selected:', date);
             
@@ -644,15 +660,18 @@
                 data: {
                     action: 'eipsi_extend_wave_deadline',
                     wave_id: waveId,
-                    new_deadline: date,
+                    deadline_date: date,
                     nonce: eipsiStudyDash.nonce
                 },
+                timeout: 20000,
                 success: function(response) {
                     console.log('[DEADLINE] AJAX response:', response);
                     if (response.success) {
                         console.log('[DEADLINE] Saved successfully');
                         self.showToast('Plazo guardado correctamente', 'success');
-                        self.loadStudyData();
+                        if (self.currentStudyId) {
+                            self.loadStudyData(self.currentStudyId);
+                        }
                     } else {
                         console.error('[DEADLINE] Save failed:', response.data);
                         self.showToast('Error: ' + (response.data?.message || response.data || 'No se pudo guardar'), 'error');
@@ -660,8 +679,11 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('[DEADLINE] AJAX error:', status, error);
-                    console.error('[DEADLINE] Response text:', xhr.responseText);
-                    self.showToast('Error al guardar plazo', 'error');
+                    if (status === 'timeout' || xhr.status === 504) {
+                        self.showToast('⏱️ Timeout al guardar plazo. Intentá de nuevo.', 'error');
+                    } else {
+                        self.showToast('Error al guardar plazo', 'error');
+                    }
                 }
             });
         },
@@ -689,12 +711,15 @@
                     wave_id: waveId,
                     nonce: eipsiStudyDash.nonce
                 },
+                timeout: 20000,
                 success: function(response) {
                     console.log('[DEADLINE] Remove response:', response);
                     if (response.success) {
                         console.log('[DEADLINE] Removed successfully');
                         self.showToast('Plazo quitado correctamente', 'success');
-                        self.loadStudyData();
+                        if (self.currentStudyId) {
+                            self.loadStudyData(self.currentStudyId);
+                        }
                     } else {
                         console.error('[DEADLINE] Remove failed:', response.data);
                         self.showToast('Error: ' + (response.data?.message || response.data || 'No se pudo quitar'), 'error');
@@ -702,8 +727,11 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('[DEADLINE] Remove AJAX error:', status, error);
-                    console.error('[DEADLINE] Response text:', xhr.responseText);
-                    self.showToast('Error al quitar plazo', 'error');
+                    if (status === 'timeout' || xhr.status === 504) {
+                        self.showToast('⏱️ Timeout al quitar plazo. Intentá de nuevo.', 'error');
+                    } else {
+                        self.showToast('Error al quitar plazo', 'error');
+                    }
                 }
             });
         },
@@ -767,7 +795,11 @@
                     if (response.success) {
                         console.log('[NUDGE] Saved successfully');
                         self.showToast('Configuración de nudges guardada', 'success');
-                        self.loadStudyData();
+                        if (self.currentStudyId) {
+                            self.loadStudyData(self.currentStudyId);
+                        } else {
+                            console.warn('[NUDGE] No currentStudyId, skipping reload');
+                        }
                     } else {
                         console.error('[NUDGE] Save failed:', response.data);
                         self.showToast('Error: ' + (response.data?.message || 'No se pudo guardar'), 'error');
@@ -776,7 +808,11 @@
                 error: function(xhr, status, error) {
                     console.error('[NUDGE] AJAX error:', status, error);
                     console.error('[NUDGE] Response text:', xhr.responseText);
-                    self.showToast('Error al guardar configuración de nudges', 'error');
+                    if (status === 'timeout' || xhr.status === 504) {
+                        self.showToast('⏱️ Timeout: El servidor está sobrecargado. Probá en unos segundos.', 'error');
+                    } else {
+                        self.showToast('Error al guardar configuración de nudges', 'error');
+                    }
                 }
             });
             
@@ -1129,6 +1165,7 @@
                     search: searchTerm,
                     nonce: eipsiStudyDash.nonce
                 },
+                timeout: 20000,
                 success: function(response) {
                     console.log('[EMAIL-LOGS] AJAX success:', response);
                     if (response.success) {
@@ -1139,7 +1176,11 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('[EMAIL-LOGS] AJAX error:', status, error);
-                    self.showToast('Error de conexión al cargar logs', 'error');
+                    if (status === 'timeout' || xhr.status === 504) {
+                        self.showToast('⏱️ Timeout al cargar logs. El servidor está lento.', 'error');
+                    } else {
+                        self.showToast('Error de conexión al cargar logs', 'error');
+                    }
                 }
             });
         },
@@ -1200,6 +1241,7 @@
                     wave_id: waveId,
                     nonce: eipsiStudyDash.nonce
                 },
+                timeout: 60000, // 60 seconds for email sending
                 beforeSend: function() {
                     console.log('[REMINDER] Sending AJAX request...');
                 },
@@ -1209,12 +1251,16 @@
                         self.showToast('✅ Recordatorios enviados: ' + (response.data.sent_count || 0), 'success');
                         self.loadStudyData(studyId);
                     } else {
-                        self.showToast('❌ Error: ' + (response.data.message || 'No se pudieron enviar los recordatorios'), 'error');
+                        self.showToast('❌ Error: ' + (response.data?.message || 'No se pudieron enviar los recordatorios'), 'error');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('[REMINDER] AJAX error:', status, error);
-                    self.showToast('Error de conexión al enviar recordatorios', 'error');
+                    if (status === 'timeout' || xhr.status === 504) {
+                        self.showToast('⏱️ Timeout: El envío de emails está tardando. Los emails pueden haberse enviado igual.', 'warning');
+                    } else {
+                        self.showToast('Error de conexión al enviar recordatorios', 'error');
+                    }
                 }
             });
         },
@@ -1246,6 +1292,7 @@
                     study_id: studyId,
                     nonce: eipsiStudyDash.nonce
                 },
+                timeout: 120000, // 2 minutes for global reminders (many emails)
                 beforeSend: function() {
                     console.log('[GLOBAL-REMINDER] Sending AJAX request...');
                     $('#send-global-reminder').prop('disabled', true).text('Enviando...');
@@ -1254,16 +1301,20 @@
                     $('#send-global-reminder').prop('disabled', false).text('Enviar recordatorio global');
                     console.log('[GLOBAL-REMINDER] AJAX success:', response);
                     if (response.success) {
-                        self.showToast('✅ Recordatorios globales enviados: ' + (response.data.sent_count || 0), 'success');
+                        self.showToast('✅ Recordatorios globales enviados: ' + (response.data?.sent_count || 0), 'success');
                         self.loadStudyData(studyId);
                     } else {
-                        self.showToast('❌ Error: ' + (response.data.message || 'No se pudieron enviar los recordatorios'), 'error');
+                        self.showToast('❌ Error: ' + (response.data?.message || 'No se pudieron enviar los recordatorios'), 'error');
                     }
                 },
                 error: function(xhr, status, error) {
                     $('#send-global-reminder').prop('disabled', false).text('Enviar recordatorio global');
                     console.error('[GLOBAL-REMINDER] AJAX error:', status, error);
-                    self.showToast('Error de conexión al enviar recordatorios globales', 'error');
+                    if (status === 'timeout' || xhr.status === 504) {
+                        self.showToast('⏱️ Timeout: El envío global está tardando. Los emails pueden haberse enviado igual.', 'warning');
+                    } else {
+                        self.showToast('Error de conexión al enviar recordatorios globales', 'error');
+                    }
                 }
             });
         },
@@ -1342,6 +1393,7 @@
                     search: search,
                     nonce: eipsiStudyDash.nonce
                 },
+                timeout: 30000,
                 success: function(response) {
                     console.log('[LOAD] Participants response:', response);
                     if (response.success) {
@@ -1353,7 +1405,11 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('[LOAD] AJAX error:', status, error);
-                    $('#participants-tbody').html('<tr><td colspan="3" style="text-align:center;padding:20px;">Error de conexión</td></tr>');
+                    if (status === 'timeout' || xhr.status === 504) {
+                        $('#participants-tbody').html('<tr><td colspan="3" style="text-align:center;padding:20px;">⏱️ Timeout: El servidor está lento. <button onclick="EIPSI_StudyDashboard.loadParticipantsList(1)" class="btn-link">Reintentar</button></td></tr>');
+                    } else {
+                        $('#participants-tbody').html('<tr><td colspan="3" style="text-align:center;padding:20px;">Error de conexión</td></tr>');
+                    }
                 }
             });
         },
