@@ -501,7 +501,7 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
     }
 
     $wave_id = isset($_POST['wave_id']) ? (int) $_POST['wave_id'] : 0;
-    $new_deadline = isset($_POST['new_deadline']) ? sanitize_text_field($_POST['new_deadline']) : '';
+    $new_deadline = isset($_POST['deadline_date']) ? sanitize_text_field($_POST['deadline_date']) : '';
     error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}, New deadline: {$new_deadline}");
 
     if (!$wave_id || empty($new_deadline)) {
@@ -674,7 +674,16 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
 
     $wave_id = isset($_POST['wave_id']) ? (int) $_POST['wave_id'] : 0;
     $nudges = isset($_POST['nudges']) ? $_POST['nudges'] : array();
-    $enabled = isset($_POST['enabled']) ? (bool) $_POST['enabled'] : false;
+    $enabled = isset($_POST['enabled']) ? ($_POST['enabled'] === 'true' || $_POST['enabled'] === true) : false;
+    
+    // Handle JSON string if passed
+    if (is_string($nudges)) {
+        $nudges = json_decode(stripslashes($nudges), true);
+    }
+    if (!is_array($nudges)) {
+        $nudges = array();
+    }
+    
     error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}, Enabled: " . ($enabled ? 'true' : 'false') . ", Nudges count: " . count($nudges));
 
     if (!$wave_id) {

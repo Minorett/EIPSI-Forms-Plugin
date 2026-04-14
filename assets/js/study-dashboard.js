@@ -1075,8 +1075,30 @@
          */
         openEmailLogs: function() {
             console.log('[FUNC] openEmailLogs called');
+            const self = this;
             this.loadEmailLogs(1);
             $('#eipsi-email-logs-modal').fadeIn(200);
+            
+            // Bind refresh button
+            $('#refresh-email-logs').off('click').on('click', function() {
+                console.log('[BUTTON] refresh-email-logs clicked');
+                self.loadEmailLogs(1);
+            });
+            
+            // Bind status filter
+            $('#email-log-status-filter').off('change').on('change', function() {
+                console.log('[FILTER] Status changed:', $(this).val());
+                self.loadEmailLogs(1);
+            });
+            
+            // Bind search input (debounced)
+            let searchTimeout;
+            $('#email-log-search').off('input').on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function() {
+                    self.loadEmailLogs(1);
+                }, 500);
+            });
         },
 
         /**
@@ -1092,6 +1114,10 @@
                 return;
             }
 
+            // Get filter values
+            const statusFilter = $('#email-log-status-filter').val() || 'all';
+            const searchTerm = $('#email-log-search').val() || '';
+            
             $.ajax({
                 url: eipsiStudyDash.ajaxUrl,
                 type: 'GET',
@@ -1099,6 +1125,8 @@
                     action: 'eipsi_get_study_email_logs',
                     study_id: studyId,
                     page: page,
+                    status: statusFilter,
+                    search: searchTerm,
                     nonce: eipsiStudyDash.nonce
                 },
                 success: function(response) {
