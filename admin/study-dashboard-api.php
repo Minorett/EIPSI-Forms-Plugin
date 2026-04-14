@@ -16,6 +16,8 @@ add_action('wp_ajax_eipsi_get_study_overview', 'wp_ajax_eipsi_get_study_overview
 add_action('wp_ajax_eipsi_get_wave_details', 'wp_ajax_eipsi_get_wave_details_handler');
 add_action('wp_ajax_eipsi_send_wave_reminder_manual', 'wp_ajax_eipsi_send_wave_reminder_manual_handler');
 add_action('wp_ajax_eipsi_extend_wave_deadline', 'wp_ajax_eipsi_extend_wave_deadline_handler');
+add_action('wp_ajax_eipsi_remove_wave_deadline', 'wp_ajax_eipsi_remove_wave_deadline_handler');
+add_action('wp_ajax_eipsi_save_wave_nudges', 'wp_ajax_eipsi_save_wave_nudges_handler');
 add_action('wp_ajax_eipsi_get_study_email_logs', 'wp_ajax_eipsi_get_study_email_logs_handler');
 add_action('wp_ajax_eipsi_add_participant', 'wp_ajax_eipsi_add_participant_handler');
 add_action('wp_ajax_eipsi_validate_csv_participants', 'wp_ajax_eipsi_validate_csv_participants_handler');
@@ -374,16 +376,31 @@ function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
 
         $survey_id = (int) $wave->study_id;
 
-        // Get active participant IDs assigned to this wave
+        // Get all active participants in this study who haven't completed this wave yet
+        // This includes those with 'active' assignments AND those who should have access
+        // but haven't been assigned yet (waves T2, T3, etc.)
         $participant_ids = $wpdb->get_col($wpdb->prepare(
-            "SELECT participant_id FROM {$wpdb->prefix}survey_assignments 
-             WHERE wave_id = %d AND status = 'active'",
-            $wave_id
+            "SELECT DISTINCT p.id 
+             FROM {$wpdb->prefix}survey_participants p
+             INNER JOIN {$wpdb->prefix}survey_assignments sa ON p.id = sa.participant_id
+             WHERE sa.study_id = %d 
+             AND p.is_active = 1
+             AND p.id NOT IN (
+                 -- Exclude those who already completed this wave
+                 SELECT DISTINCT participant_id 
+                 FROM {$wpdb->prefix}vas_form_results 
+                 WHERE form_id = %d
+             )",
+            $survey_id,
+            $wave->form_id
         ));
 
         if (empty($participant_ids)) {
+            error_log("[EIPSI Reminder] No participants found for wave {$wave_id}, study {$survey_id}");
             wp_send_json_error('No active participants found for this wave');
         }
+        
+        error_log("[EIPSI Reminder] Found " . count($participant_ids) . " participants for wave {$wave_id}");
 
         // Send reminders via Email Service
         $result = EIPSI_Email_Service::send_manual_reminders($survey_id, $participant_ids, $wave_id);
@@ -704,9 +721,12 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
             throw new Exception($wpdb->last_error);
         }
 
+        error_log("[EIPSI Save Nudges] Update result: " . var_export($result, true));
+
         wp_send_json_success(array(
             'message' => 'Configuración de nudges guardada',
-            'nudge_config' => $nudge_config
+            'nudge_config' => $nudge_config,
+            'rows_updated' => $result
         ));
     } catch (Exception $e) {
         error_log('[EIPSI Save Nudges] Error: ' . $e->getMessage());
@@ -715,57 +735,11 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
             'error' => 'exception'
         ), 500);
     }
-    if ($participant_survey_id <= 0) {
-        wp_send_json_error(array(
-            'message' => 'El participante no tiene un estudio asociado. ID de estudio inválido: ' . $participant_survey_id,
-            'error' => 'invalid_survey_id',
-            'participant_survey_id' => $participant_survey_id
-        ));
-    }
-
-    // Verify survey_id exists in wp_posts (for FK compliance)
-    global $wpdb;
-    $post_exists = $wpdb->get_var($wpdb->prepare(
-        "SELECT ID FROM {$wpdb->posts} WHERE ID = %d LIMIT 1",
-        $participant_survey_id
-    ));
-
-    if (!$post_exists) {
-        // Check if it's a longitudinal study
-        $study_exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}survey_studies WHERE id = %d LIMIT 1",
-            $participant_survey_id
-        ));
-
-        if (!$study_exists) {
-            wp_send_json_error(array(
-                'message' => 'El estudio asociado al participante ya no existe. Por favor, elimina este participante y vuelve a intentarlo.',
-                'error' => 'survey_not_found',
-                'participant_survey_id' => $participant_survey_id
-            ));
-        }
-        // Longitudinal studies are valid - continue
-    }
-
-    // Use the participant's survey_id if not provided
-    if (empty($survey_id)) {
-        $survey_id = $participant_survey_id;
-    }
-
-    // Send the email
-    $result = EIPSI_Email_Service::resend_participant_email($participant_id, $email_type, $survey_id, $wave_id);
-
-    if ($result['success']) {
-        wp_send_json_success(array(
-            'message' => $result['message']
-        ));
-    } else {
-        wp_send_json_error(array(
-            'message' => $result['message'],
-            'error' => $result['error']
-        ));
-    }
 }
+
+// ============================================
+// Email Log Handler
+// ============================================
 
 /**
  * GET participant email history
