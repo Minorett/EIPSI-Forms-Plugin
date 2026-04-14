@@ -26,6 +26,68 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
 
     global $wpdb;
 
+    // =========================================================================
+    // PROFESSIONAL CRON OPTIMIZATIONS - v2.4.0
+    // =========================================================================
+    
+    // 1. PROCESS LOCKING - Prevent concurrent executions
+    $lock_key = 'eipsi_cron_wave_reminders_lock';
+    $lock_timeout = 5 * MINUTE_IN_SECONDS; // 5 minutes max execution time
+    
+    if (get_transient($lock_key)) {
+        error_log('[EIPSI Cron] LOCKED: Another instance is running. Aborting.');
+        return array(
+            'processed_studies' => 0,
+            'total_emails_sent' => 0,
+            'status' => 'locked',
+            'message' => 'Another cron instance is already running'
+        );
+    }
+    
+    // Set lock
+    set_transient($lock_key, array(
+        'started_at' => current_time('mysql'),
+        'pid' => getmypid(),
+        'host' => isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'cli'
+    ), $lock_timeout);
+    
+    // 5. SHUTDOWN HANDLER - Ensure lock is released on fatal errors
+    register_shutdown_function(function() use ($lock_key) {
+        // Only release if this process still holds the lock
+        $lock_data = get_transient($lock_key);
+        if ($lock_data && isset($lock_data['pid']) && $lock_data['pid'] === getmypid()) {
+            delete_transient($lock_key);
+            error_log('[EIPSI Cron] Lock released via shutdown handler');
+        }
+    });
+    
+    // 2. TIME LIMIT CONTROL - Prevent gateway timeouts
+    $start_time = microtime(true);
+    $max_execution_time = 25; // 25 seconds (Hostinger typically allows 30)
+    
+    // Check if running via real cron (CLI) or WP-Cron (HTTP)
+    $is_cli = (php_sapi_name() === 'cli');
+    $is_real_cron = defined('DOING_CRON') && DOING_CRON;
+    
+    // If via WP-Cron HTTP, be more conservative with time
+    if (!$is_cli && !$is_real_cron) {
+        $max_execution_time = 20; // 20 seconds for WP-Cron HTTP requests
+    }
+    
+    error_log("[EIPSI Cron] Process started at {$start_time}, max execution: {$max_execution_time}s, CLI: " . ($is_cli ? 'YES' : 'NO'));
+    
+    // 3. BATCH LIMITING - Process max emails per run to avoid timeouts
+    $batch_size = 5; // Maximum emails to send per cron run
+    $emails_processed = 0;
+    
+    // 4. MEMORY MONITORING
+    $start_memory = memory_get_usage(true);
+    $memory_limit = ini_get('memory_limit');
+    $memory_limit_bytes = wp_convert_hr_to_bytes($memory_limit);
+    $max_memory_usage = $memory_limit_bytes * 0.8; // 80% of available memory
+    
+    error_log("[EIPSI Cron] Memory: {$start_memory} bytes / {$memory_limit} ({$memory_limit_bytes} bytes limit)");
+
     // Get studies to process
     if ($specific_study_id) {
         // Process only specific study (from manual cron)
@@ -49,8 +111,27 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
     }
 
     $total_emails_sent = 0;
+    $studies_processed = 0;
+    $aborted_due_to_time = false;
 
     foreach ($studies as $study) {
+        // Check time limit before processing each study
+        $elapsed = microtime(true) - $start_time;
+        if ($elapsed > $max_execution_time) {
+            error_log("[EIPSI Cron] TIMEOUT WARNING: {$elapsed}s elapsed, aborting gracefully. Processed {$emails_processed} emails.");
+            $aborted_due_to_time = true;
+            break;
+        }
+        
+        // Check memory usage
+        $current_memory = memory_get_usage(true);
+        if ($current_memory > $max_memory_usage) {
+            error_log("[EIPSI Cron] MEMORY WARNING: {$current_memory} bytes used, aborting gracefully.");
+            $aborted_due_to_time = true; // Actually memory, but same handling
+            break;
+        }
+        $studies_processed++;
+        
         // Guard against null config (json_decode(null) is deprecated in PHP 8.1+)
         $config = !empty($study->config) ? json_decode($study->config, true) : array();
         if (!is_array($config)) {
@@ -193,6 +274,23 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         }
 
         foreach ($all_assignments_to_process as $assignment) {
+            // BATCH LIMITING: Check if we've reached max emails for this run
+            if ($emails_processed >= $batch_size) {
+                error_log("[EIPSI Cron] BATCH LIMIT REACHED: {$emails_processed} emails processed. Stopping gracefully.");
+                $aborted_due_to_time = true; // Actually batch limit, but same handling
+                break 2; // Break out of both loops
+            }
+            
+            // TIME CHECK: Check time limit every 3 emails
+            if ($emails_processed % 3 === 0) {
+                $elapsed = microtime(true) - $start_time;
+                if ($elapsed > $max_execution_time) {
+                    error_log("[EIPSI Cron] TIMEOUT WARNING: {$elapsed}s elapsed after {$emails_processed} emails. Stopping.");
+                    $aborted_due_to_time = true;
+                    break 2; // Break out of both loops
+                }
+            }
+            
             $current_stage = (int) $assignment->reminder_count;
             $has_due_date = !empty($assignment->due_date);
             
@@ -236,6 +334,7 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
                 
                 if ($result['success'] && $result['sent']) {
                     $total_emails_sent++;
+                    $emails_processed++; // Batch counter
                     // Set rate limit to prevent duplicate in next cron run
                     $rate_limit_key = "eipsi_reminder_{$assignment->participant_id}_{$assignment->wave_id}_0";
                     set_transient($rate_limit_key, true, 24 * HOUR_IN_SECONDS);
@@ -297,6 +396,7 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
 
             if ($result) {
                 $emails_sent++;
+                $emails_processed++; // Batch counter
                 // Increment reminder count (stage) for next nudge
                 EIPSI_Assignment_Service::increment_reminder_count($assignment->wave_id, $assignment->participant_id);
                 // Set rate limit - 24 hours per stage
@@ -330,17 +430,40 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         }
     }
 
-    error_log("[EIPSI Cron] ========== RESUMEN NUDGE 0 ==========");
-    error_log("[EIPSI Cron] Estudios procesados: " . count($studies));
+    // Calculate execution stats
+    $end_time = microtime(true);
+    $execution_time = round($end_time - $start_time, 3);
+    $end_memory = memory_get_usage(true);
+    $memory_used = round(($end_memory - $start_memory) / 1024 / 1024, 2); // MB
+    
+    error_log("[EIPSI Cron] ========== RESUMEN EJECUCIÓN v2.4.0 ==========");
+    error_log("[EIPSI Cron] Estudios procesados: {$studies_processed} / " . count($studies));
     error_log("[EIPSI Cron] Total emails enviados (Nudge 0 + otros): {$total_emails_sent}");
+    error_log("[EIPSI Cron] Emails procesados en batch: {$emails_processed} / {$batch_size}");
+    error_log("[EIPSI Cron] Tiempo de ejecución: {$execution_time}s / {$max_execution_time}s");
+    error_log("[EIPSI Cron] Memoria usada: {$memory_used} MB");
+    error_log("[EIPSI Cron] Estado: " . ($aborted_due_to_time ? 'ABORTADO (timeout/batch limit)' : 'COMPLETADO'));
     error_log("[EIPSI Cron] Verificar en base de datos: SELECT * FROM wp_survey_assignments WHERE reminder_count = 0 AND status = 'pending'");
     error_log("[EIPSI Cron] ==================================");
     error_log('[EIPSI Cron] Completed hourly wave reminders' . ($specific_study_id ? " for study {$specific_study_id}" : ''));
     
+    // RELEASE LOCK - Always release at the end
+    delete_transient($lock_key);
+    error_log('[EIPSI Cron] Lock released');
+    
     // Return summary for manual cron
     return array(
-        'processed_studies' => count($studies),
-        'total_emails_sent' => $total_emails_sent
+        'processed_studies' => $studies_processed,
+        'total_studies' => count($studies),
+        'total_emails_sent' => $total_emails_sent,
+        'emails_processed' => $emails_processed,
+        'batch_size' => $batch_size,
+        'execution_time' => $execution_time,
+        'max_execution_time' => $max_execution_time,
+        'memory_used_mb' => $memory_used,
+        'aborted' => $aborted_due_to_time,
+        'status' => $aborted_due_to_time ? 'aborted' : 'completed',
+        'message' => $aborted_due_to_time ? 'Stopped gracefully due to time/batch limits. Remaining emails will be processed in next cron run.' : 'All studies processed successfully'
     );
 }
 add_action('eipsi_send_wave_reminders_hourly', 'eipsi_send_wave_reminders_hourly');
