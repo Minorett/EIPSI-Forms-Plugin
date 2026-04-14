@@ -305,7 +305,7 @@ class EIPSI_Wave_Availability_Email_Service {
 
         // Get study info for correct URL
         $study = $wpdb->get_row($wpdb->prepare(
-            "SELECT study_code, name FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+            "SELECT study_code, study_name FROM {$wpdb->prefix}survey_studies WHERE id = %d",
             $study_id
         ));
 
@@ -370,7 +370,7 @@ class EIPSI_Wave_Availability_Email_Service {
 
         // Prepare email content
         $wave_name = $wave->name ?: 'Toma ' . $wave->order_index;
-        $subject = "Tu siguiente evaluación está disponible - " . $study->name;
+        $subject = "Tu siguiente evaluación está disponible - " . $study->study_name;
         
         $message = sprintf(
             '<p>¡Hola %s!</p>
@@ -393,7 +393,7 @@ class EIPSI_Wave_Availability_Email_Service {
                 Por favor no respondas directamente a este mensaje.
             </p>',
             esc_html($participant->first_name),
-            esc_html($study->name),
+            esc_html($study->study_name),
             esc_html($wave_name),
             esc_url($magic_link),
             esc_html($magic_link)

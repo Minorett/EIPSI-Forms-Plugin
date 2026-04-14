@@ -790,3 +790,56 @@
     color: #1e293b !important;
     border-color: #e2e8f0 !important;
 }
+
+/* Force light mode on stat cards - override high-contrast.css */
+.eipsi-email-log-wrap .eipsi-email-stats-cards {
+    background: transparent !important;
+}
+
+.eipsi-email-log-wrap .eipsi-stat-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-left-width: 4px !important;
+    color: #1e293b !important;
+}
+
+.eipsi-email-log-wrap .eipsi-stat-card .stat-label {
+    color: #64748b !important;
+    text-shadow: none !important;
+}
+
+.eipsi-email-log-wrap .eipsi-stat-card .stat-value {
+    color: #1e293b !important;
+    text-shadow: none !important;
+}
+
+.eipsi-email-log-wrap .eipsi-stat-card.eipsi-stat-success .stat-value {
+    color: #008080 !important;
+}
+
+.eipsi-email-log-wrap .eipsi-stat-card.eipsi-stat-error .stat-value {
+    color: #800000 !important;
+}
+
+.eipsi-email-log-wrap .eipsi-stat-card.eipsi-stat-total .stat-value {
+    color: #3B6CAA !important;
+}
+
+.eipsi-email-log-wrap .eipsi-stat-card .stat-sublabel {
+    color: #64748b !important;
+}
+
+/* Force light mode on tab header */
+.eipsi-email-log-wrap .eipsi-tab-header {
+    background: #f8f9fa !important;
+    border-color: #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+.eipsi-email-log-wrap .eipsi-tab-header h2 {
+    color: #1e293b !important;
+}
+
+.eipsi-email-log-wrap .eipsi-tab-header p {
+    color: #64748b !important;
+}
