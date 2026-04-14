@@ -684,7 +684,8 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
         $nudges = array();
     }
     
-    error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}, Enabled: " . ($enabled ? 'true' : 'false') . ", Nudges count: " . count($nudges));
+    $nudge_count = is_array($nudges) ? count($nudges) : 0;
+    error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}, Enabled: " . ($enabled ? 'true' : 'false') . ", Nudges count: " . $nudge_count);
 
     if (!$wave_id) {
         wp_send_json_error('Missing wave ID');
