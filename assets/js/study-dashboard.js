@@ -796,6 +796,22 @@
         },
 
         /**
+         * Save nudge configuration for a wave
+         */
+        saveNudgeConfig: function(waveId) {
+            console.log('[FUNC] saveNudgeConfig called, waveId:', waveId);
+            const $card = $(`#wave-card-${waveId}`);
+            const $toggle = $card.find('.nudge-toggle-input');
+            console.log('[NUDGE] Card found:', $card.length, 'Toggle found:', $toggle.length);
+            console.log('[NUDGE] Toggle id:', $toggle.attr('id'), 'checked:', $toggle.is(':checked'));
+            const enabled = $toggle.is(':checked');
+            console.log('[NUDGE] Toggle state:', enabled);
+            
+            // Build nudge config array
+            const nudges = [];
+            const self = this;
+            
+            $card.find('.nudge-row').each(function(index) {
                 const $row = $(this);
                 const minutes = parseInt($row.find('.nudge-minutes-input').val()) || 1440;
                 
