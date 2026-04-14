@@ -90,7 +90,7 @@
                 
                 switch(action) {
                     case 'toggle-deadline':
-                        self.toggleDeadlineEditor($btn.closest('.wave-card').find('.deadline-editor'));
+                        self.toggleDeadlineEditor(waveId);
                         break;
                     case 'save-deadline':
                         self.saveDeadline(waveId, $btn.closest('.deadline-editor'));
@@ -105,7 +105,7 @@
                         self.saveNudgeConfig(waveId);
                         break;
                     case 'cancel-deadline':
-                        self.toggleDeadlineEditor($btn.closest('.deadline-editor'));
+                        self.toggleDeadlineEditor(waveId);
                         break;
                     case 'cancel-nudge':
                         self.toggleNudgePanel(waveId);
@@ -604,7 +604,7 @@
          */
         toggleDeadlineEditor: function(waveId) {
             console.log('[FUNC] toggleDeadlineEditor called, waveId:', waveId);
-            const $editor = $(`#deadline-editor-${waveId}`);
+            const $editor = $(`#de${waveId}`);
             console.log('[DEADLINE] Editor found:', $editor.length > 0);
             console.log('[DEADLINE] Editor current display:', $editor.css('display'));
             const isVisible = $editor.is(':visible');
@@ -623,7 +623,7 @@
          */
         saveDeadline: function(waveId, $editor) {
             console.log('[FUNC] saveDeadline called, waveId:', waveId);
-            const date = $editor.find('.deadline-date-input').val();
+            const date = $editor.find(`#de${waveId}-date`).val();
             
             console.log('[DEADLINE] Date selected:', date);
             
@@ -635,17 +635,17 @@
 
             const self = this;
             console.log('[DEADLINE] Sending AJAX with date:', date);
-            console.log('[DEADLINE] AJAX URL:', eipsiDashboardData.ajaxUrl);
-            console.log('[DEADLINE] Nonce available:', !!eipsiDashboardData.nonce);
+            console.log('[DEADLINE] AJAX URL:', eipsiStudyDash.ajaxUrl);
+            console.log('[DEADLINE] Nonce available:', !!eipsiStudyDash.nonce);
             
             $.ajax({
-                url: eipsiDashboardData.ajaxUrl,
+                url: eipsiStudyDash.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'eipsi_extend_wave_deadline',
                     wave_id: waveId,
                     new_deadline: date,
-                    nonce: eipsiDashboardData.nonce
+                    nonce: eipsiStudyDash.nonce
                 },
                 success: function(response) {
                     console.log('[DEADLINE] AJAX response:', response);
@@ -678,16 +678,16 @@
             
             const self = this;
             console.log('[DEADLINE] Sending AJAX to remove deadline');
-            console.log('[DEADLINE] AJAX URL:', eipsiDashboardData.ajaxUrl);
-            console.log('[DEADLINE] Nonce available:', !!eipsiDashboardData.nonce);
+            console.log('[DEADLINE] AJAX URL:', eipsiStudyDash.ajaxUrl);
+            console.log('[DEADLINE] Nonce available:', !!eipsiStudyDash.nonce);
             
             $.ajax({
-                url: eipsiDashboardData.ajaxUrl,
+                url: eipsiStudyDash.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'eipsi_remove_wave_deadline',
                     wave_id: waveId,
-                    nonce: eipsiDashboardData.nonce
+                    nonce: eipsiStudyDash.nonce
                 },
                 success: function(response) {
                     console.log('[DEADLINE] Remove response:', response);
@@ -748,19 +748,19 @@
             });
             
             console.log('[NUDGE] Saving config:', nudges, 'enabled:', enabled);
-            console.log('[NUDGE] AJAX URL:', eipsiDashboardData.ajaxUrl);
+            console.log('[NUDGE] AJAX URL:', eipsiStudyDash.ajaxUrl);
             
             // Make AJAX call to save nudge config
             const self = this;
             $.ajax({
-                url: eipsiDashboardData.ajaxUrl,
+                url: eipsiStudyDash.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'eipsi_save_wave_nudges',
                     wave_id: waveId,
                     nudges: nudges,
                     enabled: enabled,
-                    nonce: eipsiDashboardData.nonce
+                    nonce: eipsiStudyDash.nonce
                 },
                 success: function(response) {
                     console.log('[NUDGE] Save response:', response);
@@ -1121,25 +1121,24 @@
          */
         renderEmailLogs: function(data) {
             console.log('[FUNC] renderEmailLogs called, data:', data);
-            const $tbody = $('#email-logs-table tbody');
+            const $tbody = $('#email-logs-tbody');
             $tbody.empty();
 
-            if (!data.logs || data.logs.length === 0) {
-                $tbody.append('<tr><td colspan="6" style="text-align:center;padding:20px;">No hay emails registrados</td></tr>');
+            if (!data || data.length === 0) {
+                $tbody.append('<tr><td colspan="4" style="text-align:center;padding:20px;">No hay emails registrados</td></tr>');
                 return;
             }
 
-            data.logs.forEach(function(log) {
+            data.forEach(function(log) {
                 const statusClass = log.status === 'sent' ? 'status-sent' : 'status-failed';
                 const statusText = log.status === 'sent' ? 'Enviado' : 'Fallido';
+                const date = log.sent_at ? new Date(log.sent_at).toLocaleString() : '-';
                 const row = `
                     <tr>
-                        <td>${log.participant_email || '-'}</td>
-                        <td>${log.email_type || '-'}</td>
-                        <td><span class="email-status ${statusClass}">${statusText}</span></td>
-                        <td>${log.sent_at || '-'}</td>
-                        <td>${log.opened_at || '-'}</td>
-                        <td>${log.error_message || '-'}</td>
+                        <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${date}</td>
+                        <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${log.recipient_email || '-'}</td>
+                        <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${log.email_type || '-'}</td>
+                        <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;"><span class="email-status ${statusClass}">${statusText}</span></td>
                     </tr>
                 `;
                 $tbody.append(row);
