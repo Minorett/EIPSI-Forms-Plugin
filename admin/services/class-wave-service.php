@@ -72,9 +72,10 @@ class EIPSI_Wave_Service {
             'max_retries' => $max_retries,
             'status' => $status,
             'is_mandatory' => $is_mandatory,
+            'follow_up_reminders_enabled' => 1, // v2.5.0 - Nudges activados por defecto
         );
 
-        $formats = array('%d', '%d', '%s', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%s', '%d');
+        $formats = array('%d', '%d', '%s', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d');
 
         if (!empty($wave_data['start_date'])) {
             $data['start_date'] = sanitize_text_field($wave_data['start_date']);

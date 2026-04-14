@@ -519,8 +519,8 @@
                     ? deadlineDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
                     : 'Sin fecha límite';
                 
-                // Nudges
-                const nudgesEnabled = wave.nudges_enabled || false;
+                // Nudges - v2.5.0: Activados por defecto
+                const nudgesEnabled = wave.follow_up_reminders_enabled !== undefined ? wave.follow_up_reminders_enabled : true;
                 const nudgeCount = wave.nudge_count || 4;
                 const nudgeLblClass = nudgesEnabled ? 'on' : '';
                 const nudgeLblText = nudgesEnabled 
@@ -850,6 +850,8 @@
                     if (response.success) {
                         console.log('[NUDGE] Saved successfully');
                         self.showToast('Configuración de nudges guardada', 'success');
+                        // Cerrar el panel después de guardar exitosamente
+                        self.toggleNudgePanel(waveId);
                         if (self.currentStudyId) {
                             self.loadStudyData(self.currentStudyId);
                         } else {
@@ -870,8 +872,6 @@
                     }
                 }
             });
-            
-            this.toggleNudgePanel(waveId);
         },
 
         /**

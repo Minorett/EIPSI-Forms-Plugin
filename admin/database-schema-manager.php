@@ -4333,6 +4333,7 @@ public static function get_schema_health_summary() {
         $charset_collate = $wpdb->get_charset_collate();
         
         $result = array(
+            'success' => true,
             'exists' => false,
             'created' => false,
             'error' => null
@@ -4378,6 +4379,7 @@ public static function get_schema_health_summary() {
             $result['exists'] = true;
             error_log('[EIPSI Schema] Created survey_nudge_jobs table');
         } else {
+            $result['success'] = false;
             $result['error'] = 'Failed to create nudge_jobs table';
             error_log('[EIPSI Schema] ERROR: Failed to create survey_nudge_jobs table');
         }
