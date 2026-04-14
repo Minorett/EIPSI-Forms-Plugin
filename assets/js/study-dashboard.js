@@ -780,7 +780,11 @@
          */
         toggleNudgePanel: function(waveId) {
             console.log('[FUNC] toggleNudgePanel called, waveId:', waveId);
-            const $card = $(`.wave-card[data-wave-id="${waveId}"]`);
+            const $card = $(`#wave-card-${waveId}`);
+            const $toggle = $card.find('.nudge-toggle-input');
+            console.log('[NUDGE] Found toggle:', $toggle.length, 'checked:', $toggle.is(':checked'));
+            const enabled = $toggle.is(':checked');
+            console.log('[NUDGE] Toggle state:', enabled);
             const $panel = $card.find('.nudge-panel');
             const isOpen = $panel.is(':visible');
             
@@ -792,19 +796,6 @@
         },
 
         /**
-         * Save nudge configuration - ahora recibe minutos y convierte a value+unit
-         */
-        saveNudgeConfig: function(waveId) {
-            console.log('[FUNC] saveNudgeConfig called, waveId:', waveId);
-            const $card = $(`.wave-card[data-wave-id="${waveId}"]`);
-            const nudges = [];
-            const enabled = $card.find('.nudge-toggle').is(':checked');
-            const self = this;
-            
-            console.log('[NUDGE] Toggle state:', enabled);
-            
-            // Leer minutos y convertir a value+unit para compatibilidad backend
-            $card.find('.nudge-row').each(function(index) {
                 const $row = $(this);
                 const minutes = parseInt($row.find('.nudge-minutes-input').val()) || 1440;
                 

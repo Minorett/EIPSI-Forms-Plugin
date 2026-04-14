@@ -829,7 +829,7 @@ input:checked + .tslider:before { transform: translateX(14px); }
                                 ${nudgesEnabled ? `Recordatorios activados · ${nudgeCount} nudges` : 'Recordatorios desactivados'}
                             </span>
                             <label class="toggle" onclick="event.stopPropagation()">
-                                <input type="checkbox" ${nudgesEnabled ? 'checked' : ''} onchange="toggleNudgePanel('n${wave.id}')">
+                                <input type="checkbox" class="nudge-toggle" ${nudgesEnabled ? 'checked' : ''} onchange="toggleNudgePanel('n${wave.id}')">
                                 <span class="tslider"></span>
                             </label>
                         </div>
