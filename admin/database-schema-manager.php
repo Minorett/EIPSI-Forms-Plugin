@@ -1956,7 +1956,7 @@ class EIPSI_Database_Schema_Manager {
             completion_time_limit INT DEFAULT NULL,
             status ENUM('draft', 'active', 'completed', 'paused') DEFAULT 'draft',
             is_mandatory TINYINT(1) DEFAULT 1,
-            follow_up_reminders_enabled TINYINT(1) DEFAULT 0,
+            follow_up_reminders_enabled TINYINT(1) DEFAULT 1,
             nudge_config TEXT DEFAULT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -2044,6 +2044,12 @@ class EIPSI_Database_Schema_Manager {
                 }
             }
         }
+
+        // v2.5.0 - Ensure follow_up_reminders_enabled defaults to 1 (ON by default)
+        $wpdb->query("ALTER TABLE {$table_name} ALTER COLUMN follow_up_reminders_enabled SET DEFAULT 1");
+        
+        // Also update any NULL values to 1 (enable nudges for existing waves)
+        $wpdb->query("UPDATE {$table_name} SET follow_up_reminders_enabled = 1 WHERE follow_up_reminders_enabled IS NULL");
 
         return $result;
     }

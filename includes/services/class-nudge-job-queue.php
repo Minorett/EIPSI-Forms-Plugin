@@ -532,4 +532,43 @@ class EIPSI_Nudge_Job_Queue {
             'failed' => intval($stats->failed)
         );
     }
+    
+    /**
+     * Cancelar jobs pendientes para un assignment
+     * 
+     * @param int $assignment_id ID del assignment
+     * @return int Número de jobs cancelados
+     */
+    public static function cancel_jobs_for_assignment($assignment_id) {
+        global $wpdb;
+        $table = self::get_table_name();
+        
+        $assignment_id = intval($assignment_id);
+        
+        // Cancelar jobs pendientes que contengan el assignment_id en el payload
+        $result = $wpdb->query($wpdb->prepare(
+            "UPDATE {$table} 
+             SET status = 'cancelled', 
+                 updated_at = %s 
+             WHERE status IN ('pending', 'processing') 
+             AND JSON_EXTRACT(payload, '$.assignment_id') = %d",
+            current_time('mysql'),
+            $assignment_id
+        ));
+        
+        if ($result === false) {
+            error_log('[EIPSI JobQueue] ERROR canceling jobs for assignment ' . $assignment_id . ': ' . $wpdb->last_error);
+            return 0;
+        }
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                '[EIPSI JobQueue] Cancelled %d jobs for assignment %d',
+                $result,
+                $assignment_id
+            ));
+        }
+        
+        return intval($result);
+    }
 }
