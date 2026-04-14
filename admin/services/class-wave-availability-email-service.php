@@ -297,39 +297,113 @@ class EIPSI_Wave_Availability_Email_Service {
      */
     private static function send_wave_availability_email_with_retry($assignment, $wave, $participant, $study_id, $attempt_number) {
         error_log("[EIPSI WaveEmail] Enviando email (intento #{$attempt_number})...");
+        global $wpdb;
         
         if (!class_exists('EIPSI_Email_Service')) {
             require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
         }
 
-        // Preparar datos del email
-        $to = $participant->email;
-        $subject = sprintf(__('Tu siguiente evaluación está disponible - %s', 'eipsi-forms'), $assignment->wave_name);
-        
-        // Generar magic link
-        $magic_link = '';
-        if (class_exists('EIPSI_MagicLinksService')) {
-            $token = EIPSI_MagicLinksService::generate_magic_link($study_id, $assignment->participant_id);
-            if ($token !== false) {
-                // Construir el magic link URL
-                $magic_link = add_query_arg(array(
-                    'eipsi_token' => $token,
-                    'survey_id' => $study_id
-                ), home_url('/eipsi-survey/'));
-            }
+        // Get study info for correct URL
+        $study = $wpdb->get_row($wpdb->prepare(
+            "SELECT study_code, name FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+            $study_id
+        ));
+
+        if (!$study) {
+            error_log("[EIPSI WaveEmail] ERROR: Study not found for ID: {$study_id}");
+            return array(
+                'success' => false,
+                'error' => 'study_not_found',
+                'message' => 'Estudio no encontrado'
+            );
         }
 
-        // Preparar template
-        ob_start();
-        include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/emails/wave-available.php';
-        $message = ob_get_clean();
+        // Build study page URL
+        $study_slug = 'estudio-' . sanitize_title($study->study_code);
+        $study_page = get_page_by_path($study_slug);
+        
+        if (!$study_page) {
+            // Fallback: try to find by meta
+            $study_pages = get_posts([
+                'post_type' => 'page',
+                'meta_key' => 'eipsi_study_id',
+                'meta_value' => $study_id,
+                'posts_per_page' => 1
+            ]);
+            $study_page = !empty($study_pages) ? $study_pages[0] : null;
+        }
+        
+        if (!$study_page) {
+            error_log("[EIPSI WaveEmail] ERROR: Study page not found for slug: {$study_slug}");
+            return array(
+                'success' => false,
+                'error' => 'study_page_not_found',
+                'message' => 'Página del estudio no encontrada'
+            );
+        }
 
-        // Intentar enviar usando EIPSI_Email_Service para respetar configuración SMTP
-        // send_email($survey_id, $participant_id, $to, $type, $subject, $content)
+        $study_url = get_permalink($study_page->ID);
+        error_log("[EIPSI WaveEmail] Study URL: {$study_url}");
+
+        // Generate magic token
+        if (!class_exists('EIPSI_MagicLinksService')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-magic-links-service.php';
+        }
+        
+        $token = EIPSI_MagicLinksService::generate_magic_link($study_id, $participant->id);
+        if (!$token) {
+            error_log("[EIPSI WaveEmail] ERROR: Failed to generate magic token");
+            return array(
+                'success' => false,
+                'error' => 'token_generation_failed',
+                'message' => 'No se pudo generar el token de acceso'
+            );
+        }
+
+        // Build magic link with email pre-filled
+        $magic_link = add_query_arg([
+            'eipsi_magic' => $token,
+            'email_pre' => urlencode($participant->email)
+        ], $study_url);
+        
+        error_log("[EIPSI WaveEmail] Magic link generated: {$magic_link}");
+
+        // Prepare email content
+        $wave_name = $wave->name ?: 'Toma ' . $wave->order_index;
+        $subject = "Tu siguiente evaluación está disponible - " . $study->name;
+        
+        $message = sprintf(
+            '<p>¡Hola %s!</p>
+            <p>¡Buenas noticias! Ya podés acceder a tu siguiente toma del estudio:</p>
+            <h2>%s (%s)</h2>
+            <p style="text-align: center; margin: 30px 0;">
+                <a href="%s" style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                    Comenzar Evaluación →
+                </a>
+            </p>
+            <p>O copiá este link en tu navegador:<br>
+            <code style="background: #f3f4f6; padding: 8px; word-break: break-all;">%s</code></p>
+            <hr>
+            <p style="color: #666; font-size: 14px;">
+                <strong>¿Necesitás ayuda?</strong><br>
+                Si tenés problemas para acceder, respondé a este email o contactá al investigador.
+            </p>
+            <p style="color: #999; font-size: 12px;">
+                Este es un email automático del sistema EIPSI Forms.<br>
+                Por favor no respondas directamente a este mensaje.
+            </p>',
+            esc_html($participant->first_name),
+            esc_html($study->name),
+            esc_html($wave_name),
+            esc_url($magic_link),
+            esc_html($magic_link)
+        );
+
+        // Send email
         $sent = EIPSI_Email_Service::send_email(
             $study_id,
-            $assignment->participant_id,
-            $to,
+            $participant->id,
+            $participant->email,
             'wave_availability',
             $subject,
             $message
@@ -337,7 +411,8 @@ class EIPSI_Wave_Availability_Email_Service {
         
         if ($sent) {
             // Log exitoso
-            $log_id = self::log_email_success($study_id, $assignment->participant_id, $wave->id, $to);
+            $log_id = self::log_email_success($study_id, $participant->id, $wave->id, $participant->email);
+            error_log("[EIPSI WaveEmail] Email enviado exitosamente. Log ID: {$log_id}");
             
             return array(
                 'success' => true,
@@ -345,7 +420,7 @@ class EIPSI_Wave_Availability_Email_Service {
                 'message' => 'Email enviado correctamente'
             );
         } else {
-            // Log fallido - EIPSI_Email_Service maneja el error internamente
+            error_log("[EIPSI WaveEmail] ERROR: Failed to send email via SMTP");
             return array(
                 'success' => false,
                 'error' => 'smtp_error',

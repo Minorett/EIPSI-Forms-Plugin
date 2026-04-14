@@ -47,8 +47,6 @@ class EIPSI_Email_Service {
         
         if (!$token) {
             return false;
-        }
-
         // Get study code for the survey
         $study_code = self::get_study_code($survey_id);
         
@@ -63,8 +61,21 @@ class EIPSI_Email_Service {
             $base_url = site_url('/');
         }
 
-        // URL structure: base_url?eipsi_magic=TOKEN
-        return add_query_arg('eipsi_magic', $token, $base_url);
+        // Get participant email for pre-filling the login form
+        $participant = self::get_participant($participant_id);
+        $email_pre = $participant ? urlencode($participant->email) : '';
+
+        $magic_link = add_query_arg([
+            'eipsi_magic' => $token,
+            'survey_id' => $survey_id
+        ], $base_url);
+
+        // Add email pre-fill parameter if we have the participant's email
+        if ($email_pre) {
+            $magic_link = add_query_arg('email_pre', $email_pre, $magic_link);
+        }
+
+        return $magic_link;
     }
 
     /**
