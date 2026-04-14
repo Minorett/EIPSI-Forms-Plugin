@@ -360,6 +360,12 @@ class EIPSI_Nudge_Job_Queue {
             require_once plugin_dir_path(dirname(__FILE__)) . '../admin/services/class-wave-availability-email-service.php';
         }
         
+        // Cargar datos del participant para obtener email, first_name, last_name
+        $participant_data = $wpdb->get_row($wpdb->prepare(
+            "SELECT email, first_name, last_name FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+            $assignment->participant_id
+        ));
+        
         // Construir objetos necesarios para el servicio
         $wave = (object) array(
             'id' => $assignment->wave_id,
@@ -370,9 +376,9 @@ class EIPSI_Nudge_Job_Queue {
         
         $participant = (object) array(
             'id' => $assignment->participant_id,
-            'email' => $assignment->email,
-            'first_name' => $assignment->first_name,
-            'last_name' => $assignment->last_name
+            'email' => $participant_data ? $participant_data->email : '',
+            'first_name' => $participant_data ? $participant_data->first_name : '',
+            'last_name' => $participant_data ? $participant_data->last_name : ''
         );
         
         $result = EIPSI_Wave_Availability_Email_Service::ensure_wave_availability_email_sent(

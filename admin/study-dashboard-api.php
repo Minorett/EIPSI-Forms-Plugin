@@ -696,7 +696,10 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
 
     $wave_id = isset($_POST['wave_id']) ? (int) $_POST['wave_id'] : 0;
     $nudges = isset($_POST['nudges']) ? $_POST['nudges'] : array();
-    $enabled = isset($_POST['enabled']) ? ($_POST['enabled'] === 'true' || $_POST['enabled'] === true) : false;
+    // v2.5.0 - Robust enabled detection: accepts 'true', true, '1', 1, 'on'
+    $enabled_raw = isset($_POST['enabled']) ? $_POST['enabled'] : false;
+    $enabled = in_array($enabled_raw, array('true', true, '1', 1, 'on', 'yes'), true);
+    error_log("[EIPSI DASHBOARD API] Raw enabled value: " . var_export($enabled_raw, true) . " | Parsed: " . ($enabled ? 'true' : 'false'));
     
     // Handle JSON string if passed
     if (is_string($nudges)) {

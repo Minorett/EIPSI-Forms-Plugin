@@ -792,6 +792,11 @@
                 $panel.slideUp(200);
             } else {
                 $panel.slideDown(200);
+                // v2.5.0 - Auto-enable nudges when opening panel (if not already enabled)
+                if (!enabled) {
+                    console.log('[NUDGE] Auto-enabling nudges when opening panel');
+                    $toggle.prop('checked', true).trigger('change');
+                }
             }
         },
 

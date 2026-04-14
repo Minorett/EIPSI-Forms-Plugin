@@ -4350,6 +4350,11 @@ public static function get_schema_health_summary() {
         
         if ($table_exists) {
             $result['exists'] = true;
+            // v2.5.0 - Ensure updated_at column exists for cancel_jobs_for_assignment
+            if (!self::local_column_exists($table_name, 'updated_at')) {
+                $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+                error_log('[EIPSI Schema] Added updated_at column to survey_nudge_jobs');
+            }
             return $result;
         }
         
@@ -4368,6 +4373,7 @@ public static function get_schema_health_summary() {
             completed_at DATETIME NULL,
             failed_at DATETIME NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY status_scheduled (status, scheduled_at),
             KEY priority_created (priority, created_at),
