@@ -4319,6 +4319,71 @@ public static function get_schema_health_summary() {
 
         return $result;
     }
+    
+    /**
+     * Sync wp_survey_nudge_jobs table in local DB
+     * Job Queue for Nudge system with retry logic
+     * 
+     * @since 2.5.0
+     * @return array Result with success status and details
+     */
+    private static function sync_local_survey_nudge_jobs_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'survey_nudge_jobs';
+        $charset_collate = $wpdb->get_charset_collate();
+        
+        $result = array(
+            'exists' => false,
+            'created' => false,
+            'error' => null
+        );
+        
+        // Check if table exists
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+        
+        if ($table_exists) {
+            $result['exists'] = true;
+            return $result;
+        }
+        
+        // Create table with comprehensive schema for job queue
+        $sql = "CREATE TABLE {$table_name} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            job_type VARCHAR(50) NOT NULL,
+            payload LONGTEXT,
+            priority INT(11) DEFAULT 10,
+            status VARCHAR(20) DEFAULT 'pending',
+            retries INT(11) DEFAULT 0,
+            error TEXT,
+            result TEXT,
+            scheduled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            processed_at DATETIME NULL,
+            completed_at DATETIME NULL,
+            failed_at DATETIME NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY status_scheduled (status, scheduled_at),
+            KEY priority_created (priority, created_at),
+            KEY job_type (job_type)
+        ) {$charset_collate};";
+        
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        $create_result = dbDelta($sql);
+        
+        // Verify creation
+        $table_exists_after = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+        
+        if ($table_exists_after) {
+            $result['created'] = true;
+            $result['exists'] = true;
+            error_log('[EIPSI Schema] Created survey_nudge_jobs table');
+        } else {
+            $result['error'] = 'Failed to create nudge_jobs table';
+            error_log('[EIPSI Schema] ERROR: Failed to create survey_nudge_jobs table');
+        }
+        
+        return $result;
+    }
 
 }
 
@@ -4473,72 +4538,6 @@ function eipsi_get_column_info($table_name, $column_name) {
 
     return $info ?: null;
 }
-
-    /**
-     * Sync wp_survey_nudge_jobs table in local DB
-     * Job Queue for Nudge system with retry logic
-     * 
-     * @since 2.5.0
-     * @return array Result with success status and details
-     */
-    private static function sync_local_survey_nudge_jobs_table() {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'survey_nudge_jobs';
-        $charset_collate = $wpdb->get_charset_collate();
-        
-        $result = array(
-            'exists' => false,
-            'created' => false,
-            'error' => null
-        );
-        
-        // Check if table exists
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
-        
-        if ($table_exists) {
-            $result['exists'] = true;
-            return $result;
-        }
-        
-        // Create table with comprehensive schema for job queue
-        $sql = "CREATE TABLE {$table_name} (
-            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            job_type VARCHAR(50) NOT NULL,
-            payload LONGTEXT,
-            priority INT(11) DEFAULT 10,
-            status VARCHAR(20) DEFAULT 'pending',
-            retries INT(11) DEFAULT 0,
-            error TEXT,
-            result TEXT,
-            scheduled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            processed_at DATETIME NULL,
-            completed_at DATETIME NULL,
-            failed_at DATETIME NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY status_scheduled (status, scheduled_at),
-            KEY priority_created (priority, created_at),
-            KEY job_type (job_type)
-        ) {$charset_collate};";
-        
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        $create_result = dbDelta($sql);
-        
-        // Verify creation
-        $table_exists_after = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
-        
-        if ($table_exists_after) {
-            $result['created'] = true;
-            $result['exists'] = true;
-            error_log('[EIPSI Schema] Created survey_nudge_jobs table');
-        } else {
-            $result['error'] = 'Failed to create nudge_jobs table';
-            error_log('[EIPSI Schema] ERROR: Failed to create survey_nudge_jobs table');
-        }
-        
-        return $result;
-    }
-
 
 /**
  * Sincronización longitudinal unificada.

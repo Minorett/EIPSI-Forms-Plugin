@@ -154,6 +154,42 @@ class Wave_Service {
             ));
         }
 
+        // v2.5.0 - Cancelar eventos programados y jobs en cola para este assignment
+        if ($result > 0) {
+            // Obtener el assignment_id
+            $assignment = $wpdb->get_row($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}survey_assignments 
+                 WHERE participant_id = %d AND study_id = %d AND wave_id = %d",
+                $participant_id,
+                $study_id,
+                $wave_id
+            ));
+            
+            if ($assignment) {
+                // Cancelar eventos programados
+                if (class_exists('EIPSI_Nudge_Event_Scheduler')) {
+                    EIPSI_Nudge_Event_Scheduler::cancel_scheduled_nudges($assignment->id);
+                }
+                
+                // Cancelar jobs pendientes en la cola
+                if (class_exists('EIPSI_Nudge_Job_Queue')) {
+                    EIPSI_Nudge_Job_Queue::cancel_jobs_for_assignment($assignment->id);
+                }
+                
+                // Invalidar cache
+                if (class_exists('EIPSI_Nudge_Cache')) {
+                    EIPSI_Nudge_Cache::invalidate_assignment_cache($assignment->id);
+                }
+                
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log(sprintf(
+                        '[Wave_Service] Cancelados eventos y jobs para assignment_id=%d',
+                        $assignment->id
+                    ));
+                }
+            }
+        }
+        
         // v2.1.3: Trigger immediate email for minute-based intervals
         // If next wave has minutes interval and is immediately available, send email now
         if ($result !== false) {

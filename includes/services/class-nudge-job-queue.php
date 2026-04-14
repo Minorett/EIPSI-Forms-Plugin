@@ -355,17 +355,52 @@ class EIPSI_Nudge_Job_Queue {
             return array('success' => false, 'error' => 'Wave not yet available');
         }
         
-        // Aquí iría la llamada al servicio de email
-        // Por ahora, simulamos éxito y actualizamos el contador
-        $wpdb->update(
-            $wpdb->prefix . 'survey_assignments',
-            array('reminder_count' => 1),
-            array('id' => $assignment_id),
-            array('%d'),
-            array('%d')
+        // v2.5.0 - Enviar email real usando Wave Availability Email Service
+        if (!class_exists('EIPSI_Wave_Availability_Email_Service')) {
+            require_once plugin_dir_path(dirname(__FILE__)) . '../admin/services/class-wave-availability-email-service.php';
+        }
+        
+        // Construir objetos necesarios para el servicio
+        $wave = (object) array(
+            'id' => $assignment->wave_id,
+            'name' => $assignment->wave_name,
+            'wave_index' => $assignment->wave_index,
+            'study_id' => $assignment->study_id
         );
         
-        return array('success' => true, 'message' => 'Nudge 0 sent successfully');
+        $participant = (object) array(
+            'id' => $assignment->participant_id,
+            'email' => $assignment->email,
+            'first_name' => $assignment->first_name,
+            'last_name' => $assignment->last_name
+        );
+        
+        $result = EIPSI_Wave_Availability_Email_Service::ensure_wave_availability_email_sent(
+            $assignment,
+            $wave,
+            $participant,
+            $assignment->study_id
+        );
+        
+        // El servicio ya actualiza reminder_count si tiene éxito
+        if ($result['success'] && $result['sent']) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    '[EIPSI JobQueue] Nudge 0 email ENVIADO: assignment=%d, participant=%d',
+                    $assignment_id,
+                    $assignment->participant_id
+                ));
+            }
+            return array('success' => true, 'message' => 'Nudge 0 email sent successfully');
+        } else {
+            $reason = isset($result['reason']) ? $result['reason'] : 'unknown';
+            error_log(sprintf(
+                '[EIPSI JobQueue] Nudge 0 email FALLÓ: assignment=%d, reason=%s',
+                $assignment_id,
+                $reason
+            ));
+            return array('success' => false, 'error' => $reason);
+        }
     }
     
     /**
@@ -404,17 +439,74 @@ class EIPSI_Nudge_Job_Queue {
             return array('success' => true, 'message' => 'Assignment already completed');
         }
         
-        // Aquí iría el envío real del email
-        // Simulamos éxito y actualizamos contador
-        $wpdb->update(
-            $wpdb->prefix . 'survey_assignments',
-            array('reminder_count' => $stage + 1),
-            array('id' => $assignment_id),
-            array('%d'),
-            array('%d')
+        // v2.5.0 - Enviar email real usando EIPSI_Email_Service
+        if (!class_exists('EIPSI_Email_Service')) {
+            require_once plugin_dir_path(dirname(__FILE__)) . '../admin/services/class-email-service.php';
+        }
+        
+        // Cargar datos completos del assignment
+        $full_assignment = $wpdb->get_row($wpdb->prepare(
+            "SELECT a.*, w.name as wave_name, w.wave_index, w.due_date, w.nudge_config
+             FROM {$wpdb->prefix}survey_assignments a
+             JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+             WHERE a.id = %d",
+            $assignment_id
+        ));
+        
+        if (!$full_assignment) {
+            return array('success' => false, 'error' => 'Could not load assignment data');
+        }
+        
+        // Construir objeto wave
+        $wave = (object) array(
+            'id' => $full_assignment->wave_id,
+            'name' => $full_assignment->wave_name,
+            'wave_index' => $full_assignment->wave_index,
+            'due_date' => $full_assignment->due_date
         );
         
-        return array('success' => true, 'message' => "Nudge {$stage} sent successfully");
+        // Enviar email de recordatorio
+        $email_sent = EIPSI_Email_Service::send_wave_reminder_email(
+            $full_assignment->study_id,
+            $full_assignment->participant_id,
+            $wave,
+            $stage
+        );
+        
+        if ($email_sent) {
+            // Actualizar contador solo si el email se envió realmente
+            $wpdb->update(
+                $wpdb->prefix . 'survey_assignments',
+                array('reminder_count' => $stage + 1),
+                array('id' => $assignment_id),
+                array('%d'),
+                array('%d')
+            );
+            
+            // Invalidar cache
+            if (class_exists('EIPSI_Nudge_Cache')) {
+                EIPSI_Nudge_Cache::mark_nudge_sent($assignment_id, $stage);
+            }
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    '[EIPSI JobQueue] Nudge %d email ENVIADO: assignment=%d, participant=%d',
+                    $stage,
+                    $assignment_id,
+                    $full_assignment->participant_id
+                ));
+            }
+            
+            return array('success' => true, 'message' => "Nudge {$stage} email sent successfully");
+        } else {
+            error_log(sprintf(
+                '[EIPSI JobQueue] Nudge %d email FALLÓ: assignment=%d, participant=%d',
+                $stage,
+                $assignment_id,
+                $full_assignment->participant_id
+            ));
+            return array('success' => false, 'error' => 'Email sending failed');
+        }
     }
     
     /**
