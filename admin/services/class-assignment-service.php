@@ -12,8 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// ✅ DIAGNÓSTICO: Confirmar que se cargó este archivo
-error_log('[EIPSI-DIAG-CREATE] Archivo class-assignment-service.php CARGADO - versión 1.5.7');
+// ✅ DIAGNÓSTICO: Solo en modo debug para evitar I/O overhead en producción
+if (defined('WP_DEBUG') && WP_DEBUG) {
+    error_log('[EIPSI-DIAG-CREATE] Archivo class-assignment-service.php CARGADO - versión 1.5.7');
+}
 
 class EIPSI_Assignment_Service {
 
@@ -232,6 +234,20 @@ class EIPSI_Assignment_Service {
                 absint($participant_id)
             )
         );
+        
+        // v2.5.0 - Invalidate cache for this assignment
+        if ($updated !== false && class_exists('EIPSI_Nudge_Cache')) {
+            // Get assignment ID for cache invalidation
+            $assignment = $wpdb->get_row($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d AND participant_id = %d",
+                $wave_id,
+                $participant_id
+            ));
+            
+            if ($assignment) {
+                EIPSI_Nudge_Cache::invalidate_assignment_cache($assignment->id);
+            }
+        }
 
         return $updated !== false;
     }
@@ -488,9 +504,11 @@ class EIPSI_Assignment_Service {
     public static function create_assignments_for_participant($participant_id, $study_id) {
         global $wpdb;
 
-        // ✅ DIAGNÓSTICO: Confirmar que se ejecutó la función
-        error_log(sprintf('[EIPSI-DIAG-CREATE] >>> FUNCIÓN create_assignments_for_participant EJECUTÁNDOSE con participant_id=%s, study_id=%s', 
-            $participant_id, $study_id));
+        // ✅ DIAGNÓSTICO: Solo en modo debug
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf('[EIPSI-DIAG-CREATE] >>> FUNCIÓN create_assignments_for_participant EJECUTÁNDOSE con participant_id=%s, study_id=%s', 
+                $participant_id, $study_id));
+        }
 
         $participant_id = absint($participant_id);
         $study_id = absint($study_id);
@@ -521,18 +539,19 @@ class EIPSI_Assignment_Service {
         // ✅ v1.5.7 - Buscar TODAS las waves sin filtrar por status (las waves pueden tener cualquier estado)
         $table_name = $wpdb->prefix . 'survey_waves';
         
-        // ✅ DIAGNÓSTICO: Verificar si la tabla existe
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
-        error_log(sprintf('[EIPSI-DIAG-CREATE] Tabla esperada: %s - Existe: %s', 
-            $table_name, 
-            $table_exists ? 'SÍ' : 'NO'
-        ));
-        
-        // Listar todas las tablas que contienen 'wave' para diagnóstico
-        $all_wave_tables = $wpdb->get_col("SHOW TABLES LIKE '%wave%'");
-        error_log(sprintf('[EIPSI-DIAG-CREATE] Tablas con "wave" encontradas: %s', 
-            implode(', ', $all_wave_tables)
-        ));
+        // ✅ DIAGNÓSTICO: Solo en modo debug
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_name}'");
+            error_log(sprintf('[EIPSI-DIAG-CREATE] Tabla esperada: %s - Existe: %s', 
+                $table_name, 
+                $table_exists ? 'SÍ' : 'NO'
+            ));
+            
+            $all_wave_tables = $wpdb->get_col("SHOW TABLES LIKE '%wave%'");
+            error_log(sprintf('[EIPSI-DIAG-CREATE] Tablas con "wave" encontradas: %s', 
+                implode(', ', $all_wave_tables)
+            ));
+        }
         
         $active_waves = $wpdb->get_results($wpdb->prepare(
             "SELECT id, wave_index, name, status 
@@ -542,20 +561,24 @@ class EIPSI_Assignment_Service {
             $study_id
         ));
 
-        // ✅ DEBUG: Log para verificar waves encontradas (siempre activo para diagnóstico)
-        error_log(sprintf(
-            '[EIPSI-DIAG-CREATE] Buscando waves para study %d: encontradas %d waves',
-            $study_id,
-            count($active_waves)
-        ));
-        foreach ($active_waves as $w) {
-            error_log(sprintf('[EIPSI-DIAG-CREATE] Wave: id=%d, wave_index=%d, name=%s, status=%s', 
-                $w->id, $w->wave_index, $w->name, $w->status));
+        // ✅ DEBUG: Solo en modo debug
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                '[EIPSI-DIAG-CREATE] Buscando waves para study %d: encontradas %d waves',
+                $study_id,
+                count($active_waves)
+            ));
+            foreach ($active_waves as $w) {
+                error_log(sprintf('[EIPSI-DIAG-CREATE] Wave: id=%d, wave_index=%d, name=%s, status=%s', 
+                    $w->id, $w->wave_index, $w->name, $w->status));
+            }
         }
 
         if (empty($active_waves)) {
             // No active waves - not an error, just nothing to do
-            error_log(sprintf('[EIPSI-DIAG-CREATE] No se encontraron waves para study %d', $study_id));
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf('[EIPSI-DIAG-CREATE] No se encontraron waves para study %d', $study_id));
+            }
             return $result;
         }
 
@@ -603,15 +626,17 @@ class EIPSI_Assignment_Service {
             }
         }
 
-        // Log the result (siempre activo para diagnóstico)
-        error_log(sprintf(
-            '[EIPSI-DIAG-CREATE] Final: creados=%d, skipped=%d, errores=%d para participant %d, study %d',
-            $result['created'],
-            $result['skipped'],
-            count($result['errors']),
-            $participant_id,
-            $study_id
-        ));
+        // Log the result (solo en debug)
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                '[EIPSI-DIAG-CREATE] Final: creados=%d, skipped=%d, errores=%d para participant %d, study %d',
+                $result['created'],
+                $result['skipped'],
+                count($result['errors']),
+                $participant_id,
+                $study_id
+            ));
+        }
 
         return $result;
     }

@@ -150,6 +150,11 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-access-l
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-auth-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/class-survey-access-handler.php';
 
+// v2.5.0 - Nudge System Architecture (Job Queue, Event-Driven, Cache)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-job-queue.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-event-scheduler.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-cache.php';
+
 // Initialize Survey Access Handler
 $eipsi_survey_access = new EIPSI_Survey_Access_Handler();
 $eipsi_survey_access->init();

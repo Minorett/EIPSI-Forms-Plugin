@@ -207,27 +207,35 @@ class EIPSI_Nudge_Service {
         $wave_name = isset($wave->name) ? $wave->name : 'unknown';
         
         // Stage 0 (NUDGE_AVAILABLE) is always sent immediately when wave becomes available
-        // This is the INITIAL availability email, NOT a follow-up reminder
         if ((int)$current_stage === self::NUDGE_AVAILABLE) {
             $available_at = isset($assignment->available_at) ? $assignment->available_at : 'not_set';
-            error_log("[EIPSI Nudge] CHECK NUDGE 0: assignment_id={$assignment_id}, participant_id={$participant_id}, wave_id={$wave_id}, wave_name={$wave_name}, available_at={$available_at}, result=ALLOWED");
+            error_log("[EIPSI Nudge] CHECK NUDGE 0: assignment_id={$assignment_id}, available_at={$available_at}, result=ALLOWED");
             return true;
         }
         
-        // For stages 1-4 (follow-up reminders), check if follow_up_reminders_enabled
-        error_log("[EIPSI Nudge] Stage {$current_stage} - checking follow_up_reminders_enabled: " . (isset($wave->follow_up_reminders_enabled) ? $wave->follow_up_reminders_enabled : 'NOT SET'));
+        // For stages 1-4, check if follow_up_reminders_enabled
         if (empty($wave->follow_up_reminders_enabled)) {
             error_log("[EIPSI Nudge] Stage {$current_stage} - BLOCKED: follow_up_reminders_enabled is empty");
             return false;
         }
         
-        // Use custom config if provided (from modal), otherwise use defaults
+        // v2.5.0 - Check cache first (short TTL because this can change over time)
+        if (class_exists('EIPSI_Nudge_Cache')) {
+            $cached = EIPSI_Nudge_Cache::get_cached_should_send($assignment_id, $current_stage);
+            if ($cached !== null) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("[EIPSI Nudge] Stage {$current_stage}: CACHE HIT for assignment {$assignment_id} = " . ($cached ? 'SEND' : 'SKIP'));
+                }
+                return $cached;
+            }
+        }
+        
+        // Get config
         if ($custom_config && isset($custom_config[$current_stage])) {
             $config = $custom_config[$current_stage];
             $timing_value = isset($config['hours']) ? intval($config['hours']) : 24;
             $timing_unit = isset($config['unit']) ? $config['unit'] : 'hours';
         } else {
-            // Get config from wave's nudge_config JSON
             $nudge_config = isset($wave->nudge_config) ? json_decode($wave->nudge_config, true) : array();
             $nudge_key = "nudge_{$current_stage}";
             if (isset($nudge_config[$nudge_key])) {
@@ -235,7 +243,6 @@ class EIPSI_Nudge_Service {
                 $timing_value = isset($config['value']) ? intval($config['value']) : 24;
                 $timing_unit = isset($config['unit']) ? $config['unit'] : 'hours';
             } else {
-                // Fallback to defaults (simplified - no reference_point)
                 $config = self::get_nudge_config($current_stage, false);
                 if (!$config) {
                     return false;
@@ -250,14 +257,24 @@ class EIPSI_Nudge_Service {
         
         $now = current_time('timestamp');
         
-        // Calculate based on available date (after wave becomes available)
-        // Simplified v2.4.0 - Always use wave_availability, removed reference_point
-        $available_ts = strtotime($assignment->available_at);
-        $trigger_ts = $available_ts + $timing_seconds;
+        // v2.5.0 - Use cached trigger timestamp if available (immutable calculation)
+        if (class_exists('EIPSI_Nudge_Cache')) {
+            $trigger_ts = EIPSI_Nudge_Cache::get_trigger_timestamp($assignment_id, $current_stage, $assignment, $wave);
+        } else {
+            $available_ts = strtotime($assignment->available_at);
+            $trigger_ts = $available_ts + $timing_seconds;
+        }
+        
+        $should_send = ($now >= $trigger_ts);
+        
+        // Cache the result
+        if (class_exists('EIPSI_Nudge_Cache')) {
+            EIPSI_Nudge_Cache::cache_should_send($assignment_id, $current_stage, $should_send, 300); // 5 min cache
+        }
         
         error_log("[EIPSI Nudge] Stage {$current_stage}: trigger at " . date('Y-m-d H:i:s', $trigger_ts) . " ({$timing_value} {$timing_unit} after available)");
         
-        return ($now >= $trigger_ts);
+        return $should_send;
     }
     
     /**

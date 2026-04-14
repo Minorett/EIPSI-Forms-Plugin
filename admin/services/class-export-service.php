@@ -60,10 +60,12 @@ class EIPSI_Export_Service {
                     WHEN sw.due_date < sr.submitted_at THEN 'Late'
                     WHEN sr.submitted_at IS NOT NULL THEN 'Completed'
                     ELSE 'Pending'
-                END as status
+                END as status,
+                sa.assigned_at as wave_assigned_at
             FROM {$wpdb->prefix}survey_participants sp
             JOIN {$wpdb->prefix}survey_waves sw ON sp.survey_id = sw.study_id
             LEFT JOIN {$wpdb->prefix}survey_responses sr ON sp.id = sr.participant_id AND sw.id = sr.wave_id
+            LEFT JOIN {$wpdb->prefix}survey_assignments sa ON sp.id = sa.participant_id AND sw.id = sa.wave_id
             WHERE sp.survey_id = %d
         ";
 
@@ -112,6 +114,7 @@ class EIPSI_Export_Service {
         $headers = array(
             'Participant ID',
             'Wave',
+            'Fecha Asignación Toma',
             'Submitted At',
             'Response Time (min)',
             'Status',
@@ -174,6 +177,7 @@ class EIPSI_Export_Service {
             $row = array(
                 $item->participant_id,
                 $item->wave_index,
+                $item->wave_assigned_at,
                 $item->submitted_at,
                 round($item->response_time_seconds / 60, 2),
                 $item->status,
@@ -231,6 +235,7 @@ class EIPSI_Export_Service {
         $headers = array(
             'Participant ID',
             'Wave',
+            'Fecha Asignación Toma',
             'Submitted At',
             'Response Time (min)',
             'Status',
@@ -293,6 +298,7 @@ class EIPSI_Export_Service {
             $row = array(
                 $item->participant_id,
                 $item->wave_index,
+                $item->wave_assigned_at,
                 $item->submitted_at,
                 round($item->response_time_seconds / 60, 2),
                 $item->status,

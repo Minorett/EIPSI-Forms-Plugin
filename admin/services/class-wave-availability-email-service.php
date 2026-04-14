@@ -38,12 +38,21 @@ class EIPSI_Wave_Availability_Email_Service {
         $participant_id = $assignment->participant_id;
         $wave_id = $assignment->wave_id;
         
-        error_log("[EIPSI WaveEmail] === INICIO VERIFICACIÓN === participant={$participant_id}, wave={$wave_id}");
-
-        // Paso 1: ¿La toma está disponible?
+        // Verificación consolidada en un solo log
         $is_available = self::is_wave_available($assignment, $wave);
-        error_log("[EIPSI WaveEmail] Paso 1 - ¿Toma disponible? " . ($is_available ? 'SÍ' : 'NO'));
+        $already_sent = self::was_nudge_zero_already_sent($participant_id, $wave_id);
+        $retry_status = self::get_retry_status($participant_id, $wave_id);
         
+        error_log(sprintf(
+            '[EIPSI WaveEmail] Verificando p=%d w=%d | disponible=%s | enviado=%s | reintentos=%d/%d',
+            $participant_id,
+            $wave_id,
+            $is_available ? 'SÍ' : 'NO',
+            $already_sent ? 'SÍ' : 'NO',
+            $retry_status['attempts'],
+            self::MAX_RETRY_ATTEMPTS
+        ));
+
         if (!$is_available) {
             return array(
                 'success' => false,
@@ -54,13 +63,8 @@ class EIPSI_Wave_Availability_Email_Service {
                 'wave_id' => $wave_id
             );
         }
-
-        // Paso 2: ¿Se envió mail de inmediato (Nudge 0)?
-        $already_sent = self::was_nudge_zero_already_sent($participant_id, $wave_id);
-        error_log("[EIPSI WaveEmail] Paso 2 - ¿Nudge 0 ya enviado? " . ($already_sent ? 'SÍ' : 'NO'));
         
         if ($already_sent) {
-            error_log("[EIPSI WaveEmail] ✓ TODO CORRECTO: Nudge 0 ya enviado anteriormente. No se envía duplicado.");
             return array(
                 'success' => true,
                 'sent' => false,
@@ -71,12 +75,8 @@ class EIPSI_Wave_Availability_Email_Service {
             );
         }
 
-        // Paso 3: Verificar si hay reintentos pendientes
-        $retry_status = self::get_retry_status($participant_id, $wave_id);
-        error_log("[EIPSI WaveEmail] Paso 3 - Estado de reintentos: intentos={$retry_status['attempts']}, último_intento={$retry_status['last_attempt']}");
-
         if ($retry_status['attempts'] >= self::MAX_RETRY_ATTEMPTS) {
-            error_log("[EIPSI WaveEmail] ✗ MÁXIMO DE REINTENTOS ALCANZADO ({$retry_status['attempts']}/" . self::MAX_RETRY_ATTEMPTS . ")");
+            error_log("[EIPSI WaveEmail] ✗ Máximo reintentos alcanzado ({$retry_status['attempts']}/" . self::MAX_RETRY_ATTEMPTS . ")");
             return array(
                 'success' => false,
                 'sent' => false,
@@ -106,23 +106,19 @@ class EIPSI_Wave_Availability_Email_Service {
             }
         }
 
-        // Paso 4: Intentar enviar el email con sistema de reintento
-        error_log("[EIPSI WaveEmail] Paso 4 - Intentando enviar Nudge 0 (intento #" . ($retry_status['attempts'] + 1) . ")");
-        
+        // Intentar enviar
+        $attempt = $retry_status['attempts'] + 1;
         $send_result = self::send_wave_availability_email_with_retry(
             $assignment, 
             $wave, 
             $participant, 
             $study_id,
-            $retry_status['attempts'] + 1
+            $attempt
         );
 
-        // Paso 5: Verificar resultado y actualizar estado
         if ($send_result['success']) {
-            // Éxito: Marcar como enviado
             self::mark_nudge_zero_sent($participant_id, $wave_id, $send_result['log_id']);
-            
-            error_log("[EIPSI WaveEmail] ✓ ÉXITO: Email enviado correctamente. Log ID: {$send_result['log_id']}");
+            error_log("[EIPSI WaveEmail] ✓ Enviado p={$participant_id} w={$wave_id} (log_id={$send_result['log_id']})");
             
             return array(
                 'success' => true,
@@ -132,13 +128,15 @@ class EIPSI_Wave_Availability_Email_Service {
                 'participant_id' => $participant_id,
                 'wave_id' => $wave_id,
                 'log_id' => $send_result['log_id'],
-                'attempts' => $retry_status['attempts'] + 1
+                'attempts' => $attempt
             );
         } else {
-            // Fallo: Registrar intento fallido
             self::record_failed_attempt($participant_id, $wave_id, $send_result['error']);
             
-            error_log("[EIPSI WaveEmail] ✗ FALLO: {$send_result['error']}");
+            // Log detallado solo para errores críticos
+            if ($send_result['error'] !== 'retry_cooldown') {
+                error_log("[EIPSI WaveEmail] ✗ Fallo p={$participant_id} w={$wave_id}: {$send_result['error']} (intento {$attempt})");
+            }
             
             return array(
                 'success' => false,
@@ -193,9 +191,11 @@ class EIPSI_Wave_Availability_Email_Service {
         foreach ($logs as $log) {
             $metadata = !empty($log->metadata) ? json_decode($log->metadata, true) : array();
             if (isset($metadata['wave_id']) && $metadata['wave_id'] == $wave_id) {
-                // También verificar que sea Nudge 0 (no un follow-up)
                 if (isset($metadata['nudge_stage']) && $metadata['nudge_stage'] === 0) {
-                    error_log("[EIPSI WaveEmail] Verificación 1 (email_log): Nudge 0 encontrado - log_id={$log->id}");
+                    // Log solo en debug - no es un error, es prevención de duplicado
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("[EIPSI WaveEmail] Nudge 0 ya enviado (log_id={$log->id})");
+                    }
                     return true;
                 }
             }
@@ -212,7 +212,9 @@ class EIPSI_Wave_Availability_Email_Service {
         ));
 
         if ($already_accessed > 0) {
-            error_log("[EIPSI WaveEmail] Verificación 2 (submissions): Usuario ya accedió a wave {$wave_id} - no necesita Nudge 0");
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("[EIPSI WaveEmail] Usuario ya accedió a wave {$wave_id} - no necesita Nudge 0");
+            }
             return true;
         }
 
@@ -225,11 +227,12 @@ class EIPSI_Wave_Availability_Email_Service {
         ));
 
         if (in_array($assignment_status, array('submitted', 'in_progress'))) {
-            error_log("[EIPSI WaveEmail] Verificación 3 (assignment): Assignment en estado '{$assignment_status}' - no necesita Nudge 0");
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("[EIPSI WaveEmail] Assignment en '{$assignment_status}' - no necesita Nudge 0");
+            }
             return true;
         }
 
-        error_log("[EIPSI WaveEmail] Todas las verificaciones pasaron: Nudge 0 NO enviado aún");
         return false;
     }
 
@@ -268,7 +271,10 @@ class EIPSI_Wave_Availability_Email_Service {
         // Guardar por 24 horas
         set_transient($transient_key, $status, 24 * HOUR_IN_SECONDS);
         
-        error_log("[EIPSI WaveEmail] Intento fallido registrado: {$status['attempts']}/" . self::MAX_RETRY_ATTEMPTS);
+        // Solo loguear errores críticos, no cooldowns
+        if ($error !== 'retry_cooldown' && (defined('WP_DEBUG') && WP_DEBUG)) {
+            error_log("[EIPSI WaveEmail] Intento fallido registrado: {$status['attempts']}/" . self::MAX_RETRY_ATTEMPTS);
+        }
     }
 
     /**
@@ -289,14 +295,19 @@ class EIPSI_Wave_Availability_Email_Service {
         // Guardar por 7 días para evitar duplicados
         set_transient($transient_key, $status, 7 * DAY_IN_SECONDS);
         
-        error_log("[EIPSI WaveEmail] Nudge 0 marcado como enviado. Log ID: {$log_id}");
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("[EIPSI WaveEmail] Nudge 0 marcado como enviado. Log ID: {$log_id}");
+        }
     }
 
     /**
      * Enviar email de disponibilidad con reintentos internos
      */
     private static function send_wave_availability_email_with_retry($assignment, $wave, $participant, $study_id, $attempt_number) {
-        error_log("[EIPSI WaveEmail] Enviando email (intento #{$attempt_number})...");
+        // Log simplificado solo en debug
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("[EIPSI WaveEmail] Enviando email (intento #{$attempt_number})");
+        }
         global $wpdb;
         
         if (!class_exists('EIPSI_Email_Service')) {
@@ -310,7 +321,7 @@ class EIPSI_Wave_Availability_Email_Service {
         ));
 
         if (!$study) {
-            error_log("[EIPSI WaveEmail] ERROR: Study not found for ID: {$study_id}");
+            error_log("[EIPSI WaveEmail] ERROR: Study {$study_id} no encontrado");
             return array(
                 'success' => false,
                 'error' => 'study_not_found',
@@ -334,7 +345,7 @@ class EIPSI_Wave_Availability_Email_Service {
         }
         
         if (!$study_page) {
-            error_log("[EIPSI WaveEmail] ERROR: Study page not found for slug: {$study_slug}");
+            error_log("[EIPSI WaveEmail] ERROR: Página no encontrada para study: {$study_slug}");
             return array(
                 'success' => false,
                 'error' => 'study_page_not_found',
@@ -343,7 +354,9 @@ class EIPSI_Wave_Availability_Email_Service {
         }
 
         $study_url = get_permalink($study_page->ID);
-        error_log("[EIPSI WaveEmail] Study URL: {$study_url}");
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("[EIPSI WaveEmail] Study URL: {$study_url}");
+        }
 
         // Generate magic token
         if (!class_exists('EIPSI_MagicLinksService')) {
@@ -352,7 +365,7 @@ class EIPSI_Wave_Availability_Email_Service {
         
         $token = EIPSI_MagicLinksService::generate_magic_link($study_id, $participant->id);
         if (!$token) {
-            error_log("[EIPSI WaveEmail] ERROR: Failed to generate magic token");
+            // El error ya fue logueado por MagicLinksService con diagnóstico
             return array(
                 'success' => false,
                 'error' => 'token_generation_failed',
@@ -366,7 +379,9 @@ class EIPSI_Wave_Availability_Email_Service {
             'email_pre' => urlencode($participant->email)
         ], $study_url);
         
-        error_log("[EIPSI WaveEmail] Magic link generated: {$magic_link}");
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("[EIPSI WaveEmail] Magic link generado para p={$participant->id}");
+        }
 
         // Prepare email content
         $wave_name = $wave->name ?: 'Toma ' . $wave->order_index;
@@ -410,9 +425,7 @@ class EIPSI_Wave_Availability_Email_Service {
         );
         
         if ($sent) {
-            // Log exitoso
             $log_id = self::log_email_success($study_id, $participant->id, $wave->id, $participant->email);
-            error_log("[EIPSI WaveEmail] Email enviado exitosamente. Log ID: {$log_id}");
             
             return array(
                 'success' => true,
@@ -420,7 +433,7 @@ class EIPSI_Wave_Availability_Email_Service {
                 'message' => 'Email enviado correctamente'
             );
         } else {
-            error_log("[EIPSI WaveEmail] ERROR: Failed to send email via SMTP");
+            error_log("[EIPSI WaveEmail] ERROR: Fallo SMTP al enviar a p={$participant->id}");
             return array(
                 'success' => false,
                 'error' => 'smtp_error',

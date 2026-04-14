@@ -870,3 +870,170 @@ function eipsi_extend_wave_deadline_handler() {
     ));
 }
 add_action('wp_ajax_eipsi_extend_wave_deadline', 'eipsi_extend_wave_deadline_handler');
+
+/**
+ * GET reminder/nudge configuration for a wave
+ * 
+ * @since 2.4.0
+ */
+add_action('wp_ajax_eipsi_get_reminder_config', 'wp_ajax_eipsi_get_reminder_config_handler');
+function wp_ajax_eipsi_get_reminder_config_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => __('Unauthorized', 'eipsi-forms')));
+    }
+
+    $wave_id = isset($_GET['wave_id']) ? intval($_GET['wave_id']) : 0;
+    
+    if (!$wave_id) {
+        wp_send_json_error(array('message' => __('Missing wave ID', 'eipsi-forms')));
+    }
+
+    global $wpdb;
+    
+    // Get wave nudge config from database
+    $wave = $wpdb->get_row($wpdb->prepare(
+        "SELECT nudge_config, follow_up_reminders_enabled FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+        $wave_id
+    ));
+
+    if (!$wave) {
+        wp_send_json_error(array('message' => __('Wave not found', 'eipsi-forms')));
+    }
+
+    // Parse nudge config
+    $nudge_config = array();
+    if (!empty($wave->nudge_config)) {
+        $nudge_config = json_decode($wave->nudge_config, true);
+        if (!is_array($nudge_config)) {
+            $nudge_config = array();
+        }
+    }
+
+    // Build response config for stages 1-4 (JS expects 1-indexed)
+    $config = array();
+    for ($stage = 1; $stage <= 4; $stage++) {
+        $nudge_key = "nudge_{$stage}";
+        if (isset($nudge_config[$nudge_key])) {
+            $nudge = $nudge_config[$nudge_key];
+            // Convert to hours if needed for backwards compatibility
+            $value = isset($nudge['value']) ? intval($nudge['value']) : 24 * $stage;
+            $unit = isset($nudge['unit']) ? $nudge['unit'] : 'hours';
+            
+            // If unit is days, convert to hours for the form
+            if ($unit === 'days') {
+                $value = $value * 24;
+                $unit = 'hours';
+            }
+            
+            $config[$stage] = array(
+                'enabled' => !empty($nudge['enabled']),
+                'hours' => $value,
+                'unit' => $unit,
+                'subject' => isset($nudge['subject']) ? $nudge['subject'] : ''
+            );
+        } else {
+            // Default values
+            $defaults = array(
+                1 => array('hours' => 24, 'unit' => 'hours'),
+                2 => array('hours' => 48, 'unit' => 'hours'),
+                3 => array('hours' => 72, 'unit' => 'hours'),
+                4 => array('hours' => 168, 'unit' => 'hours')
+            );
+            $config[$stage] = array(
+                'enabled' => false,
+                'hours' => $defaults[$stage]['hours'],
+                'unit' => $defaults[$stage]['unit'],
+                'subject' => ''
+            );
+        }
+    }
+
+    wp_send_json_success(array(
+        'config' => $config,
+        'follow_up_reminders_enabled' => !empty($wave->follow_up_reminders_enabled)
+    ));
+}
+
+/**
+ * POST save reminder/nudge configuration for a wave
+ * 
+ * @since 2.4.0
+ */
+add_action('wp_ajax_eipsi_save_reminder_config', 'wp_ajax_eipsi_save_reminder_config_handler');
+function wp_ajax_eipsi_save_reminder_config_handler() {
+    check_ajax_referer('eipsi_waves_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error(array('message' => __('Unauthorized', 'eipsi-forms')));
+    }
+
+    $wave_id = isset($_POST['wave_id']) ? intval($_POST['wave_id']) : 0;
+    $config_json = isset($_POST['config']) ? stripslashes($_POST['config']) : '{}';
+    
+    if (!$wave_id) {
+        wp_send_json_error(array('message' => __('Missing wave ID', 'eipsi-forms')));
+    }
+
+    $config = json_decode($config_json, true);
+    if (!is_array($config)) {
+        wp_send_json_error(array('message' => __('Invalid config format', 'eipsi-forms')));
+    }
+
+    global $wpdb;
+
+    // Build nudge config for database (nudge_1 to nudge_4)
+    $nudge_config = array();
+    $any_enabled = false;
+    
+    for ($stage = 1; $stage <= 4; $stage++) {
+        if (isset($config[$stage])) {
+            $stage_config = $config[$stage];
+            $enabled = !empty($stage_config['enabled']);
+            $hours = isset($stage_config['hours']) ? intval($stage_config['hours']) : 24 * $stage;
+            $unit = isset($stage_config['unit']) ? sanitize_text_field($stage_config['unit']) : 'hours';
+            $subject = isset($stage_config['subject']) ? sanitize_text_field($stage_config['subject']) : '';
+            
+            // Convert hours to appropriate unit/value for storage
+            if ($unit === 'days' || $hours >= 24) {
+                $value = floor($hours / 24);
+                $storage_unit = 'days';
+            } else {
+                $value = $hours;
+                $storage_unit = 'hours';
+            }
+            
+            $nudge_config["nudge_{$stage}"] = array(
+                'enabled' => $enabled,
+                'value' => $value,
+                'unit' => $storage_unit,
+                'subject' => $subject
+            );
+            
+            if ($enabled) {
+                $any_enabled = true;
+            }
+        }
+    }
+
+    // Update wave with nudge config
+    $result = $wpdb->update(
+        $wpdb->prefix . 'survey_waves',
+        array(
+            'nudge_config' => wp_json_encode($nudge_config),
+            'follow_up_reminders_enabled' => $any_enabled ? 1 : 0
+        ),
+        array('id' => $wave_id),
+        array('%s', '%d'),
+        array('%d')
+    );
+
+    if ($result === false) {
+        wp_send_json_error(array('message' => __('Error saving configuration', 'eipsi-forms')));
+    }
+
+    wp_send_json_success(array(
+        'message' => __('Configuración guardada correctamente', 'eipsi-forms')
+    ));
+}

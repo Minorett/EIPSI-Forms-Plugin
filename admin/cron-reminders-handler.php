@@ -16,6 +16,15 @@ if (!defined('ABSPATH')) {
 // v2.2.0 - Load new robust wave availability email service
 require_once plugin_dir_path(__FILE__) . 'services/class-wave-availability-email-service.php';
 
+// v2.5.0 - Job Queue for Nudge system
+require_once plugin_dir_path(dirname(__FILE__)) . 'includes/services/class-nudge-job-queue.php';
+
+// v2.5.0 - Event-Driven Nudge Scheduler
+require_once plugin_dir_path(dirname(__FILE__)) . 'includes/services/class-nudge-event-scheduler.php';
+
+// v2.5.0 - Cache for Nudge calculations
+require_once plugin_dir_path(dirname(__FILE__)) . 'includes/services/class-nudge-cache.php';
+
 /**
  * Send wave reminders - Hourly cron job
  *
@@ -38,6 +47,7 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         error_log('[EIPSI Cron] LOCKED: Another instance is running. Aborting.');
         return array(
             'processed_studies' => 0,
+            'total_emails_queued' => 0,
             'total_emails_sent' => 0,
             'status' => 'locked',
             'message' => 'Another cron instance is already running'
@@ -60,6 +70,20 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
             error_log('[EIPSI Cron] Lock released via shutdown handler');
         }
     });
+    
+    // FIX 2: SILENT CRON TRACKING - Log cron health for diagnostics (no UI)
+    $last_cron = get_option('eipsi_last_cron_run');
+    $now_ts = time();
+    if ($last_cron) {
+        $minutes_since = round(($now_ts - $last_cron) / 60);
+        error_log("[EIPSI Cron] Last execution was {$minutes_since} minutes ago");
+        if ($minutes_since > 10) {
+            error_log("[EIPSI Cron] WARNING: Cron delay detected (>10 min). WP-Cron depends on site traffic. Consider server cron: */5 * * * * curl -s " . site_url('/wp-cron.php?doing_wp_cron') . " > /dev/null 2>&1");
+        }
+    } else {
+        error_log("[EIPSI Cron] First execution tracked (no previous history)");
+    }
+    update_option('eipsi_last_cron_run', $now_ts);
     
     // 2. TIME LIMIT CONTROL - Prevent gateway timeouts
     $start_time = microtime(true);
@@ -106,11 +130,13 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         error_log('[EIPSI Cron] No active studies found');
         return array(
             'processed_studies' => 0,
+            'total_emails_queued' => 0,
             'total_emails_sent' => 0
         );
     }
 
     $total_emails_sent = 0;
+    $total_emails_queued = 0;  // v2.5.0 - Jobs encolados para procesamiento asíncrono
     $studies_processed = 0;
     $aborted_due_to_time = false;
 
@@ -197,6 +223,7 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
              AND p.is_active = 1
              AND p.email IS NOT NULL
              AND a.reminder_count = 0
+             AND (a.available_at IS NULL OR a.available_at <= NOW())
              HAVING last_submission_date IS NOT NULL
              ORDER BY a.id DESC
              LIMIT %d",
@@ -210,20 +237,46 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
         $now = current_time('timestamp');
         error_log("[EIPSI Cron] NUDGE 0 FILTER: Current time (timestamp)={$now}, formatted=" . date('Y-m-d H:i:s', $now));
         foreach ($nudge_zero_assignments as $assignment) {
-            error_log("[EIPSI Cron] NUDGE 0 CHECK: assignment_id={$assignment->id}, participant_id={$assignment->participant_id}, wave_id={$assignment->wave_id}, wave_name={$assignment->wave_name}, last_submission_date={$assignment->last_submission_date}, interval_days={$assignment->interval_days}, time_unit={$assignment->time_unit}");
-            if (!empty($assignment->last_submission_date)) {
+            error_log("[EIPSI Cron] NUDGE 0 CHECK: assignment_id={$assignment->id}, participant_id={$assignment->participant_id}, wave_id={$assignment->wave_id}, wave_name={$assignment->wave_name}, last_submission_date={$assignment->last_submission_date}, interval_days={$assignment->interval_days}, time_unit={$assignment->time_unit}, available_at_db={$assignment->available_at}");
+            
+            // FIX 1: Priorizar available_at persistido, calcular solo como fallback
+            if (!empty($assignment->available_at)) {
+                $available_at = strtotime($assignment->available_at);
+                error_log("[EIPSI Cron] NUDGE 0 USING PERSISTED: assignment_id={$assignment->id}, available_at={$assignment->available_at}");
+            } else {
+                // Calcular en runtime solo si no está persistido
+                if (empty($assignment->last_submission_date)) {
+                    error_log("[EIPSI Cron] NUDGE 0 BLOCKED: assignment_id={$assignment->id}, reason=NO_LAST_SUBMISSION_DATE_AND_NO_AVAILABLE_AT");
+                    continue;
+                }
                 // time_unit: 0 = minutes, 1 = days (from database)
                 $time_unit_str = (intval($assignment->time_unit) === 0) ? 'minutes' : 'days';
                 $available_at = strtotime("+{$assignment->interval_days} {$time_unit_str}", strtotime($assignment->last_submission_date));
-                error_log("[EIPSI Cron] NUDGE 0 CALC: assignment_id={$assignment->id}, available_at_timestamp={$available_at}, available_at_formatted=" . ($available_at ? date('Y-m-d H:i:s', $available_at) : 'INVALID') . ", now={$now}, condition_met=" . ($available_at && $now >= $available_at ? 'YES' : 'NO'));
-                if ($available_at && $now >= $available_at) {
-                    $available_now_assignments[] = $assignment;
-                    error_log("[EIPSI Cron] Nudge 0 READY: participant={$assignment->participant_id}, wave={$assignment->wave_name}, available_at=" . date('Y-m-d H:i:s', $available_at));
-                } else {
-                    error_log("[EIPSI Cron] NUDGE 0 BLOCKED: assignment_id={$assignment->id}, reason=NOT_YET_AVAILABLE, available_at=" . ($available_at ? date('Y-m-d H:i:s', $available_at) : 'N/A') . ", now=" . date('Y-m-d H:i:s', $now));
+                error_log("[EIPSI Cron] NUDGE 0 CALC RUNTIME: assignment_id={$assignment->id}, available_at_timestamp={$available_at}, available_at_formatted=" . ($available_at ? date('Y-m-d H:i:s', $available_at) : 'INVALID'));
+                
+                // Persistir para la próxima vez
+                if ($available_at) {
+                    $available_at_formatted = date('Y-m-d H:i:s', $available_at);
+                    $wpdb->update(
+                        $wpdb->prefix . 'survey_assignments',
+                        array('available_at' => $available_at_formatted),
+                        array('id' => $assignment->id),
+                        array('%s'),
+                        array('%d')
+                    );
+                    error_log("[EIPSI Cron] NUDGE 0 PERSISTED: assignment_id={$assignment->id}, available_at={$available_at_formatted}");
                 }
+            }
+            
+            error_log("[EIPSI Cron] NUDGE 0 EVAL: assignment_id={$assignment->id}, available_at_timestamp={$available_at}, now={$now}, condition_met=" . ($available_at && $now >= $available_at ? 'YES' : 'NO'));
+            if ($available_at && $now >= $available_at) {
+                $available_now_assignments[] = $assignment;
+                error_log("[EIPSI Cron] Nudge 0 READY: participant={$assignment->participant_id}, wave={$assignment->wave_name}, available_at=" . date('Y-m-d H:i:s', $available_at));
+                
+                // v2.5.0 - Trigger event-driven scheduling for follow-up nudges
+                do_action('eipsi_wave_available', $assignment->id);
             } else {
-                error_log("[EIPSI Cron] NUDGE 0 BLOCKED: assignment_id={$assignment->id}, reason=NO_LAST_SUBMISSION_DATE");
+                error_log("[EIPSI Cron] NUDGE 0 BLOCKED: assignment_id={$assignment->id}, reason=NOT_YET_AVAILABLE, available_at=" . ($available_at ? date('Y-m-d H:i:s', $available_at) : 'N/A') . ", now=" . date('Y-m-d H:i:s', $now));
             }
         }
 
@@ -294,6 +347,25 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
             $current_stage = (int) $assignment->reminder_count;
             $has_due_date = !empty($assignment->due_date);
             
+            // FIX 3: Logging completo para diagnóstico
+            error_log(sprintf(
+                '[EIPSI NUDGE] Evaluando assignment %d | wave %d | participante %d | status: %s | reminder_count: %d | available_at: %s | due_date: %s | follow_up_enabled: %s',
+                $assignment->id,
+                $assignment->wave_id,
+                $assignment->participant_id,
+                $assignment->status,
+                $assignment->reminder_count,
+                $assignment->available_at ?? 'NULL',
+                $assignment->due_date ?? 'NULL',
+                $assignment->follow_up_reminders_enabled ? 'SÍ' : 'NO'
+            ));
+            
+            // Verificar status
+            if ($assignment->status !== 'pending') {
+                error_log("[EIPSI NUDGE] SKIP: status no es pending ({$assignment->status}) para assignment {$assignment->id}");
+                continue;
+            }
+            
             error_log("[EIPSI Cron] Processing assignment {$assignment->id}, participant {$assignment->participant_id}, wave {$assignment->wave_id}, stage {$current_stage}");
             
             // v2.3.0 - Load nudge config from wave's nudge_config JSON column
@@ -306,16 +378,23 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
             $nudge_key = "nudge_{$current_stage}";
             if ($custom_config && isset($custom_config[$nudge_key])) {
                 if (empty($custom_config[$nudge_key]['enabled'])) {
-                    error_log("[EIPSI Cron] SKIPPED: Nudge {$current_stage} disabled in wave config for participant {$assignment->participant_id}");
+                    error_log("[EIPSI NUDGE] SKIP: nudge_{$current_stage} desactivado en config de wave {$assignment->wave_id} (participante {$assignment->participant_id})");
                     continue;
                 }
+            } elseif ($current_stage > 0) {
+                // FIX 3: Log cuando no hay config personalizada para nudges 1-4
+                error_log("[EIPSI NUDGE] SKIP: nudge_{$current_stage} no tiene config personalizada para wave {$assignment->wave_id} (participante {$assignment->participant_id})");
+                continue;
             }
             
             // Check if we should send this nudge now
             $should_send = EIPSI_Nudge_Service::should_send_nudge($assignment, (object) $assignment, $current_stage, $custom_config);
             error_log("[EIPSI Cron] should_send_nudge result for stage {$current_stage}: " . ($should_send ? 'YES' : 'NO'));
             if (!$should_send) {
-                error_log("[EIPSI Cron] SKIPPED: Nudge {$current_stage} not yet due for participant {$assignment->participant_id}");
+                // FIX 3: Log detallado de por qué no se envía
+                $now = current_time('timestamp');
+                $available_ts = !empty($assignment->available_at) ? strtotime($assignment->available_at) : 0;
+                error_log("[EIPSI NUDGE] SKIP: nudge_{$current_stage} aún no vence. Now: " . date('Y-m-d H:i:s', $now) . " | available_at: " . ($available_ts ? date('Y-m-d H:i:s', $available_ts) : 'N/A') . " (participante {$assignment->participant_id})");
                 continue;
             }
             
@@ -332,103 +411,80 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
                 
                 error_log("[EIPSI Cron] Wave Availability Email Service result: " . wp_json_encode($result));
                 
-                if ($result['success'] && $result['sent']) {
-                    $total_emails_sent++;
-                    $emails_processed++; // Batch counter
-                    // Set rate limit to prevent duplicate in next cron run
-                    $rate_limit_key = "eipsi_reminder_{$assignment->participant_id}_{$assignment->wave_id}_0";
-                    set_transient($rate_limit_key, true, 24 * HOUR_IN_SECONDS);
-                    // v2.2.1 - Delay SMTP para evitar rate limiting (2 segundos entre emails)
-                    sleep(2);
-                } elseif ($result['reason'] === 'max_retries_reached') {
-                    // Increment reminder_count to stop trying
-                    EIPSI_Assignment_Service::increment_reminder_count($assignment->wave_id, $assignment->participant_id);
-                    error_log("[EIPSI Cron] Max retries reached, marking as attempted");
+                // v2.5.0 - Encolar en Job Queue en lugar de enviar directamente
+                $job_id = EIPSI_Nudge_Job_Queue::enqueue('send_nudge_0', [
+                    'assignment_id' => $assignment->id,
+                    'participant_id' => $assignment->participant_id,
+                    'wave_id' => $assignment->wave_id,
+                    'study_id' => $study->id
+                ], 5); // Prioridad 5 (alta) para Nudge 0
+                
+                if ($job_id) {
+                    error_log("[EIPSI Cron] Nudge 0 encolado: job_id={$job_id}, participant={$assignment->participant_id}");
+                    $total_emails_queued++;
                 } else {
-                    // Log why Nudge 0 was not sent
-                    $reason = isset($result['reason']) ? $result['reason'] : 'unknown';
-                    error_log("[EIPSI Cron] Nudge 0 NOT SENT for participant={$assignment->participant_id}, wave={$assignment->wave_id}, reason={$reason}");
+                    error_log("[EIPSI Cron] ERROR: Fallo al encolar Nudge 0 para participant={$assignment->participant_id}");
                 }
                 
                 continue; // Skip old logic for Nudge 0
-            }
-
-            // Nudges 1-4 only send if reminders_enabled is set
-            if (!$reminders_enabled) {
-                error_log("[EIPSI Cron] SKIPPED: Nudge {$current_stage} - reminders disabled for study {$study->id}");
-                continue;
+            } elseif ($result['reason'] === 'max_retries_reached') {
+                // Increment reminder_count to stop trying
+                EIPSI_Assignment_Service::increment_reminder_count($assignment->wave_id, $assignment->participant_id);
+                error_log("[EIPSI Cron] Max retries reached, marking as attempted");
+            } else {
+                // Log why Nudge 0 was not sent
+                $reason = isset($result['reason']) ? $result['reason'] : 'unknown';
+                error_log("[EIPSI Cron] Nudge 0 NOT SENT for participant={$assignment->participant_id}, wave={$assignment->wave_id}, reason={$reason}");
             }
             
-            // Check rate limiting - max 1 email per participant per wave per 24 hours
-            $rate_limit_key = "eipsi_reminder_{$assignment->participant_id}_{$assignment->wave_id}_{$current_stage}";
-            $is_rate_limited = get_transient($rate_limit_key);
-            error_log("[EIPSI Cron] Rate limit check: key={$rate_limit_key}, limited=" . ($is_rate_limited ? 'YES' : 'NO'));
-            if ($is_rate_limited) {
-                error_log("[EIPSI Cron] SKIPPED: Rate limited for participant {$assignment->participant_id}, wave {$assignment->wave_id}, nudge {$current_stage}");
-                continue;
-            }
-
-            // Get nudge config
-            $nudge_config = EIPSI_Nudge_Service::get_nudge_config($current_stage, $has_due_date);
-            if (!$nudge_config) {
-                error_log("[EIPSI Cron] ERROR: Invalid nudge stage {$current_stage}");
-                continue;
-            }
-
-            // Send reminder email
-            $wave = array(
-                'id' => $assignment->wave_id,
-                'name' => $assignment->wave_name,
-                'wave_index' => $assignment->wave_index,
-                'due_date' => $assignment->due_date
-            );
-
-            error_log("[EIPSI Cron] Sending Nudge {$current_stage} ({$nudge_config['label']}) to participant {$assignment->participant_id} ({$assignment->email}) for wave {$assignment->wave_name}");
-
-            $result = EIPSI_Email_Service::send_wave_reminder_email(
-                $study->id,
-                $assignment->participant_id,
-                (object) $wave,
-                $current_stage // Pass stage for template selection
-            );
-
-            error_log("[EIPSI Cron] Email send result: " . ($result ? 'SUCCESS' : 'FAILED'));
-
-            if ($result) {
-                $emails_sent++;
-                $emails_processed++; // Batch counter
-                // Increment reminder count (stage) for next nudge
-                EIPSI_Assignment_Service::increment_reminder_count($assignment->wave_id, $assignment->participant_id);
-                // Set rate limit - 24 hours per stage
-                set_transient($rate_limit_key, true, DAY_IN_SECONDS);
-                error_log("[EIPSI Cron] Nudge {$current_stage} sent and rate limit set for participant {$assignment->participant_id}");
-            } else {
-                error_log("[EIPSI Cron] NUDGE {$current_stage} FAILED for participant {$assignment->participant_id}");
-            }
+            continue; // Skip old logic for Nudge 0
         }
 
-        error_log("[EIPSI Cron] Study {$study->study_name}: {$emails_sent} reminder emails sent");
+        // Nudges 1-4 only send if reminders_enabled is set
+        if (!$reminders_enabled) {
+            error_log("[EIPSI Cron] SKIPPED: Nudge {$current_stage} - reminders disabled for study {$study->id}");
+            continue;
+        }
         
-        // Accumulate total emails sent
-        $total_emails_sent += $emails_sent;
-
-        // Send investigator alert if enabled
-        if (!empty($config['investigator_alert_enabled']) && $emails_sent > 0) {
-            $investigator_email = !empty($config['investigator_alert_email']) 
-                ? $config['investigator_alert_email'] 
-                : get_option('admin_email');
-
-            $subject = "[EIPSI] Resumen de Recordatorios - {$study->study_name}";
-            $message = sprintf(
-                "Se enviaron %d recordatorios para el estudio '%s'.\n\nFecha: %s",
-                $emails_sent,
-                $study->study_name,
-                date('Y-m-d H:i:s')
-            );
-
-            wp_mail($investigator_email, $subject, $message);
+        // Check rate limiting - max 1 email per participant per wave per 24 hours
+        $rate_limit_key = "eipsi_reminder_{$assignment->participant_id}_{$assignment->wave_id}_{$current_stage}";
+        $is_rate_limited = get_transient($rate_limit_key);
+        error_log("[EIPSI Cron] Rate limit check: key={$rate_limit_key}, limited=" . ($is_rate_limited ? 'YES' : 'NO'));
+        if ($is_rate_limited) {
+            error_log("[EIPSI Cron] SKIPPED: Rate limited for participant {$assignment->participant_id}, wave {$assignment->wave_id}, nudge {$current_stage}");
+            continue;
         }
-    }
+
+        // v2.5.0 - Encolar en Job Queue
+        $job_type = "send_nudge_{$current_stage}";
+        $job_id = EIPSI_Nudge_Job_Queue::enqueue($job_type, [
+            'assignment_id' => $assignment->id,
+            'participant_id' => $assignment->participant_id,
+            'wave_id' => $assignment->wave_id,
+            'study_id' => $study->id,
+            'stage' => $current_stage
+        ], 10); // Prioridad 10 (normal) para follow-ups
+        
+        if ($job_id) {
+            error_log(sprintf(
+                '[EIPSI Cron] Nudge %d encolado: job_id=%d, participant=%d, wave=%d',
+                $current_stage,
+                $job_id,
+                $assignment->participant_id,
+                $assignment->wave_id
+            ));
+            $total_emails_queued++;
+            
+            // Set rate limit para prevenir duplicados mientras el job está en cola
+            set_transient($rate_limit_key, true, DAY_IN_SECONDS);
+        } else {
+            error_log(sprintf(
+                '[EIPSI Cron] ERROR: Fallo al encolar Nudge %d para participant=%d',
+                $current_stage,
+                $assignment->participant_id
+            ));
+        }
+    } // end foreach
 
     // Calculate execution stats
     $end_time = microtime(true);
@@ -436,8 +492,9 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
     $end_memory = memory_get_usage(true);
     $memory_used = round(($end_memory - $start_memory) / 1024 / 1024, 2); // MB
     
-    error_log("[EIPSI Cron] ========== RESUMEN EJECUCIÓN v2.4.0 ==========");
+    error_log("[EIPSI Cron] ========== RESUMEN EJECUCIÓN v2.5.0 (Job Queue) ==========");
     error_log("[EIPSI Cron] Estudios procesados: {$studies_processed} / " . count($studies));
+    error_log("[EIPSI Cron] Jobs encolados (Nudge 0 + otros): {$total_emails_queued}");
     error_log("[EIPSI Cron] Total emails enviados (Nudge 0 + otros): {$total_emails_sent}");
     error_log("[EIPSI Cron] Emails procesados en batch: {$emails_processed} / {$batch_size}");
     error_log("[EIPSI Cron] Tiempo de ejecución: {$execution_time}s / {$max_execution_time}s");
@@ -455,6 +512,7 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
     return array(
         'processed_studies' => $studies_processed,
         'total_studies' => count($studies),
+        'total_emails_queued' => $total_emails_queued,
         'total_emails_sent' => $total_emails_sent,
         'emails_processed' => $emails_processed,
         'batch_size' => $batch_size,
@@ -804,3 +862,81 @@ function eipsi_clear_rate_limits_handler() {
         'deleted' => $deleted !== false ? $deleted : 0
     ));
 }
+
+/**
+ * Job Queue Worker - Process pending nudge jobs
+ * 
+ * @since 2.5.0
+ */
+function eipsi_process_nudge_jobs_worker() {
+    // Check if Job Queue class exists
+    if (!class_exists('EIPSI_Nudge_Job_Queue')) {
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/services/class-nudge-job-queue.php';
+    }
+    
+    // Check for process lock
+    $lock_key = 'eipsi_job_worker_lock';
+    if (get_transient($lock_key)) {
+        error_log('[EIPSI JobWorker] Another worker is running, skipping');
+        return;
+    }
+    
+    // Set lock for 5 minutes
+    set_transient($lock_key, true, 5 * MINUTE_IN_SECONDS);
+    
+    error_log('[EIPSI JobWorker] Starting job processing');
+    
+    $start_time = microtime(true);
+    $max_time = 240; // 4 minutes (leaving buffer for 5 min cron)
+    $total_processed = 0;
+    
+    do {
+        // Process a batch of jobs
+        $stats = EIPSI_Nudge_Job_Queue::process_batch(5); // 5 jobs at a time
+        
+        $total_processed += $stats['processed'];
+        
+        // Log progress
+        if ($stats['processed'] > 0) {
+            error_log(sprintf(
+                '[EIPSI JobWorker] Processed: %d completed, %d retried, %d failed',
+                $stats['completed'],
+                $stats['retried'],
+                $stats['failed']
+            ));
+        }
+        
+        // Check time limit
+        $elapsed = microtime(true) - $start_time;
+        if ($elapsed > $max_time) {
+            error_log('[EIPSI JobWorker] Time limit reached, stopping');
+            break;
+        }
+        
+        // If no jobs were processed, we're done
+        if ($stats['processed'] === 0) {
+            break;
+        }
+        
+        // Small delay to prevent overwhelming SMTP
+        usleep(500000); // 0.5 seconds
+        
+    } while (true);
+    
+    error_log(sprintf('[EIPSI JobWorker] Finished: %d jobs processed in %.2fs', $total_processed, microtime(true) - $start_time));
+    
+    // Release lock
+    delete_transient($lock_key);
+}
+add_action('eipsi_process_nudge_jobs', 'eipsi_process_nudge_jobs_worker');
+
+/**
+ * Schedule Job Worker cron (runs every 5 minutes)
+ */
+function eipsi_schedule_job_worker() {
+    if (!wp_next_scheduled('eipsi_process_nudge_jobs')) {
+        wp_schedule_event(time(), 'every_5_minutes', 'eipsi_process_nudge_jobs');
+        error_log('[EIPSI JobWorker] Scheduled job worker cron');
+    }
+}
+add_action('wp', 'eipsi_schedule_job_worker');

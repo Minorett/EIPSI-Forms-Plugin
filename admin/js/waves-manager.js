@@ -200,7 +200,7 @@
 					action: 'eipsi_toggle_follow_up_reminders',
 					wave_id: waveId,
 					enabled: enabled,
-					nonce: eipsiWavesManagerData.nonce || eipsiFormsData.nonce,
+					nonce: eipsiWavesManagerData.wavesNonce,
 				},
 				success: function ( response ) {
 					if ( response.success ) {
@@ -2249,7 +2249,7 @@
 				data: {
 					action: 'eipsi_get_reminder_config',
 					wave_id: waveId,
-					nonce: eipsiWavesManagerData.nonce || eipsiFormsData.nonce,
+					nonce: eipsiWavesManagerData.wavesNonce,
 				},
 				success: function ( response ) {
 					if ( response.success && response.data.config ) {
@@ -2304,7 +2304,7 @@
 				action: 'eipsi_save_reminder_config',
 				wave_id: currentConfigWaveId,
 				config: JSON.stringify( config ),
-				nonce: eipsiWavesManagerData.nonce || eipsiFormsData.nonce,
+				nonce: eipsiWavesManagerData.wavesNonce,
 			},
 			success: function ( response ) {
 				if ( response.success ) {

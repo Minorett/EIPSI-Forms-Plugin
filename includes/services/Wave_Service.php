@@ -241,6 +241,48 @@ class Wave_Service {
             date('Y-m-d H:i:s', $now)
         ));
 
+        // Get or create assignment for the next wave
+        $next_assignment = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, available_at FROM {$wpdb->prefix}survey_assignments 
+             WHERE participant_id = %d AND study_id = %d AND wave_id = %d",
+            $participant_id,
+            $study_id,
+            $next_wave->id
+        ));
+
+        // Persist available_at if not already set
+        $available_at_formatted = date('Y-m-d H:i:s', $available_at);
+        if (!$next_assignment) {
+            // Create assignment with available_at
+            $wpdb->insert(
+                $wpdb->prefix . 'survey_assignments',
+                array(
+                    'study_id' => $study_id,
+                    'wave_id' => $next_wave->id,
+                    'participant_id' => $participant_id,
+                    'status' => 'pending',
+                    'available_at' => $available_at_formatted,
+                ),
+                array('%d', '%d', '%d', '%s', '%s')
+            );
+            error_log("[Wave_Service] Created assignment for next wave {$next_wave->id} with available_at: {$available_at_formatted}");
+        } elseif (empty($next_assignment->available_at)) {
+            // Update existing assignment with available_at
+            $wpdb->update(
+                $wpdb->prefix . 'survey_assignments',
+                array('available_at' => $available_at_formatted),
+                array('id' => $next_assignment->id),
+                array('%s'),
+                array('%d')
+            );
+            error_log("[Wave_Service] Persisted available_at for assignment {$next_assignment->id}: {$available_at_formatted}");
+            
+            // v2.5.0 - Trigger event-driven scheduling for follow-up nudges
+            do_action('eipsi_wave_available', $next_assignment->id);
+        } else {
+            error_log("[Wave_Service] Using existing available_at for assignment {$next_assignment->id}: {$next_assignment->available_at}");
+        }
+
         // Only send if the wave is actually available now
         if ($now < $available_at) {
             $wait_hours = ceil(($available_at - $now) / 3600);

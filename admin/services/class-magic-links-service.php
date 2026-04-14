@@ -43,8 +43,26 @@ class EIPSI_MagicLinksService {
         ));
 
         if (!$participant_exists) {
-            error_log('[EIPSI MagicLinksService] Participant not found: ' . $participant_id);
-            return false;
+            // SISTEMA DE DIAGNÓSTICO: Detectar si se pasó assignment_id en lugar de participant_id
+            $diagnostic_info = self::diagnose_participant_id_issue($participant_id, $survey_id);
+            error_log(sprintf(
+                '[EIPSI MagicLinksService] Participant not found: %d. Diagnóstico: %s',
+                $participant_id,
+                $diagnostic_info['message']
+            ));
+            
+            // Si detectamos el participant_id correcto, usarlo
+            if ($diagnostic_info['correct_participant_id']) {
+                error_log(sprintf(
+                    '[EIPSI MagicLinksService] AUTO-CORRECCIÓN: Usando participant_id=%d en lugar de %d',
+                    $diagnostic_info['correct_participant_id'],
+                    $participant_id
+                ));
+                $participant_id = $diagnostic_info['correct_participant_id'];
+                $participant_exists = true;
+            } else {
+                return false;
+            }
         }
 
         // Validate survey_id exists in wp_survey_studies (longitudinal study table)
@@ -344,5 +362,117 @@ class EIPSI_MagicLinksService {
             'page_url' => $page_url,
             'error' => null
         );
+    }
+
+    /**
+     * SISTEMA DE DIAGNÓSTICO: Detectar cuando se pasa assignment_id en lugar de participant_id
+     * 
+     * Este sistema detecta y auto-corrige el bug donde el código pasa assignment.id 
+     * en lugar de assignment.participant_id al generar magic links.
+     * 
+     * @param int $wrong_id El ID que se intentó usar (probablemente assignment_id)
+     * @param int $study_id El ID del estudio
+     * @return array Diagnóstico con mensaje y participant_id correcto si se detectó
+     */
+    private static function diagnose_participant_id_issue($wrong_id, $study_id) {
+        global $wpdb;
+        
+        $result = array(
+            'message' => 'ID no encontrado en ninguna tabla',
+            'correct_participant_id' => null,
+            'issue_type' => 'unknown'
+        );
+        
+        // Verificar si el ID es un assignment_id válido
+        $assignment_data = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, participant_id, study_id, wave_id, status 
+             FROM {$wpdb->prefix}survey_assignments 
+             WHERE id = %d",
+            $wrong_id
+        ));
+        
+        if ($assignment_data) {
+            $result['issue_type'] = 'assignment_id_passed';
+            $result['correct_participant_id'] = intval($assignment_data->participant_id);
+            $result['message'] = sprintf(
+                'Se pasó assignment_id=%d en lugar de participant_id=%d. Assignment: study_id=%d, wave_id=%d, status=%s',
+                $wrong_id,
+                $assignment_data->participant_id,
+                $assignment_data->study_id,
+                $assignment_data->wave_id,
+                $assignment_data->status
+            );
+            return $result;
+        }
+        
+        // Verificar si es un wave_id (otro error común)
+        $wave_data = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, study_id, name, wave_index 
+             FROM {$wpdb->prefix}survey_waves 
+             WHERE id = %d",
+            $wrong_id
+        ));
+        
+        if ($wave_data) {
+            $result['issue_type'] = 'wave_id_passed';
+            $result['message'] = sprintf(
+                'Se pasó wave_id=%d (study_id=%d, name=%s) en lugar de participant_id',
+                $wrong_id,
+                $wave_data->study_id,
+                $wave_data->name
+            );
+            return $result;
+        }
+        
+        // Verificar si el participante existe pero fue borrado lógicamente
+        $deleted_participant = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, email, is_active, deleted_at 
+             FROM {$wpdb->prefix}survey_participants 
+             WHERE id = %d AND (is_active = 0 OR deleted_at IS NOT NULL)",
+            $wrong_id
+        ));
+        
+        if ($deleted_participant) {
+            $result['issue_type'] = 'participant_inactive';
+            $result['message'] = sprintf(
+                'Participante %d existe pero está inactivo/borrado: email=%s, is_active=%d',
+                $wrong_id,
+                $deleted_participant->email,
+                $deleted_participant->is_active
+            );
+            return $result;
+        }
+        
+        // Verificar si el ID es de otra tabla
+        $tables_to_check = array(
+            'survey_studies' => 'study',
+            'survey_responses' => 'response',
+            'survey_email_log' => 'email_log',
+            'survey_magic_links' => 'magic_link'
+        );
+        
+        foreach ($tables_to_check as $table => $type) {
+            $exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}{$table} WHERE id = %d",
+                $wrong_id
+            ));
+            if ($exists) {
+                $result['issue_type'] = 'wrong_table_id';
+                $result['message'] = sprintf(
+                    'Se pasó un %s_id=%d en lugar de participant_id',
+                    $type,
+                    $wrong_id
+                );
+                return $result;
+            }
+        }
+        
+        // El ID no existe en ninguna tabla conocida
+        $result['message'] = sprintf(
+            'ID=%d no existe en ninguna tabla del sistema (ni participants, assignments, waves, studies, etc.)',
+            $wrong_id
+        );
+        
+        return $result;
     }
 }

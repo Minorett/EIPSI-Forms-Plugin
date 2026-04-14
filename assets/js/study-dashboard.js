@@ -147,6 +147,19 @@
                 }
             });
 
+            // Live update of minutes translation
+            $('#waves-container').on('input', '.nudge-minutes-input', function() {
+                const $input = $(this);
+                const minutes = parseInt($input.val()) || 0;
+                const waveId = $input.closest('.wave-card').data('wave-id');
+                const nudgeIndex = $input.closest('.nudge-row').data('nudge-index');
+                const $translation = $('#ntrans-' + waveId + '-' + nudgeIndex);
+                
+                if ($translation.length) {
+                    $translation.text(self.formatMinutes(minutes));
+                }
+            });
+
             // Download data
             $('#action-download-data').off('click').on('click', function() {
                 console.log('[BUTTON] action-download-data clicked, studyId:', self.currentStudyId);
@@ -445,6 +458,27 @@
         },
 
         /**
+         * Format minutes into human-readable combination
+         * Muestra desglose completo: días, horas y minutos
+         * Ej: 4833 min → "3 días 8 h 33 min"
+         */
+        formatMinutes: function(minutes) {
+            minutes = parseInt(minutes) || 0;
+            if (minutes === 0) return '0 min';
+            
+            const days = Math.floor(minutes / 1440);
+            const hours = Math.floor((minutes % 1440) / 60);
+            const mins = minutes % 60;
+            
+            const parts = [];
+            if (days > 0) parts.push(days + ' día' + (days > 1 ? 's' : ''));
+            if (hours > 0) parts.push(hours + ' h');
+            if (mins > 0) parts.push(mins + ' min');
+            
+            return parts.join(' ') || '0 min';
+        },
+
+        /**
          * Render waves cards - FULL MOCKUP VERSION
          */
         renderWaves: function(waves) {
@@ -493,23 +527,28 @@
                     ? 'Recordatorios activados · ' + nudgeCount + ' nudges'
                     : 'Recordatorios desactivados';
                 
-                // Generate nudge rows HTML
-                // Handle nudge_config object from API
+                // Generate nudge rows HTML - ahora en minutos con traducción automática
                 const nudgeConfig = wave.nudge_config || wave.nudges || {};
                 let nudgeRowsHtml = '';
                 for (let i = 1; i <= 4; i++) {
                     const nudgeKey = 'nudge_' + i;
                     const nudgeData = nudgeConfig[nudgeKey];
-                    const nudge = nudgeData || { value: i === 1 ? 24 : i === 2 ? 72 : i === 3 ? 168 : 336, unit: 'hours' };
+                    // Convertir valores legacy a minutos para display
+                    let minutes;
+                    if (nudgeData) {
+                        minutes = nudgeData.unit === 'days' ? nudgeData.value * 1440 : nudgeData.value * 60;
+                    } else {
+                        // Defaults en minutos: 24h=1440, 72h=4320, 168h=10080, 336h=20160
+                        minutes = i === 1 ? 1440 : i === 2 ? 4320 : i === 3 ? 10080 : 20160;
+                    }
+                    const timeLabel = self.formatMinutes(minutes);
                     nudgeRowsHtml += 
-                        '<div class="nudge-row">' +
+                        '<div class="nudge-row" data-nudge-index="' + i + '">' +
                             '<span class="nudge-num">' + i + '</span>' +
-                            '<input type="number" value="' + nudge.value + '" id="nudge-' + wave.id + '-' + i + '-val" min="1">' +
-                            '<select id="nudge-' + wave.id + '-' + i + '-unit">' +
-                                '<option value="hours"' + (nudge.unit === 'hours' ? ' selected' : '') + '>horas</option>' +
-                                '<option value="days"' + (nudge.unit === 'days' ? ' selected' : '') + '>días</option>' +
-                            '</select>' +
-                            '<span style="color:var(--eipsi-text-muted);font-size:12px;">después de disponible</span>' +
+                            '<input type="number" value="' + minutes + '" id="nudge-' + wave.id + '-' + i + '-val" min="1" class="nudge-minutes-input">' +
+                            '<span class="nudge-unit-label">minutos</span>' +
+                            '<span class="nudge-translation" id="ntrans-' + wave.id + '-' + i + '">' + timeLabel + '</span>' +
+                            '<span class="nudge-suffix">después de disponible</span>' +
                         '</div>';
                 }
 
@@ -753,24 +792,41 @@
         },
 
         /**
-         * Save nudge configuration
+         * Save nudge configuration - ahora recibe minutos y convierte a value+unit
          */
         saveNudgeConfig: function(waveId) {
             console.log('[FUNC] saveNudgeConfig called, waveId:', waveId);
             const $card = $(`.wave-card[data-wave-id="${waveId}"]`);
             const nudges = [];
             const enabled = $card.find('.nudge-toggle').is(':checked');
+            const self = this;
             
             console.log('[NUDGE] Toggle state:', enabled);
             
-            // Use relative selection within the wave card
+            // Leer minutos y convertir a value+unit para compatibilidad backend
             $card.find('.nudge-row').each(function(index) {
                 const $row = $(this);
-                const val = parseInt($row.find('input[type="number"]').val()) || 24;
-                const unit = $row.find('select').val() || 'hours';
-                console.log(`[NUDGE] Row ${index}: value=${val}, unit=${unit}`);
+                const minutes = parseInt($row.find('.nudge-minutes-input').val()) || 1440;
+                
+                // Convertir minutos a value+unit (mantener compatibilidad con backend)
+                let value, unit;
+                if (minutes >= 1440 && minutes % 1440 === 0) {
+                    // Es un número entero de días
+                    value = minutes / 1440;
+                    unit = 'days';
+                } else if (minutes % 60 === 0) {
+                    // Es un número entero de horas
+                    value = minutes / 60;
+                    unit = 'hours';
+                } else {
+                    // Fracción de hora (usar horas con decimales)
+                    value = parseFloat((minutes / 60).toFixed(2));
+                    unit = 'hours';
+                }
+                
+                console.log(`[NUDGE] Row ${index}: ${minutes} min -> ${value} ${unit}`);
                 nudges.push({
-                    value: val,
+                    value: value,
                     unit: unit
                 });
             });
@@ -779,7 +835,6 @@
             console.log('[NUDGE] AJAX URL:', eipsiStudyDash.ajaxUrl);
             
             // Make AJAX call to save nudge config
-            const self = this;
             $.ajax({
                 url: eipsiStudyDash.ajaxUrl,
                 type: 'POST',
