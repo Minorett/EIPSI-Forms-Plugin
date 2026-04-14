@@ -80,6 +80,73 @@
                 $('#eipsi-csv-import-modal').fadeIn(200);
             });
 
+            // Event delegation for wave card interactions (replaces inline onclick)
+            $('#waves-container').off('click').on('click', '[data-action]', function(e) {
+                const $btn = $(this);
+                const action = $btn.data('action');
+                const waveId = $btn.closest('.wave-card').data('wave-id');
+                
+                console.log('[WAVE-ACTION]', action, 'waveId:', waveId);
+                
+                switch(action) {
+                    case 'toggle-deadline':
+                        self.toggleDeadlineEditor($btn.closest('.wave-card').find('.deadline-editor'));
+                        break;
+                    case 'save-deadline':
+                        self.saveDeadline(waveId, $btn.closest('.deadline-editor'));
+                        break;
+                    case 'remove-deadline':
+                        self.removeDeadline(waveId);
+                        break;
+                    case 'toggle-nudge':
+                        self.toggleNudgePanel(waveId);
+                        break;
+                    case 'save-nudge':
+                        self.saveNudgeConfig(waveId);
+                        break;
+                    case 'cancel-deadline':
+                        self.toggleDeadlineEditor($btn.closest('.deadline-editor'));
+                        break;
+                    case 'cancel-nudge':
+                        self.toggleNudgePanel(waveId);
+                        break;
+                    case 'send-wave-reminder':
+                        self.sendReminder(waveId);
+                        break;
+                }
+            });
+
+            // Toggle checkbox for nudges - using event delegation
+            $('#waves-container').on('change', '.nudge-toggle-input', function() {
+                const waveId = $(this).closest('.wave-card').data('wave-id');
+                const isChecked = $(this).is(':checked');
+                const $row = $(this).closest('.nudge-toggle-row');
+                const $label = $(this).closest('.wave-card').find('.nudge-lbl');
+                
+                console.log('[NUDGE-TOGGLE] waveId:', waveId, 'enabled:', isChecked);
+                
+                // Update ARIA attribute
+                $row.attr('aria-checked', isChecked);
+                
+                // Update label text
+                if (isChecked) {
+                    $label.addClass('on').text('Recordatorios activados · 4 nudges');
+                } else {
+                    $label.removeClass('on').text('Recordatorios desactivados');
+                }
+                
+                // Toggle panel visibility
+                self.toggleNudgePanel(waveId);
+            });
+
+            // Keyboard support for nudge toggle row (Enter/Space)
+            $('#waves-container').on('keydown', '.nudge-toggle-row', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    $(this).find('.nudge-toggle-input').trigger('click');
+                }
+            });
+
             // Download data
             $('#action-download-data').off('click').on('click', function() {
                 console.log('[BUTTON] action-download-data clicked, studyId:', self.currentStudyId);
@@ -233,7 +300,8 @@
          * Load study data via AJAX
          */
         loadStudyData: function(studyId) {
-            console.log('[FUNC] loadStudyData called, studyId:', studyId);
+            console.log('[EIPSI DASHBOARD] Iniciando carga del dashboard');
+            console.log('[EIPSI DASHBOARD] Study ID:', studyId);
             const self = this;
 
             if (!studyId) {
@@ -250,9 +318,25 @@
                     nonce: eipsiStudyDash.nonce
                 },
                 success: function(response) {
-                    console.log('[LOAD] AJAX success, response:', response);
+                    console.log('[EIPSI DASHBOARD] API response:', JSON.stringify(response, null, 2));
                     if (response.success) {
-                        self.renderDashboard(response.data);
+                        const data = response.data;
+                        console.log('[EIPSI DASHBOARD] Waves recibidas:', data.waves ? data.waves.length : 'none');
+                        if (data.waves) {
+                            data.waves.forEach(function(w, i) {
+                                console.log('[EIPSI DASHBOARD] Wave ' + i + ':', {
+                                    id: w.id,
+                                    name: w.name,
+                                    total: w.total,
+                                    completed: w.completed,
+                                    due_date: w.due_date || w.deadline || 'none',
+                                    nudge_config: w.nudge_config || 'none',
+                                    interval_days: w.interval_days,
+                                    time_unit: w.time_unit
+                                });
+                            });
+                        }
+                        self.renderDashboard(data);
                     } else {
                         console.error('[LOAD] Server error:', response.data);
                         self.showToast('Error al cargar datos del estudio', 'error');
@@ -331,10 +415,30 @@
         },
 
         /**
-         * Render waves cards
+         * Get interval text for wave subtitle
+         */
+        getIntervaloTexto: function(wave, index) {
+            if (index === 0) return 'Toma inicial · disponible desde el registro';
+            var valor = wave.interval_days || wave.interval_value || 0;
+            var unidad = wave.time_unit === 'minutes' ? 'minutos' : 'días';
+            if (valor === 0 || !valor) return 'Sin intervalo definido';
+            return valor + ' ' + unidad + ' después de completar T' + index;
+        },
+
+        /**
+         * Get progress bar CSS classes based on percentage
+         */
+        getProgressClass: function(pct) {
+            if (pct === 100) return { fill: 'fill-green', label: 'lbl-green' };
+            if (pct === 0)   return { fill: 'fill-gray',  label: 'lbl-muted' };
+            return { fill: 'fill-blue', label: '' };
+        },
+
+        /**
+         * Render waves cards - FULL MOCKUP VERSION
          */
         renderWaves: function(waves) {
-            console.log('[FUNC] renderWaves called, waves count:', waves.length);
+            console.log('[EIPSI DASHBOARD] Renderizando wave cards, count:', waves ? waves.length : 0);
             const container = $('#waves-container');
             container.empty();
 
@@ -343,41 +447,258 @@
                 return;
             }
 
+            const self = this;
             waves.forEach(function(wave, index) {
                 const waveNum = index + 1;
+                const waveIdx = 'T' + waveNum;
                 const progress = wave.progress || 0;
                 const completed = wave.completed || 0;
                 const total = wave.total || 0;
-
-                let deadlineText = 'Sin fecha límite';
-                if (wave.has_due_date && wave.deadline) {
-                    const d = new Date(wave.deadline);
-                    deadlineText = 'Vence: ' + d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+                const isActive = wave.status === 'active';
+                const pendientes = total - completed;
+                
+                console.log('[EIPSI DASHBOARD] Renderizando wave card:', wave.name || 'Toma ' + waveNum, '- pendientes:', pendientes);
+                
+                // Wave name and subtitle
+                const waveName = wave.name || 'Toma ' + waveNum;
+                const waveSub = self.getIntervaloTexto(wave, index);
+                
+                // Progress classes
+                const progClasses = self.getProgressClass(progress);
+                
+                // Deadline
+                const hasDeadline = wave.due_date || wave.deadline;
+                const deadlineDate = hasDeadline ? new Date(hasDeadline) : null;
+                const deadlineFormatted = deadlineDate 
+                    ? deadlineDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    : 'Sin fecha límite';
+                
+                // Nudges
+                const nudgesEnabled = wave.nudges_enabled || false;
+                const nudgeCount = wave.nudge_count || 4;
+                const nudgeLblClass = nudgesEnabled ? 'on' : '';
+                const nudgeLblText = nudgesEnabled 
+                    ? 'Recordatorios activados · ' + nudgeCount + ' nudges'
+                    : 'Recordatorios desactivados';
+                
+                // Generate nudge rows HTML
+                let nudgeRowsHtml = '';
+                for (let i = 1; i <= 4; i++) {
+                    const nudge = (wave.nudges && wave.nudges[i-1]) || { value: i === 1 ? 24 : i === 2 ? 72 : i === 3 ? 168 : 336, unit: 'hours' };
+                    nudgeRowsHtml += 
+                        '<div class="nudge-row">' +
+                            '<span class="nudge-num">' + i + '</span>' +
+                            '<input type="number" value="' + nudge.value + '" id="nudge-' + wave.id + '-' + i + '-val" min="1">' +
+                            '<select id="nudge-' + wave.id + '-' + i + '-unit">' +
+                                '<option value="hours"' + (nudge.unit === 'hours' ? ' selected' : '') + '>horas</option>' +
+                                '<option value="days"' + (nudge.unit === 'days' ? ' selected' : '') + '>días</option>' +
+                            '</select>' +
+                            '<span style="color:var(--eipsi-text-muted);font-size:12px;">después de disponible</span>' +
+                        '</div>';
                 }
 
-                const html = `
-                    <div class="wave-card" data-wave-id="${wave.id}">
-                        <div class="wave-header">
-                            <h4>${wave.name || 'Toma ' + waveNum}</h4>
-                            <span class="wave-status status-${wave.status || 'active'}">${wave.status === 'active' ? 'Activa' : 'Pausada'}</span>
-                        </div>
-                        <div class="wave-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progress}%"></div>
-                            </div>
-                            <span class="progress-text">${completed}/${total} (${progress}%)</span>
-                        </div>
-                        <div class="wave-meta">
-                            <span>${deadlineText}</span>
-                            ${wave.has_due_date ? `<button class="button button-small extend-deadline" data-wave-id="${wave.id}" data-deadline="${wave.deadline}">Extender</button>` : ''}
-                        </div>
-                        <div class="wave-actions">
-                            <button class="button button-small send-reminder" data-wave-id="${wave.id}">Enviar recordatorio</button>
-                        </div>
-                    </div>
-                `;
+                // Accessibility attributes
+                const ariaProgress = 'role="progressbar" aria-valuenow="' + progress + '" aria-valuemin="0" aria-valuemax="100"';
+                const ariaSwitch = 'role="switch" aria-checked="' + (nudgesEnabled ? 'true' : 'false') + '"';
+                
+                const html = 
+                    '<div class="wave-card" data-wave-id="' + wave.id + '" role="region" aria-label="Toma ' + waveNum + ': ' + waveName + '">' +
+                        '<div class="wave-card-head">' +
+                            '<div class="wave-left">' +
+                                '<span class="wave-idx">' + waveIdx + '</span>' +
+                                '<div>' +
+                                    '<div class="wave-name">' + waveName + '</div>' +
+                                    '<div class="wave-sub">' + waveSub + '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="wave-right">' +
+                                '<span class="pill ' + (isActive ? 'pill-active' : 'pill-paused') + '">' + (isActive ? 'Activo' : 'Pausado') + '</span>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="wave-body">' +
+                            '<div class="prog-row" ' + ariaProgress + '>' +
+                                '<div class="prog-track">' +
+                                    '<div class="prog-fill ' + progClasses.fill + '" style="width:' + Math.max(progress, 8) + '%"></div>' +
+                                '</div>' +
+                                '<span class="prog-lbl ' + progClasses.label + '">' + completed + '/' + total + ' · ' + progress + '%</span>' +
+                            '</div>' +
+                            '<div class="deadline-section">' +
+                                '<div class="deadline-row">' +
+                                    '<span>Plazo:</span>' +
+                                    '<span class="deadline-val ' + (hasDeadline ? '' : 'none') + '" id="dv-' + wave.id + '">' + deadlineFormatted + '</span>' +
+                                    '<button class="btn-link" data-action="toggle-deadline" data-wave-id="' + wave.id + '">' + (hasDeadline ? 'Cambiar' : 'Asignar plazo') + '</button>' +
+                                    (hasDeadline ? '<button class="btn-link btn-link-red" data-action="remove-deadline" data-wave-id="' + wave.id + '">Quitar</button>' : '') +
+                                '</div>' +
+                                '<div class="deadline-editor" id="de-' + wave.id + '" style="display:none;">' +
+                                    '<div class="de-label">Fecha límite para completar esta toma</div>' +
+                                    '<div class="de-row">' +
+                                        '<input type="date" class="deadline-date-input" id="de-input-' + wave.id + '" value="' + (wave.due_date || wave.deadline || '') + '">' +
+                                        '<button class="btn-save" data-action="save-deadline" data-wave-id="' + wave.id + '">Guardar</button>' +
+                                        '<button class="btn-cancel-sm" data-action="cancel-deadline" data-wave-id="' + wave.id + '">Cancelar</button>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="nudge-section">' +
+                            '<div class="nudge-toggle-row" data-action="toggle-nudge" data-wave-id="' + wave.id + '" ' + ariaSwitch + ' tabindex="0">' +
+                                '<span class="nudge-lbl ' + nudgeLblClass + '" id="nl-' + wave.id + '">' + nudgeLblText + '</span>' +
+                                '<label class="toggle" onclick="event.stopPropagation()">' +
+                                    '<input type="checkbox" class="nudge-toggle-input" id="nt-' + wave.id + '" ' + (nudgesEnabled ? 'checked' : '') + '>' +
+                                    '<span class="tslider"></span>' +
+                                '</label>' +
+                            '</div>' +
+                            '<div class="nudge-panel ' + (nudgesEnabled ? 'open' : '') + '" id="np-' + wave.id + '" style="display:' + (nudgesEnabled ? 'block' : 'none') + '">' +
+                                '<div class="nudge-rows" id="nr-' + wave.id + '">' + nudgeRowsHtml + '</div>' +
+                                '<div class="nudge-footer">' +
+                                    '<button class="btn-cancel-sm" data-action="cancel-nudge" data-wave-id="' + wave.id + '">Cancelar</button>' +
+                                    '<button class="btn-save" data-action="save-nudge" data-wave-id="' + wave.id + '">Guardar</button>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        (pendientes > 0 ? 
+                        '<div class="wave-reminder-bar">' +
+                            '<button class="btn-primary" data-action="send-wave-reminder" data-wave-id="' + wave.id + '">' +
+                                'Enviar recordatorio a pendientes (' + pendientes + ')' +
+                            '</button>' +
+                        '</div>' : '') +
+                    '</div>';
                 container.append(html);
             });
+            
+            // Initialize nudge panel visibility based on checkbox state
+            console.log('[EIPSI DASHBOARD] Inicializando nudge panels...');
+            this.initializeNudgePanels();
+        },
+        
+        /**
+         * Initialize nudge panel visibility after rendering
+         */
+        initializeNudgePanels: function() {
+            console.log('[EIPSI DASHBOARD] Inicializando visibilidad de nudge panels...');
+            var count = 0;
+            document.querySelectorAll('.nudge-toggle-input').forEach(function(cb) {
+                var waveId = cb.id ? cb.id.replace('nt-', '') : 'unknown';
+                var panel = document.getElementById('np-' + waveId);
+                var lbl = document.getElementById('nl-' + waveId);
+                
+                console.log('[EIPSI INIT] Wave', waveId, '- checked:', cb.checked, 'panel exists:', !!panel);
+                
+                if (cb.checked && panel) {
+                    panel.style.display = 'block';
+                    panel.classList.add('open');
+                } else if (panel) {
+                    panel.style.display = 'none';
+                    panel.classList.remove('open');
+                }
+                
+                if (lbl) {
+                    lbl.classList.toggle('on', cb.checked);
+                }
+                count++;
+            });
+            console.log('[EIPSI DASHBOARD] Nudge panels inicializados:', count);
+        },
+
+        /**
+         * Toggle deadline editor visibility
+         */
+        toggleDeadlineEditor: function($editor) {
+            console.log('[FUNC] toggleDeadlineEditor called');
+            const isVisible = $editor.is(':visible');
+            
+            if (isVisible) {
+                $editor.slideUp(200);
+            } else {
+                // Close all other editors first
+                $('.deadline-editor').slideUp(200);
+                $editor.slideDown(200);
+            }
+        },
+
+        /**
+         * Save deadline for a wave
+         */
+        saveDeadline: function(waveId, $editor) {
+            console.log('[FUNC] saveDeadline called, waveId:', waveId);
+            const date = $editor.find('.deadline-date-input').val();
+            
+            if (!date) {
+                this.showToast('Por favor seleccioná una fecha', 'error');
+                return;
+            }
+
+            const self = this;
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_extend_wave_deadline',
+                    wave_id: waveId,
+                    new_deadline: date,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.showToast('Plazo guardado correctamente', 'success');
+                        self.loadStudyData(self.currentStudyId);
+                    } else {
+                        self.showToast('Error: ' + (response.data || 'No se pudo guardar'), 'error');
+                    }
+                },
+                error: function() {
+                    self.showToast('Error de conexión', 'error');
+                }
+            });
+        },
+
+        /**
+         * Remove deadline from a wave
+         */
+        removeDeadline: function(waveId) {
+            console.log('[FUNC] removeDeadline called, waveId:', waveId);
+            if (!confirm('¿Quitar la fecha límite de esta toma?')) return;
+            
+            // Implementation would call AJAX to remove deadline
+            this.showToast('Funcionalidad en desarrollo', 'info');
+        },
+
+        /**
+         * Toggle nudge panel visibility
+         */
+        toggleNudgePanel: function(waveId) {
+            console.log('[FUNC] toggleNudgePanel called, waveId:', waveId);
+            const $card = $(`.wave-card[data-wave-id="${waveId}"]`);
+            const $panel = $card.find('.nudge-panel');
+            const isOpen = $panel.is(':visible');
+            
+            if (isOpen) {
+                $panel.slideUp(200);
+            } else {
+                $panel.slideDown(200);
+            }
+        },
+
+        /**
+         * Save nudge configuration
+         */
+        saveNudgeConfig: function(waveId) {
+            console.log('[FUNC] saveNudgeConfig called, waveId:', waveId);
+            const $card = $(`.wave-card[data-wave-id="${waveId}"]`);
+            const nudges = [];
+            
+            // Use relative selection within the wave card
+            $card.find('.nudge-row').each(function(index) {
+                const $row = $(this);
+                nudges.push({
+                    value: parseInt($row.find('input[type="number"]').val()) || 24,
+                    unit: $row.find('select').val() || 'hours'
+                });
+            });
+            
+            console.log('[NUDGE] Saving config:', nudges);
+            // AJAX call would go here
+            this.showToast('Configuración de nudges guardada', 'success');
+            this.toggleNudgePanel(waveId);
         },
 
         /**
@@ -693,7 +1014,7 @@
                 url: eipsiStudyDash.ajaxUrl,
                 type: 'GET',
                 data: {
-                    action: 'eipsi_get_email_logs',
+                    action: 'eipsi_get_study_email_logs',
                     study_id: studyId,
                     page: page,
                     nonce: eipsiStudyDash.nonce
@@ -765,7 +1086,7 @@
                 url: eipsiStudyDash.ajaxUrl,
                 type: 'POST',
                 data: {
-                    action: 'eipsi_send_wave_reminder',
+                    action: 'eipsi_send_wave_reminder_manual',
                     study_id: studyId,
                     wave_id: waveId,
                     nonce: eipsiStudyDash.nonce
@@ -785,6 +1106,55 @@
                 error: function(xhr, status, error) {
                     console.error('[REMINDER] AJAX error:', status, error);
                     self.showToast('Error de conexión al enviar recordatorios', 'error');
+                }
+            });
+        },
+
+        /**
+         * Send Global Reminder to all participants across all waves
+         */
+        sendGlobalReminder: function() {
+            console.log('[FUNC] sendGlobalReminder called');
+            const self = this;
+            const studyId = this.currentStudyId;
+
+            if (!studyId) {
+                console.error('[ERROR] sendGlobalReminder: studyId is null');
+                self.showToast('Error: No se pudo identificar el estudio', 'error');
+                return;
+            }
+
+            if (!confirm('¿Enviar recordatorio global a TODOS los participantes pendientes de todas las tomas?')) {
+                console.log('[GLOBAL-REMINDER] User cancelled');
+                return;
+            }
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_send_global_reminder',
+                    study_id: studyId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                beforeSend: function() {
+                    console.log('[GLOBAL-REMINDER] Sending AJAX request...');
+                    $('#send-global-reminder').prop('disabled', true).text('Enviando...');
+                },
+                success: function(response) {
+                    $('#send-global-reminder').prop('disabled', false).text('Enviar recordatorio global');
+                    console.log('[GLOBAL-REMINDER] AJAX success:', response);
+                    if (response.success) {
+                        self.showToast('✅ Recordatorios globales enviados: ' + (response.data.sent_count || 0), 'success');
+                        self.loadStudyData(studyId);
+                    } else {
+                        self.showToast('❌ Error: ' + (response.data.message || 'No se pudieron enviar los recordatorios'), 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#send-global-reminder').prop('disabled', false).text('Enviar recordatorio global');
+                    console.error('[GLOBAL-REMINDER] AJAX error:', status, error);
+                    self.showToast('Error de conexión al enviar recordatorios globales', 'error');
                 }
             });
         },
@@ -856,7 +1226,7 @@
                 url: eipsiStudyDash.ajaxUrl,
                 type: 'GET',
                 data: {
-                    action: 'eipsi_get_participants',
+                    action: 'eipsi_get_participants_list',
                     study_id: this.currentStudyId,
                     page: page,
                     status: status,

@@ -898,182 +898,313 @@ function eipsi_render_pool_hub_v2() {
             font-weight: 600;
         }
 
-        /* Modal */
+        /* ==========================================================================
+           MODAL POOL - REDESIGN v2.5
+           ========================================================================== */
+
+        /* Modal Overlay */
         .eipsi-modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(2px);
             z-index: 100000;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 40px 20px;
         }
 
+        /* Modal Container */
         .eipsi-modal {
-            background: white !important;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 700px;
-            max-height: 90vh;
+            background: #ffffff;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 640px;
+            max-height: calc(100vh - 80px);
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            color: #1e293b !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
 
-        /* Force light mode for all modal contents */
-        .eipsi-force-light-mode,
-        .eipsi-force-light-mode .eipsi-modal,
-        .eipsi-force-light-mode select,
-        .eipsi-force-light-mode input,
-        .eipsi-force-light-mode textarea {
-            background: white !important;
-            color: #1e293b !important;
-            border-color: #c3c4c7 !important;
-        }
-
-        .eipsi-force-light-mode select option {
-            background: white !important;
-            color: #1e293b !important;
-        }
-
-        .eipsi-force-light-mode th,
-        .eipsi-force-light-mode label,
-        .eipsi-force-light-mode .description {
-            color: #374151 !important;
-        }
-
-        /* Form table select styling - ensure visibility */
-        .eipsi-modal .form-table select {
-            background: white !important;
-            color: #1e293b !important;
-            border: 1px solid #c3c4c7 !important;
-            border-radius: 4px;
-            padding: 6px 8px;
-            font-size: 14px;
-            min-height: 36px;
-            display: inline-block;
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .eipsi-modal-small {
-            max-width: 500px;
-        }
-
+        /* Modal Header */
         .eipsi-modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #c3c4c7;
+            padding: 18px 24px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .eipsi-modal-header h2 {
             margin: 0;
             font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
         }
 
         .eipsi-modal-close {
             background: none;
             border: none;
             font-size: 24px;
+            color: #64748b;
             cursor: pointer;
-            color: #646970;
-            padding: 0;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
         }
 
         .eipsi-modal-close:hover {
-            background: #f0f0f1;
-            color: #1d2327;
+            background: #fef2f2;
+            color: #dc2626;
         }
 
+        /* Modal Body */
         .eipsi-modal-body {
-            padding: 20px;
+            padding: 24px;
             overflow-y: auto;
-            flex: 1;
-            max-height: calc(90vh - 140px);
-            background: white !important;
-            color: #1e293b !important;
         }
 
-        .eipsi-modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            padding: 15px 20px;
-            border-top: 1px solid #c3c4c7;
-            background: #f6f7f7;
+        /* Form Layout - Labels arriba */
+        .eipsi-form-field {
+            margin-bottom: 16px;
         }
 
-        /* Pool Studies Rows */
+        .eipsi-form-field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .eipsi-form-field input[type="text"],
+        .eipsi-form-field textarea,
+        .eipsi-form-field select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1e293b;
+            background: #ffffff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .eipsi-form-field input:focus,
+        .eipsi-form-field textarea:focus,
+        .eipsi-form-field select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .eipsi-form-field .description {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        /* Section Title */
+        .eipsi-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 24px 0 8px 0;
+        }
+
+        .eipsi-section-desc {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 16px;
+        }
+
+        /* Pool Studies Rows - Redesigned */
         #eipsi-pool-studies-rows {
-            margin: 20px 0;
+            margin: 0 0 12px 0;
         }
 
         .eipsi-pool-study-row {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px;
-            background: #f6f7f7;
+            padding: 10px 12px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .eipsi-pool-study-row select {
             flex: 1;
             min-width: 200px;
+            padding: 6px 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 13px;
         }
 
         .eipsi-pool-study-row input[type="number"] {
-            width: 100px;
+            width: 80px;
+            text-align: right;
+            padding: 6px 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 13px;
         }
 
         .eipsi-remove-study {
-            color: #800000;
+            color: #dc2626;
             cursor: pointer;
-            padding: 5px 10px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 4px;
             font-size: 18px;
+            transition: background 0.2s;
         }
 
         .eipsi-remove-study:hover {
-            background: #ffeeee;
+            background: #fef2f2;
         }
 
+        /* Progress Bar - Reemplaza "Total: X%" */
         .eipsi-probability-total {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            margin-top: 16px;
             padding: 12px 16px;
-            background: #f0f6fc;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .eipsi-progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .eipsi-progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease, background-color 0.3s;
+        }
+
+        .eipsi-progress-fill.valid {
+            background: #10b981;
+        }
+
+        .eipsi-progress-fill.invalid {
+            background: #ef4444;
+        }
+
+        .eipsi-progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .eipsi-progress-text.valid {
+            color: #059669;
+        }
+
+        .eipsi-progress-text.invalid {
+            color: #dc2626;
+        }
+
+        /* Action Buttons */
+        .eipsi-pool-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .eipsi-pool-actions button,
+        .eipsi-btn-secondary {
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
+            background: #ffffff;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .eipsi-pool-actions button:hover,
+        .eipsi-btn-secondary:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        /* Modal Footer */
+        .eipsi-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 16px 24px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .eipsi-btn-ghost {
+            padding: 8px 16px;
             font-size: 14px;
-            margin-top: 15px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .eipsi-total-label {
-            font-weight: 600;
-            color: #1d2327;
+        .eipsi-btn-ghost:hover {
+            background: #f1f5f9;
+            color: #374151;
         }
 
-        .eipsi-total-value {
-            font-weight: 700;
-            color: #800000;
+        .eipsi-btn-primary {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            background: #3b82f6;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .eipsi-total-value.valid {
-            color: #006666;
+        .eipsi-btn-primary:hover:not(:disabled) {
+            background: #2563eb;
+        }
+
+        .eipsi-btn-primary:disabled {
+            background: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* Force light mode - solo elementos internos */
+        .eipsi-force-light-mode select,
+        .eipsi-force-light-mode input,
+        .eipsi-force-light-mode textarea {
+            background: #ffffff;
+            color: #1e293b;
         }
 
         /* Shortcode Box */
@@ -1516,7 +1647,7 @@ function eipsi_render_pool_hub_v2() {
             const row = document.createElement('div');
             row.className = 'eipsi-pool-study-row';
             row.innerHTML = `
-                <select name="study_select[]" required>
+                <select name="study_select[]" required style="flex:1;min-width:200px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;">
                     <option value=""><?php _e('Seleccionar estudio...', 'eipsi-forms'); ?></option>
                     <?php 
                     $all_studies = $wpdb->get_results("SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies ORDER BY study_name", ARRAY_A);
@@ -1526,7 +1657,7 @@ function eipsi_render_pool_hub_v2() {
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <input type="number" name="study_probability[]" value="${probability}" min="0" max="100" step="0.01" placeholder="%" required>
+                <input type="number" name="study_probability[]" value="${probability}" min="0" max="100" step="0.01" placeholder="%" required style="width:80px;text-align:right;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;">
                 <span class="eipsi-remove-study" title="<?php _e('Eliminar', 'eipsi-forms'); ?>">&times;</span>
             `;
             
@@ -1571,7 +1702,7 @@ function eipsi_render_pool_hub_v2() {
             updateProbabilityTotal();
         });
 
-        // Update probability total
+        // Update probability total - with progress bar
         function updateProbabilityTotal() {
             const rows = document.querySelectorAll('#eipsi-pool-studies-rows .eipsi-pool-study-row');
             let total = 0;
@@ -1582,16 +1713,32 @@ function eipsi_render_pool_hub_v2() {
             total = Math.round(total * 100) / 100;
             console.log('[POOL-HUB] updateProbabilityTotal calculated:', total);
             
-            const valueEl = document.getElementById('eipsi-total-value');
-            valueEl.textContent = total.toFixed(2);
+            // Update progress bar
+            const progressFill = document.getElementById('eipsi-progress-fill');
+            const progressText = document.getElementById('eipsi-progress-text');
+            const progressStatus = document.getElementById('eipsi-progress-status');
+            
+            // Clamp width between 0 and 100 for display
+            const displayWidth = Math.min(Math.max(total, 0), 100);
+            progressFill.style.width = displayWidth + '%';
+            
+            // Update progress bar color and text
+            const progressLabel = progressText.querySelector('span:first-child');
+            progressLabel.textContent = total.toFixed(2) + '% / 100%';
             
             if (total === 100) {
-                valueEl.classList.add('valid');
-                document.getElementById('eipsi-total-status').textContent = '✅';
+                progressFill.classList.remove('invalid');
+                progressFill.classList.add('valid');
+                progressText.classList.remove('invalid');
+                progressText.classList.add('valid');
+                progressStatus.textContent = '✅ Completo';
                 console.log('[POOL-HUB] Probability total is valid (100%)');
             } else {
-                valueEl.classList.remove('valid');
-                document.getElementById('eipsi-total-status').textContent = '❌';
+                progressFill.classList.remove('valid');
+                progressFill.classList.add('invalid');
+                progressText.classList.remove('valid');
+                progressText.classList.add('invalid');
+                progressStatus.textContent = total < 100 ? '❌ Incompleto' : '❌ Excedido';
                 console.log('[POOL-HUB] Probability total is INVALID:', total);
             }
             
@@ -1601,6 +1748,7 @@ function eipsi_render_pool_hub_v2() {
 
         // Save pool
         const savePoolBtn = document.getElementById('eipsi-save-pool-btn');
+        const poolForm = document.getElementById('eipsi-pool-form');
         
         function updateSaveButtonState() {
             const rows = document.querySelectorAll('#eipsi-pool-studies-rows .eipsi-pool-study-row');
@@ -1611,14 +1759,13 @@ function eipsi_render_pool_hub_v2() {
                 total += parseFloat(input.value) || 0;
             });
             
-            const isValid = Math.round(total * 100) / 100 === 100;
+            const isValid = Math.round(total * 100) / 100 === 100 && rows.length > 0;
             savePoolBtn.disabled = !isValid;
-            savePoolBtn.style.opacity = isValid ? '1' : '0.5';
-            savePoolBtn.style.cursor = isValid ? 'pointer' : 'not-allowed';
             console.log('[POOL-HUB] updateSaveButtonState - isValid:', isValid, 'total:', total);
         }
         
         // Initial state
+        updateProbabilityTotal();
         updateSaveButtonState();
         
         savePoolBtn.addEventListener('click', function() {
@@ -1629,35 +1776,50 @@ function eipsi_render_pool_hub_v2() {
                 return;
             }
             
-            // Validate total
+            // Collect studies data
             const rows = document.querySelectorAll('#eipsi-pool-studies-rows .eipsi-pool-study-row');
-            console.log('[POOL-HUB] Validating pool save, rows:', rows.length);
-            let total = 0;
-            const studies = [];
-            const probabilities = {};
+            console.log('[POOL-HUB] Collecting pool data, rows:', rows.length);
             
-            rows.forEach(row => {
+            const studiesData = [];
+            let total = 0;
+            
+            rows.forEach((row, index) => {
                 const select = row.querySelector('select');
                 const input = row.querySelector('input[type="number"]');
                 const studyId = select.value;
-                const prob = parseFloat(input.value) || 0;
+                const probability = parseFloat(input.value) || 0;
                 
                 if (studyId) {
-                    studies.push(studyId);
-                    probabilities[studyId] = prob;
-                    total += prob;
+                    studiesData.push({
+                        study_id: studyId,
+                        probability: probability
+                    });
+                    total += probability;
+                    console.log('[POOL-HUB] Row', index, '- Study:', studyId, 'Prob:', probability);
                 }
             });
             
-            console.log('[POOL-HUB] Pool data prepared:', {studies: studies.length, total: total});
+            console.log('[POOL-HUB] Total probability:', total);
             
-            document.getElementById('eipsi-pool-studies-data').value = JSON.stringify({
-                studies: studies,
-                probabilities: probabilities
-            });
+            if (Math.round(total * 100) / 100 !== 100) {
+                showToast('<?php _e("La suma de probabilidades debe ser exactamente 100%", "eipsi-forms"); ?>', 'error');
+                return;
+            }
             
-            console.log('[POOL-HUB] Submitting pool form...');
-            document.getElementById('eipsi-pool-form').submit();
+            if (studiesData.length === 0) {
+                showToast('<?php _e("Agregá al menos un estudio al pool", "eipsi-forms"); ?>', 'error');
+                return;
+            }
+            
+            // Set hidden field with studies data
+            document.getElementById('eipsi-pool-studies-data').value = JSON.stringify(studiesData);
+            console.log('[POOL-HUB] Studies data JSON:', document.getElementById('eipsi-pool-studies-data').value);
+            
+            showToast('<?php _e("Guardando pool y creando página...", "eipsi-forms"); ?>', 'info');
+            
+            // Submit form via traditional POST to admin-post.php
+            console.log('[POOL-HUB] Submitting form to:', poolForm.action);
+            poolForm.submit();
         });
 
         // Analytics pool selector
@@ -1741,7 +1903,7 @@ function eipsi_render_pool_hub_v2() {
 
     <?php endif; // End if (empty($pools)) ?>
 
-    <!-- Create/Edit Pool Modal (available in both empty state and with pools) -->
+    <!-- Create/Edit Pool Modal - REDESIGNED -->
     <div class="eipsi-modal-overlay eipsi-force-light-mode" id="eipsi-pool-modal" style="display: none;">
         <div class="eipsi-modal eipsi-force-light-mode">
             <div class="eipsi-modal-header">
@@ -1754,35 +1916,31 @@ function eipsi_render_pool_hub_v2() {
                     <input type="hidden" name="pool_id" id="eipsi-pool-id" value="0">
                     <?php wp_nonce_field('eipsi_save_pool_nonce', 'pool_nonce'); ?>
 
-                    <table class="form-table">
-                        <tr>
-                            <th><label for="eipsi-pool-name"><?php _e('Nombre del pool', 'eipsi-forms'); ?></label></th>
-                            <td>
-                                <input type="text" name="pool_name" id="eipsi-pool-name" class="regular-text" required>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><label for="eipsi-pool-description"><?php _e('Descripción', 'eipsi-forms'); ?></label></th>
-                            <td>
-                                <textarea name="pool_description" id="eipsi-pool-description" class="large-text" rows="3"></textarea>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><label for="eipsi-pool-method"><?php _e('Método', 'eipsi-forms'); ?></label></th>
-                            <td>
-                                <select name="method" id="eipsi-pool-method">
-                                    <option value="seeded">🎲 <?php _e('Seeded (mismo participante = misma asignación)', 'eipsi-forms'); ?></option>
-                                    <option value="pure-random">🎰 <?php _e('Pure-random (cada acceso es nuevo)', 'eipsi-forms'); ?></option>
-                                </select>
-                                <p class="description">
-                                    <?php _e('Seeded: El participante siempre va al mismo estudio. Random: Distribución completamente aleatoria.', 'eipsi-forms'); ?>
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
+                    <!-- Form Fields -->
+                    <div class="eipsi-form-field">
+                        <label for="eipsi-pool-name"><?php _e('Nombre del pool', 'eipsi-forms'); ?></label>
+                        <input type="text" name="pool_name" id="eipsi-pool-name" required>
+                    </div>
 
-                    <h3><?php _e('Estudios y probabilidades', 'eipsi-forms'); ?></h3>
-                    <p class="description">
+                    <div class="eipsi-form-field">
+                        <label for="eipsi-pool-description"><?php _e('Descripción', 'eipsi-forms'); ?></label>
+                        <textarea name="pool_description" id="eipsi-pool-description" rows="3"></textarea>
+                    </div>
+
+                    <div class="eipsi-form-field">
+                        <label for="eipsi-pool-method"><?php _e('Método', 'eipsi-forms'); ?></label>
+                        <select name="method" id="eipsi-pool-method">
+                            <option value="seeded">🎲 <?php _e('Seeded (mismo participante = misma asignación)', 'eipsi-forms'); ?></option>
+                            <option value="pure-random">🎰 <?php _e('Pure-random (cada acceso es nuevo)', 'eipsi-forms'); ?></option>
+                        </select>
+                        <p class="description">
+                            <?php _e('Seeded: El participante siempre va al mismo estudio. Random: Distribución completamente aleatoria.', 'eipsi-forms'); ?>
+                        </p>
+                    </div>
+
+                    <!-- Studies Section -->
+                    <h3 class="eipsi-section-title"><?php _e('Estudios y probabilidades', 'eipsi-forms'); ?></h3>
+                    <p class="eipsi-section-desc">
                         <?php _e('Agregá los estudios al pool y asigná probabilidades. La suma debe ser exactamente 100%.', 'eipsi-forms'); ?>
                     </p>
 
@@ -1791,26 +1949,46 @@ function eipsi_render_pool_hub_v2() {
                     </div>
 
                     <div class="eipsi-pool-actions">
-                        <button type="button" class="button button-secondary" id="eipsi-add-study-row">
+                        <button type="button" class="eipsi-btn-secondary" id="eipsi-add-study-row">
                             + <?php _e('Agregar estudio', 'eipsi-forms'); ?>
                         </button>
-                        <button type="button" class="button button-secondary" id="eipsi-distribute-probabilities">
+                        <button type="button" class="eipsi-btn-secondary" id="eipsi-distribute-probabilities">
                             🔀 <?php _e('Distribuir equitativamente', 'eipsi-forms'); ?>
                         </button>
                     </div>
 
+                    <!-- Progress Bar Total -->
                     <div class="eipsi-probability-total" id="eipsi-probability-total-display">
-                        <span class="eipsi-total-label"><?php _e('Total:', 'eipsi-forms'); ?></span>
-                        <span class="eipsi-total-value" id="eipsi-total-value">0</span>%
-                        <span class="eipsi-total-status" id="eipsi-total-status">❌</span>
+                        <div class="eipsi-progress-bar">
+                            <div class="eipsi-progress-fill invalid" id="eipsi-progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="eipsi-progress-text invalid" id="eipsi-progress-text">
+                            <span>0% / 100%</span>
+                            <span id="eipsi-progress-status">❌ Incompleto</span>
+                        </div>
+                    </div>
+
+                    <!-- Shortcode y URL de la página (mostrado después de guardar) -->
+                    <div id="eipsi-pool-page-info" style="display: none; margin-top: 20px; padding: 16px; background: #f0f6fc; border-radius: 8px;">
+                        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #1e293b;"><?php _e('Página del pool creada', 'eipsi-forms'); ?></h4>
+                        
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;"><?php _e('Shortcode:', 'eipsi-forms'); ?></label>
+                            <code id="eipsi-pool-shortcode" style="display: block; padding: 8px 12px; background: #1d2327; color: #a5f3fc; border-radius: 4px; font-family: monospace; font-size: 13px;">[eipsi_pool_join pool_id="0"]</code>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;"><?php _e('URL de la página:', 'eipsi-forms'); ?></label>
+                            <a id="eipsi-pool-page-url" href="#" target="_blank" style="color: #3b82f6; font-size: 13px; text-decoration: none;"></a>
+                        </div>
                     </div>
 
                     <input type="hidden" name="pool_studies_data" id="eipsi-pool-studies-data" value="">
                 </form>
             </div>
             <div class="eipsi-modal-footer">
-                <button type="button" class="button button-secondary eipsi-modal-cancel"><?php _e('Cancelar', 'eipsi-forms'); ?></button>
-                <button type="button" class="button button-primary" id="eipsi-save-pool-btn"><?php _e('Guardar pool', 'eipsi-forms'); ?></button>
+                <button type="button" class="eipsi-btn-ghost eipsi-modal-cancel"><?php _e('Cancelar', 'eipsi-forms'); ?></button>
+                <button type="button" class="eipsi-btn-primary" id="eipsi-save-pool-btn" disabled><?php _e('Guardar pool', 'eipsi-forms'); ?></button>
             </div>
         </div>
     </div>
@@ -1844,4 +2022,182 @@ function eipsi_get_pool_stats($pool_id) {
         'completed' => (int) $completed,
         'rate' => $rate
     );
+}
+
+/**
+ * Create WordPress page for pool with shortcode
+ *
+ * @param int    $pool_id   Pool ID
+ * @param string $pool_name Pool name
+ * @return int|false Page ID or false on failure
+ * @since 2.5.0
+ */
+function eipsi_create_pool_page($pool_id, $pool_name) {
+    $pool_slug = 'pool-' . sanitize_title($pool_name);
+    
+    // Check if page already exists
+    $existing_page = get_page_by_path($pool_slug);
+    
+    if (!$existing_page) {
+        $existing_pages = get_posts(array(
+            'post_type' => 'page',
+            'meta_key' => 'eipsi_pool_id',
+            'meta_value' => $pool_id,
+            'posts_per_page' => 1
+        ));
+        
+        if (!empty($existing_pages)) {
+            $existing_page = $existing_pages[0];
+        }
+    }
+    
+    if ($existing_page) {
+        update_post_meta($existing_page->ID, 'eipsi_pool_id', $pool_id);
+        return $existing_page->ID;
+    }
+    
+    // Create new page
+    $page_title = sprintf(__('Pool: %s', 'eipsi-forms'), $pool_name);
+    $page_content = '[eipsi_pool_join pool_id="' . esc_attr($pool_id) . '"]';
+    
+    $page_id = wp_insert_post(array(
+        'post_title' => $page_title,
+        'post_name' => $pool_slug,
+        'post_content' => $page_content,
+        'post_status' => 'publish',
+        'post_type' => 'page',
+        'meta_input' => array(
+            'eipsi_pool_id' => $pool_id
+        )
+    ));
+    
+    if (is_wp_error($page_id)) {
+        error_log('[EIPSI] Failed to create pool page: ' . $page_id->get_error_message());
+        return false;
+    }
+    
+    return $page_id;
+}
+
+/**
+ * Get the pool page URL
+ *
+ * @param int $pool_id Pool ID
+ * @return string|null Page URL or null if no page exists
+ * @since 2.5.0
+ */
+function eipsi_get_pool_page_url($pool_id) {
+    $pages = get_posts(array(
+        'post_type' => 'page',
+        'meta_key' => 'eipsi_pool_id',
+        'meta_value' => $pool_id,
+        'posts_per_page' => 1
+    ));
+    
+    if (!empty($pages)) {
+        return get_permalink($pages[0]->ID);
+    }
+    
+    return null;
+}
+
+/**
+ * Handle pool save action (admin-post.php)
+ * Creates/updates pool and auto-creates WordPress page
+ *
+ * @since 2.5.0
+ */
+add_action('admin_post_eipsi_save_pool', 'eipsi_handle_save_pool');
+
+function eipsi_handle_save_pool() {
+    // Verify nonce
+    if (!wp_verify_nonce($_POST['pool_nonce'] ?? '', 'eipsi_save_pool_nonce')) {
+        wp_die(__('Error de seguridad. Por favor, recargá la página.', 'eipsi-forms'));
+    }
+    
+    // Check permissions
+    if (!function_exists('eipsi_user_can_manage_longitudinal') || !eipsi_user_can_manage_longitudinal()) {
+        wp_die(__('No tenés permisos para realizar esta acción.', 'eipsi-forms'));
+    }
+    
+    global $wpdb;
+    
+    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    
+    // Get form data
+    $pool_id = intval($_POST['pool_id'] ?? 0);
+    $pool_name = sanitize_text_field($_POST['pool_name'] ?? '');
+    $pool_description = sanitize_textarea_field($_POST['pool_description'] ?? '');
+    $method = sanitize_key($_POST['method'] ?? 'seeded');
+    $studies_data = json_decode(stripslashes($_POST['pool_studies_data'] ?? '[]'), true);
+    
+    if (empty($pool_name)) {
+        wp_die(__('El nombre del pool es obligatorio.', 'eipsi-forms'));
+    }
+    
+    // Extract study IDs and probabilities
+    $study_ids = array();
+    $probabilities = array();
+    $total_prob = 0;
+    
+    foreach ($studies_data as $item) {
+        if (!empty($item['study_id']) && isset($item['probability'])) {
+            $study_ids[] = intval($item['study_id']);
+            $prob = floatval($item['probability']);
+            $probabilities[] = $prob;
+            $total_prob += $prob;
+        }
+    }
+    
+    // Validate total is 100%
+    if (abs($total_prob - 100) > 0.01) {
+        wp_die(__('La suma de probabilidades debe ser exactamente 100%.', 'eipsi-forms'));
+    }
+    
+    $now = current_time('mysql');
+    
+    if ($pool_id > 0) {
+        // Update existing pool
+        $wpdb->update(
+            $pools_table,
+            array(
+                'pool_name' => $pool_name,
+                'pool_description' => $pool_description,
+                'studies' => json_encode($study_ids),
+                'probabilities' => json_encode($probabilities),
+                'method' => $method,
+                'updated_at' => $now
+            ),
+            array('id' => $pool_id),
+            array('%s', '%s', '%s', '%s', '%s', '%s'),
+            array('%d')
+        );
+    } else {
+        // Create new pool
+        $wpdb->insert(
+            $pools_table,
+            array(
+                'pool_name' => $pool_name,
+                'pool_description' => $pool_description,
+                'studies' => json_encode($study_ids),
+                'probabilities' => json_encode($probabilities),
+                'method' => $method,
+                'status' => 'active',
+                'created_at' => $now,
+                'updated_at' => $now
+            ),
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+        );
+        $pool_id = $wpdb->insert_id;
+    }
+    
+    // Auto-create WordPress page for this pool
+    $page_id = eipsi_create_pool_page($pool_id, $pool_name);
+    $page_url = $page_id ? get_permalink($page_id) : null;
+    
+    // Redirect back with success message
+    $redirect_url = admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_' . ($pool_id > 0 ? 'updated' : 'created'));
+    
+    wp_redirect($redirect_url);
+    exit;
 }

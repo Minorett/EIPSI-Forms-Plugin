@@ -13,8 +13,8 @@ if (!defined('ABSPATH')) {
 $study_data = isset($study_data) ? $study_data : array();
 ?>
 
-<div id="eipsi-study-dashboard-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none;">
-    <div class="eipsi-modal-content dashboard-wide">
+<div id="eipsi-study-dashboard-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="study-name-display" aria-describedby="study-meta-display">
+    <div class="eipsi-modal-content dashboard-wide" role="document">
         
         <!-- Header EIPSI -->
         <div class="dash-header">
@@ -122,8 +122,14 @@ $study_data = isset($study_data) ? $study_data : array();
 
 <!-- CSS EIPSI Dashboard -->
 <style>
+/* Modal backdrop - MUST keep dark overlay regardless of light mode */
+#eipsi-study-dashboard-modal.eipsi-modal {
+    background: rgba(0, 0, 0, 0.55) !important;
+    backdrop-filter: blur(2px);
+}
+
 /* Soft Light Mode - Better contrast without harsh white */
-.eipsi-force-light-mode,
+/* NOTE: No aplicar a .eipsi-force-light-mode directamente para no pisar el backdrop */
 .eipsi-force-light-mode .eipsi-modal-content,
 .eipsi-force-light-mode .wave-card,
 .eipsi-force-light-mode table,
@@ -449,9 +455,9 @@ $study_data = isset($study_data) ? $study_data : array();
     height: 5px;
     border-radius: 3px;
 }
-.fill-green { background: #008080; }
-.fill-blue { background: #3B6CAA; }
-.fill-gray { background: #cbd5e0; }
+.fill-green { background: #008080; min-width: 8px; }
+.fill-blue { background: #3B6CAA; min-width: 8px; }
+.fill-gray { background: #cbd5e0; min-width: 8px; }
 .prog-lbl {
     font-size: 12px;
     font-weight: 500;
@@ -1979,359 +1985,9 @@ table tbody tr:hover td {
     </div>
 </div>
 
-<!-- Additional JS for Add Participant and Email Logs -->
-<script>
-(function($) {
-    // Add Participant Modal Handlers
-    $('#action-add-participant').on('click', function() {
-        $('#add-participant-study-id').val(currentStudyId);
-        $('#add-participant-form')[0].reset();
-        $('#add-participant-error').hide();
-        $('#add-participant-success').hide();
-        $('#eipsi-add-participant-modal').show();
-        $('#participant-email').focus();
-    });
-
-    $('#cancel-add-participant, #eipsi-add-participant-modal .eipsi-modal-close').on('click', function() {
-        $('#eipsi-add-participant-modal').hide();
-    });
-
-    $('#submit-add-participant').on('click', function() {
-        const $btn = $(this);
-        const originalText = $btn.text();
-        $btn.text('Guardando...').prop('disabled', true);
-
-        $('#add-participant-error').hide();
-        $('#add-participant-success').hide();
-
-        const email = $('#participant-email').val();
-        if (!email) {
-            $('#add-participant-error').text('El email es obligatorio').show();
-            $btn.text(originalText).prop('disabled', false);
-            return;
-        }
-
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'eipsi_add_participant',
-                nonce: eipsi_dashboard_nonce,
-                study_id: $('#add-participant-study-id').val(),
-                email: email
-            },
-            success: function(response) {
-                if (response.success) {
-                    let message = response.data?.message || 'Participante agregado correctamente.';
-                    if (response.data?.temporary_password) {
-                        message += '<br><strong>Contraseña temporal:</strong> ' + response.data.temporary_password;
-                    }
-                    $('#add-participant-success').html(message).show();
-                    $('#add-participant-form')[0].reset();
-                    // Refresh dashboard
-                    if (currentStudyId) loadStudyData(currentStudyId);
-                } else {
-                    $('#add-participant-error').text(response.data?.message || 'Error al agregar participante').show();
-                }
-            },
-            error: function() {
-                $('#add-participant-error').text('Error de conexión').show();
-            },
-            complete: function() {
-                $btn.text(originalText).prop('disabled', false);
-            }
-        });
-    });
-
-    // Email Logs Modal Handlers
-    let currentEmailLogPage = 1;
-
-    $('#view-email-logs').on('click', function() {
-        $('#eipsi-email-logs-modal').show();
-        loadEmailLogs(1);
-    });
-
-    $('#eipsi-email-logs-modal .eipsi-modal-close').on('click', function() {
-        $('#eipsi-email-logs-modal').hide();
-    });
-
-    $('#refresh-email-logs').on('click', function() {
-        loadEmailLogs(1);
-    });
-
-    $('#email-log-status-filter, #email-log-search').on('change input', function() {
-        loadEmailLogs(1);
-    });
-
-    function loadEmailLogs(page) {
-        const studyId = window.currentStudyId || (window.StudyDashboard && window.StudyDashboard.currentStudyId);
-        if (!studyId) {
-            console.error('[ERROR] loadEmailLogs: No studyId available');
-            return;
-        }
-        currentEmailLogPage = page;
-
-        const status = $('#email-log-status-filter').val();
-        const search = $('#email-log-search').val();
-
-        $('#email-logs-tbody').html('<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:30px;">Cargando...</td></tr>');
-
-        $.ajax({
-            url: ajaxurl,
-            type: 'GET',
-            data: {
-                action: 'eipsi_get_email_logs',
-                nonce: eipsi_dashboard_nonce,
-                study_id: studyId,
-                page: page,
-                per_page: 20,
-                status: status,
-                search: search
-            },
-            success: function(response) {
-                if (response.success && response.data) {
-                    renderEmailLogs(response.data);
-                } else {
-                    $('#email-logs-tbody').html('<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:30px;">' + (response.data || 'No hay logs') + '</td></tr>');
-                }
-            },
-            error: function() {
-                $('#email-logs-tbody').html('<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:30px;">Error de conexión</td></tr>');
-            }
-        });
-    }
-
-    function renderEmailLogs(data) {
-        const logs = data.logs || [];
-        const tbody = $('#email-logs-tbody');
-        tbody.empty();
-
-        if (logs.length === 0) {
-            tbody.append('<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:30px;">No hay emails registrados</td></tr>');
-            $('#email-logs-pagination').empty();
-            return;
-        }
-
-        logs.forEach(function(log) {
-            const statusColors = {
-                sent: '#3B6CAA',
-                delivered: '#008080',
-                clicked: '#059669',
-                failed: '#dc2626',
-                opened: '#856404'
-            };
-            const statusLabels = {
-                sent: 'Enviado',
-                delivered: 'Entregado',
-                clicked: 'Click',
-                failed: 'Fallido',
-                opened: 'Abierto'
-            };
-            const color = statusColors[log.status] || '#64748b';
-            const label = statusLabels[log.status] || log.status;
-
-            const date = new Date(log.sent_at);
-            const dateStr = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-
-            tbody.append(`
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:10px 12px;font-size:11px;color:#64748b;">${dateStr}<br>${timeStr}</td>
-                    <td style="padding:10px 12px;"><code style="font-size:11px;">${log.recipient_email || '-'}</code></td>
-                    <td style="padding:10px 12px;font-size:11px;color:#64748b;">${log.email_type || '-'}</td>
-                    <td style="padding:10px 12px;"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${color}20;color:${color};">${label}</span></td>
-                </tr>
-            `);
-        });
-
-        // Pagination
-        const totalPages = data.total_pages || 1;
-        const currentPage = data.current_page || 1;
-        renderEmailLogsPagination(totalPages, currentPage);
-    }
-
-    function renderEmailLogsPagination(totalPages, currentPage) {
-        const container = $('#email-logs-pagination');
-        if (totalPages <= 1) {
-            container.empty();
-            return;
-        }
-
-        let html = '<div class="pagination">';
-        for (let i = 1; i <= totalPages; i++) {
-            const activeClass = i === currentPage ? 'active' : '';
-            html += `<button class="page-btn ${activeClass}" data-page="${i}">${i}</button>`;
-        }
-        html += '</div>';
-        container.html(html);
-
-        container.find('.page-btn').on('click', function() {
-            loadEmailLogs($(this).data('page'));
-        });
-    }
-
-    // Close modals on ESC and outside click
-    $(document).on('keydown', function(e) {
-        if (e.key === 'Escape') {
-            $('.eipsi-modal:visible').hide();
-        }
-    });
-
-    $(document).on('click', '.eipsi-modal', function(e) {
-        if (e.target === this) {
-            $(this).hide();
-        }
-    });
-
-})(jQuery);
-</script>
-
-<!-- FALLBACK HANDLERS for buttons (in case external JS is cached) -->
-<script>
-(function($) {
-    'use strict';
-    
-    $(document).ready(function() {
-        // Add Participant
-        $('#action-add-participant').off('click').on('click', function() {
-            if (typeof openAddParticipantModal === 'function') {
-                openAddParticipantModal();
-            } else if (typeof StudyDashboard !== 'undefined' && StudyDashboard.openAddParticipant) {
-                StudyDashboard.openAddParticipant();
-            } else {
-                $('#eipsi-add-participant-modal').fadeIn(200);
-            }
-        });
-        
-        // View Participants
-        $('#action-view-participants').off('click').on('click', function() {
-            if (typeof openParticipantsModal === 'function') {
-                openParticipantsModal();
-            } else if (typeof StudyDashboard !== 'undefined' && StudyDashboard.openParticipantsList) {
-                StudyDashboard.openParticipantsList();
-            } else {
-                $('#eipsi-participants-modal').fadeIn(200);
-                $('#participants-loading').show();
-            }
-        });
-        
-        // Import CSV
-        $('#action-import-csv').off('click').on('click', function() {
-            $('#eipsi-csv-import-modal').fadeIn(200);
-        });
-        
-        // Download Data - redirect to export tab
-        $('#action-download-data').off('click').on('click', function() {
-            const studyId = window.currentStudyId || $('#study-id-display').text();
-            if (studyId) {
-                window.location.href = 'admin.php?page=eipsi-longitudinal-study&tab=export&study_id=' + studyId;
-            }
-        });
-        
-        // Copy Shortcode
-        $('#copy-shortcode').off('click').on('click', function() {
-            const text = $('#shortcode-display').text();
-            navigator.clipboard.writeText(text).then(function() {
-                alert('Shortcode copiado al portapapeles');
-            });
-        });
-        
-        // Copy Page URL
-        $('#copy-page-url').off('click').on('click', function() {
-            const text = $('#study-page-url').val();
-            navigator.clipboard.writeText(text).then(function() {
-                alert('URL copiada al portapapeles');
-            });
-        });
-        
-        // Send Global Reminder
-        $('#send-global-reminder').off('click').on('click', function() {
-            if (typeof StudyDashboard !== 'undefined' && StudyDashboard.sendGlobalReminder) {
-                StudyDashboard.sendGlobalReminder();
-            } else {
-                alert('Enviando recordatorio global...');
-            }
-        });
-    });
-})(jQuery);
-</script>
-
-<!-- FORCE EIPSI WAVE FORMAT - Overrides any other renderWaves -->
-<script>
-(function($) {
-    'use strict';
-    
-    // Override renderWaves to ensure EIPSI format is always used
-    if (typeof window.StudyDashboard !== 'undefined') {
-        const originalRender = window.StudyDashboard.renderWaves || function() {};
-        
-        window.StudyDashboard.renderWaves = function(waves) {
-            const $container = $('#waves-container');
-            if (!$container.length) return;
-            
-            $container.empty();
-            
-            if (!waves || !waves.length) {
-                $container.html('<div style="padding:20px;text-align:center;color:#64748b">No hay tomas configuradas</div>');
-                return;
-            }
-            
-            waves.forEach(function(wave, index) {
-                const waveNum = index + 1;
-                const progress = wave.progress || 0;
-                const completed = wave.completed || 0;
-                const total = wave.total || 0;
-                const hasDeadline = wave.has_due_date && wave.deadline;
-                const deadlineFormatted = wave.deadline_formatted || 'sin fecha límite';
-                const isActive = wave.status === 'active';
-                
-                const nudgeConfig = wave.nudge_config || {};
-                const nudgesEnabled = (nudgeConfig.nudge_1 && nudgeConfig.nudge_1.enabled) || 
-                                     (nudgeConfig.nudge_2 && nudgeConfig.nudge_2.enabled) || false;
-                
-                const html = '<div class="wave-card" data-wave-id="' + wave.id + '">' +
-                    '<div class="wave-card-head">' +
-                        '<div class="wave-left">' +
-                            '<span class="wave-idx">T' + waveNum + '</span>' +
-                            '<div>' +
-                                '<div class="wave-name">' + (wave.wave_name || 'Toma ' + waveNum) + '</div>' +
-                                '<div class="wave-sub">' + (wave.interval_text || '') + '</div>' +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="wave-right">' +
-                            '<span class="pill ' + (isActive ? 'pill-active' : '') + '">' + (isActive ? 'Activo' : 'Inactivo') + '</span>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="wave-body">' +
-                        '<div class="prog-row">' +
-                            '<div class="prog-track"><div class="prog-fill ' + (progress === 100 ? 'fill-green' : progress > 0 ? 'fill-blue' : 'fill-gray') + '" style="width:' + progress + '%"></div></div>' +
-                            '<span class="prog-lbl" style="color:' + (progress === 100 ? '#006666' : '#2c3e50') + '">' + completed + '/' + total + ' · ' + progress + '%</span>' +
-                        '</div>' +
-                        '<div class="deadline-row">' +
-                            '<span>Plazo:</span>' +
-                            '<span class="deadline-val ' + (hasDeadline ? '' : 'none') + '">' + deadlineFormatted + '</span>' +
-                            '<button class="btn-link" onclick="toggleDeadlineEditor(\'de' + wave.id + '\', this)">' + (hasDeadline ? 'Cambiar' : 'Asignar plazo') + '</button>' +
-                            (hasDeadline ? '<button class="btn-link btn-link-red" onclick="removeDeadline(' + wave.id + ')">Quitar</button>' : '') +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="nudge-section">' +
-                        '<div class="nudge-toggle-row" onclick="toggleNudgePanel(\'n' + wave.id + '\')">' +
-                            '<span class="nudge-lbl ' + (nudgesEnabled ? 'on' : '') + '" id="nl' + wave.id + '">' + 
-                                (nudgesEnabled ? 'Recordatorios activados' : 'Recordatorios desactivados') + 
-                            '</span>' +
-                            '<label class="toggle" onclick="event.stopPropagation()">' +
-                                '<input type="checkbox" ' + (nudgesEnabled ? 'checked' : '') + ' onchange="toggleNudgePanel(\'n' + wave.id + '\')">' +
-                                '<span class="tslider"></span>' +
-                            '</label>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>';
-                
-                $container.append(html);
-            });
-        };
-    }
-})(jQuery);
-</script>
+<!-- 
+    TODA la funcionalidad JS está en assets/js/study-dashboard.js
+    El JS externo maneja renderWaves, event delegation, y todos los handlers.
+-->
 
 </div>

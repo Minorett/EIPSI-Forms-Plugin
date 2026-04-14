@@ -1,0 +1,74 @@
+/**
+ * EIPSI Forms - Design Tokens
+ * Single source of truth for all colors in the plugin
+ * 
+ * This file defines only CSS custom properties (variables) with no actual styles.
+ * It should be loaded as a dependency before any other EIPSI CSS files.
+ * 
+ * @package EIPSI_Forms
+ * @version 2.2.0
+ */
+
+:root {
+  /* === PRIMARY === */
+  --eipsi-primary:        #3B6CAA;
+  --eipsi-primary-hover:  #1E3A5F;
+  --eipsi-primary-light:  #d6edff;
+  --eipsi-primary-subtle: #f0f6fc;
+
+  /* === SUCCESS (teal) === */
+  --eipsi-success:        #008080;
+  --eipsi-success-text:   #006666;
+  --eipsi-success-bg:     #e8f5e9;
+
+  /* === ERROR (borgoña) === */
+  --eipsi-error:          #800000;
+  --eipsi-error-text:     #660000;
+  --eipsi-error-bg:       #fff5f5;
+
+  /* === WARNING (ámbar) === */
+  --eipsi-warning:        #ffc107;
+  --eipsi-warning-text:   #856404;
+  --eipsi-warning-bg:     #fff8e5;
+
+  /* === NEUTRAL TEXT === */
+  --eipsi-text:           #2c3e50;
+  --eipsi-text-muted:     #64748b;
+  --eipsi-text-light:     #94a3b8;
+
+  /* === NEUTRAL BACKGROUND === */
+  --eipsi-bg:             #ffffff;
+  --eipsi-bg-subtle:      #f8f9fa;
+  --eipsi-bg-muted:       #f1f5f9;
+
+  /* === BORDERS === */
+  --eipsi-border:         #e2e8f0;
+  --eipsi-border-dark:    #cbd5e0;
+  --eipsi-border-light:   #f1f5f9;
+
+  /* === SHADOWS === */
+  --eipsi-shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.05);
+  --eipsi-shadow:         0 2px 8px rgba(0, 0, 0, 0.08);
+  --eipsi-shadow-lg:      0 4px 16px rgba(0, 0, 0, 0.1);
+
+  /* === SPACING === */
+  --eipsi-space-xs:       0.25rem;
+  --eipsi-space-sm:       0.5rem;
+  --eipsi-space-md:       1rem;
+  --eipsi-space-lg:       1.5rem;
+  --eipsi-space-xl:       2rem;
+
+  /* === RADIUS === */
+  --eipsi-radius-sm:      4px;
+  --eipsi-radius:         8px;
+  --eipsi-radius-lg:      12px;
+
+  /* === TYPOGRAPHY === */
+  --eipsi-font-sm:        0.875rem;
+  --eipsi-font-base:      1rem;
+  --eipsi-font-lg:        1.125rem;
+  --eipsi-font-xl:        1.25rem;
+
+  /* === TRANSITIONS === */
+  --eipsi-transition:     all 0.2s ease;
+}

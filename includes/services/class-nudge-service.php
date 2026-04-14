@@ -221,15 +221,11 @@ class EIPSI_Nudge_Service {
             return false;
         }
         
-        $has_due_date = !empty($wave->due_date);
-        
         // Use custom config if provided (from modal), otherwise use defaults
         if ($custom_config && isset($custom_config[$current_stage])) {
             $config = $custom_config[$current_stage];
             $timing_value = isset($config['hours']) ? intval($config['hours']) : 24;
             $timing_unit = isset($config['unit']) ? $config['unit'] : 'hours';
-            // v2.3.0 - Support reference_point: wave_availability or due_date
-            $reference_point = isset($config['reference_point']) ? $config['reference_point'] : 'wave_availability';
         } else {
             // Get config from wave's nudge_config JSON
             $nudge_config = isset($wave->nudge_config) ? json_decode($wave->nudge_config, true) : array();
@@ -238,16 +234,14 @@ class EIPSI_Nudge_Service {
                 $config = $nudge_config[$nudge_key];
                 $timing_value = isset($config['value']) ? intval($config['value']) : 24;
                 $timing_unit = isset($config['unit']) ? $config['unit'] : 'hours';
-                $reference_point = isset($config['reference_point']) ? $config['reference_point'] : 'wave_availability';
             } else {
-                // Fallback to defaults
-                $config = self::get_nudge_config($current_stage, $has_due_date);
+                // Fallback to defaults (simplified - no reference_point)
+                $config = self::get_nudge_config($current_stage, false);
                 if (!$config) {
                     return false;
                 }
                 $timing_value = $config['timing_days'];
                 $timing_unit = 'days';
-                $reference_point = 'wave_availability';
             }
         }
         
@@ -256,32 +250,14 @@ class EIPSI_Nudge_Service {
         
         $now = current_time('timestamp');
         
-        // v2.3.0 - Support dual reference points
-        if ($reference_point === 'due_date' && $has_due_date) {
-            // Calculate based on due date (before deadline)
-            $due_ts = strtotime($wave->due_date);
-            $trigger_ts = $due_ts - $timing_seconds;
-            
-            error_log("[EIPSI Nudge] Stage {$current_stage} - due_date mode: trigger at " . date('Y-m-d H:i:s', $trigger_ts) . " ({$timing_value} {$timing_unit} before deadline)");
-            
-            // Send if we're within the trigger window (±1 hour for cron hourly)
-            // AND we haven't passed the due date
-            return ($now >= $trigger_ts && $now < $due_ts);
-        } elseif ($reference_point === 'wave_availability') {
-            // Calculate based on available date (after wave becomes available)
-            $available_ts = strtotime($assignment->available_at);
-            $trigger_ts = $available_ts + $timing_seconds;
-            
-            error_log("[EIPSI Nudge] Stage {$current_stage} - wave_availability mode: trigger at " . date('Y-m-d H:i:s', $trigger_ts) . " ({$timing_value} {$timing_unit} after available)");
-            
-            return ($now >= $trigger_ts);
-        } else {
-            // Fallback: if due_date requested but not set, use available_at
-            $available_ts = strtotime($assignment->available_at);
-            $trigger_ts = $available_ts + $timing_seconds;
-            
-            return ($now >= $trigger_ts);
-        }
+        // Calculate based on available date (after wave becomes available)
+        // Simplified v2.4.0 - Always use wave_availability, removed reference_point
+        $available_ts = strtotime($assignment->available_at);
+        $trigger_ts = $available_ts + $timing_seconds;
+        
+        error_log("[EIPSI Nudge] Stage {$current_stage}: trigger at " . date('Y-m-d H:i:s', $trigger_ts) . " ({$timing_value} {$timing_unit} after available)");
+        
+        return ($now >= $trigger_ts);
     }
     
     /**

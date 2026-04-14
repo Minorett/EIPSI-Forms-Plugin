@@ -203,9 +203,10 @@ class EIPSI_Wave_Availability_Email_Service {
 
         // MÉTODO 2 (BACKUP): Verificar si el usuario ya interactuó con la wave
         // Esto previene duplicados incluso si el email_log se borra o el metadata falla
+        // Usamos vas_form_results que guarda las submissions de formularios
         $already_accessed = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}eipsi_form_submissions 
-             WHERE participant_id = %d AND wave_id = %d",
+            "SELECT COUNT(*) FROM {$wpdb->prefix}vas_form_results 
+             WHERE participant_id = %d AND form_id = %d",
             $participant_id, 
             $wave_id
         ));
@@ -323,11 +324,16 @@ class EIPSI_Wave_Availability_Email_Service {
         include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/emails/wave-available.php';
         $message = ob_get_clean();
 
-        // Headers
-        $headers = array('Content-Type: text/html; charset=UTF-8');
-
         // Intentar enviar usando EIPSI_Email_Service para respetar configuración SMTP
-        $sent = EIPSI_Email_Service::send_email($to, $subject, $message, $headers);
+        // send_email($survey_id, $participant_id, $to, $type, $subject, $content)
+        $sent = EIPSI_Email_Service::send_email(
+            $study_id,
+            $assignment->participant_id,
+            $to,
+            'wave_availability',
+            $subject,
+            $message
+        );
         
         if ($sent) {
             // Log exitoso

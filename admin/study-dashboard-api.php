@@ -389,6 +389,64 @@ function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
 }
 
 /**
+ * POST send global reminder to all waves in a study
+ */
+add_action('wp_ajax_eipsi_send_global_reminder', 'wp_ajax_eipsi_send_global_reminder_handler');
+function wp_ajax_eipsi_send_global_reminder_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $study_id = isset($_POST['study_id']) ? (int) $_POST['study_id'] : 0;
+    if (!$study_id) {
+        wp_send_json_error('Missing study ID');
+    }
+
+    global $wpdb;
+
+    // Get all waves for this study
+    $waves = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, survey_id FROM {$wpdb->prefix}survey_waves WHERE study_id = %d",
+        $study_id
+    ));
+
+    if (empty($waves)) {
+        wp_send_json_error('No waves found for this study');
+    }
+
+    $total_sent = 0;
+    $total_failed = 0;
+
+    // Send reminders for each wave
+    foreach ($waves as $wave) {
+        if (!$wave->survey_id) continue;
+
+        // Get active participant IDs assigned to this wave
+        $participant_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT participant_id FROM {$wpdb->prefix}survey_assignments 
+             WHERE wave_id = %d AND status = 'active'",
+            $wave->id
+        ));
+
+        if (empty($participant_ids)) continue;
+
+        // Send reminders via Email Service
+        $result = EIPSI_Email_Service::send_manual_reminders((int)$wave->survey_id, $participant_ids, $wave->id);
+        
+        $total_sent += $result['sent_count'];
+        $total_failed += $result['failed_count'];
+    }
+
+    wp_send_json_success(array(
+        'message' => sprintf(__('Se han enviado %d recordatorios globales.', 'eipsi-forms'), $total_sent),
+        'sent_count' => $total_sent,
+        'failed_count' => $total_failed
+    ));
+}
+
+/**
  * POST extend wave deadline
  */
 function wp_ajax_eipsi_extend_wave_deadline_handler() {

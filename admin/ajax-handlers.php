@@ -4096,37 +4096,28 @@ function eipsi_save_wave_nudge_config_handler() {
         $wave_id
     ));
     
-    $has_due_date = !empty($wave->due_date);
-    
     // Validate and sanitize nudge config
+    // v2.4.0 - Simplified: always use wave_availability, removed reference_point
     $valid_units = array('minutes', 'hours', 'days');
-    $valid_reference_points = array('wave_availability', 'due_date');
     $sanitized_config = array();
     
     foreach (array('nudge_1', 'nudge_2', 'nudge_3', 'nudge_4') as $nudge_key) {
         if (isset($nudge_config[$nudge_key])) {
             $nudge = $nudge_config[$nudge_key];
             
-            // Auto-set reference_point based on due_date presence
-            // If due_date exists, default to 'due_date' (before deadline)
-            // If no due_date, default to 'wave_availability' (after available)
-            $reference_point = isset($nudge['reference_point']) && in_array($nudge['reference_point'], $valid_reference_points) 
-                ? $nudge['reference_point'] 
-                : ($has_due_date ? 'due_date' : 'wave_availability');
-            
             $sanitized_config[$nudge_key] = array(
                 'enabled' => !empty($nudge['enabled']),
                 'value' => intval($nudge['value']),
-                'unit' => in_array($nudge['unit'], $valid_units) ? $nudge['unit'] : 'hours',
-                'reference_point' => $reference_point
+                'unit' => in_array($nudge['unit'], $valid_units) ? $nudge['unit'] : 'hours'
+                // reference_point removed in v2.4.0 - always wave_availability
             );
         } else {
             // Default OFF if not provided
             $sanitized_config[$nudge_key] = array(
                 'enabled' => false,
                 'value' => 24,
-                'unit' => 'hours',
-                'reference_point' => $has_due_date ? 'due_date' : 'wave_availability'
+                'unit' => 'hours'
+                // reference_point removed in v2.4.0
             );
         }
     }

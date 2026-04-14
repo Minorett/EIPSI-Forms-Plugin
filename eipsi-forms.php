@@ -23,7 +23,7 @@
     exit;
  }
 
- define('EIPSI_FORMS_VERSION', '2.0.0');
+ define('EIPSI_FORMS_VERSION', '2.0.1');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -357,19 +357,19 @@ function eipsi_enqueue_randomization_assets($hook) {
             wp_enqueue_style(
                 'eipsi-study-dashboard-css',
                 EIPSI_FORMS_PLUGIN_URL . 'assets/css/study-dashboard.css',
-                array(),
+                array('eipsi-tokens'),
                 EIPSI_FORMS_VERSION
             );
 
             wp_enqueue_script(
-                'eipsi-study-dashboard-js',
+                'eipsi-study-dashboard',
                 EIPSI_FORMS_PLUGIN_URL . 'assets/js/study-dashboard.js',
                 array('jquery'),
-                time(),
+                EIPSI_FORMS_VERSION,
                 true
             );
 
-            wp_localize_script('eipsi-study-dashboard-js', 'eipsiStudyDash', array(
+            wp_localize_script('eipsi-study-dashboard', 'eipsiStudyDash', array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('eipsi_study_dashboard_nonce'),
                 'strings' => array(
@@ -401,11 +401,19 @@ function eipsi_enqueue_admin_light_theme($hook) {
     );
 
     if (in_array($page, $eipsi_pages, true)) {
+        // Enqueue design tokens FIRST (single source of truth)
+        wp_enqueue_style(
+            'eipsi-tokens',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-tokens.css',
+            array(),
+            EIPSI_FORMS_VERSION
+        );
+
         // Enqueue the unified admin light theme
         wp_enqueue_style(
             'eipsi-admin-light-theme',
             EIPSI_FORMS_PLUGIN_URL . 'assets/css/admin-light-theme.css',
-            array(),
+            array('eipsi-tokens'),
             EIPSI_FORMS_VERSION
         );
 
@@ -413,7 +421,7 @@ function eipsi_enqueue_admin_light_theme($hook) {
         wp_enqueue_style(
             'eipsi-admin-style',
             EIPSI_FORMS_PLUGIN_URL . 'assets/css/admin-style.css',
-            array('eipsi-admin-light-theme'),
+            array('eipsi-tokens', 'eipsi-admin-light-theme'),
             EIPSI_FORMS_VERSION
         );
 
@@ -422,7 +430,7 @@ function eipsi_enqueue_admin_light_theme($hook) {
             wp_enqueue_style(
                 'eipsi-configuration-panel',
                 EIPSI_FORMS_PLUGIN_URL . 'assets/css/configuration-panel.css',
-                array('eipsi-admin-light-theme'),
+                array('eipsi-tokens', 'eipsi-admin-light-theme'),
                 EIPSI_FORMS_VERSION
             );
 
@@ -1200,12 +1208,20 @@ add_action('admin_enqueue_scripts', 'eipsi_forms_enqueue_admin_assets');
  * @since 1.3.8
  */
 function eipsi_forms_enqueue_block_editor_assets() {
+    // === CARGAR TOKENS PRIMERO (single source of truth) ===
+    wp_enqueue_style(
+        'eipsi-tokens',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-tokens.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+
     // === CARGAR CSS PRINCIPALES ===
     // 1. CSS del formulario principal - CONSUME las CSS variables
     wp_enqueue_style(
         'eipsi-forms-styles',
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-forms.css',
-        array(),
+        array('eipsi-tokens'),
         EIPSI_FORMS_VERSION
     );
 
@@ -1213,7 +1229,7 @@ function eipsi_forms_enqueue_block_editor_assets() {
     wp_enqueue_style(
         'eipsi-admin-style',
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/admin-style.css',
-        array(),
+        array('eipsi-tokens'),
         EIPSI_FORMS_VERSION
     );
 
@@ -1221,7 +1237,7 @@ function eipsi_forms_enqueue_block_editor_assets() {
     wp_enqueue_style(
         'eipsi-theme-toggle',
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/theme-toggle.css',
-        array(),
+        array('eipsi-tokens'),
         EIPSI_FORMS_VERSION
     );
 
@@ -1229,7 +1245,7 @@ function eipsi_forms_enqueue_block_editor_assets() {
     wp_enqueue_style(
         'eipsi-randomization',
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-randomization.css',
-        array(),
+        array('eipsi-tokens'),
         EIPSI_FORMS_VERSION
     );
 }
@@ -1255,11 +1271,19 @@ function eipsi_forms_enqueue_frontend_assets() {
         return;
     }
 
+    // Enqueue design tokens FIRST (single source of truth)
+    wp_enqueue_style(
+        'eipsi-tokens',
+        EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-tokens.css',
+        array(),
+        EIPSI_FORMS_VERSION
+    );
+
     // Enqueue main form CSS (no longer uses build/style-index.css - removed in v1.3.10 CSS refactor)
     wp_enqueue_style(
         'eipsi-forms-css',
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-forms.css',
-        array(),  // Removed dependency on eipsi-blocks-style (no longer exists)
+        array('eipsi-tokens'),  // Depends on tokens
         EIPSI_FORMS_VERSION
     );
 
@@ -1267,7 +1291,7 @@ function eipsi_forms_enqueue_frontend_assets() {
     wp_enqueue_style(
         'eipsi-theme-toggle-css',
         EIPSI_FORMS_PLUGIN_URL . 'assets/css/theme-toggle.css',
-        array('eipsi-forms-css'),
+        array('eipsi-tokens', 'eipsi-forms-css'),
         EIPSI_FORMS_VERSION
     );
 
