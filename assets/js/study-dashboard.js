@@ -602,8 +602,11 @@
         /**
          * Toggle deadline editor visibility
          */
-        toggleDeadlineEditor: function($editor) {
-            console.log('[FUNC] toggleDeadlineEditor called');
+        toggleDeadlineEditor: function(waveId) {
+            console.log('[FUNC] toggleDeadlineEditor called, waveId:', waveId);
+            const $editor = $(`#deadline-editor-${waveId}`);
+            console.log('[DEADLINE] Editor found:', $editor.length > 0);
+            console.log('[DEADLINE] Editor current display:', $editor.css('display'));
             const isVisible = $editor.is(':visible');
             
             if (isVisible) {
@@ -622,31 +625,43 @@
             console.log('[FUNC] saveDeadline called, waveId:', waveId);
             const date = $editor.find('.deadline-date-input').val();
             
+            console.log('[DEADLINE] Date selected:', date);
+            
             if (!date) {
+                console.error('[DEADLINE] No date provided');
                 this.showToast('Por favor seleccioná una fecha', 'error');
                 return;
             }
 
             const self = this;
+            console.log('[DEADLINE] Sending AJAX with date:', date);
+            console.log('[DEADLINE] AJAX URL:', eipsiDashboardData.ajaxUrl);
+            console.log('[DEADLINE] Nonce available:', !!eipsiDashboardData.nonce);
+            
             $.ajax({
-                url: eipsiStudyDash.ajaxUrl,
+                url: eipsiDashboardData.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'eipsi_extend_wave_deadline',
                     wave_id: waveId,
                     new_deadline: date,
-                    nonce: eipsiStudyDash.nonce
+                    nonce: eipsiDashboardData.nonce
                 },
                 success: function(response) {
+                    console.log('[DEADLINE] AJAX response:', response);
                     if (response.success) {
+                        console.log('[DEADLINE] Saved successfully');
                         self.showToast('Plazo guardado correctamente', 'success');
-                        self.loadStudyData(self.currentStudyId);
+                        self.loadStudyData();
                     } else {
-                        self.showToast('Error: ' + (response.data || 'No se pudo guardar'), 'error');
+                        console.error('[DEADLINE] Save failed:', response.data);
+                        self.showToast('Error: ' + (response.data?.message || response.data || 'No se pudo guardar'), 'error');
                     }
                 },
-                error: function() {
-                    self.showToast('Error de conexión', 'error');
+                error: function(xhr, status, error) {
+                    console.error('[DEADLINE] AJAX error:', status, error);
+                    console.error('[DEADLINE] Response text:', xhr.responseText);
+                    self.showToast('Error al guardar plazo', 'error');
                 }
             });
         },
@@ -656,10 +671,41 @@
          */
         removeDeadline: function(waveId) {
             console.log('[FUNC] removeDeadline called, waveId:', waveId);
-            if (!confirm('¿Quitar la fecha límite de esta toma?')) return;
+            if (!confirm('¿Quitar la fecha límite de esta toma?')) {
+                console.log('[DEADLINE] User cancelled remove deadline');
+                return;
+            }
             
-            // Implementation would call AJAX to remove deadline
-            this.showToast('Funcionalidad en desarrollo', 'info');
+            const self = this;
+            console.log('[DEADLINE] Sending AJAX to remove deadline');
+            console.log('[DEADLINE] AJAX URL:', eipsiDashboardData.ajaxUrl);
+            console.log('[DEADLINE] Nonce available:', !!eipsiDashboardData.nonce);
+            
+            $.ajax({
+                url: eipsiDashboardData.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_remove_wave_deadline',
+                    wave_id: waveId,
+                    nonce: eipsiDashboardData.nonce
+                },
+                success: function(response) {
+                    console.log('[DEADLINE] Remove response:', response);
+                    if (response.success) {
+                        console.log('[DEADLINE] Removed successfully');
+                        self.showToast('Plazo quitado correctamente', 'success');
+                        self.loadStudyData();
+                    } else {
+                        console.error('[DEADLINE] Remove failed:', response.data);
+                        self.showToast('Error: ' + (response.data?.message || response.data || 'No se pudo quitar'), 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[DEADLINE] Remove AJAX error:', status, error);
+                    console.error('[DEADLINE] Response text:', xhr.responseText);
+                    self.showToast('Error al quitar plazo', 'error');
+                }
+            });
         },
 
         /**
@@ -685,19 +731,55 @@
             console.log('[FUNC] saveNudgeConfig called, waveId:', waveId);
             const $card = $(`.wave-card[data-wave-id="${waveId}"]`);
             const nudges = [];
+            const enabled = $card.find('.nudge-toggle').is(':checked');
+            
+            console.log('[NUDGE] Toggle state:', enabled);
             
             // Use relative selection within the wave card
             $card.find('.nudge-row').each(function(index) {
                 const $row = $(this);
+                const val = parseInt($row.find('input[type="number"]').val()) || 24;
+                const unit = $row.find('select').val() || 'hours';
+                console.log(`[NUDGE] Row ${index}: value=${val}, unit=${unit}`);
                 nudges.push({
-                    value: parseInt($row.find('input[type="number"]').val()) || 24,
-                    unit: $row.find('select').val() || 'hours'
+                    value: val,
+                    unit: unit
                 });
             });
             
-            console.log('[NUDGE] Saving config:', nudges);
-            // AJAX call would go here
-            this.showToast('Configuración de nudges guardada', 'success');
+            console.log('[NUDGE] Saving config:', nudges, 'enabled:', enabled);
+            console.log('[NUDGE] AJAX URL:', eipsiDashboardData.ajaxUrl);
+            
+            // Make AJAX call to save nudge config
+            const self = this;
+            $.ajax({
+                url: eipsiDashboardData.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_save_wave_nudges',
+                    wave_id: waveId,
+                    nudges: nudges,
+                    enabled: enabled,
+                    nonce: eipsiDashboardData.nonce
+                },
+                success: function(response) {
+                    console.log('[NUDGE] Save response:', response);
+                    if (response.success) {
+                        console.log('[NUDGE] Saved successfully');
+                        self.showToast('Configuración de nudges guardada', 'success');
+                        self.loadStudyData();
+                    } else {
+                        console.error('[NUDGE] Save failed:', response.data);
+                        self.showToast('Error: ' + (response.data?.message || 'No se pudo guardar'), 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[NUDGE] AJAX error:', status, error);
+                    console.error('[NUDGE] Response text:', xhr.responseText);
+                    self.showToast('Error al guardar configuración de nudges', 'error');
+                }
+            });
+            
             this.toggleNudgePanel(waveId);
         },
 

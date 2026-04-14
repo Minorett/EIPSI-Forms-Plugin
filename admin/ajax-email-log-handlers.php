@@ -50,9 +50,13 @@ function eipsi_ajax_get_email_logs() {
         }
     }
 
-    $result = EIPSI_Email_Service::get_email_log_entries($survey_id, $sanitized_filters, $limit, $offset);
-
-    wp_send_json_success($result);
+    try {
+        $result = EIPSI_Email_Service::get_email_log_entries($survey_id, $sanitized_filters, $limit, $offset);
+        wp_send_json_success($result);
+    } catch (Exception $e) {
+        error_log('[EIPSI Email Logs] Error: ' . $e->getMessage());
+        wp_send_json_error(__('Error al cargar los logs de email: ', 'eipsi-forms') . $e->getMessage(), 500);
+    }
 }
 
 /**

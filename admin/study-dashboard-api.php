@@ -43,13 +43,16 @@ add_action('wp_ajax_eipsi_delete_participant', 'wp_ajax_eipsi_delete_participant
  * GET consolidated study data
  */
 function wp_ajax_eipsi_get_study_overview_handler() {
+    error_log('[EIPSI DASHBOARD API] get_study_overview called');
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
     if (!eipsi_user_can_manage_longitudinal()) {
+        error_log('[EIPSI DASHBOARD API] Unauthorized access attempt');
         wp_send_json_error('Unauthorized');
     }
 
     $study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
+    error_log("[EIPSI DASHBOARD API] Study ID: {$study_id}");
     if (empty($study_id)) {
         wp_send_json_error('Missing study ID');
     }
@@ -342,50 +345,61 @@ function wp_ajax_eipsi_get_wave_details_handler() {
  * POST send manual reminder
  */
 function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
+    error_log('[EIPSI DASHBOARD API] send_wave_reminder_manual called');
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
     if (!eipsi_user_can_manage_longitudinal()) {
+        error_log('[EIPSI DASHBOARD API] Unauthorized access attempt');
         wp_send_json_error('Unauthorized');
     }
 
     $wave_id = isset($_POST['wave_id']) ? (int) $_POST['wave_id'] : 0;
+    error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}");
     if (!$wave_id) {
         wp_send_json_error('Missing wave ID');
     }
 
-    global $wpdb;
+    try {
+        global $wpdb;
 
-    // Get survey_id from wave
-    $wave = $wpdb->get_row($wpdb->prepare(
-        "SELECT survey_id FROM {$wpdb->prefix}survey_waves WHERE id = %d",
-        $wave_id
-    ));
+        // Get study_id from wave (study_id is the survey_id in other tables)
+        $wave = $wpdb->get_row($wpdb->prepare(
+            "SELECT study_id FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+            $wave_id
+        ));
 
-    if (!$wave || empty($wave->survey_id)) {
-        wp_send_json_error('Wave not found or missing survey association');
+        if (!$wave || empty($wave->study_id)) {
+            wp_send_json_error('Wave not found or missing survey association');
+        }
+
+        $survey_id = (int) $wave->study_id;
+
+        // Get active participant IDs assigned to this wave
+        $participant_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT participant_id FROM {$wpdb->prefix}survey_assignments 
+             WHERE wave_id = %d AND status = 'active'",
+            $wave_id
+        ));
+
+        if (empty($participant_ids)) {
+            wp_send_json_error('No active participants found for this wave');
+        }
+
+        // Send reminders via Email Service
+        $result = EIPSI_Email_Service::send_manual_reminders($survey_id, $participant_ids, $wave_id);
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Se han enviado %d recordatorios.', 'eipsi-forms'), $result['sent_count']),
+            'sent' => $result['sent_count'],
+            'failed' => $result['failed_count']
+        ));
+    } catch (Exception $e) {
+        error_log('[EIPSI Reminder] Error: ' . $e->getMessage());
+        wp_send_json_error(array(
+            'message' => 'Error al enviar recordatorios: ' . $e->getMessage(),
+            'error' => 'exception'
+        ), 500);
     }
-
-    $survey_id = (int) $wave->survey_id;
-
-    // Get active participant IDs assigned to this wave
-    $participant_ids = $wpdb->get_col($wpdb->prepare(
-        "SELECT participant_id FROM {$wpdb->prefix}survey_assignments 
-         WHERE wave_id = %d AND status = 'active'",
-        $wave_id
-    ));
-
-    if (empty($participant_ids)) {
-        wp_send_json_error('No active participants found for this wave');
-    }
-
-    // Send reminders via Email Service
-    $result = EIPSI_Email_Service::send_manual_reminders($survey_id, $participant_ids, $wave_id);
-
-    wp_send_json_success(array(
-        'message' => sprintf(__('Se han enviado %d recordatorios.', 'eipsi-forms'), $result['sent_count']),
-        'sent' => $result['sent_count'],
-        'failed' => $result['failed_count']
-    ));
 }
 
 /**
@@ -393,71 +407,85 @@ function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
  */
 add_action('wp_ajax_eipsi_send_global_reminder', 'wp_ajax_eipsi_send_global_reminder_handler');
 function wp_ajax_eipsi_send_global_reminder_handler() {
+    error_log('[EIPSI DASHBOARD API] send_global_reminder called');
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
     if (!eipsi_user_can_manage_longitudinal()) {
+        error_log('[EIPSI DASHBOARD API] Unauthorized access attempt');
         wp_send_json_error('Unauthorized');
     }
 
     $study_id = isset($_POST['study_id']) ? (int) $_POST['study_id'] : 0;
+    error_log("[EIPSI DASHBOARD API] Study ID: {$study_id}");
     if (!$study_id) {
         wp_send_json_error('Missing study ID');
     }
 
-    global $wpdb;
+    try {
+        global $wpdb;
 
-    // Get all waves for this study
-    $waves = $wpdb->get_results($wpdb->prepare(
-        "SELECT id, survey_id FROM {$wpdb->prefix}survey_waves WHERE study_id = %d",
-        $study_id
-    ));
-
-    if (empty($waves)) {
-        wp_send_json_error('No waves found for this study');
-    }
-
-    $total_sent = 0;
-    $total_failed = 0;
-
-    // Send reminders for each wave
-    foreach ($waves as $wave) {
-        if (!$wave->survey_id) continue;
-
-        // Get active participant IDs assigned to this wave
-        $participant_ids = $wpdb->get_col($wpdb->prepare(
-            "SELECT participant_id FROM {$wpdb->prefix}survey_assignments 
-             WHERE wave_id = %d AND status = 'active'",
-            $wave->id
+        // Get all waves for this study
+        $waves = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, form_id FROM {$wpdb->prefix}survey_waves WHERE study_id = %d",
+            $study_id
         ));
 
-        if (empty($participant_ids)) continue;
+        if (empty($waves)) {
+            wp_send_json_error('No waves found for this study');
+        }
 
-        // Send reminders via Email Service
-        $result = EIPSI_Email_Service::send_manual_reminders((int)$wave->survey_id, $participant_ids, $wave->id);
-        
-        $total_sent += $result['sent_count'];
-        $total_failed += $result['failed_count'];
+        $total_sent = 0;
+        $total_failed = 0;
+
+        // Send reminders for each wave
+        foreach ($waves as $wave) {
+            if (!$wave->form_id) continue;
+
+            // Get active participant IDs assigned to this wave
+            $participant_ids = $wpdb->get_col($wpdb->prepare(
+                "SELECT participant_id FROM {$wpdb->prefix}survey_assignments 
+                 WHERE wave_id = %d AND status = 'active'",
+                $wave->id
+            ));
+
+            if (empty($participant_ids)) continue;
+
+            // Send reminders via Email Service (survey_id = study_id for longitudinal)
+            $result = EIPSI_Email_Service::send_manual_reminders($study_id, $participant_ids, $wave->id);
+            
+            $total_sent += $result['sent_count'];
+            $total_failed += $result['failed_count'];
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Se han enviado %d recordatorios globales.', 'eipsi-forms'), $total_sent),
+            'sent_count' => $total_sent,
+            'failed_count' => $total_failed
+        ));
+    } catch (Exception $e) {
+        error_log('[EIPSI Global Reminder] Error: ' . $e->getMessage());
+        wp_send_json_error(array(
+            'message' => 'Error al enviar recordatorios globales: ' . $e->getMessage(),
+            'error' => 'exception'
+        ), 500);
     }
-
-    wp_send_json_success(array(
-        'message' => sprintf(__('Se han enviado %d recordatorios globales.', 'eipsi-forms'), $total_sent),
-        'sent_count' => $total_sent,
-        'failed_count' => $total_failed
-    ));
 }
 
 /**
  * POST extend wave deadline
  */
 function wp_ajax_eipsi_extend_wave_deadline_handler() {
+    error_log('[EIPSI DASHBOARD API] extend_wave_deadline called');
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
     if (!eipsi_user_can_manage_longitudinal()) {
+        error_log('[EIPSI DASHBOARD API] Unauthorized access attempt');
         wp_send_json_error('Unauthorized');
     }
 
     $wave_id = isset($_POST['wave_id']) ? (int) $_POST['wave_id'] : 0;
     $new_deadline = isset($_POST['new_deadline']) ? sanitize_text_field($_POST['new_deadline']) : '';
+    error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}, New deadline: {$new_deadline}");
 
     if (!$wave_id || empty($new_deadline)) {
         wp_send_json_error('Missing parameters');
@@ -466,7 +494,7 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
     global $wpdb;
     $updated = $wpdb->update(
         "{$wpdb->prefix}survey_waves",
-        array('end_date' => $new_deadline),
+        array('due_date' => $new_deadline),
         array('id' => $wave_id),
         array('%s'),
         array('%d')
@@ -480,16 +508,62 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
 }
 
 /**
- * GET email logs
+ * POST remove wave deadline
  */
-function wp_ajax_eipsi_get_study_email_logs_handler() {
+add_action('wp_ajax_eipsi_remove_wave_deadline', 'wp_ajax_eipsi_remove_wave_deadline_handler');
+function wp_ajax_eipsi_remove_wave_deadline_handler() {
+    error_log('[EIPSI DASHBOARD API] remove_wave_deadline called');
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
     if (!eipsi_user_can_manage_longitudinal()) {
+        error_log('[EIPSI DASHBOARD API] Unauthorized access attempt');
+        wp_send_json_error('Unauthorized');
+    }
+
+    $wave_id = isset($_POST['wave_id']) ? (int) $_POST['wave_id'] : 0;
+    error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}");
+    if (!$wave_id) {
+        wp_send_json_error('Missing wave ID');
+    }
+
+    try {
+        global $wpdb;
+        $updated = $wpdb->update(
+            "{$wpdb->prefix}survey_waves",
+            array('due_date' => null),
+            array('id' => $wave_id),
+            array('%s'),
+            array('%d')
+        );
+
+        if ($updated === false) {
+            throw new Exception($wpdb->last_error);
+        }
+
+        wp_send_json_success('Deadline removed successfully');
+    } catch (Exception $e) {
+        error_log('[EIPSI Remove Deadline] Error: ' . $e->getMessage());
+        wp_send_json_error(array(
+            'message' => 'Error al quitar plazo: ' . $e->getMessage(),
+            'error' => 'exception'
+        ), 500);
+    }
+}
+
+/**
+ * GET email logs
+ */
+function wp_ajax_eipsi_get_study_email_logs_handler() {
+    error_log('[EIPSI DASHBOARD API] get_study_email_logs called');
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        error_log('[EIPSI DASHBOARD API] Unauthorized access attempt');
         wp_send_json_error('Unauthorized');
     }
 
     $study_id = isset($_GET['study_id']) ? intval($_GET['study_id']) : 0;
+    error_log("[EIPSI DASHBOARD API] Study ID: {$study_id}");
     if (empty($study_id)) {
         wp_send_json_error('Missing study ID');
     }
@@ -566,6 +640,81 @@ function wp_ajax_eipsi_resend_participant_email_handler() {
 
     // Validate participant has a valid survey_id
     $participant_survey_id = intval($participant->survey_id);
+}
+
+/**
+ * POST save wave nudge configuration
+ */
+add_action('wp_ajax_eipsi_save_wave_nudges', 'wp_ajax_eipsi_save_wave_nudges_handler');
+function wp_ajax_eipsi_save_wave_nudges_handler() {
+    error_log('[EIPSI DASHBOARD API] save_wave_nudges called');
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        error_log('[EIPSI DASHBOARD API] Unauthorized access attempt');
+        wp_send_json_error('Unauthorized');
+    }
+
+    $wave_id = isset($_POST['wave_id']) ? (int) $_POST['wave_id'] : 0;
+    $nudges = isset($_POST['nudges']) ? $_POST['nudges'] : array();
+    $enabled = isset($_POST['enabled']) ? (bool) $_POST['enabled'] : false;
+    error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}, Enabled: " . ($enabled ? 'true' : 'false') . ", Nudges count: " . count($nudges));
+
+    if (!$wave_id) {
+        wp_send_json_error('Missing wave ID');
+    }
+
+    try {
+        global $wpdb;
+
+        // Build nudge config JSON
+        $nudge_config = array(
+            'nudge_1' => array(
+                'enabled' => $enabled && !empty($nudges[0]),
+                'value' => isset($nudges[0]['value']) ? intval($nudges[0]['value']) : 24,
+                'unit' => isset($nudges[0]['unit']) ? sanitize_text_field($nudges[0]['unit']) : 'hours'
+            ),
+            'nudge_2' => array(
+                'enabled' => $enabled && !empty($nudges[1]),
+                'value' => isset($nudges[1]['value']) ? intval($nudges[1]['value']) : 72,
+                'unit' => isset($nudges[1]['unit']) ? sanitize_text_field($nudges[1]['unit']) : 'hours'
+            ),
+            'nudge_3' => array(
+                'enabled' => $enabled && !empty($nudges[2]),
+                'value' => isset($nudges[2]['value']) ? intval($nudges[2]['value']) : 168,
+                'unit' => isset($nudges[2]['unit']) ? sanitize_text_field($nudges[2]['unit']) : 'hours'
+            ),
+            'nudge_4' => array(
+                'enabled' => $enabled && !empty($nudges[3]),
+                'value' => isset($nudges[3]['value']) ? intval($nudges[3]['value']) : 336,
+                'unit' => isset($nudges[3]['unit']) ? sanitize_text_field($nudges[3]['unit']) : 'hours'
+            )
+        );
+
+        // Update wave with nudge config
+        $result = $wpdb->update(
+            $wpdb->prefix . 'survey_waves',
+            array('nudge_config' => wp_json_encode($nudge_config)),
+            array('id' => $wave_id),
+            array('%s'),
+            array('%d')
+        );
+
+        if ($result === false) {
+            throw new Exception($wpdb->last_error);
+        }
+
+        wp_send_json_success(array(
+            'message' => 'Configuración de nudges guardada',
+            'nudge_config' => $nudge_config
+        ));
+    } catch (Exception $e) {
+        error_log('[EIPSI Save Nudges] Error: ' . $e->getMessage());
+        wp_send_json_error(array(
+            'message' => 'Error al guardar nudges: ' . $e->getMessage(),
+            'error' => 'exception'
+        ), 500);
+    }
     if ($participant_survey_id <= 0) {
         wp_send_json_error(array(
             'message' => 'El participante no tiene un estudio asociado. ID de estudio inválido: ' . $participant_survey_id,
