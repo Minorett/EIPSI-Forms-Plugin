@@ -47,6 +47,7 @@ class EIPSI_Email_Service {
         
         if (!$token) {
             return false;
+        }
         // Get study code for the survey
         $study_code = self::get_study_code($survey_id);
         
