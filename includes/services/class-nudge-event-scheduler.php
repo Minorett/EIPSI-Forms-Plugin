@@ -271,23 +271,33 @@ class EIPSI_Nudge_Event_Scheduler {
             return;
         }
         
-        // Usar Job Queue si está disponible, sino enviar directamente
+        // v2.1.4 - Ejecutar nudge síncronamente (inmediatamente) para asegurar entrega sin delay
         if (class_exists('EIPSI_Nudge_Job_Queue')) {
-            $job_type = "send_nudge_{$stage}";
-            EIPSI_Nudge_Job_Queue::enqueue($job_type, array(
+            $payload = array(
                 'assignment_id' => $assignment_id,
                 'participant_id' => $assignment->participant_id,
                 'wave_id' => $assignment->wave_id,
                 'study_id' => $assignment->study_id,
                 'stage' => $stage
-            ), 10);
+            );
             
-            if (defined('WP_DEBUG') && WP_DEBUG) {
+            $result = EIPSI_Nudge_Job_Queue::execute_nudge_followup($payload, $stage);
+            
+            if ($result['success']) {
                 error_log(sprintf(
-                    '[EIPSI EventScheduler] Enqueued nudge %d for assignment %d',
+                    '[EIPSI EventScheduler] Nudge %d executed successfully for assignment %d',
                     $stage,
                     $assignment_id
                 ));
+            } else {
+                error_log(sprintf(
+                    '[EIPSI EventScheduler] Nudge %d execution FAILED for assignment %d: %s',
+                    $stage,
+                    $assignment_id,
+                    $result['error'] ?? 'unknown'
+                ));
+                // Fallback: enqueue for retry
+                EIPSI_Nudge_Job_Queue::enqueue("send_nudge_{$stage}", $payload, 10);
             }
         } else {
             // Fallback: envío directo (no recomendado)
