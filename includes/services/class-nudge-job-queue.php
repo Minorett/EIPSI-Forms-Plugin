@@ -388,11 +388,20 @@ class EIPSI_Nudge_Job_Queue {
             $assignment->study_id
         );
         
-        // El servicio ya actualiza reminder_count si tiene éxito
+        // v2.1.3 - Actualizar reminder_count después de enviar Nudge 0
         if ($result['success'] && $result['sent']) {
+            global $wpdb;
+            $wpdb->update(
+                $wpdb->prefix . 'survey_assignments',
+                array('reminder_count' => 1),
+                array('id' => $assignment_id),
+                array('%d'),
+                array('%d')
+            );
+            
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log(sprintf(
-                    '[EIPSI JobQueue] Nudge 0 email ENVIADO: assignment=%d, participant=%d',
+                    '[EIPSI JobQueue] Nudge 0 email ENVIADO: assignment=%d, participant=%d, reminder_count=1',
                     $assignment_id,
                     $assignment->participant_id
                 ));
