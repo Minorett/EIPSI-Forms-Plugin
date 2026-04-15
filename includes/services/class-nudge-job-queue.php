@@ -323,8 +323,9 @@ class EIPSI_Nudge_Job_Queue {
     
     /**
      * Ejecutar Nudge 0 (disponibilidad de wave)
+     * v2.1.4 - Cambiado a público para permitir ejecución síncrona desde el scheduler
      */
-    private static function execute_nudge_0($payload) {
+    public static function execute_nudge_0($payload) {
         $assignment_id = isset($payload['assignment_id']) ? intval($payload['assignment_id']) : 0;
         
         if (!$assignment_id) {

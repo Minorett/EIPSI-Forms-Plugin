@@ -165,20 +165,31 @@ class EIPSI_Nudge_Event_Scheduler {
             }
         }
         
-        // También programar inmediatamente el Nudge 0 (disponibilidad)
-        // Si hay Job Queue, se encola inmediatamente
+        // v2.1.4 - Ejecutar Nudge 0 síncronamente (inmediatamente) para asegurar que reminder_count se actualice antes de los siguientes nudges
         if (class_exists('EIPSI_Nudge_Job_Queue')) {
-            error_log(sprintf('[EIPSI EventScheduler] Enqueuing Nudge 0 (immediate availability) for assignment %d', $assignment_id));
-            EIPSI_Nudge_Job_Queue::enqueue('send_nudge_0', array(
+            error_log(sprintf('[EIPSI EventScheduler] Executing Nudge 0 SYNCHRONOUSLY for assignment %d', $assignment_id));
+            $nudge_0_result = EIPSI_Nudge_Job_Queue::execute_nudge_0(array(
                 'assignment_id' => $assignment_id,
                 'participant_id' => $assignment->participant_id,
                 'wave_id' => $assignment->wave_id,
                 'study_id' => $assignment->study_id
-            ), 5);
+            ));
             
-            $scheduled_count++;
+            if ($nudge_0_result['success']) {
+                error_log(sprintf('[EIPSI EventScheduler] Nudge 0 executed successfully for assignment %d', $assignment_id));
+                $scheduled_count++;
+            } else {
+                error_log(sprintf('[EIPSI EventScheduler] Nudge 0 execution FAILED for assignment %d: %s', $assignment_id, $nudge_0_result['error'] ?? 'unknown'));
+                // Fallback: enqueue for retry
+                EIPSI_Nudge_Job_Queue::enqueue('send_nudge_0', array(
+                    'assignment_id' => $assignment_id,
+                    'participant_id' => $assignment->participant_id,
+                    'wave_id' => $assignment->wave_id,
+                    'study_id' => $assignment->study_id
+                ), 5);
+            }
         } else {
-            error_log(sprintf('[EIPSI EventScheduler] EIPSI_Nudge_JobQueue class NOT FOUND - cannot enqueue Nudge 0'));
+            error_log(sprintf('[EIPSI EventScheduler] EIPSI_Nudge_JobQueue class NOT FOUND - cannot execute Nudge 0'));
         }
         
         error_log(sprintf('[EIPSI EventScheduler] COMPLETED: Scheduled %d nudges for assignment %d', $scheduled_count, $assignment_id));
