@@ -32,6 +32,9 @@ class EIPSI_Nudge_Event_Scheduler {
         
         // Hook para cuando una wave se hace disponible
         add_action('eipsi_wave_available', array(__CLASS__, 'schedule_nudge_sequence'), 10, 1);
+        
+        // Hook para reintento programado cuando wave no estaba disponible inicialmente
+        add_action('eipsi_wave_available_retry', array(__CLASS__, 'schedule_nudge_sequence'), 10, 1);
     }
     
     /**
@@ -86,88 +89,12 @@ class EIPSI_Nudge_Event_Scheduler {
         
         $scheduled_count = 0;
         
-        // v2.1.1 - Los nudges son acumulativos: cada uno empieza DESPUÉS del anterior
-        // Esto permite configurar "1 min después" para todos y que lleguen secuencialmente
-        $cumulative_delay = 0; // Segundos acumulados desde available_at
+        // v2.1.7 - PRIMERO ejecutar Nudge 0, LUEGO programar nudges 1-4 solo si tuvo éxito
+        // Esto evita que queden nudges programados para un assignment que nunca recibió Nudge 0
+        $nudge_0_success = false;
         
-        // Programar cada nudge según su configuración
-        for ($stage = 1; $stage <= 4; $stage++) {
-            $nudge_key = "nudge_{$stage}";
-            
-            // Verificar si está habilitado
-            if (!isset($nudge_config[$nudge_key]) || empty($nudge_config[$nudge_key]['enabled'])) {
-                continue;
-            }
-            
-            $config = $nudge_config[$nudge_key];
-            $value = isset($config['value']) ? floatval($config['value']) : ($stage * 24);
-            $unit = isset($config['unit']) ? $config['unit'] : 'hours';
-            
-            // v2.1.1 - Acumular el delay del nudge anterior
-            $delay_seconds = self::convert_to_seconds($value, $unit);
-            $cumulative_delay += $delay_seconds;
-            $scheduled_time = $available_at + $cumulative_delay;
-            
-            error_log(sprintf('[EIPSI EventScheduler] Nudge %d: +%d seconds (total: %d seconds from available)', 
-                $stage, $delay_seconds, $cumulative_delay));
-            
-            // No programar en el pasado
-            if ($scheduled_time <= current_time('timestamp')) {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log(sprintf(
-                        '[EIPSI EventScheduler] Skipping nudge %d for assignment %d - time already passed',
-                        $stage,
-                        $assignment_id
-                    ));
-                }
-                continue;
-            }
-            
-            // Programar el evento exacto
-            $event_args = array(
-                'assignment_id' => $assignment_id,
-                'stage' => $stage,
-                'scheduled_at' => $scheduled_time
-            );
-            
-            // Crear identificador único para este evento
-            $event_key = self::get_event_key($assignment_id, $stage);
-            
-            // Limpiar evento previo si existe (evita duplicados)
-            wp_clear_scheduled_hook(self::NUDGE_EVENT_HOOK, array($event_args));
-            
-            // Programar nuevo evento
-            error_log(sprintf('[EIPSI EventScheduler] Scheduling nudge %d at %s (delay: %d seconds)', 
-                $stage, date('Y-m-d H:i:s', $scheduled_time), $delay_seconds));
-            
-            $scheduled = wp_schedule_single_event($scheduled_time, self::NUDGE_EVENT_HOOK, array($event_args));
-            
-            if ($scheduled === false) {
-                error_log(sprintf(
-                    '[EIPSI EventScheduler] FAILED to schedule nudge %d for assignment %d at %s',
-                    $stage,
-                    $assignment_id,
-                    date('Y-m-d H:i:s', $scheduled_time)
-                ));
-            } else {
-                $scheduled_count++;
-                
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log(sprintf(
-                        '[EIPSI EventScheduler] Scheduled nudge %d for assignment %d at %s (delay: %d %s)',
-                        $stage,
-                        $assignment_id,
-                        date('Y-m-d H:i:s', $scheduled_time),
-                        $value,
-                        $unit
-                    ));
-                }
-            }
-        }
-        
-        // v2.1.4 - Ejecutar Nudge 0 síncronamente (inmediatamente) para asegurar que reminder_count se actualice antes de los siguientes nudges
         if (class_exists('EIPSI_Nudge_Job_Queue')) {
-            error_log(sprintf('[EIPSI EventScheduler] Executing Nudge 0 SYNCHRONOUSLY for assignment %d', $assignment_id));
+            error_log(sprintf('[EIPSI EventScheduler] STEP 1: Executing Nudge 0 SYNCHRONOUSLY for assignment %d', $assignment_id));
             $nudge_0_result = EIPSI_Nudge_Job_Queue::execute_nudge_0(array(
                 'assignment_id' => $assignment_id,
                 'participant_id' => $assignment->participant_id,
@@ -176,20 +103,137 @@ class EIPSI_Nudge_Event_Scheduler {
             ));
             
             if ($nudge_0_result['success']) {
-                error_log(sprintf('[EIPSI EventScheduler] Nudge 0 executed successfully for assignment %d', $assignment_id));
+                error_log(sprintf('[EIPSI EventScheduler] Nudge 0 executed SUCCESSFULLY for assignment %d', $assignment_id));
                 $scheduled_count++;
+                $nudge_0_success = true;
             } else {
-                error_log(sprintf('[EIPSI EventScheduler] Nudge 0 execution FAILED for assignment %d: %s', $assignment_id, $nudge_0_result['error'] ?? 'unknown'));
-                // Fallback: enqueue for retry
-                EIPSI_Nudge_Job_Queue::enqueue('send_nudge_0', array(
-                    'assignment_id' => $assignment_id,
-                    'participant_id' => $assignment->participant_id,
-                    'wave_id' => $assignment->wave_id,
-                    'study_id' => $assignment->study_id
-                ), 5);
+                $error_msg = $nudge_0_result['error'] ?? 'unknown';
+                error_log(sprintf('[EIPSI EventScheduler] Nudge 0 execution FAILED for assignment %d: %s', $assignment_id, $error_msg));
+                
+                // v2.1.7 - Si falló porque la wave no está disponible, programar reintento exacto
+                if (strpos($error_msg, 'Wave not yet available') !== false || strpos($error_msg, 'not yet available') !== false) {
+                    $retry_time = !empty($assignment->available_at) ? strtotime($assignment->available_at) : time() + 60;
+                    error_log(sprintf(
+                        '[EIPSI EventScheduler] RESCHEDULING: Nudge 0 for assignment %d will retry at %s (when wave becomes available)',
+                        $assignment_id,
+                        date('Y-m-d H:i:s', $retry_time)
+                    ));
+                    
+                    // Programar reintento exacto en available_at
+                    wp_schedule_single_event($retry_time, 'eipsi_wave_available_retry', array($assignment_id));
+                    
+                    // También encolar en Job Queue como backup
+                    EIPSI_Nudge_Job_Queue::enqueue('send_nudge_0', array(
+                        'assignment_id' => $assignment_id,
+                        'participant_id' => $assignment->participant_id,
+                        'wave_id' => $assignment->wave_id,
+                        'study_id' => $assignment->study_id
+                    ), 5, date('Y-m-d H:i:s', $retry_time));
+                } else {
+                    // Fallback genérico: retry en 5 minutos
+                    EIPSI_Nudge_Job_Queue::enqueue('send_nudge_0', array(
+                        'assignment_id' => $assignment_id,
+                        'participant_id' => $assignment->participant_id,
+                        'wave_id' => $assignment->wave_id,
+                        'study_id' => $assignment->study_id
+                    ), 5);
+                }
+                
+                // Si Nudge 0 falló, NO programar los nudges de seguimiento
+                error_log(sprintf('[EIPSI EventScheduler] ABORTING: Nudge 0 failed, not scheduling follow-up nudges for assignment %d', $assignment_id));
+                error_log(sprintf('[EIPSI EventScheduler] COMPLETED: Scheduled %d nudges for assignment %d', $scheduled_count, $assignment_id));
+                error_log(sprintf('[EIPSI EventScheduler] ========================================'));
+                return $scheduled_count;
             }
         } else {
             error_log(sprintf('[EIPSI EventScheduler] EIPSI_Nudge_JobQueue class NOT FOUND - cannot execute Nudge 0'));
+            return 0;
+        }
+        
+        // v2.1.7 - STEP 2: Solo si Nudge 0 tuvo éxito, programar nudges 1-4
+        if ($nudge_0_success && !empty($assignment->follow_up_reminders_enabled)) {
+            error_log(sprintf('[EIPSI EventScheduler] STEP 2: Scheduling follow-up nudges for assignment %d', $assignment_id));
+            
+            // v2.1.1 - Los nudges son acumulativos: cada uno empieza DESPUÉS del anterior
+            $cumulative_delay = 0;
+            
+            for ($stage = 1; $stage <= 4; $stage++) {
+                $nudge_key = "nudge_{$stage}";
+                
+                // Verificar si está habilitado
+                if (!isset($nudge_config[$nudge_key]) || empty($nudge_config[$nudge_key]['enabled'])) {
+                    continue;
+                }
+                
+                $config = $nudge_config[$nudge_key];
+                $value = isset($config['value']) ? floatval($config['value']) : ($stage * 24);
+                $unit = isset($config['unit']) ? $config['unit'] : 'hours';
+                
+                // v2.1.1 - Acumular el delay del nudge anterior
+                $delay_seconds = self::convert_to_seconds($value, $unit);
+                $cumulative_delay += $delay_seconds;
+                $scheduled_time = $available_at + $cumulative_delay;
+                
+                error_log(sprintf('[EIPSI EventScheduler] Nudge %d: +%d seconds (total: %d seconds from available)', 
+                    $stage, $delay_seconds, $cumulative_delay));
+                
+                // No programar en el pasado
+                if ($scheduled_time <= current_time('timestamp')) {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log(sprintf(
+                            '[EIPSI EventScheduler] Skipping nudge %d for assignment %d - time already passed',
+                            $stage,
+                            $assignment_id
+                        ));
+                    }
+                    continue;
+                }
+                
+                // Programar el evento exacto
+                $event_args = array(
+                    'assignment_id' => $assignment_id,
+                    'stage' => $stage,
+                    'scheduled_at' => $scheduled_time
+                );
+                
+                // Crear identificador único para este evento
+                $event_key = self::get_event_key($assignment_id, $stage);
+                
+                // Limpiar evento previo si existe (evita duplicados)
+                wp_clear_scheduled_hook(self::NUDGE_EVENT_HOOK, array($event_args));
+                
+                // Programar nuevo evento
+                error_log(sprintf('[EIPSI EventScheduler] Scheduling nudge %d at %s (delay: %d seconds)', 
+                    $stage, date('Y-m-d H:i:s', $scheduled_time), $delay_seconds));
+                
+                $scheduled = wp_schedule_single_event($scheduled_time, self::NUDGE_EVENT_HOOK, array($event_args));
+                
+                if ($scheduled === false) {
+                    error_log(sprintf(
+                        '[EIPSI EventScheduler] FAILED to schedule nudge %d for assignment %d at %s',
+                        $stage,
+                        $assignment_id,
+                        date('Y-m-d H:i:s', $scheduled_time)
+                    ));
+                } else {
+                    $scheduled_count++;
+                    
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log(sprintf(
+                            '[EIPSI EventScheduler] Scheduled nudge %d for assignment %d at %s (delay: %d %s)',
+                            $stage,
+                            $assignment_id,
+                            date('Y-m-d H:i:s', $scheduled_time),
+                            $value,
+                            $unit
+                        ));
+                    }
+                }
+            }
+        } else if (!$nudge_0_success) {
+            error_log(sprintf('[EIPSI EventScheduler] SKIPPING follow-up nudges: Nudge 0 failed for assignment %d', $assignment_id));
+        } else {
+            error_log(sprintf('[EIPSI EventScheduler] SKIPPING follow-up nudges: disabled for assignment %d', $assignment_id));
         }
         
         error_log(sprintf('[EIPSI EventScheduler] COMPLETED: Scheduled %d nudges for assignment %d', $scheduled_count, $assignment_id));
