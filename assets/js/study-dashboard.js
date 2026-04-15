@@ -787,10 +787,21 @@
             console.log('[NUDGE] Toggle state:', enabled);
             const $panel = $card.find('.nudge-panel');
             const isOpen = $panel.is(':visible');
+            const self = this;
             
             if (isOpen) {
-                $panel.slideUp(200);
+                $panel.slideUp(200, function() {
+                    // v2.5.0 - Reanudar auto-refresh cuando se cierra el panel
+                    if (!self.isAnyNudgePanelOpen()) {
+                        console.log('[NUDGE] Panel closed, resuming auto-refresh');
+                        self.startAutoRefresh();
+                    }
+                });
             } else {
+                // v2.5.0 - Pausar auto-refresh mientras se edita
+                console.log('[NUDGE] Panel opening, pausing auto-refresh');
+                this.stopAutoRefresh();
+                
                 $panel.slideDown(200);
                 // v2.5.0 - Auto-enable nudges when opening panel (if not already enabled)
                 if (!enabled) {
@@ -887,6 +898,13 @@
         },
 
         /**
+         * Check if any nudge panel is currently open
+         */
+        isAnyNudgePanelOpen: function() {
+            return $('.nudge-panel:visible').length > 0;
+        },
+
+        /**
          * Start auto-refresh interval
          */
         startAutoRefresh: function() {
@@ -895,6 +913,11 @@
             this.stopAutoRefresh();
             this.autoRefreshInterval = setInterval(function() {
                 if (self.currentStudyId) {
+                    // v2.5.0 - Skip auto-refresh if user is editing nudges
+                    if (self.isAnyNudgePanelOpen()) {
+                        console.log('[AUTO] Skipping refresh - nudge panel is open');
+                        return;
+                    }
                     console.log('[AUTO] Refreshing study data...');
                     self.loadStudyData(self.currentStudyId);
                 }

@@ -18,7 +18,7 @@ $css_ver = EIPSI_FORMS_VERSION . '.' . time();
 wp_enqueue_style('eipsi-tokens', EIPSI_FORMS_PLUGIN_URL . 'assets/css/eipsi-tokens.css', array(), $css_ver);
 wp_enqueue_style('eipsi-longitudinal-studies-tab', EIPSI_FORMS_PLUGIN_URL . 'assets/css/longitudinal-studies-tab.css', array('eipsi-tokens'), $css_ver);
 wp_enqueue_style('eipsi-study-dashboard-css', EIPSI_FORMS_PLUGIN_URL . 'assets/css/study-dashboard.css', array('eipsi-tokens'), $css_ver);
-wp_enqueue_script('eipsi-study-dashboard', EIPSI_FORMS_PLUGIN_URL . 'assets/js/study-dashboard.js', array('jquery'), time(), true);
+wp_enqueue_script('eipsi-study-dashboard', EIPSI_FORMS_PLUGIN_URL . 'assets/js/study-dashboard.js', array('jquery'), $css_ver, true);
 
 // Localize data for JS
 wp_localize_script('eipsi-study-dashboard', 'eipsiStudyDash', array(
