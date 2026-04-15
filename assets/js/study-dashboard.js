@@ -598,7 +598,7 @@
                             '<input type="number" value="' + minutes + '" id="nudge-' + wave.id + '-' + i + '-val" min="1" class="nudge-minutes-input">' +
                             '<span class="nudge-unit-label">minutos</span>' +
                             '<span class="nudge-translation" id="ntrans-' + wave.id + '-' + i + '">' + timeLabel + '</span>' +
-                            '<span class="nudge-suffix">después de disponible</span>' +
+                            '<span class="nudge-suffix">después del anterior</span>' +
                         '</div>';
                 }
 
@@ -1384,7 +1384,8 @@
             data.forEach(function(log) {
                 const statusClass = log.status === 'sent' ? 'status-sent' : 'status-failed';
                 const statusText = log.status === 'sent' ? 'Enviado' : 'Fallido';
-                const date = log.sent_at ? new Date(log.sent_at).toLocaleString() : '-';
+                // v2.1.2 - Usar fecha formateada del servidor (zona horaria de WordPress)
+                const date = log.sent_at_formatted || (log.sent_at ? new Date(log.sent_at).toLocaleString() : '-');
                 const row = `
                     <tr>
                         <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${date}</td>

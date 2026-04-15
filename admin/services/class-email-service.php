@@ -1026,6 +1026,19 @@ class EIPSI_Email_Service {
         
         $logs = $wpdb->get_results($wpdb->prepare($query, $params));
         
+        // v2.1.2 - Formatear fechas según zona horaria de WordPress
+        foreach ($logs as &$log) {
+            if (!empty($log->sent_at)) {
+                $timestamp = strtotime($log->sent_at);
+                $log->sent_at_formatted = wp_date(
+                    get_option('date_format') . ' ' . get_option('time_format'), 
+                    $timestamp
+                );
+            } else {
+                $log->sent_at_formatted = '-';
+            }
+        }
+        
         return array(
             'logs' => $logs,
             'total' => (int) $total

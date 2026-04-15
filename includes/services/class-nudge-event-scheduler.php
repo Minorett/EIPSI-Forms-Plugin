@@ -86,6 +86,10 @@ class EIPSI_Nudge_Event_Scheduler {
         
         $scheduled_count = 0;
         
+        // v2.1.1 - Los nudges son acumulativos: cada uno empieza DESPUÉS del anterior
+        // Esto permite configurar "1 min después" para todos y que lleguen secuencialmente
+        $cumulative_delay = 0; // Segundos acumulados desde available_at
+        
         // Programar cada nudge según su configuración
         for ($stage = 1; $stage <= 4; $stage++) {
             $nudge_key = "nudge_{$stage}";
@@ -99,9 +103,13 @@ class EIPSI_Nudge_Event_Scheduler {
             $value = isset($config['value']) ? floatval($config['value']) : ($stage * 24);
             $unit = isset($config['unit']) ? $config['unit'] : 'hours';
             
-            // Convertir a segundos desde available_at
+            // v2.1.1 - Acumular el delay del nudge anterior
             $delay_seconds = self::convert_to_seconds($value, $unit);
-            $scheduled_time = $available_at + $delay_seconds;
+            $cumulative_delay += $delay_seconds;
+            $scheduled_time = $available_at + $cumulative_delay;
+            
+            error_log(sprintf('[EIPSI EventScheduler] Nudge %d: +%d seconds (total: %d seconds from available)', 
+                $stage, $delay_seconds, $cumulative_delay));
             
             // No programar en el pasado
             if ($scheduled_time <= current_time('timestamp')) {

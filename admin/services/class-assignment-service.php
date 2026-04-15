@@ -623,6 +623,15 @@ class EIPSI_Assignment_Service {
                 }
             } else {
                 $result['created']++;
+                $assignment_id = (int) $wpdb->insert_id;
+                
+                // v2.5.3 - Disparar evento para programar nudges SIEMPRE (incluye T1)
+                // Para T1, el available_at es inmediato, así que los nudges empiezan ahora
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log(sprintf('[EIPSI-DIAG-CREATE] Firing eipsi_wave_available for assignment %d (wave %d)', 
+                        $assignment_id, $wave->id));
+                }
+                do_action('eipsi_wave_available', $assignment_id);
             }
         }
 
