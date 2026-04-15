@@ -110,6 +110,21 @@ class EIPSI_Survey_Access_Handler {
             array( '%d' )
         );
 
+        // v2.1.5 - Send welcome email FIRST, then create assignments (to ensure correct order)
+        // Load email service
+        if ( ! class_exists( 'EIPSI_Email_Service' ) ) {
+            $email_service_path = EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
+            if ( file_exists( $email_service_path ) ) {
+                require_once $email_service_path;
+            }
+        }
+
+        // Send welcome email with magic link FIRST
+        if ( class_exists( 'EIPSI_Email_Service' ) ) {
+            EIPSI_Email_Service::send_welcome_after_confirmation( $survey_id, $participant_id );
+            error_log(sprintf('[EIPSI-DIAG-EMAIL] Welcome email sent FIRST for participant_id=%d', $participant_id));
+        }
+
         // v1.5.7 - Create wave assignments for the participant after email confirmation
         // Load assignment service if not already loaded
         // ✅ FIX: Verificar función global, no la clase (ambos están en el mismo archivo)
@@ -136,7 +151,7 @@ class EIPSI_Survey_Access_Handler {
             error_log('[EIPSI-DIAG-EMAIL] Función ya existía previamente');
         }
 
-        // Create assignments for all active waves of the study
+        // Create assignments for all active waves of the study (AFTER welcome email)
         if ( function_exists( 'eipsi_create_assignments_for_participant' ) ) {
             $assignment_result = eipsi_create_assignments_for_participant( $participant_id, $survey_id );
             
@@ -153,18 +168,6 @@ class EIPSI_Survey_Access_Handler {
             }
         } else {
             error_log( '[EIPSI-DIAG-EMAIL] ERROR: eipsi_create_assignments_for_participant function not available!' );
-        }
-
-        // Send welcome email with magic link.
-        if ( ! class_exists( 'EIPSI_Email_Service' ) ) {
-            $email_service_path = EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-email-service.php';
-            if ( file_exists( $email_service_path ) ) {
-                require_once $email_service_path;
-            }
-        }
-
-        if ( class_exists( 'EIPSI_Email_Service' ) ) {
-            EIPSI_Email_Service::send_welcome_after_confirmation( $survey_id, $participant_id );
         }
 
         // Redirect to login with confirmation message.

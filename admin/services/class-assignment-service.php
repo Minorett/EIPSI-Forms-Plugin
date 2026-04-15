@@ -625,13 +625,22 @@ class EIPSI_Assignment_Service {
                 $result['created']++;
                 $assignment_id = (int) $wpdb->insert_id;
                 
-                // v2.5.3 - Disparar evento para programar nudges SIEMPRE (incluye T1)
-                // Para T1, el available_at es inmediato, así que los nudges empiezan ahora
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log(sprintf('[EIPSI-DIAG-CREATE] Firing eipsi_wave_available for assignment %d (wave %d)', 
-                        $assignment_id, $wave->id));
+                // v2.1.5 - Solo disparar evento para la PRIMERA wave activa (menor wave_index)
+                // Las waves posteriores se activarán automáticamente cuando se complete la anterior
+                $is_first_wave = ($wave->wave_index == $active_waves[0]->wave_index);
+                
+                if ($is_first_wave) {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log(sprintf('[EIPSI-DIAG-CREATE] Firing eipsi_wave_available for assignment %d (wave %d, FIRST wave)', 
+                            $assignment_id, $wave->id));
+                    }
+                    do_action('eipsi_wave_available', $assignment_id);
+                } else {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log(sprintf('[EIPSI-DIAG-CREATE] Assignment %d created for wave %d (wave_index=%d) - nudges will start when previous wave is completed', 
+                            $assignment_id, $wave->id, $wave->wave_index));
+                    }
                 }
-                do_action('eipsi_wave_available', $assignment_id);
             }
         }
 
