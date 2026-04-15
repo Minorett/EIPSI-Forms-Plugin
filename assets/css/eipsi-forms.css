@@ -550,6 +550,14 @@
     font-weight: var(--eipsi-font-weight-bold, 700);
 }
 
+/* v2.5.2 - Asterisco para legend (radio y checkbox múltiple) */
+.form-group legend.required::after,
+.eipsi-field legend.required::after {
+    content: " *";
+    color: var(--eipsi-color-error, #800000);
+    font-weight: var(--eipsi-font-weight-bold, 700);
+}
+
 /* Helper Text */
 .field-helper {
     color: var(--eipsi-color-text-muted, #6c757d);

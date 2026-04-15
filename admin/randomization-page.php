@@ -1234,10 +1234,13 @@ function eipsi_display_randomization() {
                     <select name="form_select[]" required style="flex:1;min-width:200px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;">
                         <option value=""><?php echo esc_js(__('Seleccionar formulario...', 'eipsi-forms')); ?></option>
                         <?php 
-                        $forms = get_posts(array('post_type' => 'eipsi_form', 'posts_per_page' => -1, 'post_status' => 'publish'));
-                        foreach ($forms as $form) : ?>
-                            <option value="<?php echo esc_js($form->ID); ?>" ${formId == <?php echo esc_js($form->ID); ?> ? 'selected' : ''}>
-                                <?php echo esc_js($form->post_title); ?>
+                        // v2.5.1 - Obtener formularios de la tabla de resultados (igual que submissions-tab)
+                        global $wpdb;
+                        $results_table = $wpdb->prefix . 'vas_form_results';
+                        $form_ids = $wpdb->get_col("SELECT DISTINCT form_id FROM {$results_table} WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
+                        foreach ($form_ids as $form_id) : ?>
+                            <option value="<?php echo esc_js($form_id); ?>" ${formId == '<?php echo esc_js($form_id); ?>' ? 'selected' : ''}>
+                                <?php echo esc_js($form_id); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

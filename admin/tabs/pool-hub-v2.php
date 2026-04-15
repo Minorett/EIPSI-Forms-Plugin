@@ -131,18 +131,7 @@ function eipsi_render_pool_hub_v2() {
                     <button
                         class="button button-primary eipsi-create-pool-btn"
                         data-open-modal="create"
-                        onclick="
-                            console.log('[POOL-HUB] Botón Crear primer pool clickeado');
-                            console.log('[POOL-HUB] Verificando elementos:');
-                            console.log('  - #eipsi-pool-modal existe:', jQuery('#eipsi-pool-modal').length > 0);
-                            console.log('  - jQuery disponible:', typeof jQuery !== 'undefined');
-                            try {
-                                jQuery('#eipsi-pool-modal').css('display', 'flex');
-                                console.log('[POOL-HUB] Modal abierto exitosamente');
-                            } catch(e) {
-                                console.error('[POOL-HUB] Error al abrir modal:', e);
-                                alert('Error al abrir modal: ' + e.message);
-                            }"
+                        onclick="openEipsiPoolModal();"
                         style="
                             background: var(--eipsi-primary);
                             color: #ffffff;
@@ -228,7 +217,7 @@ function eipsi_render_pool_hub_v2() {
                             <div class="eipsi-empty-icon">🏊</div>
                             <h3><?php _e('No hay pools aún', 'eipsi-forms'); ?></h3>
                             <p><?php _e('Crea tu primer pool para comenzar a asignar participantes.', 'eipsi-forms'); ?></p>
-                            <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#eipsi-pool-modal').css('display', 'flex');">
+                            <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="openEipsiPoolModal();">
                                 <?php _e('Crear primer pool', 'eipsi-forms'); ?>
                             </button>
                         </div>
@@ -277,7 +266,7 @@ function eipsi_render_pool_hub_v2() {
         <div class="eipsi-subtab-content" id="subtab-pools" style="display: none;">
             <div class="eipsi-pools-header">
                 <h2><?php _e('Gestión de Pools', 'eipsi-forms'); ?></h2>
-                <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#eipsi-pool-modal').css('display', 'flex');">
+                <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="openEipsiPoolModal();">
                     + <?php _e('Nuevo Pool', 'eipsi-forms'); ?>
                 </button>
             </div>
@@ -287,7 +276,7 @@ function eipsi_render_pool_hub_v2() {
                     <div class="eipsi-empty-icon">🏊</div>
                     <h3><?php _e('No hay pools creados', 'eipsi-forms'); ?></h3>
                     <p><?php _e('Los pools te permiten distribuir participantes entre múltiples estudios con probabilidades configurables.', 'eipsi-forms'); ?></p>
-                    <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="jQuery('#eipsi-pool-modal').css('display', 'flex');">
+                    <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="openEipsiPoolModal();">
                         <?php _e('Crear mi primer pool', 'eipsi-forms'); ?>
                     </button>
                 </div>
@@ -1405,6 +1394,46 @@ function eipsi_render_pool_hub_v2() {
             }
         }
 
+        // v2.2.4 - Funciones específicas para handlers inline (compatibilidad con randomization modal style)
+        function openEipsiPoolModal() {
+            console.log('[POOL-HUB] openEipsiPoolModal() llamado');
+            if (poolModal) {
+                updateProbabilityTotal();
+                openModal(poolModal);
+            } else {
+                console.error('[POOL-HUB] poolModal no encontrado');
+            }
+        }
+
+        function closeEipsiPoolModal() {
+            console.log('[POOL-HUB] closeEipsiPoolModal() llamado');
+            closeModal(poolModal);
+            // Reset form to create mode
+            resetPoolForm();
+        }
+
+        function resetPoolForm() {
+            console.log('[POOL-HUB] resetPoolForm() llamado');
+            const form = document.getElementById('eipsi-pool-form');
+            if (form) {
+                form.reset();
+                document.getElementById('eipsi-pool-id').value = '0';
+                document.getElementById('eipsi-modal-title').textContent = '<?php echo esc_js(__('Crear nuevo pool', 'eipsi-forms')); ?>';
+                document.getElementById('eipsi-save-pool-btn').textContent = '<?php echo esc_js(__('Guardar pool', 'eipsi-forms')); ?>';
+            }
+            // Clear study rows
+            const rowsContainer = document.getElementById('eipsi-pool-studies-rows');
+            if (rowsContainer) {
+                rowsContainer.innerHTML = '';
+            }
+            // Hide page info
+            const pageInfo = document.getElementById('eipsi-pool-page-info');
+            if (pageInfo) {
+                pageInfo.style.display = 'none';
+            }
+            updateProbabilityTotal();
+        }
+
         document.querySelectorAll('.eipsi-modal-close, .eipsi-modal-cancel').forEach(btn => {
             btn.addEventListener('click', function() {
                 console.log('[POOL-HUB] Modal close/cancel button clicked');
@@ -1917,10 +1946,10 @@ function eipsi_render_pool_hub_v2() {
 
     <!-- Create/Edit Pool Modal - REDESIGNED -->
     <div class="eipsi-modal-overlay" id="eipsi-pool-modal" style="display: none;">
-        <div class="eipsi-modal">
+        <div class="eipsi-modal-wide">
             <div class="eipsi-modal-header">
                 <h2 id="eipsi-modal-title"><?php _e('Crear nuevo pool', 'eipsi-forms'); ?></h2>
-                <button class="eipsi-modal-close" type="button">&times;</button>
+                <button class="eipsi-modal-close" type="button" onclick="closeEipsiPoolModal()">&times;</button>
             </div>
             <div class="eipsi-modal-body">
                 <form id="eipsi-pool-form" method="post" action="<?php echo admin_url('admin-post.php'); ?>">
@@ -1999,7 +2028,7 @@ function eipsi_render_pool_hub_v2() {
                 </form>
             </div>
             <div class="eipsi-modal-footer">
-                <button type="button" class="eipsi-btn-ghost eipsi-modal-cancel"><?php _e('Cancelar', 'eipsi-forms'); ?></button>
+                <button type="button" class="eipsi-btn-ghost" onclick="closeEipsiPoolModal()"><?php _e('Cancelar', 'eipsi-forms'); ?></button>
                 <button type="button" class="eipsi-btn-primary" id="eipsi-save-pool-btn" disabled><?php _e('Guardar pool', 'eipsi-forms'); ?></button>
             </div>
         </div>
