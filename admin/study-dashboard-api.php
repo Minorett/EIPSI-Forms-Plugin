@@ -779,22 +779,22 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
         $nudge_config = array(
             'nudge_1' => array(
                 'enabled' => $enabled && !empty($nudges[0]),
-                'value' => isset($nudges[0]['value']) ? intval($nudges[0]['value']) : 24,
+                'value' => isset($nudges[0]['value']) ? floatval($nudges[0]['value']) : 24,
                 'unit' => isset($nudges[0]['unit']) ? sanitize_text_field($nudges[0]['unit']) : 'hours'
             ),
             'nudge_2' => array(
                 'enabled' => $enabled && !empty($nudges[1]),
-                'value' => isset($nudges[1]['value']) ? intval($nudges[1]['value']) : 72,
+                'value' => isset($nudges[1]['value']) ? floatval($nudges[1]['value']) : 72,
                 'unit' => isset($nudges[1]['unit']) ? sanitize_text_field($nudges[1]['unit']) : 'hours'
             ),
             'nudge_3' => array(
                 'enabled' => $enabled && !empty($nudges[2]),
-                'value' => isset($nudges[2]['value']) ? intval($nudges[2]['value']) : 168,
+                'value' => isset($nudges[2]['value']) ? floatval($nudges[2]['value']) : 168,
                 'unit' => isset($nudges[2]['unit']) ? sanitize_text_field($nudges[2]['unit']) : 'hours'
             ),
             'nudge_4' => array(
                 'enabled' => $enabled && !empty($nudges[3]),
-                'value' => isset($nudges[3]['value']) ? intval($nudges[3]['value']) : 336,
+                'value' => isset($nudges[3]['value']) ? floatval($nudges[3]['value']) : 336,
                 'unit' => isset($nudges[3]['unit']) ? sanitize_text_field($nudges[3]['unit']) : 'hours'
             )
         );

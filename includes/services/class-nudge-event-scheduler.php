@@ -96,7 +96,7 @@ class EIPSI_Nudge_Event_Scheduler {
             }
             
             $config = $nudge_config[$nudge_key];
-            $value = isset($config['value']) ? intval($config['value']) : ($stage * 24);
+            $value = isset($config['value']) ? floatval($config['value']) : ($stage * 24);
             $unit = isset($config['unit']) ? $config['unit'] : 'hours';
             
             // Convertir a segundos desde available_at
