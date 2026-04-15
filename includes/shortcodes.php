@@ -107,10 +107,12 @@ function eipsi_render_survey_login_form($atts) {
     );
 
     // Localize with nonce — do this immediately after registering the script
+    // v2.5.3 - Agregar participantId para Save & Continue con usuarios autenticados
     wp_localize_script('eipsi-participant-auth', 'eipsiAuth', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_participant_auth'),
         'loginUrl' => get_permalink(),
+        'participantId' => $current_participant_id,
         'strings' => array(
             'registering' => __('Registrando...', 'eipsi-forms'),
             'logging_in' => __('Ingresando...', 'eipsi-forms'),
@@ -255,10 +257,12 @@ function eipsi_participant_dashboard_shortcode($atts) {
     );
     
     // Localize script with session timer strings (for authenticated pages)
+    // v2.5.3 - Agregar participantId para Save & Continue
     wp_localize_script('eipsi-participant-portal-js', 'eipsiAuth', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_participant_auth'),
         'loginUrl' => eipsi_get_login_page_url($survey_id),
+        'participantId' => $current_participant_id,
         'strings' => array(
             'session_expires_in' => __('Tu sesión expira en', 'eipsi-forms'),
             'extend_session' => __('Extender sesión', 'eipsi-forms'),

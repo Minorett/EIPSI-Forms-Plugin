@@ -954,7 +954,7 @@ export default function Edit( {
 							setAttributes( { useCustomCompletion: !! value } )
 						}
 						help={ __(
-							'Si está desactivado, se usará la configuración global de Finalización (Results & Experience → Finalización). Si está activado, podrás personalizar el mensaje de finalización solo para este formulario.',
+							'Si está desactivado, se usará la configuración global de Finalización (Cross-sectional Study → Finalización). Si está activado, podrás personalizar el mensaje de finalización solo para este formulario.',
 							'eipsi-forms'
 						) }
 					/>
@@ -971,7 +971,7 @@ export default function Edit( {
 							} }
 						>
 							{ __(
-								'Este formulario usará el mensaje global configurado en Results & Experience → Finalización.',
+								'Este formulario usará el mensaje global configurado en Cross-sectional Study → Finalización.',
 								'eipsi-forms'
 							) }
 						</p>

@@ -1707,9 +1707,6 @@ function eipsi_forms_submit_form_handler() {
             ));
         }
         
-        // Mark partial response as completed
-        EIPSI_Partial_Responses::mark_completed($form_name, $participant_id, $session_id);
-        
         // === Task 2.4B: Marcar assignment como submitted y obtener próxima toma ===
         $next_wave_data = null;
         $has_next_wave = false;

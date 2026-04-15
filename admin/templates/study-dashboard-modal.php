@@ -54,7 +54,7 @@ $study_data = isset($study_data) ? $study_data : array();
         </div>
 
         <!-- Info cards -->
-        <div class="cards-row">
+        <div class="cards-row" style="margin-left: 50px;">
             <div class="card">
                 <div class="card-title">Shortcode del estudio</div>
                 <div style="font-size:11px;color:#64748b;margin-bottom:4px">Pegá este shortcode en cualquier página WordPress.</div>
@@ -78,7 +78,7 @@ $study_data = isset($study_data) ? $study_data : array();
         </div>
 
         <!-- Waves Section -->
-        <div class="section-title">
+        <div class="section-title" style="margin-left: 50px; margin-right: 50px;">
             <span>Tomas</span>
             <div class="section-line"></div>
             <button class="btn-sm" style="font-size:11px;padding:4px 10px" id="send-global-reminder">Enviar recordatorio global</button>
@@ -89,7 +89,7 @@ $study_data = isset($study_data) ? $study_data : array();
         </div>
 
         <!-- Bottom cards -->
-        <div class="cards-row">
+        <div class="cards-row" style="margin-left: 50px;"
             <div class="card">
                 <div class="card-title">Control del estudio</div>
                 <div style="font-size:11px;color:#64748b;margin-bottom:8px;line-height:1.5">Al pausar se detienen los recordatorios y no se aceptan nuevas respuestas.</div>
@@ -105,7 +105,7 @@ $study_data = isset($study_data) ? $study_data : array();
                 </div>
             </div>
             <div class="card">
-                <div class="card-title">Emails <span style="font-size:11px;color:#64748b;font-weight:400" id="emails-last-label">· último envío: -</span></div>
+                <div class="card-title">Emails</div>
                 <div class="stat-row"><span class="stat-key">Enviados hoy</span><span class="stat-val" id="emails-today">0</span></div>
                 <div class="stat-row"><span class="stat-key">Fallidos</span><span class="stat-val green" id="emails-failed">0</span></div>
                 <div class="stat-row"><span class="stat-key">Pendientes</span><span class="stat-val" id="emails-pending">0</span></div>
@@ -756,13 +756,6 @@ input:checked + .tslider:before { transform: translateX(14px); }
         $('#emails-today').text(emails.sent_today || 0);
         $('#emails-failed').text(emails.failed || 0);
         $('#emails-pending').text(emails.pending || 0);
-        if (emails.last_sent) {
-            const last = new Date(emails.last_sent);
-            const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-            $('#emails-last-label').text('· último envío: ' + last.getDate() + ' ' + months[last.getMonth()]);
-        } else {
-            $('#emails-last-label').text('· último envío: -');
-        }
         
         // Render waves
         renderWaves(waves);

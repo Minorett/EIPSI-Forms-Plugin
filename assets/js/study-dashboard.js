@@ -298,12 +298,17 @@
                 self.openParticipantsList();
             });
 
-            // Participant status filter
-            $('#participant-status-filter').on('change', function() {
-                self.loadParticipantsList(1);
+            // Pause/Resume study buttons - v2.5.3 fix: add missing click handlers
+            $('#btn-pause-study').off('click').on('click', function() {
+                console.log('[BUTTON] btn-pause-study clicked');
+                self.pauseStudy();
             });
 
-            // Participant search
+            $('#btn-resume-study').off('click').on('click', function() {
+                console.log('[BUTTON] btn-resume-study clicked');
+                self.resumeStudy();
+            });
+
             let searchTimeout;
             $('#participant-search').on('input', function() {
                 clearTimeout(searchTimeout);

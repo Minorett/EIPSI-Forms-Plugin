@@ -39,7 +39,7 @@ msgid "EIPSI Forms"
 msgstr ""
 
 #: admin/menu.php:27 admin/menu.php:28 admin/menu.php:32
-msgid "Results & Experience"
+msgid "Cross-sectional Study"
 msgstr ""
 
 #: admin/menu.php:37 admin/menu.php:38 admin/menu.php:42
@@ -55,7 +55,7 @@ msgid "Form Library"
 msgstr ""
 
 #: admin/results-page.php:36
-msgid "EIPSI Forms - Results & Experience"
+msgid "EIPSI Forms - Cross-sectional Study"
 msgstr ""
 
 #: admin/results-page.php:42

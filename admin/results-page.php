@@ -1,6 +1,6 @@
 <?php
 /**
- * Results & Experience Page
+ * Cross-sectional Study Page
  * Main admin page with tabs:
  * 1. Submissions (form responses)
  * 2. Completion Message (global thank-you config)
@@ -40,7 +40,7 @@ function eipsi_display_results_experience_page() {
     ?>
 
     <div class="wrap eipsi-results-page">
-        <h1><?php esc_html_e('EIPSI Forms - Results & Experience', 'eipsi-forms'); ?></h1>
+        <h1><?php esc_html_e('EIPSI Forms - Cross-sectional Study', 'eipsi-forms'); ?></h1>
 
         <h2 class="nav-tab-wrapper">
             <a href="?page=eipsi-results-experience&tab=submissions"

@@ -121,36 +121,14 @@ wp_enqueue_style('eipsi-high-contrast', EIPSI_FORMS_PLUGIN_URL . 'assets/css/eip
         <div class="eipsi-stat-card eipsi-stat-success">
             <span class="stat-label">✅ <?php esc_html_e('Enviados Exitosamente', 'eipsi-forms'); ?></span>
             <span class="stat-value"><?php echo (int)$sent_count; ?></span>
-            <span class="stat-sublabel">
-                <?php printf(__('%s%% tasa de entrega', 'eipsi-forms'), $success_rate); ?>
-                <?php if ($success_rate >= 95): ?>
-                    <span class="eipsi-badge eipsi-badge-success"><?php esc_html_e('Excelente', 'eipsi-forms'); ?></span>
-                <?php elseif ($success_rate >= 85): ?>
-                    <span class="eipsi-badge eipsi-badge-warning"><?php esc_html_e('Buena', 'eipsi-forms'); ?></span>
-                <?php elseif ($total_emails > 0): ?>
-                    <span class="eipsi-badge eipsi-badge-error"><?php esc_html_e('Revisar', 'eipsi-forms'); ?></span>
-                <?php endif; ?>
-            </span>
         </div>
         <div class="eipsi-stat-card eipsi-stat-error">
             <span class="stat-label">❌ <?php esc_html_e('Fallidos', 'eipsi-forms'); ?></span>
             <span class="stat-value"><?php echo (int)$failed_count; ?></span>
-            <span class="stat-sublabel">
-                <?php if ($failed_count > 0 && $total_emails > 0): ?>
-                    <?php printf(__('%s%% del total', 'eipsi-forms'), round(($failed_count / $total_emails) * 100, 1)); ?>
-                <?php else: ?>
-                    <?php esc_html_e('Sin fallos', 'eipsi-forms'); ?>
-                <?php endif; ?>
-            </span>
         </div>
         <div class="eipsi-stat-card eipsi-stat-total">
             <span class="stat-label">📊 <?php esc_html_e('Total Emails', 'eipsi-forms'); ?></span>
             <span class="stat-value"><?php echo (int)$total_emails; ?></span>
-            <span class="stat-sublabel <?php echo esc_attr($trend_class); ?>">
-                <?php echo esc_html($trend_icon); ?> 
-                <?php printf(__('%s%% vs semana anterior', 'eipsi-forms'), abs($trend_percentage)); ?>
-                <small>(<?php echo (int)$last_7_sent; ?> <?php esc_html_e('últimos 7 días', 'eipsi-forms'); ?>)</small>
-            </span>
         </div>
     </div>
 

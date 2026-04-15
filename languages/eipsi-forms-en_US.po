@@ -41,8 +41,8 @@ msgid "EIPSI Forms"
 msgstr "EIPSI Forms"
 
 #: admin/menu.php:27 admin/menu.php:28 admin/menu.php:32
-msgid "Results & Experience"
-msgstr "Results & Experience"
+msgid "Cross-sectional Study"
+msgstr "Cross-sectional Study"
 
 #: admin/menu.php:37 admin/menu.php:38 admin/menu.php:42
 msgid "Configuration"
@@ -57,8 +57,8 @@ msgid "Form Library"
 msgstr "Form Library"
 
 #: admin/results-page.php:36
-msgid "EIPSI Forms - Results & Experience"
-msgstr "EIPSI Forms - Results & Experience"
+msgid "EIPSI Forms - Cross-sectional Study"
+msgstr "EIPSI Forms - Cross-sectional Study"
 
 #: admin/results-page.php:42
 msgid "Submissions"

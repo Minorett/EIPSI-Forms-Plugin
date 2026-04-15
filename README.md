@@ -46,7 +46,7 @@ npm run build
 
 ### Ver resultados
 
-- **Admin** → EIPSI Forms → Results & Experience → Submissions
+- **Admin** → EIPSI Forms → Cross-sectional Study → Submissions
 - Exportar a Excel (.xlsx) o CSV con un click
 
 ---

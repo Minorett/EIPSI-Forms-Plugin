@@ -258,7 +258,7 @@
 .wp-list-table thead th,
 .wp-list-table thead td {
     background: var(--eipsi-primary);
-    color: #ffffff !important;
+    color: #ffffff;
     font-weight: 600;
     font-size: var(--eipsi-font-size-sm);
     border-bottom: none;
@@ -708,8 +708,8 @@ textarea::placeholder {
 .form-table.eipsi-form-table th,
 .eipsi-table td,
 .eipsi-table th {
-    color: #1e293b !important;
-    background-color: #ffffff !important;
+    color: #1e293b;
+    background-color: #ffffff;
 }
 
 /* Force dark text on all links within tables */

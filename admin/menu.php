@@ -25,11 +25,11 @@ function eipsi_forms_menu() {
         25
     );
 
-    // Submenú: Results & Experience
+    // Submenú: Cross-sectional Study
     add_submenu_page(
         'eipsi-results-experience',
-        __('Results & Experience', 'eipsi-forms'),
-        __('Results & Experience', 'eipsi-forms'),
+        __('Cross-sectional Study', 'eipsi-forms'),
+        __('Cross-sectional Study', 'eipsi-forms'),
         $capabilities['results'],
         'eipsi-results-experience',
         'eipsi_display_results_experience_page'
@@ -86,7 +86,7 @@ function eipsi_admin_menu_redirects() {
 
     switch ($page) {
         case 'eipsi-randomization':
-            // Redirect to Results & Experience > Randomization tab
+            // Redirect to Cross-sectional Study > Randomization tab
             if ($current_tab !== 'randomization') {
                 $redirect_url = add_query_arg(
                     array(

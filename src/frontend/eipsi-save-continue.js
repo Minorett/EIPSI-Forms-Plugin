@@ -82,6 +82,12 @@
 		}
 
 		getParticipantId() {
+			// v2.5.3 - Prioridad 1: Usar participant_id autenticado si está disponible
+			if ( window.eipsiAuth && window.eipsiAuth.participantId ) {
+				return String( window.eipsiAuth.participantId );
+			}
+
+			// Prioridad 2: Fallback a localStorage (anónimo o modo incógnito)
 			const STORAGE_KEY = 'eipsi_participant_id';
 			let pid = null;
 
@@ -113,10 +119,25 @@
 			const SESSION_KEY = `eipsi_session_${ this.formId || 'default' }`;
 			let sid = null;
 
+			// v2.5.3 - Migración: intentar localStorage primero (nuevo), luego sessionStorage (legacy)
 			try {
-				sid = window.sessionStorage.getItem( SESSION_KEY );
+				sid = window.localStorage.getItem( SESSION_KEY );
 			} catch ( error ) {
 				sid = null;
+			}
+
+			// Compatibilidad: migrar desde sessionStorage si existe y no hay en localStorage
+			if ( ! sid ) {
+				try {
+					const legacySid = window.sessionStorage.getItem( SESSION_KEY );
+					if ( legacySid ) {
+						sid = legacySid;
+						// Migrar a localStorage para persistencia cross-tab
+						window.localStorage.setItem( SESSION_KEY, sid );
+					}
+				} catch ( error ) {
+					// Ignore
+				}
 			}
 
 			if ( ! sid ) {
@@ -125,9 +146,9 @@
 				sid = `sess-${ timestamp }-${ random }`;
 
 				try {
-					window.sessionStorage.setItem( SESSION_KEY, sid );
+					window.localStorage.setItem( SESSION_KEY, sid );
 				} catch ( error ) {
-					// Ignore storage errors
+					// Ignore storage errors (Safari private mode, etc.)
 				}
 			}
 
@@ -785,10 +806,12 @@
 			await this.discardFromServer();
 
 			// Limpiar almacenamiento local/sesión
+			// v2.5.3 - Limpiar tanto localStorage (nuevo) como sessionStorage (legacy)
 			try {
 				const sessionKey = `eipsi_session_${
 					this.formId || 'default'
 				}`;
+				window.localStorage.removeItem( sessionKey );
 				window.sessionStorage.removeItem( sessionKey );
 
 				const storageKey = `eipsi_form_responses_${
@@ -1116,10 +1139,12 @@
 			this.removeBeforeUnload();
 
 			// Limpiar almacenamiento local/sesión
+			// v2.5.3 - Limpiar tanto localStorage (nuevo) como sessionStorage (legacy)
 			try {
 				const sessionKey = `eipsi_session_${
 					this.formId || 'default'
 				}`;
+				window.localStorage.removeItem( sessionKey );
 				window.sessionStorage.removeItem( sessionKey );
 
 				// Limpiar cualquier respaldo en localStorage si existiera (por compatibilidad)
