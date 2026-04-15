@@ -628,6 +628,13 @@ function wp_ajax_eipsi_get_study_email_logs_handler() {
  * @fix v1.7.3 - Added survey_id validation to prevent FK errors
  */
 function wp_ajax_eipsi_resend_participant_email_handler() {
+    error_log('[EIPSI DASHBOARD API] resend_participant_email called');
+    
+    // v2.5.1 - Ensure Email Service is loaded
+    if (!class_exists('EIPSI_Email_Service')) {
+        require_once plugin_dir_path(__FILE__) . 'services/class-email-service.php';
+    }
+    
     // Check nonce - accept both nonces for compatibility
     $nonce_valid = false;
     if (isset($_POST['nonce'])) {
@@ -679,6 +686,41 @@ function wp_ajax_eipsi_resend_participant_email_handler() {
 
     // Validate participant has a valid survey_id
     $participant_survey_id = intval($participant->survey_id);
+    if ($participant_survey_id <= 0) {
+        wp_send_json_error(array(
+            'message' => 'El participante no tiene un estudio asignado válido',
+            'error' => 'invalid_survey_id'
+        ));
+    }
+
+    // Use the participant's survey_id if not provided in request
+    if (empty($survey_id)) {
+        $survey_id = $participant_survey_id;
+    }
+
+    // v2.5.1 - Use EIPSI_Email_Service to resend the email
+    try {
+        $result = EIPSI_Email_Service::resend_participant_email($participant_id, $email_type, $survey_id, $wave_id);
+        
+        if ($result['success']) {
+            wp_send_json_success(array(
+                'message' => $result['message'],
+                'email_type' => $email_type,
+                'participant_id' => $participant_id
+            ));
+        } else {
+            wp_send_json_error(array(
+                'message' => $result['message'],
+                'error' => $result['error'] ?? 'unknown_error'
+            ));
+        }
+    } catch (Exception $e) {
+        error_log('[EIPSI Resend Email] Exception: ' . $e->getMessage());
+        wp_send_json_error(array(
+            'message' => 'Error al enviar email: ' . $e->getMessage(),
+            'error' => 'exception'
+        ));
+    }
 }
 
 /**
@@ -686,7 +728,9 @@ function wp_ajax_eipsi_resend_participant_email_handler() {
  */
 add_action('wp_ajax_eipsi_save_wave_nudges', 'wp_ajax_eipsi_save_wave_nudges_handler');
 function wp_ajax_eipsi_save_wave_nudges_handler() {
+    error_log('[EIPSI DASHBOARD API] ========================================');
     error_log('[EIPSI DASHBOARD API] save_wave_nudges called');
+    error_log('[EIPSI DASHBOARD API] FULL POST DATA: ' . print_r($_POST, true));
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
 
     if (!eipsi_user_can_manage_longitudinal()) {
@@ -699,25 +743,37 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
     // v2.5.0 - Robust enabled detection: accepts 'true', true, '1', 1, 'on'
     $enabled_raw = isset($_POST['enabled']) ? $_POST['enabled'] : false;
     $enabled = in_array($enabled_raw, array('true', true, '1', 1, 'on', 'yes'), true);
-    error_log("[EIPSI DASHBOARD API] Raw enabled value: " . var_export($enabled_raw, true) . " | Parsed: " . ($enabled ? 'true' : 'false'));
+    error_log("[EIPSI DASHBOARD API] Raw enabled value: " . var_export($enabled_raw, true));
+    error_log("[EIPSI DASHBOARD API] Parsed enabled value: " . ($enabled ? 'true' : 'false'));
     
     // Handle JSON string if passed
     if (is_string($nudges)) {
         $nudges = json_decode(stripslashes($nudges), true);
+        error_log("[EIPSI DASHBOARD API] Decoded nudges from JSON: " . print_r($nudges, true));
     }
     if (!is_array($nudges)) {
         $nudges = array();
     }
     
     $nudge_count = is_array($nudges) ? count($nudges) : 0;
-    error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}, Enabled: " . ($enabled ? 'true' : 'false') . ", Nudges count: " . $nudge_count);
+    error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}");
+    error_log("[EIPSI DASHBOARD API] Enabled (final): " . ($enabled ? 'true' : 'false'));
+    error_log("[EIPSI DASHBOARD API] Nudges count: " . $nudge_count);
+    error_log("[EIPSI DASHBOARD API] Nudges data: " . print_r($nudges, true));
 
     if (!$wave_id) {
+        error_log("[EIPSI DASHBOARD API] ERROR: Missing wave ID");
         wp_send_json_error('Missing wave ID');
     }
 
     try {
         global $wpdb;
+        $table_name = $wpdb->prefix . 'survey_waves';
+        
+        // v2.5.1 - Verificar valor actual en la base de datos
+        $current_wave = $wpdb->get_row($wpdb->prepare("SELECT follow_up_reminders_enabled, nudge_config FROM {$table_name} WHERE id = %d", $wave_id));
+        error_log("[EIPSI DASHBOARD API] Current DB value - follow_up_reminders_enabled: " . ($current_wave ? $current_wave->follow_up_reminders_enabled : 'N/A'));
+        error_log("[EIPSI DASHBOARD API] Current DB value - nudge_config: " . ($current_wave ? $current_wave->nudge_config : 'N/A'));
 
         // Build nudge config JSON
         $nudge_config = array(
@@ -742,25 +798,40 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
                 'unit' => isset($nudges[3]['unit']) ? sanitize_text_field($nudges[3]['unit']) : 'hours'
             )
         );
+        
+        error_log("[EIPSI DASHBOARD API] Built nudge_config: " . wp_json_encode($nudge_config));
 
-        // Update wave with nudge config
+        // v2.5.1 - Update wave with BOTH nudge_config AND follow_up_reminders_enabled
+        $update_data = array(
+            'nudge_config' => wp_json_encode($nudge_config),
+            'follow_up_reminders_enabled' => $enabled ? 1 : 0
+        );
+        
+        error_log("[EIPSI DASHBOARD API] Update data: " . print_r($update_data, true));
+        
         $result = $wpdb->update(
-            $wpdb->prefix . 'survey_waves',
-            array('nudge_config' => wp_json_encode($nudge_config)),
+            $table_name,
+            $update_data,
             array('id' => $wave_id),
-            array('%s'),
+            array('%s', '%d'),
             array('%d')
         );
 
         if ($result === false) {
+            error_log("[EIPSI DASHBOARD API] ERROR: " . $wpdb->last_error);
             throw new Exception($wpdb->last_error);
         }
 
-        error_log("[EIPSI Save Nudges] Update result: " . var_export($result, true));
+        error_log("[EIPSI DASHBOARD API] Update result: " . var_export($result, true));
+        
+        // v2.5.1 - Verificar valor después del update
+        $updated_wave = $wpdb->get_row($wpdb->prepare("SELECT follow_up_reminders_enabled, nudge_config FROM {$table_name} WHERE id = %d", $wave_id));
+        error_log("[EIPSI DASHBOARD API] Updated DB value - follow_up_reminders_enabled: " . ($updated_wave ? $updated_wave->follow_up_reminders_enabled : 'N/A'));
 
         wp_send_json_success(array(
             'message' => 'Configuración de nudges guardada',
             'nudge_config' => $nudge_config,
+            'follow_up_reminders_enabled' => $enabled,
             'rows_updated' => $result
         ));
     } catch (Exception $e) {

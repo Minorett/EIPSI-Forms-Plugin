@@ -117,13 +117,50 @@
             });
 
             // Toggle checkbox for nudges - using event delegation
+            // v2.5.1 - Manejar click en el checkbox para evitar propagación a la barra
+            $('#waves-container').on('click', '.nudge-toggle-input', function(e) {
+                e.stopPropagation(); // Evitar que el click llegue a la barra
+                const waveId = $(this).closest('.wave-card').data('wave-id');
+                const isChecked = $(this).is(':checked');
+                const checkboxId = $(this).attr('id');
+                
+                console.log('[NUDGE-CLICK] ========================================');
+                console.log('[NUDGE-CLICK] Checkbox clicked, waveId:', waveId, 'checkboxId:', checkboxId);
+                console.log('[NUDGE-CLICK] Current checked state (BEFORE click processed):', !isChecked);
+                console.log('[NUDGE-CLICK] Will be checked state (AFTER click processed):', isChecked);
+                console.log('[NUDGE-CLICK] Event propagation stopped:', e.isPropagationStopped());
+                
+                // El change event ya actualizará la UI, solo manejamos el panel aquí
+                const $card = $(`#wave-card-${waveId}`);
+                const $panel = $card.find('.nudge-panel');
+                
+                if (isChecked) {
+                    // Checkbox encendido -> abrir panel
+                    console.log('[NUDGE-CLICK] Opening panel');
+                    self.stopAutoRefresh();
+                    $panel.slideDown(200);
+                } else {
+                    // Checkbox apagado -> cerrar panel
+                    console.log('[NUDGE-CLICK] Closing panel');
+                    $panel.slideUp(200, function() {
+                        if (!self.isAnyNudgePanelOpen()) {
+                            self.startAutoRefresh();
+                        }
+                    });
+                }
+            });
+            
+            // Toggle checkbox for nudges - using event delegation
+            // v2.5.1 - Solo actualizar UI cuando cambia el estado
             $('#waves-container').on('change', '.nudge-toggle-input', function() {
                 const waveId = $(this).closest('.wave-card').data('wave-id');
                 const isChecked = $(this).is(':checked');
                 const $row = $(this).closest('.nudge-toggle-row');
                 const $label = $(this).closest('.wave-card').find('.nudge-lbl');
                 
-                console.log('[NUDGE-TOGGLE] waveId:', waveId, 'enabled:', isChecked);
+                console.log('[NUDGE-CHANGE] ========================================');
+                console.log('[NUDGE-CHANGE] waveId:', waveId, 'enabled:', isChecked);
+                console.log('[NUDGE-CHANGE] Row found:', $row.length, 'Label found:', $label.length);
                 
                 // Update ARIA attribute
                 $row.attr('aria-checked', isChecked);
@@ -134,9 +171,6 @@
                 } else {
                     $label.removeClass('on').text('Recordatorios desactivados');
                 }
-                
-                // Toggle panel visibility
-                self.toggleNudgePanel(waveId);
             });
 
             // Keyboard support for nudge toggle row (Enter/Space)
@@ -242,6 +276,20 @@
             $('#add-participant-form').on('submit', function(e) {
                 e.preventDefault();
                 self.addParticipant();
+            });
+
+            // v2.5.1 - Add click handler for submit button (outside form)
+            $(document).on('click', '#submit-add-participant', function(e) {
+                e.preventDefault();
+                console.log('[BUTTON] submit-add-participant clicked');
+                self.addParticipant();
+            });
+
+            // v2.5.1 - Add click handler for cancel button
+            $(document).on('click', '#cancel-add-participant', function(e) {
+                e.preventDefault();
+                console.log('[BUTTON] cancel-add-participant clicked');
+                $('#add-participant-modal').fadeOut(200);
             });
 
             // View participants
@@ -520,7 +568,9 @@
                     : 'Sin fecha límite';
                 
                 // Nudges - v2.5.0: Activados por defecto
+                console.log('[RENDER] Wave', wave.id, '- follow_up_reminders_enabled raw:', wave.follow_up_reminders_enabled, 'type:', typeof wave.follow_up_reminders_enabled);
                 const nudgesEnabled = wave.follow_up_reminders_enabled !== undefined ? wave.follow_up_reminders_enabled : true;
+                console.log('[RENDER] Wave', wave.id, '- nudgesEnabled (final):', nudgesEnabled);
                 const nudgeCount = wave.nudge_count || 4;
                 const nudgeLblClass = nudgesEnabled ? 'on' : '';
                 const nudgeLblText = nudgesEnabled 
@@ -557,7 +607,7 @@
                 const ariaSwitch = 'role="switch" aria-checked="' + (nudgesEnabled ? 'true' : 'false') + '"';
                 
                 const html = 
-                    '<div class="wave-card" data-wave-id="' + wave.id + '" role="region" aria-label="Toma ' + waveNum + ': ' + waveName + '">' +
+                    '<div class="wave-card" id="wave-card-' + wave.id + '" data-wave-id="' + wave.id + '" role="region" aria-label="Toma ' + waveNum + ': ' + waveName + '">' +
                         '<div class="wave-card-head">' +
                             '<div class="wave-left">' +
                                 '<span class="wave-idx">' + waveIdx + '</span>' +
@@ -779,35 +829,59 @@
          * Toggle nudge panel visibility
          */
         toggleNudgePanel: function(waveId) {
+            console.log('[FUNC] toggleNudgePanel ========================================');
             console.log('[FUNC] toggleNudgePanel called, waveId:', waveId);
             const $card = $(`#wave-card-${waveId}`);
+            console.log('[NUDGE] Looking for card #wave-card-' + waveId + ', found:', $card.length);
+            
+            if ($card.length === 0) {
+                console.error('[ERROR] Wave card not found for waveId:', waveId);
+                return;
+            }
+            
             const $toggle = $card.find('.nudge-toggle-input');
-            console.log('[NUDGE] Found toggle:', $toggle.length, 'checked:', $toggle.is(':checked'));
+            console.log('[NUDGE] Found toggle:', $toggle.length);
+            console.log('[NUDGE] Toggle exists:', $toggle.length > 0);
+            
+            if ($toggle.length === 0) {
+                console.error('[ERROR] Toggle not found in wave card');
+                return;
+            }
+            
+            console.log('[NUDGE] Toggle ID:', $toggle.attr('id'));
+            console.log('[NUDGE] Toggle checked state:', $toggle.is(':checked'));
             const enabled = $toggle.is(':checked');
-            console.log('[NUDGE] Toggle state:', enabled);
+            console.log('[NUDGE] Toggle state (enabled):', enabled);
+            
             const $panel = $card.find('.nudge-panel');
-            const isOpen = $panel.is(':visible');
+            console.log('[NUDGE] Panel found:', $panel.length);
+            console.log('[NUDGE] Panel visible:', $panel.is(':visible'));
+            
             const self = this;
             
-            if (isOpen) {
+            // v2.5.1 - Sincronizar toggle y panel recíprocamente
+            console.log('[NUDGE] Decision: enabled=' + enabled + ', will toggle to ' + (!enabled));
+            if (!enabled) {
+                // Toggle OFF -> Encender toggle + Abrir panel
+                console.log('[NUDGE] Toggle is OFF, enabling and opening panel');
+                $toggle.prop('checked', true).trigger('change');
+                
+                // Pausar auto-refresh mientras se edita
+                console.log('[NUDGE] Panel opening, pausing auto-refresh');
+                this.stopAutoRefresh();
+                
+                $panel.slideDown(200);
+            } else {
+                // Toggle ON -> Apagar toggle + Cerrar panel
+                console.log('[NUDGE] Toggle is ON, disabling and closing panel');
+                $toggle.prop('checked', false).trigger('change');
+                
                 $panel.slideUp(200, function() {
-                    // v2.5.0 - Reanudar auto-refresh cuando se cierra el panel
                     if (!self.isAnyNudgePanelOpen()) {
                         console.log('[NUDGE] Panel closed, resuming auto-refresh');
                         self.startAutoRefresh();
                     }
                 });
-            } else {
-                // v2.5.0 - Pausar auto-refresh mientras se edita
-                console.log('[NUDGE] Panel opening, pausing auto-refresh');
-                this.stopAutoRefresh();
-                
-                $panel.slideDown(200);
-                // v2.5.0 - Auto-enable nudges when opening panel (if not already enabled)
-                if (!enabled) {
-                    console.log('[NUDGE] Auto-enabling nudges when opening panel');
-                    $toggle.prop('checked', true).trigger('change');
-                }
             }
         },
 
@@ -815,13 +889,24 @@
          * Save nudge configuration for a wave
          */
         saveNudgeConfig: function(waveId) {
+            console.log('[FUNC] saveNudgeConfig ========================================');
             console.log('[FUNC] saveNudgeConfig called, waveId:', waveId);
             const $card = $(`#wave-card-${waveId}`);
+            console.log('[NUDGE-SAVE] Card found:', $card.length);
+            
+            if ($card.length === 0) {
+                console.error('[ERROR] Card not found for waveId:', waveId);
+                alert('Error: No se encontró la wave card');
+                return;
+            }
+            
             const $toggle = $card.find('.nudge-toggle-input');
-            console.log('[NUDGE] Card found:', $card.length, 'Toggle found:', $toggle.length);
-            console.log('[NUDGE] Toggle id:', $toggle.attr('id'), 'checked:', $toggle.is(':checked'));
+            console.log('[NUDGE-SAVE] Toggle found:', $toggle.length);
+            console.log('[NUDGE-SAVE] Toggle ID:', $toggle.attr('id'));
+            console.log('[NUDGE-SAVE] Toggle checked:', $toggle.is(':checked'));
+            
             const enabled = $toggle.is(':checked');
-            console.log('[NUDGE] Toggle state:', enabled);
+            console.log('[NUDGE-SAVE] Final enabled state to save:', enabled);
             
             // Build nudge config array
             const nudges = [];
@@ -854,20 +939,26 @@
                 });
             });
             
-            console.log('[NUDGE] Saving config:', nudges, 'enabled:', enabled);
-            console.log('[NUDGE] AJAX URL:', eipsiStudyDash.ajaxUrl);
+            console.log('[NUDGE-SAVE] ========================================');
+            console.log('[NUDGE-SAVE] Final nudges array:', JSON.stringify(nudges, null, 2));
+            console.log('[NUDGE-SAVE] Final enabled value:', enabled);
+            console.log('[NUDGE-SAVE] Enabled type:', typeof enabled);
+            console.log('[NUDGE-SAVE] AJAX URL:', eipsiStudyDash.ajaxUrl);
+            
+            const ajaxData = {
+                action: 'eipsi_save_wave_nudges',
+                wave_id: waveId,
+                nudges: nudges,
+                enabled: enabled,
+                nonce: eipsiStudyDash.nonce
+            };
+            console.log('[NUDGE-SAVE] Full AJAX data:', JSON.stringify(ajaxData, null, 2));
             
             // Make AJAX call to save nudge config
             $.ajax({
                 url: eipsiStudyDash.ajaxUrl,
                 type: 'POST',
-                data: {
-                    action: 'eipsi_save_wave_nudges',
-                    wave_id: waveId,
-                    nudges: nudges,
-                    enabled: enabled,
-                    nonce: eipsiStudyDash.nonce
-                },
+                data: ajaxData,
                 success: function(response) {
                     console.log('[NUDGE] Save response:', response);
                     if (response.success) {
@@ -901,7 +992,9 @@
          * Check if any nudge panel is currently open
          */
         isAnyNudgePanelOpen: function() {
-            return $('.nudge-panel:visible').length > 0;
+            const openPanels = $('.nudge-panel:visible').length;
+            console.log('[FUNC] isAnyNudgePanelOpen - open panels:', openPanels);
+            return openPanels > 0;
         },
 
         /**
@@ -1423,6 +1516,79 @@
         },
 
         /**
+         * Add participant to study
+         * v2.5.1 - Created missing function
+         */
+        addParticipant: function() {
+            console.log('[FUNC] addParticipant called');
+            const self = this;
+            
+            const studyId = this.currentStudyId;
+            const email = $('#participant-email').val().trim();
+            
+            console.log('[ADD-PARTICIPANT] studyId:', studyId, 'email:', email);
+            
+            // Validate email
+            if (!email || !email.includes('@')) {
+                $('#add-participant-error').text('Por favor ingresa un email válido').show();
+                $('#add-participant-success').hide();
+                return;
+            }
+            
+            // Show loading state
+            $('#submit-add-participant').prop('disabled', true).text('Agregando...');
+            $('#add-participant-error').hide();
+            
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'eipsi_add_participant',
+                    study_id: studyId,
+                    email: email,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    console.log('[ADD-PARTICIPANT] Response:', response);
+                    $('#submit-add-participant').prop('disabled', false).text('Agregar');
+                    
+                    if (typeof response !== 'object' || response === null) {
+                        console.error('[ADD-PARTICIPANT] Invalid response:', response);
+                        $('#add-participant-error').text('Error: Respuesta inválida del servidor').show();
+                        return;
+                    }
+                    
+                    if (response.success) {
+                        $('#add-participant-success').text(response.data?.message || 'Participante agregado correctamente').show();
+                        $('#add-participant-error').hide();
+                        $('#participant-email').val('');
+                        
+                        // Refresh participants list if open
+                        if ($('#eipsi-participants-modal').is(':visible')) {
+                            self.loadParticipantsList(1);
+                        }
+                        
+                        // Close modal after delay
+                        setTimeout(function() {
+                            $('#eipsi-add-participant-modal').fadeOut(200);
+                            $('#add-participant-success').hide();
+                        }, 2000);
+                    } else {
+                        const errorMsg = response.data || 'Error al agregar participante';
+                        $('#add-participant-error').text(errorMsg).show();
+                        $('#add-participant-success').hide();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[ADD-PARTICIPANT] AJAX error:', status, error);
+                    $('#submit-add-participant').prop('disabled', false).text('Agregar');
+                    $('#add-participant-error').text('Error de conexión. Intenta nuevamente.').show();
+                }
+            });
+        },
+
+        /**
          * Delete Study permanently
          */
         deleteStudy: function(studyId) {
@@ -1731,13 +1897,20 @@
                 success: function(response) {
                     $row.removeClass('loading');
                     console.log('[RESEND] AJAX success, response:', response);
+                    
+                    // v2.5.1 - Validar que la respuesta sea un objeto válido
+                    if (typeof response !== 'object' || response === null) {
+                        console.error('[RESEND] Invalid response format (expected object):', response);
+                        self.showToast('Error: Respuesta inválida del servidor. El handler AJAX puede no estar registrado.', 'error');
+                        return;
+                    }
 
                     if (response.success) {
-                        self.showToast(response.data.message || 'Email enviado correctamente', 'success');
+                        self.showToast(response.data?.message || 'Email enviado correctamente', 'success');
                     } else {
                         // Show detailed error message from backend
-                        const errorMsg = response.data.message || 'Error al enviar email';
-                        const errorCode = response.data.error || '';
+                        const errorMsg = response.data?.message || 'Error al enviar email';
+                        const errorCode = response.data?.error || '';
                         console.error('[RESEND] Server returned error:', errorCode, errorMsg);
 
                         // Provide helpful guidance based on error type
