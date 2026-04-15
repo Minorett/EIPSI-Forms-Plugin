@@ -271,37 +271,136 @@ class EIPSI_Nudge_Event_Scheduler {
             return;
         }
         
-        // v2.1.4 - Ejecutar nudge síncronamente (inmediatamente) para asegurar entrega sin delay
-        if (class_exists('EIPSI_Nudge_Job_Queue')) {
-            $payload = array(
-                'assignment_id' => $assignment_id,
-                'participant_id' => $assignment->participant_id,
-                'wave_id' => $assignment->wave_id,
-                'study_id' => $assignment->study_id,
-                'stage' => $stage
-            );
+        // v2.1.6 - Lock Transacción con SELECT FOR UPDATE
+        // Garantiza que solo un nudge por assignment se ejecute a la vez,
+        // manteniendo el timing exacto incluso con intervalos cortos (72 segundos)
+        
+        $transaction_started = false;
+        $result = null;
+        
+        try {
+            // Iniciar transacción
+            $wpdb->query('START TRANSACTION');
+            $transaction_started = true;
             
-            $result = EIPSI_Nudge_Job_Queue::execute_nudge_followup($payload, $stage);
+            // Bloquear la fila del assignment - ningún otro proceso puede leer/escribir hasta COMMIT/ROLLBACK
+            $locked_assignment = $wpdb->get_row($wpdb->prepare(
+                "SELECT reminder_count, status, participant_id, wave_id, study_id 
+                 FROM {$wpdb->prefix}survey_assignments 
+                 WHERE id = %d 
+                 FOR UPDATE",
+                $assignment_id
+            ));
             
-            if ($result['success']) {
-                error_log(sprintf(
-                    '[EIPSI EventScheduler] Nudge %d executed successfully for assignment %d',
-                    $stage,
-                    $assignment_id
-                ));
-            } else {
-                error_log(sprintf(
-                    '[EIPSI EventScheduler] Nudge %d execution FAILED for assignment %d: %s',
-                    $stage,
-                    $assignment_id,
-                    $result['error'] ?? 'unknown'
-                ));
-                // Fallback: enqueue for retry
-                EIPSI_Nudge_Job_Queue::enqueue("send_nudge_{$stage}", $payload, 10);
+            if (!$locked_assignment) {
+                $wpdb->query('ROLLBACK');
+                error_log(sprintf('[EIPSI EventScheduler] Assignment %d no longer exists (locked check)', $assignment_id));
+                return;
             }
-        } else {
-            // Fallback: envío directo (no recomendado)
-            self::send_nudge_direct($assignment, $stage);
+            
+            // Verificar que sigue pendiente
+            if ($locked_assignment->status !== 'pending') {
+                $wpdb->query('ROLLBACK');
+                error_log(sprintf(
+                    '[EIPSI EventScheduler] Assignment %d is %s (locked check), skipping nudge %d',
+                    $assignment_id,
+                    $locked_assignment->status,
+                    $stage
+                ));
+                return;
+            }
+            
+            // Verificar stage correcto con el count bloqueado
+            if (intval($locked_assignment->reminder_count) != $expected_reminder_count) {
+                $actual_count = intval($locked_assignment->reminder_count);
+                
+                // Determinar si es duplicado o el anterior aún no terminó
+                if ($actual_count < $expected_reminder_count) {
+                    // Nudge anterior aún no completó, re-encolar para 1 minuto (timing más cercano que 5 min)
+                    error_log(sprintf(
+                        '[EIPSI EventScheduler] LOCK: Nudge %d for assignment %d waiting - count is %d, expected %d. Re-enqueuing for 1 min',
+                        $stage,
+                        $assignment_id,
+                        $actual_count,
+                        $expected_reminder_count
+                    ));
+                    
+                    EIPSI_Nudge_Job_Queue::enqueue(
+                        "send_nudge_{$stage}",
+                        array(
+                            'assignment_id' => $assignment_id,
+                            'participant_id' => $locked_assignment->participant_id,
+                            'wave_id' => $locked_assignment->wave_id,
+                            'study_id' => $locked_assignment->study_id,
+                            'stage' => $stage
+                        ),
+                        10,
+                        date('Y-m-d H:i:s', strtotime('+1 minute'))
+                    );
+                } else {
+                    // Ya se envió este nudge (count > expected)
+                    error_log(sprintf(
+                        '[EIPSI EventScheduler] LOCK: Nudge %d for assignment %d already sent (count=%d > expected=%d)',
+                        $stage,
+                        $assignment_id,
+                        $actual_count,
+                        $expected_reminder_count
+                    ));
+                }
+                
+                $wpdb->query('ROLLBACK');
+                return;
+            }
+            
+            // TODAS LAS VERIFICACIONES PASARON - ejecutar nudge dentro de la transacción
+            if (class_exists('EIPSI_Nudge_Job_Queue')) {
+                $payload = array(
+                    'assignment_id' => $assignment_id,
+                    'participant_id' => $locked_assignment->participant_id,
+                    'wave_id' => $locked_assignment->wave_id,
+                    'study_id' => $locked_assignment->study_id,
+                    'stage' => $stage
+                );
+                
+                // Ejecutar - esto enviará el email y actualizará reminder_count DENTRO de la transacción
+                $result = EIPSI_Nudge_Job_Queue::execute_nudge_followup($payload, $stage);
+                
+                if ($result['success']) {
+                    $wpdb->query('COMMIT');
+                    error_log(sprintf(
+                        '[EIPSI EventScheduler] LOCK: Nudge %d executed and COMMITTED for assignment %d',
+                        $stage,
+                        $assignment_id
+                    ));
+                } else {
+                    // Falló el envío - rollback para que se reintente
+                    $wpdb->query('ROLLBACK');
+                    error_log(sprintf(
+                        '[EIPSI EventScheduler] LOCK: Nudge %d FAILED for assignment %d: %s - ROLLBACK',
+                        $stage,
+                        $assignment_id,
+                        $result['error'] ?? 'unknown'
+                    ));
+                    
+                    // Re-encolar para reintento en 1 minuto
+                    EIPSI_Nudge_Job_Queue::enqueue("send_nudge_{$stage}", $payload, 10);
+                }
+            } else {
+                // Fallback sin Job Queue
+                $wpdb->query('ROLLBACK');
+                self::send_nudge_direct((object)$locked_assignment, $stage);
+            }
+            
+        } catch (Exception $e) {
+            if ($transaction_started) {
+                $wpdb->query('ROLLBACK');
+            }
+            error_log(sprintf(
+                '[EIPSI EventScheduler] LOCK: EXCEPTION for assignment %d nudge %d: %s',
+                $assignment_id,
+                $stage,
+                $e->getMessage()
+            ));
         }
     }
     

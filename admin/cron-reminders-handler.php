@@ -888,44 +888,22 @@ function eipsi_process_nudge_jobs_worker() {
     
     error_log('[EIPSI JobWorker] Starting job processing');
     
-    $start_time = microtime(true);
-    $max_time = 240; // 4 minutes (leaving buffer for 5 min cron)
-    $total_processed = 0;
+    // v2.1.5 - Process only 1 job per cron run to ensure reminder_count updates
+    // between nudges and prevent race conditions where multiple nudges execute
+    // before the database reflects the updated reminder_count
+    $stats = EIPSI_Nudge_Job_Queue::process_batch(1); // Only 1 job at a time
     
-    do {
-        // Process a batch of jobs
-        $stats = EIPSI_Nudge_Job_Queue::process_batch(5); // 5 jobs at a time
-        
-        $total_processed += $stats['processed'];
-        
-        // Log progress
-        if ($stats['processed'] > 0) {
-            error_log(sprintf(
-                '[EIPSI JobWorker] Processed: %d completed, %d retried, %d failed',
-                $stats['completed'],
-                $stats['retried'],
-                $stats['failed']
-            ));
-        }
-        
-        // Check time limit
-        $elapsed = microtime(true) - $start_time;
-        if ($elapsed > $max_time) {
-            error_log('[EIPSI JobWorker] Time limit reached, stopping');
-            break;
-        }
-        
-        // If no jobs were processed, we're done
-        if ($stats['processed'] === 0) {
-            break;
-        }
-        
-        // Small delay to prevent overwhelming SMTP
-        usleep(500000); // 0.5 seconds
-        
-    } while (true);
-    
-    error_log(sprintf('[EIPSI JobWorker] Finished: %d jobs processed in %.2fs', $total_processed, microtime(true) - $start_time));
+    // Log result
+    if ($stats['processed'] > 0) {
+        error_log(sprintf(
+            '[EIPSI JobWorker] Processed: %d completed, %d retried, %d failed (single job mode)',
+            $stats['completed'],
+            $stats['retried'],
+            $stats['failed']
+        ));
+    } else {
+        error_log('[EIPSI JobWorker] No pending jobs to process');
+    }
     
     // Release lock
     delete_transient($lock_key);
