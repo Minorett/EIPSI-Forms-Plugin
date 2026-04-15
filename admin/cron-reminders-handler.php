@@ -274,7 +274,9 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
                 error_log("[EIPSI Cron] Nudge 0 READY: participant={$assignment->participant_id}, wave={$assignment->wave_name}, available_at=" . date('Y-m-d H:i:s', $available_at));
                 
                 // v2.5.0 - Trigger event-driven scheduling for follow-up nudges
+                error_log("[EIPSI Cron] NUDGE 0 TRIGGER: Firing eipsi_wave_available action for assignment_id={$assignment->id}");
                 do_action('eipsi_wave_available', $assignment->id);
+                error_log("[EIPSI Cron] NUDGE 0 TRIGGER: eipsi_wave_available action completed for assignment_id={$assignment->id}");
             } else {
                 error_log("[EIPSI Cron] NUDGE 0 BLOCKED: assignment_id={$assignment->id}, reason=NOT_YET_AVAILABLE, available_at=" . ($available_at ? date('Y-m-d H:i:s', $available_at) : 'N/A') . ", now=" . date('Y-m-d H:i:s', $now));
             }

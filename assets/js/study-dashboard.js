@@ -1687,15 +1687,22 @@
             }
 
             data.participants.forEach(function(p) {
-                console.log('[RENDER] Participant:', p.id, 'email:', p.email, 'is_active:', p.is_active);
-                const statusBadge = p.is_active
+                // v2.5.2 - Fix: Convert is_active to proper boolean (it comes as string "0" or "1")
+                const isActive = p.is_active == true || p.is_active == 1 || p.is_active == '1';
+                console.log('[RENDER] Participant:', p.id, 'email:', p.email, 'is_active raw:', p.is_active, 'parsed:', isActive);
+                
+                const statusBadge = isActive
                     ? '<span class="eipsi-badge badge-active">Activo</span>'
                     : '<span class="eipsi-badge badge-inactive">Inactivo</span>';
 
                 // Toggle button: Activo = 🔒 (cerrado, clic para desactivar), Inactivo = 🔓 (abierto, clic para activar)
-                const toggleIcon = p.is_active ? '🔒' : '🔓';
-                const toggleText = p.is_active ? 'Desactivar' : 'Activar';
-                const toggleClass = p.is_active ? 'deactivate' : 'activate';
+                const toggleIcon = isActive ? '🔒' : '🔓';
+                const toggleText = isActive ? 'Desactivar' : 'Activar';
+                const toggleClass = isActive ? 'deactivate' : 'activate';
+                
+                // v2.5.2 - Disable email buttons for inactive participants
+                const emailButtonsDisabled = !isActive ? 'disabled' : '';
+                const emailButtonsTitle = !isActive ? 'Participante inactivo - Actívalo primero' : '';
 
                 const row = `
                     <tr data-participant-id="${p.id}">
@@ -1706,17 +1713,27 @@
                                 <button type="button"
                                         class="button button-small toggle-participant-status ${toggleClass}"
                                         data-participant-id="${p.id}"
-                                        data-is-active="${p.is_active ? '1' : '0'}"
+                                        data-is-active="${isActive ? '1' : '0'}"
                                         title="${toggleText}">
                                     ${toggleIcon}
                                 </button>
                                 <button type="button" class="button button-small delete-participant-btn" data-participant-id="${p.id}" title="Eliminar">
                                     🗑️
                                 </button>
-                                <button type="button" class="button button-small resend-magic-link-btn" data-participant-id="${p.id}" data-participant-email="${p.email}" title="Enviar Magic Link">
+                                <button type="button" 
+                                        class="button button-small resend-magic-link-btn" 
+                                        data-participant-id="${p.id}" 
+                                        data-participant-email="${p.email}" 
+                                        title="${isActive ? 'Enviar Magic Link' : 'Participante inactivo - Actívalo primero'}"
+                                        ${emailButtonsDisabled}>
                                     ✨
                                 </button>
-                                <button type="button" class="button button-small resend-reminder-btn" data-participant-id="${p.id}" data-participant-email="${p.email}" title="Enviar Recordatorio">
+                                <button type="button" 
+                                        class="button button-small resend-reminder-btn" 
+                                        data-participant-id="${p.id}" 
+                                        data-participant-email="${p.email}" 
+                                        title="${isActive ? 'Enviar Recordatorio' : 'Participante inactivo - Actívalo primero'}"
+                                        ${emailButtonsDisabled}>
                                     ⏰
                                 </button>
                             </div>
