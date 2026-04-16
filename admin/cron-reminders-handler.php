@@ -442,6 +442,13 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
             continue; // Skip old logic for Nudge 0
         }
 
+        // v2.5.3 - Nudges 1-4 ahora son manejados por Event Scheduler, no por cron handler
+        // El cron handler solo procesa Nudge 0 (wave availability)
+        if ($current_stage > 0) {
+            error_log("[EIPSI Cron] SKIPPED: Nudge {$current_stage} - delegated to Event Scheduler");
+            continue;
+        }
+
         // Nudges 1-4 only send if reminders_enabled is set
         if (!$reminders_enabled) {
             error_log("[EIPSI Cron] SKIPPED: Nudge {$current_stage} - reminders disabled for study {$study->id}");

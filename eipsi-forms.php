@@ -557,7 +557,7 @@ function eipsi_enqueue_participant_auth_assets() {
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('eipsi_participant_auth'),
         'loginUrl' => get_permalink(),
-        'participantId' => null, // Se actualizará desde shortcodes si hay sesión
+        'participantId' => null // Se actualizará desde shortcodes si hay sesión
         'strings' => array(
             'checking' => __('Verificando sesión...', 'eipsi-forms'),
             'sessionExpired' => __('Tu sesión expiró. Por favor, iniciá sesión nuevamente.', 'eipsi-forms'),
