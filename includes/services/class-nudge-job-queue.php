@@ -180,6 +180,42 @@ class EIPSI_Nudge_Job_Queue {
             return false;
         }
         
+        // v2.5.3 - Errores irrecuperables: no reintentar, marcar como failed inmediatamente
+        $irrecoverable_errors = [
+            'Assignment not found',
+            'Participant not found',
+            'Wave not found',
+            'Invalid payload JSON',
+            'Invalid assignment ID',
+            'Invalid participant ID'
+        ];
+        
+        foreach ($irrecoverable_errors as $irrecoverable) {
+            if (stripos($error, $irrecoverable) !== false) {
+                // Marcar como failed permanentemente sin reintentar
+                $wpdb->update(
+                    self::get_table_name(),
+                    array(
+                        'status' => 'failed',
+                        'error' => sanitize_text_field($error . ' [IRRECOVERABLE]'),
+                        'retries' => intval($job->retries),
+                        'failed_at' => current_time('mysql')
+                    ),
+                    array('id' => $job_id),
+                    array('%s', '%s', '%d', '%s'),
+                    array('%d')
+                );
+                
+                error_log(sprintf(
+                    '[EIPSI JobQueue] Job #%d marked as PERMANENTLY FAILED (irrecoverable error): %s',
+                    $job_id,
+                    $error
+                ));
+                
+                return false;
+            }
+        }
+        
         $retries = intval($job->retries) + 1;
         
         if ($retries >= 5) {
