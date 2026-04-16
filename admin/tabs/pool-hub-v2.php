@@ -1395,7 +1395,8 @@ function eipsi_render_pool_hub_v2() {
         }
 
         // v2.2.4 - Funciones específicas para handlers inline (compatibilidad con randomization modal style)
-        function openEipsiPoolModal() {
+        // v2.5.3 - Definidas en window para estar disponibles antes de DOMContentLoaded
+        window.openEipsiPoolModal = function() {
             console.log('[POOL-HUB] openEipsiPoolModal() llamado');
             if (poolModal) {
                 updateProbabilityTotal();
@@ -1403,7 +1404,7 @@ function eipsi_render_pool_hub_v2() {
             } else {
                 console.error('[POOL-HUB] poolModal no encontrado');
             }
-        }
+        };
 
         function closeEipsiPoolModal() {
             console.log('[POOL-HUB] closeEipsiPoolModal() llamado');
@@ -1939,9 +1940,6 @@ function eipsi_render_pool_hub_v2() {
         });
 
         console.log('[POOL-HUB-INIT] Script Pool Hub cargado completamente');
-
-        // Exponer funciones para handlers inline (onclick="...")
-        window.openEipsiPoolModal = openEipsiPoolModal;
     }); // End DOMContentLoaded
     </script>
 
