@@ -462,7 +462,7 @@ class EIPSI_Wave_Availability_Email_Service {
             array(
                 'survey_id' => $survey_id,
                 'participant_id' => $participant_id,
-                'email_type' => 'reminder',
+                'email_type' => 'wave_availability',  // v2.5.3 - Nudge 0 específico
                 'recipient_email' => $recipient_email,
                 'subject' => 'Tu siguiente evaluación está disponible',
                 'status' => 'sent',

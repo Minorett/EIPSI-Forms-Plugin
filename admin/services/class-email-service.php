@@ -523,7 +523,11 @@ class EIPSI_Email_Service {
         
         $content = self::render_template($template_name, $placeholders);
 
-        return self::send_email($survey_id, $participant_id, $participant->email, 'reminder', $subject, $content);
+        // v2.5.3 - Distinguir tipo de nudge para logs más granulares
+        // Nudge 0 = wave_availability, Nudges 1-4 = nudge_1, nudge_2, etc.
+        $email_type = ($stage === 0) ? 'wave_availability' : 'nudge_' . $stage;
+        
+        return self::send_email($survey_id, $participant_id, $participant->email, $email_type, $subject, $content);
     }
 
     /**

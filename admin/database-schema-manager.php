@@ -2370,7 +2370,7 @@ class EIPSI_Database_Schema_Manager {
                 id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
                 participant_id BIGINT(20) UNSIGNED NOT NULL,
                 survey_id INT(11),
-                email_type ENUM('reminder', 'welcome', 'confirmation', 'magic_link', 'recovery', 'custom', 'audit_log') DEFAULT 'custom',
+                email_type ENUM('reminder', 'wave_availability', 'nudge_1', 'nudge_2', 'nudge_3', 'nudge_4', 'welcome', 'confirmation', 'magic_link', 'recovery', 'custom', 'audit_log') DEFAULT 'custom',
                 wave_id BIGINT(20) UNSIGNED,
                 sent_at DATETIME NOT NULL,
                 status ENUM('sent', 'failed', 'bounced', 'audit') DEFAULT 'sent',
@@ -2395,7 +2395,7 @@ class EIPSI_Database_Schema_Manager {
         $required_columns = array(
             'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NOT NULL AFTER id",
             'survey_id' => "ALTER TABLE {$table_name} ADD COLUMN survey_id INT(11) AFTER participant_id",
-            'email_type' => "ALTER TABLE {$table_name} ADD COLUMN email_type ENUM('reminder', 'welcome', 'confirmation', 'magic_link', 'recovery', 'custom', 'audit_log') DEFAULT 'custom' AFTER survey_id",
+            'email_type' => "ALTER TABLE {$table_name} ADD COLUMN email_type ENUM('reminder', 'wave_availability', 'nudge_1', 'nudge_2', 'nudge_3', 'nudge_4', 'welcome', 'confirmation', 'magic_link', 'recovery', 'custom', 'audit_log') DEFAULT 'custom' AFTER survey_id",
             'wave_id' => "ALTER TABLE {$table_name} ADD COLUMN wave_id BIGINT(20) UNSIGNED AFTER email_type",
             'recipient_email' => "ALTER TABLE {$table_name} ADD COLUMN recipient_email VARCHAR(255) AFTER wave_id",
             'subject' => "ALTER TABLE {$table_name} ADD COLUMN subject VARCHAR(500) AFTER recipient_email",
@@ -3334,7 +3334,7 @@ private static function get_schema_map() {
         'survey_email_log' => array(
             'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
             'survey_id' => 'INT(11)',
-            "email_type" => "ENUM('reminder', 'welcome', 'confirmation', 'magic_link', 'recovery', 'custom', 'audit_log') DEFAULT 'custom'",
+            "email_type" => "ENUM('reminder', 'wave_availability', 'nudge_1', 'nudge_2', 'nudge_3', 'nudge_4', 'welcome', 'confirmation', 'magic_link', 'recovery', 'custom', 'audit_log') DEFAULT 'custom'",
             'wave_id' => 'BIGINT(20) UNSIGNED',
             'recipient_email' => 'VARCHAR(255)',
             'subject' => 'VARCHAR(500)',

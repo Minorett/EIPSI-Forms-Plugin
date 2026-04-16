@@ -453,6 +453,11 @@
     color: var(--eipsi-error);
 }
 
+/* Email Details Modal - Background específico */
+#eipsi-email-details-modal .eipsi-modal-content {
+    background-color: #FAFAF3;
+}
+
 /* ==========================================================================
    FORM ELEMENTS
    ========================================================================== */

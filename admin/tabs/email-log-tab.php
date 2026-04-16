@@ -208,17 +208,16 @@ wp_enqueue_style('eipsi-high-contrast', EIPSI_FORMS_PLUGIN_URL . 'assets/css/eip
             <table class="wp-list-table widefat fixed striped eipsi-email-log-table">
                 <thead>
                     <tr>
-                        <th style="width: 15%;"><?php esc_html_e('Fecha', 'eipsi-forms'); ?></th>
-                        <th style="width: 15%;"><?php esc_html_e('Tipo', 'eipsi-forms'); ?></th>
-                        <th style="width: 20%;"><?php esc_html_e('Participante', 'eipsi-forms'); ?></th>
-                        <th style="width: 15%;"><?php esc_html_e('Email', 'eipsi-forms'); ?></th>
-                        <th style="width: 10%;"><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
-                        <th style="width: 25%;"><?php esc_html_e('Acciones', 'eipsi-forms'); ?></th>
+                        <th style="width: 18%;"><?php esc_html_e('Fecha', 'eipsi-forms'); ?></th>
+                        <th style="width: 18%;"><?php esc_html_e('Tipo', 'eipsi-forms'); ?></th>
+                        <th style="width: 22%;"><?php esc_html_e('Email', 'eipsi-forms'); ?></th>
+                        <th style="width: 12%;"><?php esc_html_e('Estado', 'eipsi-forms'); ?></th>
+                        <th style="width: 30%;"><?php esc_html_e('Acciones', 'eipsi-forms'); ?></th>
                     </tr>
                 </thead>
                 <tbody id="eipsi-email-log-body">
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px;">
+                        <td colspan="5" style="text-align: center; padding: 40px;">
                             <span class="spinner is-active" style="display: inline-block; vertical-align: middle;"></span>
                             <span style="margin-left: 10px;"><?php esc_html_e('Cargando emails...', 'eipsi-forms'); ?></span>
                         </td>
