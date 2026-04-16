@@ -211,7 +211,7 @@
 		if ( logs.length === 0 ) {
 			$emailLogBody.html( `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 40px;">
+                    <td colspan="5" style="text-align: center; padding: 40px;">
                         <p style="color: #646970;">${
 							eipsi.i18n.noEmails || 'No se encontraron emails'
 						}</p>
@@ -248,11 +248,6 @@
                         <span class="eipsi-email-type ${
 							log.email_type
 						}">${ typeLabel }</span>
-                    </td>
-                    <td>
-                        <strong>${ escapeHtml(
-							log.participant_name || 'N/A'
-						) }</strong>
                     </td>
                     <td>
                         <span style="font-size: 13px;">${ escapeHtml(

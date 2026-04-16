@@ -54,6 +54,12 @@ function eipsi_render_pool_hub() {
     }
 
     // Enqueue assets
+    // v2.5.3 - Logs de debug para verificar carga de assets
+    $js_file = EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-hub/assets/pool-hub.js';
+    $css_file = EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-hub/assets/pool-hub.css';
+    error_log('[POOL-HUB-DEBUG] JS file exists: ' . (file_exists($js_file) ? 'YES' : 'NO') . ' - Path: ' . $js_file);
+    error_log('[POOL-HUB-DEBUG] CSS file exists: ' . (file_exists($css_file) ? 'YES' : 'NO') . ' - Path: ' . $css_file);
+    
     wp_enqueue_style( 'eipsi-pool-hub', EIPSI_FORMS_PLUGIN_URL . 'admin/pool-hub/assets/pool-hub.css', array(), EIPSI_FORMS_VERSION );
     wp_enqueue_script( 'eipsi-pool-hub', EIPSI_FORMS_PLUGIN_URL . 'admin/pool-hub/assets/pool-hub.js', array( 'jquery' ), EIPSI_FORMS_VERSION, true );
     
@@ -62,6 +68,7 @@ function eipsi_render_pool_hub() {
         'nonce'   => wp_create_nonce( 'eipsi_pool_hub_nonce' ),
         'poolId'  => $pool_id,
         'activeTab' => $active_tab,
+        'debug'   => true, // v2.5.3 - Habilitar logs de debug en JS
         'strings' => array(
             'confirmDelete' => __( '¿Eliminar este pool? Esta acción no se puede deshacer.', 'eipsi-forms' ),
             'confirmReassign' => __( '¿Re-asignar este participante a otro estudio?', 'eipsi-forms' ),
@@ -369,6 +376,17 @@ function eipsi_render_pool_hub() {
             }
         }
     </style>
+
+    <!-- v2.5.3 - Script de debug para verificar disponibilidad de funciones JS -->
+    <script>
+    console.log('[POOL-HUB-DEBUG-INLINE] Verificando disponibilidad de funciones...');
+    console.log('[POOL-HUB-DEBUG-INLINE] typeof openEipsiPoolModal:', typeof window.openEipsiPoolModal);
+    console.log('[POOL-HUB-DEBUG-INLINE] typeof jQuery:', typeof jQuery);
+    console.log('[POOL-HUB-DEBUG-INLINE] typeof eipsiPoolHub:', typeof eipsiPoolHub);
+    if (typeof eipsiPoolHub !== 'undefined') {
+        console.log('[POOL-HUB-DEBUG-INLINE] eipsiPoolHub data:', eipsiPoolHub);
+    }
+    </script>
 
     <?php
 }

@@ -316,8 +316,9 @@ class EIPSI_Assignment_Service {
         $at_risk_where .= "status = 'pending' AND due_at < DATE_SUB(NOW(), INTERVAL %d DAY)";
         $params = array_merge($params, array((int) $days_overdue));
 
+        // v2.5.3 - Fix: Usar spread operator para pasar parámetros a prepare()
         $at_risk = (int) $wpdb->get_var(
-            $wpdb->prepare("SELECT COUNT(*) FROM {$assignments_table} {$at_risk_where}", $params)
+            $wpdb->prepare("SELECT COUNT(*) FROM {$assignments_table} {$at_risk_where}", ...array_values($params))
         );
 
         // Pending total
@@ -325,8 +326,9 @@ class EIPSI_Assignment_Service {
         $pending_where .= "status = 'pending'";
         $pending_params = $study_id > 0 ? array((int) $study_id) : array();
 
+        // v2.5.3 - Fix: Usar spread operator para pasar parámetros a prepare()
         $pending = (int) $wpdb->get_var(
-            $wpdb->prepare("SELECT COUNT(*) FROM {$assignments_table} {$pending_where}", $pending_params)
+            $wpdb->prepare("SELECT COUNT(*) FROM {$assignments_table} {$pending_where}", ...array_values($pending_params))
         );
 
         // Reminders sent today
@@ -335,8 +337,9 @@ class EIPSI_Assignment_Service {
         $email_where .= "DATE(sent_at) = CURDATE() AND email_type IN ('reminder', 'recovery')";
         $email_params = $study_id > 0 ? array((int) $study_id) : array();
 
+        // v2.5.3 - Fix: Usar spread operator para pasar parámetros a prepare()
         $reminders_today = (int) $wpdb->get_var(
-            $wpdb->prepare("SELECT COUNT(*) FROM {$email_log_table} {$email_where}", $email_params)
+            $wpdb->prepare("SELECT COUNT(*) FROM {$email_log_table} {$email_where}", ...array_values($email_params))
         );
 
         return array(

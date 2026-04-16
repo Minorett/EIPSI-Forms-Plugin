@@ -2063,7 +2063,7 @@ function eipsi_ajax_get_response_details() {
             if (isset($timing_metadata['total_duration'])) {
                 $total_seconds = $timing_metadata['total_duration'];
                 $minutes = floor($total_seconds / 60);
-                $seconds = intval(round($total_seconds % 60));
+                $seconds = intval(round(fmod($total_seconds, 60)));
 
                 if ($minutes > 0) {
                     $html .= '<p><strong>⏰ Tiempo total:</strong> ' . sprintf('%d min %d sec', $minutes, $seconds) . '</p>';
