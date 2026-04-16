@@ -89,7 +89,7 @@ $study_data = isset($study_data) ? $study_data : array();
         </div>
 
         <!-- Bottom cards -->
-        <div class="cards-row" style="margin-left: 50px;"
+        <div class="cards-row" style="margin-left: 50px;">
             <div class="card">
                 <div class="card-title">Control del estudio</div>
                 <div style="font-size:11px;color:#64748b;margin-bottom:8px;line-height:1.5">Al pausar se detienen los recordatorios y no se aceptan nuevas respuestas.</div>
