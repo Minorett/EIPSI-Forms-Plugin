@@ -64,6 +64,22 @@ function export_normalizeName($name) {
     return strtoupper(trim($name));
 }
 
+/**
+ * Sanitiza un valor de campo para exportación.
+ * Elimina HTML, normaliza arrays y limpia whitespace.
+ *
+ * @param mixed $val Valor crudo del campo
+ * @return string Valor limpio listo para exportar
+ */
+function eipsi_sanitize_export_value($val) {
+    if (is_array($val)) {
+        return implode(' | ', array_map('strval', $val));
+    }
+    $val = wp_strip_all_tags((string) $val);
+    $val = trim($val);
+    return $val;
+}
+
 function eipsi_export_to_excel() {
     try {
         if (!current_user_can('manage_options')) {
@@ -125,12 +141,37 @@ function eipsi_export_to_excel() {
 
     // Obtener todas las preguntas únicas para crear columnas (excluir campos internos)
     $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id', 'eipsi_consent_accepted');
+    
+    // v2.5.3 - Orden determinístico: usar submission con más campos como referencia
     $all_questions = [];
+    $reference_submission = [];
+    $max_fields = 0;
+
     foreach ($results as $row) {
         $form_data = $row->form_responses ? json_decode($row->form_responses, true) : [];
+        if (!is_array($form_data)) continue;
+        
+        // Filtrar campos internos
+        $filtered = array_diff_key($form_data, array_flip($internal_fields));
+        
+        // Si este submission tiene más campos que el actual de referencia, usarlo como base
+        if (count($filtered) > $max_fields) {
+            $max_fields = count($filtered);
+            $reference_submission = array_keys($filtered);
+        }
+    }
+
+    // El orden de referencia es el del submission más completo
+    $all_questions = $reference_submission;
+
+    // Segunda pasada: agregar al final cualquier campo que no esté en la referencia
+    foreach ($results as $row) {
+        $form_data = $row->form_responses ? json_decode($row->form_responses, true) : [];
+        if (!is_array($form_data)) continue;
+        
         foreach ($form_data as $question => $answer) {
             if (!in_array($question, $all_questions) && !in_array($question, $internal_fields)) {
-                $all_questions[] = $question;
+                $all_questions[] = $question; // Campos extras van al final
             }
         }
     }
@@ -464,7 +505,8 @@ function eipsi_export_to_excel() {
 
         // Agregar respuestas en el orden de las preguntas (excluir campos internos)
         foreach ($all_questions as $question) {
-            $row_data[] = isset($form_data[$question]) ? (is_array($form_data[$question]) ? json_encode($form_data[$question]) : $form_data[$question]) : '';
+            $val = isset($form_data[$question]) ? $form_data[$question] : '';
+            $row_data[] = eipsi_sanitize_export_value($val);
         }
 
         $data[] = $row_data;
@@ -537,12 +579,37 @@ function eipsi_export_to_csv() {
     
     // Obtener todas las preguntas únicas para crear columnas (excluir campos internos)
     $internal_fields = array('action', 'eipsi_nonce', 'start_time', 'end_time', 'form_start_time', 'form_end_time', 'nonce', 'form_action', 'ip_address', 'device', 'browser', 'os', 'screen_width', 'current_page', 'form_id', 'eipsi_consent_accepted');
+    
+    // v2.5.3 - Orden determinístico: usar submission con más campos como referencia
     $all_questions = [];
+    $reference_submission = [];
+    $max_fields = 0;
+
     foreach ($results as $row) {
         $form_data = $row->form_responses ? json_decode($row->form_responses, true) : [];
+        if (!is_array($form_data)) continue;
+        
+        // Filtrar campos internos
+        $filtered = array_diff_key($form_data, array_flip($internal_fields));
+        
+        // Si este submission tiene más campos que el actual de referencia, usarlo como base
+        if (count($filtered) > $max_fields) {
+            $max_fields = count($filtered);
+            $reference_submission = array_keys($filtered);
+        }
+    }
+
+    // El orden de referencia es el del submission más completo
+    $all_questions = $reference_submission;
+
+    // Segunda pasada: agregar al final cualquier campo que no esté en la referencia
+    foreach ($results as $row) {
+        $form_data = $row->form_responses ? json_decode($row->form_responses, true) : [];
+        if (!is_array($form_data)) continue;
+        
         foreach ($form_data as $question => $answer) {
             if (!in_array($question, $all_questions) && !in_array($question, $internal_fields)) {
-                $all_questions[] = $question;
+                $all_questions[] = $question; // Campos extras van al final
             }
         }
     }
@@ -602,6 +669,7 @@ function eipsi_export_to_csv() {
     header('Content-Disposition: attachment; filename=form-responses' . $form_suffix . '-' . date('Y-m-d-H-i-s') . '.csv');
     
     $output = fopen('php://output', 'w');
+    fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8 para Excel
     
     // Encabezados: nuevo formato con IDs + metadatos + timestamps + preguntas dinámicas
     // ONLY include metadata columns if privacy config allows
@@ -784,7 +852,8 @@ function eipsi_export_to_csv() {
 
         // Agregar respuestas en el orden de las preguntas (excluir campos internos)
         foreach ($all_questions as $question) {
-            $row_data[] = isset($form_data[$question]) ? (is_array($form_data[$question]) ? json_encode($form_data[$question]) : $form_data[$question]) : '';
+            $val = isset($form_data[$question]) ? $form_data[$question] : '';
+            $row_data[] = eipsi_sanitize_export_value($val);
         }
 
         fputcsv($output, $row_data);
