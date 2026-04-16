@@ -77,6 +77,28 @@ class EIPSI_Nudge_Job_Queue {
     }
     
     /**
+     * Contar jobs urgentes pendientes (que deberían ya haberse ejecutado)
+     * 
+     * @return int Cantidad de jobs urgentes
+     */
+    public static function count_pending_urgent() {
+        global $wpdb;
+        
+        $table = self::get_table_name();
+        $now = current_time('mysql');
+        
+        $count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} 
+             WHERE status = 'pending' 
+             AND scheduled_at <= %s 
+             AND retries < 5",
+            $now
+        ));
+        
+        return intval($count);
+    }
+    
+    /**
      * Obtener jobs pendientes para procesar
      * 
      * @param int $limit Cuántos jobs procesar

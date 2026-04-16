@@ -709,6 +709,42 @@ add_action('init', function() {
 });
 
 /**
+ * v2.5.3 - Wake-up autónomo: Procesar jobs pendientes en cada visita al sitio
+ * Los participantes mantienen el sistema funcionando automáticamente
+ */
+add_action('wp_loaded', 'eipsi_wake_up_job_processor', 20);
+
+function eipsi_wake_up_job_processor() {
+    // Solo ejecutar en requests normales (no AJAX, no CRON, no REST API)
+    if (defined('DOING_AJAX') && DOING_AJAX) return;
+    if (defined('DOING_CRON') && DOING_CRON) return;
+    if (defined('REST_REQUEST') && REST_REQUEST) return;
+    
+    // Verificar si la clase existe
+    if (!class_exists('EIPSI_Nudge_Job_Queue')) {
+        return;
+    }
+    
+    // Contar jobs urgentes pendientes
+    $pending_count = EIPSI_Nudge_Job_Queue::count_pending_urgent();
+    
+    // Solo procesar si hay jobs pendientes
+    if ($pending_count > 0) {
+        // Procesar máximo 2 jobs para no relentizar la página
+        $stats = EIPSI_Nudge_Job_Queue::process_batch(2);
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                '[EIPSI WakeUp] Auto-processed jobs via page visit: %d completed, %d retried, %d failed',
+                $stats['completed'],
+                $stats['retried'],
+                $stats['failed']
+            ));
+        }
+    }
+}
+
+/**
  * Crear página especial para acceso aleatorizado
  * DESHABILITADO por defecto (v1.3.17) - Ya no se crea automáticamente
  * Si se necesita, el usuario puede crear la página manualmente y agregar el shortcode
