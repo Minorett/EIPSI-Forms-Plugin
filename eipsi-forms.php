@@ -551,6 +551,29 @@ function eipsi_enqueue_participant_auth_assets() {
         EIPSI_FORMS_VERSION,
         true
     );
+
+    // v2.5.3 - Definir eipsiAuth para evitar ReferenceError
+    wp_localize_script('eipsi-participant-auth', 'eipsiAuth', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('eipsi_participant_auth'),
+        'loginUrl' => get_permalink(),
+        'participantId' => null, // Se actualizará desde shortcodes si hay sesión
+        'strings' => array(
+            'checking' => __('Verificando sesión...', 'eipsi-forms'),
+            'sessionExpired' => __('Tu sesión expiró. Por favor, iniciá sesión nuevamente.', 'eipsi-forms'),
+            'unauthorized' => __('No tenés acceso a esta encuesta.', 'eipsi-forms'),
+            'sessionContinued' => __('Sesión activa · Continuando...', 'eipsi-forms'),
+            'technicalError' => __('Error técnico. Intentá de nuevo.', 'eipsi-forms'),
+            'magicLinkSent' => __('¡Listo! Revisá tu email.', 'eipsi-forms'),
+            'magicLinkError' => __('Error al enviar el link. Intentá de nuevo.', 'eipsi-forms'),
+            'invalidEmail' => __('Por favor, ingresá un email válido.', 'eipsi-forms'),
+            'enterEmail' => __('Ingresá tu email para comenzar', 'eipsi-forms'),
+            'magicLinkButton' => __('Enviarme link mágico ✨', 'eipsi-forms'),
+            'checkingEmail' => __('Enviando link...', 'eipsi-forms'),
+            'welcomeBack' => __('¡Te extrañamos! Continuemos...', 'eipsi-forms'),
+            'loginRequired' => __('Iniciá sesión para participar', 'eipsi-forms')
+        )
+    ));
 }
 
 /**

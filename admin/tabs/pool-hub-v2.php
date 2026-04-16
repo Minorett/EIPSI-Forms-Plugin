@@ -1939,6 +1939,9 @@ function eipsi_render_pool_hub_v2() {
         });
 
         console.log('[POOL-HUB-INIT] Script Pool Hub cargado completamente');
+
+        // Exponer funciones para handlers inline (onclick="...")
+        window.openEipsiPoolModal = openEipsiPoolModal;
     }); // End DOMContentLoaded
     </script>
 
