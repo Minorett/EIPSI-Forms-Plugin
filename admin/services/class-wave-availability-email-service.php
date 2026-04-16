@@ -177,11 +177,12 @@ class EIPSI_Wave_Availability_Email_Service {
         
         // MÉTODO 1: Buscar en email_log emails tipo 'reminder' con wave_id en metadata
         // O buscar en la tabla de nudges enviados
+        // v2.5.3 - Fix: buscar tanto 'reminder' (legacy) como 'wave_availability' (nuevo tipo)
         $logs = $wpdb->get_results($wpdb->prepare(
-            "SELECT id, status, metadata 
+            "SELECT id, status, metadata, email_type
              FROM {$wpdb->prefix}survey_email_log 
              WHERE participant_id = %d 
-             AND email_type = 'reminder'
+             AND email_type IN ('reminder', 'wave_availability')
              AND status IN ('sent', 'pending')
              ORDER BY sent_at DESC 
              LIMIT 5",

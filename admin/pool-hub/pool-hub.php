@@ -189,9 +189,6 @@ function eipsi_render_pool_hub() {
         .eipsi-pool-hub {
             --eipsi-sidebar-width: 280px;
             --eipsi-header-height: 60px;
-            --eipsi-blue: #3B6CAA;
-            --eipsi-blue-dark: #1E3A5F;
-            --eipsi-teal: #008080;
             --eipsi-gray-100: #f8fafc;
             --eipsi-gray-200: #e2e8f0;
             --eipsi-gray-600: #64748b;
@@ -322,12 +319,12 @@ function eipsi_render_pool_hub() {
         }
 
         .eipsi-pool-tab-item a:hover {
-            color: var(--eipsi-blue);
+            color: var(--eipsi-primary);
         }
 
         .eipsi-pool-tab-item.is-active a {
-            color: var(--eipsi-blue);
-            border-bottom-color: var(--eipsi-blue);
+            color: var(--eipsi-primary);
+            border-bottom-color: var(--eipsi-primary);
         }
 
         .eipsi-pool-tab-item .dashicons {

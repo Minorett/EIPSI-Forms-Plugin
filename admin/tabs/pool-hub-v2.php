@@ -388,6 +388,7 @@ function eipsi_render_pool_hub_v2() {
             </div>
         </div>
     </div>
+    <?php endif; // End if (empty($pools)) - Cerrando el else del if principal ?>
 
     <!-- Shortcode Modal -->
     <div class="eipsi-modal-overlay" id="eipsi-shortcode-modal" style="display: none;">
@@ -908,7 +909,7 @@ function eipsi_render_pool_hub_v2() {
         }
         
         .eipsi-modal-overlay.active {
-            display: flex !important;
+            display: flex;
         }
 
         /* Modal Container */
@@ -1297,7 +1298,7 @@ function eipsi_render_pool_hub_v2() {
         }
     </style>
 
-    <script>
+    <script data-version="<?php echo time(); ?>">
     document.addEventListener('DOMContentLoaded', function() {
         console.log('[POOL-HUB-INIT] DOMContentLoaded - Script Pool Hub iniciando...');
 
@@ -1943,9 +1944,7 @@ function eipsi_render_pool_hub_v2() {
     }); // End DOMContentLoaded
     </script>
 
-    <?php endif; // End if (empty($pools)) ?>
-
-    <!-- v2.5.3 - Script de fallback: define funciones del modal si no existen (cuando hay pools) -->
+    <!-- v2.5.3 - Script ahora disponible para ambos estados (con/sin pools) -->
     <script>
     if (typeof window.openEipsiPoolModal !== 'function') {
         window.openEipsiPoolModal = function() {
