@@ -1945,6 +1945,29 @@ function eipsi_render_pool_hub_v2() {
 
     <?php endif; // End if (empty($pools)) ?>
 
+    <!-- v2.5.3 - Script de fallback: define funciones del modal si no existen (cuando hay pools) -->
+    <script>
+    if (typeof window.openEipsiPoolModal !== 'function') {
+        window.openEipsiPoolModal = function() {
+            const modal = document.getElementById('eipsi-pool-modal');
+            if (modal) {
+                modal.classList.add('active');
+                modal.style.display = 'flex';
+            } else {
+                console.error('[POOL-HUB-FALLBACK] Modal no encontrado');
+            }
+        };
+        window.closeEipsiPoolModal = function() {
+            const modal = document.getElementById('eipsi-pool-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+            }
+        };
+        console.log('[POOL-HUB-FALLBACK] Funciones definidas en modo fallback');
+    }
+    </script>
+
     <!-- Create/Edit Pool Modal - REDESIGNED -->
     <div class="eipsi-modal-overlay" id="eipsi-pool-modal" style="display: none;">
         <div class="eipsi-modal-wide">

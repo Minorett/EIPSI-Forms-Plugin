@@ -430,17 +430,11 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
                 }
                 
                 continue; // Skip old logic for Nudge 0
-            } elseif ($result['reason'] === 'max_retries_reached') {
-                // Increment reminder_count to stop trying
-                EIPSI_Assignment_Service::increment_reminder_count($assignment->wave_id, $assignment->participant_id);
-                error_log("[EIPSI Cron] Max retries reached, marking as attempted");
-            } else {
-                // Log why Nudge 0 was not sent
-                $reason = isset($result['reason']) ? $result['reason'] : 'unknown';
-                error_log("[EIPSI Cron] Nudge 0 NOT SENT for participant={$assignment->participant_id}, wave={$assignment->wave_id}, reason={$reason}");
             }
             
-            continue; // Skip old logic for Nudge 0
+            // Nota: Los bloques elseif/else fueron removidos porque $result solo existe dentro del if anterior
+            // y el continue hacía que nunca se ejecutaran. Si se necesita manejo de errores del servicio,
+            // debe implementarse dentro del bloque if ($current_stage === 0) antes del continue.
         }
 
         // v2.5.3 - Nudges 1-4 ahora son manejados por Event Scheduler, no por cron handler
