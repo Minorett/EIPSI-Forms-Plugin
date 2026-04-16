@@ -55,7 +55,126 @@ if (empty($investigator_email)) {
     $investigator_email = get_option('admin_email');
 }
 $config['investigator_alert_email'] = $investigator_email;
+
+// v2.5.1 - Verificar salud del cron para mostrar alerta si es necesario
+$cron_health = null;
+$show_cron_warning = false;
+if (class_exists('EIPSI_Cron_Health_Service')) {
+    $cron_health = EIPSI_Cron_Health_Service::get_cron_health();
+    $show_cron_warning = ($cron_health['overall_status'] !== 'ok') || 
+                         !$cron_health['system_status']['enabled'] ||
+                         (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON);
+}
+// Generar comando cron personalizado para el sitio actual
+$site_url = get_site_url();
+$cron_command = "*/5 * * * * wget -q -O - {$site_url}/wp-cron.php?doing_wp_cron >/dev/null 2>&1";
 ?>
+
+<!-- CSS para alerta de cron -->
+<style>
+.eipsi-cron-alert {
+    margin: 0 0 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    position: relative;
+}
+.eipsi-cron-alert.eipsi-fade-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+.eipsi-cron-alert.eipsi-dismissed {
+    display: none !important;
+}
+.eipsi-cron-alert h4 {
+    margin: 0 0 12px 0;
+    color: #856404;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.eipsi-cron-alert p {
+    margin: 0 0 15px 0;
+    color: #856404;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.eipsi-cron-alert .eipsi-cron-command {
+    background: #1e1e1e;
+    color: #00ff00;
+    padding: 12px 15px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    margin: 10px 0;
+    overflow-x: auto;
+    white-space: nowrap;
+    user-select: all;
+}
+.eipsi-cron-alert .eipsi-cron-instructions {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+    border-left: 3px solid #ffc107;
+}
+.eipsi-cron-alert .eipsi-cron-instructions ol {
+    margin: 10px 0;
+    padding-left: 20px;
+    color: #856404;
+    font-size: 13px;
+    line-height: 1.8;
+}
+.eipsi-cron-alert .eipsi-cron-instructions li {
+    margin-bottom: 8px;
+}
+.eipsi-cron-alert .eipsi-dismiss-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #856404;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+.eipsi-cron-alert .eipsi-dismiss-btn:hover {
+    background: rgba(133, 100, 4, 0.1);
+}
+.eipsi-cron-alert .eipsi-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.eipsi-cron-alert .eipsi-status-badge.warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+.eipsi-cron-alert .eipsi-status-badge.critical {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #dc3545;
+}
+</style>
 
 <div class="eipsi-cron-reminders-tab">
 
@@ -87,6 +206,53 @@ $config['investigator_alert_email'] = $investigator_email;
             <?php _e('Configura el envío automático de recordatorios para waves pendientes y recuperación de participantes inactivos. Los cron jobs se ejecutan cada hora.', 'eipsi-forms'); ?>
         </p>
     </div>
+
+    <?php if ($show_cron_warning) : ?>
+    <!-- v2.5.1 - Alerta de configuración de cron server -->
+    <div class="eipsi-cron-alert" id="eipsi-cron-config-alert" data-alert-id="cron-server-config">
+        <button type="button" class="eipsi-dismiss-btn" title="<?php _e('Cerrar aviso', 'eipsi-forms'); ?>">×</button>
+        
+        <?php if ($cron_health && $cron_health['overall_status'] === 'critical') : ?>
+            <span class="eipsi-status-badge critical">
+                ⚠️ <?php _e('CRÍTICO: Cron no configurado', 'eipsi-forms'); ?>
+            </span>
+        <?php else : ?>
+            <span class="eipsi-status-badge warning">
+                ⚡ <?php _e('ADVERTENCIA: Cron puede no funcionar correctamente', 'eipsi-forms'); ?>
+            </span>
+        <?php endif; ?>
+        
+        <h4>
+            🔧 <?php _e('Configuración Requerida: Cron Job de Servidor', 'eipsi-forms'); ?>
+        </h4>
+        <p>
+            <?php _e('El sistema de recordatorios depende de que el servidor ejecute tareas programadas automáticamente. Actualmente, los recordatorios solo se envían cuando alguien visita el sitio (WP-Cron), lo que puede causar retrasos o fallos en el envío.', 'eipsi-forms'); ?>
+        </p>
+        
+        <div class="eipsi-cron-instructions">
+            <strong><?php _e('Para asegurar el envío oportuno de recordatorios, configure un cron job real en su servidor:', 'eipsi-forms'); ?></strong>
+            
+            <p style="margin: 10px 0 5px 0; font-size: 12px; color: #856404;">
+                <?php _e('Comando para su sitio (copie y péguelo en cPanel, Plesk o consola SSH):', 'eipsi-forms'); ?>
+            </p>
+            <div class="eipsi-cron-command" title="<?php _e('Haga clic para seleccionar todo', 'eipsi-forms'); ?>">
+                <?php echo esc_html($cron_command); ?>
+            </div>
+            
+            <ol>
+                <li><?php _e('Acceda al panel de control de su hosting (cPanel, Plesk, DirectAdmin, etc.)', 'eipsi-forms'); ?></li>
+                <li><?php _e('Busque la sección "Cron Jobs" o "Tareas Programadas"', 'eipsi-forms'); ?></li>
+                <li><?php _e('Cree un nuevo cron job que se ejecute cada 5 minutos', 'eipsi-forms'); ?></li>
+                <li><?php _e('Pegue el comando de arriba en el campo de comando/script', 'eipsi-forms'); ?></li>
+                <li><?php _e('Guarde los cambios', 'eipsi-forms'); ?></li>
+            </ol>
+            
+            <p style="margin: 15px 0 0 0; font-size: 12px; font-style: italic; color: #856404;">
+                💡 <?php _e('Este aviso se puede cerrar pero reaparecerá si el sistema detecta que el cron sigue sin funcionar correctamente.', 'eipsi-forms'); ?>
+            </p>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Survey Selector -->
     <?php if (empty($studies)): ?>
@@ -569,6 +735,48 @@ $config['investigator_alert_email'] = $investigator_email;
                 console.error('Clear rate limits error:', err);
             });
         });
+    }
+
+    // v2.5.1 - Cron Alert fade-in y dismiss con localStorage
+    const cronAlert = document.getElementById('eipsi-cron-config-alert');
+    if (cronAlert) {
+        const alertId = cronAlert.dataset.alertId;
+        const storageKey = 'eipsi_dismissed_' + alertId;
+        
+        // Verificar si fue previamente dismissado
+        const isDismissed = localStorage.getItem(storageKey);
+        
+        if (!isDismissed) {
+            // Trigger fade-in después de un pequeño delay para que sea visible
+            setTimeout(() => {
+                cronAlert.classList.add('eipsi-fade-in');
+            }, 100);
+            
+            // Handler para el botón dismiss
+            const dismissBtn = cronAlert.querySelector('.eipsi-dismiss-btn');
+            if (dismissBtn) {
+                dismissBtn.addEventListener('click', function() {
+                    cronAlert.classList.remove('eipsi-fade-in');
+                    cronAlert.classList.add('eipsi-dismissed');
+                    localStorage.setItem(storageKey, 'true');
+                });
+            }
+            
+            // Auto-seleccionar comando al hacer clic
+            const cronCommand = cronAlert.querySelector('.eipsi-cron-command');
+            if (cronCommand) {
+                cronCommand.addEventListener('click', function() {
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    range.selectNodeContents(this);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                });
+            }
+        } else {
+            // Ya fue dismissado, mantener oculto
+            cronAlert.classList.add('eipsi-dismissed');
+        }
     }
 
     // Initialize tooltips or additional UI enhancements here

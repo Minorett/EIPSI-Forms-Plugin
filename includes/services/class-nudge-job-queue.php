@@ -448,21 +448,26 @@ class EIPSI_Nudge_Job_Queue {
         );
         
         // v2.1.3 - Actualizar reminder_count después de enviar Nudge 0
+        // v2.5.1 - También actualizar last_nudge_sent_at como punto de referencia para nudge 1
         if ($result['success'] && $result['sent']) {
             global $wpdb;
             $wpdb->update(
                 $wpdb->prefix . 'survey_assignments',
-                array('reminder_count' => 1),
+                array(
+                    'reminder_count' => 1,
+                    'last_nudge_sent_at' => current_time('mysql')
+                ),
                 array('id' => $assignment_id),
-                array('%d'),
+                array('%d', '%s'),
                 array('%d')
             );
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log(sprintf(
-                    '[EIPSI JobQueue] Nudge 0 email ENVIADO: assignment=%d, participant=%d, reminder_count=1',
+                    '[EIPSI JobQueue] Nudge 0 email ENVIADO: assignment=%d, participant=%d, reminder_count=1 a las %s',
                     $assignment_id,
-                    $assignment->participant_id
+                    $assignment->participant_id,
+                    current_time('mysql')
                 ));
             }
             return array('success' => true, 'message' => 'Nudge 0 email sent successfully');
@@ -558,6 +563,15 @@ class EIPSI_Nudge_Job_Queue {
                 array('%d')
             );
             
+            // v2.5.1 - Guardar timestamp real del envío para control de intervalos
+            $wpdb->update(
+                $wpdb->prefix . 'survey_assignments',
+                array('last_nudge_sent_at' => current_time('mysql')),
+                array('id' => $assignment_id),
+                array('%s'),
+                array('%d')
+            );
+            
             // Invalidar cache
             if (class_exists('EIPSI_Nudge_Cache')) {
                 EIPSI_Nudge_Cache::mark_nudge_sent($assignment_id, $stage);
@@ -565,10 +579,11 @@ class EIPSI_Nudge_Job_Queue {
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log(sprintf(
-                    '[EIPSI JobQueue] Nudge %d email ENVIADO: assignment=%d, participant=%d',
+                    '[EIPSI JobQueue] Nudge %d email ENVIADO: assignment=%d, participant=%d a las %s',
                     $stage,
                     $assignment_id,
-                    $full_assignment->participant_id
+                    $full_assignment->participant_id,
+                    current_time('mysql')
                 ));
             }
             

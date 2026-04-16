@@ -267,6 +267,47 @@ class EIPSI_Nudge_Service {
         
         $should_send = ($now >= $trigger_ts);
         
+        // v2.5.1 - Verificar intervalo mínimo desde el último nudge enviado
+        // Esto evita que nudges consecutivos se envíen seguidos si el cron tuvo delay
+        if ($should_send && $current_stage > 0 && !empty($assignment->last_nudge_sent_at)) {
+            $segundos_desde_ultimo = $now - strtotime($assignment->last_nudge_sent_at);
+            
+            // El intervalo mínimo es el configurado para este nudge en nudge_config
+            // Si no hay config específica, usar 2 horas como mínimo
+            $intervalo_minimo_segundos = 2 * HOUR_IN_SECONDS; // fallback
+            
+            if (!empty($nudge_config[$nudge_key]) && 
+                !empty($nudge_config[$nudge_key]['value']) && 
+                !empty($nudge_config[$nudge_key]['unit'])) {
+                $valor = intval($nudge_config[$nudge_key]['value']);
+                $unidad = $nudge_config[$nudge_key]['unit'];
+                $intervalo_minimo_segundos = ($unidad === 'days') 
+                    ? $valor * DAY_IN_SECONDS 
+                    : $valor * HOUR_IN_SECONDS;
+            }
+            
+            if ($segundos_desde_ultimo < $intervalo_minimo_segundos) {
+                $minutos_restantes = round(($intervalo_minimo_segundos - $segundos_desde_ultimo) / 60);
+                error_log(sprintf(
+                    '[EIPSI NUDGE] SKIP intervalo: nudge_%d para assignment %d - último nudge hace %d min, intervalo mínimo %d min, faltan %d min',
+                    $current_stage,
+                    $assignment_id,
+                    round($segundos_desde_ultimo / 60),
+                    round($intervalo_minimo_segundos / 60),
+                    $minutos_restantes
+                ));
+                $should_send = false;
+            } else {
+                error_log(sprintf(
+                    '[EIPSI NUDGE] OK intervalo: nudge_%d para assignment %d - último nudge hace %d min >= intervalo mínimo %d min',
+                    $current_stage,
+                    $assignment_id,
+                    round($segundos_desde_ultimo / 60),
+                    round($intervalo_minimo_segundos / 60)
+                ));
+            }
+        }
+        
         // Cache the result
         if (class_exists('EIPSI_Nudge_Cache')) {
             EIPSI_Nudge_Cache::cache_should_send($assignment_id, $current_stage, $should_send, 300); // 5 min cache

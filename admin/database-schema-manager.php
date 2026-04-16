@@ -2135,6 +2135,7 @@ class EIPSI_Database_Schema_Manager {
             first_viewed_at DATETIME NULL,
             submitted_at DATETIME NULL,
             reminder_count INT DEFAULT 0,
+            last_nudge_sent_at DATETIME NULL COMMENT 'Timestamp real del último nudge enviado exitosamente',
             last_reminder_sent DATETIME NULL,
             retry_count INT DEFAULT 0,
             last_retry_sent DATETIME NULL,
