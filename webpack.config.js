@@ -50,6 +50,8 @@ module.exports = {
     },
     // Generate individual entry points for each block
     entry: generateBlockEntries(),
+    // v2.5.2 - CRITICAL: Must include module rules for CSS/SCSS processing
+    module: defaultConfig.module,
     // Enable aggressive tree-shaking and dead code elimination
     //
     // IMPORTANT (WordPress/Gutenberg reality):
