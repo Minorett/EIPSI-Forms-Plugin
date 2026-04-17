@@ -23,7 +23,13 @@
     "devDependencies": {
         "@wordpress/scripts": "^31.4.0",
         "jsdom": "^27.2.0",
-        "ajv": "^8.18.0"
+        "ajv": "^8.18.0",
+        "style-loader": "^3.3.4",
+        "css-loader": "^6.10.0",
+        "postcss-loader": "^8.1.0",
+        "sass-loader": "^14.1.0",
+        "sass": "^1.71.0",
+        "autoprefixer": "^10.4.17"
     },
     "dependencies": {
         "@wordpress/api-fetch": "^7.37.0",
