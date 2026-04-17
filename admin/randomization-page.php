@@ -146,7 +146,7 @@ function eipsi_display_randomization() {
                         <!-- Formularios y probabilidades -->
                         <h3 class="eipsi-section-title"><?php _e('Formularios y probabilidades', 'eipsi-forms'); ?></h3>
                         <p class="eipsi-section-desc">
-                            <?php _e('Agregá los formularios y asigná probabilidades. La suma debe ser exactamente 100%.', 'eipsi-forms'); ?>
+                            <?php _e('Agregá los formularios y asigná probabilidades. La suma debe ser 100% (±1% tolerancia permitida).', 'eipsi-forms'); ?>
                         </p>
 
                         <div id="rct-forms-rows">
@@ -1295,7 +1295,9 @@ function eipsi_display_randomization() {
                 const progressLabel = progressText.querySelector('span:first-child');
                 progressLabel.textContent = total.toFixed(2) + '% / 100%';
                 
-                if (total === 100) {
+                const isTotalValid = total >= 99 && total <= 101;
+                
+                if (isTotalValid) {
                     progressFill.classList.remove('invalid');
                     progressFill.classList.add('valid');
                     progressText.classList.remove('invalid');
@@ -1306,7 +1308,7 @@ function eipsi_display_randomization() {
                     progressFill.classList.add('invalid');
                     progressText.classList.remove('valid');
                     progressText.classList.add('invalid');
-                    progressStatus.textContent = total < 100 ? '❌ Incompleto' : '❌ Excedido';
+                    progressStatus.textContent = total < 99 ? '❌ Incompleto' : '❌ Excedido';
                 }
                 
                 updateRCTSaveButtonState();
@@ -1321,14 +1323,14 @@ function eipsi_display_randomization() {
                     total += parseFloat(input.value) || 0;
                 });
                 
-                const isValid = Math.round(total * 100) / 100 === 100 && rows.length > 0;
+                const isValid = total >= 99 && total <= 101 && rows.length > 0;
                 document.getElementById('rct-save-btn').disabled = !isValid;
             }
             
             // Save randomization
             document.getElementById('rct-save-btn')?.addEventListener('click', function() {
                 if (this.disabled) {
-                    showMessage('<?php echo esc_js(__('La suma de probabilidades debe ser exactamente 100%', 'eipsi-forms')); ?>', 'error');
+                    showMessage('<?php echo esc_js(__('La suma de probabilidades debe ser 100% (±1% tolerancia)', 'eipsi-forms')); ?>', 'error');
                     return;
                 }
                 
@@ -1514,14 +1516,14 @@ function eipsi_handle_save_randomization() {
     // Generate unique config ID
     $config_id = empty($rct_id) ? 'rct_' . wp_generate_password(8, false) . '_' . time() : $rct_id;
     
-    // Validate total is 100%
+    // Validate total is 100% (±1% tolerance for rounding)
     $total_prob = 0;
     foreach ($forms_data as $item) {
         $total_prob += floatval($item['probability'] ?? 0);
     }
     
-    if (abs($total_prob - 100) > 0.01) {
-        wp_die(__('La suma de probabilidades debe ser exactamente 100%.', 'eipsi-forms'));
+    if ($total_prob < 99 || $total_prob > 101) {
+        wp_die(__('La suma de probabilidades debe ser 100% (±1% tolerancia).', 'eipsi-forms'));
     }
     
     // Prepare config data

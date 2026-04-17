@@ -49,7 +49,22 @@ function eipsi_render_pool_hub_v2() {
 
     // Check for messages
     $message = isset($_GET['message']) ? sanitize_key($_GET['message']) : '';
+    
+    // v2.5.2 - Cargar estudios disponibles para el modal de crear/editar pool
+    $all_studies = $wpdb->get_results(
+        "SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies ORDER BY study_name",
+        ARRAY_A
+    );
+    
+    // Convertir estudios a formato JSON para JavaScript
+    $studies_json = json_encode($all_studies);
     ?>
+    
+    <!-- Pasar estudios a JavaScript -->
+    <script>
+        window.eipsiPoolStudies = <?php echo $studies_json; ?>;
+        console.log('[POOL-HUB-INIT] Estudios cargados:', window.eipsiPoolStudies.length);
+    </script>
 
     <div class="wrap eipsi-pool-hub-v2">
         
@@ -206,60 +221,78 @@ function eipsi_render_pool_hub_v2() {
                 </div>
             </div>
 
-            <div class="eipsi-overview-grid">
-                <div class="eipsi-overview-main">
-                    <h2><?php _e('Distribución por Pool', 'eipsi-forms'); ?></h2>
-                    <div class="eipsi-chart-container">
-                        <canvas id="eipsi-overview-chart" height="300"></canvas>
-                    </div>
-                    <?php if (empty($pools)) : ?>
-                        <div class="eipsi-empty-state">
-                            <div class="eipsi-empty-icon">🏊</div>
-                            <h3><?php _e('No hay pools aún', 'eipsi-forms'); ?></h3>
-                            <p><?php _e('Crea tu primer pool para comenzar a asignar participantes.', 'eipsi-forms'); ?></p>
-                            <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="openEipsiPoolModal();">
-                                <?php _e('Crear primer pool', 'eipsi-forms'); ?>
-                            </button>
-                        </div>
-                    <?php endif; ?>
-                </div>
-                <div class="eipsi-overview-sidebar">
-                    <h2><?php _e('Actividad reciente', 'eipsi-forms'); ?></h2>
-                    <div class="eipsi-activity-list">
-                        <?php if (empty($recent_activity)) : ?>
-                            <div class="eipsi-empty-state-small">
-                                <p><?php _e('Todavía no hay asignaciones.', 'eipsi-forms'); ?></p>
-                            </div>
-                        <?php else : ?>
-                            <?php foreach ($recent_activity as $activity) : ?>
-                                <div class="eipsi-activity-item">
-                                    <span class="eipsi-activity-icon">
-                                        <?php echo $activity['status'] === 'completed' ? '✅' : ($activity['status'] === 'assigned' ? '👤' : '⏳'); ?>
-                                    </span>
-                                    <div class="eipsi-activity-content">
-                                        <span class="eipsi-activity-text">
-                                            <?php 
-                                            $email = esc_html($activity['participant_email']);
-                                            $pool = esc_html($activity['pool_name']);
-                                            if ($activity['status'] === 'completed') {
-                                                printf(__('%s completó en %s', 'eipsi-forms'), $email, $pool);
-                                            } elseif ($activity['status'] === 'assigned') {
-                                                printf(__('%s asignado a %s', 'eipsi-forms'), $email, $pool);
-                                            } else {
-                                                printf(__('%s en progreso en %s', 'eipsi-forms'), $email, $pool);
-                                            }
-                                            ?>
-                                        </span>
-                                        <span class="eipsi-activity-time">
-                                            <?php echo human_time_diff(strtotime($activity['assigned_at']), current_time('timestamp')); ?> ago
-                                        </span>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
+            <!-- Pool Summary Cards -->
+            <div class="eipsi-overview-header">
+                <h2><?php _e('Resumen de Pools', 'eipsi-forms'); ?></h2>
+                <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="openEipsiPoolModal();">
+                    + <?php _e('Nuevo pool', 'eipsi-forms'); ?>
+                </button>
             </div>
+            
+            <?php if (empty($pools)) : ?>
+                <div class="eipsi-empty-state">
+                    <div class="eipsi-empty-icon">🏊</div>
+                    <h3><?php _e('No hay pools aún', 'eipsi-forms'); ?></h3>
+                    <p><?php _e('Crea tu primer pool para comenzar a asignar participantes.', 'eipsi-forms'); ?></p>
+                    <button class="button button-primary eipsi-create-pool-btn" data-open-modal="create" onclick="openEipsiPoolModal();">
+                        <?php _e('Crear primer pool', 'eipsi-forms'); ?>
+                    </button>
+                </div>
+            <?php else : ?>
+                <div class="eipsi-pool-summary-grid">
+                    <?php foreach ($pools as $pool) : 
+                        $pool_stats = eipsi_get_pool_stats($pool['id']);
+                        $studies = json_decode($pool['studies'], true);
+                        $probabilities = json_decode($pool['probabilities'], true);
+                        $study_count = is_array($studies) ? count($studies) : 0;
+                        $is_active = $pool['status'] === 'active';
+                        
+                        // Calculate expected vs actual balance
+                        $balance_diff = 0;
+                        if ($study_count > 0 && $pool_stats['total'] > 0 && is_array($probabilities)) {
+                            // Simple balance calculation - deviation from perfect distribution
+                            $balance_diff = min(100, abs(100 - ($pool_stats['completed'] / max(1, $pool_stats['total']) * 100)));
+                        }
+                    ?>
+                        <div class="eipsi-pool-summary-card <?php echo $is_active ? 'is-active' : 'is-paused'; ?>">
+                            <div class="eipsi-pool-summary-header">
+                                <h3><?php echo esc_html($pool['pool_name']); ?></h3>
+                                <span class="eipsi-status-badge status-<?php echo esc_attr($pool['status']); ?>">
+                                    <?php echo $is_active ? __('Activo', 'eipsi-forms') : __('Pausado', 'eipsi-forms'); ?>
+                                </span>
+                            </div>
+                            <div class="eipsi-pool-summary-body">
+                                <div class="eipsi-pool-summary-metric">
+                                    <span class="eipsi-metric-value"><?php echo $study_count; ?></span>
+                                    <span class="eipsi-metric-label"><?php _e('Estudios', 'eipsi-forms'); ?></span>
+                                </div>
+                                <div class="eipsi-pool-summary-metric">
+                                    <span class="eipsi-metric-value"><?php echo $pool_stats['total']; ?></span>
+                                    <span class="eipsi-metric-label"><?php _e('Asignaciones', 'eipsi-forms'); ?></span>
+                                </div>
+                                <div class="eipsi-pool-summary-metric">
+                                    <span class="eipsi-metric-value"><?php echo $pool_stats['rate']; ?>%</span>
+                                    <span class="eipsi-metric-label"><?php _e('Completados', 'eipsi-forms'); ?></span>
+                                </div>
+                            </div>
+                            <div class="eipsi-pool-summary-balance">
+                                <div class="eipsi-balance-bar-container">
+                                    <div class="eipsi-balance-bar" style="width: <?php echo min(100, max(0, 100 - $balance_diff)); ?>%"></div>
+                                </div>
+                                <span class="eipsi-balance-label"><?php _e('Balance', 'eipsi-forms'); ?></span>
+                            </div>
+                            <div class="eipsi-pool-summary-actions">
+                                <button class="button button-small eipsi-view-analytics" data-pool-id="<?php echo $pool['id']; ?>">
+                                    📊 <?php _e('Analytics', 'eipsi-forms'); ?>
+                                </button>
+                                <button class="button button-small eipsi-edit-pool" data-pool-id="<?php echo $pool['id']; ?>">
+                                    ✏️ <?php _e('Editar', 'eipsi-forms'); ?>
+                                </button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Pools Tab -->
@@ -281,85 +314,90 @@ function eipsi_render_pool_hub_v2() {
                     </button>
                 </div>
             <?php else : ?>
-                <div class="eipsi-pools-cards">
-                    <?php foreach ($pools as $pool) : 
-                        $pool_stats = eipsi_get_pool_stats($pool['id']);
-                        $studies = json_decode($pool['studies'], true);
-                        $study_count = is_array($studies) ? count($studies) : 0;
-                    ?>
-                        <div class="eipsi-pool-card <?php echo $pool['status'] === 'active' ? 'is-active' : 'is-inactive'; ?>">
-                            <div class="eipsi-pool-card-header">
-                                <div class="eipsi-pool-info">
-                                    <h3><?php echo esc_html($pool['pool_name']); ?></h3>
-                                    <span class="eipsi-status-badge status-<?php echo esc_attr($pool['status']); ?>">
-                                        <?php echo $pool['status'] === 'active' ? __('Activo', 'eipsi-forms') : __('Inactivo', 'eipsi-forms'); ?>
-                                    </span>
-                                </div>
-                                <div class="eipsi-pool-menu">
-                                    <button class="eipsi-pool-menu-toggle" type="button">⋮</button>
-                                    <div class="eipsi-pool-menu-dropdown">
-                                    <a href="#" class="eipsi-edit-pool" data-pool-id="<?php echo $pool['id']; ?>">
-                                        ✏️ <?php _e('Editar', 'eipsi-forms'); ?>
-                                    </a>
-                                    <a href="#" class="eipsi-duplicate-pool" data-pool-id="<?php echo $pool['id']; ?>">
-                                        📋 <?php _e('Duplicar', 'eipsi-forms'); ?>
-                                    </a>
-                                    <a href="#" class="eipsi-toggle-pool" data-pool-id="<?php echo $pool['id']; ?>" data-status="<?php echo $pool['status']; ?>">
-                                        <?php echo $pool['status'] === 'active' ? '🚫 ' . __('Desactivar', 'eipsi-forms') : '✅ ' . __('Activar', 'eipsi-forms'); ?>
-                                    </a>
-                                    <hr>
-                                    <a href="#" class="eipsi-delete-pool-trigger" data-pool-id="<?php echo $pool['id']; ?>" data-pool-name="<?php echo esc_attr($pool['pool_name']); ?>">
-                                        🗑️ <?php _e('Eliminar', 'eipsi-forms'); ?>
-                                    </a>
-                                </div>
-                                <!-- Inline confirmation (hidden by default) -->
-                                <div class="eipsi-delete-confirm" id="delete-confirm-<?php echo $pool['id']; ?>" style="display: none;">
-                                    <span class="eipsi-delete-confirm-text"><?php _e('¿Confirmar eliminación?', 'eipsi-forms'); ?></span>
-                                    <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&action=delete&pool_id=' . $pool['id']), 'eipsi_delete_longitudinal_pool_' . $pool['id']); ?>" class="eipsi-delete-yes">
-                                        <?php _e('Sí', 'eipsi-forms'); ?>
-                                    </a>
-                                    <span class="eipsi-delete-separator">·</span>
-                                    <a href="#" class="eipsi-delete-no" data-pool-id="<?php echo $pool['id']; ?>">
-                                        <?php _e('No', 'eipsi-forms'); ?>
-                                    </a>
-                                </div>
-                                </div>
-                            </div>
-                            <div class="eipsi-pool-card-body">
-                                <p class="eipsi-pool-description"><?php echo esc_html(isset($pool['description']) && $pool['description'] ? $pool['description'] : __('Sin descripción', 'eipsi-forms')); ?></p>
-                                <div class="eipsi-pool-meta">
-                                    <span class="eipsi-pool-method">
-                                        <?php echo $pool['method'] === 'seeded' ? '🎲 ' . __('Seeded', 'eipsi-forms') : '🎰 ' . __('Random', 'eipsi-forms'); ?>
-                                    </span>
-                                    <span class="eipsi-pool-studies">
-                                        📚 <?php printf(__('%d estudios', 'eipsi-forms'), $study_count); ?>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="eipsi-pool-card-stats">
-                                <div class="eipsi-stat">
-                                    <span class="eipsi-stat-value"><?php echo $pool_stats['total']; ?></span>
-                                    <span class="eipsi-stat-label"><?php _e('Asign.', 'eipsi-forms'); ?></span>
-                                </div>
-                                <div class="eipsi-stat">
-                                    <span class="eipsi-stat-value"><?php echo $pool_stats['completed']; ?></span>
-                                    <span class="eipsi-stat-label"><?php _e('Compl.', 'eipsi-forms'); ?></span>
-                                </div>
-                                <div class="eipsi-stat">
-                                    <span class="eipsi-stat-value"><?php echo $pool_stats['rate']; ?>%</span>
-                                    <span class="eipsi-stat-label"><?php _e('Rate', 'eipsi-forms'); ?></span>
-                                </div>
-                            </div>
-                            <div class="eipsi-pool-card-actions">
-                                <button class="button button-small eipsi-view-analytics" data-pool-id="<?php echo $pool['id']; ?>">
-                                    📊 <?php _e('Analytics', 'eipsi-forms'); ?>
-                                </button>
-                                <button class="button button-small eipsi-get-shortcode" data-pool-id="<?php echo $pool['id']; ?>">
-                                    📋 <?php _e('Shortcode', 'eipsi-forms'); ?>
-                                </button>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+                <div class="eipsi-pools-table-container">
+                    <table class="eipsi-pools-table wp-list-table widefat fixed striped">
+                        <thead>
+                            <tr>
+                                <th><?php _e('Pool', 'eipsi-forms'); ?></th>
+                                <th><?php _e('Estudios', 'eipsi-forms'); ?></th>
+                                <th><?php _e('Asignaciones', 'eipsi-forms'); ?></th>
+                                <th><?php _e('Balance', 'eipsi-forms'); ?></th>
+                                <th><?php _e('Estado', 'eipsi-forms'); ?></th>
+                                <th class="eipsi-actions-col"><?php _e('Acciones', 'eipsi-forms'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($pools as $pool) : 
+                                $pool_stats = eipsi_get_pool_stats($pool['id']);
+                                $studies = json_decode($pool['studies'], true);
+                                $probabilities = json_decode($pool['probabilities'], true);
+                                $study_count = is_array($studies) ? count($studies) : 0;
+                                $is_active = $pool['status'] === 'active';
+                                
+                                // Calculate balance
+                                $balance_diff = 0;
+                                if ($study_count > 0 && $pool_stats['total'] > 0) {
+                                    $balance_diff = min(100, abs(100 - ($pool_stats['completed'] / max(1, $pool_stats['total']) * 100)));
+                                }
+                                $balance_pct = min(100, max(0, 100 - $balance_diff));
+                            ?>
+                                <tr class="eipsi-pool-row <?php echo $is_active ? 'is-active' : 'is-paused'; ?>">
+                                    <td class="eipsi-pool-name-col">
+                                        <strong><?php echo esc_html($pool['pool_name']); ?></strong>
+                                        <div class="eipsi-row-meta">
+                                            <?php echo $pool['method'] === 'seeded' ? '🎲 ' . __('Seeded', 'eipsi-forms') : '🎰 ' . __('Random', 'eipsi-forms'); ?>
+                                        </div>
+                                    </td>
+                                    <td class="eipsi-pool-studies-col">
+                                        <?php echo $study_count; ?> estudios
+                                    </td>
+                                    <td class="eipsi-pool-assignments-col">
+                                        <strong><?php echo $pool_stats['total']; ?></strong>
+                                        <div class="eipsi-row-meta">
+                                            <?php echo $pool_stats['completed']; ?> completados (<?php echo $pool_stats['rate']; ?>%)
+                                        </div>
+                                    </td>
+                                    <td class="eipsi-pool-balance-col">
+                                        <div class="eipsi-balance-mini-bar">
+                                            <div class="eipsi-balance-mini-fill" style="width: <?php echo $balance_pct; ?>%"></div>
+                                        </div>
+                                        <span class="eipsi-balance-mini-text"><?php echo round($balance_pct); ?>%</span>
+                                    </td>
+                                    <td class="eipsi-pool-status-col">
+                                        <label class="eipsi-toggle-switch">
+                                            <input type="checkbox" class="eipsi-toggle-pool-status" 
+                                                   data-pool-id="<?php echo $pool['id']; ?>" 
+                                                   <?php echo $is_active ? 'checked' : ''; ?>>
+                                            <span class="eipsi-toggle-slider"></span>
+                                        </label>
+                                        <span class="eipsi-status-text"><?php echo $is_active ? __('Activo', 'eipsi-forms') : __('Pausado', 'eipsi-forms'); ?></span>
+                                    </td>
+                                    <td class="eipsi-pool-actions-col">
+                                        <div class="eipsi-action-buttons">
+                                            <button class="button button-small eipsi-view-analytics" data-pool-id="<?php echo $pool['id']; ?>" title="<?php _e('Analytics', 'eipsi-forms'); ?>">
+                                                📊
+                                            </button>
+                                            <button class="button button-small eipsi-edit-pool" data-pool-id="<?php echo $pool['id']; ?>" title="<?php _e('Editar', 'eipsi-forms'); ?>">
+                                                ✏️
+                                            </button>
+                                            <button class="button button-small eipsi-get-shortcode" data-pool-id="<?php echo $pool['id']; ?>" title="<?php _e('Shortcode', 'eipsi-forms'); ?>">
+                                                📋
+                                            </button>
+                                            <button class="button button-small eipsi-delete-pool-trigger" data-pool-id="<?php echo $pool['id']; ?>" data-pool-name="<?php echo esc_attr($pool['pool_name']); ?>" title="<?php _e('Eliminar', 'eipsi-forms'); ?>">
+                                                🗑️
+                                            </button>
+                                        </div>
+                                        <!-- Inline confirmation -->
+                                        <div class="eipsi-delete-confirm-inline" id="delete-confirm-<?php echo $pool['id']; ?>" style="display: none;">
+                                            <span><?php _e('¿Eliminar?', 'eipsi-forms'); ?></span>
+                                            <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&action=delete&pool_id=' . $pool['id']), 'eipsi_delete_longitudinal_pool_' . $pool['id']); ?>" class="eipsi-delete-yes"><?php _e('Sí', 'eipsi-forms'); ?></a>
+                                            <a href="#" class="eipsi-delete-no" data-pool-id="<?php echo $pool['id']; ?>"><?php _e('No', 'eipsi-forms'); ?></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             <?php endif; ?>
         </div>
@@ -1296,6 +1334,323 @@ function eipsi_render_pool_hub_v2() {
                 transform: translateY(0);
             }
         }
+
+        /* v2.5.2 - Overview Header */
+        .eipsi-overview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--eipsi-border);
+        }
+
+        .eipsi-overview-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* v2.5.2 - Pool Summary Grid */
+        .eipsi-pool-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .eipsi-pool-summary-card {
+            background: white;
+            border: 1px solid var(--eipsi-border);
+            border-radius: var(--eipsi-radius-lg);
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .eipsi-pool-summary-card.is-paused {
+            opacity: 0.7;
+            background: var(--eipsi-bg-subtle);
+        }
+
+        .eipsi-pool-summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .eipsi-pool-summary-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .eipsi-pool-summary-body {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .eipsi-pool-summary-metric {
+            text-align: center;
+        }
+
+        .eipsi-metric-value {
+            display: block;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--eipsi-text);
+        }
+
+        .eipsi-metric-label {
+            display: block;
+            font-size: 12px;
+            color: var(--eipsi-text-muted);
+            margin-top: 4px;
+        }
+
+        .eipsi-pool-summary-balance {
+            margin-bottom: 16px;
+        }
+
+        .eipsi-balance-bar-container {
+            height: 8px;
+            background: var(--eipsi-bg-muted);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .eipsi-balance-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--eipsi-primary), #3b82f6);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .eipsi-balance-label {
+            font-size: 11px;
+            color: var(--eipsi-text-muted);
+        }
+
+        .eipsi-pool-summary-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* v2.5.2 - Pools Table */
+        .eipsi-pools-table-container {
+            margin-top: 20px;
+        }
+
+        .eipsi-pools-table {
+            width: 100%;
+        }
+
+        .eipsi-pools-table th {
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .eipsi-pool-row.is-paused {
+            background: var(--eipsi-bg-subtle);
+        }
+
+        .eipsi-pool-name-col strong {
+            font-size: 14px;
+        }
+
+        .eipsi-row-meta {
+            font-size: 11px;
+            color: var(--eipsi-text-muted);
+            margin-top: 4px;
+        }
+
+        .eipsi-pool-balance-col {
+            min-width: 100px;
+        }
+
+        .eipsi-balance-mini-bar {
+            height: 6px;
+            background: var(--eipsi-bg-muted);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .eipsi-balance-mini-fill {
+            height: 100%;
+            background: var(--eipsi-primary);
+            border-radius: 3px;
+        }
+
+        .eipsi-balance-mini-text {
+            font-size: 11px;
+            color: var(--eipsi-text-muted);
+        }
+
+        .eipsi-action-buttons {
+            display: flex;
+            gap: 4px;
+        }
+
+        .eipsi-action-buttons .button {
+            padding: 0 6px;
+            min-height: 28px;
+            line-height: 26px;
+        }
+
+        .eipsi-delete-confirm-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* v2.5.2 - Toggle Switch */
+        .eipsi-toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        .eipsi-toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .eipsi-toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .eipsi-toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        .eipsi-toggle-switch input:checked + .eipsi-toggle-slider {
+            background-color: var(--eipsi-primary);
+        }
+
+        .eipsi-toggle-switch input:checked + .eipsi-toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        .eipsi-status-text {
+            font-size: 12px;
+            color: var(--eipsi-text-muted);
+        }
+
+        /* v2.5.2 - Analytics Cards */
+        .eipsi-analytics-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .eipsi-analytics-card {
+            background: white;
+            border: 1px solid var(--eipsi-border);
+            border-radius: var(--eipsi-radius-lg);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .eipsi-analytics-card-icon {
+            font-size: 32px;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--eipsi-bg-subtle);
+            border-radius: var(--eipsi-radius);
+        }
+
+        .eipsi-analytics-card-content {
+            flex: 1;
+        }
+
+        .eipsi-analytics-card-value {
+            display: block;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--eipsi-text);
+            line-height: 1;
+        }
+
+        .eipsi-analytics-card-label {
+            display: block;
+            font-size: 13px;
+            color: var(--eipsi-text-muted);
+            margin-top: 4px;
+        }
+
+        .eipsi-analytics-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 24px 0 16px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--eipsi-border);
+        }
+
+        .eipsi-analytics-empty {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--eipsi-bg-subtle);
+            border-radius: var(--eipsi-radius-lg);
+        }
+
+        .eipsi-analytics-empty .eipsi-empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .eipsi-analytics-empty h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .eipsi-analytics-empty p {
+            margin: 0;
+            color: var(--eipsi-text-muted);
+        }
+
+        /* v2.5.2 - Modal Content */
+        .eipsi-modal-content {
+            background: white;
+            border-radius: var(--eipsi-radius-lg);
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
     </style>
 
     <script data-version="<?php echo time(); ?>">
@@ -1491,7 +1846,8 @@ function eipsi_render_pool_hub_v2() {
                 const poolSelect = document.getElementById('eipsi-analytics-pool-select');
                 
                 // Switch to analytics tab
-                document.querySelector('[data-subtab="analytics"]').click();
+                const analyticsTab = document.querySelector('[data-subtab="analytics"]');
+                if (analyticsTab) analyticsTab.click();
                 
                 // Select the pool
                 if (poolSelect) {
@@ -1583,7 +1939,7 @@ function eipsi_render_pool_hub_v2() {
             }
         });
 
-        // Toggle pool status
+        // Toggle pool status (from dropdown menu)
         document.querySelectorAll('.eipsi-toggle-pool').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -1591,6 +1947,27 @@ function eipsi_render_pool_hub_v2() {
                 const currentStatus = this.dataset.status;
                 console.log('[POOL-HUB] Toggle pool status clicked, poolId:', poolId, 'currentStatus:', currentStatus);
                 togglePoolStatus(poolId, currentStatus);
+            });
+        });
+
+        // v2.5.2 - Toggle pool status from table switch
+        document.querySelectorAll('.eipsi-toggle-pool-status').forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                const poolId = this.dataset.poolId;
+                const newStatus = this.checked ? 'active' : 'paused';
+                console.log('[POOL-HUB] Toggle switch changed, poolId:', poolId, 'newStatus:', newStatus);
+                togglePoolStatus(poolId, this.checked ? 'paused' : 'active');
+                
+                // Update status text
+                const row = this.closest('.eipsi-pool-row');
+                const statusText = row?.querySelector('.eipsi-status-text');
+                if (statusText) {
+                    statusText.textContent = this.checked ? '<?php _e('Activo', 'eipsi-forms'); ?>' : '<?php _e('Pausado', 'eipsi-forms'); ?>';
+                }
+                if (row) {
+                    row.classList.toggle('is-active', this.checked);
+                    row.classList.toggle('is-paused', !this.checked);
+                }
             });
         });
 
@@ -1674,25 +2051,40 @@ function eipsi_render_pool_hub_v2() {
             });
         }
 
-        // Add study row
+        // v2.5.2 - Add study row usando estudios cargados dinámicamente
         function addStudyRow(studyId = '', probability = '') {
             console.log('[POOL-HUB] addStudyRow called, studyId:', studyId, 'probability:', probability);
             const container = document.getElementById('eipsi-pool-studies-rows');
+            if (!container) {
+                console.error('[POOL-HUB] Container eipsi-pool-studies-rows no encontrado');
+                return;
+            }
+            
             const rowCount = container.querySelectorAll('.eipsi-pool-study-row').length;
             console.log('[POOL-HUB] Current study rows:', rowCount);
+            
+            // v2.5.2 - Usar estudios cargados desde window.eipsiPoolStudies
+            const studies = window.eipsiPoolStudies || [];
+            console.log('[POOL-HUB] Estudios disponibles:', studies.length);
+            
+            if (studies.length === 0) {
+                alert('<?php _e("No hay estudios disponibles. Primero creá un estudio longitudinal.", "eipsi-forms"); ?>');
+                return;
+            }
+            
+            // Generar opciones del select dinámicamente
+            let optionsHtml = '<option value=""><?php _e("Seleccionar estudio...", "eipsi-forms"); ?></option>';
+            studies.forEach(function(study) {
+                const selected = (studyId == study.id) ? 'selected' : '';
+                optionsHtml += '<option value="' + study.id + '" ' + selected + '>' + 
+                    study.study_name + ' (' + study.study_code + ')</option>';
+            });
             
             const row = document.createElement('div');
             row.className = 'eipsi-pool-study-row';
             row.innerHTML = `
                 <select name="study_select[]" required style="flex:1;min-width:200px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;">
-                    <option value=""><?php _e('Seleccionar estudio...', 'eipsi-forms'); ?></option>
-                    <?php 
-                    $all_studies = $wpdb->get_results("SELECT id, study_name, study_code FROM {$wpdb->prefix}survey_studies ORDER BY study_name", ARRAY_A);
-                    foreach ($all_studies as $study) : ?>
-                        <option value="<?php echo $study['id']; ?>" ${studyId == <?php echo $study['id']; ?> ? 'selected' : ''}>
-                            <?php echo esc_html($study['study_name'] . ' (' . $study['study_code'] . ')'); ?>
-                        </option>
-                    <?php endforeach; ?>
+                    ${optionsHtml}
                 </select>
                 <input type="number" name="study_probability[]" value="${probability}" min="0" max="100" step="0.01" placeholder="%" required style="width:80px;text-align:right;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;">
                 <span class="eipsi-remove-study" title="<?php _e('Eliminar', 'eipsi-forms'); ?>">&times;</span>
@@ -1713,6 +2105,26 @@ function eipsi_render_pool_hub_v2() {
             
             container.appendChild(row);
             console.log('[POOL-HUB] Study row added, new count:', rowCount + 1);
+            
+            // v2.5.2 - Auto-distribute probabilities after adding
+            autoDistributeProbabilities();
+        }
+
+        // v2.5.2 - Auto-distribute function
+        function autoDistributeProbabilities() {
+            const rows = document.querySelectorAll('#eipsi-pool-studies-rows .eipsi-pool-study-row');
+            if (rows.length === 0) return;
+            
+            const equalProb = (100 / rows.length).toFixed(2);
+            rows.forEach((row, index) => {
+                const input = row.querySelector('input[type="number"]');
+                // Only set if empty or default value
+                if (!input.value || input.value === '0' || input.value === '') {
+                    input.value = equalProb;
+                }
+            });
+            updateProbabilityTotal();
+            console.log('[POOL-HUB] Auto-distributed probabilities:', equalProb + '% each');
         }
 
         // Add study button
@@ -1866,7 +2278,8 @@ function eipsi_render_pool_hub_v2() {
         });
 
         // Analytics pool selector
-        document.getElementById('eipsi-analytics-pool-select').addEventListener('change', function() {
+        const analyticsSelect = document.getElementById('eipsi-analytics-pool-select');
+        if (analyticsSelect) analyticsSelect.addEventListener('change', function() {
             const poolId = this.value;
             console.log('[POOL-HUB] Analytics pool selector changed, poolId:', poolId);
             if (poolId) {
@@ -1906,16 +2319,109 @@ function eipsi_render_pool_hub_v2() {
             });
         }
 
+        // v2.5.2 - Render pool analytics con cards y tabla breakdown
         function renderPoolAnalytics(data) {
             console.log('[POOL-HUB] renderPoolAnalytics called, data:', data);
             const container = document.getElementById('eipsi-analytics-container');
-            // Render analytics HTML based on data
-            // This would include charts and stats
-            console.log('[POOL-HUB] Analytics rendered');
+            
+            // Si no hay asignaciones
+            if (!data.assignments || data.assignments.length === 0) {
+                container.innerHTML = `
+                    <div class="eipsi-analytics-empty">
+                        <div class="eipsi-empty-icon">📊</div>
+                        <h3><?php _e('Este pool todavía no tiene participantes asignados', 'eipsi-forms'); ?></h3>
+                        <p><?php _e('Compartí el shortcode para comenzar a recibir participantes.', 'eipsi-forms'); ?></p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Calcular métricas
+            const total = data.total_assignments || 0;
+            const completed = data.completed || 0;
+            const inProgress = data.in_progress || 0;
+            const dropouts = data.dropouts || 0;
+            const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+            const dropoutRate = total > 0 ? Math.round((dropouts / total) * 100) : 0;
+            
+            // HTML de cards resumen
+            let html = `
+                <div class="eipsi-analytics-cards">
+                    <div class="eipsi-analytics-card">
+                        <div class="eipsi-analytics-card-icon">👥</div>
+                        <div class="eipsi-analytics-card-content">
+                            <span class="eipsi-analytics-card-value">${total}</span>
+                            <span class="eipsi-analytics-card-label"><?php _e('Total asignados', 'eipsi-forms'); ?></span>
+                        </div>
+                    </div>
+                    <div class="eipsi-analytics-card">
+                        <div class="eipsi-analytics-card-icon">✅</div>
+                        <div class="eipsi-analytics-card-content">
+                            <span class="eipsi-analytics-card-value">${completionRate}%</span>
+                            <span class="eipsi-analytics-card-label"><?php _e('Completion rate', 'eipsi-forms'); ?></span>
+                        </div>
+                    </div>
+                    <div class="eipsi-analytics-card">
+                        <div class="eipsi-analytics-card-icon">⚠️</div>
+                        <div class="eipsi-analytics-card-content">
+                            <span class="eipsi-analytics-card-value">${dropoutRate}%</span>
+                            <span class="eipsi-analytics-card-label"><?php _e('Dropout rate', 'eipsi-forms'); ?></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 class="eipsi-analytics-section-title"><?php _e('Breakdown por estudio', 'eipsi-forms'); ?></h3>
+                <div class="eipsi-analytics-table-container">
+                    <table class="eipsi-analytics-table wp-list-table widefat fixed striped">
+                        <thead>
+                            <tr>
+                                <th><?php _e('Estudio', 'eipsi-forms'); ?></th>
+                                <th><?php _e('Asignaciones', 'eipsi-forms'); ?></th>
+                                <th><?php _e('% Real', 'eipsi-forms'); ?></th>
+                                <th><?php _e('% Esperado', 'eipsi-forms'); ?></th>
+                                <th><?php _e('Completados', 'eipsi-forms'); ?></th>
+                                <th><?php _e('En progreso', 'eipsi-forms'); ?></th>
+                                <th><?php _e('Dropouts', 'eipsi-forms'); ?></th>
+                                <th><?php _e('Completion Rate', 'eipsi-forms'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            // Agregar filas de estudios
+            if (data.studies && data.studies.length > 0) {
+                data.studies.forEach(study => {
+                    const realPct = total > 0 ? ((study.assignments / total) * 100).toFixed(1) : 0;
+                    const studyCompletionRate = study.assignments > 0 ? Math.round((study.completed / study.assignments) * 100) : 0;
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${study.name}</strong></td>
+                            <td>${study.assignments}</td>
+                            <td>${realPct}%</td>
+                            <td>${study.expected_pct}%</td>
+                            <td>${study.completed}</td>
+                            <td>${study.in_progress}</td>
+                            <td>${study.dropouts}</td>
+                            <td>${studyCompletionRate}%</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            console.log('[POOL-HUB] Analytics rendered with cards and table');
         }
 
         // Export CSV
-        document.getElementById('eipsi-export-analytics-csv').addEventListener('click', function() {
+        const exportBtn = document.getElementById('eipsi-export-analytics-csv');
+        if (exportBtn) exportBtn.addEventListener('click', function() {
             const poolId = document.getElementById('eipsi-analytics-pool-select').value;
             console.log('[POOL-HUB] Export CSV clicked, poolId:', poolId);
             if (!poolId) {
@@ -1967,9 +2473,9 @@ function eipsi_render_pool_hub_v2() {
     }
     </script>
 
-    <!-- Create/Edit Pool Modal - REDESIGNED -->
+    <!-- Create/Edit Pool Modal - v2.5.2 max-width 680px -->
     <div class="eipsi-modal-overlay" id="eipsi-pool-modal" style="display: none;">
-        <div class="eipsi-modal-wide">
+        <div class="eipsi-modal-content" style="max-width: 680px;">
             <div class="eipsi-modal-header">
                 <h2 id="eipsi-modal-title"><?php _e('Crear nuevo pool', 'eipsi-forms'); ?></h2>
                 <button class="eipsi-modal-close" type="button" onclick="closeEipsiPoolModal()">&times;</button>
@@ -2052,7 +2558,9 @@ function eipsi_render_pool_hub_v2() {
             </div>
             <div class="eipsi-modal-footer">
                 <button type="button" class="eipsi-btn-ghost" onclick="closeEipsiPoolModal()"><?php _e('Cancelar', 'eipsi-forms'); ?></button>
-                <button type="button" class="eipsi-btn-primary" id="eipsi-save-pool-btn" disabled><?php _e('Guardar pool', 'eipsi-forms'); ?></button>
+                <button type="button" class="eipsi-btn-primary" id="eipsi-save-pool-btn" disabled title="<?php _e('La suma debe ser 100%', 'eipsi-forms'); ?>">
+                    <?php _e('Guardar pool', 'eipsi-forms'); ?>
+                </button>
             </div>
         </div>
     </div>
