@@ -2,7 +2,7 @@
 /**
  * Custom webpack config for @wordpress/scripts.
  *
- * We keep WordPress defaults, but disable performance hints so `npm run build`
+ * We keep WordPress defaults, but disable performance hints so `npm run build` 
  * stays warning-free (CI-friendly) while we continue to optimize bundle size.
  *
  * Also configures entry points to generate both base files and individual blocks.
@@ -10,6 +10,73 @@
 const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
 const fs = require( 'fs' );
 const path = require( 'path' );
+
+// v2.5.2 - FIX: Webpack 4 needs explicit CSS/SCSS loaders
+// Extract CSS loader config from default or define explicitly
+const getCSSLoaders = () => {
+    // Try to find existing CSS rules in default config
+    const defaultRules = defaultConfig.module?.rules || [];
+    const cssRule = defaultRules.find(r => r.test?.toString().includes('css') || r.test?.toString().includes('scss'));
+    
+    if (cssRule) {
+        return defaultRules;
+    }
+    
+    // Fallback: define CSS/SCSS loaders explicitly for webpack 4
+    return [
+        {
+            test: /\.css$/,
+            use: [
+                'style-loader',
+                {
+                    loader: 'css-loader',
+                    options: { importLoaders: 1 }
+                },
+                {
+                    loader: 'postcss-loader',
+                    options: {
+                        postcssOptions: {
+                            plugins: [
+                                require('autoprefixer')
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            test: /\.scss$/,
+            use: [
+                'style-loader',
+                {
+                    loader: 'css-loader',
+                    options: { importLoaders: 2 }
+                },
+                {
+                    loader: 'postcss-loader',
+                    options: {
+                        postcssOptions: {
+                            plugins: [
+                                require('autoprefixer')
+                            ]
+                        }
+                    }
+                },
+                {
+                    loader: 'sass-loader',
+                    options: {
+                        sassOptions: {
+                            outputStyle: 'compressed',
+                            quietDeps: true
+                        }
+                    }
+                }
+            ]
+        },
+        // Include all other default rules (JS, images, fonts, etc.)
+        ...defaultRules.filter(r => !r.test?.toString().includes('css') && !r.test?.toString().includes('scss'))
+    ];
+};
 
 // Dynamically generate entry points for each block
 function generateBlockEntries() {
@@ -50,8 +117,11 @@ module.exports = {
     },
     // Generate individual entry points for each block
     entry: generateBlockEntries(),
-    // v2.5.2 - CRITICAL: Must include module rules for CSS/SCSS processing
-    module: defaultConfig.module,
+    // v2.5.2 - FIX: Explicit CSS/SCSS loaders for webpack 4 compatibility
+    module: {
+        ...(defaultConfig.module || {}),
+        rules: getCSSLoaders()
+    },
     // Enable aggressive tree-shaking and dead code elimination
     //
     // IMPORTANT (WordPress/Gutenberg reality):
