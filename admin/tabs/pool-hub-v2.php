@@ -1654,13 +1654,47 @@ function eipsi_render_pool_hub_v2() {
     </style>
 
     <script data-version="<?php echo time(); ?>">
+    // v2.5.3 - FIX: Declare DOM element references at the top to avoid hoisting issues
+    let savePoolBtn, poolForm;
+    
     document.addEventListener('DOMContentLoaded', function() {
         console.log('[POOL-HUB-INIT] DOMContentLoaded - Script Pool Hub iniciando...');
+        
+        // Initialize DOM references immediately
+        savePoolBtn = document.getElementById('eipsi-save-pool-btn');
+        poolForm = document.getElementById('eipsi-pool-form');
+        console.log('[POOL-HUB-INIT] DOM references initialized:', {savePoolBtn: !!savePoolBtn, poolForm: !!poolForm});
 
         const subTabs = document.querySelectorAll('.eipsi-sub-tabs .nav-tab');
         const subContents = document.querySelectorAll('.eipsi-subtab-content');
         console.log('[POOL-HUB-INIT] Sub-tabs encontrados:', subTabs.length);
         console.log('[POOL-HUB-INIT] Sub-contents encontrados:', subContents.length);
+        
+        // v2.5.3 - Log de estado de todos los elementos críticos
+        console.log('[POOL-HUB-INIT] === ESTADO DE ELEMENTOS CRÍTICOS ===');
+        console.log('[POOL-HUB-INIT] Botones encontrados:', {
+            create: document.querySelectorAll('.eipsi-create-pool-btn').length,
+            edit: document.querySelectorAll('.eipsi-edit-pool').length,
+            toggle: document.querySelectorAll('.eipsi-toggle-pool').length,
+            analytics: document.querySelectorAll('.eipsi-view-analytics').length,
+            delete: document.querySelectorAll('.eipsi-delete-pool').length,
+            toggleStatus: document.querySelectorAll('.eipsi-toggle-pool-status').length
+        });
+        console.log('[POOL-HUB-INIT] Modales encontrados:', {
+            poolModal: !!document.getElementById('eipsi-pool-modal'),
+            shortcodeModal: !!document.getElementById('eipsi-shortcode-modal'),
+            deleteModal: !!document.getElementById('eipsi-delete-modal')
+        });
+        console.log('[POOL-HUB-INIT] Formularios:', {
+            poolForm: !!document.getElementById('eipsi-pool-form'),
+            studiesContainer: !!document.getElementById('eipsi-pool-studies-rows'),
+            studiesData: !!document.getElementById('eipsi-pool-studies-data')
+        });
+        console.log('[POOL-HUB-INIT] Selectores:', {
+            poolMethod: !!document.getElementById('eipsi-pool-method'),
+            analyticsSelect: !!document.getElementById('eipsi-analytics-pool-select')
+        });
+        console.log('[POOL-HUB-INIT] =========================================');
 
         // Sub-tab switching
         subTabs.forEach(tab => {
@@ -1752,13 +1786,18 @@ function eipsi_render_pool_hub_v2() {
 
         // v2.2.4 - Funciones específicas para handlers inline (compatibilidad con randomization modal style)
         // v2.5.3 - Definidas en window para estar disponibles antes de DOMContentLoaded
-        window.openEipsiPoolModal = function() {
-            console.log('[POOL-HUB] openEipsiPoolModal() llamado');
+        window.openEipsiPoolModal = function(poolId = null) {
+            console.log('[POOL-HUB] openEipsiPoolModal() llamado', {poolId, poolModalExists: !!poolModal, savePoolBtnExists: !!savePoolBtn});
             if (poolModal) {
+                console.log('[POOL-HUB] Estado pre-update:', {
+                    probabilityTotal: document.getElementById('eipsi-progress-text')?.textContent,
+                    studyRows: document.querySelectorAll('#eipsi-pool-studies-rows .eipsi-pool-study-row').length
+                });
                 updateProbabilityTotal();
                 openModal(poolModal);
+                console.log('[POOL-HUB] Modal abierto exitosamente');
             } else {
-                console.error('[POOL-HUB] poolModal no encontrado');
+                console.error('[POOL-HUB] poolModal no encontrado - verificar ID: eipsi-pool-modal');
             }
         };
 
@@ -1772,21 +1811,35 @@ function eipsi_render_pool_hub_v2() {
         function resetPoolForm() {
             console.log('[POOL-HUB] resetPoolForm() llamado');
             const form = document.getElementById('eipsi-pool-form');
+            const poolIdInput = document.getElementById('eipsi-pool-id');
+            const modalTitle = document.getElementById('eipsi-modal-title');
+            const saveBtn = document.getElementById('eipsi-save-pool-btn');
+            
+            console.log('[POOL-HUB] resetPoolForm - elementos encontrados:', {
+                form: !!form, poolIdInput: !!poolIdInput, modalTitle: !!modalTitle, saveBtn: !!saveBtn
+            });
+            
             if (form) {
                 form.reset();
-                document.getElementById('eipsi-pool-id').value = '0';
-                document.getElementById('eipsi-modal-title').textContent = '<?php echo esc_js(__('Crear nuevo pool', 'eipsi-forms')); ?>';
-                document.getElementById('eipsi-save-pool-btn').textContent = '<?php echo esc_js(__('Guardar pool', 'eipsi-forms')); ?>';
+                if (poolIdInput) poolIdInput.value = '0';
+                if (modalTitle) modalTitle.textContent = '<?php echo esc_js(__('Crear nuevo pool', 'eipsi-forms')); ?>';
+                if (saveBtn) saveBtn.textContent = '<?php echo esc_js(__('Guardar pool', 'eipsi-forms')); ?>';
+                console.log('[POOL-HUB] Formulario reseteado');
+            } else {
+                console.warn('[POOL-HUB] Formulario no encontrado en resetPoolForm');
             }
             // Clear study rows
             const rowsContainer = document.getElementById('eipsi-pool-studies-rows');
             if (rowsContainer) {
+                const rowCount = rowsContainer.querySelectorAll('.eipsi-pool-study-row').length;
                 rowsContainer.innerHTML = '';
+                console.log('[POOL-HUB] Filas de estudios limpiadas (eran:', rowCount, ')');
             }
             // Hide page info
             const pageInfo = document.getElementById('eipsi-pool-page-info');
             if (pageInfo) {
                 pageInfo.style.display = 'none';
+                console.log('[POOL-HUB] Page info ocultado');
             }
             updateProbabilityTotal();
         }
@@ -1831,21 +1884,25 @@ function eipsi_render_pool_hub_v2() {
         });
 
         // Edit pool
-        document.querySelectorAll('.eipsi-edit-pool').forEach(btn => {
+        const editButtons = document.querySelectorAll('.eipsi-edit-pool');
+        console.log('[POOL-HUB] Botones de editar encontrados:', editButtons.length);
+        editButtons.forEach((btn, index) => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 const poolId = this.dataset.poolId;
-                console.log('[POOL-HUB] Edit pool clicked, poolId:', poolId);
+                console.log('[POOL-HUB] Edit pool clicked - index:', index, 'poolId:', poolId);
                 // Load pool data via AJAX and open modal
                 loadPoolData(poolId);
             });
         });
 
         // View analytics - sync with analytics tab
-        document.querySelectorAll('.eipsi-view-analytics').forEach(btn => {
+        const analyticsButtons = document.querySelectorAll('.eipsi-view-analytics');
+        console.log('[POOL-HUB] Botones de analytics encontrados:', analyticsButtons.length);
+        analyticsButtons.forEach((btn, index) => {
             btn.addEventListener('click', function() {
                 const poolId = this.dataset.poolId;
-                console.log('[POOL-HUB] View analytics clicked, poolId:', poolId);
+                console.log('[POOL-HUB] View analytics clicked - index:', index, 'poolId:', poolId);
                 const poolSelect = document.getElementById('eipsi-analytics-pool-select');
                 
                 // Switch to analytics tab
@@ -1989,39 +2046,58 @@ function eipsi_render_pool_hub_v2() {
 
         // Load pool data function
         function loadPoolData(poolId) {
-            console.log('[POOL-HUB] loadPoolData called, poolId:', poolId);
+            console.log('[POOL-HUB] loadPoolData() INICIANDO', {poolId, timestamp: new Date().toISOString()});
             const data = new FormData();
             data.append('action', 'eipsi_get_pool_data');
             data.append('pool_id', poolId);
             data.append('nonce', '<?php echo wp_create_nonce("eipsi_forms_nonce"); ?>');
 
-            console.log('[POOL-HUB] Fetching pool data via AJAX...');
+            console.log('[POOL-HUB] AJAX request - eipsi_get_pool_data', {poolId, ajaxurl});
             fetch(ajaxurl, {
                 method: 'POST',
                 body: data
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('[POOL-HUB] AJAX response status:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('[POOL-HUB] AJAX data received:', {success: data.success, hasPool: !!data.data?.pool, hasStudies: !!data.data?.studies});
                 if (data.success) {
+                    const pool = data.data.pool;
+                    const studies = data.data.studies || [];
+                    console.log('[POOL-HUB] Pool data:', {id: pool.id, name: pool.pool_name, method: pool.method, studiesCount: studies.length});
+                    
                     document.getElementById('eipsi-modal-title').textContent = '<?php _e("Editar pool", "eipsi-forms"); ?>';
-                    document.getElementById('eipsi-pool-id').value = data.data.pool.id;
-                    document.getElementById('eipsi-pool-name').value = data.data.pool.pool_name;
-                    document.getElementById('eipsi-pool-description').value = data.data.pool.description;
-                    document.getElementById('eipsi-pool-method').value = data.data.pool.method;
+                    document.getElementById('eipsi-pool-id').value = pool.id;
+                    document.getElementById('eipsi-pool-name').value = pool.pool_name;
+                    document.getElementById('eipsi-pool-description').value = pool.description;
+                    document.getElementById('eipsi-pool-method').value = pool.method;
                     
                     // Populate studies
                     const container = document.getElementById('eipsi-pool-studies-rows');
+                    console.log('[POOL-HUB] Limpiando container de estudios');
                     container.innerHTML = '';
-                    if (data.data.studies) {
-                        data.data.studies.forEach(study => {
+                    if (studies.length > 0) {
+                        console.log('[POOL-HUB] Agregando', studies.length, 'filas de estudios');
+                        studies.forEach((study, index) => {
+                            console.log('[POOL-HUB] Agregando fila', index, {id: study.id, probability: study.probability});
                             addStudyRow(study.id, study.probability);
                         });
+                    } else {
+                        console.log('[POOL-HUB] No hay estudios para agregar');
                     }
                     updateProbabilityTotal();
                     openModal(poolModal);
+                    console.log('[POOL-HUB] loadPoolData() COMPLETADO');
                 } else {
+                    console.error('[POOL-HUB] Error en respuesta AJAX:', data.data?.message || 'Error desconocido');
                     showToast(data.data.message || '<?php _e("Error al cargar pool", "eipsi-forms"); ?>', 'error');
                 }
+            })
+            .catch(error => {
+                console.error('[POOL-HUB] Error en fetch:', error);
+                showToast('<?php _e("Error de conexión", "eipsi-forms"); ?>', 'error');
             });
         }
 
@@ -2156,14 +2232,20 @@ function eipsi_render_pool_hub_v2() {
 
         // Update probability total - with progress bar
         function updateProbabilityTotal() {
+            console.log('[POOL-HUB] updateProbabilityTotal() INICIANDO');
             const rows = document.querySelectorAll('#eipsi-pool-studies-rows .eipsi-pool-study-row');
+            console.log('[POOL-HUB] Filas encontradas:', rows.length);
+            
             let total = 0;
-            rows.forEach(row => {
+            const rowValues = [];
+            rows.forEach((row, index) => {
                 const input = row.querySelector('input[type="number"]');
-                total += parseFloat(input.value) || 0;
+                const value = parseFloat(input?.value) || 0;
+                total += value;
+                rowValues.push({index, value, inputExists: !!input});
             });
             total = Math.round(total * 100) / 100;
-            console.log('[POOL-HUB] updateProbabilityTotal calculated:', total);
+            console.log('[POOL-HUB] updateProbabilityTotal - detalle:', {rowValues, total});
             
             // Update progress bar
             const progressFill = document.getElementById('eipsi-progress-fill');
@@ -2201,10 +2283,7 @@ function eipsi_render_pool_hub_v2() {
             updateSaveButtonState();
         }
 
-        // Save pool - v2.5.3 FIX: Declare savePoolBtn early before function definitions
-        const savePoolBtn = document.getElementById('eipsi-save-pool-btn');
-        const poolForm = document.getElementById('eipsi-pool-form');
-        
+        // Save pool - savePoolBtn and poolForm are declared at the top of script
         function updateSaveButtonState() {
             // v2.5.3 - FIX: Check if savePoolBtn exists before using it
             if (!savePoolBtn) {
@@ -2461,24 +2540,39 @@ function eipsi_render_pool_hub_v2() {
 
     <!-- v2.5.3 - Script ahora disponible para ambos estados (con/sin pools) -->
     <script>
+    // v2.5.3 - Diagnóstico de disponibilidad de funciones globales
+    console.log('[POOL-HUB-FALLBACK-CHECK] Verificando funciones globales:', {
+        openEipsiPoolModal: typeof window.openEipsiPoolModal,
+        closeEipsiPoolModal: typeof window.closeEipsiPoolModal,
+        eipsiPoolStudies: typeof window.eipsiPoolStudies,
+        jQuery: typeof jQuery,
+        $: typeof $
+    });
+    
     if (typeof window.openEipsiPoolModal !== 'function') {
-        window.openEipsiPoolModal = function() {
+        console.warn('[POOL-HUB-FALLBACK] openEipsiPoolModal no definido, creando fallback');
+        window.openEipsiPoolModal = function(poolId = null) {
+            console.log('[POOL-HUB-FALLBACK] openEipsiPoolModal() llamado', {poolId});
             const modal = document.getElementById('eipsi-pool-modal');
             if (modal) {
                 modal.classList.add('active');
                 modal.style.display = 'flex';
+                console.log('[POOL-HUB-FALLBACK] Modal abierto (modo fallback)');
             } else {
-                console.error('[POOL-HUB-FALLBACK] Modal no encontrado');
+                console.error('[POOL-HUB-FALLBACK] Modal #eipsi-pool-modal no encontrado');
             }
         };
         window.closeEipsiPoolModal = function() {
+            console.log('[POOL-HUB-FALLBACK] closeEipsiPoolModal() llamado');
             const modal = document.getElementById('eipsi-pool-modal');
             if (modal) {
                 modal.classList.remove('active');
                 modal.style.display = 'none';
             }
         };
-        console.log('[POOL-HUB-FALLBACK] Funciones definidas en modo fallback');
+        console.log('[POOL-HUB-FALLBACK] Funciones fallback definidas');
+    } else {
+        console.log('[POOL-HUB-FALLBACK] openEipsiPoolModal ya estaba definido, no se necesita fallback');
     }
     </script>
 
