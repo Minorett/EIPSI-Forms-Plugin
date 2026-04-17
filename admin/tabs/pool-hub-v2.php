@@ -1808,23 +1808,26 @@ function eipsi_render_pool_hub_v2() {
         });
 
         // Create pool buttons - v2.2.3: Fixed to work with empty state
-        // Using jQuery delegation for dynamically added buttons
-        $(document).on('click', '.eipsi-create-pool-btn', function(e) {
-            console.log('[POOL-HUB-JQ] Handler jQuery activado para .eipsi-create-pool-btn');
-            e.preventDefault();
-            e.stopPropagation();
+        // v2.5.3 - FIX: Use jQuery wrapper for WordPress noConflict mode
+        jQuery(function($) {
+            // Using jQuery delegation for dynamically added buttons
+            $(document).on('click', '.eipsi-create-pool-btn', function(e) {
+                console.log('[POOL-HUB-JQ] Handler jQuery activado para .eipsi-create-pool-btn');
+                e.preventDefault();
+                e.stopPropagation();
 
-            const modalType = $(this).data('open-modal');
-            console.log('[POOL-HUB-JQ] modalType:', modalType, '| poolModal existe:', !!poolModal);
+                const modalType = $(this).data('open-modal');
+                console.log('[POOL-HUB-JQ] modalType:', modalType, '| poolModal existe:', !!poolModal);
 
-            if (modalType === 'create' && poolModal) {
-                console.log('[POOL-HUB-JQ] Abriendo modal de creación...');
-                updateProbabilityTotal();
-                openModal(poolModal);
-                console.log('[POOL-HUB-JQ] Modal abierto vía jQuery');
-            } else {
-                console.error('[POOL-HUB-JQ] No se pudo abrir modal:', {modalType, poolModalExists: !!poolModal});
-            }
+                if (modalType === 'create' && poolModal) {
+                    console.log('[POOL-HUB-JQ] Abriendo modal de creación...');
+                    updateProbabilityTotal();
+                    openModal(poolModal);
+                    console.log('[POOL-HUB-JQ] Modal abierto vía jQuery');
+                } else {
+                    console.error('[POOL-HUB-JQ] No se pudo abrir modal:', {modalType, poolModalExists: !!poolModal});
+                }
+            });
         });
 
         // Edit pool
@@ -2198,11 +2201,17 @@ function eipsi_render_pool_hub_v2() {
             updateSaveButtonState();
         }
 
-        // Save pool
+        // Save pool - v2.5.3 FIX: Declare savePoolBtn early before function definitions
         const savePoolBtn = document.getElementById('eipsi-save-pool-btn');
         const poolForm = document.getElementById('eipsi-pool-form');
         
         function updateSaveButtonState() {
+            // v2.5.3 - FIX: Check if savePoolBtn exists before using it
+            if (!savePoolBtn) {
+                console.log('[POOL-HUB] updateSaveButtonState - savePoolBtn not ready yet');
+                return;
+            }
+            
             const rows = document.querySelectorAll('#eipsi-pool-studies-rows .eipsi-pool-study-row');
             let total = 0;
             
