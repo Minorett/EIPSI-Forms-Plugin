@@ -1789,7 +1789,13 @@ function eipsi_forms_submit_form_handler() {
                 $longitudinal_participant_id, $study_id, $wave_id));
             $marked = Wave_Service::mark_assignment_submitted($longitudinal_participant_id, $study_id, $wave_id);
             error_log('[EIPSI-DIAG] Resultado mark_assignment_submitted: ' . ($marked ? 'ÉXITO' : 'FALLÓ'));
-            
+
+            // ==========================================================================
+            // POOL COMPLETION CHECK (v2.5.3)
+            // Check if all waves in this study are completed, and if so, mark pool assignment
+            // ==========================================================================
+            eipsi_check_and_mark_pool_completion($longitudinal_participant_id, $study_id, $stable_form_id);
+
             // Obtener próxima toma pendiente usando study_id
             $next_wave = Wave_Service::get_next_pending_wave($longitudinal_participant_id, $study_id);
             
@@ -1926,7 +1932,22 @@ function eipsi_forms_submit_form_handler() {
             $success_response['nudge_0_sent'] = true;
             $success_response['nudge_0_message'] = $nudge_0_message;
         }
-        
+
+        // ==========================================================================
+        // FASE 4 - TRACKING DE COMPLETITUD EN POOLS (v2.5.3)
+        // Disparar hook para que otros handlers verifiquen completitud de pools
+        // Solo para participantes autenticados con contexto longitudinal válido
+        // ==========================================================================
+        if ($authenticated_participant_id && $study_id) {
+            do_action('eipsi_form_submitted', array(
+                'survey_id'      => $study_id,
+                'participant_id' => $authenticated_participant_id,
+                'wave_index'     => $wave_index,
+                'form_id'        => $stable_form_id,
+                'insert_id'      => $insert_id,
+            ));
+        }
+
         wp_send_json_success($success_response);
         
     } else {
@@ -4380,4 +4401,106 @@ function eipsi_auto_fix_schema_issues_handler() {
         'fixes' => $fixes,
         'total_fixes' => count($fixes)
     ));
+}
+
+// =============================================================================
+// POOL STUDIES COMPLETION CHECK (v2.5.3)
+// =============================================================================
+
+/**
+ * Check if all waves in a study are completed and mark pool assignment as completed
+ *
+ * @param int $participant_id The longitudinal participant ID
+ * @param int $study_id The study ID
+ * @param string $form_id The form ID that was just submitted
+ * @return bool True if pool assignment was marked as completed
+ */
+function eipsi_check_and_mark_pool_completion($participant_id, $study_id, $form_id) {
+    global $wpdb;
+
+    error_log(sprintf('[EIPSI-POOL-COMPLETION] Checking completion: participant_id=%d, study_id=%d, form_id=%s',
+        $participant_id, $study_id, $form_id));
+
+    // Get the participant's email to identify them in pool assignments
+    $participants_table = $wpdb->prefix . 'survey_participants';
+    $participant = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT email FROM {$participants_table} WHERE id = %d",
+            $participant_id
+        ),
+        ARRAY_A
+    );
+
+    if (!$participant) {
+        error_log('[EIPSI-POOL-COMPLETION] Participant not found');
+        return false;
+    }
+
+    // Find all pool assignments for this participant (matching by email pattern)
+    $pool_assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
+    $pool_assignment = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT id, pool_id, completed FROM {$pool_assignments_table} 
+             WHERE study_id = %d AND participant_id LIKE %s AND completed = 0
+             ORDER BY assigned_at DESC LIMIT 1",
+            $study_id,
+            '%' . $wpdb->esc_like($participant['email']) . '%'
+        ),
+        ARRAY_A
+    );
+
+    if (!$pool_assignment) {
+        error_log('[EIPSI-POOL-COMPLETION] No active pool assignment found for this study');
+        return false;
+    }
+
+    // Check if all waves for this study are completed
+    $assignments_table = $wpdb->prefix . 'survey_assignments';
+    $waves_table = $wpdb->prefix . 'survey_waves';
+
+    // Get total waves for this study
+    $total_waves = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$waves_table} WHERE study_id = %d",
+            $study_id
+        )
+    );
+
+    // Get completed assignments for this participant and study
+    $completed_waves = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$assignments_table} 
+             WHERE participant_id = %d AND study_id = %d AND status = 'submitted'",
+            $participant_id,
+            $study_id
+        )
+    );
+
+    error_log(sprintf('[EIPSI-POOL-COMPLETION] Waves: total=%d, completed=%d', $total_waves, $completed_waves));
+
+    // If all waves are completed, mark the pool assignment as completed
+    if ($completed_waves >= $total_waves) {
+        $result = $wpdb->update(
+            $pool_assignments_table,
+            array(
+                'completed' => 1,
+                'completed_at' => current_time('mysql'),
+                'completion_form_id' => $form_id,
+            ),
+            array('id' => $pool_assignment['id']),
+            array('%d', '%s', '%s'),
+            array('%d')
+        );
+
+        if ($result !== false) {
+            error_log(sprintf('[EIPSI-POOL-COMPLETION] Pool assignment %d marked as completed', $pool_assignment['id']));
+            return true;
+        } else {
+            error_log('[EIPSI-POOL-COMPLETION] Error updating pool assignment: ' . $wpdb->last_error);
+            return false;
+        }
+    }
+
+    error_log('[EIPSI-POOL-COMPLETION] Study not yet fully completed');
+    return false;
 }

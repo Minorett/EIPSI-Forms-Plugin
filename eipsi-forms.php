@@ -202,7 +202,18 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-dashboard-api.php';
 // AJAX API: wp_ajax_eipsi_join_pool + wp_ajax_eipsi_get_pool_stats
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-assignment-api.php';
 
-// Shortcode: [eipsi_pool_join pool_id="X"]
+// Pool Studies REST API (v2.5.3) - Phase 1 of Pool Randomization System
+// Endpoints: /eipsi/v1/pool-detect, /pool-config, /pool-assign, /pool-analytics
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-rest-api.php';
+
+// Pool Block Renderer (v2.5.3) - Phase 2: Block + Shortcode [eipsi_pool]
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/class-pool-block-renderer.php';
+
+// Pool Completion Hooks (v2.5.3) - Phase 4: Tracking de completitud
+// Hook: eipsi_form_submitted → eipsi_check_pool_completion_on_submit
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-completion-hooks.php';
+
+// Shortcode: [eipsi_pool_join pool_id="X"] - Legacy compatibility
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/shortcodes/class-pool-join-shortcode.php';
 
 // ============================================================================
@@ -921,8 +932,54 @@ function eipsi_forms_activate() {
     // END PHASE 3 TABLES
     // ============================================================================
 
+    // ============================================================================
+    // POOL STUDIES TABLES - Phase 1 of Pool Randomization System (v2.5.3)
+    // ============================================================================
+
+    // Create pool assignments table - tracks participant assignments to pool studies
+    $pool_assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
+    $sql_pool_assignments = "CREATE TABLE IF NOT EXISTS $pool_assignments_table (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        pool_id BIGINT(20) UNSIGNED NOT NULL,
+        participant_id VARCHAR(255) NOT NULL,
+        study_id BIGINT(20) UNSIGNED NOT NULL,
+        assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        first_access DATETIME DEFAULT NULL,
+        last_access DATETIME DEFAULT NULL,
+        access_count INT(11) DEFAULT 0,
+        completed TINYINT(1) DEFAULT 0,
+        completed_at DATETIME DEFAULT NULL,
+        completion_form_id VARCHAR(20) DEFAULT NULL,
+        PRIMARY KEY (id),
+        KEY idx_pool_id (pool_id),
+        KEY idx_participant_id (participant_id),
+        KEY idx_study_id (study_id),
+        UNIQUE KEY unique_pool_participant (pool_id, participant_id)
+    ) $charset_collate;";
+    dbDelta($sql_pool_assignments);
+
+    // Create pool analytics table - daily metrics per study per pool
+    $pool_analytics_table = $wpdb->prefix . 'eipsi_pool_analytics';
+    $sql_pool_analytics = "CREATE TABLE IF NOT EXISTS $pool_analytics_table (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        pool_id BIGINT(20) UNSIGNED NOT NULL,
+        date DATE NOT NULL,
+        study_id BIGINT(20) UNSIGNED NOT NULL,
+        assignments INT(11) DEFAULT 0,
+        completions INT(11) DEFAULT 0,
+        cumulative_assignments INT(11) DEFAULT 0,
+        PRIMARY KEY (id),
+        KEY idx_pool_date (pool_id, date),
+        KEY idx_study_id (study_id)
+    ) $charset_collate;";
+    dbDelta($sql_pool_analytics);
+
+    // ============================================================================
+    // END POOL STUDIES TABLES
+    // ============================================================================
+
     // Store schema version
-    update_option('eipsi_db_schema_version', '1.2.2');
+    update_option('eipsi_db_schema_version', '1.2.3');
 
     // Log activation
     error_log('[EIPSI Forms] Plugin activated - Schema v1.2.2 installed');
@@ -1526,6 +1583,12 @@ function eipsi_forms_register_blocks() {
                 register_block_type($block_json_path, array(
                     'render_callback' => 'eipsi_render_randomization_block'
                 ));
+            }
+            // Special handling for pool block with render_callback (v2.5.3)
+            elseif ($block_folder === 'pool-block') {
+                register_block_type($block_json_path, array(
+                    'render_callback' => 'eipsi_render_pool_join_block'
+                ));
             } else {
                 register_block_type($block_json_path);
             }
@@ -1576,6 +1639,25 @@ function eipsi_render_randomization_block($attributes) {
     return do_shortcode($shortcode);
 }
 
+/**
+ * Render callback para bloque Pool de Estudios (v2.5.3)
+ * 
+ * Renderiza el bloque de asignación a pools longitudinales
+ * 
+ * @param array $attributes Atributos del bloque
+ * @return string HTML output
+ */
+function eipsi_render_pool_join_block($attributes) {
+    // Usar la clase renderer para mantener consistencia
+    if (!class_exists('EIPSI_Pool_Block_Renderer')) {
+        return '<div class="eipsi-pool-error">' .
+               '<p>' . esc_html__('Error: Pool Block Renderer no disponible.', 'eipsi-forms') . '</p>' .
+               '</div>';
+    }
+
+    return EIPSI_Pool_Block_Renderer::render_block($attributes);
+}
+
 function eipsi_forms_enqueue_block_assets($content) {
     $blocks = array(
         'eipsi/form-container',
@@ -1587,7 +1669,8 @@ function eipsi_forms_enqueue_block_assets($content) {
         'eipsi/campo-radio',
         'eipsi/campo-multiple',
         'eipsi/campo-likert',
-        'eipsi/vas-slider'
+        'eipsi/vas-slider',
+        'eipsi/pool-join', // v2.5.3 - Pool de Estudios
     );
 
     foreach ($blocks as $block) {
@@ -1659,6 +1742,7 @@ function eipsi_forms_render_form_block($attributes) {
 
 // Register admin post handlers
 add_action('admin_post_eipsi_forms_export_excel', 'eipsi_export_to_excel');
+add_action('admin_post_eipsi_save_pool', 'eipsi_handle_save_pool');
 // Deletion and editing of results are handled via admin_init in admin/handlers.php and admin/results-page.php
 
 /**
@@ -1724,4 +1808,182 @@ function eipsi_smtp_configuration_notice() {
         </p>
     </div>
     <?php
+}
+
+/**
+ * Handle saving pool data from admin form
+ *
+ * @since 2.5.3 - Moved from pool-hub-v2.php to ensure handler is always registered
+ */
+function eipsi_handle_save_pool() {
+    error_log('[EIPSI-POOL] Handler eipsi_handle_save_pool executing');
+    
+    // Verify nonce
+    if (!wp_verify_nonce($_POST['pool_nonce'] ?? '', 'eipsi_save_pool_nonce')) {
+        error_log('[EIPSI-POOL] Nonce verification failed');
+        wp_die(__('Error de seguridad. Por favor, recargá la página.', 'eipsi-forms'));
+    }
+    
+    // Check permissions
+    if (!function_exists('eipsi_user_can_manage_longitudinal') || !eipsi_user_can_manage_longitudinal()) {
+        error_log('[EIPSI-POOL] Permission check failed');
+        wp_die(__('No tenés permisos para realizar esta acción.', 'eipsi-forms'));
+    }
+    
+    global $wpdb;
+    
+    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    
+    // Get form data
+    $pool_id = intval($_POST['pool_id'] ?? 0);
+    $pool_name = sanitize_text_field($_POST['pool_name'] ?? '');
+    $pool_description = sanitize_textarea_field($_POST['pool_description'] ?? '');
+    $method = sanitize_key($_POST['method'] ?? 'seeded');
+    $notify_on_completion = !empty($_POST['notify_on_completion']);
+    $studies_data = json_decode(stripslashes($_POST['pool_studies_data'] ?? '[]'), true);
+    
+    error_log('[EIPSI-POOL] Received data: pool_id=' . $pool_id . ', name=' . $pool_name . ', studies=' . count($studies_data));
+    
+    if (empty($pool_name)) {
+        wp_die(__('El nombre del pool es obligatorio.', 'eipsi-forms'));
+    }
+    
+    // Extract study IDs and probabilities
+    $study_ids = array();
+    $probabilities = array();
+    $total_prob = 0;
+    
+    foreach ($studies_data as $item) {
+        if (!empty($item['study_id']) && isset($item['probability'])) {
+            $study_ids[] = intval($item['study_id']);
+            $prob = floatval($item['probability']);
+            $probabilities[] = $prob;
+            $total_prob += $prob;
+        }
+    }
+    
+    error_log('[EIPSI-POOL] Processed ' . count($study_ids) . ' studies, total_prob=' . $total_prob);
+    
+    // Build config JSON (Fase 4: incluye notify_on_completion)
+    $config = array(
+        'studies' => $studies_data,
+        'method' => $method,
+        'notify_on_completion' => $notify_on_completion,
+        'updated_at' => current_time('mysql'),
+    );
+
+    // Validate total is 100%
+    if (abs($total_prob - 100) > 0.01) {
+        wp_die(__('La suma de probabilidades debe ser exactamente 100%.', 'eipsi-forms'));
+    }
+
+    $now = current_time('mysql');
+
+    if ($pool_id > 0) {
+        // Update existing pool
+        $wpdb->update(
+            $pools_table,
+            array(
+                'pool_name' => $pool_name,
+                'pool_description' => $pool_description,
+                'studies' => json_encode($study_ids),
+                'probabilities' => json_encode($probabilities),
+                'method' => $method,
+                'config' => json_encode($config),
+                'updated_at' => $now
+            ),
+            array('id' => $pool_id),
+            array('%s', '%s', '%s', '%s', '%s', '%s'),
+            array('%d')
+        );
+        error_log('[EIPSI-POOL] Updated existing pool ID: ' . $pool_id);
+    } else {
+        // Create new pool
+        $wpdb->insert(
+            $pools_table,
+            array(
+                'pool_name' => $pool_name,
+                'pool_description' => $pool_description,
+                'studies' => json_encode($study_ids),
+                'probabilities' => json_encode($probabilities),
+                'method' => $method,
+                'config' => json_encode($config),
+                'status' => 'active',
+                'created_at' => $now,
+                'updated_at' => $now
+            ),
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+        );
+        $pool_id = $wpdb->insert_id;
+        error_log('[EIPSI-POOL] Created new pool ID: ' . $pool_id);
+    }
+    
+    // Auto-create WordPress page for this pool
+    $page_id = eipsi_create_pool_page($pool_id, $pool_name);
+    $page_url = $page_id ? get_permalink($page_id) : null;
+    
+    error_log('[EIPSI-POOL] Page created: ' . ($page_id ? $page_id : 'failed'));
+    
+    // Redirect back with success message
+    $redirect_url = admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_' . ($pool_id > 0 ? 'updated' : 'created'));
+    
+    error_log('[EIPSI-POOL] Redirecting to: ' . $redirect_url);
+    
+    wp_redirect($redirect_url);
+    exit;
+}
+
+/**
+ * Create WordPress page for pool with shortcode
+ *
+ * @param int    $pool_id   Pool ID
+ * @param string $pool_name Pool name
+ * @return int|false Page ID or false on failure
+ * @since 2.5.0
+ */
+function eipsi_create_pool_page($pool_id, $pool_name) {
+    $pool_slug = 'pool-' . sanitize_title($pool_name);
+    
+    // Check if page already exists
+    $existing_page = get_page_by_path($pool_slug);
+    
+    if (!$existing_page) {
+        $existing_pages = get_posts(array(
+            'post_type' => 'page',
+            'meta_key' => 'eipsi_pool_id',
+            'meta_value' => $pool_id,
+            'posts_per_page' => 1
+        ));
+        
+        if (!empty($existing_pages)) {
+            $existing_page = $existing_pages[0];
+        }
+    }
+    
+    if ($existing_page) {
+        update_post_meta($existing_page->ID, 'eipsi_pool_id', $pool_id);
+        return $existing_page->ID;
+    }
+    
+    // Create new page
+    $page_title = sprintf(__('Pool: %s', 'eipsi-forms'), $pool_name);
+    $page_content = '[eipsi_pool_join pool_id="' . esc_attr($pool_id) . '"]';
+    
+    $page_id = wp_insert_post(array(
+        'post_title' => $page_title,
+        'post_name' => $pool_slug,
+        'post_content' => $page_content,
+        'post_status' => 'publish',
+        'post_type' => 'page',
+        'meta_input' => array(
+            'eipsi_pool_id' => $pool_id
+        )
+    ));
+    
+    if (is_wp_error($page_id)) {
+        error_log('[EIPSI] Failed to create pool page: ' . $page_id->get_error_message());
+        return false;
+    }
+    
+    return $page_id;
 }

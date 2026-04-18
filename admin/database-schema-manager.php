@@ -3478,7 +3478,9 @@ public static function get_all_tables_status() {
         'eipsi_longitudinal_pools',
         'eipsi_longitudinal_pool_assignments',
         'survey_participant_access_log',
-        'eipsi_device_data'
+        'eipsi_device_data',
+        'eipsi_pool_assignments',
+        'eipsi_pool_analytics'
     );
     
     $status = array();
@@ -3535,7 +3537,9 @@ public static function repair_single_table($table_name) {
             'eipsi_longitudinal_pools' => 'sync_local_longitudinal_pools_table',
             'eipsi_longitudinal_pool_assignments' => 'sync_local_longitudinal_pool_assignments_table',
             'survey_participant_access_log' => 'sync_local_survey_participant_access_log_table',
-            'eipsi_device_data' => 'sync_local_device_data_table'
+            'eipsi_device_data' => 'sync_local_device_data_table',
+            'eipsi_pool_assignments' => 'sync_local_pool_assignments_table',
+            'eipsi_pool_analytics' => 'sync_local_pool_analytics_table'
         );
         
         if (isset($sync_map[$table_name]) && method_exists('EIPSI_Database_Schema_Manager', $sync_map[$table_name])) {
@@ -4030,7 +4034,9 @@ public static function get_schema_health_summary() {
             'survey_studies',
             'survey_magic_links',
             'survey_email_log',
-            'survey_audit_log'
+            'survey_audit_log',
+            'eipsi_pool_assignments',
+            'eipsi_pool_analytics'
         );
         
         $fixed_tables = array();
@@ -4114,7 +4120,9 @@ public static function get_schema_health_summary() {
             'eipsi_longitudinal_pools',
             'eipsi_longitudinal_pool_assignments',
             'survey_participant_access_log',
-            'eipsi_device_data'
+            'eipsi_device_data',
+            'eipsi_pool_assignments',
+            'eipsi_pool_analytics'
         );
         
         $issues = array();
@@ -4397,6 +4405,116 @@ public static function get_schema_health_summary() {
             error_log('[EIPSI Schema] ERROR: Failed to create survey_nudge_jobs table');
         }
         
+        return $result;
+    }
+
+    /**
+     * Sync wp_eipsi_pool_assignments table in local DB
+     * Pool Studies Assignment Tracking (Phase 1 of Pool Randomization System)
+     *
+     * @since 2.5.3
+     * @return array Result with success status and details
+     */
+    private static function sync_local_pool_assignments_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'eipsi_pool_assignments';
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+
+        if ( ! $result['exists'] ) {
+            // Create table
+            $sql = "CREATE TABLE {$table_name} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                pool_id BIGINT(20) UNSIGNED NOT NULL,
+                participant_id VARCHAR(255) NOT NULL,
+                study_id BIGINT(20) UNSIGNED NOT NULL,
+                assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                first_access DATETIME DEFAULT NULL,
+                last_access DATETIME DEFAULT NULL,
+                access_count INT(11) DEFAULT 0,
+                completed TINYINT(1) DEFAULT 0,
+                completed_at DATETIME DEFAULT NULL,
+                completion_form_id VARCHAR(20) DEFAULT NULL,
+                PRIMARY KEY (id),
+                KEY idx_pool_id (pool_id),
+                KEY idx_participant_id (participant_id),
+                KEY idx_study_id (study_id),
+                UNIQUE KEY unique_pool_participant (pool_id, participant_id)
+            ) {$charset_collate};";
+
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+
+            $result['created'] = true;
+            $result['exists'] = true;
+
+            error_log( '[EIPSI Forms] Created table: ' . $table_name );
+        }
+
+        return $result;
+    }
+
+    /**
+     * Sync wp_eipsi_pool_analytics table in local DB
+     * Pool Studies Daily Analytics (Phase 1 of Pool Randomization System)
+     *
+     * @since 2.5.3
+     * @return array Result with success status and details
+     */
+    private static function sync_local_pool_analytics_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'eipsi_pool_analytics';
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $result = array(
+            'success' => true,
+            'exists' => false,
+            'created' => false,
+            'columns_added' => array(),
+            'columns_missing' => array(),
+            'error' => null,
+        );
+
+        // Check if table exists
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
+        $result['exists'] = ! empty( $table_exists );
+
+        if ( ! $result['exists'] ) {
+            // Create table
+            $sql = "CREATE TABLE {$table_name} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                pool_id BIGINT(20) UNSIGNED NOT NULL,
+                date DATE NOT NULL,
+                study_id BIGINT(20) UNSIGNED NOT NULL,
+                assignments INT(11) DEFAULT 0,
+                completions INT(11) DEFAULT 0,
+                cumulative_assignments INT(11) DEFAULT 0,
+                PRIMARY KEY (id),
+                KEY idx_pool_date (pool_id, date),
+                KEY idx_study_id (study_id)
+            ) {$charset_collate};";
+
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+            dbDelta( $sql );
+
+            $result['created'] = true;
+            $result['exists'] = true;
+
+            error_log( '[EIPSI Forms] Created table: ' . $table_name );
+        }
+
         return $result;
     }
 

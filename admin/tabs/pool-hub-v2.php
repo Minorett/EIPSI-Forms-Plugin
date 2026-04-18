@@ -2310,13 +2310,25 @@ function eipsi_render_pool_hub_v2() {
         updateProbabilityTotal();
         updateSaveButtonState();
         
-        savePoolBtn.addEventListener('click', function() {
-            console.log('[POOL-HUB] Save pool button clicked');
-            if (this.disabled) {
-                console.log('[POOL-HUB] Save blocked - button disabled');
-                showToast('<?php _e("La suma de probabilidades debe ser exactamente 100%", "eipsi-forms"); ?>', 'error');
-                return;
-            }
+        // v2.5.3 - FIX: Verificar que savePoolBtn existe antes de agregar listener
+        if (savePoolBtn) {
+            console.log('[POOL-HUB] Attaching click listener to savePoolBtn');
+            console.log('[POOL-HUB] Button type:', savePoolBtn.type, '| disabled:', savePoolBtn.disabled);
+            console.log('[POOL-HUB] Form action:', poolForm?.action, '| method:', poolForm?.method);
+            
+            // Detectar si hay otros submit buttons en el form
+            const submitButtons = poolForm?.querySelectorAll('button[type="submit"], input[type="submit"]');
+            console.log('[POOL-HUB] Submit buttons found in form:', submitButtons?.length || 0);
+            savePoolBtn.addEventListener('click', function(e) {
+                console.log('[POOL-HUB] Save pool button clicked - handler executing');
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (this.disabled) {
+                    console.log('[POOL-HUB] Save blocked - button disabled');
+                    showToast('<?php _e("La suma de probabilidades debe ser exactamente 100%", "eipsi-forms"); ?>', 'error');
+                    return;
+                }
             
             // Collect studies data
             const rows = document.querySelectorAll('#eipsi-pool-studies-rows .eipsi-pool-study-row');
@@ -2363,7 +2375,12 @@ function eipsi_render_pool_hub_v2() {
             // Submit form via traditional POST to admin-post.php
             console.log('[POOL-HUB] Submitting form to:', poolForm.action);
             poolForm.submit();
-        });
+            console.log('[POOL-HUB] Form submitted successfully');
+            });
+            console.log('[POOL-HUB] Click listener attached successfully to savePoolBtn');
+        } else {
+            console.error('[POOL-HUB] CRITICAL: savePoolBtn is null when trying to attach listener!');
+        }
 
         // Analytics pool selector
         const analyticsSelect = document.getElementById('eipsi-analytics-pool-select');
@@ -2611,6 +2628,17 @@ function eipsi_render_pool_hub_v2() {
                         </p>
                     </div>
 
+                    <!-- Fase 4: Notificación al completar -->
+                    <div class="eipsi-form-field" style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 6px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                            <input type="checkbox" name="notify_on_completion" id="eipsi-notify-completion" value="1" style="width: auto; margin: 0;">
+                            <?php _e('Notificarme por email cuando un participante complete el estudio', 'eipsi-forms'); ?>
+                        </label>
+                        <p class="description" style="margin-top: 4px; margin-left: 24px;">
+                            <?php _e('Se enviará un email al administrador cuando un participante complete todas las waves del estudio asignado.', 'eipsi-forms'); ?>
+                        </p>
+                    </div>
+
                     <!-- Studies Section -->
                     <h3 class="eipsi-section-title"><?php _e('Estudios y probabilidades', 'eipsi-forms'); ?></h3>
                     <p class="eipsi-section-desc">
@@ -2700,61 +2728,6 @@ function eipsi_get_pool_stats($pool_id) {
 }
 
 /**
- * Create WordPress page for pool with shortcode
- *
- * @param int    $pool_id   Pool ID
- * @param string $pool_name Pool name
- * @return int|false Page ID or false on failure
- * @since 2.5.0
- */
-function eipsi_create_pool_page($pool_id, $pool_name) {
-    $pool_slug = 'pool-' . sanitize_title($pool_name);
-    
-    // Check if page already exists
-    $existing_page = get_page_by_path($pool_slug);
-    
-    if (!$existing_page) {
-        $existing_pages = get_posts(array(
-            'post_type' => 'page',
-            'meta_key' => 'eipsi_pool_id',
-            'meta_value' => $pool_id,
-            'posts_per_page' => 1
-        ));
-        
-        if (!empty($existing_pages)) {
-            $existing_page = $existing_pages[0];
-        }
-    }
-    
-    if ($existing_page) {
-        update_post_meta($existing_page->ID, 'eipsi_pool_id', $pool_id);
-        return $existing_page->ID;
-    }
-    
-    // Create new page
-    $page_title = sprintf(__('Pool: %s', 'eipsi-forms'), $pool_name);
-    $page_content = '[eipsi_pool_join pool_id="' . esc_attr($pool_id) . '"]';
-    
-    $page_id = wp_insert_post(array(
-        'post_title' => $page_title,
-        'post_name' => $pool_slug,
-        'post_content' => $page_content,
-        'post_status' => 'publish',
-        'post_type' => 'page',
-        'meta_input' => array(
-            'eipsi_pool_id' => $pool_id
-        )
-    ));
-    
-    if (is_wp_error($page_id)) {
-        error_log('[EIPSI] Failed to create pool page: ' . $page_id->get_error_message());
-        return false;
-    }
-    
-    return $page_id;
-}
-
-/**
  * Get the pool page URL
  *
  * @param int $pool_id Pool ID
@@ -2774,105 +2747,4 @@ function eipsi_get_pool_page_url($pool_id) {
     }
     
     return null;
-}
-
-/**
- * Handle pool save action (admin-post.php)
- * Creates/updates pool and auto-creates WordPress page
- *
- * @since 2.5.0
- */
-add_action('admin_post_eipsi_save_pool', 'eipsi_handle_save_pool');
-
-function eipsi_handle_save_pool() {
-    // Verify nonce
-    if (!wp_verify_nonce($_POST['pool_nonce'] ?? '', 'eipsi_save_pool_nonce')) {
-        wp_die(__('Error de seguridad. Por favor, recargá la página.', 'eipsi-forms'));
-    }
-    
-    // Check permissions
-    if (!function_exists('eipsi_user_can_manage_longitudinal') || !eipsi_user_can_manage_longitudinal()) {
-        wp_die(__('No tenés permisos para realizar esta acción.', 'eipsi-forms'));
-    }
-    
-    global $wpdb;
-    
-    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
-    
-    // Get form data
-    $pool_id = intval($_POST['pool_id'] ?? 0);
-    $pool_name = sanitize_text_field($_POST['pool_name'] ?? '');
-    $pool_description = sanitize_textarea_field($_POST['pool_description'] ?? '');
-    $method = sanitize_key($_POST['method'] ?? 'seeded');
-    $studies_data = json_decode(stripslashes($_POST['pool_studies_data'] ?? '[]'), true);
-    
-    if (empty($pool_name)) {
-        wp_die(__('El nombre del pool es obligatorio.', 'eipsi-forms'));
-    }
-    
-    // Extract study IDs and probabilities
-    $study_ids = array();
-    $probabilities = array();
-    $total_prob = 0;
-    
-    foreach ($studies_data as $item) {
-        if (!empty($item['study_id']) && isset($item['probability'])) {
-            $study_ids[] = intval($item['study_id']);
-            $prob = floatval($item['probability']);
-            $probabilities[] = $prob;
-            $total_prob += $prob;
-        }
-    }
-    
-    // Validate total is 100%
-    if (abs($total_prob - 100) > 0.01) {
-        wp_die(__('La suma de probabilidades debe ser exactamente 100%.', 'eipsi-forms'));
-    }
-    
-    $now = current_time('mysql');
-    
-    if ($pool_id > 0) {
-        // Update existing pool
-        $wpdb->update(
-            $pools_table,
-            array(
-                'pool_name' => $pool_name,
-                'pool_description' => $pool_description,
-                'studies' => json_encode($study_ids),
-                'probabilities' => json_encode($probabilities),
-                'method' => $method,
-                'updated_at' => $now
-            ),
-            array('id' => $pool_id),
-            array('%s', '%s', '%s', '%s', '%s', '%s'),
-            array('%d')
-        );
-    } else {
-        // Create new pool
-        $wpdb->insert(
-            $pools_table,
-            array(
-                'pool_name' => $pool_name,
-                'pool_description' => $pool_description,
-                'studies' => json_encode($study_ids),
-                'probabilities' => json_encode($probabilities),
-                'method' => $method,
-                'status' => 'active',
-                'created_at' => $now,
-                'updated_at' => $now
-            ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
-        );
-        $pool_id = $wpdb->insert_id;
-    }
-    
-    // Auto-create WordPress page for this pool
-    $page_id = eipsi_create_pool_page($pool_id, $pool_name);
-    $page_url = $page_id ? get_permalink($page_id) : null;
-    
-    // Redirect back with success message
-    $redirect_url = admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_' . ($pool_id > 0 ? 'updated' : 'created'));
-    
-    wp_redirect($redirect_url);
-    exit;
 }

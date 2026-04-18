@@ -1234,13 +1234,17 @@ function eipsi_display_randomization() {
                     <select name="form_select[]" required style="flex:1;min-width:200px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;">
                         <option value=""><?php echo esc_js(__('Seleccionar formulario...', 'eipsi-forms')); ?></option>
                         <?php 
-                        // v2.5.1 - Obtener formularios de la tabla de resultados (igual que submissions-tab)
-                        global $wpdb;
-                        $results_table = $wpdb->prefix . 'vas_form_results';
-                        $form_ids = $wpdb->get_col("SELECT DISTINCT form_id FROM {$results_table} WHERE form_id IS NOT NULL AND form_id != '' ORDER BY form_id");
-                        foreach ($form_ids as $form_id) : ?>
-                            <option value="<?php echo esc_js($form_id); ?>" ${formId == '<?php echo esc_js($form_id); ?>' ? 'selected' : ''}>
-                                <?php echo esc_js($form_id); ?>
+                        // v2.5.3 - Obtener formularios del CPT eipsi_form_template (Form Library)
+                        $forms = get_posts(array(
+                            'post_type' => 'eipsi_form_template',
+                            'post_status' => array('publish', 'private'),
+                            'posts_per_page' => -1,
+                            'orderby' => 'title',
+                            'order' => 'ASC',
+                        ));
+                        foreach ($forms as $form) : ?>
+                            <option value="<?php echo esc_js($form->ID); ?>" ${formId == '<?php echo esc_js($form->ID); ?>' ? 'selected' : ''}>
+                                <?php echo esc_js($form->post_title); ?> (ID: <?php echo esc_js($form->ID); ?>)
                             </option>
                         <?php endforeach; ?>
                     </select>

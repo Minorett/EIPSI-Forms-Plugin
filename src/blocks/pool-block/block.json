@@ -1,0 +1,49 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "eipsi/pool-join",
+    "title": "Pool de Estudios",
+    "category": "eipsi-forms",
+    "icon": "randomize",
+    "description": "Asigna participantes a estudios longitudinales según probabilidades configurables",
+    "keywords": [ "pool", "estudios longitudinales", "aleatorización", "randomization" ],
+    "version": "2.5.3",
+    "textdomain": "eipsi-forms",
+    "attributes": {
+        "poolId": {
+            "type": "string",
+            "default": ""
+        },
+        "method": {
+            "type": "string",
+            "default": "seeded"
+        },
+        "studies": {
+            "type": "array",
+            "default": []
+        },
+        "buttonText": {
+            "type": "string",
+            "default": "Unirse al estudio"
+        },
+        "redirectMode": {
+            "type": "string",
+            "default": "auto"
+        },
+        "studiesInput": {
+            "type": "string",
+            "default": ""
+        },
+        "generatedShortcode": {
+            "type": "string",
+            "default": ""
+        }
+    },
+    "supports": {
+        "html": false,
+        "multiple": false
+    },
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./editor.scss",
+    "style": "file:./style.scss"
+}
