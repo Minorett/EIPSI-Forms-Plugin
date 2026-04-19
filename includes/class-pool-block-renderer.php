@@ -100,7 +100,8 @@ class EIPSI_Pool_Block_Renderer {
                 'pool_id'       => 0,
                 'show_name'     => '0',
                 'redirect'      => '1',
-                'button_label'  => __('Comenzar mi participación', 'eipsi-forms'),
+                'button_text'   => '',  // Atributo viejo
+                'button_label'  => __('Comenzar mi participación', 'eipsi-forms'), // Atributo viejo alternativo
             ),
             $atts,
             'eipsi_pool_join'
@@ -114,11 +115,16 @@ class EIPSI_Pool_Block_Renderer {
             );
         }
 
+        // Determinar el texto del botón (soporta ambos atributos viejos)
+        $button_text = !empty($atts['button_text'])
+            ? $atts['button_text']
+            : $atts['button_label'];
+
         // Convertir a atributos del nuevo formato
         $new_atts = array(
             'pool_id'       => $pool_id,
             'method'        => 'seeded',
-            'button_text'   => sanitize_text_field($atts['button_label']),
+            'button_text'   => sanitize_text_field($button_text),
             'redirect_mode' => filter_var($atts['redirect'], FILTER_VALIDATE_BOOLEAN) ? 'auto' : 'embed',
         );
 

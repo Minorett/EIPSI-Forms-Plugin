@@ -4007,7 +4007,7 @@ function eipsi_repair_single_table_handler() {
         'survey_email_log',
         'survey_audit_log',
         'eipsi_longitudinal_pools',
-        'eipsi_longitudinal_pool_assignments',
+        'eipsi_pool_assignments',
         'survey_participant_access_log',
         'eipsi_device_data'
     );

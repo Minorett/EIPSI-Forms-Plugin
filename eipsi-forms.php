@@ -213,9 +213,6 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/class-pool-block-renderer.php';
 // Hook: eipsi_form_submitted → eipsi_check_pool_completion_on_submit
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-completion-hooks.php';
 
-// Shortcode: [eipsi_pool_join pool_id="X"] - Legacy compatibility
-require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/shortcodes/class-pool-join-shortcode.php';
-
 // ============================================================================
 // EMAIL SYSTEM CONFIGURATION (v1.5.4 - Default Email Fix)
 // ============================================================================
@@ -1872,9 +1869,9 @@ function eipsi_handle_save_pool() {
         'updated_at' => current_time('mysql'),
     );
 
-    // Validate total is 100%
-    if (abs($total_prob - 100) > 0.01) {
-        wp_die(__('La suma de probabilidades debe ser exactamente 100%.', 'eipsi-forms'));
+    // Validate total is 100% (with 0.1% tolerance for floating point precision)
+    if (abs($total_prob - 100) > 0.1) {
+        wp_die(sprintf(__('La suma de probabilidades debe ser 100%% (±0.1%% tolerancia). Actual: %.2f%%', 'eipsi-forms'), $total_prob));
     }
 
     $now = current_time('mysql');
@@ -1987,3 +1984,114 @@ function eipsi_create_pool_page($pool_id, $pool_name) {
     
     return $page_id;
 }
+
+/**
+ * ============================================================================
+ * FASE 6 - Migración de pools a formato v2
+ * ============================================================================
+ *
+ * Convierte la configuración vieja de pools al nuevo formato estructurado.
+ * Idempotente: solo corre una vez por sitio.
+ *
+ * @since 2.5.3
+ */
+function eipsi_migrate_pools_to_v2() {
+    // Solo correr una vez
+    if ( get_option( 'eipsi_pools_migrated_v2' ) ) {
+        return;
+    }
+
+    global $wpdb;
+
+    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+
+    // Verificar que la tabla existe
+    $table_exists = $wpdb->get_var(
+        $wpdb->prepare(
+            "SHOW TABLES LIKE %s",
+            $pools_table
+        )
+    );
+
+    if ( ! $table_exists ) {
+        error_log( '[EIPSI Pool] Migración v2: tabla de pools no existe, nada que migrar.' );
+        update_option( 'eipsi_pools_migrated_v2', true );
+        return;
+    }
+
+    $pools = $wpdb->get_results( "SELECT * FROM {$pools_table}" );
+
+    if ( empty( $pools ) ) {
+        error_log( '[EIPSI Pool] Migración v2: no hay pools para migrar.' );
+        update_option( 'eipsi_pools_migrated_v2', true );
+        return;
+    }
+
+    $migrated_count = 0;
+
+    foreach ( $pools as $pool ) {
+        // Obtener config vieja (puede estar en columna config o ser null)
+        $old_config = json_decode( $pool->config ?? '{}', true );
+
+        // Si ya tiene el formato nuevo (versión 2), saltear
+        if ( isset( $old_config['version'] ) && $old_config['version'] >= 2 ) {
+            continue;
+        }
+
+        // Construir array de estudios con probabilidades
+        $studies_array = array();
+        $old_studies   = json_decode( $pool->studies ?? '[]', true );
+        $old_probs     = json_decode( $pool->probabilities ?? '[]', true );
+
+        if ( is_array( $old_studies ) ) {
+            foreach ( $old_studies as $index => $study_id ) {
+                $studies_array[] = array(
+                    'study_id'    => intval( $study_id ),
+                    'probability' => isset( $old_probs[ $index ] ) ? floatval( $old_probs[ $index ] ) : 0,
+                );
+            }
+        }
+
+        // Construir nuevo formato de config
+        $new_config = array(
+            'studies'              => $studies_array,
+            'method'               => $old_config['method'] ?? 'seeded',
+            'allow_reassignment'   => $old_config['allow_reassignment'] ?? false,
+            'notify_on_completion' => $old_config['notify_on_completion'] ?? false,
+            'paused_message'       => $old_config['paused_message'] ?? __( 'Este estudio no está disponible en este momento.', 'eipsi-forms' ),
+            'migrated_at'          => current_time( 'mysql' ),
+            'version'              => 2,
+        );
+
+        // Actualizar el pool con el nuevo config
+        $updated = $wpdb->update(
+            $pools_table,
+            array( 'config' => wp_json_encode( $new_config ) ),
+            array( 'id'     => $pool->id ),
+            array( '%s' ),
+            array( '%d' )
+        );
+
+        if ( $updated !== false ) {
+            $migrated_count++;
+            error_log( "[EIPSI Pool] Migrado pool ID {$pool->id} a formato v2" );
+        } else {
+            error_log( "[EIPSI Pool] ERROR: Falló migración del pool ID {$pool->id}: " . $wpdb->last_error );
+        }
+    }
+
+    update_option( 'eipsi_pools_migrated_v2', true );
+    error_log( "[EIPSI Pool] Migración v2 completada. {$migrated_count} pools migrados." );
+}
+
+/**
+ * Hook para ejecutar la migración de pools en plugins_loaded
+ *
+ * @since 2.5.3
+ */
+add_action( 'plugins_loaded', function() {
+    // Ejecutar migración de pools v2 después de que todas las tablas estén listas
+    if ( is_admin() ) {
+        eipsi_migrate_pools_to_v2();
+    }
+}, 20 );

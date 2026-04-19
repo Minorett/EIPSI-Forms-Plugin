@@ -48,7 +48,7 @@ class EIPSI_Pool_Dashboard_Service {
     public function __construct() {
         global $wpdb;
         $this->pools_table        = $wpdb->prefix . 'eipsi_longitudinal_pools';
-        $this->assignments_table  = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
+        $this->assignments_table  = $wpdb->prefix . 'eipsi_pool_assignments';
         $this->studies_table      = $wpdb->prefix . 'survey_studies';
         $this->participants_table = $wpdb->prefix . 'survey_participants';
     }

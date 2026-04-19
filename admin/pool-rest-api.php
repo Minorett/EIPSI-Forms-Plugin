@@ -180,10 +180,10 @@ function eipsi_rest_pool_config(WP_REST_Request $request) {
 
     // Validate probability sum = 100
     $total_probability = array_sum(array_column($studies, 'probability'));
-    if ($total_probability < 99.99 || $total_probability > 100.01) {
+    if ($total_probability < 99.9 || $total_probability > 100.1) {
         return new WP_REST_Response(array(
             'success' => false,
-            'message' => sprintf('La suma de probabilidades debe ser 100%%. Actual: %.2f%%', $total_probability),
+            'message' => sprintf('La suma de probabilidades debe ser 100%% (±0.1%% tolerancia). Actual: %.2f%%', $total_probability),
         ), 400);
     }
 

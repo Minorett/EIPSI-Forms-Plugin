@@ -53,7 +53,7 @@ function eipsi_export_pool_assignments() {
 
     global $wpdb;
 
-    $assignments_table  = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
+    $assignments_table  = $wpdb->prefix . 'eipsi_pool_assignments';
     $participants_table = $wpdb->prefix . 'survey_participants';
     $studies_table      = $wpdb->prefix . 'survey_studies';
     $pools_table        = $wpdb->prefix . 'eipsi_longitudinal_pools';

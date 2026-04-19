@@ -38,7 +38,7 @@ function eipsi_display_longitudinal_pools_page() {
         $delete_nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
         if ( wp_verify_nonce( $delete_nonce, 'eipsi_delete_longitudinal_pool_' . $active_pool_id ) ) {
             // v2.1.3: First delete related assignments to avoid FK constraint issues
-            $assignments_table = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
+            $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
             $wpdb->delete( $assignments_table, array( 'pool_id' => $active_pool_id ), array( '%d' ) );
 
             $deleted = $wpdb->delete(
@@ -323,7 +323,7 @@ function eipsi_display_longitudinal_pools_page() {
                         </div>
 
                         <p class="description">
-                            <?php esc_html_e( 'La suma de probabilidades debe ser exactamente 100%.', 'eipsi-forms' ); ?>
+                            <?php esc_html_e( 'La suma de probabilidades debe ser 100% (±0.1% tolerancia permitida).', 'eipsi-forms' ); ?>
                         </p>
 
                         <!-- Hidden input to store final data -->
@@ -639,7 +639,7 @@ function eipsi_display_longitudinal_pools_page() {
                 form.addEventListener('submit', function(e) {
                     if (!validateBeforeSubmit()) {
                         e.preventDefault();
-                        alert('<?php echo esc_js( __( 'La suma de probabilidades debe ser exactamente 100%.', 'eipsi-forms' ) ); ?>');
+                        alert('<?php echo esc_js( __( 'La suma de probabilidades debe ser 100% (±0.1% tolerancia).', 'eipsi-forms' ) ); ?>');
                         return false;
                     }
                     saveDataToHiddenInput();
@@ -712,7 +712,8 @@ function eipsi_display_longitudinal_pools_page() {
 
             totalEl.textContent = total.toFixed(2) + '%';
 
-            if (total === 100) {
+            // Allow ±0.1% tolerance for floating point precision
+            if (total >= 99.9 && total <= 100.1) {
                 totalEl.classList.add('valid');
                 totalEl.classList.remove('invalid');
                 statusEl.textContent = '✅';
@@ -733,7 +734,8 @@ function eipsi_display_longitudinal_pools_page() {
                 total += val;
             });
 
-            return Math.round(total * 100) / 100 === 100;
+            // Allow ±0.1% tolerance for floating point precision
+            return total >= 99.9 && total <= 100.1;
         }
 
         function saveDataToHiddenInput() {

@@ -628,7 +628,7 @@ class EIPSI_Participant_Service {
         }
         
         // Delete from longitudinal pool assignments if table exists
-        $pool_assignments_table = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
+        $pool_assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
         if ($wpdb->get_var("SHOW TABLES LIKE '$pool_assignments_table'") === $pool_assignments_table) {
             $pool_col_exists = $wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 

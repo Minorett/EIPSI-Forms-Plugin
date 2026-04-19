@@ -33,7 +33,7 @@ $table_display_names = array(
     'survey_email_log' => 'Email Log',
     'survey_audit_log' => 'Audit Log',
     'eipsi_longitudinal_pools' => 'Longitudinal Pools',
-    'eipsi_longitudinal_pool_assignments' => 'Pool Assignments',
+    'eipsi_pool_assignments' => 'Pool Assignments',
     'survey_participant_access_log' => 'Access Log',
     'eipsi_device_data' => 'Device Data'
 );

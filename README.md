@@ -11,7 +11,7 @@
 
 ---
 
-## 📋 Versión Actual: 2.1.3
+## 📋 Versión Actual: 2.5.3
 
 **Compatibilidad:** WordPress 5.8+ | PHP 7.4+ | Tested up to WP 6.7
 
@@ -96,22 +96,41 @@ Sistema de aleatorización completo para ensayos clínicos controlados.
 
 ---
 
-### 🏥 Longitudinal Pools
+### 🏥 Pool Hub v2.5.3 (Longitudinal Pools)
 
-Asignación automática de participantes a estudios con probabilidades configurables.
+Sistema avanzado de asignación aleatoria de participantes a estudios longitudinales con tracking completo y analytics.
 
 **Características:**
-- **Pools de estudios:** Agrupa múltiples estudios longitudinales
-- **Probabilidades custom:** Define peso de cada estudio en el pool
-- **Asignación automática:** Weighted random al unirse
-- **Dashboard de monitoreo:** Visualización de asignaciones y balances
+- **Pools de estudios:** Agrupa múltiples estudios longitudinales con configuración JSON estructurada
+- **Weighted Random Assignment:** Dos métodos de aleatorización:
+  - `seeded` - Asignación determinística reproducible (mismo participante = mismo estudio)
+  - `pure-random` - Aleatoriedad criptográfica para máxima imparcialidad
+- **Persistencia de asignaciones:** Tabla `eipsi_pool_assignments` para tracking completo
+- **Analytics diarios:** Tabla `eipsi_pool_analytics` con métricas de asignaciones y completitud
+- **Dashboard v3:** Visualización de estadísticas, completitud, y estado de pools
+- **Re-asignación configurable:** Permitir o bloquear re-asignación después de completar
+- **Migración automática:** Función `eipsi_migrate_pools_to_v2()` para migrar formatos viejos
 
-**Shortcodes:**
+**Tablas de base de datos:**
+- `wp_eipsi_longitudinal_pools` - Configuración de pools
+- `wp_eipsi_pool_assignments` - Asignaciones de participantes
+- `wp_eipsi_pool_analytics` - Analytics diarios por pool/estudio
+
+**Shortcodes (backward compatible):**
 ```
-[eipsi_pool_join pool_id="789"]  // Página de unión al pool
+[eipsi_pool pool_id="789"]                    // Shortcode nuevo (v2.5.3)
+[eipsi_pool pool_id="789" method="seeded"]   // Especificar método
+[eipsi_pool_join pool_id="789"]               // Legacy alias (v2.1.0+)
 ```
 
-**Estado:** ✅ Parte 1-4 implementadas. ⚠️ *Fix reciente (v2.1.3): Ahora se pueden eliminar pools correctamente incluso si los estudios vinculados fueron borrados.*
+**Testing E2E:**
+```php
+// tests/test-pool-hub-e2e.php
+require_once __DIR__ . '/tests/test-pool-hub-e2e.php';
+eipsi_e2e_run_all_tests();
+```
+
+**Estado:** ✅ v2.5.3 - Sistema completo con migración, analytics, y testing E2E.
 
 ---
 
@@ -338,7 +357,7 @@ El plugin crea las siguientes tablas en la base de datos:
 | Tabla | Descripción |
 |-------|-------------|
 | `wp_eipsi_longitudinal_pools` | Definición de pools |
-| `wp_eipsi_longitudinal_pool_assignments` | Asignaciones a pools |
+| `wp_eipsi_pool_assignments` | Asignaciones a pools |
 
 ---
 

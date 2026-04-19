@@ -34,7 +34,7 @@ function eipsi_display_longitudinal_study_page() {
 
         if (wp_verify_nonce($nonce, 'eipsi_delete_longitudinal_pool_' . $pool_id) && eipsi_user_can_manage_longitudinal()) {
             $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
-            $assignments_table = $wpdb->prefix . 'eipsi_longitudinal_pool_assignments';
+            $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
 
             // Delete related assignments first (foreign key constraint)
             $wpdb->delete($assignments_table, ['pool_id' => $pool_id], ['%d']);

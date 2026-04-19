@@ -111,10 +111,12 @@ class EIPSI_Pool_Assignment_Service {
         if ( $existing ) {
             // Si no permite re-asignación o no completó, devolver existente
             if ( ! $allow_reassignment || ! $existing->completed ) {
+                error_log( "[EIPSI] Usando asignación existente para participante {$participant_id} en pool {$pool_id}, estudio {$existing->study_id}" );
                 $this->record_access( $existing->id );
                 return $this->format_assignment( $existing, true );
             }
             // Si permite re-asignación y completó, continuar para crear nueva
+            error_log( "[EIPSI] Re-asignando participante {$participant_id} en pool {$pool_id} (estudio previo {$existing->study_id} completado)" );
         }
 
         // Weighted random assignment
@@ -131,8 +133,11 @@ class EIPSI_Pool_Assignment_Service {
         $assignment_id = $this->create_assignment( $pool_id, $participant_id, $study_id );
 
         if ( ! $assignment_id ) {
+            error_log( "[EIPSI] ERROR: Falló creación de asignación para participante {$participant_id} en pool {$pool_id}" );
             return false;
         }
+
+        error_log( "[EIPSI] Asignación creada exitosamente: ID {$assignment_id}, participante {$participant_id}, pool {$pool_id}, estudio {$study_id}" );
 
         // Obtener la asignación recién creada
         $assignment = $wpdb->get_row(
@@ -251,6 +256,8 @@ class EIPSI_Pool_Assignment_Service {
 
         $assignment_id = (int) $wpdb->insert_id;
 
+        error_log( "[EIPSI] Asignación persistida: ID {$assignment_id}, participante {$participant_id}, pool {$pool_id}, estudio {$study_id}" );
+
         // Actualizar analytics diarios de assignments (Fase 4)
         $this->update_daily_analytics_assignments( $pool_id, $study_id );
 
@@ -320,9 +327,14 @@ class EIPSI_Pool_Assignment_Service {
         );
 
         if ( $result !== false && $result > 0 && $study_id ) {
+            error_log( "[EIPSI] Pool {$pool_id} marcado como completado por participante {$participant_id}, estudio {$study_id}" );
             // Actualizar analytics diarios de completions
             $this->update_daily_analytics_completions( $pool_id, $study_id );
             return true;
+        }
+
+        if ( $result === false ) {
+            error_log( "[EIPSI] ERROR: Falló al marcar completado para participante {$participant_id} en pool {$pool_id}: " . $wpdb->last_error );
         }
 
         return $result !== false && $result > 0;

@@ -48,7 +48,7 @@ function eipsi_fix_corrupt_indexes($tables = array()) {
             $wpdb->prefix . 'vas_form_results',
             $wpdb->prefix . 'vas_form_events',
             $wpdb->prefix . 'eipsi_longitudinal_pools',
-            $wpdb->prefix . 'eipsi_longitudinal_pool_assignments',
+            $wpdb->prefix . 'eipsi_pool_assignments',
             $wpdb->prefix . 'survey_participant_access_log',
             $wpdb->prefix . 'eipsi_device_data'
         );
