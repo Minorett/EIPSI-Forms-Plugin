@@ -25,6 +25,11 @@ function eipsi_render_pool_hub_v2() {
     $nonce = wp_create_nonce('eipsi_admin_nonce');
     $ajax_url = admin_url('admin-ajax.php');
     
+    // Load available studies for pool creation
+    global $wpdb;
+    $studies_table = $wpdb->prefix . 'survey_studies';
+    $available_studies = $wpdb->get_results( "SELECT id, study_name, study_code, status FROM {$studies_table} ORDER BY study_name ASC" );
+    
     $message = isset($_GET['message']) ? sanitize_key($_GET['message']) : '';
     ?>
 
@@ -1067,7 +1072,7 @@ function eipsi_render_pool_hub_v2() {
             pools: [],
             currentPoolId: null,
             chart: null,
-            studiesData: [],
+            studiesData: <?php echo json_encode($available_studies ?: []); ?>,
             deletePoolId: null
         };
 
@@ -1511,10 +1516,13 @@ function eipsi_render_pool_hub_v2() {
                 document.getElementById('eipsi-pool-form-v3').reset();
                 document.getElementById('eipsi-pool-id-v3').value = '0';
                 document.getElementById('eipsi-pool-studies-rows-v3').innerHTML = '';
+                // Add two empty study rows for new pool
+                addStudyRowV3('', '');
+                addStudyRowV3('', '');
             }
 
             modal.style.display = 'flex';
-            loadStudiesForSelect();
+            updateProbabilityTotalV3();
         }
 
         function closePoolModalV3() {
@@ -1549,10 +1557,15 @@ function eipsi_render_pool_hub_v2() {
             const rowCount = container.children.length;
 
             let optionsHtml = '<option value=""><?php _e('Seleccionar estudio...', 'eipsi-forms'); ?></option>';
-            POOL_HUB_V3.studiesData.forEach(function(study) {
-                const selected = study.id == studyId ? 'selected' : '';
-                optionsHtml += `<option value="${study.id}" ${selected}>${study.name} (${study.code})</option>`;
-            });
+            
+            if (POOL_HUB_V3.studiesData.length === 0) {
+                optionsHtml = '<option value=""><?php _e('No hay estudios disponibles', 'eipsi-forms'); ?></option>';
+            } else {
+                POOL_HUB_V3.studiesData.forEach(function(study) {
+                    const selected = study.id == studyId ? 'selected' : '';
+                    optionsHtml += `<option value="${study.id}" ${selected}>${study.study_name} (${study.study_code})</option>`;
+                });
+            }
 
             const row = document.createElement('div');
             row.className = 'eipsi-form-row-v3';
