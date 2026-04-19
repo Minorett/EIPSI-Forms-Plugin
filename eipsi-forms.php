@@ -1922,7 +1922,11 @@ function eipsi_handle_save_pool() {
     error_log('[EIPSI-POOL] Page created: ' . ($page_id ? $page_id : 'failed'));
     
     // Redirect back with success message
-    $redirect_url = admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_' . ($pool_id > 0 ? 'updated' : 'created'));
+    $message_type = $pool_id > 0 ? 'updated' : 'created';
+    $redirect_url = admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_' . $message_type);
+    if ($page_url) {
+        $redirect_url .= '&page_url=' . urlencode($page_url);
+    }
     
     error_log('[EIPSI-POOL] Redirecting to: ' . $redirect_url);
     
@@ -1964,7 +1968,7 @@ function eipsi_create_pool_page($pool_id, $pool_name) {
     
     // Create new page
     $page_title = sprintf(__('Pool: %s', 'eipsi-forms'), $pool_name);
-    $page_content = '[eipsi_pool_join pool_id="' . esc_attr($pool_id) . '"]';
+    $page_content = '<!-- wp:shortcode -->[eipsi_pool pool_id="' . esc_attr($pool_id) . '"]<!-- /wp:shortcode -->';
     
     $page_id = wp_insert_post(array(
         'post_title' => $page_title,

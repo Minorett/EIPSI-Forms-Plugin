@@ -37,9 +37,17 @@ function eipsi_render_pool_hub_v2() {
         <?php if ($message) : ?>
             <div class="notice notice-success is-dismissible">
                 <p><?php 
-                    if ($message === 'pool_deleted') _e('Pool eliminado correctamente.', 'eipsi-forms');
-                    elseif ($message === 'pool_created') _e('Pool creado correctamente.', 'eipsi-forms');
-                    elseif ($message === 'pool_updated') _e('Pool actualizado correctamente.', 'eipsi-forms');
+                    if ($message === 'pool_deleted') {
+                        _e('Pool eliminado correctamente.', 'eipsi-forms');
+                    } elseif ($message === 'pool_created') {
+                        _e('Pool creado correctamente.', 'eipsi-forms');
+                        $page_url = isset($_GET['page_url']) ? esc_url($_GET['page_url']) : '';
+                        if ($page_url) {
+                            echo '<br><strong>' . __('URL pública:', 'eipsi-forms') . '</strong> <a href="' . $page_url . '" target="_blank">' . $page_url . '</a>';
+                        }
+                    } elseif ($message === 'pool_updated') {
+                        _e('Pool actualizado correctamente.', 'eipsi-forms');
+                    }
                 ?></p>
             </div>
         <?php endif; ?>
@@ -1060,6 +1068,56 @@ function eipsi_render_pool_hub_v2() {
             color: #92400e;
             font-size: 13px;
         }
+
+        /* Pool Share Section */
+        .eipsi-pool-share {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .eipsi-shortcode {
+            display: inline-block;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: monospace;
+            color: #475569;
+            cursor: pointer;
+            border: 1px dashed #cbd5e1;
+            transition: all 0.2s;
+        }
+
+        .eipsi-shortcode:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
+
+        .eipsi-page-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .eipsi-page-link:hover {
+            color: #2563eb;
+            text-decoration: underline;
+        }
+
+        .eipsi-no-page {
+            font-size: 11px;
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 
 
@@ -1198,6 +1256,11 @@ function eipsi_render_pool_hub_v2() {
                     <div class="eipsi-completion-rate">${pool.completion_rate}%</div>
                     <div style="font-size: 12px; color: #64748b; margin-top: -8px;"><?php _e('tasa de completitud', 'eipsi-forms'); ?></div>
 
+                    <div class="eipsi-pool-share" style="margin-top: 8px;">
+                        <code class="eipsi-shortcode" title="Click para copiar" onclick="copyToClipboardV3('[eipsi_pool pool_id=${pool.id}]')">[eipsi_pool pool_id=${pool.id}]</code>
+                        ${pool.page_url ? `<a href="${pool.page_url}" target="_blank" class="eipsi-page-link" title="Ver página pública"><span class="dashicons dashicons-external"></span> Ver página pública</a>` : '<span class="eipsi-no-page">Sin página asignada</span>'}
+                    </div>
+
                     <div class="eipsi-pool-card-actions">
                         <button type="button" class="button" onclick="switchPoolSubtab('analytics'); loadPoolAnalytics(${pool.id});">
                             <span class="dashicons dashicons-chart-area"></span> <?php _e('Ver Analytics', 'eipsi-forms'); ?>
@@ -1240,6 +1303,7 @@ function eipsi_render_pool_hub_v2() {
                                 <th><?php _e('Balance', 'eipsi-forms'); ?></th>
                                 <th><?php _e('Completion', 'eipsi-forms'); ?></th>
                                 <th><?php _e('Estado', 'eipsi-forms'); ?></th>
+                                <th><?php _e('Compartir', 'eipsi-forms'); ?></th>
                                 <th><?php _e('Acciones', 'eipsi-forms'); ?></th>
                             </tr>
                         </thead>
@@ -1272,6 +1336,12 @@ function eipsi_render_pool_hub_v2() {
                                 <input type="checkbox" ${isChecked} onchange="togglePoolStatusV3(${pool.id}, this.checked)">
                                 <span class="eipsi-toggle-slider"></span>
                             </label>
+                        </td>
+                        <td>
+                            <div class="eipsi-pool-share">
+                                <code class="eipsi-shortcode" title="Click para copiar" onclick="copyToClipboardV3('[eipsi_pool pool_id=${pool.id}]')">[eipsi_pool pool_id=${pool.id}]</code>
+                                ${pool.page_url ? `<a href="${pool.page_url}" target="_blank" class="eipsi-page-link" title="Ver página pública"><span class="dashicons dashicons-external"></span> URL</a>` : '<span class="eipsi-no-page">Sin página</span>'}
+                            </div>
                         </td>
                         <td>
                             <button type="button" class="button button-small" onclick="editPoolV3(${pool.id})">
@@ -1691,12 +1761,47 @@ function eipsi_render_pool_hub_v2() {
             };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
         }
+
+        // Copy to clipboard
+        function copyToClipboardV3(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                showToastV3('✅ Copiado al portapapeles');
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showToastV3('✅ Copiado al portapapeles');
+                } catch (e) {
+                    showToastV3('❌ Error al copiar');
+                }
+                document.body.removeChild(textarea);
+            });
+        }
+
+        // Show toast notification
+        function showToastV3(message) {
+            const container = document.getElementById('eipsi-toast-container');
+            const toast = document.createElement('div');
+            toast.style.cssText = 'background:#1e293b;color:#fff;padding:12px 20px;border-radius:8px;margin-bottom:8px;font-size:14px;animation:fadeIn 0.3s;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 2000);
+        }
     </script>
 
     </div><!-- End wrap -->
 
-<?php } // End function eipsi_render_pool_hub_v2 ?>
-
+<?php } // End function eipsi_render_pool_hub_v2
 
 /**
  * Get pool statistics

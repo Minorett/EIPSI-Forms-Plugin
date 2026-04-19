@@ -207,6 +207,15 @@ function eipsi_ajax_get_all_pools_summary() {
 
         $balance_score = count($studies) > 0 ? round(100 - ($total_deviation / count($studies)), 1) : 100;
 
+        // Get pool page URL
+        $pages = get_posts(array(
+            'post_type' => 'page',
+            'meta_key' => 'eipsi_pool_id',
+            'meta_value' => $pool_id,
+            'posts_per_page' => 1
+        ));
+        $page_url = !empty($pages) ? get_permalink($pages[0]->ID) : null;
+
         $pools_summary[] = array(
             'id' => $pool_id,
             'name' => $pool['pool_name'],
@@ -220,7 +229,8 @@ function eipsi_ajax_get_all_pools_summary() {
             'balance_score' => $balance_score,
             'distribution' => $distribution,
             'config' => $config,
-            'created_at' => $pool['created_at']
+            'created_at' => $pool['created_at'],
+            'page_url' => $page_url
         );
     }
 
