@@ -3311,4 +3311,9 @@
 			.replace( /"/g, '&quot;' )
 			.replace( /'/g, '&#039;' );
 	}
+
+	// v2.5.4 - Expose API for external use (modal templates)
+	window.StudyDashboard = {
+		showNotification: showNotification
+	};
 } )( window.jQuery );

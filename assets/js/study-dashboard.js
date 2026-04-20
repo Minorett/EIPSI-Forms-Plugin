@@ -204,19 +204,37 @@
 
             // Copy shortcode
             $('#copy-shortcode').off('click').on('click', function() {
+                const $btn = $(this);
                 const text = $('#shortcode-display').text();
                 console.log('[BUTTON] copy-shortcode clicked, text:', text);
                 navigator.clipboard.writeText(text).then(function() {
-                    alert('Shortcode copiado al portapapeles');
+                    // v2.5.4 - Toast notification + button feedback
+                    if (window.StudyDashboard && window.StudyDashboard.showNotification) {
+                        window.StudyDashboard.showNotification('Shortcode copiado al portapapeles', 'success');
+                    }
+                    // Button turns green with checkmark
+                    $btn.css({background: '#22c55e', color: '#fff'}).text('✓ Copiado');
+                    setTimeout(function() {
+                        $btn.css({background: '', color: ''}).text('Copiar');
+                    }, 2000);
                 });
             });
 
             // Copy page URL
             $('#copy-page-url').off('click').on('click', function() {
+                const $btn = $(this);
                 const text = $('#study-page-url').val();
                 console.log('[BUTTON] copy-page-url clicked, text:', text);
                 navigator.clipboard.writeText(text).then(function() {
-                    alert('URL copiada al portapapeles');
+                    // v2.5.4 - Toast notification + button feedback
+                    if (window.StudyDashboard && window.StudyDashboard.showNotification) {
+                        window.StudyDashboard.showNotification('URL copiada al portapapeles', 'success');
+                    }
+                    // Button turns green with checkmark
+                    $btn.css({background: '#22c55e', color: '#fff'}).text('✓ Copiado');
+                    setTimeout(function() {
+                        $btn.css({background: '', color: ''}).text('Copiar');
+                    }, 2000);
                 });
             });
 
