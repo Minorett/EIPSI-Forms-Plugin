@@ -265,7 +265,7 @@ $view_class      = 'view-' . esc_attr( $view_mode );
                                         </p>
                                         <?php if ( ! empty( $countdown_text ) ) : ?>
                                             <p class="countdown-text" style="margin: 0; font-size: 13px; color: #0284c7;">
-                                                ⏳ <?php printf( esc_html__( 'Quedan %s', 'eipsi-forms' ), esc_html( $countdown_text ) ); ?>
+                                                ⏳ <?php esc_html_e( 'Quedan', 'eipsi-forms' ); ?> <span class="countdown-value"><?php echo esc_html( $countdown_text ); ?></span>
                                             </p>
                                         <?php endif; ?>
                                     </div>
