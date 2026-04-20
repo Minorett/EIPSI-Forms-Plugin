@@ -403,18 +403,8 @@ function eipsi_send_wave_reminders_hourly($specific_study_id = null) {
             
             // v2.2.0 - For Nudge 0, use robust Wave Availability Email Service
             if ($current_stage === 0) {
-                error_log("[EIPSI Cron] Using EIPSI_Wave_Availability_Email_Service for Nudge 0");
-                
-                $result = EIPSI_Wave_Availability_Email_Service::ensure_wave_availability_email_sent(
-                    $assignment,
-                    (object) $assignment,
-                    (object) $assignment,
-                    $study->id
-                );
-                
-                error_log("[EIPSI Cron] Wave Availability Email Service result: " . wp_json_encode($result));
-                
-                // v2.5.0 - Encolar en Job Queue en lugar de enviar directamente
+                // v2.5.4 - FIX: Solo encolar en Job Queue, NO enviar directamente
+                // El envío directo + encolado causaba emails duplicados
                 $job_id = EIPSI_Nudge_Job_Queue::enqueue('send_nudge_0', [
                     'assignment_id' => $assignment->id,
                     'participant_id' => $assignment->participant_id,
