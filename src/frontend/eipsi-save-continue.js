@@ -1059,7 +1059,61 @@
 				}
 			} );
 
+			// CAPTURAR ESTADO DEL CONSENTIMIENTO EXPLÍCITAMENTE
+			// Los checkboxes unchecked no aparecen en FormData, por eso hay que capturarlos manualmente
+			this.captureConsentStatus( responses );
+
 			return responses;
+		}
+
+		/**
+		 * Captura el estado del checkbox de consentimiento informado
+		 * Incluye tanto checked como unchecked para garantizar consistencia
+		 *
+		 * @param {Object} responses - Objeto de respuestas a modificar
+		 */
+		captureConsentStatus( responses ) {
+			// Buscar el checkbox de consentimiento por múltiples selectores comunes
+			const consentSelectors = [
+				'input[name="consent_informed"]',
+				'input[name="consent"]',
+				'input[name="eipsi_consent"]',
+				'input[data-consent-field]',
+				'#eipsi-consent-checkbox',
+				'.eipsi-consent-checkbox input[type="checkbox"]',
+			];
+
+			let consentField = null;
+			for ( const selector of consentSelectors ) {
+				consentField = this.form.querySelector( selector );
+				if ( consentField ) {
+					break;
+				}
+			}
+
+			// Si encontramos el campo, registrar su estado explícitamente
+			if ( consentField ) {
+				const fieldName = consentField.name || 'consent_informed';
+				const isChecked = consentField.checked;
+
+				// Guardar el estado booleano explícito
+				responses[ fieldName ] = isChecked ? 'true' : 'false';
+
+				// Metadata adicional para auditoría
+				responses[ `${ fieldName }_timestamp` ] = new Date().toISOString();
+				responses[ `${ fieldName }_page` ] = this.getCurrentPage();
+
+				if ( this.config?.settings?.debug && window.console?.debug ) {
+					window.console.debug(
+						'[EIPSI Save & Continue] Consentimiento capturado:',
+						{
+							field: fieldName,
+							checked: isChecked,
+							page: this.getCurrentPage(),
+						}
+					);
+				}
+			}
 		}
 
 		getCurrentPage() {

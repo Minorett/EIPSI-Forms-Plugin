@@ -398,23 +398,18 @@ function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
 
         $survey_id = (int) $wave->study_id;
 
-        // Get all active participants in this study who haven't completed this wave yet
-        // This includes those with 'active' assignments AND those who should have access
-        // but haven't been assigned yet (waves T2, T3, etc.)
+        // Get participants with PENDING assignments for THIS SPECIFIC WAVE only
+        // Only sends to those who actually need to complete this wave
         $participant_ids = $wpdb->get_col($wpdb->prepare(
-            "SELECT DISTINCT p.id 
-             FROM {$wpdb->prefix}survey_participants p
-             INNER JOIN {$wpdb->prefix}survey_assignments sa ON p.id = sa.participant_id
-             WHERE sa.study_id = %d 
-             AND p.is_active = 1
-             AND p.id NOT IN (
-                 -- Exclude those who already completed this wave
-                 SELECT DISTINCT participant_id 
-                 FROM {$wpdb->prefix}vas_form_results 
-                 WHERE form_id = %d
-             )",
-            $survey_id,
-            $wave->form_id
+            "SELECT DISTINCT sa.participant_id 
+             FROM {$wpdb->prefix}survey_assignments sa
+             JOIN {$wpdb->prefix}survey_participants p ON sa.participant_id = p.id
+             WHERE sa.wave_id = %d           -- Only this specific wave
+             AND sa.study_id = %d 
+             AND sa.status = 'pending'       -- Only pending (not submitted/paused)
+             AND p.is_active = 1",
+            $wave_id,
+            $survey_id
         ));
 
         if (empty($participant_ids)) {
