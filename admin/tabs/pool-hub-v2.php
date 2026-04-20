@@ -1126,13 +1126,32 @@ function eipsi_render_pool_hub_v2() {
         function switchPoolSubtab(tabName) {
             document.querySelectorAll('.eipsi-sub-tabs .nav-tab').forEach(tab => {
                 tab.classList.remove('nav-tab-active');
-            }
-        });
+                if (tab.dataset.subtab === tabName) {
+                    tab.classList.add('nav-tab-active');
+                }
+            });
 
-        // Hide all subtab contents
-        document.querySelectorAll('.eipsi-subtab-content').forEach(content => {
-            content.style.display = 'none';
-        });
+            // Hide all subtab contents
+            document.querySelectorAll('.eipsi-subtab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+
+            // Show selected
+            const selectedContent = document.getElementById('subtab-' + tabName);
+            if (selectedContent) {
+                selectedContent.style.display = 'block';
+            }
+
+            // Load data if needed
+            if (tabName === 'analytics') {
+                if (POOL_HUB_V3.pools.length > 0) {
+                    loadPoolAnalytics(POOL_HUB_V3.pools[0].id);
+                }
+            }
+        }
+
+        // Load all pools data
+        function loadAllPoolsData() {
             jQuery.ajax({
                 url: POOL_HUB_V3.ajaxUrl,
                 type: 'POST',
