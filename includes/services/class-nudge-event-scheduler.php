@@ -255,12 +255,19 @@ class EIPSI_Nudge_Event_Scheduler {
         
         $assignment_id = intval($args['assignment_id']);
         $stage = intval($args['stage']);
+        $scheduled_at = isset($args['scheduled_at']) ? intval($args['scheduled_at']) : 0;
         
-        if (defined('WP_DEBUG') && WP_DEBUG) {
+        $now = current_time('timestamp');
+        $is_catch_up = ($scheduled_at > 0 && $now > $scheduled_at + 300); // 5 min grace period
+        
+        if (defined('WP_DEBUG') || $is_catch_up) {
             error_log(sprintf(
-                '[EIPSI EventScheduler] Executing scheduled nudge %d for assignment %d',
+                '[EIPSI EventScheduler] Executing scheduled nudge %d for assignment %d (scheduled: %s, now: %s, catch-up: %s)',
                 $stage,
-                $assignment_id
+                $assignment_id,
+                $scheduled_at ? date('Y-m-d H:i:s', $scheduled_at) : 'N/A',
+                date('Y-m-d H:i:s', $now),
+                $is_catch_up ? 'YES' : 'NO'
             ));
         }
         
@@ -416,6 +423,60 @@ class EIPSI_Nudge_Event_Scheduler {
                         $stage,
                         $assignment_id
                     ));
+                    
+                    // v2.5.4 - CATCH-UP: If this nudge was delayed, reschedule next nudge with proper interval from 'now'
+                    if ($is_catch_up && $stage < 4) {
+                        $next_stage = $stage + 1;
+                        
+                        // Get nudge config for next stage
+                        $wave = $wpdb->get_row($wpdb->prepare(
+                            "SELECT w.nudge_config, w.follow_up_reminders_enabled
+                             FROM {$wpdb->prefix}survey_assignments a
+                             JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+                             WHERE a.id = %d",
+                            $assignment_id
+                        ));
+                        
+                        if ($wave && !empty($wave->follow_up_reminders_enabled)) {
+                            $nudge_config = !empty($wave->nudge_config) ? json_decode($wave->nudge_config, true) : array();
+                            $next_key = "nudge_{$next_stage}";
+                            
+                            if (isset($nudge_config[$next_key]) && !empty($nudge_config[$next_key]['enabled'])) {
+                                $config = $nudge_config[$next_key];
+                                $value = isset($config['value']) ? floatval($config['value']) : ($next_stage * 24);
+                                $unit = isset($config['unit']) ? $config['unit'] : 'hours';
+                                $delay_seconds = self::convert_to_seconds($value, $unit);
+                                
+                                // Reschedule from NOW, not from original available_at
+                                $new_scheduled_time = $now + $delay_seconds;
+                                
+                                // Clear old event and schedule new one
+                                $old_event_args = array(
+                                    'assignment_id' => $assignment_id,
+                                    'stage' => $next_stage,
+                                    'scheduled_at' => 0 // Old events don't have this
+                                );
+                                wp_clear_scheduled_hook(self::NUDGE_EVENT_HOOK, array($old_event_args));
+                                
+                                $new_event_args = array(
+                                    'assignment_id' => $assignment_id,
+                                    'stage' => $next_stage,
+                                    'scheduled_at' => $new_scheduled_time
+                                );
+                                
+                                wp_schedule_single_event($new_scheduled_time, self::NUDGE_EVENT_HOOK, array($new_event_args));
+                                
+                                error_log(sprintf(
+                                    '[EIPSI EventScheduler] CATCH-UP: Rescheduled nudge %d for assignment %d at %s (+ %d %s from now)',
+                                    $next_stage,
+                                    $assignment_id,
+                                    date('Y-m-d H:i:s', $new_scheduled_time),
+                                    $value,
+                                    $unit
+                                ));
+                            }
+                        }
+                    }
                 } else {
                     // Falló el envío - rollback para que se reintente
                     $wpdb->query('ROLLBACK');
