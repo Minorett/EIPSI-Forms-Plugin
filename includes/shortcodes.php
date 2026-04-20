@@ -301,6 +301,51 @@ function eipsi_participant_dashboard_shortcode($atts) {
         }
     }
     
+    // Calculate availability for next wave (if there's an interval from previous wave)
+    $wave_locked = false;
+    $available_timestamp = null;
+    if ($next_wave) {
+        // Check if previous wave exists and has interval_days
+        $prev_wave = null;
+        foreach ($all_waves as $wave) {
+            if ($wave['wave_index'] == ($next_wave['wave_index'] - 1)) {
+                $prev_wave = $wave;
+                break;
+            }
+        }
+        
+        if ($prev_wave && !empty($prev_wave['assignment']) && $prev_wave['assignment']['status'] === 'submitted') {
+            // Get interval_days from next wave (or study default)
+            $interval_days = isset($next_wave['interval_days']) ? intval($next_wave['interval_days']) : 0;
+            
+            if ($interval_days > 0) {
+                // Calculate available date
+                $submitted_at = strtotime($prev_wave['assignment']['submitted_at']);
+                $available_timestamp = strtotime("+{$interval_days} days", $submitted_at);
+                $now = current_time('timestamp');
+                
+                if ($available_timestamp > $now) {
+                    $wave_locked = true;
+                }
+            }
+        }
+        
+        // Add flags to next_wave
+        $next_wave['is_locked'] = $wave_locked;
+        $next_wave['available_timestamp'] = $available_timestamp;
+    }
+    
+    // Enqueue countdown script if wave is locked
+    if ($wave_locked && $available_timestamp) {
+        wp_enqueue_script(
+            'eipsi-participant-countdown',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/js/participant-countdown.js',
+            array('jquery'),
+            EIPSI_FORMS_VERSION,
+            true
+        );
+    }
+    
     // Render dashboard template
     ob_start();
     include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/participant-dashboard.php';

@@ -19,12 +19,20 @@
         const availableTimestamp = parseInt(element.dataset.availableTimestamp, 10);
         if (!availableTimestamp || isNaN(availableTimestamp)) return;
 
+        // Buscar el elemento donde mostrar el valor (puede ser el mismo o un hijo .countdown-value)
+        const valueElement = element.querySelector('.countdown-value') || element;
+
         function updateCountdown() {
             const now = Math.floor(Date.now() / 1000);
             const remaining = availableTimestamp - now;
 
             if (remaining <= 0) {
-                element.innerHTML = '<span class="countdown-ready">✅ ¡Disponible ahora! Recarga la página</span>';
+                // Si hay label y value separados, actualizar ambos
+                if (valueElement !== element) {
+                    element.innerHTML = '<span class="countdown-ready">✅ ¡Disponible ahora! Recarga la página</span>';
+                } else {
+                    valueElement.textContent = '✅ ¡Disponible ahora!';
+                }
                 // Recargar página después de 5 segundos para que PHP actualice el estado
                 setTimeout(function() {
                     window.location.reload();
@@ -47,7 +55,7 @@
                 text = minutes + 'm ' + seconds + 's';
             }
 
-            element.textContent = '⏳ ' + text;
+            valueElement.textContent = text;
         }
 
         // Actualizar cada segundo

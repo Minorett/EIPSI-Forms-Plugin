@@ -34,7 +34,8 @@ function eipsi_display_longitudinal_study_page() {
         
         error_log('[EIPSI-POOL-DELETE] Request received - Pool ID: ' . $pool_id . ', Nonce: ' . substr($nonce, 0, 10) . '...');
         
-        $nonce_valid = wp_verify_nonce($nonce, 'eipsi_delete_longitudinal_pool_' . $pool_id);
+        // Use generic delete nonce (matches JavaScript)
+        $nonce_valid = wp_verify_nonce($nonce, 'eipsi_delete_pool');
         $can_manage = eipsi_user_can_manage_longitudinal();
         
         error_log('[EIPSI-POOL-DELETE] Nonce valid: ' . ($nonce_valid ? 'YES' : 'NO') . ', Can manage: ' . ($can_manage ? 'YES' : 'NO'));

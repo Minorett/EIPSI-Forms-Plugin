@@ -148,16 +148,12 @@ if (!empty($step_3['timing_intervals'])) {
                             <?php 
                             $wave_num = $index + 1;
                             $wave_name = esc_html($wave['name'] ?? "Toma {$wave_num}");
-                            $duration = intval($wave['estimated_duration'] ?? 15);
                             $is_required = isset($wave['is_required']) ? (bool)$wave['is_required'] : true;
                             ?>
                             <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f8f9fa;border-radius:8px;border:1px solid #e2e8f0;">
                                 <div style="display:flex;align-items:center;gap:10px;">
                                     <span style="background:#3B6CAA;color:white;padding:2px 8px;border-radius:4px;font-weight:600;font-size:12px;">T<?php echo $wave_num; ?></span>
                                     <span style="font-weight:600;color:#2c3e50;font-size:13px;"><?php echo $wave_name; ?></span>
-                                </div>
-                                <div style="display:flex;align-items:center;gap:12px;">
-                                    <span style="font-size:12px;color:#64748b;"><?php echo $duration; ?> min</span>
                                 </div>
                             </div>
                         <?php endforeach; ?>

@@ -745,3 +745,328 @@ body.eipsi-dark-mode .eipsi-contact-link,
 .dark-mode .eipsi-contact-link {
     background: #ffffff;
 }
+
+/* ==========================================================================
+   AVAILABILITY INFO & COUNTDOWN STYLES
+   ========================================================================== */
+
+.eipsi-availability-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.eipsi-availability-info.locked {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+}
+
+.eipsi-availability-info.ready {
+    background: #d4edda;
+    border: 1px solid #28a745;
+}
+
+.availability-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.availability-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.eipsi-availability-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.eipsi-availability-date {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.eipsi-availability-status {
+    font-size: 16px;
+    font-weight: 600;
+    color: #28a745;
+}
+
+/* Countdown Styles */
+.eipsi-countdown {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(0,0,0,0.1);
+}
+
+.countdown-label {
+    font-size: 13px;
+    color: #856404;
+    font-weight: 500;
+}
+
+.countdown-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #856404;
+    font-family: 'SF Mono', Monaco, monospace;
+    letter-spacing: 1px;
+}
+
+/* Next Take Card States */
+.eipsi-next-take-card.locked {
+    border-left: 4px solid #ffc107;
+}
+
+.eipsi-next-take-card.ready {
+    border-left: 4px solid #28a745;
+}
+
+/* Dark Mode for Availability */
+body.eipsi-dark-mode .eipsi-availability-info.locked,
+.dark-mode .eipsi-availability-info.locked {
+    background: rgba(255, 193, 7, 0.15);
+    border-color: #ffc107;
+}
+
+body.eipsi-dark-mode .eipsi-availability-info.ready,
+.dark-mode .eipsi-availability-info.ready {
+    background: rgba(40, 167, 69, 0.15);
+    border-color: #28a745;
+}
+
+body.eipsi-dark-mode .eipsi-availability-date,
+.dark-mode .eipsi-availability-date {
+    color: #e5e7eb;
+}
+
+body.eipsi-dark-mode .countdown-value,
+.dark-mode .countdown-value {
+    color: #ffd700;
+}
+
+body.eipsi-dark-mode .countdown-label,
+.dark-mode .countdown-label {
+    color: #ffd700;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE STYLES
+   ========================================================================== */
+
+@media screen and (max-width: 768px) {
+    /* Container adjustments */
+    .eipsi-dashboard-container {
+        padding: 12px;
+        max-width: 100%;
+    }
+
+    /* Header mobile */
+    .eipsi-dashboard-header {
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .eipsi-dashboard-title {
+        font-size: 20px;
+    }
+
+    .eipsi-dashboard-subtitle {
+        font-size: 13px;
+    }
+
+    /* Main CTA button - fix overflow issue */
+    .eipsi-dash-cta {
+        flex-direction: column;
+        padding: 20px;
+        gap: 16px;
+    }
+
+    .eipsi-dash-cta-content {
+        width: 100%;
+    }
+
+    .eipsi-dash-cta-title {
+        font-size: 18px;
+    }
+
+    .eipsi-dash-cta-button {
+        width: 100%;
+        justify-content: center;
+        padding: 16px 24px;
+        font-size: 16px;
+    }
+
+    /* Stats cards - stack vertically */
+    .eipsi-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .eipsi-stat-card {
+        padding: 16px;
+    }
+
+    .eipsi-stat-value {
+        font-size: 24px;
+    }
+
+    /* Study cards */
+    .eipsi-study-list {
+        gap: 12px;
+    }
+
+    .eipsi-study-card {
+        padding: 16px;
+    }
+
+    .eipsi-study-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .eipsi-study-actions {
+        width: 100%;
+    }
+
+    .eipsi-study-actions .button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Progress bar */
+    .eipsi-progress-section {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .eipsi-progress-bar {
+        width: 100%;
+    }
+
+    /* Tables - make them scrollable */
+    .eipsi-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .eipsi-data-table {
+        min-width: 600px;
+    }
+
+    /* Timeline */
+    .eipsi-timeline {
+        padding-left: 24px;
+    }
+
+    .eipsi-timeline-item {
+        padding: 12px;
+    }
+
+    /* Buttons */
+    .eipsi-button-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .eipsi-button-group .button,
+    .eipsi-button-primary,
+    .eipsi-button-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Forms */
+    .eipsi-form-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .eipsi-form-field input,
+    .eipsi-form-field select,
+    .eipsi-form-field textarea {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    /* Alerts */
+    .eipsi-alert {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    /* Footer */
+    .eipsi-dashboard-footer {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+        padding: 16px;
+    }
+
+    /* Modal */
+    .eipsi-modal-content {
+        margin: 20px;
+        max-height: calc(100vh - 40px);
+    }
+
+    .eipsi-modal-body {
+        padding: 16px;
+    }
+
+    /* Empty state */
+    .eipsi-empty-state {
+        padding: 40px 20px;
+    }
+
+    .eipsi-empty-icon {
+        font-size: 48px;
+    }
+
+    .eipsi-empty-state h3 {
+        font-size: 18px;
+    }
+}
+
+/* Extra small devices */
+@media screen and (max-width: 480px) {
+    .eipsi-dashboard-container {
+        padding: 8px;
+    }
+
+    .eipsi-dashboard-header {
+        padding: 12px;
+    }
+
+    .eipsi-dashboard-title {
+        font-size: 18px;
+    }
+
+    .eipsi-dash-cta-title {
+        font-size: 16px;
+    }
+
+    .eipsi-dash-cta-button {
+        padding: 14px 20px;
+        font-size: 15px;
+    }
+
+    .eipsi-stat-value {
+        font-size: 20px;
+    }
+
+    .eipsi-stat-label {
+        font-size: 12px;
+    }
+}

@@ -1648,15 +1648,12 @@ function eipsi_render_pool_hub_v2() {
                 return;
             }
             
-            // Generate nonce with pool_id appended (matches PHP verification)
-            const baseNonce = '<?php echo wp_create_nonce('eipsi_delete_longitudinal_pool_'); ?>';
-            const nonce = baseNonce + POOL_HUB_V3.deletePoolId;
+            // Use generic delete nonce
+            const nonce = '<?php echo wp_create_nonce('eipsi_delete_pool'); ?>';
             const url = '<?php echo admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&action=delete&pool_id='); ?>' + POOL_HUB_V3.deletePoolId + '&_wpnonce=' + nonce;
             
             console.log('[EIPSI-POOL-DELETE] Attempting to delete pool ID:', POOL_HUB_V3.deletePoolId);
-            console.log('[EIPSI-POOL-DELETE] Base nonce:', baseNonce.substring(0, 10) + '...');
-            console.log('[EIPSI-POOL-DELETE] Full nonce:', nonce.substring(0, 15) + '...');
-            console.log('[EIPSI-POOL-DELETE] Redirect URL:', url);
+            console.log('[EIPSI-POOL-DELETE] URL:', url);
             
             window.location.href = url;
         }

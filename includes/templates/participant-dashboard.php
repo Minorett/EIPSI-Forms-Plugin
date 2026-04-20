@@ -217,44 +217,60 @@ if (!$all_done && $next_ready_index >= 0) {
         
         <?php if ($next_wave): ?>
             <?php
-            $due_status = eipsi_calculate_due_status($next_wave['due_date']);
             $form_title = get_the_title($next_wave['form_id']) ?: sprintf(__('Toma %d', 'eipsi-forms'), $next_wave['wave_index']);
-            $estimated_time = !empty($next_wave['estimated_time']) ? $next_wave['estimated_time'] : '10-15';
+            $is_locked = !empty($next_wave['is_locked']);
+            $available_timestamp = isset($next_wave['available_timestamp']) ? $next_wave['available_timestamp'] : '';
             ?>
             
-            <div class="eipsi-next-take-card <?php echo esc_attr($due_status['urgency'] === 'high' ? 'urgent' : ''); ?>">
+            <div class="eipsi-next-take-card <?php echo esc_attr($is_locked ? 'locked' : ''); ?>">
                 <div class="eipsi-card-header">
                     <div class="wave-badge">
                         <span class="eipsi-wave-index">T<?php echo absint($next_wave['wave_index']); ?></span>
                     </div>
                     <div class="wave-info">
                         <h3 class="eipsi-form-title"><?php echo esc_html($form_title); ?></h3>
-                        <span class="wave-estimated-time">⏱️ <?php printf(__('%s minutos', 'eipsi-forms'), esc_html($estimated_time)); ?></span>
                     </div>
                 </div>
                 
                 <div class="eipsi-card-body">
-                    <div class="eipsi-due-date <?php echo esc_attr($due_status['class']); ?>">
-                        <span class="due-icon">
-                            <?php 
-                            if ($due_status['urgency'] === 'high') echo '⏰';
-                            elseif ($due_status['urgency'] === 'medium') echo '⚡';
-                            else echo '📅';
-                            ?>
-                        </span>
-                        <div class="due-info">
-                            <span class="eipsi-due-label"><?php esc_html_e('Fecha límite:', 'eipsi-forms'); ?></span>
-                            <span class="eipsi-due-value"><?php echo esc_html($due_status['text']); ?></span>
+                    <?php if ($is_locked && $available_timestamp): ?>
+                        <!-- Toma bloqueada - mostrar fecha de disponibilidad y countdown -->
+                        <div class="eipsi-availability-info locked">
+                            <span class="availability-icon">🔒</span>
+                            <div class="availability-info">
+                                <span class="eipsi-availability-label"><?php esc_html_e('Disponible el:', 'eipsi-forms'); ?></span>
+                                <span class="eipsi-availability-date"><?php echo esc_html(date_i18n('j \d\e F Y, H:i', $available_timestamp)); ?></span>
+                                <div class="eipsi-countdown" data-available-timestamp="<?php echo esc_attr($available_timestamp); ?>">
+                                    <span class="countdown-label"><?php esc_html_e('Faltan:', 'eipsi-forms'); ?></span>
+                                    <span class="countdown-value">--</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="eipsi-take-actions">
-                        <a href="<?php echo esc_url(add_query_arg(array('wave_id' => $next_wave['id'], 'survey_id' => $survey_id), home_url('/estudio/'))); ?>"
-                           class="eipsi-button-primary eipsi-respond-now">
-                            <span class="btn-icon">▶️</span>
-                            <?php esc_html_e('Responder ahora', 'eipsi-forms'); ?>
-                        </a>
-                    </div>
+                        
+                        <div class="eipsi-take-actions">
+                            <button type="button" class="eipsi-button-secondary" disabled>
+                                <span class="btn-icon">🔒</span>
+                                <?php esc_html_e('Esperando...', 'eipsi-forms'); ?>
+                            </button>
+                        </div>
+                    <?php else: ?>
+                        <!-- Toma lista para responder -->
+                        <div class="eipsi-availability-info ready">
+                            <span class="availability-icon">✅</span>
+                            <div class="availability-info">
+                                <span class="eipsi-availability-label"><?php esc_html_e('Estado:', 'eipsi-forms'); ?></span>
+                                <span class="eipsi-availability-status"><?php esc_html_e('¡Lista para comenzar!', 'eipsi-forms'); ?></span>
+                            </div>
+                        </div>
+                        
+                        <div class="eipsi-take-actions">
+                            <a href="<?php echo esc_url(add_query_arg(array('wave_id' => $next_wave['id'], 'survey_id' => $survey_id), home_url('/estudio/'))); ?>"
+                               class="eipsi-button-primary eipsi-respond-now">
+                                <span class="btn-icon">▶️</span>
+                                <?php esc_html_e('Responder ahora', 'eipsi-forms'); ?>
+                            </a>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php else: ?>
