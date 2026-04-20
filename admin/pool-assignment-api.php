@@ -234,6 +234,7 @@ function eipsi_ajax_get_all_pools_summary() {
         );
     }
 
+    error_log('[EIPSI-POOL-AJAX] Sending ' . count($pools_summary) . ' pools to frontend');
     wp_send_json_success(array('pools' => $pools_summary));
 }
 add_action('wp_ajax_eipsi_get_all_pools_summary', 'eipsi_ajax_get_all_pools_summary');

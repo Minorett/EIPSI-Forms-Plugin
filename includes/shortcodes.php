@@ -73,6 +73,14 @@ function eipsi_render_survey_login_form($atts) {
     if ( ! is_admin() ) {
         nocache_headers();
     }
+    // Extract attributes
+    $survey_id = isset($atts['survey_id']) ? absint($atts['survey_id']) : 0;
+    $redirect_url = isset($atts['redirect_url']) ? esc_url_raw($atts['redirect_url']) : '';
+    
+    // Initialize participant variables
+    $is_participant_logged_in = false;
+    $current_participant_id = 0;
+    
     // Auto-resolve survey_id from redirect_to if not provided
     if (empty($atts['survey_id']) && isset($_GET['redirect_to'])) {
         $redirect_url = esc_url_raw($_GET['redirect_to']);

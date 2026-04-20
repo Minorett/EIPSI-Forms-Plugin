@@ -67,33 +67,16 @@ function eipsi_render_pool_hub_v2() {
 
         <!-- Sub-tabs -->
         <div class="eipsi-sub-tabs">
-            <a href="#" class="nav-tab nav-tab-active" data-subtab="overview" onclick="switchPoolSubtab('overview'); return false;">
-                <span class="dashicons dashicons-chart-area"></span> <?php _e('Overview', 'eipsi-forms'); ?>
-            </a>
-            <a href="#" class="nav-tab" data-subtab="pools" onclick="switchPoolSubtab('pools'); return false;">
-                <span class="dashicons dashicons-groups"></span> <?php _e('Pools', 'eipsi-forms'); ?>
+            <a href="#" class="nav-tab nav-tab-active" data-subtab="pools" onclick="switchPoolSubtab('pools'); return false;">
+                <span class="dashicons dashicons-list-view"></span> <?php _e('Pools', 'eipsi-forms'); ?>
             </a>
             <a href="#" class="nav-tab" data-subtab="analytics" onclick="switchPoolSubtab('analytics'); return false;">
-                <span class="dashicons dashicons-chart-line"></span> <?php _e('Analytics', 'eipsi-forms'); ?>
+                <span class="dashicons dashicons-chart-bar"></span> <?php _e('Analytics', 'eipsi-forms'); ?>
             </a>
-        </div>
-
-        <!-- Sub-tab: Overview -->
-        <div class="eipsi-subtab-content" id="subtab-overview">
-            <div class="eipsi-skeleton-grid" id="eipsi-overview-skeleton">
-                <?php for ($i = 0; $i < 4; $i++) : ?>
-                <div class="eipsi-skeleton-card">
-                    <div class="eipsi-skeleton" style="height: 20px; width: 60%; margin-bottom: 16px;"></div>
-                    <div class="eipsi-skeleton" style="height: 12px; width: 40%;"></div>
-                    <div class="eipsi-skeleton" style="height: 8px; width: 100%; margin-top: 20px;"></div>
-                </div>
-                <?php endfor; ?>
-            </div>
-            <div id="eipsi-overview-cards" style="display: none;"></div>
         </div>
 
         <!-- Sub-tab: Pools -->
-        <div class="eipsi-subtab-content" id="subtab-pools" style="display: none;">
+        <div class="eipsi-subtab-content" id="subtab-pools">
             <div class="eipsi-skeleton-table" id="eipsi-pools-skeleton">
                 <div class="eipsi-skeleton" style="height: 40px; width: 100%; margin-bottom: 8px;"></div>
                 <?php for ($i = 0; $i < 5; $i++) : ?>
@@ -1143,27 +1126,13 @@ function eipsi_render_pool_hub_v2() {
         function switchPoolSubtab(tabName) {
             document.querySelectorAll('.eipsi-sub-tabs .nav-tab').forEach(tab => {
                 tab.classList.remove('nav-tab-active');
-                if (tab.dataset.subtab === tabName) {
-                    tab.classList.add('nav-tab-active');
-                }
-            });
-
-            document.querySelectorAll('.eipsi-subtab-content').forEach(content => {
-                content.style.display = 'none';
-            });
-            document.getElementById('subtab-' + tabName).style.display = 'block';
-
-            if (tabName === 'overview') {
-                renderOverview();
-            } else if (tabName === 'pools') {
-                renderPoolsTable();
-            } else if (tabName === 'analytics') {
-                updatePoolSelector();
             }
-        }
+        });
 
-        // Load All Pools Data via AJAX
-        function loadAllPoolsData() {
+        // Hide all subtab contents
+        document.querySelectorAll('.eipsi-subtab-content').forEach(content => {
+            content.style.display = 'none';
+        });
             jQuery.ajax({
                 url: POOL_HUB_V3.ajaxUrl,
                 type: 'POST',
@@ -1174,103 +1143,15 @@ function eipsi_render_pool_hub_v2() {
                 success: function(response) {
                     if (response.success) {
                         POOL_HUB_V3.pools = response.data.pools || [];
-                        renderOverview();
+                        console.log('[EIPSI-POOL-LOAD] Loaded ' + POOL_HUB_V3.pools.length + ' pools');
+                        POOL_HUB_V3.pools.forEach(function(p) {
+                            console.log('[EIPSI-POOL-LOAD] Pool #' + p.id + ': ' + p.name + ' (' + p.status + ')');
+                        });
+                        renderPoolsTable();
                         updatePoolSelector();
                     }
                 }
             });
-        }
-
-        // Render Overview
-        function renderOverview() {
-            const container = document.getElementById('eipsi-overview-cards');
-            const skeleton = document.getElementById('eipsi-overview-skeleton');
-
-            if (POOL_HUB_V3.pools.length === 0) {
-                container.innerHTML = `
-                    <div class="eipsi-empty-state">
-                        <div class="eipsi-empty-icon">🏊</div>
-                        <h3><?php _e('Todavía no creaste ningún pool', 'eipsi-forms'); ?></h3>
-                        <p><?php _e('Creá tu primer pool para comenzar a distribuir participantes.', 'eipsi-forms'); ?></p>
-                        <button type="button" class="button button-primary" onclick="openPoolModalV3()">
-                            <?php _e('Crear primer pool', 'eipsi-forms'); ?>
-                        </button>
-                    </div>
-                `;
-                skeleton.style.display = 'none';
-                container.style.display = 'block';
-                return;
-            }
-
-            let html = '<div class="eipsi-overview-grid">';
-            POOL_HUB_V3.pools.forEach(function(pool) {
-                html += renderPoolCard(pool);
-            });
-            html += '</div>';
-
-            container.innerHTML = html;
-            skeleton.style.display = 'none';
-            container.style.display = 'block';
-        }
-
-        // Render Pool Card
-        function renderPoolCard(pool) {
-            const statusClass = pool.status === 'active' ? 'eipsi-status-active' : 'eipsi-status-paused';
-            const statusText = pool.status === 'active' ? '<?php _e('Activo', 'eipsi-forms'); ?>' : '<?php _e('Pausado', 'eipsi-forms'); ?>';
-            const hasBalanceWarning = pool.balance_score < 90;
-
-            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
-            let distributionHtml = '';
-            
-            if (pool.distribution && pool.distribution.length > 0) {
-                const total = pool.distribution.reduce((sum, d) => sum + (d.count || 0), 0);
-                pool.distribution.forEach(function(item, index) {
-                    const pct = total > 0 ? ((item.count || 0) / total) * 100 : 0;
-                    const color = colors[index % colors.length];
-                    distributionHtml += `<div class="eipsi-balance-bar-fill" style="width: ${pct}%; background: ${color};"></div>`;
-                });
-            }
-
-            return `
-                <div class="eipsi-pool-card">
-                    <div class="eipsi-pool-card-header">
-                        <div>
-                            <h3 class="eipsi-pool-card-title">${escapeHtml(pool.name)}</h3>
-                            <div class="eipsi-pool-card-meta">
-                                <span>${pool.studies_count} <?php _e('estudios', 'eipsi-forms'); ?></span>
-                                <span>${pool.total_assignments} <?php _e('asignados', 'eipsi-forms'); ?></span>
-                            </div>
-                        </div>
-                        <span class="eipsi-status-badge ${statusClass}">${statusText}</span>
-                    </div>
-
-                    <div class="eipsi-balance-section">
-                        <div class="eipsi-balance-label">
-                            ${hasBalanceWarning ? '⚠️ ' : ''}<?php _e('Balance de distribución', 'eipsi-forms'); ?>
-                        </div>
-                        <div class="eipsi-balance-bar ${hasBalanceWarning ? 'warning' : ''}">
-                            ${distributionHtml}
-                        </div>
-                    </div>
-
-                    <div class="eipsi-completion-rate">${pool.completion_rate}%</div>
-                    <div style="font-size: 12px; color: #64748b; margin-top: -8px;"><?php _e('tasa de completitud', 'eipsi-forms'); ?></div>
-
-                    <div class="eipsi-pool-share" style="margin-top: 8px;">
-                        <code class="eipsi-shortcode" title="Click para copiar" onclick="copyToClipboardV3('[eipsi_pool pool_id=${pool.id}]')">[eipsi_pool pool_id=${pool.id}]</code>
-                        ${pool.page_url ? `<a href="${pool.page_url}" target="_blank" class="eipsi-page-link" title="Ver página pública"><span class="dashicons dashicons-external"></span> Ver página pública</a>` : '<span class="eipsi-no-page">Sin página asignada</span>'}
-                    </div>
-
-                    <div class="eipsi-pool-card-actions">
-                        <button type="button" class="button" onclick="switchPoolSubtab('analytics'); loadPoolAnalytics(${pool.id});">
-                            <span class="dashicons dashicons-chart-area"></span> <?php _e('Ver Analytics', 'eipsi-forms'); ?>
-                        </button>
-                        <button type="button" class="button" onclick="editPoolV3(${pool.id});">
-                            <span class="dashicons dashicons-edit"></span> <?php _e('Editar', 'eipsi-forms'); ?>
-                        </button>
-                    </div>
-                </div>
-            `;
         }
 
         // Render Pools Table
@@ -1340,7 +1221,7 @@ function eipsi_render_pool_hub_v2() {
                         <td>
                             <div class="eipsi-pool-share">
                                 <code class="eipsi-shortcode" title="Click para copiar" onclick="copyToClipboardV3('[eipsi_pool pool_id=${pool.id}]')">[eipsi_pool pool_id=${pool.id}]</code>
-                                ${pool.page_url ? `<a href="${pool.page_url}" target="_blank" class="eipsi-page-link" title="Ver página pública"><span class="dashicons dashicons-external"></span> URL</a>` : '<span class="eipsi-no-page">Sin página</span>'}
+                                ${pool.page_url ? `<code class="eipsi-shortcode" title="Click para copiar URL" onclick="copyToClipboardV3('${pool.page_url}')"><span class="dashicons dashicons-admin-page"></span> URL</code>` : '<span class="eipsi-no-page">Sin página</span>'}
                             </div>
                         </td>
                         <td>
@@ -1743,9 +1624,21 @@ function eipsi_render_pool_hub_v2() {
         }
 
         function executeDeletePoolV3() {
-            if (!POOL_HUB_V3.deletePoolId) return;
+            if (!POOL_HUB_V3.deletePoolId) {
+                console.log('[EIPSI-POOL-DELETE] No pool ID set for deletion');
+                return;
+            }
             
-            const url = '<?php echo admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub-v2&action=delete_pool&pool_id='); ?>' + POOL_HUB_V3.deletePoolId + '&_wpnonce=<?php echo wp_create_nonce('delete_pool'); ?>';
+            // Generate nonce with pool_id appended (matches PHP verification)
+            const baseNonce = '<?php echo wp_create_nonce('eipsi_delete_longitudinal_pool_'); ?>';
+            const nonce = baseNonce + POOL_HUB_V3.deletePoolId;
+            const url = '<?php echo admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&action=delete&pool_id='); ?>' + POOL_HUB_V3.deletePoolId + '&_wpnonce=' + nonce;
+            
+            console.log('[EIPSI-POOL-DELETE] Attempting to delete pool ID:', POOL_HUB_V3.deletePoolId);
+            console.log('[EIPSI-POOL-DELETE] Base nonce:', baseNonce.substring(0, 10) + '...');
+            console.log('[EIPSI-POOL-DELETE] Full nonce:', nonce.substring(0, 15) + '...');
+            console.log('[EIPSI-POOL-DELETE] Redirect URL:', url);
+            
             window.location.href = url;
         }
 

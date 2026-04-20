@@ -31,20 +31,42 @@ function eipsi_display_longitudinal_study_page() {
     if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['pool_id']) && isset($_GET['tab']) && $_GET['tab'] === 'pool-hub') {
         $pool_id = intval($_GET['pool_id']);
         $nonce = isset($_GET['_wpnonce']) ? $_GET['_wpnonce'] : '';
+        
+        error_log('[EIPSI-POOL-DELETE] Request received - Pool ID: ' . $pool_id . ', Nonce: ' . substr($nonce, 0, 10) . '...');
+        
+        $nonce_valid = wp_verify_nonce($nonce, 'eipsi_delete_longitudinal_pool_' . $pool_id);
+        $can_manage = eipsi_user_can_manage_longitudinal();
+        
+        error_log('[EIPSI-POOL-DELETE] Nonce valid: ' . ($nonce_valid ? 'YES' : 'NO') . ', Can manage: ' . ($can_manage ? 'YES' : 'NO'));
 
-        if (wp_verify_nonce($nonce, 'eipsi_delete_longitudinal_pool_' . $pool_id) && eipsi_user_can_manage_longitudinal()) {
+        if ($nonce_valid && $can_manage) {
             $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
             $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
+            
+            error_log('[EIPSI-POOL-DELETE] Starting deletion for pool ID: ' . $pool_id);
 
             // Delete related assignments first (foreign key constraint)
-            $wpdb->delete($assignments_table, ['pool_id' => $pool_id], ['%d']);
+            $assignments_deleted = $wpdb->delete($assignments_table, ['pool_id' => $pool_id], ['%d']);
+            error_log('[EIPSI-POOL-DELETE] Assignments deleted: ' . ($assignments_deleted !== false ? $assignments_deleted : '0') . ' rows');
+            
+            if ($wpdb->last_error) {
+                error_log('[EIPSI-POOL-DELETE] ERROR deleting assignments: ' . $wpdb->last_error);
+            }
 
             // Delete the pool
-            $wpdb->delete($pools_table, ['id' => $pool_id], ['%d']);
+            $pool_deleted = $wpdb->delete($pools_table, ['id' => $pool_id], ['%d']);
+            error_log('[EIPSI-POOL-DELETE] Pool deleted: ' . ($pool_deleted ? 'SUCCESS' : 'FAILED') . ' - Rows affected: ' . ($pool_deleted !== false ? $pool_deleted : 0));
+            
+            if ($wpdb->last_error) {
+                error_log('[EIPSI-POOL-DELETE] ERROR deleting pool: ' . $wpdb->last_error);
+            }
 
             // Redirect to avoid re-deletion on refresh
+            error_log('[EIPSI-POOL-DELETE] Redirecting to pool-hub');
             wp_redirect(admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_deleted'));
             exit;
+        } else {
+            error_log('[EIPSI-POOL-DELETE] Permission denied. Nonce valid: ' . ($nonce_valid ? 'YES' : 'NO') . ', Can manage: ' . ($can_manage ? 'YES' : 'NO'));
         }
     }
 
