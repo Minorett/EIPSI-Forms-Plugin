@@ -415,7 +415,7 @@ class EIPSI_Wave_Availability_Email_Service {
             esc_html($magic_link)
         );
 
-        // Send email
+        // Send email - EIPSI_Email_Service ya inserta el log automáticamente
         $sent = EIPSI_Email_Service::send_email(
             $study_id,
             $participant->id,
@@ -426,11 +426,10 @@ class EIPSI_Wave_Availability_Email_Service {
         );
         
         if ($sent) {
-            $log_id = self::log_email_success($study_id, $participant->id, $wave->id, $participant->email);
-            
+            // v2.5.4 - NO llamar a log_email_success porque send_email ya logueó
             return array(
                 'success' => true,
-                'log_id' => $log_id,
+                'log_id' => null, // El log_id se obtiene del insert de send_email
                 'message' => 'Email enviado correctamente'
             );
         } else {
