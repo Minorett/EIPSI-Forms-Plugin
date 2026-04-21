@@ -2409,7 +2409,7 @@ function eipsi_ajax_get_all_pools_summary() {
     
     if (!$nonce_ok) {
         error_log('[EIPSI-POOL-DEBUG] ERROR: Nonce verification failed');
-        wp_send_json_error(array('message' => __('Token inválido.', 'eipsi-forms'), 'debug' => 'nonce failed']), 403);
+        wp_send_json_error(array('message' => __('Token inválido.', 'eipsi-forms'), 'debug' => 'nonce failed'), 403);
     }
     
     if (!current_user_can('manage_options')) {
