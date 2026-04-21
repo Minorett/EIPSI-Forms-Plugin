@@ -250,6 +250,19 @@ function eipsi_export_to_excel() {
         $headers[] = 'RCT Assigned Variant';
         $headers[] = 'RCT Randomization ID';
     }
+    
+    // v2.5.4 - Pool de estudios context
+    $has_pool_submissions = false;
+    $pool_context = array();
+    if (function_exists('eipsi_get_pool_context_for_study')) {
+        // Detectar si este formulario pertenece a un estudio con pool
+        $pool_context = eipsi_get_pool_context_for_study($form_id);
+        $has_pool_submissions = !empty($pool_context);
+    }
+    if ($has_pool_submissions) {
+        $headers[] = 'Pool Code';
+        $headers[] = 'Pool Assigned At';
+    }
 
     if ($privacy_config['ip_address']) {
         $headers[] = 'IP Address';
@@ -392,6 +405,14 @@ function eipsi_export_to_excel() {
         if ($has_rct_submission) {
             $row_data[] = $row->rct_assigned_variant ?? '-';
             $row_data[] = $row->rct_randomization_id ?? '-';
+        }
+        
+        // v2.5.4 - Pool de estudios context data
+        if ($has_pool_submissions) {
+            $participant_key = 'email_' . md5($row->participant_id);
+            $pool_data = $pool_context[$participant_key] ?? null;
+            $row_data[] = $pool_data ? $pool_data['pool_code'] : '-';
+            $row_data[] = $pool_data ? $pool_data['assigned_at'] : '-';
         }
         
         // Add metadata fields only if privacy config allows
@@ -695,6 +716,19 @@ function eipsi_export_to_csv() {
         $headers[] = 'RCT Randomization ID';
     }
     
+    // v2.5.4 - Pool de estudios context
+    $has_pool_submissions = false;
+    $pool_context = array();
+    if (function_exists('eipsi_get_pool_context_for_study')) {
+        // Detectar si este formulario pertenece a un estudio con pool
+        $pool_context = eipsi_get_pool_context_for_study($first_form_id);
+        $has_pool_submissions = !empty($pool_context);
+    }
+    if ($has_pool_submissions) {
+        $headers[] = 'Pool Code';
+        $headers[] = 'Pool Assigned At';
+    }
+    
     if ($privacy_config['ip_address']) {
         $headers[] = 'IP Address';
     }
@@ -798,6 +832,14 @@ function eipsi_export_to_csv() {
         if ($has_rct_submission) {
             $row_data[] = $row->rct_assigned_variant ?? '-';
             $row_data[] = $row->rct_randomization_id ?? '-';
+        }
+        
+        // v2.5.4 - Pool de estudios context data
+        if ($has_pool_submissions) {
+            $participant_key = 'email_' . md5($row->participant_id);
+            $pool_data = $pool_context[$participant_key] ?? null;
+            $row_data[] = $pool_data ? $pool_data['pool_code'] : '-';
+            $row_data[] = $pool_data ? $pool_data['assigned_at'] : '-';
         }
         
         // Add metadata fields only if privacy config allows
@@ -1085,4 +1127,139 @@ function eipsi_get_study_title($study_id) {
         $study_id
     ));
     return $title ? $title : 'estudio-' . $study_id;
+}
+
+/**
+ * ============================================================================
+ * FASE 4 - EXPORTACIÓN CON CONTEXTO DE POOL
+ * ============================================================================
+ *
+ * Incluye pool_code y pool_assignment info en las exportaciones de respuestas.
+ * El investigador puede ver de qué pool vino cada participante.
+ *
+ * @since 2.5.4
+ */
+
+/**
+ * Obtener pool assignments para un estudio específico
+ *
+ * @param string $study_id ID del estudio
+ * @return array Array indexado por participant_id con info del pool
+ */
+function eipsi_get_pool_context_for_study($study_id) {
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'eipsi_pool_assignments';
+    
+    // Buscar asignaciones donde el study_id coincida
+    $results = $wpdb->get_results($wpdb->prepare(
+        "SELECT participant_id, pool_id as pool_code, assigned_at 
+         FROM {$table} 
+         WHERE study_id = %s",
+        $study_id
+    ));
+    
+    $context = array();
+    foreach ($results as $row) {
+        // El participant_id guardado es 'email_' . md5(email)
+        // Necesitamos mapearlo al formato usado en las respuestas
+        $context[$row->participant_id] = array(
+            'pool_code' => $row->pool_code,
+            'assigned_at' => $row->assigned_at
+        );
+    }
+    
+    return $context;
+}
+
+/**
+ * Exportar respuestas con contexto de pool (FASE 5)
+ *
+ * Versión completa con LEFT JOIN que incluye pool_code y pool_assigned_at
+ * directamente en la query SQL para máxima eficiencia.
+ *
+ * @param string $form_id ID del formulario
+ * @param string $study_id ID del estudio longitudinal
+ * @return array Array de objetos con respuestas + contexto de pool
+ */
+function eipsi_export_responses_with_pool_context($form_id, $study_id) {
+    global $wpdb;
+    
+    if (!current_user_can('manage_options')) {
+        wp_die(__('No tenés permisos.', 'eipsi-forms'));
+    }
+    
+    $responses_table = $wpdb->prefix . 'vas_form_results'; // Tabla existente de respuestas
+    $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
+    
+    // Query con LEFT JOIN para obtener contexto de pool
+    $sql = "
+        SELECT 
+            r.*,
+            a.pool_id as pool_code,
+            a.assigned_at as pool_assigned_at,
+            a.assignment_method as pool_assignment_method
+        FROM {$responses_table} r
+        LEFT JOIN {$assignments_table} a 
+            ON r.participant_id = a.participant_id 
+            AND a.study_id = %s
+        WHERE r.form_id = %s
+        ORDER BY r.submitted_at DESC
+    ";
+    
+    $results = $wpdb->get_results($wpdb->prepare($sql, $study_id, $form_id));
+    
+    error_log('[EIPSI-POOL] Export with context: ' . count($results) . ' responses for study ' . $study_id);
+    
+    return $results;
+}
+
+/**
+ * Generar CSV de exportación con contexto de pool (FASE 5 - Helper para UI)
+ *
+ * @param string $form_id ID del formulario
+ * @param string $study_id ID del estudio
+ * @return string Contenido CSV
+ */
+function eipsi_generate_pool_context_csv($form_id, $study_id) {
+    $responses = eipsi_export_responses_with_pool_context($form_id, $study_id);
+    
+    if (empty($responses)) {
+        return false;
+    }
+    
+    $output = fopen('php://temp', 'r+');
+    fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8
+    
+    // Headers
+    $headers = array(
+        'Submission ID',
+        'Participant ID', 
+        'Submitted At',
+        'Pool Code',
+        'Pool Assigned At',
+        'Assignment Method',
+        'Form Responses (JSON)'
+    );
+    fputcsv($output, $headers);
+    
+    // Data
+    foreach ($responses as $row) {
+        $data = array(
+            $row->id,
+            $row->participant_id,
+            $row->submitted_at ?? $row->created_at,
+            $row->pool_code ?: '-',
+            $row->pool_assigned_at ?: '-',
+            $row->pool_assignment_method ?: '-',
+            $row->form_responses
+        );
+        fputcsv($output, $data);
+    }
+    
+    rewind($output);
+    $csv = stream_get_contents($output);
+    fclose($output);
+    
+    return $csv;
 }

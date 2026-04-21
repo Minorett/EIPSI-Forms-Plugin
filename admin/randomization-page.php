@@ -1489,7 +1489,7 @@ function eipsi_get_randomization_page_url($config_id) {
 
 /**
  * Handle randomization save action (admin-post.php)
- * Creates/updates randomization and auto-creates WordPress page
+ * Creates/updates randomization like the Gutenberg block - stores config in post_meta
  *
  * @since 2.5.0
  */
@@ -1517,9 +1517,6 @@ function eipsi_handle_save_randomization() {
         wp_die(__('El nombre de la aleatorización es obligatorio.', 'eipsi-forms'));
     }
     
-    // Generate unique config ID
-    $config_id = empty($rct_id) ? 'rct_' . wp_generate_password(8, false) . '_' . time() : $rct_id;
-    
     // Validate total is 100% (±1% tolerance for rounding)
     $total_prob = 0;
     foreach ($forms_data as $item) {
@@ -1530,32 +1527,113 @@ function eipsi_handle_save_randomization() {
         wp_die(__('La suma de probabilidades debe ser 100% (±1% tolerancia).', 'eipsi-forms'));
     }
     
-    // Prepare config data
-    $config = array(
-        'id' => $config_id,
-        'name' => $rct_name,
-        'description' => $rct_description,
-        'method' => $method,
-        'forms' => array(),
-        'probabilities' => array(),
-        'created_at' => current_time('mysql'),
-        'updated_at' => current_time('mysql'),
-        'is_active' => true
-    );
+    // STEP 1: Create/update the WordPress page FIRST to get template_id
+    // This mimics how the Gutenberg block works - config is tied to a post
+    $page_slug = 'randomization-' . sanitize_title($rct_name);
+    $page_title = sprintf(__('Aleatorización: %s', 'eipsi-forms'), $rct_name);
     
-    foreach ($forms_data as $item) {
-        $config['forms'][] = intval($item['form_id']);
-        $config['probabilities'][] = floatval($item['probability']);
+    // Check if updating existing
+    $existing_page_id = !empty($rct_id) ? intval($rct_id) : 0;
+    
+    if ($existing_page_id) {
+        $page_id = $existing_page_id;
+        // Update existing page
+        wp_update_post(array(
+            'ID' => $page_id,
+            'post_title' => $page_title,
+            'post_name' => $page_slug,
+        ));
+    } else {
+        // Create new page
+        $page_id = wp_insert_post(array(
+            'post_title' => $page_title,
+            'post_name' => $page_slug,
+            'post_status' => 'publish',
+            'post_type' => 'page',
+            'post_content' => '', // Will be set with shortcode below
+        ));
+        
+        if (is_wp_error($page_id)) {
+            error_log('[EIPSI] Failed to create randomization page: ' . $page_id->get_error_message());
+            wp_die(__('Error al crear la página de aleatorización.', 'eipsi-forms'));
+        }
     }
     
-    // Save to database (using options for now - can be migrated to custom table later)
-    $saved_configs = get_option('eipsi_randomization_configs', array());
-    $saved_configs[$config_id] = $config;
-    update_option('eipsi_randomization_configs', $saved_configs);
+    // STEP 2: Generate config_id based on post_id (like Gutenberg block does)
+    // Format: rct_post_{post_id}_eipsi (deterministic, always same for same post)
+    $config_id = 'rct_post_' . intval($page_id) . '_eipsi';
     
-    // Auto-create WordPress page for this randomization
-    $page_id = eipsi_create_randomization_page($config_id, $rct_name);
-    $page_url = $page_id ? get_permalink($page_id) : null;
+    // STEP 3: Prepare formularios array with shortcodes and probabilities
+    $formularios = array();
+    $probabilidades = array();
+    $shortcodes = array();
+    
+    foreach ($forms_data as $item) {
+        $form_id = intval($item['form_id']);
+        $prob = floatval($item['probability']);
+        
+        // Get form info
+        $form_post = get_post($form_id);
+        $form_title = $form_post ? $form_post->post_title : 'Formulario ' . $form_id;
+        
+        $formularios[] = array(
+            'id' => $form_id,
+            'titulo' => $form_title,
+            'exists' => (bool) $form_post,
+        );
+        
+        $probabilidades[$form_id] = $prob;
+        $shortcodes[] = '[eipsi_form id="' . $form_id . '"]';
+    }
+    
+    // STEP 4: Save config to post_meta (like Gutenberg block does)
+    // This is the KEY change - config is stored in post_meta, not options
+    $config = array(
+        'config_id' => $config_id,
+        'post_id' => $page_id,
+        'shortcodes' => $shortcodes,
+        'formularios' => $formularios,
+        'probabilidades' => $probabilidades,
+        'metodo' => $method,
+        'seed' => '',
+        'permitirOverride' => true,
+        'registrarAsignaciones' => true,
+        'persistent_mode' => true,
+        'created_at' => current_time('mysql'),
+        'created_by' => get_current_user_id(),
+        'version' => '2.5.0'
+    );
+    
+    $meta_key = '_randomization_config_' . $config_id;
+    update_post_meta($page_id, $meta_key, $config);
+    
+    // Also save a reference for easy lookup
+    update_post_meta($page_id, 'eipsi_randomization_config_id', $config_id);
+    
+    // STEP 5: Update page content with the CORRECT shortcode format
+    // Format: [eipsi_randomization template="{post_id}" config="{config_id}"]
+    $shortcode = sprintf('[eipsi_randomization template="%d" config="%s"]', $page_id, $config_id);
+    
+    wp_update_post(array(
+        'ID' => $page_id,
+        'post_content' => $shortcode,
+    ));
+    
+    // Also save to the custom table for the dashboard/analytics (if function exists)
+    if (function_exists('eipsi_save_randomization_config_to_db')) {
+        eipsi_save_randomization_config_to_db(
+            $config_id,
+            array(
+                'formularios' => $formularios,
+                'probabilidades' => $probabilidades,
+                'method' => $method,
+                'manualAssignments' => array(),
+                'showInstructions' => false,
+            )
+        );
+    }
+    
+    $page_url = get_permalink($page_id);
     
     // Redirect back with success message
     $redirect_url = admin_url('admin.php?page=eipsi-results-experience&tab=randomization&message=rct_' . (empty($rct_id) ? 'created' : 'updated'));

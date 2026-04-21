@@ -28,7 +28,7 @@ import { useState, useEffect } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 
 export default function Edit({ attributes, setAttributes }) {
-    const { poolId, method, studies, buttonText, redirectMode, studiesInput, generatedShortcode } = attributes;
+    const { poolId, poolDescription, poolIncentive, redirectMode, studies, studiesInput, generatedShortcode } = attributes;
 
     const [isLoading, setIsLoading] = useState(false);
     const [isDetecting, setIsDetecting] = useState(false);
@@ -240,39 +240,55 @@ export default function Edit({ attributes, setAttributes }) {
         <div {...blockProps}>
             <InspectorControls>
                 <PanelBody
-                    title={__('⚙️ Configuración del Pool', 'eipsi-forms')}
+                    title={__('📋 Mensajes para Participantes', 'eipsi-forms')}
                     initialOpen={true}
                 >
+                    <TextareaControl
+                        label={__('Descripción del Pool', 'eipsi-forms')}
+                        value={poolDescription}
+                        onChange={(value) => setAttributes({ poolDescription: value })}
+                        placeholder={__('Ej: Estamos comparando diferentes técnicas de intervención para ansiedad. Tu participación nos ayuda a entender cuál funciona mejor.', 'eipsi-forms')}
+                        help={__('Este texto se mostrará a los participantes en la página de acceso al pool. Obligatorio.', 'eipsi-forms')}
+                        rows={4}
+                    />
+
+                    <TextareaControl
+                        label={__('Mensaje de incentivo (opcional)', 'eipsi-forms')}
+                        value={poolIncentive}
+                        onChange={(value) => setAttributes({ poolIncentive: value })}
+                        placeholder={__('Ej: Sorteo de 5 gift cards de $50 entre todos los participantes que completen el estudio.', 'eipsi-forms')}
+                        help={__('Si hay algún incentivo por participar, describilo aquí. Se mostrará destacado en la página de acceso.', 'eipsi-forms')}
+                        rows={3}
+                    />
+                </PanelBody>
+
+                <PanelBody
+                    title={__('⚙️ Configuración Técnica', 'eipsi-forms')}
+                    initialOpen={false}
+                >
                     <SelectControl
-                        label={__('Método de asignación', 'eipsi-forms')}
-                        value={method}
+                        label={__('Modo de acceso', 'eipsi-forms')}
+                        value={redirectMode}
                         options={[
-                            { label: __('Seeded (Determinístico)', 'eipsi-forms'), value: 'seeded' },
-                            { label: __('Pure Random (Aleatorio)', 'eipsi-forms'), value: 'pure-random' },
+                            { 
+                                label: __('Transición (por defecto) - Página de confirmación', 'eipsi-forms'), 
+                                value: 'transition' 
+                            },
+                            { 
+                                label: __('Mínimo (1 click) - Acceso inmediato', 'eipsi-forms'), 
+                                value: 'minimal' 
+                            },
                         ]}
-                        onChange={(value) => setAttributes({ method: value })}
-                        help={method === 'seeded'
-                            ? __('El mismo participante siempre recibe el mismo estudio.', 'eipsi-forms')
-                            : __('La asignación es completamente aleatoria en cada visita.', 'eipsi-forms')
+                        onChange={(value) => setAttributes({ redirectMode: value })}
+                        help={redirectMode === 'transition'
+                            ? __('Los participantes verán una página de "Asignación exitosa" antes de acceder a su estudio.', 'eipsi-forms')
+                            : __('Los participantes accederán inmediatamente a su estudio asignado con un solo click.', 'eipsi-forms')
                         }
                     />
 
-                    <SelectControl
-                        label={__('Modo de redirección', 'eipsi-forms')}
-                        value={redirectMode}
-                        options={[
-                            { label: __('Auto (redirigir inmediatamente)', 'eipsi-forms'), value: 'auto' },
-                            { label: __('Embed (mostrar botón)', 'eipsi-forms'), value: 'embed' },
-                        ]}
-                        onChange={(value) => setAttributes({ redirectMode: value })}
-                    />
-
-                    <TextControl
-                        label={__('Texto del botón', 'eipsi-forms')}
-                        value={buttonText}
-                        onChange={(value) => setAttributes({ buttonText: value })}
-                        placeholder={__('Unirse al estudio', 'eipsi-forms')}
-                    />
+                    <Notice status="info" isDismissible={false} style={{ marginBottom: '1rem', marginTop: '1rem' }}>
+                        {__('La asignación es siempre aleatoria simple equiprobable (25% cada estudio si son 4).', 'eipsi-forms')}
+                    </Notice>
                 </PanelBody>
             </InspectorControls>
 

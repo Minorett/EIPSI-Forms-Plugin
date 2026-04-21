@@ -1835,6 +1835,7 @@ function eipsi_handle_save_pool() {
     $pool_id = intval($_POST['pool_id'] ?? 0);
     $pool_name = sanitize_text_field($_POST['pool_name'] ?? '');
     $pool_description = sanitize_textarea_field($_POST['pool_description'] ?? '');
+    $pool_incentive = sanitize_textarea_field($_POST['pool_incentive'] ?? '');
     $method = sanitize_key($_POST['method'] ?? 'seeded');
     $notify_on_completion = !empty($_POST['notify_on_completion']);
     $studies_data = json_decode(stripslashes($_POST['pool_studies_data'] ?? '[]'), true);
@@ -1843,6 +1844,10 @@ function eipsi_handle_save_pool() {
     
     if (empty($pool_name)) {
         wp_die(__('El nombre del pool es obligatorio.', 'eipsi-forms'));
+    }
+    
+    if (empty($pool_description)) {
+        wp_die(__('La descripción del pool es obligatoria.', 'eipsi-forms'));
     }
     
     // Extract study IDs and probabilities
@@ -1861,11 +1866,19 @@ function eipsi_handle_save_pool() {
     
     error_log('[EIPSI-POOL] Processed ' . count($study_ids) . ' studies, total_prob=' . $total_prob);
     
-    // Build config JSON (Fase 4: incluye notify_on_completion)
+    // Get redirect mode (default: transition)
+    $redirect_mode = sanitize_key($_POST['redirect_mode'] ?? 'transition');
+    if (!in_array($redirect_mode, ['transition', 'minimal'])) {
+        $redirect_mode = 'transition';
+    }
+    
+    // Build config JSON (Fase 4: incluye notify_on_completion, incentive, redirect_mode)
     $config = array(
         'studies' => $studies_data,
         'method' => $method,
         'notify_on_completion' => $notify_on_completion,
+        'incentive_message' => $pool_incentive,
+        'redirect_mode' => $redirect_mode,
         'updated_at' => current_time('mysql'),
     );
 
@@ -2099,3 +2112,275 @@ add_action( 'plugins_loaded', function() {
         eipsi_migrate_pools_to_v2();
     }
 }, 20 );
+
+/**
+ * ============================================================================
+ * FASE 1 - POOL ACCESS ENDPOINT (Nuevo sistema Pool de Estudios V2)
+ * ============================================================================
+ *
+ * Maneja el acceso a pools mediante URL /pool/POOL_CODIGO/
+ * Interfaz minimalista sin lista de estudios, sin duraciones.
+ *
+ * @since 2.5.4
+ */
+
+// 1. Registrar rewrite rules para pools
+add_action('init', 'eipsi_register_pool_rewrite_rules', 10);
+
+function eipsi_register_pool_rewrite_rules() {
+    // Pattern: /pool/POOL_CODIGO/
+    add_rewrite_rule(
+        '^pool/([^/]+)/?$',
+        'index.php?eipsi_pool_code=$matches[1]',
+        'top'
+    );
+    
+    // También: /estudio/ESTUDIO_CODIGO/ (para estudios individuales)
+    add_rewrite_rule(
+        '^estudio/([^/]+)/?$',
+        'index.php?eipsi_study_code=$matches[1]',
+        'top'
+    );
+    
+    // Registrar query vars
+    add_filter('query_vars', 'eipsi_add_pool_query_vars');
+}
+
+function eipsi_add_pool_query_vars($vars) {
+    $vars[] = 'eipsi_pool_code';
+    $vars[] = 'eipsi_study_code';
+    return $vars;
+}
+
+// 2. Interceptar requests y servir el template apropiado
+add_action('template_redirect', 'eipsi_handle_pool_access', 1);
+
+function eipsi_handle_pool_access() {
+    $pool_code = get_query_var('eipsi_pool_code');
+    $study_code = get_query_var('eipsi_study_code');
+    
+    // Cargar helpers si no están cargados
+    if (!function_exists('eipsi_get_valid_pool')) {
+        $helpers_file = EIPSI_FORMS_PLUGIN_DIR . 'includes/helpers/pool-helpers.php';
+        if (file_exists($helpers_file)) {
+            require_once $helpers_file;
+        }
+    }
+    
+    // CASO A: Acceso a Pool
+    if (!empty($pool_code)) {
+        // Verificar que el pool existe y está activo
+        $pool_data = eipsi_get_valid_pool($pool_code);
+        
+        if (!$pool_data) {
+            // Pool no existe o no está activo - mostrar error 404
+            wp_die(
+                __('El pool solicitado no existe o no está disponible.', 'eipsi-forms'),
+                __('Pool no encontrado', 'eipsi-forms'),
+                array('response' => 404)
+            );
+        }
+        
+        // Verificar si el participante ya tiene asignación
+        $participant_id = eipsi_get_participant_id();
+        
+        if ($participant_id) {
+            $assignment = eipsi_get_pool_assignment($pool_code, $participant_id);
+            
+            if ($assignment) {
+                // Ya asignado - redirigir al estudio
+                $study_url = eipsi_get_study_url($assignment['study_id']);
+                wp_redirect($study_url);
+                exit;
+            }
+        }
+        
+        // Mostrar interfaz de acceso al pool
+        eipsi_render_pool_access_page($pool_code, $pool_data);
+        exit;
+    }
+    
+    // CASO B: Acceso a Estudio Individual (placeholder para Fase 2)
+    if (!empty($study_code)) {
+        // Por ahora, dejar que el sistema existente maneje esto
+        // En Fase 2 implementaremos el redireccionamiento post-asignación
+        return;
+    }
+}
+
+// 3. Handler para POST del formulario de pool
+add_action('admin_post_nopriv_eipsi_pool_join', 'eipsi_handle_pool_join');
+add_action('admin_post_eipsi_pool_join', 'eipsi_handle_pool_join');
+
+function eipsi_handle_pool_join() {
+    // Verificar nonce
+    if (!wp_verify_nonce($_POST['pool_nonce'] ?? '', 'eipsi_pool_access')) {
+        wp_die(__('Error de seguridad. Por favor, recargá la página.', 'eipsi-forms'));
+    }
+    
+    // Obtener datos
+    $pool_code = sanitize_text_field($_POST['pool_code'] ?? '');
+    $email = sanitize_email($_POST['participant_email'] ?? '');
+    $consent = !empty($_POST['pool_consent']);
+    
+    if (empty($pool_code) || empty($email) || !$consent) {
+        wp_die(__('Por favor completá todos los campos y aceptá el consentimiento.', 'eipsi-forms'));
+    }
+    
+    // Cargar helpers
+    if (!function_exists('eipsi_get_valid_pool')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/helpers/pool-helpers.php';
+    }
+    
+    // Verificar pool
+    $pool_data = eipsi_get_valid_pool($pool_code);
+    if (!$pool_data) {
+        wp_die(__('El pool no está disponible.', 'eipsi-forms'));
+    }
+    
+    // Obtener modo de redirección (default: transition)
+    $redirect_mode = isset($pool_data['redirect_mode']) ? $pool_data['redirect_mode'] : 'transition';
+    
+    // Crear participante (usar email como ID para MVP)
+    $participant_id = 'email_' . md5($email);
+    eipsi_set_participant_cookie($participant_id);
+    
+    // Verificar si ya tiene asignación (doble check)
+    $assignment = eipsi_get_pool_assignment($pool_code, $participant_id);
+    
+    if ($assignment) {
+        // Ya asignado - redirigir directo al estudio (sin importar modo)
+        wp_redirect(eipsi_get_study_url($assignment['study_id']));
+        exit;
+    }
+    
+    // Guardar email para referencia (en sesión o cookie adicional)
+    setcookie('eipsi_participant_email', $email, time() + 365 * 24 * 60 * 60, '/');
+    
+    // EJECUTAR ALEATORIZACIÓN (Fase 2)
+    $assignment = eipsi_pool_randomize($pool_code, $participant_id, $pool_data);
+    
+    if (!$assignment) {
+        // Error en aleatorización (pool saturado o error BD)
+        wp_die(__('No se pudo realizar la asignación. El pool puede estar saturado o ocurrió un error. Por favor, intentá más tarde o contactá al investigador.', 'eipsi-forms'));
+    }
+    
+    // SEGÚN MODO DE REDIRECCIÓN:
+    if ($redirect_mode === 'minimal') {
+        // MODO MÍNIMO (1 click): Redirigir INMEDIATAMENTE al estudio asignado
+        error_log('[EIPSI-POOL] Modo minimal: redirigiendo inmediatamente al estudio ' . $assignment['study_id']);
+        wp_redirect(eipsi_get_study_url($assignment['study_id']));
+        exit;
+        
+    } else {
+        // MODO TRANSICIÓN (default): Mostrar página de "Asignación exitosa"
+        error_log('[EIPSI-POOL] Modo transición: mostrando página de confirmación para estudio ' . $assignment['study_id']);
+        eipsi_render_pool_assigned_page($pool_code, $participant_id, $assignment);
+    }
+}
+
+/**
+ * ============================================================================
+ * FASE 3 - AJAX ENDPOINTS PARA ADMIN DASHBOARD DEL POOL
+ * ============================================================================
+ */
+
+// 3.1 Obtener estadísticas del pool
+add_action('wp_ajax_eipsi_get_pool_stats', 'eipsi_ajax_get_pool_stats');
+
+function eipsi_ajax_get_pool_stats() {
+    // Verificar permisos
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('No tenés permisos.', 'eipsi-forms')));
+    }
+    
+    $pool_code = sanitize_text_field($_POST['pool_code'] ?? '');
+    
+    if (empty($pool_code)) {
+        wp_send_json_error(array('message' => __('Código de pool requerido.', 'eipsi-forms')));
+    }
+    
+    // Cargar helpers si es necesario
+    if (!function_exists('eipsi_get_pool_stats')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/helpers/pool-helpers.php';
+    }
+    
+    $stats = eipsi_get_pool_stats($pool_code);
+    
+    if (!$stats) {
+        wp_send_json_error(array('message' => __('Pool no encontrado.', 'eipsi-forms')));
+    }
+    
+    wp_send_json_success($stats);
+}
+
+// 3.2 Exportar asignaciones a CSV
+add_action('wp_ajax_eipsi_export_pool_csv', 'eipsi_ajax_export_pool_csv');
+
+function eipsi_ajax_export_pool_csv() {
+    // Verificar permisos
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('No tenés permisos.', 'eipsi-forms')));
+    }
+    
+    $pool_code = sanitize_text_field($_POST['pool_code'] ?? '');
+    
+    if (empty($pool_code)) {
+        wp_send_json_error(array('message' => __('Código de pool requerido.', 'eipsi-forms')));
+    }
+    
+    // Cargar helpers
+    if (!function_exists('eipsi_export_pool_assignments_csv')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/helpers/pool-helpers.php';
+    }
+    
+    $csv = eipsi_export_pool_assignments_csv($pool_code);
+    
+    if (!$csv) {
+        wp_send_json_error(array('message' => __('No hay asignaciones para exportar.', 'eipsi-forms')));
+    }
+    
+    wp_send_json_success(array(
+        'csv' => $csv,
+        'filename' => 'pool_' . $pool_code . '_assignments_' . date('Y-m-d') . '.csv'
+    ));
+}
+
+// 3.3 Cambiar estado del pool
+add_action('wp_ajax_eipsi_change_pool_status', 'eipsi_ajax_change_pool_status');
+
+function eipsi_ajax_change_pool_status() {
+    // Verificar permisos
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('No tenés permisos.', 'eipsi-forms')));
+    }
+    
+    $pool_code = sanitize_text_field($_POST['pool_code'] ?? '');
+    $new_status = sanitize_key($_POST['status'] ?? '');
+    
+    if (empty($pool_code) || empty($new_status)) {
+        wp_send_json_error(array('message' => __('Datos incompletos.', 'eipsi-forms')));
+    }
+    
+    // Cargar helpers
+    if (!function_exists('eipsi_change_pool_status')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/helpers/pool-helpers.php';
+    }
+    
+    $result = eipsi_change_pool_status($pool_code, $new_status);
+    
+    if (!$result) {
+        wp_send_json_error(array('message' => __('No se pudo cambiar el estado.', 'eipsi-forms')));
+    }
+    
+    $status_labels = array(
+        'active' => __('Activo', 'eipsi-forms'),
+        'paused' => __('Pausado', 'eipsi-forms'),
+        'closed' => __('Cerrado', 'eipsi-forms')
+    );
+    
+    wp_send_json_success(array(
+        'message' => sprintf(__('Pool %s correctamente.', 'eipsi-forms'), $status_labels[$new_status] ?? $new_status),
+        'status' => $new_status
+    ));
+}

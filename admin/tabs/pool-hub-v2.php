@@ -131,8 +131,14 @@ function eipsi_render_pool_hub_v2() {
                             <input type="text" name="pool_name" id="eipsi-pool-name-v3" required>
                         </div>
                         <div class="eipsi-form-field">
-                            <label for="eipsi-pool-description-v3"><?php _e('Descripción', 'eipsi-forms'); ?></label>
-                            <textarea name="pool_description" id="eipsi-pool-description-v3" rows="2"></textarea>
+                            <label for="eipsi-pool-description-v3"><?php _e('Descripción para participantes', 'eipsi-forms'); ?> *</label>
+                            <textarea name="pool_description" id="eipsi-pool-description-v3" rows="3" required placeholder="<?php esc_attr_e('Ej: Estamos comparando diferentes técnicas de intervención para ansiedad...', 'eipsi-forms'); ?>"></textarea>
+                            <p class="description"><?php _e('Este texto se mostrará a los participantes en la página de acceso al pool.', 'eipsi-forms'); ?></p>
+                        </div>
+                        <div class="eipsi-form-field">
+                            <label for="eipsi-pool-incentive-v3"><?php _e('Mensaje de incentivo (opcional)', 'eipsi-forms'); ?></label>
+                            <textarea name="pool_incentive" id="eipsi-pool-incentive-v3" rows="2" placeholder="<?php esc_attr_e('Ej: Sorteo de 5 gift cards de $50 entre todos los participantes que completen el estudio', 'eipsi-forms'); ?>"></textarea>
+                            <p class="description"><?php _e('Si hay algún incentivo por participar, describilo aquí. Se mostrará en la página de acceso.', 'eipsi-forms'); ?></p>
                         </div>
                         <div class="eipsi-form-field">
                             <label><?php _e('Método de asignación', 'eipsi-forms'); ?></label>

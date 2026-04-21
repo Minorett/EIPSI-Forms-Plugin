@@ -14,21 +14,21 @@
             "type": "string",
             "default": ""
         },
-        "method": {
+        "poolDescription": {
             "type": "string",
-            "default": "seeded"
+            "default": ""
+        },
+        "poolIncentive": {
+            "type": "string",
+            "default": ""
+        },
+        "redirectMode": {
+            "type": "string",
+            "default": "transition"
         },
         "studies": {
             "type": "array",
             "default": []
-        },
-        "buttonText": {
-            "type": "string",
-            "default": "Unirse al estudio"
-        },
-        "redirectMode": {
-            "type": "string",
-            "default": "auto"
         },
         "studiesInput": {
             "type": "string",
