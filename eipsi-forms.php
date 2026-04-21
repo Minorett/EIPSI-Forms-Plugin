@@ -199,9 +199,6 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-pool-dashboard-servi
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/longitudinal-pool-dashboard.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-dashboard-api.php';
 
-// AJAX API: wp_ajax_eipsi_join_pool + wp_ajax_eipsi_get_pool_stats
-require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-assignment-api.php';
-
 // Pool Studies REST API (v2.5.3) - Phase 1 of Pool Randomization System
 // Endpoints: /eipsi/v1/pool-detect, /pool-config, /pool-assign, /pool-analytics
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-rest-api.php';
