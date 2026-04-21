@@ -2393,17 +2393,45 @@ function eipsi_ajax_change_pool_status() {
 add_action('wp_ajax_eipsi_get_all_pools_summary', 'eipsi_ajax_get_all_pools_summary');
 
 function eipsi_ajax_get_all_pools_summary() {
-    check_ajax_referer('eipsi_pool_hub', 'nonce');
+    error_log('[EIPSI-POOL-DEBUG] === GET_ALL_POOLS_SUMMARY CALLED ===');
+    error_log('[EIPSI-POOL-DEBUG] REQUEST_METHOD: ' . $_SERVER['REQUEST_METHOD']);
+    error_log('[EIPSI-POOL-DEBUG] POST data: ' . print_r($_POST, true));
+    
+    // Try both nonces for compatibility
+    $nonce_ok = false;
+    if (isset($_POST['nonce']) && wp_verify_nonce($_POST['nonce'], 'eipsi_pool_hub')) {
+        $nonce_ok = true;
+        error_log('[EIPSI-POOL-DEBUG] Nonce eipsi_pool_hub OK');
+    } elseif (isset($_POST['nonce']) && wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce')) {
+        $nonce_ok = true;
+        error_log('[EIPSI-POOL-DEBUG] Nonce eipsi_admin_nonce OK');
+    }
+    
+    if (!$nonce_ok) {
+        error_log('[EIPSI-POOL-DEBUG] ERROR: Nonce verification failed');
+        wp_send_json_error(array('message' => __('Token inválido.', 'eipsi-forms'), 'debug' => 'nonce failed']), 403);
+    }
     
     if (!current_user_can('manage_options')) {
+        error_log('[EIPSI-POOL-DEBUG] ERROR: User lacks manage_options capability');
         wp_send_json_error(array('message' => __('Sin permisos.', 'eipsi-forms')), 403);
     }
+    error_log('[EIPSI-POOL-DEBUG] User permissions OK');
     
     global $wpdb;
     $table_pools = $wpdb->prefix . 'eipsi_longitudinal_pools';
     $table_assignments = $wpdb->prefix . 'eipsi_pool_assignments';
     
+    $table_pools = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    error_log('[EIPSI-POOL-DEBUG] Table: ' . $table_pools);
+    
+    // Check if table exists
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table_pools}'");
+    error_log('[EIPSI-POOL-DEBUG] Table exists: ' . ($table_exists ? 'YES' : 'NO'));
+    
     $pools = $wpdb->get_results("SELECT * FROM {$table_pools} ORDER BY id DESC");
+    error_log('[EIPSI-POOL-DEBUG] Found ' . count($pools) . ' pools');
+    
     $result = array();
     
     foreach ($pools as $pool) {
@@ -2441,6 +2469,9 @@ function eipsi_ajax_get_all_pools_summary() {
             'config' => $config
         );
     }
+    
+    error_log('[EIPSI-POOL-DEBUG] Returning ' . count($result) . ' pools');
+    error_log('[EIPSI-POOL-DEBUG] === END GET_ALL_POOLS_SUMMARY ===');
     
     wp_send_json_success(array('pools' => $result));
 }

@@ -22,7 +22,7 @@ function eipsi_render_pool_hub_v2() {
     wp_enqueue_script('jquery');
     wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js', array(), '4.4.1', true);
 
-    $nonce = wp_create_nonce('eipsi_admin_nonce');
+    $nonce = wp_create_nonce('eipsi_pool_hub');
     $ajax_url = admin_url('admin-ajax.php');
     
     // Load available studies for pool creation
@@ -1158,6 +1158,10 @@ function eipsi_render_pool_hub_v2() {
 
         // Load all pools data
         function loadAllPoolsData() {
+            console.log('[EIPSI-JS-DEBUG] === loadAllPoolsData START ===');
+            console.log('[EIPSI-JS-DEBUG] ajaxUrl:', POOL_HUB_V3.ajaxUrl);
+            console.log('[EIPSI-JS-DEBUG] nonce:', POOL_HUB_V3.nonce ? 'SET (length: ' + POOL_HUB_V3.nonce.length + ')' : 'MISSING');
+            
             jQuery.ajax({
                 url: POOL_HUB_V3.ajaxUrl,
                 type: 'POST',
@@ -1166,6 +1170,7 @@ function eipsi_render_pool_hub_v2() {
                     nonce: POOL_HUB_V3.nonce
                 },
                 success: function(response) {
+                    console.log('[EIPSI-JS-DEBUG] AJAX SUCCESS - response:', response);
                     if (response.success) {
                         POOL_HUB_V3.pools = response.data.pools || [];
                         console.log('[EIPSI-POOL-LOAD] Loaded ' + POOL_HUB_V3.pools.length + ' pools');
@@ -1174,7 +1179,20 @@ function eipsi_render_pool_hub_v2() {
                         });
                         renderPoolsTable();
                         updatePoolSelector();
+                    } else {
+                        console.error('[EIPSI-JS-DEBUG] response.success is FALSE');
+                        console.error('[EIPSI-JS-DEBUG] Error message:', response.data?.message);
                     }
+                    console.log('[EIPSI-JS-DEBUG] === loadAllPoolsData END ===');
+                },
+                error: function(xhr, status, error) {
+                    console.error('[EIPSI-JS-DEBUG] AJAX ERROR - status:', status);
+                    console.error('[EIPSI-JS-DEBUG] AJAX ERROR - error:', error);
+                    console.error('[EIPSI-JS-DEBUG] AJAX ERROR - responseText:', xhr.responseText);
+                    console.error('[EIPSI-JS-DEBUG] AJAX ERROR - statusCode:', xhr.status);
+                },
+                complete: function() {
+                    console.log('[EIPSI-JS-DEBUG] AJAX request completed');
                 }
             });
         }
