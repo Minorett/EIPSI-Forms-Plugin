@@ -2381,3 +2381,347 @@ function eipsi_ajax_change_pool_status() {
         'status' => $new_status
     ));
 }
+
+// ============================================================================
+// POOL HUB V3 - AJAX ENDPOINTS (v2.5.4)
+// Moved from pool-assignment-api.php
+// ============================================================================
+
+/**
+ * 4.1 Get all pools summary for Pool Hub V3
+ */
+add_action('wp_ajax_eipsi_get_all_pools_summary', 'eipsi_ajax_get_all_pools_summary');
+
+function eipsi_ajax_get_all_pools_summary() {
+    check_ajax_referer('eipsi_pool_hub', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Sin permisos.', 'eipsi-forms')), 403);
+    }
+    
+    global $wpdb;
+    $table_pools = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    $table_assignments = $wpdb->prefix . 'eipsi_pool_assignments';
+    
+    $pools = $wpdb->get_results("SELECT * FROM {$table_pools} ORDER BY id DESC");
+    $result = array();
+    
+    foreach ($pools as $pool) {
+        $config = json_decode($pool->config_json, true) ?: array();
+        $studies = isset($config['studies']) ? $config['studies'] : array();
+        
+        // Count assignments
+        $assignments = $wpdb->get_results($wpdb->prepare(
+            "SELECT study_id, COUNT(*) as count FROM {$table_assignments} WHERE pool_id = %s GROUP BY study_id",
+            $pool->pool_code
+        ));
+        
+        $distribution = array();
+        $total = 0;
+        foreach ($assignments as $row) {
+            $distribution[] = array(
+                'study_id' => $row->study_id,
+                'count' => (int) $row->count
+            );
+            $total += (int) $row->count;
+        }
+        
+        $result[] = array(
+            'id' => (int) $pool->id,
+            'name' => $pool->pool_code,
+            'status' => $pool->status,
+            'description' => $config['description'] ?? '',
+            'incentive' => $config['incentive'] ?? '',
+            'studies_count' => count($studies),
+            'total_assignments' => $total,
+            'distribution' => $distribution,
+            'completion_rate' => 0,
+            'balance_score' => 100,
+            'page_url' => get_permalink($config['page_id'] ?? 0),
+            'config' => $config
+        );
+    }
+    
+    wp_send_json_success(array('pools' => $result));
+}
+
+/**
+ * 4.2 Get pool analytics
+ */
+add_action('wp_ajax_eipsi_get_pool_analytics', 'eipsi_ajax_get_pool_analytics');
+
+function eipsi_ajax_get_pool_analytics() {
+    check_ajax_referer('eipsi_pool_hub', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Sin permisos.', 'eipsi-forms')), 403);
+    }
+    
+    $pool_id = isset($_GET['pool_id']) ? intval($_GET['pool_id']) : 0;
+    if (!$pool_id) {
+        wp_send_json_error(array('message' => __('ID inválido.', 'eipsi-forms')), 400);
+    }
+    
+    global $wpdb;
+    $table_pools = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    $table_assignments = $wpdb->prefix . 'eipsi_pool_assignments';
+    $table_participants = $wpdb->prefix . 'survey_participants';
+    $table_studies = $wpdb->prefix . 'surveys';
+    
+    $pool = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$table_pools} WHERE id = %d",
+        $pool_id
+    ));
+    
+    if (!$pool) {
+        wp_send_json_error(array('message' => __('Pool no encontrado.', 'eipsi-forms')), 404);
+    }
+    
+    $config = json_decode($pool->config_json, true) ?: array();
+    $studies = isset($config['studies']) ? $config['studies'] : array();
+    
+    // Get assignments with participant info
+    $assignments = $wpdb->get_results($wpdb->prepare(
+        "SELECT a.*, p.email as participant_email 
+        FROM {$table_assignments} a 
+        LEFT JOIN {$table_participants} p ON a.participant_id = p.id 
+        WHERE a.pool_id = %s 
+        ORDER BY a.assigned_at DESC",
+        $pool->pool_code
+    ));
+    
+    $study_breakdown = array();
+    $total = count($assignments);
+    $completed = 0;
+    
+    foreach ($studies as $study) {
+        $study_assignments = array_filter($assignments, function($a) use ($study) {
+            return $a->study_id == $study['study_id'];
+        });
+        
+        $study_completed = count(array_filter($study_assignments, function($a) {
+            return $a->status === 'completed';
+        }));
+        
+        $study_total = count($study_assignments);
+        $completed += $study_completed;
+        
+        $study_breakdown[] = array(
+            'study_id' => $study['study_id'],
+            'study_name' => $wpdb->get_var($wpdb->prepare(
+                "SELECT study_name FROM {$table_studies} WHERE id = %d",
+                $study['study_id']
+            )) ?: 'Estudio #' . $study['study_id'],
+            'assigned' => $study_total,
+            'completed' => $study_completed,
+            'in_progress' => $study_total - $study_completed,
+            'actual_pct' => $total > 0 ? round(($study_total / $total) * 100, 1) : 0,
+            'expected_pct' => (float) $study['probability'],
+            'delta' => $total > 0 ? round((($study_total / $total) * 100) - $study['probability'], 1) : 0,
+            'completion_rate' => $study_total > 0 ? round(($study_completed / $study_total) * 100, 1) : 0
+        );
+    }
+    
+    // Recent activity
+    $recent = array_slice($assignments, 0, 10);
+    $activity = array();
+    foreach ($recent as $a) {
+        $activity[] = array(
+            'participant_email' => $a->participant_email ?: 'ID: ' . $a->participant_id,
+            'study_name' => $wpdb->get_var($wpdb->prepare(
+                "SELECT study_name FROM {$table_studies} WHERE id = %d",
+                $a->study_id
+            )) ?: 'Estudio #' . $a->study_id,
+            'assigned_at' => human_time_diff(strtotime($a->assigned_at), current_time('timestamp')) . ' atrás',
+            'status' => $a->status
+        );
+    }
+    
+    wp_send_json_success(array(
+        'metrics' => array(
+            'total_assignments' => $total,
+            'completion_rate' => $total > 0 ? round(($completed / $total) * 100, 1) : 0,
+            'balance_score' => 100,
+            'dropout_rate' => $total > 0 ? round((($total - $completed) / $total) * 100, 1) : 0
+        ),
+        'study_breakdown' => $study_breakdown,
+        'recent_activity' => $activity
+    ));
+}
+
+/**
+ * 4.3 Toggle pool status (Pool Hub V3)
+ */
+add_action('wp_ajax_eipsi_toggle_pool_status', 'eipsi_ajax_toggle_pool_status');
+
+function eipsi_ajax_toggle_pool_status() {
+    check_ajax_referer('eipsi_pool_hub', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('Sin permisos.', 'eipsi-forms')), 403);
+    }
+    
+    $pool_id = isset($_POST['pool_id']) ? intval($_POST['pool_id']) : 0;
+    $status = isset($_POST['status']) ? sanitize_key($_POST['status']) : '';
+    
+    if (!$pool_id || !in_array($status, array('active', 'paused', 'closed'))) {
+        wp_send_json_error(array('message' => __('Datos inválidos.', 'eipsi-forms')), 400);
+    }
+    
+    global $wpdb;
+    $table_pools = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    
+    $result = $wpdb->update(
+        $table_pools,
+        array('status' => $status),
+        array('id' => $pool_id),
+        array('%s'),
+        array('%d')
+    );
+    
+    if ($result !== false) {
+        wp_send_json_success(array('status' => $status));
+    } else {
+        wp_send_json_error(array('message' => __('Error al actualizar.', 'eipsi-forms')));
+    }
+}
+
+/**
+ * 4.4 Export pool assignments to CSV
+ */
+add_action('wp_ajax_eipsi_export_pool_assignments', 'eipsi_ajax_export_pool_assignments');
+
+function eipsi_ajax_export_pool_assignments() {
+    if (!current_user_can('manage_options')) {
+        wp_die(__('Sin permisos.', 'eipsi-forms'));
+    }
+    
+    check_ajax_referer('eipsi_pool_hub', 'nonce');
+    
+    $pool_id = isset($_GET['pool_id']) ? intval($_GET['pool_id']) : 0;
+    if (!$pool_id) {
+        wp_die(__('ID inválido.', 'eipsi-forms'));
+    }
+    
+    global $wpdb;
+    $table_pools = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    $table_assignments = $wpdb->prefix . 'eipsi_pool_assignments';
+    $table_participants = $wpdb->prefix . 'survey_participants';
+    
+    $pool = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$table_pools} WHERE id = %d",
+        $pool_id
+    ));
+    
+    if (!$pool) {
+        wp_die(__('Pool no encontrado.', 'eipsi-forms'));
+    }
+    
+    $assignments = $wpdb->get_results($wpdb->prepare(
+        "SELECT a.*, p.email, p.first_name, p.last_name 
+        FROM {$table_assignments} a 
+        LEFT JOIN {$table_participants} p ON a.participant_id = p.id 
+        WHERE a.pool_id = %s 
+        ORDER BY a.assigned_at DESC",
+        $pool->pool_code
+    ));
+    
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename=pool-assignments-' . $pool->pool_code . '.csv');
+    
+    $output = fopen('php://output', 'w');
+    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM for Excel
+    
+    fputcsv($output, array('ID', 'Email', 'Nombre', 'Apellido', 'Study ID', 'Estado', 'Fecha Asignación', 'IP'));
+    
+    foreach ($assignments as $row) {
+        fputcsv($output, array(
+            $row->id,
+            $row->email,
+            $row->first_name,
+            $row->last_name,
+            $row->study_id,
+            $row->status,
+            $row->assigned_at,
+            $row->ip_address
+        ));
+    }
+    
+    fclose($output);
+    exit;
+}
+
+/**
+ * 4.5 Join pool (frontend AJAX)
+ */
+add_action('wp_ajax_nopriv_eipsi_join_pool', 'eipsi_ajax_join_pool');
+add_action('wp_ajax_eipsi_join_pool', 'eipsi_ajax_join_pool');
+
+function eipsi_ajax_join_pool() {
+    check_ajax_referer('eipsi_pool_access', 'nonce');
+    
+    $pool_code = isset($_POST['pool_code']) ? sanitize_text_field($_POST['pool_code']) : '';
+    $email = isset($_POST['email']) ? sanitize_email($_POST['pool_email']) : '';
+    $consent = isset($_POST['consent']) ? true : false;
+    
+    if (empty($pool_code) || empty($email)) {
+        wp_send_json_error(array('message' => __('Datos incompletos.', 'eipsi-forms')));
+    }
+    
+    if (!$consent) {
+        wp_send_json_error(array('message' => __('Debes aceptar los términos.', 'eipsi-forms')));
+    }
+    
+    // Load helpers
+    if (!function_exists('eipsi_pool_randomize')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/helpers/pool-helpers.php';
+    }
+    
+    // Get pool
+    global $wpdb;
+    $table_pools = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    $pool = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$table_pools} WHERE pool_code = %s",
+        $pool_code
+    ));
+    
+    if (!$pool || $pool->status !== 'active') {
+        wp_send_json_error(array('message' => __('Pool no disponible.', 'eipsi-forms')));
+    }
+    
+    $config = json_decode($pool->config_json, true) ?: array();
+    
+    // Check if already assigned
+    $existing = eipsi_get_pool_assignment($pool_code, $email);
+    if ($existing) {
+        $study_url = get_permalink(get_post_meta($existing['study_id'], 'survey_page_id', true));
+        wp_send_json_success(array(
+            'already_assigned' => true,
+            'study_id' => $existing['study_id'],
+            'redirect_url' => $study_url
+        ));
+    }
+    
+    // Randomize
+    $pool_data = array('status' => $pool->status, 'config' => $config);
+    $assignment = eipsi_pool_randomize($pool_code, $email, $pool_data);
+    
+    if (!$assignment) {
+        wp_send_json_error(array('message' => __('No se pudo asignar. Intentá de nuevo.', 'eipsi-forms')));
+    }
+    
+    // Save assignment
+    $result = eipsi_save_pool_assignment($pool_code, $email, $assignment['study_id']);
+    
+    if ($result) {
+        $study_url = get_permalink(get_post_meta($assignment['study_id'], 'survey_page_id', true));
+        wp_send_json_success(array(
+            'study_id' => $assignment['study_id'],
+            'study_name' => $assignment['study_name'],
+            'redirect_url' => $study_url,
+            'mode' => $config['redirect_mode'] ?? 'transition'
+        ));
+    } else {
+        wp_send_json_error(array('message' => __('Error al guardar asignación.', 'eipsi-forms')));
+    }
+}
