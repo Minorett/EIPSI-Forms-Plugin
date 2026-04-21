@@ -2435,13 +2435,13 @@ function eipsi_ajax_get_all_pools_summary() {
     $result = array();
     
     foreach ($pools as $pool) {
-        $config = json_decode($pool->config_json, true) ?: array();
+        $config = json_decode($pool->config, true) ?: array();
         $studies = isset($config['studies']) ? $config['studies'] : array();
         
-        // Count assignments
+        // Count assignments (pool_id en assignments es el ID numérico del pool)
         $assignments = $wpdb->get_results($wpdb->prepare(
-            "SELECT study_id, COUNT(*) as count FROM {$table_assignments} WHERE pool_id = %s GROUP BY study_id",
-            $pool->pool_code
+            "SELECT study_id, COUNT(*) as count FROM {$table_assignments} WHERE pool_id = %d GROUP BY study_id",
+            $pool->id
         ));
         
         $distribution = array();
@@ -2456,7 +2456,7 @@ function eipsi_ajax_get_all_pools_summary() {
         
         $result[] = array(
             'id' => (int) $pool->id,
-            'name' => $pool->pool_code,
+            'name' => $pool->pool_name,
             'status' => $pool->status,
             'description' => $config['description'] ?? '',
             'incentive' => $config['incentive'] ?? '',
@@ -2465,7 +2465,7 @@ function eipsi_ajax_get_all_pools_summary() {
             'distribution' => $distribution,
             'completion_rate' => 0,
             'balance_score' => 100,
-            'page_url' => get_permalink($config['page_id'] ?? 0),
+            'page_url' => get_permalink($pool->page_id ?? 0),
             'config' => $config
         );
     }
