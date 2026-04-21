@@ -1945,11 +1945,42 @@ function eipsi_handle_save_pool() {
 }
 
 /**
+ * Repair pools that don't have a WordPress page
+ * Creates missing pages and updates the pool record
+ */
+function eipsi_repair_missing_pool_pages() {
+    global $wpdb;
+    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    
+    // Find pools without page_id
+    $orphan_pools = $wpdb->get_results(
+        "SELECT id, pool_name FROM {$pools_table} WHERE page_id IS NULL OR page_id = 0"
+    );
+    
+    if (empty($orphan_pools)) {
+        return;
+    }
+    
+    error_log('[EIPSI-POOL-REPAIR] Found ' . count($orphan_pools) . ' pools without pages');
+    
+    foreach ($orphan_pools as $pool) {
+        error_log('[EIPSI-POOL-REPAIR] Creating page for pool ID ' . $pool->id . ': ' . $pool->pool_name);
+        $page_id = eipsi_create_pool_page($pool->id, $pool->pool_name);
+        
+        if ($page_id) {
+            error_log('[EIPSI-POOL-REPAIR] Created page ID ' . $page_id . ' for pool ID ' . $pool->id);
+        } else {
+            error_log('[EIPSI-POOL-REPAIR] FAILED to create page for pool ID ' . $pool->id);
+        }
+    }
+}
+
+/**
  * Create WordPress page for pool with shortcode
  *
  * @param int    $pool_id   Pool ID
- * @param string $pool_name Pool name
- * @return int|false Page ID or false on failure
+ * @param string $pool_name Pool name for the page title
+ * @return int|false Page ID on success, false on failure
  * @since 2.5.0
  */
 function eipsi_create_pool_page($pool_id, $pool_name) {
@@ -1994,6 +2025,23 @@ function eipsi_create_pool_page($pool_id, $pool_name) {
     if (is_wp_error($page_id)) {
         error_log('[EIPSI] Failed to create pool page: ' . $page_id->get_error_message());
         return false;
+    }
+    
+    // Update pool with page_id
+    global $wpdb;
+    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    $updated = $wpdb->update(
+        $pools_table,
+        array('page_id' => $page_id),
+        array('id' => $pool_id),
+        array('%d'),
+        array('%d')
+    );
+    
+    if ($updated !== false) {
+        error_log('[EIPSI] Pool ID ' . $pool_id . ' updated with page_id: ' . $page_id);
+    } else {
+        error_log('[EIPSI] ERROR: Could not update pool ID ' . $pool_id . ' with page_id');
     }
     
     return $page_id;
@@ -2396,6 +2444,9 @@ function eipsi_ajax_get_all_pools_summary() {
     error_log('[EIPSI-POOL-DEBUG] === GET_ALL_POOLS_SUMMARY CALLED ===');
     error_log('[EIPSI-POOL-DEBUG] REQUEST_METHOD: ' . $_SERVER['REQUEST_METHOD']);
     error_log('[EIPSI-POOL-DEBUG] POST data: ' . print_r($_POST, true));
+    
+    // Repair pools without pages (create missing WordPress pages)
+    eipsi_repair_missing_pool_pages();
     
     // Try both nonces for compatibility
     $nonce_ok = false;

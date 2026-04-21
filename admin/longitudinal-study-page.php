@@ -20,6 +20,71 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Handle pool deletion early via admin_init (before any output)
+ * This avoids "headers already sent" errors
+ */
+add_action('admin_init', 'eipsi_handle_pool_deletion_early', 1);
+
+function eipsi_handle_pool_deletion_early() {
+    // Only process if we're on the right page with delete action
+    if (!isset($_GET['page']) || $_GET['page'] !== 'eipsi-longitudinal-study') {
+        return;
+    }
+    if (!isset($_GET['action']) || $_GET['action'] !== 'delete') {
+        return;
+    }
+    if (!isset($_GET['tab']) || $_GET['tab'] !== 'pool-hub') {
+        return;
+    }
+    if (!isset($_GET['pool_id'])) {
+        return;
+    }
+
+    $pool_id = intval($_GET['pool_id']);
+    $nonce = isset($_GET['_wpnonce']) ? $_GET['_wpnonce'] : '';
+
+    error_log('[EIPSI-POOL-DELETE-EARLY] Request received - Pool ID: ' . $pool_id);
+
+    // Verify nonce and permissions
+    $nonce_valid = wp_verify_nonce($nonce, 'eipsi_delete_pool');
+    $can_manage = function_exists('eipsi_user_can_manage_longitudinal') && eipsi_user_can_manage_longitudinal();
+
+    error_log('[EIPSI-POOL-DELETE-EARLY] Nonce valid: ' . ($nonce_valid ? 'YES' : 'NO') . ', Can manage: ' . ($can_manage ? 'YES' : 'NO'));
+
+    if (!$nonce_valid || !$can_manage) {
+        error_log('[EIPSI-POOL-DELETE-EARLY] Permission denied');
+        return; // Let the page display handle the error
+    }
+
+    global $wpdb;
+    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
+
+    error_log('[EIPSI-POOL-DELETE-EARLY] Starting deletion');
+
+    // Delete related assignments first
+    $assignments_deleted = $wpdb->delete($assignments_table, ['pool_id' => $pool_id], ['%d']);
+    error_log('[EIPSI-POOL-DELETE-EARLY] Assignments deleted: ' . ($assignments_deleted !== false ? $assignments_deleted : '0') . ' rows');
+
+    // Delete the pool
+    $pool_deleted = $wpdb->delete($pools_table, ['id' => $pool_id], ['%d']);
+    error_log('[EIPSI-POOL-DELETE-EARLY] Pool deleted: ' . ($pool_deleted ? 'SUCCESS' : 'FAILED'));
+
+    if ($pool_deleted) {
+        // Get pool page ID and delete it too
+        $page_id = isset($_GET['page_id']) ? intval($_GET['page_id']) : 0;
+        if ($page_id) {
+            wp_delete_post($page_id, true);
+            error_log('[EIPSI-POOL-DELETE-EARLY] Pool page deleted: ' . $page_id);
+        }
+
+        // Safe redirect (no headers sent yet)
+        wp_redirect(admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_deleted'));
+        exit;
+    }
+}
+
 function eipsi_display_longitudinal_study_page() {
     if (!function_exists('eipsi_user_can_manage_longitudinal') || !eipsi_user_can_manage_longitudinal()) {
         wp_die(__('Unauthorized', 'eipsi-forms'));
@@ -27,49 +92,8 @@ function eipsi_display_longitudinal_study_page() {
 
     global $wpdb;
 
-    // Handle pool deletion early (before any output)
-    if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['pool_id']) && isset($_GET['tab']) && $_GET['tab'] === 'pool-hub') {
-        $pool_id = intval($_GET['pool_id']);
-        $nonce = isset($_GET['_wpnonce']) ? $_GET['_wpnonce'] : '';
-        
-        error_log('[EIPSI-POOL-DELETE] Request received - Pool ID: ' . $pool_id . ', Nonce: ' . substr($nonce, 0, 10) . '...');
-        
-        // Use generic delete nonce (matches JavaScript)
-        $nonce_valid = wp_verify_nonce($nonce, 'eipsi_delete_pool');
-        $can_manage = eipsi_user_can_manage_longitudinal();
-        
-        error_log('[EIPSI-POOL-DELETE] Nonce valid: ' . ($nonce_valid ? 'YES' : 'NO') . ', Can manage: ' . ($can_manage ? 'YES' : 'NO'));
-
-        if ($nonce_valid && $can_manage) {
-            $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
-            $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
-            
-            error_log('[EIPSI-POOL-DELETE] Starting deletion for pool ID: ' . $pool_id);
-
-            // Delete related assignments first (foreign key constraint)
-            $assignments_deleted = $wpdb->delete($assignments_table, ['pool_id' => $pool_id], ['%d']);
-            error_log('[EIPSI-POOL-DELETE] Assignments deleted: ' . ($assignments_deleted !== false ? $assignments_deleted : '0') . ' rows');
-            
-            if ($wpdb->last_error) {
-                error_log('[EIPSI-POOL-DELETE] ERROR deleting assignments: ' . $wpdb->last_error);
-            }
-
-            // Delete the pool
-            $pool_deleted = $wpdb->delete($pools_table, ['id' => $pool_id], ['%d']);
-            error_log('[EIPSI-POOL-DELETE] Pool deleted: ' . ($pool_deleted ? 'SUCCESS' : 'FAILED') . ' - Rows affected: ' . ($pool_deleted !== false ? $pool_deleted : 0));
-            
-            if ($wpdb->last_error) {
-                error_log('[EIPSI-POOL-DELETE] ERROR deleting pool: ' . $wpdb->last_error);
-            }
-
-            // Redirect to avoid re-deletion on refresh
-            error_log('[EIPSI-POOL-DELETE] Redirecting to pool-hub');
-            wp_redirect(admin_url('admin.php?page=eipsi-longitudinal-study&tab=pool-hub&message=pool_deleted'));
-            exit;
-        } else {
-            error_log('[EIPSI-POOL-DELETE] Permission denied. Nonce valid: ' . ($nonce_valid ? 'YES' : 'NO') . ', Can manage: ' . ($can_manage ? 'YES' : 'NO'));
-        }
-    }
+    // NOTE: Pool deletion is now handled by eipsi_handle_pool_deletion_early() 
+    // via admin_init hook (priority 1) to avoid "headers already sent" errors
 
     $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'dashboard-study';
     $allowed_tabs = array(
