@@ -35,6 +35,55 @@
 		'eipsi_forms_nonce',
 	] );
 
+	/**
+	 * Fix 7: Circuit Breaker Pattern
+	 * Protege contra fallos de red consecutivos
+	 */
+	class EipsiCircuitBreaker {
+		constructor(threshold = 5, timeout = 60000) {
+			this.failures = 0;
+			this.threshold = threshold;
+			this.timeout = timeout;
+			this.state = 'CLOSED';
+			this.nextAttempt = null;
+		}
+
+		async execute(fn) {
+			if (this.state === 'OPEN') {
+				if (Date.now() < this.nextAttempt) {
+					throw new Error('Circuit OPEN');
+				}
+				this.state = 'HALF_OPEN';
+			}
+			try {
+				const result = await fn();
+				this.onSuccess();
+				return result;
+			} catch (error) {
+				this.onFailure();
+				throw error;
+			}
+		}
+
+		onSuccess() {
+			this.failures = 0;
+			this.state = 'CLOSED';
+		}
+
+		onFailure() {
+			this.failures++;
+			if (this.failures >= this.threshold) {
+				this.state = 'OPEN';
+				this.nextAttempt = Date.now() + this.timeout;
+				console.warn('[EIPSI] Circuit breaker ABIERTO');
+			}
+		}
+
+		isOpen() {
+			return this.state === 'OPEN';
+		}
+	}
+
 	class EIPSISaveContinue {
 		constructor( form, config ) {
 			this.form = form;
@@ -54,6 +103,10 @@
 			// Fix 5: Dirty tracking para reducir payload
 			this.dirtyFields = new Set();
 			this.lastSavedChecksum = null;
+			// Fix 7: Circuit breaker
+			this.circuitBreaker = new EipsiCircuitBreaker(5, 60000);
+			// Fix 9: Indicador visual
+			this.saveIndicator = null;
 
 			this.init();
 		}
@@ -1112,7 +1165,7 @@
 
 		collectResponses( fullScan = false ) {
 			const responses = {};
-
+		
 			if ( fullScan || this.dirtyFields.size === 0 ) {
 				// Scan completo — para beforeunload y primer guardado
 				const formData = new FormData( this.form );
@@ -1134,24 +1187,10 @@
 					}
 				} );
 			}
-
-				const normalized =
-					typeof value === 'string' ? value : `${ value }`;
-
-				if ( responses[ key ] !== undefined ) {
-					if ( ! Array.isArray( responses[ key ] ) ) {
-						responses[ key ] = [ responses[ key ] ];
-					}
-					responses[ key ].push( normalized );
-				} else {
-					responses[ key ] = normalized;
-				}
-			} );
-
+		
 			// CAPTURAR ESTADO DEL CONSENTIMIENTO EXPLÍCITAMENTE
-			// Los checkboxes unchecked no aparecen en FormData, por eso hay que capturarlos manualmente
 			this.captureConsentStatus( responses );
-
+		
 			return responses;
 		}
 
@@ -1238,41 +1277,49 @@
 		}
 
 		async saveToServer( responses = null, pageIndex = null ) {
-			if ( ! this.config.ajaxUrl ) {
+			// Fix 7: Circuit breaker check
+			if ( this.circuitBreaker.isOpen() ) {
+				console.warn( '[EIPSI] Circuit breaker abierto — solo guardando local' );
 				return false;
 			}
-
-			try {
-				const formData = new FormData();
-				formData.append( 'action', 'eipsi_save_partial_response' );
-				formData.append( 'form_id', this.formId );
-				formData.append( 'participant_id', this.participantId );
-				formData.append( 'session_id', this.sessionId );
-				formData.append(
-					'page_index',
-					pageIndex || this.getCurrentPage()
-				);
-				formData.append(
-					'responses',
-					JSON.stringify( responses || this.collectResponses() )
-				);
-				formData.append(
-					'nonce',
-					this.config?.savePartialNonce || this.config?.nonce || ''
-				);
-
-				const response = await fetch( this.config.ajaxUrl, {
-					method: 'POST',
-					body: formData,
-					keepalive: true,
-					credentials: 'same-origin',
-				} );
-
-				const data = await response.json();
-				return !! data.success;
-			} catch ( error ) {
-				return false;
-			}
+		
+			return this.circuitBreaker.execute( async () => {
+				if ( ! this.config.ajaxUrl ) {
+					return false;
+				}
+		
+				try {
+					const formData = new FormData();
+					formData.append( 'action', 'eipsi_save_partial_response' );
+					formData.append( 'form_id', this.formId );
+					formData.append( 'participant_id', this.participantId );
+					formData.append( 'session_id', this.sessionId );
+					formData.append(
+						'page_index',
+						pageIndex || this.getCurrentPage()
+					);
+					formData.append(
+						'responses',
+						JSON.stringify( responses || this.collectResponses() )
+					);
+					formData.append(
+						'nonce',
+						this.config?.savePartialNonce || this.config?.nonce || ''
+					);
+		
+					const response = await fetch( this.config.ajaxUrl, {
+						method: 'POST',
+						body: formData,
+						keepalive: true,
+						credentials: 'same-origin',
+					} );
+		
+					const data = await response.json();
+					return !! data.success;
+				} catch ( error ) {
+					return false;
+				}
+			} );
 		}
 
 		handleFormCompleted() {
