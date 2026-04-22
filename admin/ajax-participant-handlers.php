@@ -777,12 +777,14 @@ function eipsi_get_participant_redirect_url($survey_id, $participant_id) {
  * 
  * @return int|null
  */
-function eipsi_get_current_participant_id() {
-    if (!class_exists('EIPSI_Auth_Service')) {
-        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
+if (!function_exists('eipsi_get_current_participant_id')) {
+    function eipsi_get_current_participant_id() {
+        if (!class_exists('EIPSI_Auth_Service')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
+        }
+        
+        return EIPSI_Auth_Service::get_current_participant();
     }
-    
-    return EIPSI_Auth_Service::get_current_participant();
 }
 
 /**
@@ -790,10 +792,12 @@ function eipsi_get_current_participant_id() {
  * 
  * @return int|null
  */
-function eipsi_get_current_survey_id() {
-    if (!class_exists('EIPSI_Auth_Service')) {
-        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
+if (!function_exists('eipsi_get_current_survey_id')) {
+    function eipsi_get_current_survey_id() {
+        if (!class_exists('EIPSI_Auth_Service')) {
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
+        }
+        
+        return EIPSI_Auth_Service::get_current_survey();
     }
-    
-    return EIPSI_Auth_Service::get_current_survey();
 }
