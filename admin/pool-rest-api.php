@@ -198,7 +198,68 @@ function eipsi_rest_pool_config(WP_REST_Request $request) {
     );
 
     if ($pool_id > 0) {
-        // Update existing pool
+        // -----------------------------------------------------------------
+        // VALIDACIÓN: Verificar si hay asignaciones existentes antes de permitir
+        // edición de campos críticos (estudios, probabilidades, método, seed)
+        // -----------------------------------------------------------------
+        $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
+        $existing_assignments = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$assignments_table} WHERE pool_id = %d",
+            $pool_id
+        ));
+        
+        if ($existing_assignments > 0) {
+            // Obtener config actual para comparar
+            $current_pool = $wpdb->get_row($wpdb->prepare(
+                "SELECT config FROM {$pools_table} WHERE id = %d",
+                $pool_id
+            ));
+            
+            if ($current_pool && $current_pool->config) {
+                $current_config = json_decode($current_pool->config, true);
+                
+                // Verificar si intentan cambiar campos críticos
+                $critical_fields_changed = false;
+                $changed_fields = array();
+                
+                // Comparar estudios (solo los IDs de estudio, no las probabilidades exactas)
+                $current_studies = isset($current_config['studies']) ? array_column($current_config['studies'], 'id') : array();
+                $new_studies = isset($config['studies']) ? array_column($config['studies'], 'id') : array();
+                sort($current_studies);
+                sort($new_studies);
+                
+                if ($current_studies !== $new_studies) {
+                    $critical_fields_changed = true;
+                    $changed_fields[] = 'studies';
+                }
+                
+                // Comparar método de asignación
+                if (isset($current_config['method']) && isset($config['method']) && 
+                    $current_config['method'] !== $config['method']) {
+                    $critical_fields_changed = true;
+                    $changed_fields[] = 'method';
+                }
+                
+                // Comparar seed (si cambia, la asignación ya no es reproducible)
+                if (isset($current_config['seed']) && isset($config['seed']) && 
+                    $current_config['seed'] !== $config['seed']) {
+                    $critical_fields_changed = true;
+                    $changed_fields[] = 'seed';
+                }
+                
+                if ($critical_fields_changed) {
+                    error_log("[EIPSI POOL EDIT] BLOQUEADO: Intentaron cambiar campos críticos (" . implode(', ', $changed_fields) . ") en pool {$pool_id} con {$existing_assignments} asignaciones existentes");
+                    return new WP_REST_Response(array(
+                        'success' => false,
+                        'message' => 'No se pueden modificar los estudios, método de asignación o semilla aleatoria porque ya existen ' . $existing_assignments . ' participante(s) asignado(s). Estos campos afectan la integridad de las asignaciones existentes.',
+                        'code' => 'assignments_exist',
+                        'field_errors' => $changed_fields,
+                    ), 409);
+                }
+            }
+        }
+        
+        // Update existing pool (solo campos permitidos)
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $result = $wpdb->update(
             $pools_table,
@@ -217,6 +278,8 @@ function eipsi_rest_pool_config(WP_REST_Request $request) {
                 'message' => 'Error al actualizar el pool: ' . $wpdb->last_error,
             ), 500);
         }
+        
+        error_log("[EIPSI POOL EDIT] Pool {$pool_id} actualizado correctamente");
 
         return new WP_REST_Response(array(
             'success' => true,

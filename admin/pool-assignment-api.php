@@ -123,10 +123,13 @@ add_action( 'wp_ajax_nopriv_eipsi_join_pool', 'eipsi_ajax_join_pool' );
  * @since 2.3.0
  */
 function eipsi_ajax_pool_auth() {
+    error_log("[EIPSI POOL AUTH] === INICIO AJAX pool_auth ===");
+    
     // -----------------------------------------------------------------
     // 1. Verificar nonce
     // -----------------------------------------------------------------
     check_ajax_referer( 'eipsi_pool_access', 'nonce' );
+    error_log("[EIPSI POOL AUTH] Nonce verificado OK");
 
     // -----------------------------------------------------------------
     // 2. Sanitizar inputs
@@ -134,16 +137,21 @@ function eipsi_ajax_pool_auth() {
     $pool_id     = isset( $_POST['pool_id'] ) ? absint( $_POST['pool_id'] ) : 0;
     $email       = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
     $auth_action = isset( $_POST['auth_action'] ) ? sanitize_text_field( wp_unslash( $_POST['auth_action'] ) ) : '';
+    
+    error_log("[EIPSI POOL AUTH] Inputs: pool_id={$pool_id}, email={$email}, action={$auth_action}");
 
     if ( ! $pool_id ) {
+        error_log("[EIPSI POOL AUTH] ERROR: ID de pool inválido");
         wp_send_json_error( array( 'message' => __( 'ID de pool inválido.', 'eipsi-forms' ) ), 400 );
     }
 
     if ( ! is_email( $email ) ) {
+        error_log("[EIPSI POOL AUTH] ERROR: Email inválido: {$email}");
         wp_send_json_error( array( 'message' => __( 'Por favor ingresá un email válido.', 'eipsi-forms' ) ), 400 );
     }
 
     if ( ! in_array( $auth_action, array( 'login', 'register' ), true ) ) {
+        error_log("[EIPSI POOL AUTH] ERROR: Acción inválida: {$auth_action}");
         wp_send_json_error( array( 'message' => __( 'Acción inválida.', 'eipsi-forms' ) ), 400 );
     }
 
@@ -153,16 +161,26 @@ function eipsi_ajax_pool_auth() {
     // -----------------------------------------------------------------
     // 3. Buscar participante por email
     // -----------------------------------------------------------------
+    error_log("[EIPSI POOL AUTH] Buscando participante por email: {$email}");
     $participant = $wpdb->get_row( $wpdb->prepare(
         "SELECT * FROM {$participants_table} WHERE email = %s",
         $email
     ) );
+    
+    if ( $participant ) {
+        error_log("[EIPSI POOL AUTH] Participante ENCONTRADO: ID={$participant->id}, email_confirmed={$participant->email_confirmed}");
+    } else {
+        error_log("[EIPSI POOL AUTH] Participante NO encontrado para email: {$email}");
+    }
 
     // -----------------------------------------------------------------
     // 4. LOGIN: Participante debe existir
     // -----------------------------------------------------------------
     if ( $auth_action === 'login' ) {
+        error_log("[EIPSI POOL AUTH] Procesando LOGIN");
+        
         if ( ! $participant ) {
+            error_log("[EIPSI POOL AUTH] LOGIN ERROR: Participante no existe");
             wp_send_json_error( array( 
                 'message' => __( 'Email no registrado. Por favor creá una cuenta primero.', 'eipsi-forms' ),
                 'code'    => 'user_not_found'
@@ -170,11 +188,14 @@ function eipsi_ajax_pool_auth() {
         }
 
         // Verificar si tiene estudio asignado activo
+        error_log("[EIPSI POOL AUTH] Verificando asignación activa para participant_id={$participant->id}, pool_id={$pool_id}");
         $has_study = eipsi_participant_has_active_pool_study( $participant->id, $pool_id );
 
         if ( $has_study ) {
+            error_log("[EIPSI POOL AUTH] LOGIN: Tiene estudio asignado: study_id={$has_study->study_id}, study_name={$has_study->study_name}");
             // Tiene estudio asignado → enviar magic link directo al estudio
             $magic_link = eipsi_generate_participant_magic_link( $participant->id, $has_study->study_id );
+            error_log("[EIPSI POOL AUTH] Magic link generado: {$magic_link}");
             
             wp_send_json_success( array(
                 'redirect_url'   => $magic_link,
@@ -182,8 +203,10 @@ function eipsi_ajax_pool_auth() {
                 'message'      => __( 'Preparando tu acceso al estudio...', 'eipsi-forms' )
             ) );
         } else {
+            error_log("[EIPSI POOL AUTH] LOGIN: NO tiene estudio asignado → redirigiendo a dashboard");
             // No tiene estudio asignado → enviar magic link al dashboard del pool
             $magic_link = eipsi_generate_pool_dashboard_link( $participant->id, $pool_id );
+            error_log("[EIPSI POOL AUTH] Dashboard link generado: {$magic_link}");
             
             wp_send_json_success( array(
                 'magic_link_url' => $magic_link,
@@ -196,7 +219,10 @@ function eipsi_ajax_pool_auth() {
     // 5. REGISTER: Crear nuevo participante
     // -----------------------------------------------------------------
     if ( $auth_action === 'register' ) {
+        error_log("[EIPSI POOL AUTH] Procesando REGISTER");
+        
         if ( $participant ) {
+            error_log("[EIPSI POOL AUTH] REGISTER ERROR: Email ya existe");
             wp_send_json_error( array( 
                 'message' => __( 'Este email ya está registrado. Por favor ingresá con tu cuenta.', 'eipsi-forms' ),
                 'code'    => 'email_exists'
@@ -204,6 +230,7 @@ function eipsi_ajax_pool_auth() {
         }
 
         // Crear nuevo participante
+        error_log("[EIPSI POOL AUTH] Creando nuevo participante...");
         $result = $wpdb->insert(
             $participants_table,
             array(
@@ -216,20 +243,25 @@ function eipsi_ajax_pool_auth() {
         );
 
         if ( $result === false ) {
+            error_log("[EIPSI POOL AUTH] REGISTER ERROR: Falló inserción en DB");
             wp_send_json_error( array( 'message' => __( 'Error al crear la cuenta. Por favor intentá de nuevo.', 'eipsi-forms' ) ), 500 );
         }
 
         $participant_id = $wpdb->insert_id;
+        error_log("[EIPSI POOL AUTH] Participante creado: participant_id={$participant_id}");
 
         // Enviar email de confirmación
+        error_log("[EIPSI POOL AUTH] Enviando email de confirmación...");
         $confirmation_sent = eipsi_send_pool_email_confirmation( $participant_id, $email, $pool_id );
 
         if ( $confirmation_sent ) {
+            error_log("[EIPSI POOL AUTH] Email de confirmación enviado OK");
             wp_send_json_success( array(
                 'confirmation_sent' => true,
                 'message'           => __( '¡Listo! Te enviamos un email de confirmación. Revisá tu bandeja de entrada (y spam) para activar tu cuenta.', 'eipsi-forms' )
             ) );
         } else {
+            error_log("[EIPSI POOL AUTH] REGISTER ERROR: Falló envío de email");
             wp_send_json_error( array( 'message' => __( 'Error al enviar el email de confirmación. Por favor intentá de nuevo.', 'eipsi-forms' ) ), 500 );
         }
     }
@@ -823,18 +855,24 @@ El equipo de EIPSI", 'eipsi-forms' ),
  * @since 2.3.0
  */
 function eipsi_ajax_request_pool_assignment() {
+    error_log("[EIPSI POOL ASSIGN] === INICIO AJAX request_pool_assignment ===");
+    
     // -----------------------------------------------------------------
     // 1. Verificar nonce
     // -----------------------------------------------------------------
     check_ajax_referer( 'eipsi_pool_access', 'nonce' );
+    error_log("[EIPSI POOL ASSIGN] Nonce verificado OK");
 
     // -----------------------------------------------------------------
     // 2. Sanitizar inputs
     // -----------------------------------------------------------------
     $pool_id        = isset( $_POST['pool_id'] ) ? absint( $_POST['pool_id'] ) : 0;
     $participant_id = isset( $_POST['participant_id'] ) ? absint( $_POST['participant_id'] ) : 0;
+    
+    error_log("[EIPSI POOL ASSIGN] Inputs: pool_id={$pool_id}, participant_id={$participant_id}");
 
     if ( ! $pool_id || ! $participant_id ) {
+        error_log("[EIPSI POOL ASSIGN] ERROR: Datos inválidos");
         wp_send_json_error( array( 'message' => __( 'Datos inválidos.', 'eipsi-forms' ) ), 400 );
     }
 
@@ -844,6 +882,7 @@ function eipsi_ajax_request_pool_assignment() {
     global $wpdb;
     $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
 
+    error_log("[EIPSI POOL ASSIGN] Verificando asignación existente...");
     $existing = $wpdb->get_var( $wpdb->prepare(
         "SELECT id FROM {$assignments_table} 
          WHERE pool_id = %d AND participant_id = %d AND completed = 0
@@ -853,11 +892,13 @@ function eipsi_ajax_request_pool_assignment() {
     ) );
 
     if ( $existing ) {
+        error_log("[EIPSI POOL ASSIGN] ERROR: Ya tiene asignación existente (assignment_id={$existing})");
         wp_send_json_error( array( 
             'message' => __( 'Ya tenés un estudio asignado activo.', 'eipsi-forms' ),
             'code'    => 'already_assigned'
         ), 409 );
     }
+    error_log("[EIPSI POOL ASSIGN] No tiene asignación existente - OK");
 
     // -----------------------------------------------------------------
     // 4. Obtener método de asignación del pool
@@ -869,38 +910,48 @@ function eipsi_ajax_request_pool_assignment() {
     ) );
 
     if ( ! $pool ) {
+        error_log("[EIPSI POOL ASSIGN] ERROR: Pool no encontrado");
         wp_send_json_error( array( 'message' => __( 'Pool no encontrado.', 'eipsi-forms' ) ), 404 );
     }
 
     $method = $pool->method ?: 'seeded';
+    error_log("[EIPSI POOL ASSIGN] Método de asignación: {$method}");
 
     // -----------------------------------------------------------------
     // 5. Crear asignación usando el servicio
     // -----------------------------------------------------------------
+    error_log("[EIPSI POOL ASSIGN] Creando asignación...");
     $service = new EIPSI_Pool_Assignment_Service();
     $assignment = $service->assign_participant( $pool_id, $participant_id, $method );
 
     if ( ! $assignment || is_wp_error( $assignment ) ) {
         $error_message = is_wp_error( $assignment ) ? $assignment->get_error_message() : __( 'Error al asignar estudio.', 'eipsi-forms' );
+        error_log("[EIPSI POOL ASSIGN] ERROR: Falló asignación - {$error_message}");
         wp_send_json_error( array( 'message' => $error_message ), 500 );
     }
+    
+    error_log("[EIPSI POOL ASSIGN] Asignación creada: assignment_id={$assignment->assignment_id}, study_id={$assignment->study_id}");
 
     // -----------------------------------------------------------------
     // 6. Enviar email de nudge0 (bienvenida al estudio)
     // -----------------------------------------------------------------
     $study_name = $service->get_study_name( $assignment->study_id );
+    error_log("[EIPSI POOL ASSIGN] Study name: {$study_name}");
     
     // Trigger para enviar nudge0
+    error_log("[EIPSI POOL ASSIGN] Trigger eipsi_pool_assignment_created");
     do_action( 'eipsi_pool_assignment_created', $participant_id, $pool_id, $assignment->study_id );
 
     // -----------------------------------------------------------------
     // 7. Generar magic link al estudio
     // -----------------------------------------------------------------
     $magic_link = eipsi_generate_participant_magic_link( $participant_id, $assignment->study_id );
+    error_log("[EIPSI POOL ASSIGN] Magic link generado: {$magic_link}");
 
     // -----------------------------------------------------------------
     // 8. Responder éxito
     // -----------------------------------------------------------------
+    error_log("[EIPSI POOL ASSIGN] === ASIGNACIÓN COMPLETADA ===");
     wp_send_json_success( array(
         'assignment_id' => $assignment->assignment_id,
         'study_id'        => $assignment->study_id,

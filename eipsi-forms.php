@@ -2321,6 +2321,8 @@ add_action('template_redirect', 'eipsi_handle_pool_email_confirmation', 2);
  * @since 2.3.0
  */
 function eipsi_handle_pool_email_confirmation() {
+    error_log("[EIPSI POOL CONFIRM] === INICIO confirmación de email ===");
+    
     // Verificar si es una petición de confirmación
     if ( ! isset( $_GET['eipsi_action'] ) || $_GET['eipsi_action'] !== 'pool_confirm' ) {
         return;
@@ -2328,8 +2330,11 @@ function eipsi_handle_pool_email_confirmation() {
 
     $participant_id = isset( $_GET['participant_id'] ) ? absint( $_GET['participant_id'] ) : 0;
     $token          = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
+    
+    error_log("[EIPSI POOL CONFIRM] Datos recibidos: participant_id={$participant_id}, token=" . substr($token, 0, 10) . "...");
 
     if ( ! $participant_id || ! $token ) {
+        error_log("[EIPSI POOL CONFIRM] ERROR: participant_id o token faltantes");
         wp_die(
             __( 'Enlace de confirmación inválido. Por favor solicitá un nuevo enlace.', 'eipsi-forms' ),
             __( 'Confirmación inválida', 'eipsi-forms' ),
@@ -2341,20 +2346,26 @@ function eipsi_handle_pool_email_confirmation() {
     $stored_data = get_transient( 'eipsi_pool_confirm_' . $participant_id );
 
     if ( ! $stored_data || ! is_array( $stored_data ) ) {
+        error_log("[EIPSI POOL CONFIRM] ERROR: Transient no encontrado o inválido para participant_id={$participant_id}");
         wp_die(
             __( 'El enlace de confirmación expiró o ya fue utilizado. Por favor registrate nuevamente.', 'eipsi-forms' ),
             __( 'Enlace expirado', 'eipsi-forms' ),
             array( 'response' => 410 )
         );
     }
+    
+    error_log("[EIPSI POOL CONFIRM] Transient encontrado: pool_id={$stored_data['pool_id']}");
 
     if ( ! hash_equals( $stored_data['token'], $token ) ) {
+        error_log("[EIPSI POOL CONFIRM] ERROR: Token no coincide");
         wp_die(
             __( 'Enlace de confirmación inválido.', 'eipsi-forms' ),
             __( 'Token inválido', 'eipsi-forms' ),
             array( 'response' => 403 )
         );
     }
+    
+    error_log("[EIPSI POOL CONFIRM] Token válido - procediendo a confirmar email");
 
     // Token válido → confirmar email
     global $wpdb;
@@ -2362,16 +2373,23 @@ function eipsi_handle_pool_email_confirmation() {
     $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
 
     // Actualizar estado de confirmación
-    $wpdb->update(
+    $result = $wpdb->update(
         $participants_table,
         array( 'email_confirmed' => 1 ),
         array( 'id' => $participant_id ),
         array( '%d' ),
         array( '%d' )
     );
+    
+    if ($result === false) {
+        error_log("[EIPSI POOL CONFIRM] ERROR: Falló actualización de email_confirmed en DB");
+    } else {
+        error_log("[EIPSI POOL CONFIRM] Email confirmado OK para participant_id={$participant_id}");
+    }
 
     // Eliminar transient
     delete_transient( 'eipsi_pool_confirm_' . $participant_id );
+    error_log("[EIPSI POOL CONFIRM] Transient eliminado");
 
     // Obtener pool_id para redirección
     $pool_id = $stored_data['pool_id'] ?? 0;
@@ -2388,6 +2406,7 @@ function eipsi_handle_pool_email_confirmation() {
             
             // Generar magic link al dashboard
             $dashboard_url = eipsi_generate_pool_dashboard_link( $participant_id, $pool_id );
+            error_log("[EIPSI POOL CONFIRM] Redirigiendo al dashboard: {$dashboard_url}");
             
             // Redirigir al dashboard del pool
             wp_redirect( $dashboard_url );
