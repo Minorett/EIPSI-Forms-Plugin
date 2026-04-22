@@ -2307,9 +2307,97 @@ function eipsi_handle_pool_access() {
     // CASO B: Acceso a Estudio Individual (placeholder para Fase 2)
     if (!empty($study_code)) {
         // Por ahora, dejar que el sistema existente maneje esto
-        // En Fase 2 implementaremos el redireccionamiento post-asignación
+    }
+}
+
+// 3. Handler para confirmación de email en pools
+add_action('template_redirect', 'eipsi_handle_pool_email_confirmation', 2);
+
+/**
+ * Manejar confirmación de email para registro en pool.
+ * 
+ * URL: /?eipsi_action=pool_confirm&participant_id=xxx&token=xxx
+ *
+ * @since 2.3.0
+ */
+function eipsi_handle_pool_email_confirmation() {
+    // Verificar si es una petición de confirmación
+    if ( ! isset( $_GET['eipsi_action'] ) || $_GET['eipsi_action'] !== 'pool_confirm' ) {
         return;
     }
+
+    $participant_id = isset( $_GET['participant_id'] ) ? absint( $_GET['participant_id'] ) : 0;
+    $token          = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
+
+    if ( ! $participant_id || ! $token ) {
+        wp_die(
+            __( 'Enlace de confirmación inválido. Por favor solicitá un nuevo enlace.', 'eipsi-forms' ),
+            __( 'Confirmación inválida', 'eipsi-forms' ),
+            array( 'response' => 400 )
+        );
+    }
+
+    // Verificar token
+    $stored_data = get_transient( 'eipsi_pool_confirm_' . $participant_id );
+
+    if ( ! $stored_data || ! is_array( $stored_data ) ) {
+        wp_die(
+            __( 'El enlace de confirmación expiró o ya fue utilizado. Por favor registrate nuevamente.', 'eipsi-forms' ),
+            __( 'Enlace expirado', 'eipsi-forms' ),
+            array( 'response' => 410 )
+        );
+    }
+
+    if ( ! hash_equals( $stored_data['token'], $token ) ) {
+        wp_die(
+            __( 'Enlace de confirmación inválido.', 'eipsi-forms' ),
+            __( 'Token inválido', 'eipsi-forms' ),
+            array( 'response' => 403 )
+        );
+    }
+
+    // Token válido → confirmar email
+    global $wpdb;
+    $participants_table = $wpdb->prefix . 'eipsi_survey_participants';
+    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+
+    // Actualizar estado de confirmación
+    $wpdb->update(
+        $participants_table,
+        array( 'email_confirmed' => 1 ),
+        array( 'id' => $participant_id ),
+        array( '%d' ),
+        array( '%d' )
+    );
+
+    // Eliminar transient
+    delete_transient( 'eipsi_pool_confirm_' . $participant_id );
+
+    // Obtener pool_id para redirección
+    $pool_id = $stored_data['pool_id'] ?? 0;
+
+    // Obtener página del pool
+    if ( $pool_id ) {
+        $pool = $wpdb->get_row( $wpdb->prepare(
+            "SELECT page_id FROM {$pools_table} WHERE id = %d",
+            $pool_id
+        ) );
+
+        if ( $pool && $pool->page_id ) {
+            $pool_url = get_permalink( $pool->page_id );
+            
+            // Generar magic link al dashboard
+            $dashboard_url = eipsi_generate_pool_dashboard_link( $participant_id, $pool_id );
+            
+            // Redirigir al dashboard del pool
+            wp_redirect( $dashboard_url );
+            exit;
+        }
+    }
+
+    // Fallback: redirigir a home con mensaje
+    wp_redirect( add_query_arg( 'pool_confirmed', '1', home_url( '/' ) ) );
+    exit;
 }
 
 // 3. Handler para POST del formulario de pool

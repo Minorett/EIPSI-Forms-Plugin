@@ -99,6 +99,146 @@ add_action( 'wp_ajax_eipsi_join_pool', 'eipsi_ajax_join_pool' );
 add_action( 'wp_ajax_nopriv_eipsi_join_pool', 'eipsi_ajax_join_pool' );
 
 /**
+ * Handler AJAX: autenticación en pool (login o register).
+ *
+ * Inputs POST esperados:
+ *   - nonce      : string (nonce de seguridad)
+ *   - pool_id    : int
+ *   - email      : string
+ *   - auth_action: 'login' | 'register'
+ *
+ * Respuesta JSON para login:
+ *   { success: true, data: { 
+ *       redirect_url: string|null,  // Si tiene estudio asignado
+ *       magic_link_url: string|null, // Si no tiene estudio
+ *       message: string 
+ *   }}
+ *
+ * Respuesta JSON para register:
+ *   { success: true, data: { 
+ *       confirmation_sent: true,
+ *       message: string 
+ *   }}
+ *
+ * @since 2.3.0
+ */
+function eipsi_ajax_pool_auth() {
+    // -----------------------------------------------------------------
+    // 1. Verificar nonce
+    // -----------------------------------------------------------------
+    check_ajax_referer( 'eipsi_pool_access', 'nonce' );
+
+    // -----------------------------------------------------------------
+    // 2. Sanitizar inputs
+    // -----------------------------------------------------------------
+    $pool_id     = isset( $_POST['pool_id'] ) ? absint( $_POST['pool_id'] ) : 0;
+    $email       = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+    $auth_action = isset( $_POST['auth_action'] ) ? sanitize_text_field( wp_unslash( $_POST['auth_action'] ) ) : '';
+
+    if ( ! $pool_id ) {
+        wp_send_json_error( array( 'message' => __( 'ID de pool inválido.', 'eipsi-forms' ) ), 400 );
+    }
+
+    if ( ! is_email( $email ) ) {
+        wp_send_json_error( array( 'message' => __( 'Por favor ingresá un email válido.', 'eipsi-forms' ) ), 400 );
+    }
+
+    if ( ! in_array( $auth_action, array( 'login', 'register' ), true ) ) {
+        wp_send_json_error( array( 'message' => __( 'Acción inválida.', 'eipsi-forms' ) ), 400 );
+    }
+
+    global $wpdb;
+    $participants_table = $wpdb->prefix . 'eipsi_survey_participants';
+
+    // -----------------------------------------------------------------
+    // 3. Buscar participante por email
+    // -----------------------------------------------------------------
+    $participant = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$participants_table} WHERE email = %s",
+        $email
+    ) );
+
+    // -----------------------------------------------------------------
+    // 4. LOGIN: Participante debe existir
+    // -----------------------------------------------------------------
+    if ( $auth_action === 'login' ) {
+        if ( ! $participant ) {
+            wp_send_json_error( array( 
+                'message' => __( 'Email no registrado. Por favor creá una cuenta primero.', 'eipsi-forms' ),
+                'code'    => 'user_not_found'
+            ), 404 );
+        }
+
+        // Verificar si tiene estudio asignado activo
+        $has_study = eipsi_participant_has_active_pool_study( $participant->id, $pool_id );
+
+        if ( $has_study ) {
+            // Tiene estudio asignado → enviar magic link directo al estudio
+            $magic_link = eipsi_generate_participant_magic_link( $participant->id, $has_study->study_id );
+            
+            wp_send_json_success( array(
+                'redirect_url'   => $magic_link,
+                'study_name'   => $has_study->study_name,
+                'message'      => __( 'Preparando tu acceso al estudio...', 'eipsi-forms' )
+            ) );
+        } else {
+            // No tiene estudio asignado → enviar magic link al dashboard del pool
+            $magic_link = eipsi_generate_pool_dashboard_link( $participant->id, $pool_id );
+            
+            wp_send_json_success( array(
+                'magic_link_url' => $magic_link,
+                'message'        => __( 'Ingresá a tu dashboard del pool para asignarte un estudio.', 'eipsi-forms' )
+            ) );
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // 5. REGISTER: Crear nuevo participante
+    // -----------------------------------------------------------------
+    if ( $auth_action === 'register' ) {
+        if ( $participant ) {
+            wp_send_json_error( array( 
+                'message' => __( 'Este email ya está registrado. Por favor ingresá con tu cuenta.', 'eipsi-forms' ),
+                'code'    => 'email_exists'
+            ), 409 );
+        }
+
+        // Crear nuevo participante
+        $result = $wpdb->insert(
+            $participants_table,
+            array(
+                'email'         => $email,
+                'created_at'    => current_time( 'mysql' ),
+                'is_active'     => 1,
+                'email_confirmed' => 0, // Email pendiente de confirmación
+            ),
+            array( '%s', '%s', '%d', '%d' )
+        );
+
+        if ( $result === false ) {
+            wp_send_json_error( array( 'message' => __( 'Error al crear la cuenta. Por favor intentá de nuevo.', 'eipsi-forms' ) ), 500 );
+        }
+
+        $participant_id = $wpdb->insert_id;
+
+        // Enviar email de confirmación
+        $confirmation_sent = eipsi_send_pool_email_confirmation( $participant_id, $email, $pool_id );
+
+        if ( $confirmation_sent ) {
+            wp_send_json_success( array(
+                'confirmation_sent' => true,
+                'message'           => __( '¡Listo! Te enviamos un email de confirmación. Revisá tu bandeja de entrada (y spam) para activar tu cuenta.', 'eipsi-forms' )
+            ) );
+        } else {
+            wp_send_json_error( array( 'message' => __( 'Error al enviar el email de confirmación. Por favor intentá de nuevo.', 'eipsi-forms' ) ), 500 );
+        }
+    }
+}
+
+add_action( 'wp_ajax_eipsi_pool_auth', 'eipsi_ajax_pool_auth' );
+add_action( 'wp_ajax_nopriv_eipsi_pool_auth', 'eipsi_ajax_pool_auth' );
+
+/**
  * Handler AJAX: obtener estadísticas de un pool (solo admins).
  *
  * Inputs POST esperados:
@@ -480,3 +620,178 @@ function eipsi_ajax_export_pool_assignments() {
     exit;
 }
 add_action('wp_ajax_eipsi_export_pool_assignments', 'eipsi_ajax_export_pool_assignments');
+
+// =========================================================================
+// HELPER FUNCTIONS FOR POOL AUTHENTICATION
+// =========================================================================
+
+/**
+ * Verificar si un participante tiene un estudio activo asignado en un pool.
+ *
+ * @param int $participant_id ID del participante.
+ * @param int $pool_id         ID del pool.
+ * @return object|false Objeto con study_id y study_name, o false si no tiene.
+ */
+function eipsi_participant_has_active_pool_study( $participant_id, $pool_id ) {
+    global $wpdb;
+    
+    $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
+    $studies_table = $wpdb->prefix . 'eipsi_survey_studies';
+    
+    $assignment = $wpdb->get_row( $wpdb->prepare(
+        "SELECT pa.study_id, ps.name as study_name 
+         FROM {$assignments_table} pa
+         JOIN {$studies_table} ps ON pa.study_id = ps.id
+         WHERE pa.participant_id = %d 
+         AND pa.pool_id = %d
+         AND pa.completed = 0
+         ORDER BY pa.assigned_at DESC
+         LIMIT 1",
+        $participant_id,
+        $pool_id
+    ) );
+    
+    return $assignment ? $assignment : false;
+}
+
+/**
+ * Generar magic link para un participante hacia un estudio.
+ *
+ * @param int $participant_id ID del participante.
+ * @param int $study_id         ID del estudio.
+ * @return string URL del magic link.
+ */
+function eipsi_generate_participant_magic_link( $participant_id, $study_id ) {
+    $token = wp_create_nonce( 'eipsi_magic_' . $participant_id . '_' . $study_id );
+    $expires = time() + ( 24 * 60 * 60 ); // 24 horas
+    
+    // Guardar token en meta para validación
+    update_user_meta( $participant_id, 'eipsi_magic_token_' . $study_id, array(
+        'token'   => $token,
+        'expires' => $expires,
+    ) );
+    
+    $study_url = get_permalink( $study_id );
+    $magic_url = add_query_arg( array(
+        'magic_login'    => '1',
+        'participant_id' => $participant_id,
+        'study_id'       => $study_id,
+        'token'          => $token,
+    ), $study_url );
+    
+    return $magic_url;
+}
+
+/**
+ * Generar link al dashboard del pool para un participante.
+ *
+ * @param int $participant_id ID del participante.
+ * @param int $pool_id         ID del pool.
+ * @return string URL del dashboard del pool.
+ */
+function eipsi_generate_pool_dashboard_link( $participant_id, $pool_id ) {
+    // Obtener la página del pool
+    global $wpdb;
+    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    
+    $pool = $wpdb->get_row( $wpdb->prepare(
+        "SELECT page_id FROM {$pools_table} WHERE id = %d",
+        $pool_id
+    ) );
+    
+    if ( $pool && $pool->page_id ) {
+        $pool_url = get_permalink( $pool->page_id );
+    } else {
+        // Fallback: buscar página con el shortcode del pool
+        $pool_url = home_url( '/pool-dashboard/' );
+    }
+    
+    $token = wp_create_nonce( 'eipsi_pool_access_' . $participant_id . '_' . $pool_id );
+    
+    $dashboard_url = add_query_arg( array(
+        'pool_access'    => '1',
+        'participant_id' => $participant_id,
+        'pool_id'        => $pool_id,
+        'token'          => $token,
+    ), $pool_url );
+    
+    return $dashboard_url;
+}
+
+/**
+ * Enviar email de confirmación para registro en pool.
+ *
+ * @param int    $participant_id ID del participante.
+ * @param string $email            Email del participante.
+ * @param int    $pool_id          ID del pool.
+ * @return bool True si se envió correctamente.
+ */
+function eipsi_send_pool_email_confirmation( $participant_id, $email, $pool_id ) {
+    // Incluir el servicio de confirmación si existe
+    if ( ! class_exists( 'EIPSI_Email_Confirmation_Service' ) ) {
+        require_once dirname( __FILE__ ) . '/services/class-email-confirmation-service.php';
+    }
+    
+    // Generar token de confirmación
+    $token = wp_create_nonce( 'eipsi_pool_confirm_' . $participant_id . '_' . time() );
+    
+    // Guardar token en la tabla de participantes (o crear tabla de tokens si no existe)
+    global $wpdb;
+    $participants_table = $wpdb->prefix . 'eipsi_survey_participants';
+    
+    // Guardar token en meta temporal (usando transient o opción)
+    set_transient( 'eipsi_pool_confirm_' . $participant_id, array(
+        'token'     => $token,
+        'pool_id'   => $pool_id,
+        'email'     => $email,
+        'expires'   => time() + ( 24 * 60 * 60 ), // 24 horas
+    ), 24 * 60 * 60 );
+    
+    // Obtener info del pool
+    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    $pool = $wpdb->get_row( $wpdb->prepare(
+        "SELECT name, page_id FROM {$pools_table} WHERE id = %d",
+        $pool_id
+    ) );
+    
+    $pool_name = $pool ? $pool->name : __( 'Pool de Estudios', 'eipsi-forms' );
+    
+    // Construir URL de confirmación
+    $confirm_url = add_query_arg( array(
+        'eipsi_action'     => 'pool_confirm',
+        'participant_id'  => $participant_id,
+        'token'           => $token,
+    ), home_url( '/' ) );
+    
+    // Asunto y mensaje
+    $subject = sprintf( __( 'Confirmá tu email para participar en %s', 'eipsi-forms' ), $pool_name );
+    
+    $message = sprintf(
+        __( "Hola,
+
+Para completar tu registro en %s, por favor confirmá tu email haciendo clic en el siguiente enlace:
+
+%s
+
+Este enlace expira en 24 horas.
+
+Si no solicitaste este registro, podés ignorar este mensaje.
+
+Saludos,
+El equipo de EIPSI", 'eipsi-forms' ),
+        $pool_name,
+        $confirm_url
+    );
+    
+    $headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+    
+    $sent = wp_mail( $email, $subject, $message, $headers );
+    
+    if ( $sent ) {
+        error_log( "[EIPSI Pool] Email de confirmación enviado a {$email} para pool {$pool_id}" );
+    } else {
+        error_log( "[EIPSI Pool] ERROR al enviar email de confirmación a {$email}" );
+    }
+    
+    return $sent;
+}

@@ -368,9 +368,115 @@ class EIPSI_Pool_Block_Renderer {
                 </div>
 
                 <div class="eipsi-pool-login-box">
-                    <h3><?php esc_html_e('Iniciá sesión para participar', 'eipsi-forms'); ?></h3>
-                    <p class="eipsi-pool-login-subtitle"><?php esc_html_e('Necesitás estar autenticado para unirte a este pool de estudios.', 'eipsi-forms'); ?></p>
-                    <?php echo do_shortcode('[eipsi_survey_login]'); ?>
+                    <!-- Header -->
+                    <div class="eipsi-pool-login-header">
+                        <h3><?php esc_html_e('Acceder al Pool de Estudios', 'eipsi-forms'); ?></h3>
+                        <p class="eipsi-pool-login-subtitle"><?php esc_html_e('Ingresá con tu email o creá una cuenta para participar.', 'eipsi-forms'); ?></p>
+                    </div>
+                    
+                    <!-- Tabs -->
+                    <div class="eipsi-pool-login-tabs">
+                        <button type="button" class="eipsi-pool-tab active" data-tab="login">
+                            <?php esc_html_e('Ingresar', 'eipsi-forms'); ?>
+                        </button>
+                        <button type="button" class="eipsi-pool-tab" data-tab="register">
+                            <?php esc_html_e('Crear cuenta', 'eipsi-forms'); ?>
+                        </button>
+                    </div>
+                    
+                    <!-- Login Pane -->
+                    <div class="eipsi-pool-tab-content active" data-pane="login">
+                        <form id="eipsi-pool-login-form-<?php echo esc_attr($pool_id); ?>" 
+                              class="eipsi-pool-auth-form eipsi-pool-login-form" 
+                              data-pool-id="<?php echo esc_attr($pool_id); ?>"
+                              data-action="login">
+                            
+                            <div class="eipsi-pool-form-group">
+                                <label for="pool-login-email-<?php echo esc_attr($pool_id); ?>">
+                                    <?php esc_html_e('Tu email', 'eipsi-forms'); ?>
+                                    <span class="required">*</span>
+                                </label>
+                                <input type="email" 
+                                       id="pool-login-email-<?php echo esc_attr($pool_id); ?>" 
+                                       name="email" 
+                                       required
+                                       placeholder="<?php esc_attr_e('tu@email.com', 'eipsi-forms'); ?>"
+                                       autocomplete="email">
+                            </div>
+                            
+                            <button type="submit" class="eipsi-pool-submit-btn">
+                                <span class="btn-text"><?php esc_html_e('Ingresar', 'eipsi-forms'); ?></span>
+                                <span class="btn-spinner" style="display:none;">⏳</span>
+                            </button>
+                            
+                            <p class="eipsi-pool-form-footer">
+                                <?php esc_html_e('¿No tenés cuenta?', 'eipsi-forms'); ?> 
+                                <a href="#" class="eipsi-pool-switch-tab" data-target="register"><?php esc_html_e('Creá una aquí', 'eipsi-forms'); ?></a>
+                            </p>
+                        </form>
+                    </div>
+                    
+                    <!-- Register Pane -->
+                    <div class="eipsi-pool-tab-content" data-pane="register">
+                        <form id="eipsi-pool-register-form-<?php echo esc_attr($pool_id); ?>" 
+                              class="eipsi-pool-auth-form eipsi-pool-register-form" 
+                              data-pool-id="<?php echo esc_attr($pool_id); ?>"
+                              data-action="register">
+                            
+                            <div class="eipsi-pool-form-group">
+                                <label for="pool-register-email-<?php echo esc_attr($pool_id); ?>">
+                                    <?php esc_html_e('Tu email', 'eipsi-forms'); ?>
+                                    <span class="required">*</span>
+                                </label>
+                                <input type="email" 
+                                       id="pool-register-email-<?php echo esc_attr($pool_id); ?>" 
+                                       name="email" 
+                                       required
+                                       placeholder="<?php esc_attr_e('tu@email.com', 'eipsi-forms'); ?>"
+                                       autocomplete="email">
+                                <small class="field-hint"><?php esc_html_e('Te enviaremos un enlace de confirmación.', 'eipsi-forms'); ?></small>
+                            </div>
+                            
+                            <div class="eipsi-pool-form-options">
+                                <label class="eipsi-pool-checkbox-label">
+                                    <input type="checkbox" name="accept_terms" value="1" required>
+                                    <span><?php 
+                                        printf(
+                                            wp_kses(
+                                                __('Acepto los <a href="%1$s" target="_blank">términos y condiciones</a> y la <a href="%2$s" target="_blank">política de privacidad</a>', 'eipsi-forms'),
+                                                array('a' => array('href' => array(), 'target' => array()))
+                                            ),
+                                            esc_url(get_privacy_policy_url() ?: '#'),
+                                            esc_url(get_privacy_policy_url() ?: '#')
+                                        );
+                                    ?></span>
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="eipsi-pool-submit-btn">
+                                <span class="btn-text"><?php esc_html_e('Crear cuenta', 'eipsi-forms'); ?></span>
+                                <span class="btn-spinner" style="display:none;">⏳</span>
+                            </button>
+                            
+                            <p class="eipsi-pool-form-footer">
+                                <?php esc_html_e('¿Ya tenés cuenta?', 'eipsi-forms'); ?> 
+                                <a href="#" class="eipsi-pool-switch-tab" data-target="login"><?php esc_html_e('Ingresá aquí', 'eipsi-forms'); ?></a>
+                            </p>
+                        </form>
+                    </div>
+                    
+                    <!-- Messages -->
+                    <div class="eipsi-pool-login-message" style="display:none;" role="alert"></div>
+                    
+                    <!-- Success State (hidden initially) -->
+                    <div class="eipsi-pool-success-state" style="display:none;" role="status">
+                        <div class="eipsi-pool-success-icon">✓</div>
+                        <h4><?php esc_html_e('¡Listo!', 'eipsi-forms'); ?></h4>
+                        <p class="eipsi-pool-success-text"></p>
+                        <a href="#" class="eipsi-pool-redirect-link" style="display:none;">
+                            <?php esc_html_e('Ir a mi estudio →', 'eipsi-forms'); ?>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -437,6 +543,238 @@ class EIPSI_Pool_Block_Renderer {
                 color: #64748b;
                 margin: 0 0 1.5rem 0;
                 text-align: center;
+            }
+            .eipsi-pool-form-group {
+                margin-bottom: 1.25rem;
+            }
+            .eipsi-pool-form-group label {
+                display: block;
+                font-size: 14px;
+                font-weight: 500;
+                color: #374151;
+                margin-bottom: 0.5rem;
+            }
+            .eipsi-pool-form-group .required {
+                color: #ef4444;
+                margin-left: 2px;
+            }
+            .eipsi-pool-form-group input[type="email"] {
+                width: 100%;
+                padding: 0.75rem 1rem;
+                font-size: 16px;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                box-sizing: border-box;
+                transition: border-color 0.2s, box-shadow 0.2s;
+            }
+            .eipsi-pool-form-group input[type="email"]:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+            .eipsi-pool-form-group .field-hint {
+                display: block;
+                font-size: 12px;
+                color: #6b7280;
+                margin-top: 0.375rem;
+            }
+            .eipsi-pool-checkbox-label {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.5rem;
+                font-size: 13px;
+                color: #4b5563;
+                cursor: pointer;
+            }
+            .eipsi-pool-checkbox-label input {
+                margin-top: 2px;
+            }
+            .eipsi-pool-checkbox-label a {
+                color: #3b82f6;
+                text-decoration: underline;
+            }
+            .eipsi-pool-submit-btn {
+                width: 100%;
+                padding: 0.875rem 1.5rem;
+                margin-top: 1rem;
+                font-size: 16px;
+                font-weight: 600;
+                color: #ffffff;
+                background: #3b82f6;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: background 0.2s, transform 0.1s;
+            }
+            .eipsi-pool-submit-btn:hover {
+                background: #2563eb;
+            }
+            .eipsi-pool-submit-btn:active {
+                transform: translateY(1px);
+            }
+            .eipsi-pool-submit-btn:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+            .eipsi-pool-login-message {
+                margin-top: 1rem;
+                padding: 0.875rem 1rem;
+                border-radius: 8px;
+                font-size: 14px;
+                text-align: center;
+            }
+            .eipsi-pool-login-message.success {
+                background: #d1fae5;
+                color: #065f46;
+                border: 1px solid #a7f3d0;
+            }
+            .eipsi-pool-login-message.error {
+                background: #fee2e2;
+                color: #991b1b;
+                border: 1px solid #fecaca;
+            }
+            /* Login Form Specific Styles */
+            .eipsi-pool-login-header {
+                text-align: center;
+                margin-bottom: 1.5rem;
+            }
+            .eipsi-pool-login-header h3 {
+                margin: 0 0 0.5rem 0;
+                font-size: 1.25rem;
+                color: #1e293b;
+            }
+            .eipsi-pool-login-tabs {
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 1.5rem;
+                border-bottom: 2px solid #e5e7eb;
+            }
+            .eipsi-pool-tab {
+                flex: 1;
+                padding: 0.75rem 1rem;
+                font-size: 14px;
+                font-weight: 500;
+                color: #6b7280;
+                background: none;
+                border: none;
+                border-bottom: 2px solid transparent;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .eipsi-pool-tab.active {
+                color: #3b82f6;
+                border-bottom-color: #3b82f6;
+            }
+            .eipsi-pool-tab:hover:not(.active) {
+                color: #4b5563;
+                background: #f9fafb;
+            }
+            .eipsi-pool-tab-content {
+                display: none;
+            }
+            .eipsi-pool-tab-content.active {
+                display: block;
+            }
+            .eipsi-pool-form-group {
+                margin-bottom: 1.25rem;
+            }
+            .eipsi-pool-form-group label {
+                display: block;
+                font-size: 14px;
+                font-weight: 500;
+                color: #374151;
+                margin-bottom: 0.5rem;
+            }
+            .eipsi-pool-form-group .required {
+                color: #ef4444;
+                margin-left: 2px;
+            }
+            .eipsi-pool-form-group input[type="email"] {
+                width: 100%;
+                padding: 0.75rem 1rem;
+                font-size: 16px;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                box-sizing: border-box;
+                transition: border-color 0.2s, box-shadow 0.2s;
+            }
+            .eipsi-pool-form-group input[type="email"]:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+            .eipsi-pool-form-group .field-hint {
+                display: block;
+                font-size: 12px;
+                color: #6b7280;
+                margin-top: 0.375rem;
+            }
+            .eipsi-pool-checkbox-label {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.5rem;
+                font-size: 13px;
+                color: #4b5563;
+                cursor: pointer;
+            }
+            .eipsi-pool-checkbox-label input {
+                margin-top: 2px;
+            }
+            .eipsi-pool-checkbox-label a {
+                color: #3b82f6;
+                text-decoration: underline;
+            }
+            .eipsi-pool-form-footer {
+                margin-top: 1rem;
+                text-align: center;
+                font-size: 13px;
+                color: #6b7280;
+            }
+            .eipsi-pool-form-footer a {
+                color: #3b82f6;
+                text-decoration: none;
+            }
+            .eipsi-pool-form-footer a:hover {
+                text-decoration: underline;
+            }
+            /* Success State */
+            .eipsi-pool-success-state {
+                text-align: center;
+                padding: 2rem;
+            }
+            .eipsi-pool-success-icon {
+                width: 64px;
+                height: 64px;
+                margin: 0 auto 1rem;
+                background: #10b981;
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 32px;
+            }
+            .eipsi-pool-success-state h4 {
+                margin: 0 0 0.5rem 0;
+                font-size: 1.25rem;
+                color: #1e293b;
+            }
+            .eipsi-pool-success-text {
+                color: #6b7280;
+                margin-bottom: 1.5rem;
+            }
+            .eipsi-pool-redirect-link {
+                display: inline-block;
+                padding: 0.75rem 1.5rem;
+                background: #3b82f6;
+                color: white;
+                text-decoration: none;
+                border-radius: 8px;
+                font-weight: 500;
+                transition: background 0.2s;
+            }
+            .eipsi-pool-redirect-link:hover {
+                background: #2563eb;
             }
         </style>
         <?php

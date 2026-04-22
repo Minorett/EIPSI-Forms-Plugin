@@ -14,10 +14,152 @@
 	'use strict';
 
 	/**
-	 * Inicializar todos los formularios de pool join presentes en la página.
+	 * Inicializar todos los formularios de pool presentes en la página.
 	 */
 	function init() {
 		$( document ).on( 'submit', '.eipsi-pool-join-form', handleSubmit );
+		$( document ).on( 'submit', '.eipsi-pool-auth-form', handlePoolAuthSubmit );
+		$( document ).on( 'click', '.eipsi-pool-tab', switchTab );
+		$( document ).on( 'click', '.eipsi-pool-switch-tab', switchTabLink );
+	}
+
+	/**
+	 * Handler para clic en tabs.
+	 *
+	 * @param {Event} e Evento click.
+	 */
+	function switchTab( e ) {
+		const $tab = $( this );
+		const target = $tab.data( 'tab' );
+		const $container = $tab.closest( '.eipsi-pool-login-box' );
+
+		// Activar tab
+		$container.find( '.eipsi-pool-tab' ).removeClass( 'active' );
+		$tab.addClass( 'active' );
+
+		// Mostrar pane correspondiente
+		$container.find( '.eipsi-pool-tab-content' ).removeClass( 'active' );
+		$container.find( '[data-pane="' + target + '"]' ).addClass( 'active' );
+	}
+
+	/**
+	 * Handler para links de cambio de tab.
+	 *
+	 * @param {Event} e Evento click.
+	 */
+	function switchTabLink( e ) {
+		e.preventDefault();
+		const target = $( this ).data( 'target' );
+		const $container = $( this ).closest( '.eipsi-pool-login-box' );
+
+		// Activar tab
+		$container.find( '.eipsi-pool-tab' ).removeClass( 'active' );
+		$container.find( '[data-tab="' + target + '"]' ).addClass( 'active' );
+
+		// Mostrar pane correspondiente
+		$container.find( '.eipsi-pool-tab-content' ).removeClass( 'active' );
+		$container.find( '[data-pane="' + target + '"]' ).addClass( 'active' );
+	}
+
+	/**
+	 * Handler para login/register en el bloque pool.
+	 *
+	 * @param {Event} e Evento submit.
+	 */
+	function handlePoolAuthSubmit( e ) {
+		e.preventDefault();
+
+		const $form = $( this );
+		const action = $form.data( 'action' );
+		const poolId = $form.data( 'pool-id' );
+		const $container = $form.closest( '.eipsi-pool-login-box' );
+		const $btn = $form.find( '.eipsi-pool-submit-btn' );
+		const $message = $container.find( '.eipsi-pool-login-message' );
+		const $successState = $container.find( '.eipsi-pool-success-state' );
+		const email = $form.find( 'input[name="email"]' ).val().trim();
+
+		// Validación
+		if ( ! email || ! isValidEmail( email ) ) {
+			showMessage(
+				$message,
+				getI18n( 'error_email_invalid', 'Por favor ingresá un email válido.' ),
+				'error'
+			);
+			$form.find( 'input[name="email"]' ).focus();
+			return;
+		}
+
+		// Para registro, verificar términos
+		if ( action === 'register' ) {
+			if ( ! $form.find( 'input[name="accept_terms"]' ).is( ':checked' ) ) {
+				showMessage(
+					$message,
+					getI18n( 'error_terms_required', 'Debés aceptar los términos y condiciones.' ),
+					'error'
+				);
+				return;
+			}
+		}
+
+		setLoading( $btn, true );
+		hideMessage( $message );
+
+		const data = {
+			action: 'eipsi_pool_auth',
+			nonce: window.eipsiPoolJoin && eipsiPoolJoin.nonce ? eipsiPoolJoin.nonce : '',
+			pool_id: poolId,
+			email: email,
+			auth_action: action,
+		};
+
+		$.ajax( {
+			url: eipsiPoolJoin.ajaxUrl,
+			method: 'POST',
+			dataType: 'json',
+			data,
+		} )
+			.done( function ( response ) {
+				if ( response.success ) {
+					if ( action === 'login' && response.data.redirect_url ) {
+						// Login exitoso con estudio asignado -> redirigir
+						window.location.href = response.data.redirect_url;
+					} else if ( action === 'login' && response.data.magic_link_url ) {
+						// Login exitoso sin estudio asignado -> mostrar enlace
+						$container.find( '.eipsi-pool-tab-content' ).hide();
+						$successState.find( '.eipsi-pool-success-text' ).text(
+							getI18n( 'login_success', '¡Listo! Te enviamos un email con el enlace de acceso.' )
+						);
+						if ( response.data.magic_link_url ) {
+							$successState.find( '.eipsi-pool-redirect-link' )
+								.attr( 'href', response.data.magic_link_url )
+								.show();
+						}
+						$successState.show();
+					} else if ( action === 'register' ) {
+						// Registro exitoso -> mostrar mensaje de confirmación
+						$container.find( '.eipsi-pool-tab-content' ).hide();
+						$successState.find( '.eipsi-pool-success-text' ).text(
+							getI18n( 'register_success', '¡Listo! Te enviamos un email de confirmación. Revisá tu bandeja de entrada (y spam).' )
+						);
+						$successState.find( '.eipsi-pool-redirect-link' ).hide();
+						$successState.show();
+					}
+				} else {
+					const msg = response.data && response.data.message
+						? response.data.message
+						: getI18n( 'error_generic', 'Ocurrió un error. Por favor, intentá de nuevo.' );
+					showMessage( $message, msg, 'error' );
+					setLoading( $btn, false );
+				}
+			} )
+			.fail( function () {
+				showMessage(
+					$message,
+					getI18n( 'error_generic', 'No se pudo conectar con el servidor. Revisá tu conexión.' ),
+					'error'
+				);
+				setLoading( $btn, false );
+			} );
 	}
 
 	/**
@@ -102,6 +244,101 @@
 	}
 
 	/**
+	 * Handler del formulario de login simplificado del pool (block shortcode).
+	 *
+	 * @param {Event} e Evento submit.
+	 */
+	function handleLoginSubmit( e ) {
+		e.preventDefault();
+
+		const $form = $( this );
+		const $btn = $form.find( '.eipsi-pool-submit-btn' );
+		const $message = $form.closest( '.eipsi-pool-login-form-wrapper' ).find( '.eipsi-pool-login-message' );
+		const poolId = $form.data( 'pool-id' );
+		const email = $form.find( 'input[name="email"]' ).val().trim();
+
+		// Validación básica en cliente
+		if ( ! email || ! isValidEmail( email ) ) {
+			showMessage(
+				$message,
+				getI18n(
+					'error_email_invalid',
+					'Por favor ingresá un email válido.'
+				),
+				'error'
+			);
+			$form.find( 'input[name="email"]' ).focus();
+			return;
+		}
+
+		// Verificar términos
+		if ( ! $form.find( 'input[name="accept_terms"]' ).is( ':checked' ) ) {
+			showMessage(
+				$message,
+				getI18n(
+					'error_terms_required',
+					'Debés aceptar los términos y condiciones para continuar.'
+				),
+				'error'
+			);
+			return;
+		}
+
+		// Estado de carga
+		setLoading( $btn, true );
+		hideMessage( $message );
+
+		const data = {
+			action: 'eipsi_join_pool',
+			nonce: eipsiPoolJoin.nonce,
+			pool_id: poolId,
+			email: email,
+		};
+
+		$.ajax( {
+			url: eipsiPoolJoin.ajaxUrl,
+			method: 'POST',
+			dataType: 'json',
+			data,
+		} )
+			.done( function ( response ) {
+				if ( response.success ) {
+					// Mostrar mensaje de éxito: revisá tu email
+					showMessage(
+						$message,
+						getI18n(
+							'login_success',
+							'¡Listo! Te enviamos un email con un enlace para acceder. Revisá tu bandeja de entrada (y spam).'
+						),
+						'success'
+					);
+					$form.hide();
+				} else {
+					const msg =
+						response.data && response.data.message
+							? response.data.message
+							: getI18n(
+									'error_generic',
+									'Ocurrió un error. Por favor, intentá de nuevo.'
+							  );
+					showMessage( $message, msg, 'error' );
+					setLoading( $btn, false );
+				}
+			} )
+			.fail( function () {
+				showMessage(
+					$message,
+					getI18n(
+						'error_generic',
+						'No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.'
+					),
+					'error'
+				);
+				setLoading( $btn, false );
+			} );
+	}
+
+	/**
 	 * Manejar respuesta exitosa.
 	 *
 	 * @param {jQuery}  $form      Formulario.
@@ -143,75 +380,105 @@
 		$success.trigger( 'focus' );
 	}
 
-	// -------------------------------------------------------------------------
-	// Helpers
-	// -------------------------------------------------------------------------
+	$success.slideDown( 300 );
+	$success.trigger( 'focus' );
+}
 
-	/**
-	 * Activar o desactivar estado de carga en el botón.
-	 *
-	 * @param {jQuery}  $btn    Botón.
-	 * @param {boolean} loading True = cargando.
-	 */
-	function setLoading( $btn, loading ) {
-		if ( loading ) {
-			$btn.attr( 'disabled', true ).text(
-				$btn.data( 'label-loading' ) ||
-					getI18n( 'loading', 'Asignando...' )
-			);
-		} else {
-			$btn.removeAttr( 'disabled' ).text(
-				$btn.data( 'label-default' ) || 'Comenzar'
-			);
-		}
+// -------------------------------------------------------------------------
+// Helpers
+// -------------------------------------------------------------------------
+
+/**
+ * Alternar estado de carga del botón.
+ *
+ * @param {jQuery} $btn     Botón.
+ * @param {boolean} loading Estado de carga.
+ */
+function setLoading( $btn, loading ) {
+	const $text = $btn.find( '.btn-text' );
+	const $spinner = $btn.find( '.btn-spinner' );
+	const defaultText = $btn.data( 'label-default' ) || $btn.text();
+
+	if ( loading ) {
+		$btn.prop( 'disabled', true );
+		$text.hide();
+		$spinner.show();
+	} else {
+		$btn.prop( 'disabled', false );
+		$text.show().text( defaultText );
+		$spinner.hide();
 	}
+}
 
-	/**
-	 * Mostrar mensaje de error o éxito inline.
-	 *
-	 * @param {jQuery} $el  Contenedor del mensaje.
-	 * @param {string} msg  Texto a mostrar.
-	 * @param {string} type 'error' | 'success'
-	 */
-	function showMessage( $el, msg, type ) {
-		$el.removeClass( 'eipsi-pool-msg-error eipsi-pool-msg-success' )
-			.addClass( 'eipsi-pool-msg-' + ( type || 'error' ) )
-			.text( msg )
-			.slideDown( 200 );
+/**
+ * Validar formato de email.
+ *
+ * @param {string} email Email a validar.
+ * @return {boolean} True si es válido.
+ */
+function isValidEmail( email ) {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( email );
+}
+
+/**
+ * Mostrar mensaje en el contenedor.
+ *
+ * @param {jQuery} $container Contenedor del mensaje.
+ * @param {string} message    Mensaje a mostrar.
+ * @param {string} type       Tipo: 'success' o 'error'.
+ */
+function showMessage( $container, message, type ) {
+	$container
+		.removeClass( 'success error' )
+		.addClass( type )
+		.html( message )
+		.show();
+}
+
+/**
+ * Ocultar mensaje.
+ *
+ * @param {jQuery} $container Contenedor del mensaje.
+ */
+function hideMessage( $container ) {
+	$container.hide().removeClass( 'success error' );
+}
+
+/**
+ * Alternar estado de carga del botón.
+ *
+ * @param {jQuery} $btn     Botón.
+ * @param {boolean} loading Estado de carga.
+ */
+function setLoading( $btn, loading ) {
+	const $text = $btn.find( '.btn-text' );
+	const $spinner = $btn.find( '.btn-spinner' );
+	const defaultText = $btn.data( 'label-default' ) || $btn.text();
+
+	if ( loading ) {
+		$btn.prop( 'disabled', true );
+		$text.hide();
+		$spinner.show();
+	} else {
+		$btn.prop( 'disabled', false );
+		$text.show().text( defaultText );
+		$spinner.hide();
 	}
+}
 
-	/**
-	 * Ocultar mensaje inline.
-	 *
-	 * @param {jQuery} $el Contenedor del mensaje.
-	 */
-	function hideMessage( $el ) {
-		$el.hide().text( '' );
-	}
+/**
+ * Obtener string i18n con fallback.
+ *
+ * @param {string} key      Clave en eipsiPoolJoin.i18n.
+ * @param {string} fallback Texto de fallback si la clave no existe.
+ * @return {string} Texto traducido o fallback.
+ */
+function getI18n( key, fallback ) {
+	return window.eipsiPoolJoin && eipsiPoolJoin.i18n && eipsiPoolJoin.i18n[ key ]
+		? eipsiPoolJoin.i18n[ key ]
+		: fallback;
+}
 
-	/**
-	 * Validar formato de email de forma básica.
-	 *
-	 * @param {string} email Email a validar.
-	 * @return {boolean} True si el email tiene formato válido.
-	 */
-	function isValidEmail( email ) {
-		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( email );
-	}
-
-	/**
-	 * Obtener string i18n con fallback.
-	 *
-	 * @param {string} key      Clave en eipsiPoolJoin.i18n.
-	 * @param {string} fallback Texto de fallback si la clave no existe.
-	 * @return {string} Texto traducido o fallback.
-	 */
-	function getI18n( key, fallback ) {
-		return eipsiPoolJoin && eipsiPoolJoin.i18n && eipsiPoolJoin.i18n[ key ]
-			? eipsiPoolJoin.i18n[ key ]
-			: fallback;
-	}
-
-	// Arrancar cuando el DOM esté listo
-	$( init );
+// Arrancar cuando el DOM esté listo
+jQuery( init );
 } )( jQuery );
