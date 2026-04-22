@@ -293,12 +293,20 @@ function wp_ajax_eipsi_send_reminder_handler() {
 
         if ($study_id && class_exists('EIPSI_Email_Service')) {
             $pending = EIPSI_Email_Service::get_pending_participants($study_id, $wave_id);
-            $participant_ids = array_map(function($p) { return $p->id; }, $pending);
+            $candidate_ids = array_map(function($p) { return $p->id; }, $pending);
+            
+            // Filter by eligibility: only those who completed previous wave
+            require_once dirname(__FILE__) . '/services/class-wave-eligibility-service.php';
+            $participant_ids = EIPSI_Wave_Eligibility_Service::filter_pending_by_eligibility(
+                $wave_id,
+                $study_id,
+                $candidate_ids
+            );
         }
     }
 
     if (empty($participant_ids)) {
-        wp_send_json_error('No participants to send reminders to');
+        wp_send_json_error('No eligible participants to send reminders to (previous wave not completed)');
     }
 
     $result = array(

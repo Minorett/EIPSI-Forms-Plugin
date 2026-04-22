@@ -398,9 +398,11 @@ function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
 
         $survey_id = (int) $wave->study_id;
 
+        // Include eligibility service
+        require_once dirname(__FILE__) . '/services/class-wave-eligibility-service.php';
+
         // Get participants with PENDING assignments for THIS SPECIFIC WAVE only
-        // Only sends to those who actually need to complete this wave
-        $participant_ids = $wpdb->get_col($wpdb->prepare(
+        $candidate_ids = $wpdb->get_col($wpdb->prepare(
             "SELECT DISTINCT sa.participant_id 
              FROM {$wpdb->prefix}survey_assignments sa
              JOIN {$wpdb->prefix}survey_participants p ON sa.participant_id = p.id
@@ -412,12 +414,24 @@ function wp_ajax_eipsi_send_wave_reminder_manual_handler() {
             $survey_id
         ));
 
-        if (empty($participant_ids)) {
+        if (empty($candidate_ids)) {
             error_log("[EIPSI Reminder] No participants found for wave {$wave_id}, study {$survey_id}");
             wp_send_json_error('No active participants found for this wave');
         }
+
+        // Filter by eligibility: only those who completed previous wave
+        $participant_ids = EIPSI_Wave_Eligibility_Service::filter_pending_by_eligibility(
+            $wave_id,
+            $survey_id,
+            $candidate_ids
+        );
+
+        if (empty($participant_ids)) {
+            error_log("[EIPSI Reminder] No eligible participants found for wave {$wave_id}, study {$survey_id}");
+            wp_send_json_error('No eligible participants found for this wave (previous wave not completed)');
+        }
         
-        error_log("[EIPSI Reminder] Found " . count($participant_ids) . " participants for wave {$wave_id}");
+        error_log("[EIPSI Reminder] Found " . count($participant_ids) . " eligible participants for wave {$wave_id} (filtered from " . count($candidate_ids) . " candidates)");
 
         // Send reminders via Email Service
         $result = EIPSI_Email_Service::send_manual_reminders($survey_id, $participant_ids, $wave_id);
