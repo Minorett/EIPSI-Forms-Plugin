@@ -21,6 +21,7 @@
 		$( document ).on( 'submit', '.eipsi-pool-auth-form', handlePoolAuthSubmit );
 		$( document ).on( 'click', '.eipsi-pool-tab', switchTab );
 		$( document ).on( 'click', '.eipsi-pool-switch-tab', switchTabLink );
+		$( document ).on( 'click', '.eipsi-pool-request-assignment-btn', handleRequestAssignment );
 	}
 
 	/**
@@ -334,6 +335,70 @@
 					),
 					'error'
 				);
+				setLoading( $btn, false );
+			} );
+	}
+
+	/**
+	 * Handler para solicitar asignación desde el dashboard del pool.
+	 *
+	 * @param {Event} e Evento click.
+	 */
+	function handleRequestAssignment( e ) {
+		e.preventDefault();
+
+		const $btn = $( this );
+		const poolId = $btn.data( 'pool-id' );
+		const participantId = $btn.data( 'participant-id' );
+		const $message = $btn.closest( '.eipsi-pool-dashboard-content' ).find( '.eipsi-pool-assignment-message' );
+
+		// Estado de carga
+		setLoading( $btn, true );
+		$message.hide().removeClass( 'success error' );
+
+		const data = {
+			action: 'eipsi_request_pool_assignment',
+			nonce: window.eipsiPoolJoin && eipsiPoolJoin.nonce ? eipsiPoolJoin.nonce : '',
+			pool_id: poolId,
+			participant_id: participantId,
+		};
+
+		$.ajax( {
+			url: eipsiPoolJoin.ajaxUrl,
+			method: 'POST',
+			dataType: 'json',
+			data,
+		} )
+			.done( function ( response ) {
+				if ( response.success ) {
+					// Asignación exitosa - mostrar mensaje y redirigir
+					$message
+						.html( response.data.message + '<br>Preparando tu acceso al estudio...' )
+						.addClass( 'success' )
+						.show();
+
+					// Redirigir al estudio después de un breve delay
+					setTimeout( function () {
+						if ( response.data.redirect_url ) {
+							window.location.href = response.data.redirect_url;
+						}
+					}, 1500 );
+				} else {
+					const msg = response.data && response.data.message
+						? response.data.message
+						: getI18n( 'error_generic', 'Ocurrió un error. Por favor, intentá de nuevo.' );
+					$message
+						.html( msg )
+						.addClass( 'error' )
+						.show();
+					setLoading( $btn, false );
+				}
+			} )
+			.fail( function () {
+				$message
+					.html( getI18n( 'error_generic', 'No se pudo conectar con el servidor. Revisá tu conexión.' ) )
+					.addClass( 'error' )
+					.show();
 				setLoading( $btn, false );
 			} );
 	}

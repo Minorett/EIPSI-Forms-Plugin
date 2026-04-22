@@ -178,20 +178,11 @@ class EIPSI_Pool_Block_Renderer {
             return self::render_login_required($pool_id);
         }
 
-        // Obtener o crear asignación del participante
-        $assignment = self::get_or_create_assignment($pool_id, $participant_id, $method);
+        // Verificar si ya tiene asignación existente
+        $assignment = self::get_existing_assignment($pool_id, $participant_id);
 
-        if (!$assignment) {
-            return sprintf(
-                '<div class="eipsi-pool-wrapper"><div class="eipsi-pool-error">' .
-                '<div class="eipsi-pool-error-icon">❌</div>' .
-                '<div class="eipsi-pool-error-message">%s</div></div></div>',
-                esc_html__('Error al procesar tu asignación. Por favor, intentá de nuevo.', 'eipsi-forms')
-            );
-        }
-
-        // Si ya completó el estudio asignado
-        if ($assignment['completed']) {
+        // Si ya tiene asignación y está completada
+        if ($assignment && $assignment['completed']) {
             return sprintf(
                 '<div class="eipsi-pool-wrapper"><div class="eipsi-pool-completed">' .
                 '<div class="eipsi-pool-completed-icon">✅</div>' .
@@ -200,13 +191,13 @@ class EIPSI_Pool_Block_Renderer {
             );
         }
 
-        // Si ya tiene asignación, mostrar estado
-        if ($assignment['is_existing']) {
+        // Si ya tiene asignación activa, mostrar estado
+        if ($assignment) {
             return self::render_assigned_state($assignment, $button_text, $redirect_mode);
         }
 
-        // Nueva asignación - mostrar botón para unirse
-        return self::render_join_button($assignment, $button_text, $redirect_mode);
+        // No tiene asignación - mostrar dashboard del pool para solicitar asignación
+        return self::render_pool_dashboard($pool_id, $participant_id, $button_text);
     }
 
     /**
@@ -250,6 +241,39 @@ class EIPSI_Pool_Block_Renderer {
             'is_existing'   => $assignment->is_existing,
             'completed'     => $assignment->completed,
             'study_url'     => $service->get_study_url($assignment->study_id),
+        );
+    }
+
+    /**
+     * Obtener asignación EXISTENTE del participante (sin crear nueva).
+     *
+     * @param int $pool_id        ID del pool.
+     * @param int $participant_id ID del participante.
+     * @return array|null Datos de la asignación o null si no existe.
+     */
+    private static function get_existing_assignment($pool_id, $participant_id) {
+        global $wpdb;
+        $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
+        $service = new EIPSI_Pool_Assignment_Service();
+
+        $assignment = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$assignments_table} 
+             WHERE pool_id = %d AND participant_id = %d
+             ORDER BY assigned_at DESC
+             LIMIT 1",
+            $pool_id,
+            $participant_id
+        ));
+
+        if (!$assignment) {
+            return null;
+        }
+
+        return array(
+            'study_id'    => $assignment->study_id,
+            'is_existing' => true,
+            'completed'   => $assignment->completed,
+            'study_url'   => $service->get_study_url($assignment->study_id),
         );
     }
 
@@ -775,6 +799,81 @@ class EIPSI_Pool_Block_Renderer {
             }
             .eipsi-pool-redirect-link:hover {
                 background: #2563eb;
+            }
+            /* Pool Dashboard */
+            .eipsi-pool-dashboard {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 2rem;
+            }
+            .eipsi-pool-dashboard-content {
+                margin-top: 2rem;
+            }
+            .eipsi-pool-status-box {
+                background: #f8fafc;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+                text-align: center;
+            }
+            .eipsi-pool-status-icon {
+                font-size: 2.5rem;
+                margin-bottom: 0.5rem;
+            }
+            .eipsi-pool-status-box h3 {
+                margin: 0 0 0.75rem 0;
+                font-size: 1.25rem;
+                color: #1e293b;
+            }
+            .eipsi-pool-status-box p {
+                margin: 0;
+                color: #6b7280;
+                line-height: 1.5;
+            }
+            .eipsi-pool-request-assignment-btn {
+                width: 100%;
+                padding: 1rem 1.5rem;
+                background: linear-gradient(135deg, #3b82f6, #2563eb);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-size: 1.1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+            .eipsi-pool-request-assignment-btn:hover {
+                background: linear-gradient(135deg, #2563eb, #1d4ed8);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            }
+            .eipsi-pool-request-assignment-btn:disabled {
+                background: #94a3b8;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+            .eipsi-pool-assignment-message {
+                margin-top: 1rem;
+                padding: 1rem;
+                border-radius: 8px;
+                text-align: center;
+                display: none;
+            }
+            .eipsi-pool-assignment-message.success {
+                background: #d1fae5;
+                color: #065f46;
+                border: 1px solid #a7f3d0;
+            }
+            .eipsi-pool-assignment-message.error {
+                background: #fee2e2;
+                color: #991b1b;
+                border: 1px solid #fecaca;
             }
         </style>
         <?php

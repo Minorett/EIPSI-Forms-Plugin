@@ -795,3 +795,120 @@ El equipo de EIPSI", 'eipsi-forms' ),
     
     return $sent;
 }
+
+// ============================================================================
+// AJAX: SOLICITUD DE ASIGNACIÓN DESDE DASHBOARD DEL POOL
+// ============================================================================
+
+/**
+ * Handler AJAX: solicitar asignación de estudio desde el dashboard del pool.
+ *
+ * Este endpoint es llamado cuando un participante logueado y confirmado
+ * hace clic en "Asignarme un estudio" desde el dashboard del pool.
+ *
+ * Inputs POST esperados:
+ *   - nonce         : string (nonce de seguridad)
+ *   - pool_id       : int
+ *   - participant_id: int
+ *
+ * Respuesta JSON:
+ *   { success: true, data: { 
+ *       assignment_id: int,
+ *       study_id: int,
+ *       study_name: string,
+ *       redirect_url: string,  // Magic link al estudio
+ *       message: string
+ *   }}
+ *
+ * @since 2.3.0
+ */
+function eipsi_ajax_request_pool_assignment() {
+    // -----------------------------------------------------------------
+    // 1. Verificar nonce
+    // -----------------------------------------------------------------
+    check_ajax_referer( 'eipsi_pool_access', 'nonce' );
+
+    // -----------------------------------------------------------------
+    // 2. Sanitizar inputs
+    // -----------------------------------------------------------------
+    $pool_id        = isset( $_POST['pool_id'] ) ? absint( $_POST['pool_id'] ) : 0;
+    $participant_id = isset( $_POST['participant_id'] ) ? absint( $_POST['participant_id'] ) : 0;
+
+    if ( ! $pool_id || ! $participant_id ) {
+        wp_send_json_error( array( 'message' => __( 'Datos inválidos.', 'eipsi-forms' ) ), 400 );
+    }
+
+    // -----------------------------------------------------------------
+    // 3. Verificar que el participante no tenga asignación existente
+    // -----------------------------------------------------------------
+    global $wpdb;
+    $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
+
+    $existing = $wpdb->get_var( $wpdb->prepare(
+        "SELECT id FROM {$assignments_table} 
+         WHERE pool_id = %d AND participant_id = %d AND completed = 0
+         LIMIT 1",
+        $pool_id,
+        $participant_id
+    ) );
+
+    if ( $existing ) {
+        wp_send_json_error( array( 
+            'message' => __( 'Ya tenés un estudio asignado activo.', 'eipsi-forms' ),
+            'code'    => 'already_assigned'
+        ), 409 );
+    }
+
+    // -----------------------------------------------------------------
+    // 4. Obtener método de asignación del pool
+    // -----------------------------------------------------------------
+    $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+    $pool = $wpdb->get_row( $wpdb->prepare(
+        "SELECT method FROM {$pools_table} WHERE id = %d",
+        $pool_id
+    ) );
+
+    if ( ! $pool ) {
+        wp_send_json_error( array( 'message' => __( 'Pool no encontrado.', 'eipsi-forms' ) ), 404 );
+    }
+
+    $method = $pool->method ?: 'seeded';
+
+    // -----------------------------------------------------------------
+    // 5. Crear asignación usando el servicio
+    // -----------------------------------------------------------------
+    $service = new EIPSI_Pool_Assignment_Service();
+    $assignment = $service->assign_participant( $pool_id, $participant_id, $method );
+
+    if ( ! $assignment || is_wp_error( $assignment ) ) {
+        $error_message = is_wp_error( $assignment ) ? $assignment->get_error_message() : __( 'Error al asignar estudio.', 'eipsi-forms' );
+        wp_send_json_error( array( 'message' => $error_message ), 500 );
+    }
+
+    // -----------------------------------------------------------------
+    // 6. Enviar email de nudge0 (bienvenida al estudio)
+    // -----------------------------------------------------------------
+    $study_name = $service->get_study_name( $assignment->study_id );
+    
+    // Trigger para enviar nudge0
+    do_action( 'eipsi_pool_assignment_created', $participant_id, $pool_id, $assignment->study_id );
+
+    // -----------------------------------------------------------------
+    // 7. Generar magic link al estudio
+    // -----------------------------------------------------------------
+    $magic_link = eipsi_generate_participant_magic_link( $participant_id, $assignment->study_id );
+
+    // -----------------------------------------------------------------
+    // 8. Responder éxito
+    // -----------------------------------------------------------------
+    wp_send_json_success( array(
+        'assignment_id' => $assignment->assignment_id,
+        'study_id'        => $assignment->study_id,
+        'study_name'      => $study_name,
+        'redirect_url'    => $magic_link,
+        'message'         => sprintf( __( '¡Te asignamos a: %s!', 'eipsi-forms' ), $study_name )
+    ) );
+}
+
+add_action( 'wp_ajax_eipsi_request_pool_assignment', 'eipsi_ajax_request_pool_assignment' );
+add_action( 'wp_ajax_nopriv_eipsi_request_pool_assignment', 'eipsi_ajax_request_pool_assignment' );
