@@ -445,105 +445,79 @@
 		$success.trigger( 'focus' );
 	}
 
-	$success.slideDown( 300 );
-	$success.trigger( 'focus' );
-}
+	// -------------------------------------------------------------------------
+	// Helpers
+	// -------------------------------------------------------------------------
 
-// -------------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------------
+	/**
+	 * Alternar estado de carga del botón.
+	 *
+	 * @param {jQuery} $btn     Botón.
+	 * @param {boolean} loading Estado de carga.
+	 */
+	function setLoading( $btn, loading ) {
+		const $text = $btn.find( '.btn-text' );
+		const $spinner = $btn.find( '.btn-spinner' );
+		const defaultText = $btn.data( 'label-default' ) || $btn.text();
 
-/**
- * Alternar estado de carga del botón.
- *
- * @param {jQuery} $btn     Botón.
- * @param {boolean} loading Estado de carga.
- */
-function setLoading( $btn, loading ) {
-	const $text = $btn.find( '.btn-text' );
-	const $spinner = $btn.find( '.btn-spinner' );
-	const defaultText = $btn.data( 'label-default' ) || $btn.text();
-
-	if ( loading ) {
-		$btn.prop( 'disabled', true );
-		$text.hide();
-		$spinner.show();
-	} else {
-		$btn.prop( 'disabled', false );
-		$text.show().text( defaultText );
-		$spinner.hide();
+		if ( loading ) {
+			$btn.prop( 'disabled', true );
+			$text.hide();
+			$spinner.show();
+		} else {
+			$btn.prop( 'disabled', false );
+			$text.show().text( defaultText );
+			$spinner.hide();
+		}
 	}
-}
 
-/**
- * Validar formato de email.
- *
- * @param {string} email Email a validar.
- * @return {boolean} True si es válido.
- */
-function isValidEmail( email ) {
-	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( email );
-}
-
-/**
- * Mostrar mensaje en el contenedor.
- *
- * @param {jQuery} $container Contenedor del mensaje.
- * @param {string} message    Mensaje a mostrar.
- * @param {string} type       Tipo: 'success' o 'error'.
- */
-function showMessage( $container, message, type ) {
-	$container
-		.removeClass( 'success error' )
-		.addClass( type )
-		.html( message )
-		.show();
-}
-
-/**
- * Ocultar mensaje.
- *
- * @param {jQuery} $container Contenedor del mensaje.
- */
-function hideMessage( $container ) {
-	$container.hide().removeClass( 'success error' );
-}
-
-/**
- * Alternar estado de carga del botón.
- *
- * @param {jQuery} $btn     Botón.
- * @param {boolean} loading Estado de carga.
- */
-function setLoading( $btn, loading ) {
-	const $text = $btn.find( '.btn-text' );
-	const $spinner = $btn.find( '.btn-spinner' );
-	const defaultText = $btn.data( 'label-default' ) || $btn.text();
-
-	if ( loading ) {
-		$btn.prop( 'disabled', true );
-		$text.hide();
-		$spinner.show();
-	} else {
-		$btn.prop( 'disabled', false );
-		$text.show().text( defaultText );
-		$spinner.hide();
+	/**
+	 * Validar formato de email.
+	 *
+	 * @param {string} email Email a validar.
+	 * @return {boolean} True si es válido.
+	 */
+	function isValidEmail( email ) {
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( email );
 	}
-}
 
-/**
- * Obtener string i18n con fallback.
- *
- * @param {string} key      Clave en eipsiPoolJoin.i18n.
- * @param {string} fallback Texto de fallback si la clave no existe.
- * @return {string} Texto traducido o fallback.
- */
-function getI18n( key, fallback ) {
-	return window.eipsiPoolJoin && eipsiPoolJoin.i18n && eipsiPoolJoin.i18n[ key ]
-		? eipsiPoolJoin.i18n[ key ]
-		: fallback;
-}
+	/**
+	 * Mostrar mensaje en el contenedor.
+	 *
+	 * @param {jQuery} $container Contenedor del mensaje.
+	 * @param {string} message    Mensaje a mostrar.
+	 * @param {string} type       Tipo: 'success' o 'error'.
+	 */
+	function showMessage( $container, message, type ) {
+		$container
+			.removeClass( 'success error' )
+			.addClass( type )
+			.html( message )
+			.show();
+	}
 
-// Arrancar cuando el DOM esté listo
-jQuery( init );
+	/**
+	 * Ocultar mensaje.
+	 *
+	 * @param {jQuery} $container Contenedor del mensaje.
+	 */
+	function hideMessage( $container ) {
+		$container.hide().removeClass( 'success error' );
+	}
+
+	/**
+	 * Obtener string i18n con fallback.
+	 *
+	 * @param {string} key      Clave en eipsiPoolJoin.i18n.
+	 * @param {string} fallback Texto de fallback si la clave no existe.
+	 * @return {string} Texto traducido o fallback.
+	 */
+	function getI18n( key, fallback ) {
+		return window.eipsiPoolJoin && eipsiPoolJoin.i18n && eipsiPoolJoin.i18n[ key ]
+			? eipsiPoolJoin.i18n[ key ]
+			: fallback;
+	}
+
+	// Arrancar cuando el DOM esté listo
+	jQuery( init );
 } )( jQuery );
