@@ -84,6 +84,40 @@ class EIPSI_Pool_Block_Renderer {
     }
 
     /**
+     * Encolar assets necesarios para el pool (login, dashboard, asignación).
+     *
+     * @since 2.3.0
+     */
+    private static function enqueue_pool_assets() {
+        // Verificar si ya fueron encolados
+        if ( wp_script_is( 'eipsi-pool-join', 'enqueued' ) ) {
+            return;
+        }
+
+        // Encolar jQuery (ya debería estar, pero por si acaso)
+        wp_enqueue_script( 'jquery' );
+
+        // Encolar el JS del pool
+        wp_enqueue_script(
+            'eipsi-pool-join',
+            plugin_dir_url( __DIR__ ) . 'assets/js/eipsi-pool-join.js',
+            array( 'jquery' ),
+            '2.3.0',
+            true
+        );
+
+        // Localizar variables para AJAX
+        wp_localize_script(
+            'eipsi-pool-join',
+            'eipsiPoolJoin',
+            array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( 'eipsi_pool_access' ),
+            )
+        );
+    }
+
+    /**
      * Shortcode de compatibilidad [eipsi_pool_join pool_id="X"]
      * Alias del shortcode nuevo para mantener backward compatibility.
      *
@@ -142,6 +176,9 @@ class EIPSI_Pool_Block_Renderer {
      */
     private static function render_pool_content($pool_id, $method, $button_text, $redirect_mode) {
         global $wpdb;
+
+        // Encolar assets necesarios para el pool (login, dashboard, etc.)
+        self::enqueue_pool_assets();
 
         // Verificar que el pool existe y está activo
         $pool = self::get_pool_info($pool_id);
