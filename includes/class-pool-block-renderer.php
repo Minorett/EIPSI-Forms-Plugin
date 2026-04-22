@@ -331,21 +331,116 @@ class EIPSI_Pool_Block_Renderer {
      * @return string HTML.
      */
     private static function render_login_required($pool_id) {
-        // Usar el shortcode de login existente
-        $login_form = do_shortcode('[eipsi_survey_login]');
+        global $wpdb;
+        $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
 
-        return sprintf(
-            '<div class="eipsi-pool-wrapper">
-                <div class="eipsi-pool-login-required">
-                    <div class="eipsi-pool-login-title">%s</div>
-                    <p style="margin-bottom: 1rem; color: #64748b;">%s</p>
-                    %s
+        // Get pool data
+        $pool = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$pools_table} WHERE id = %d",
+            $pool_id
+        ), ARRAY_A);
+
+        if (!$pool) {
+            return '<div class="eipsi-pool-wrapper"><p>' . esc_html__('Pool no encontrado.', 'eipsi-forms') . '</p></div>';
+        }
+
+        $pool_name = $pool['name'] ?? 'Pool';
+        $description = $pool['description'] ?? '';
+        $incentive = $pool['incentive'] ?? '';
+
+        // Pool-specific login template (different from survey login)
+        ob_start();
+        ?>
+        <div class="eipsi-pool-wrapper">
+            <div class="eipsi-pool-access-container">
+                <div class="eipsi-pool-header">
+                    <div class="eipsi-pool-icon">🏊</div>
+                    <h2 class="eipsi-pool-title"><?php echo esc_html($pool_name); ?></h2>
+                    <?php if ($description): ?>
+                        <p class="eipsi-pool-description"><?php echo esc_html($description); ?></p>
+                    <?php endif; ?>
+                    <?php if ($incentive): ?>
+                        <div class="eipsi-pool-incentive">
+                            <span class="incentive-icon">🎁</span>
+                            <span class="incentive-text"><?php echo esc_html($incentive); ?></span>
+                        </div>
+                    <?php endif; ?>
                 </div>
-            </div>',
-            esc_html__('Iniciá sesión para participar', 'eipsi-forms'),
-            esc_html__('Necesitás estar autenticado para unirte a este pool de estudios.', 'eipsi-forms'),
-            $login_form
-        );
+
+                <div class="eipsi-pool-login-box">
+                    <h3><?php esc_html_e('Iniciá sesión para participar', 'eipsi-forms'); ?></h3>
+                    <p class="eipsi-pool-login-subtitle"><?php esc_html_e('Necesitás estar autenticado para unirte a este pool de estudios.', 'eipsi-forms'); ?></p>
+                    <?php echo do_shortcode('[eipsi_survey_login]'); ?>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .eipsi-pool-access-container {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 2rem 1rem;
+            }
+            .eipsi-pool-header {
+                text-align: center;
+                margin-bottom: 2rem;
+            }
+            .eipsi-pool-icon {
+                font-size: 48px;
+                margin-bottom: 0.5rem;
+            }
+            .eipsi-pool-title {
+                font-size: 24px;
+                font-weight: 600;
+                color: #1e293b;
+                margin: 0 0 1rem 0;
+            }
+            .eipsi-pool-description {
+                font-size: 16px;
+                color: #64748b;
+                margin: 0 0 1rem 0;
+                line-height: 1.5;
+            }
+            .eipsi-pool-incentive {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                background: #fef3c7;
+                padding: 12px 16px;
+                border-radius: 8px;
+                margin-top: 1rem;
+            }
+            .eipsi-pool-incentive .incentive-icon {
+                font-size: 20px;
+            }
+            .eipsi-pool-incentive .incentive-text {
+                font-size: 14px;
+                color: #92400e;
+                font-weight: 500;
+            }
+            .eipsi-pool-login-box {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 2rem;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            }
+            .eipsi-pool-login-box h3 {
+                font-size: 18px;
+                font-weight: 600;
+                color: #1e293b;
+                margin: 0 0 0.5rem 0;
+                text-align: center;
+            }
+            .eipsi-pool-login-subtitle {
+                font-size: 14px;
+                color: #64748b;
+                margin: 0 0 1.5rem 0;
+                text-align: center;
+            }
+        </style>
+        <?php
+        return ob_get_clean();
     }
 
     /**

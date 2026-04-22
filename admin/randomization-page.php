@@ -15,6 +15,7 @@ if (!defined('ABSPATH')) {
  * Renderizar página principal del Randomization Dashboard
  */
 function eipsi_display_randomization() {
+    error_log('EIPSI DIAGNOSTIC: eipsi_display_randomization() called at ' . date('H:i:s'));
     // Verificar permisos
     if (!current_user_can('manage_options')) {
         wp_die(__('Unauthorized', 'eipsi-forms'));

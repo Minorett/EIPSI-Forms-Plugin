@@ -76,8 +76,10 @@ function eipsi_display_results_experience_page() {
 
         <?php if ($active_tab === 'randomization'): ?>
             <div class="tab-content" data-tab="randomization">
+                <!-- DIAGNOSTIC: results-page.php tab=randomization loaded at <?php echo date('H:i:s'); ?> -->
                 <?php
                 if (file_exists(dirname(__FILE__) . '/randomization-page.php')) {
+                    error_log('EIPSI DIAGNOSTIC: Loading randomization-page.php from results-page.php');
                     require_once dirname(__FILE__) . '/randomization-page.php';
                     eipsi_display_randomization();
                 } else {
