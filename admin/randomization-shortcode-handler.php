@@ -449,18 +449,20 @@ function eipsi_generate_server_fingerprint() {
  * 
  * @return string
  */
-function eipsi_get_client_ip() {
-    $ip = '';
+if ( ! function_exists( 'eipsi_get_client_ip' ) ) {
+    function eipsi_get_client_ip() {
+        $ip = '';
 
-    if ( isset( $_SERVER['HTTP_CLIENT_IP'] ) ) {
-        $ip = $_SERVER['HTTP_CLIENT_IP'];
-    } elseif ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-    } elseif ( isset( $_SERVER['REMOTE_ADDR'] ) ) {
-        $ip = $_SERVER['REMOTE_ADDR'];
+        if ( isset( $_SERVER['HTTP_CLIENT_IP'] ) ) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } elseif ( isset( $_SERVER['REMOTE_ADDR'] ) ) {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+
+        return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '0.0.0.0';
     }
-
-    return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '0.0.0.0';
 }
 
 /**
