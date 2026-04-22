@@ -190,12 +190,33 @@ $view_class      = 'view-' . esc_attr( $view_mode );
             <div class="eipsi-participant-welcome">
 
                 <div class="welcome-header">
-                    <?php if ( $magic_link_login ) : ?>
-                        <h3 class="welcome-title">✨ ¡Bienvenido/a!</h3>
-                        <p class="welcome-subtitle">Accediste correctamente a tu estudio</p>
-                    <?php else : ?>
-                        <h3 class="welcome-title">👋 ¡Hola de nuevo!</h3>
-                        <p class="welcome-subtitle">Tu progreso en este estudio</p>
+                    <div class="welcome-header-content">
+                        <?php if ( $magic_link_login ) : ?>
+                            <h3 class="welcome-title">✨ ¡Bienvenido/a!</h3>
+                            <p class="welcome-subtitle">Accediste correctamente a tu estudio</p>
+                        <?php else : ?>
+                            <h3 class="welcome-title">👋 ¡Hola de nuevo!</h3>
+                            <p class="welcome-subtitle">Tu progreso en este estudio</p>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <?php if ( $is_participant_logged_in && $current_participant_id ) : ?>
+                        <!-- Dropdown de abandono (solo participantes logueados) -->
+                        <div class="eipsi-header-dropdown-container">
+                            <button type="button" 
+                                    class="eipsi-header-dropdown-trigger" 
+                                    id="eipsi-withdraw-dropdown-trigger"
+                                    aria-label="Opciones de estudio"
+                                    aria-expanded="false">
+                                <span class="eipsi-dropdown-icon">⚙️</span>
+                            </button>
+                            <div class="eipsi-header-dropdown-menu" id="eipsi-withdraw-dropdown-menu" style="display: none;">
+                                <button type="button" class="eipsi-dropdown-item" id="eipsi-withdraw-button">
+                                    <span class="eipsi-item-icon">🚪</span>
+                                    <span class="eipsi-item-text"><?php _e('Abandonar estudio', 'eipsi-forms'); ?></span>
+                                </button>
+                            </div>
+                        </div>
                     <?php endif; ?>
                 </div>
 
@@ -274,23 +295,10 @@ $view_class      = 'view-' . esc_attr( $view_mode );
                                             <?php
                                             // FIX (v2.1.1): Show correct time unit (minutes, hours, days)
                                             // IMPROVED (v2.2.0): Convert large minutes to human-readable format
+                                            // FIX (v2.2.1): Use Wave_Service::normalize_time_unit() to handle 0 correctly
+                                            // (empty(0) returns true in PHP, causing 'minutes' to become 'days')
                                             $interval_value = (int) $next_wave['interval_days'];
-                                            $raw_time_unit  = ! empty( $next_wave['time_unit'] ) ? $next_wave['time_unit'] : 'days';
-                                            
-                                            // Map numeric values to strings (if stored as 0, 1, 2)
-                                            $numeric_map = array(
-                                                '0' => 'minutes',
-                                                '1' => 'hours',
-                                                '2' => 'days'
-                                            );
-                                            
-                                            if ( isset( $numeric_map[ $raw_time_unit ] ) ) {
-                                                $time_unit = $numeric_map[ $raw_time_unit ];
-                                            } elseif ( in_array( $raw_time_unit, array( 'minutes', 'hours', 'days' ) ) ) {
-                                                $time_unit = $raw_time_unit;
-                                            } else {
-                                                $time_unit = 'days'; // default
-                                            }
+                                            $time_unit = Wave_Service::normalize_time_unit( $next_wave['time_unit'] ?? null );
                                             
                                             /**
                                              * Convert interval to human-readable format
@@ -738,6 +746,48 @@ $view_class      = 'view-' . esc_attr( $view_mode );
     </div>
 
 </div>
+
+<?php
+// Incluir modales de abandono si el participante está logueado
+if ( $is_participant_logged_in && $current_participant_id ) {
+    eipsi_load_template('withdrawal-modals.php');
+}
+?>
+
+<?php if ( $is_participant_logged_in && $current_participant_id ) : ?>
+<!-- Estilos para dropdown de abandono -->
+<style>
+.welcome-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.eipsi-header-dropdown-container { position: relative; flex-shrink: 0; }
+.eipsi-header-dropdown-trigger { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; cursor: pointer; font-size: 18px; transition: all 0.2s; }
+.eipsi-header-dropdown-trigger:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.eipsi-header-dropdown-menu { position: absolute; top: calc(100% + 8px); right: 0; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); min-width: 180px; z-index: 1000; }
+.eipsi-dropdown-item { width: 100%; padding: 12px 16px; border: none; background: none; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; color: #374151; text-align: left; }
+.eipsi-dropdown-item:hover { background: #fef2f2; color: #dc2626; }
+.eipsi-item-icon { font-size: 16px; }
+</style>
+
+<!-- Script para dropdown de abandono -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var trigger = document.getElementById('eipsi-withdraw-dropdown-trigger');
+    var menu = document.getElementById('eipsi-withdraw-dropdown-menu');
+    if (trigger && menu) {
+        trigger.addEventListener('click', function() {
+            var isVisible = menu.style.display === 'block';
+            menu.style.display = isVisible ? 'none' : 'block';
+            trigger.setAttribute('aria-expanded', !isVisible);
+        });
+        document.addEventListener('click', function(e) {
+            if (!trigger.contains(e.target) && !menu.contains(e.target)) {
+                menu.style.display = 'none';
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+});
+</script>
+<?php endif; ?>
 
 <?php
 // Enqueue countdown script if there's a locked wave with future availability
