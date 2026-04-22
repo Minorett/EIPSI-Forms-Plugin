@@ -67,15 +67,20 @@ function eipsi_handle_pool_deletion_early() {
     $assignments_deleted = $wpdb->delete($assignments_table, ['pool_id' => $pool_id], ['%d']);
     error_log('[EIPSI-POOL-DELETE-EARLY] Assignments deleted: ' . ($assignments_deleted !== false ? $assignments_deleted : '0') . ' rows');
 
+    // Get pool page ID before deleting the pool
+    $page_id = $wpdb->get_var($wpdb->prepare(
+        "SELECT page_id FROM {$pools_table} WHERE id = %d",
+        $pool_id
+    ));
+
     // Delete the pool
     $pool_deleted = $wpdb->delete($pools_table, ['id' => $pool_id], ['%d']);
     error_log('[EIPSI-POOL-DELETE-EARLY] Pool deleted: ' . ($pool_deleted ? 'SUCCESS' : 'FAILED'));
 
     if ($pool_deleted) {
-        // Get pool page ID and delete it too
-        $page_id = isset($_GET['page_id']) ? intval($_GET['page_id']) : 0;
-        if ($page_id) {
-            wp_delete_post($page_id, true);
+        // Delete associated pool page if exists
+        if (!empty($page_id)) {
+            eipsi_delete_associated_page(intval($page_id));
             error_log('[EIPSI-POOL-DELETE-EARLY] Pool page deleted: ' . $page_id);
         }
 

@@ -330,28 +330,28 @@ function eipsi_create_study_page($study_id, $study_code, $study_name) {
         return $existing_page->ID;
     }
     
-    // Create new page
+    // Create new page with proper Shortcode block (not Classic block)
     $page_title = sprintf(__('Estudio: %s', 'eipsi-forms'), $study_name);
     $page_slug = 'estudio-' . sanitize_title($study_code);
-    $page_content = '[eipsi_longitudinal_study study_code="' . esc_attr($study_code) . '"]';
-    
-    $page_id = wp_insert_post(array(
-        'post_title' => $page_title,
-        'post_name' => $page_slug,
-        'post_content' => $page_content,
-        'post_status' => 'publish',
-        'post_type' => 'page',
-        'meta_input' => array(
-            'eipsi_study_code' => $study_code,
-            'eipsi_study_id' => $study_id
+    $shortcode = '[eipsi_longitudinal_study study_code="' . esc_attr($study_code) . '"]';
+
+    $page_id = eipsi_create_shortcode_page(
+        $page_title,
+        $page_slug,
+        $shortcode,
+        array(
+            'meta_input' => array(
+                'eipsi_study_code' => $study_code,
+                'eipsi_study_id' => $study_id
+            )
         )
-    ));
-    
+    );
+
     if (is_wp_error($page_id)) {
         error_log('[EIPSI] Failed to create study page: ' . $page_id->get_error_message());
         return false;
     }
-    
+
     return $page_id;
 }
 

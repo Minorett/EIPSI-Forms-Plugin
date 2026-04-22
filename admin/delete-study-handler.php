@@ -39,6 +39,17 @@ function eipsi_ajax_delete_study() {
     $wpdb->query('START TRANSACTION');
 
     try {
+        // Get study page ID before deleting the study
+        $page_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT page_id FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+            $study_id
+        ));
+
+        // Delete associated study page if exists
+        if (!empty($page_id)) {
+            eipsi_delete_associated_page(intval($page_id));
+        }
+
         // Delete email logs
         $wpdb->query($wpdb->prepare(
             "DELETE FROM {$wpdb->prefix}survey_email_log WHERE survey_id = %d",

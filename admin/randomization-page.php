@@ -1442,26 +1442,26 @@ function eipsi_create_randomization_page($config_id, $name) {
         return $existing_page->ID;
     }
     
-    // Create new page
+    // Create new page with proper Shortcode block (not Classic block)
     $page_title = sprintf(__('Aleatorización: %s', 'eipsi-forms'), $name);
-    $page_content = '[eipsi_randomization config_id="' . esc_attr($config_id) . '"]';
-    
-    $page_id = wp_insert_post(array(
-        'post_title' => $page_title,
-        'post_name' => $page_slug,
-        'post_content' => $page_content,
-        'post_status' => 'publish',
-        'post_type' => 'page',
-        'meta_input' => array(
-            'eipsi_randomization_config_id' => $config_id
+    $shortcode = '[eipsi_randomization config_id="' . esc_attr($config_id) . '"]';
+
+    $page_id = eipsi_create_shortcode_page(
+        $page_title,
+        $page_slug,
+        $shortcode,
+        array(
+            'meta_input' => array(
+                'eipsi_randomization_config_id' => $config_id
+            )
         )
-    ));
-    
+    );
+
     if (is_wp_error($page_id)) {
         error_log('[EIPSI] Failed to create randomization page: ' . $page_id->get_error_message());
         return false;
     }
-    
+
     return $page_id;
 }
 

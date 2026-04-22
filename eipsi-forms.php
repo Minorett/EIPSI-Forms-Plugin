@@ -85,6 +85,59 @@ function eipsi_user_can_manage_longitudinal() {
     return current_user_can(eipsi_get_longitudinal_capability());
 }
 
+/**
+ * Create a WordPress page with a proper Shortcode block (not Classic block).
+ *
+ * @since 2.2.1
+ *
+ * @param string $title    Page title.
+ * @param string $slug     Page slug.
+ * @param string $shortcode Shortcode content (e.g., '[eipsi_randomization ...]').
+ * @param array  $args     Additional wp_insert_post args.
+ * @return int|WP_Error    Page ID on success, WP_Error on failure.
+ */
+function eipsi_create_shortcode_page( $title, $slug, $shortcode, $args = array() ) {
+    // Wrap shortcode in proper Shortcode block format (not Classic block)
+    $block_content = "<!-- wp:shortcode -->\n" . $shortcode . "\n<!-- /wp:shortcode -->";
+
+    $default_args = array(
+        'post_title'   => $title,
+        'post_name'    => $slug,
+        'post_content' => $block_content,
+        'post_status'  => 'publish',
+        'post_type'    => 'page',
+    );
+
+    $page_data = wp_parse_args( $args, $default_args );
+    $page_id   = wp_insert_post( $page_data, true );
+
+    return $page_id;
+}
+
+/**
+ * Delete associated page when deleting a pool/study/randomization.
+ *
+ * @since 2.2.1
+ *
+ * @param int $page_id Page ID to delete.
+ * @return bool True on success, false on failure.
+ */
+function eipsi_delete_associated_page( $page_id ) {
+    if ( empty( $page_id ) || $page_id <= 0 ) {
+        return false;
+    }
+
+    $page = get_post( $page_id );
+    if ( ! $page || $page->post_type !== 'page' ) {
+        return false;
+    }
+
+    // Force delete the page (skip trash)
+    $result = wp_delete_post( $page_id, true );
+
+    return $result !== false;
+}
+
 // Configuración longitudinal (v1.4.0+)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/config/longitudinal-config.php';
 
