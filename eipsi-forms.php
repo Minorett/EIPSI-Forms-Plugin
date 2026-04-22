@@ -247,6 +247,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-phase3-handlers.php';
 // Service: weighted random assignment + magic link generation
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-pool-assignment-service.php';
 
+// Pool Assignment AJAX API (v2.5.3) - AJAX handlers for pool auth and assignment
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-assignment-api.php';
+
 // Pool Analytics Dashboard (v2.1.0 - Part 4)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-pool-dashboard-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/longitudinal-pool-dashboard.php';
