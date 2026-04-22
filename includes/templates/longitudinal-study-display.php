@@ -252,7 +252,6 @@ $view_class      = 'view-' . esc_attr( $view_mode );
                             </div>
                             <?php if ( ! empty( $next_wave['is_locked'] ) ) : ?>
                                 <div class="wave-locked-message" data-eipsi-countdown data-available-timestamp="<?php echo esc_attr( $next_wave['available_timestamp'] ); ?>">
-                                    <span class="lock-icon">🔒</span>
                                     <div class="lock-content" style="flex: 1;">
                                         <?php
                                         // Calculate time remaining for countdown
