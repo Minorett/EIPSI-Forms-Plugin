@@ -200,7 +200,7 @@ if (!$all_done && $next_ready_index >= 0) {
 
 <div class="eipsi-participant-dashboard">
 
-    <!-- Header de bienvenida -->
+    <!-- Header de bienvenida con dropdown de abandono -->
     <div class="eipsi-dash-header">
         <p class="eipsi-dash-greeting">
             <?php 
@@ -209,6 +209,33 @@ if (!$all_done && $next_ready_index >= 0) {
                 esc_html__('Hola de nuevo, %s', 'eipsi-forms'),
                 esc_html($participant_name)
             );
+            ?>
+        </p>
+        
+        <?php 
+        // Fase 3 - v2.5: Dropdown de abandono SOLO si:
+        // (1) Hay participante logueado ($participant_id > 0)
+        // (2) Es estudio longitudinal (tiene waves - $all_waves no vacío)
+        if ($participant_id > 0 && !empty($all_waves)) : 
+        ?>
+        <div class="eipsi-header-dropdown">
+            <button type="button" class="eipsi-dropdown-trigger" id="eipsi-withdraw-dropdown-trigger"
+                    data-participant-id="<?php echo esc_attr($participant_id); ?>"
+                    data-study-id="<?php echo esc_attr($survey_id); ?>"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    title="<?php esc_attr_e('Opciones del estudio', 'eipsi-forms'); ?>">
+                <span class="dropdown-icon">⚙️</span>
+                <span class="dropdown-chevron">▼</span>
+            </button>
+            <div class="eipsi-dropdown-menu" id="eipsi-withdraw-dropdown-menu" role="menu" aria-hidden="true">
+                <button type="button" class="eipsi-dropdown-item" id="eipsi-withdraw-button" role="menuitem">
+                    <span class="item-icon">🚪</span>
+                    <span class="item-text"><?php esc_html_e('Abandonar estudio', 'eipsi-forms'); ?></span>
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
     <div class="eipsi-dashboard-section eipsi-section-highlight">
         <h2 class="eipsi-section-title">
             <span class="section-icon">📋</span>
@@ -386,16 +413,13 @@ if (!$all_done && $next_ready_index >= 0) {
         <?php endif; ?>
     </div>
 
-    <!-- Pie -->
+    <!-- Pie simplificado - Fase 3 v2.5: Sin logout (inservible), abandono movido a header -->
     <div class="eipsi-dash-footer">
-        <div class="eipsi-footer-actions">
-            <button type="button" class="eipsi-button-logout" id="eipsi-logout-button" data-nonce="<?php echo wp_create_nonce('eipsi_participant_logout'); ?>">
-                <span class="btn-icon">🚪</span>
-                <?php esc_html_e('Cerrar sesión', 'eipsi-forms'); ?>
-            </button>
-        </div>
         <div class="eipsi-footer-info">
             <span class="security-badge">🔒 <?php esc_html_e('Conexión segura', 'eipsi-forms'); ?></span>
         </div>
     </div>
 </div>
+
+<!-- Fase 3 - v2.5: Modales de Abandono -->
+<?php include __DIR__ . '/withdrawal-modals.php'; ?>

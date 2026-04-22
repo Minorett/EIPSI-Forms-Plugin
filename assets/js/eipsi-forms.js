@@ -4236,6 +4236,131 @@ if ( pages.length === 0 ) {
         },
     };
 
+    /**
+     * v2.5: Consentimiento Informado - Validación de botones explícitos
+     * 
+     * Gate: Checkbox de confirmación de lectura habilita el botón "Aceptar"
+     * Botón "Rechazar" siempre disponible - guarda estado y redirige
+     * Botón "Aceptar" - guarda estado y permite continuar
+     */
+    function initConsentV2() {
+        const consentBlocks = document.querySelectorAll('.eipsi-consent-block');
+        
+        consentBlocks.forEach(block => {
+            const readingCheckbox = block.querySelector('#eipsi-consent-confirm-reading');
+            const acceptBtn = block.querySelector('.eipsi-btn-accept');
+            const rejectBtn = block.querySelector('.eipsi-btn-reject');
+            const decisionInput = block.querySelector('#eipsi-consent-decision');
+            const errorMsg = block.querySelector('.eipsi-consent-error');
+            
+            if (!readingCheckbox || !acceptBtn || !rejectBtn) return;
+            
+            // Gate: Habilitar "Aceptar" solo cuando se marca el checkbox de lectura
+            readingCheckbox.addEventListener('change', () => {
+                const isChecked = readingCheckbox.checked;
+                acceptBtn.disabled = !isChecked;
+                acceptBtn.setAttribute('aria-disabled', !isChecked);
+                
+                if (errorMsg) {
+                    errorMsg.style.display = 'none';
+                }
+                
+                if (window.console && window.console.debug) {
+                    window.console.debug('[EIPSI Consent v2.5] Reading confirmed:', isChecked);
+                }
+            });
+            
+            // Click en "No deseo participar" (Rechazo T1)
+            rejectBtn.addEventListener('click', async () => {
+                rejectBtn.disabled = true;
+                rejectBtn.textContent = 'Procesando...';
+                
+                // Guardar decisión en campo oculto
+                if (decisionInput) {
+                    decisionInput.value = 'declined';
+                }
+                
+                // Guardar en backend (consent_declined)
+                try {
+                    await saveConsentDecision(block, 'declined');
+                } catch (e) {
+                    console.warn('[EIPSI Consent] Error saving decline:', e);
+                }
+                
+                // Redirigir a pantalla de bloqueo T1
+                window.location.href = '/consentimiento-rechazado';
+            });
+            
+            // Click en "Acepto participar"
+            acceptBtn.addEventListener('click', async () => {
+                if (!readingCheckbox.checked) {
+                    if (errorMsg) {
+                        errorMsg.style.display = 'block';
+                        errorMsg.textContent = 'Debes confirmar que leíste el consentimiento informado para continuar.';
+                    }
+                    return;
+                }
+                
+                acceptBtn.disabled = true;
+                acceptBtn.textContent = 'Procesando...';
+                
+                // Guardar decisión en campo oculto
+                if (decisionInput) {
+                    decisionInput.value = 'accepted';
+                }
+                
+                // Guardar en backend
+                try {
+                    await saveConsentDecision(block, 'accepted');
+                } catch (e) {
+                    console.warn('[EIPSI Consent] Error saving accept:', e);
+                }
+                
+                // Permitir continuar (formulario se habilita)
+                block.classList.add('consent-accepted');
+                
+                // Scroll al formulario si existe
+                const form = document.querySelector('.eipsi-form');
+                if (form) {
+                    form.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    }
+    
+    /**
+     * Guardar decisión de consentimiento en backend
+     */
+    async function saveConsentDecision(block, decision) {
+        const formId = block.closest('.eipsi-form')?.dataset?.formId || 'default';
+        const payload = new URLSearchParams({
+            action: 'eipsi_save_consent_decision',
+            decision: decision,
+            form_id: formId,
+            timestamp: new Date().toISOString()
+        });
+        
+        const ajaxUrl = window.eipsiFormsConfig?.ajaxUrl || '/wp-admin/admin-ajax.php';
+        
+        const response = await fetch(ajaxUrl, {
+            method: 'POST',
+            body: payload,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            credentials: 'same-origin'
+        });
+        
+        return response.json();
+    }
+    
+    // Inicializar consentimiento v2.5 al cargar DOM
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initConsentV2);
+    } else {
+        initConsentV2();
+    }
+
     EIPSIForms.init();
 
     window.EIPSIForms = EIPSIForms;

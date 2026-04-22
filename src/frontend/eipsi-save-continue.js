@@ -44,12 +44,16 @@
 			this.sessionId = this.getSessionId();
 			this.autosaveTimer = null;
 			this.db = null;
-			this.pendingSync = false;
+			this.saveQueue = [];
+			this.processingQueue = false;
 			this.initialized = false;
 			this.completed = false;
 			this.hasResponses = false;
 			this.beforeUnloadHandler = null;
 			this.inputDebounceId = null;
+			// Fix 5: Dirty tracking para reducir payload
+			this.dirtyFields = new Set();
+			this.lastSavedChecksum = null;
 
 			this.init();
 		}
@@ -98,12 +102,7 @@
 			}
 
 			if ( ! pid ) {
-				const randomSource = crypto.randomUUID
-					? crypto.randomUUID().replace( /-/g, '' )
-					: `${ Math.random()
-							.toString( 36 )
-							.substring( 2 ) }${ Date.now().toString( 36 ) }`;
-				pid = `p-${ randomSource.substring( 0, 12 ) }`;
+				pid = this.generateSecureParticipantId();
 
 				try {
 					window.localStorage.setItem( STORAGE_KEY, pid );
@@ -113,6 +112,32 @@
 			}
 
 			return pid;
+		}
+
+		/**
+		 * Fix 4: Generación criptográficamente segura de participant_id
+		 * Fallback progresivo: crypto.randomUUID → crypto.getRandomValues → Math.random + timestamp
+		 */
+		generateSecureParticipantId() {
+			// Opción 1: crypto.randomUUID (más moderno, disponible en navegadores recientes)
+			if ( typeof crypto !== 'undefined' && crypto.randomUUID ) {
+				return 'p-' + crypto.randomUUID().replace( /-/g, '' ).substring( 0, 12 );
+			}
+
+			// Opción 2: crypto.getRandomValues (CSPRNG seguro, disponible en todos los navegadores modernos)
+			if ( typeof crypto !== 'undefined' && crypto.getRandomValues ) {
+				const array = new Uint8Array( 8 );
+				crypto.getRandomValues( array );
+				const hex = Array.from( array, ( b ) =>
+					b.toString( 16 ).padStart( 2, '0' )
+				).join( '' );
+				return 'p-' + hex.substring( 0, 12 );
+			}
+
+			// Opción 3: Último fallback - Math.random con timestamp (menos seguro pero funcional)
+			const timestamp = Date.now().toString( 36 );
+			const random = Math.random().toString( 36 ).substring( 2, 8 );
+			return 'p-' + timestamp + random;
 		}
 
 		getSessionId() {
@@ -182,20 +207,45 @@
 		}
 
 		async checkForPartialResponse() {
-			const serverPartial = await this.loadFromServer();
-			if (
-				serverPartial &&
-				serverPartial.found &&
-				serverPartial.partial
-			) {
-				this.showRecoveryPopup( serverPartial.partial );
+			// Fix 6: Cargar ambos en paralelo para reducir latencia
+			const [ serverPartial, localPartial ] = await Promise.all( [
+				this.loadFromServer().catch( () => null ),
+				this.loadFromIDB().catch( () => null ),
+			] );
+
+			const hasServer = serverPartial?.found && serverPartial?.partial;
+			const hasLocal = !! localPartial;
+
+			if ( ! hasServer && ! hasLocal ) {
 				return;
+			} // Nada que recuperar
+
+			let toRestore;
+
+			if ( hasServer && hasLocal ) {
+				// Usar el más reciente basándose en timestamp
+				const serverDate = new Date( serverPartial.partial.updated_at || 0 );
+				const localDate = new Date(
+					localPartial.updated_at || localPartial.savedAt || 0
+				);
+
+				toRestore =
+					localDate > serverDate ? localPartial : serverPartial.partial;
+
+				// Si local es más reciente, sincronizar con servidor en background
+				if ( localDate > serverDate ) {
+					this.saveToServer(
+						localPartial.responses,
+						localPartial.page_index
+					).catch( ( e ) =>
+						console.warn( '[EIPSI] Background sync failed:', e )
+					);
+				}
+			} else {
+				toRestore = hasServer ? serverPartial.partial : localPartial;
 			}
 
-			const localPartial = await this.loadFromIDB();
-			if ( localPartial ) {
-				this.showRecoveryPopup( localPartial );
-			}
+			this.showRecoveryPopup( toRestore );
 		}
 
 		async loadFromServer() {
@@ -881,7 +931,7 @@
 			}
 
 			this.autosaveTimer = window.setInterval( () => {
-				this.savePartial( 'auto' );
+				this.queueSave( 'auto' );
 			}, AUTOSAVE_INTERVAL );
 		}
 
@@ -931,9 +981,17 @@
 					this.handleFieldInput()
 				);
 				field.addEventListener( 'change', () =>
-					this.savePartial( 'field-change' )
+					this.handleFieldChange( field )
 				);
 			} );
+		}
+
+		handleFieldChange( field ) {
+			if ( this.completed ) {
+				return;
+			}
+			this.dirtyFields.add( field.name || field.id );
+			this.queueSave( 'field-change' );
 		}
 
 		handleFieldInput() {
@@ -950,15 +1008,34 @@
 			}, INPUT_DEBOUNCE );
 		}
 
-		async savePartial( trigger = 'manual' ) {
-			if ( this.completed || this.pendingSync ) {
+		async queueSave( trigger = 'manual' ) {
+			if ( this.completed ) {
 				return;
 			}
 
-			this.pendingSync = true;
+			// Descartar saves duplicados en cola — solo mantener el último por trigger
+			this.saveQueue = this.saveQueue.filter( s => s.trigger !== trigger );
+			this.saveQueue.push( { trigger, timestamp: Date.now() } );
 
+			if ( ! this.processingQueue ) {
+				await this.processSaveQueue();
+			}
+		}
+
+		async processSaveQueue() {
+			this.processingQueue = true;
+			while ( this.saveQueue.length > 0 ) {
+				const save = this.saveQueue.shift();
+				await this.executeSave( save.trigger );
+			}
+			this.processingQueue = false;
+		}
+
+		async executeSave( trigger ) {
 			try {
-				const responses = this.collectResponses();
+				// Fix 5: fullScan solo para beforeunload o primer guardado
+				const fullScan = trigger === 'beforeunload' || this.dirtyFields.size === 0;
+				const responses = this.collectResponses( fullScan );
 				const currentPage = this.getCurrentPage();
 				this.hasResponses = Object.keys( responses ).length > 0;
 
@@ -979,6 +1056,8 @@
 
 				await this.saveToIDB( responses, currentPage );
 				await this.saveToServer( responses, currentPage );
+				// Fix 5: Limpiar dirty tracking después de save exitoso
+				this.dirtyFields.clear();
 			} catch ( error ) {
 				if ( window.console && window.console.warn ) {
 					window.console.warn(
@@ -986,8 +1065,6 @@
 						error
 					);
 				}
-			} finally {
-				this.pendingSync = false;
 			}
 		}
 
@@ -1033,18 +1110,30 @@
 			this.saveToIDB( responses, currentPage );
 		}
 
-		collectResponses() {
+		collectResponses( fullScan = false ) {
 			const responses = {};
-			const formData = new FormData( this.form );
 
-			formData.forEach( ( value, key ) => {
-				if ( EXCLUDED_FIELDS.has( key ) ) {
-					return;
-				}
-
-				if ( value instanceof File ) {
-					return;
-				}
+			if ( fullScan || this.dirtyFields.size === 0 ) {
+				// Scan completo — para beforeunload y primer guardado
+				const formData = new FormData( this.form );
+				formData.forEach( ( value, key ) => {
+					if ( EXCLUDED_FIELDS.has( key ) ) {
+						return;
+					}
+					if ( value instanceof File ) {
+						return;
+					}
+					responses[ key ] = value;
+				} );
+			} else {
+				// Solo campos modificados (Fix 5: dirty tracking)
+				this.dirtyFields.forEach( ( fieldName ) => {
+					const field = this.form.querySelector( `[name="${ fieldName }"]` );
+					if ( field ) {
+						responses[ fieldName ] = field.value;
+					}
+				} );
+			}
 
 				const normalized =
 					typeof value === 'string' ? value : `${ value }`;

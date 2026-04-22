@@ -114,6 +114,139 @@
 	}
 }
 
+/**
+ * v2.5: Consentimiento Informado - Checkbox de lectura + Botones explícitos
+ */
+
+.eipsi-consent-reading-confirmation {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+	margin-bottom: 1.5em;
+	cursor: pointer;
+
+	input[type="checkbox"] {
+		appearance: none;
+		-webkit-appearance: none;
+		width: 20px;
+		height: 20px;
+		border: 2px solid var(--eipsi-color-checkbox-border, #d1d5db);
+		border-radius: 4px;
+		background-color: var(--eipsi-color-bg, #ffffff);
+		cursor: pointer;
+		position: relative;
+		margin-top: 2px;
+		flex-shrink: 0;
+		transition: all var(--eipsi-transition-duration, 0.2s) var(--eipsi-transition-timing, ease);
+
+		&:checked {
+			background-color: var(--eipsi-color-button-bg, #2563eb);
+			border-color: var(--eipsi-color-button-bg, #2563eb);
+
+			&::after {
+				content: '';
+				position: absolute;
+				left: 7px;
+				top: 5px;
+				width: 5px;
+				height: 10px;
+				border: solid white;
+				border-width: 0 2px 2px 0;
+				transform: rotate(45deg);
+			}
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--eipsi-color-button-bg, #2563eb);
+			outline-offset: 2px;
+		}
+	}
+
+	label {
+		font-family: var(--eipsi-font-family-body, inherit);
+		font-size: var(--eipsi-font-size-base, 16px);
+		font-weight: 500;
+		color: var(--eipsi-color-text, #111827);
+		cursor: pointer;
+		user-select: none;
+		line-height: 1.4;
+
+		.eipsi-required-mark {
+			color: #d92d20;
+			margin-left: 4px;
+		}
+	}
+}
+
+.eipsi-consent-decision-buttons {
+	display: flex;
+	gap: 1rem;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+.eipsi-btn {
+	font-family: var(--eipsi-font-family-body, inherit);
+	font-size: var(--eipsi-font-size-base, 16px);
+	font-weight: 500;
+	padding: 0.75rem 1.5rem;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	border: 2px solid transparent;
+	min-width: 180px;
+	text-align: center;
+
+	&:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+}
+
+.eipsi-btn-reject {
+	background-color: transparent;
+	color: #dc2626;
+	border-color: #dc2626;
+
+	&:hover:not(:disabled) {
+		background-color: #dc2626;
+		color: white;
+	}
+
+	&:focus-visible {
+		outline: 2px solid #dc2626;
+		outline-offset: 2px;
+	}
+}
+
+.eipsi-btn-accept {
+	background-color: #16a34a;
+	color: white;
+	border-color: #16a34a;
+
+	&:hover:not(:disabled) {
+		background-color: #15803d;
+		border-color: #15803d;
+	}
+
+	&:focus-visible {
+		outline: 2px solid #16a34a;
+		outline-offset: 2px;
+	}
+
+	&:disabled {
+		background-color: #9ca3af;
+		border-color: #9ca3af;
+	}
+}
+
+.eipsi-consent-error {
+	margin-top: 1em;
+	color: #dc2626;
+	font-size: 0.9em;
+	text-align: center;
+}
+
 /* Dark mode compatibility - Updated to work with form container selectors */
 .vas-dinamico-form[data-theme="dark"] .eipsi-consent-block,
 .eipsi-form[data-theme="dark"] .eipsi-consent-block {
@@ -148,5 +281,47 @@
 				color: var(--eipsi-color-text, #f9fafb);
 			}
 		}
+	}
+
+	/* Dark mode: Checkbox de lectura */
+	.eipsi-consent-reading-confirmation {
+		input[type="checkbox"] {
+			border-color: var(--eipsi-color-checkbox-border, #4b5563);
+			background-color: var(--eipsi-color-bg, #111827);
+
+			&:checked {
+				background-color: var(--eipsi-color-button-bg, #2563eb);
+				border-color: var(--eipsi-color-button-bg, #2563eb);
+			}
+		}
+
+		label {
+			color: var(--eipsi-color-text, #f9fafb);
+		}
+	}
+
+	/* Dark mode: Botones */
+	.eipsi-btn-reject {
+		color: #f87171;
+		border-color: #f87171;
+
+		&:hover:not(:disabled) {
+			background-color: #f87171;
+			color: #111827;
+		}
+	}
+
+	.eipsi-btn-accept {
+		background-color: #22c55e;
+		border-color: #22c55e;
+
+		&:hover:not(:disabled) {
+			background-color: #16a34a;
+			border-color: #16a34a;
+		}
+	}
+
+	.eipsi-consent-error {
+		color: #f87171;
 	}
 }

@@ -619,6 +619,62 @@ body.eipsi-dark-mode .eipsi-participant-dashboard {
     color: #d63638;
 }
 
+/* Fase 3 - v2.5: Botón de abandono (solo icono) */
+.eipsi-button-withdraw {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 2px solid var(--eipsi-color-border, #e9ecef);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.eipsi-button-withdraw .btn-icon {
+    font-size: 18px;
+    line-height: 1;
+    color: var(--eipsi-color-text-muted, #6c757d);
+    transition: color 0.2s ease;
+}
+
+.eipsi-button-withdraw:hover {
+    background: #fef2f2;
+    border-color: #dc2626;
+    transform: scale(1.05);
+}
+
+.eipsi-button-withdraw:hover .btn-icon {
+    color: #dc2626;
+}
+
+.eipsi-button-withdraw:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+    .eipsi-button-withdraw {
+        border-color: var(--eipsi-color-border, #4b5563);
+    }
+    
+    .eipsi-button-withdraw:hover {
+        background: rgba(220, 38, 38, 0.1);
+        border-color: #f87171;
+    }
+    
+    .eipsi-button-withdraw:hover .btn-icon {
+        color: #f87171;
+    }
+    
+    .eipsi-button-withdraw .btn-icon {
+        color: var(--eipsi-color-text-muted, #9ca3af);
+    }
+}
+
 .eipsi-footer-info {
     font-size: 12px;
     color: var(--eipsi-color-text-muted, #6c757d);

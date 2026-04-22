@@ -2979,6 +2979,282 @@ function eipsi_load_partial_response_handler() {
 }
 
 /**
+ * Fase 2 - v2.5: Save Consent Decision (T1 rejection)
+ * Handles both 'accepted' and 'declined' decisions at consent block
+ * 
+ * @since 2.5.0
+ */
+add_action('wp_ajax_nopriv_eipsi_save_consent_decision', 'eipsi_save_consent_decision_handler');
+add_action('wp_ajax_eipsi_save_consent_decision', 'eipsi_save_consent_decision_handler');
+
+function eipsi_save_consent_decision_handler() {
+    // Verify nonce
+    if (!wp_verify_nonce($_POST['nonce'] ?? '', 'eipsi_forms_nonce')) {
+        wp_send_json_error(array('message' => __('Invalid nonce', 'eipsi-forms')));
+        return;
+    }
+    
+    $form_id = sanitize_text_field($_POST['form_id'] ?? '');
+    $decision = sanitize_text_field($_POST['decision'] ?? '');
+    $participant_id = sanitize_text_field($_POST['participant_id'] ?? '');
+    
+    if (empty($form_id) || !in_array($decision, array('accepted', 'declined'))) {
+        wp_send_json_error(array('message' => __('Invalid parameters', 'eipsi-forms')));
+        return;
+    }
+    
+    // Get participant_id from session if not provided
+    if (empty($participant_id)) {
+        $participant_id = eipsi_get_current_participant_id();
+    }
+    
+    global $wpdb;
+    
+    // v2.5: Check if this is longitudinal (has study_id) or standalone
+    $study_id = eipsi_get_study_id_for_form($form_id);
+    
+    if ($study_id) {
+        // Longitudinal study: save to wp_survey_participants
+        $table = $wpdb->prefix . 'survey_participants';
+        
+        $data = array(
+            'consent_decision' => $decision,
+            'consent_decided_at' => current_time('mysql'),
+            'consent_ip_address' => eipsi_get_client_ip(),
+            'consent_user_agent' => sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? ''),
+            'consent_context' => 'T1_consent_block',
+        );
+        
+        // If declined, also set blocked_survey_id
+        if ($decision === 'declined') {
+            $data['consent_blocked_survey_id'] = $form_id;
+        }
+        
+        $where = array(
+            'study_id' => $study_id,
+            'participant_id' => $participant_id,
+        );
+        
+        $result = $wpdb->update($table, $data, $where);
+        
+        // If no existing record, insert new
+        if ($result === false || $result === 0) {
+            $data['study_id'] = $study_id;
+            $data['participant_id'] = $participant_id;
+            $data['status'] = ($decision === 'declined') ? 'consent_declined' : 'active';
+            $wpdb->insert($table, $data);
+        }
+    } else {
+        // Standalone form: save to wp_survey_assignments
+        $table = $wpdb->prefix . 'survey_assignments';
+        
+        $data = array(
+            'consent_decision' => $decision,
+            'consent_decided_at' => current_time('mysql'),
+            'consent_ip_address' => eipsi_get_client_ip(),
+            'consent_user_agent' => sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? ''),
+            'consent_context' => 'T1_consent_block',
+        );
+        
+        $where = array(
+            'survey_id' => $form_id,
+            'participant_id' => $participant_id,
+        );
+        
+        $result = $wpdb->update($table, $data, $where);
+        
+        // If no existing record, insert new
+        if ($result === false || $result === 0) {
+            $data['survey_id'] = $form_id;
+            $data['participant_id'] = $participant_id;
+            $data['status'] = ($decision === 'declined') ? 'consent_declined' : 'active';
+            $wpdb->insert($table, $data);
+        }
+    }
+    
+    // Log the decision
+    if (function_exists('eipsi_log_audit')) {
+        eipsi_log_audit('consent_decision', array(
+            'form_id' => $form_id,
+            'participant_id' => $participant_id,
+            'decision' => $decision,
+            'study_id' => $study_id ?? null,
+        ));
+    }
+    
+    wp_send_json_success(array(
+        'message' => __('Decision saved', 'eipsi-forms'),
+        'decision' => $decision,
+        'redirect' => ($decision === 'declined') ? '/consentimiento-rechazado' : null,
+    ));
+}
+
+/**
+ * Fase 3 - v2.5: AJAX Handler for Study Abandonment
+ * Handles both B1 (standard withdrawal) and B2 (data deletion)
+ * 
+ * @since 2.5.0
+ */
+add_action('wp_ajax_eipsi_abandon_study', 'eipsi_abandon_study_handler');
+add_action('wp_ajax_nopriv_eipsi_abandon_study', 'eipsi_abandon_study_handler');
+
+function eipsi_abandon_study_handler() {
+    // Verify nonce
+    if (!wp_verify_nonce($_POST['nonce'] ?? '', 'eipsi_abandon_study')) {
+        wp_send_json_error(array('message' => __('Invalid security token', 'eipsi-forms')));
+        return;
+    }
+    
+    global $wpdb;
+    
+    // Get and sanitize input
+    $participant_id = sanitize_text_field($_POST['participant_id'] ?? '');
+    $study_id = sanitize_text_field($_POST['study_id'] ?? '');
+    $withdrawal_type = sanitize_text_field($_POST['withdrawal_type'] ?? ''); // 'b1' or 'b2'
+    $verification_text = sanitize_text_field($_POST['verification_text'] ?? '');
+    
+    // Validate required fields
+    if (empty($participant_id) || empty($study_id)) {
+        wp_send_json_error(array('message' => __('Participant ID and Study ID are required', 'eipsi-forms')));
+        return;
+    }
+    
+    // Validate withdrawal type
+    if (!in_array($withdrawal_type, array('b1', 'b2'), true)) {
+        wp_send_json_error(array('message' => __('Invalid withdrawal type', 'eipsi-forms')));
+        return;
+    }
+    
+    // For B2 (data deletion), verify the exact text was entered
+    if ($withdrawal_type === 'b2') {
+        $required_text = 'NO QUIERO QUE MIS RESPUESTAS FORMEN PARTE DEL ANÁLISIS';
+        if (strtoupper(trim($verification_text)) !== $required_text) {
+            wp_send_json_error(array(
+                'message' => __('Verification text does not match. Please type exactly as shown.', 'eipsi-forms'),
+                'code' => 'verification_failed'
+            ));
+            return;
+        }
+    }
+    
+    $current_time = current_time('mysql');
+    $ip_address = eipsi_get_client_ip();
+    $user_agent = sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? '');
+    
+    // Update participant record
+    $participants_table = $wpdb->prefix . 'survey_participants';
+    
+    // Prepare update data
+    $update_data = array(
+        'consent_decision' => 'withdrawn',
+        'consent_decided_at' => $current_time,
+        'consent_ip_address' => $ip_address,
+        'consent_user_agent' => $user_agent,
+        'consent_context' => ($withdrawal_type === 'b2') ? 'T2B_data_deletion' : 'T2A_withdrawal',
+        'status' => 'withdrawn',
+    );
+    
+    // For B2, mark data for deletion
+    if ($withdrawal_type === 'b2') {
+        $update_data['data_deleted'] = 1;
+    }
+    
+    $where = array(
+        'study_id' => $study_id,
+        'participant_id' => $participant_id,
+    );
+    
+    $result = $wpdb->update($participants_table, $update_data, $where);
+    
+    if ($result === false) {
+        wp_send_json_error(array(
+            'message' => __('Failed to update participant record', 'eipsi-forms'),
+            'error' => $wpdb->last_error
+        ));
+        return;
+    }
+    
+    // Mark all pending waves as withdrawn
+    $waves_table = $wpdb->prefix . 'study_waves';
+    $assignments_table = $wpdb->prefix . 'survey_assignments';
+    
+    // Get current wave if any
+    $current_wave = $wpdb->get_row($wpdb->prepare(
+        "SELECT id FROM {$waves_table} WHERE study_id = %s AND status = 'active' ORDER BY wave_index ASC LIMIT 1",
+        $study_id
+    ));
+    
+    if ($current_wave) {
+        // Update participant record with withdrawal wave
+        $wpdb->update($participants_table, array(
+            'withdrawal_wave_id' => $current_wave->id
+        ), $where);
+    }
+    
+    // For B2, anonymize/delete existing responses
+    if ($withdrawal_type === 'b2') {
+        $submissions_table = $wpdb->prefix . 'survey_submissions';
+        $partial_table = $wpdb->prefix . 'survey_partial_responses';
+        
+        // Get all form IDs for this study
+        $forms_table = $wpdb->prefix . 'study_wave_forms';
+        $form_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT DISTINCT form_id FROM {$forms_table} WHERE study_id = %s",
+            $study_id
+        ));
+        
+        foreach ($form_ids as $form_id) {
+            // Anonymize submissions
+            $wpdb->query($wpdb->prepare(
+                "UPDATE {$submissions_table} 
+                 SET participant_id = CONCAT('ANONYMIZED_', MD5(participant_id)),
+                     status = 'anonymized',
+                     anonymized_at = %s
+                 WHERE form_id = %d 
+                 AND participant_id = %s 
+                 AND status NOT IN ('anonymized', 'deleted')",
+                $current_time,
+                $form_id,
+                $participant_id
+            ));
+            
+            // Delete partial responses
+            $wpdb->query($wpdb->prepare(
+                "DELETE FROM {$partial_table} 
+                 WHERE form_id = %d 
+                 AND participant_id = %s",
+                $form_id,
+                $participant_id
+            ));
+        }
+    }
+    
+    // Log the abandonment
+    if (function_exists('eipsi_log_audit')) {
+        eipsi_log_audit('study_abandonment', array(
+            'participant_id' => $participant_id,
+            'study_id' => $study_id,
+            'withdrawal_type' => $withdrawal_type,
+            'data_deleted' => ($withdrawal_type === 'b2'),
+            'ip_address' => $ip_address,
+        ));
+    }
+    
+    // Prepare redirect URL based on type
+    $redirect_url = ($withdrawal_type === 'b2') 
+        ? '/abandono-datos-eliminados' 
+        : '/abandono-confirmado';
+    
+    wp_send_json_success(array(
+        'message' => ($withdrawal_type === 'b2') 
+            ? __('Your data has been scheduled for deletion', 'eipsi-forms')
+            : __('You have successfully withdrawn from the study', 'eipsi-forms'),
+        'withdrawal_type' => $withdrawal_type,
+        'redirect_url' => $redirect_url,
+    ));
+}
+
+/**
  * Save & Continue: Discard partial response
  */
 function eipsi_discard_partial_response_handler() {

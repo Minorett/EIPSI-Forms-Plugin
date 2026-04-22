@@ -20,6 +20,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		mostrarCheckbox,
 		etiquetaCheckbox,
 		isRequired,
+		etiquetaConfirmacionLectura,
+		textoBotonRechazar,
+		textoBotonAceptar,
 	} = attributes;
 
 	// Estado para validación de markdown
@@ -120,19 +123,67 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				) }
 
 				{ mostrarCheckbox && (
-					<div className="eipsi-consent-checkbox-wrapper">
-						<input
-							type="checkbox"
-							id="consent-preview-checkbox"
-							disabled
-							checked={ false }
-						/>
-						<label htmlFor="consent-preview-checkbox">
-							{ etiquetaCheckbox }
-							{ isRequired && (
+					<div className="eipsi-consent-control-preview">
+						{/* v2.5: Preview del checkbox de confirmación de lectura */}
+						<div className="eipsi-consent-reading-preview">
+							<input
+								type="checkbox"
+								id="eipsi-consent-reading-preview"
+								disabled
+								checked={ false }
+							/>
+							<label htmlFor="eipsi-consent-reading-preview">
+								{ etiquetaConfirmacionLectura }
 								<span className="eipsi-required-mark">*</span>
-							) }
-						</label>
+							</label>
+						</div>
+
+						{/* v2.5: Preview de botones de decisión */}
+						<div className="eipsi-consent-buttons-preview">
+							<button
+								type="button"
+								disabled
+								style={ {
+									backgroundColor: 'transparent',
+									color: '#dc2626',
+									border: '2px solid #dc2626',
+									padding: '8px 16px',
+									borderRadius: '6px',
+									marginRight: '12px',
+									opacity: 0.7,
+									cursor: 'not-allowed',
+								} }
+							>
+								{ textoBotonRechazar }
+							</button>
+							<button
+								type="button"
+								disabled
+								style={ {
+									backgroundColor: '#9ca3af',
+									color: 'white',
+									border: '2px solid #9ca3af',
+									padding: '8px 16px',
+									borderRadius: '6px',
+									opacity: 0.5,
+									cursor: 'not-allowed',
+								} }
+							>
+								{ textoBotonAceptar }
+							</button>
+						</div>
+
+						{/* Nota informativa para el editor */}
+						<p
+							style={ {
+								fontSize: '11px',
+								color: '#6b7280',
+								marginTop: '8px',
+								fontStyle: 'italic',
+							} }
+						>
+							💡 Preview: El botón "Aceptar" se habilitará cuando el participante marque el checkbox de lectura.
+						</p>
 					</div>
 				) }
 			</div>

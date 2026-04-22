@@ -24,6 +24,9 @@ const ConsentSettings = ( { attributes, setAttributes } ) => {
 		etiquetaCheckbox,
 		isRequired,
 		showTimestamp,
+		etiquetaConfirmacionLectura,
+		textoBotonRechazar,
+		textoBotonAceptar,
 	} = attributes;
 
 	return (
@@ -169,9 +172,60 @@ const ConsentSettings = ( { attributes, setAttributes } ) => {
 
 				{ mostrarCheckbox && (
 					<>
+						<PanelBody
+							title={ __(
+								'v2.5 - Configuración de Consentimiento',
+								'eipsi-forms'
+							) }
+							initialOpen={ true }
+						>
+							<TextareaControl
+								label={ __(
+									'Etiqueta del Checkbox de Lectura (Gate)',
+									'eipsi-forms'
+								) }
+								help={ __(
+									'Texto que debe confirmar el participante antes de poder aceptar',
+									'eipsi-forms'
+								) }
+								value={ etiquetaConfirmacionLectura || '' }
+								onChange={ ( value ) =>
+									setAttributes( {
+										etiquetaConfirmacionLectura: value,
+									} )
+								}
+							/>
+
+							<TextControl
+								label={ __(
+									'Texto Botón Rechazar',
+									'eipsi-forms'
+								) }
+								value={ textoBotonRechazar || '' }
+								onChange={ ( value ) =>
+									setAttributes( {
+										textoBotonRechazar: value,
+									} )
+								}
+							/>
+
+							<TextControl
+								label={ __(
+									'Texto Botón Aceptar',
+									'eipsi-forms'
+								) }
+								value={ textoBotonAceptar || '' }
+								onChange={ ( value ) =>
+									setAttributes( {
+										textoBotonAceptar: value,
+									} )
+								}
+							/>
+						</PanelBody>
+
 						<TextareaControl
 							label={ __(
-								'Etiqueta del Checkbox',
+								'Etiqueta del Checkbox (Legacy)',
 								'eipsi-forms'
 							) }
 							value={ etiquetaCheckbox }

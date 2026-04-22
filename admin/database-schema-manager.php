@@ -1504,6 +1504,63 @@ class EIPSI_Database_Schema_Manager {
     }
     
     /**
+     * Fase 2 - v2.5: Agregar campos de consentimiento informado
+     * 
+     * @since 2.5.0
+     */
+    public static function add_consent_v2_fields() {
+        global $wpdb;
+        
+        // Campos para wp_survey_participants (longitudinal)
+        $participants_table = $wpdb->prefix . 'survey_participants';
+        $participants_columns = array(
+            'consent_decision' => "VARCHAR(20) DEFAULT NULL COMMENT 'accepted|declined'",
+            'consent_decided_at' => "DATETIME DEFAULT NULL",
+            'consent_ip_address' => "VARCHAR(45) DEFAULT NULL",
+            'consent_user_agent' => "TEXT DEFAULT NULL",
+            'consent_context' => "VARCHAR(50) DEFAULT NULL COMMENT 'T1_consent_block|dashboard_abandonment'",
+            'consent_blocked_survey_id' => "VARCHAR(50) DEFAULT NULL",
+            'withdrawal_wave_id' => "VARCHAR(50) DEFAULT NULL",
+            'data_deleted' => "TINYINT(1) DEFAULT 0",
+        );
+        
+        // Campos para wp_survey_assignments (standalone)
+        $assignments_table = $wpdb->prefix . 'survey_assignments';
+        $assignments_columns = array(
+            'consent_decision' => "VARCHAR(20) DEFAULT NULL COMMENT 'accepted|declined'",
+            'consent_decided_at' => "DATETIME DEFAULT NULL",
+            'consent_ip_address' => "VARCHAR(45) DEFAULT NULL",
+            'consent_user_agent' => "TEXT DEFAULT NULL",
+            'consent_context' => "VARCHAR(50) DEFAULT NULL",
+        );
+        
+        // Verificar y agregar columnas en survey_participants
+        foreach ( $participants_columns as $column => $definition ) {
+            $column_exists = $wpdb->get_results( 
+                "SHOW COLUMNS FROM `{$participants_table}` LIKE '{$column}'" 
+            );
+            if ( empty( $column_exists ) ) {
+                $wpdb->query( "ALTER TABLE `{$participants_table}` ADD COLUMN {$column} {$definition}" );
+            }
+        }
+        
+        // Verificar y agregar columnas en survey_assignments
+        foreach ( $assignments_columns as $column => $definition ) {
+            $column_exists = $wpdb->get_results( 
+                "SHOW COLUMNS FROM `{$assignments_table}` LIKE '{$column}'" 
+            );
+            if ( empty( $column_exists ) ) {
+                $wpdb->query( "ALTER TABLE `{$assignments_table}` ADD COLUMN {$column} {$definition}" );
+            }
+        }
+        
+        return array(
+            'success' => true,
+            'message' => 'Consent v2.5 fields migrated successfully'
+        );
+    }
+    
+    /**
      * Ensure index exists on local table
      */
     private static function ensure_local_index( $table, $column ) {
@@ -4599,11 +4656,59 @@ function eipsi_get_column_info($table_name, $column_name) {
 }
 
 /**
+ * Verificar y agregar índices faltantes en tabla eipsi_partial_responses
+ * Fix para audit v1.3.15 - Fix 3: Índices faltantes
+ *
+ * @since 2.5.0
+ */
+function eipsi_sync_partial_responses_indexes() {
+    global $wpdb;
+    $table = $wpdb->prefix . 'eipsi_partial_responses';
+    
+    // Verificar si la tabla existe
+    $table_exists = $wpdb->get_var($wpdb->prepare(
+        "SHOW TABLES LIKE %s",
+        $table
+    ));
+    
+    if (!$table_exists) {
+        return;
+    }
+    
+    // Índices a verificar/agregar
+    $indexes_to_add = [
+        'idx_participant_completed' => "ALTER TABLE {$table} ADD INDEX idx_participant_completed (participant_id, completed)",
+        'idx_updated_completed'     => "ALTER TABLE {$table} ADD INDEX idx_updated_completed (updated_at, completed)",
+        'idx_form_participant'      => "ALTER TABLE {$table} ADD INDEX idx_form_participant (form_id, participant_id)",
+    ];
+    
+    // Obtener índices existentes
+    $existing_indexes = $wpdb->get_col("SHOW INDEX FROM {$table}", 2);
+    
+    foreach ($indexes_to_add as $index_name => $sql) {
+        if (!in_array($index_name, $existing_indexes)) {
+            $wpdb->query($sql);
+            if ($wpdb->last_error) {
+                error_log("[EIPSI Schema Manager] Error adding index {$index_name}: " . $wpdb->last_error);
+            } else {
+                error_log("[EIPSI Schema Manager] Index {$index_name} added successfully");
+            }
+        }
+    }
+}
+
+/**
  * Sincronización longitudinal unificada.
  * El Schema Manager es el único entrypoint de creación/repair.
  */
 add_action('eipsi_sync_longitudinal_tables', function() {
     if (class_exists('EIPSI_Database_Schema_Manager')) {
         EIPSI_Database_Schema_Manager::verify_and_sync_schema();
+    }
+    // Sync partial responses indexes
+    eipsi_sync_partial_responses_indexes();
+    // Fase 2 - v2.5: Sync consent fields
+    if (class_exists('EIPSI_Database_Schema_Manager')) {
+        EIPSI_Database_Schema_Manager::add_consent_v2_fields();
     }
 });

@@ -818,6 +818,12 @@ function eipsi_forms_activate() {
         wp_schedule_event(time(), 'daily', 'eipsi_cleanup_unconfirmed_participants_daily');
     }
     
+    // Save & Continue: Schedule daily cleanup of expired partial responses (30d incomplete, 90d completed)
+    if (!wp_next_scheduled('eipsi_cleanup_partial_responses')) {
+        wp_schedule_event(time(), 'daily', 'eipsi_cleanup_partial_responses');
+    }
+    add_action('eipsi_cleanup_partial_responses', 'eipsi_run_partial_cleanup');
+    
     // Create form results table
     $table_name = $wpdb->prefix . 'vas_form_results';
     $sql = "CREATE TABLE IF NOT EXISTS $table_name (
@@ -2806,4 +2812,203 @@ function eipsi_ajax_join_pool() {
     } else {
         wp_send_json_error(array('message' => __('Error al guardar asignación.', 'eipsi-forms')));
     }
+}
+
+/**
+ * Save & Continue: Cleanup de respuestas parciales expiradas
+ * - Incompletos de más de 30 días
+ * - Completados de más de 90 días
+ * - Más de 3 sesiones por participante/formulario
+ *
+ * @since 2.5.0
+ */
+function eipsi_run_partial_cleanup() {
+    global $wpdb;
+    $table = $wpdb->prefix . 'eipsi_partial_responses';
+    
+    // Eliminar incompletos de más de 30 días
+    $deleted_incomplete = $wpdb->query($wpdb->prepare(
+        "DELETE FROM {$table} WHERE updated_at < %s AND completed = 0",
+        date('Y-m-d H:i:s', strtotime('-30 days'))
+    ));
+    
+    // Eliminar completados de más de 90 días
+    $deleted_complete = $wpdb->query($wpdb->prepare(
+        "DELETE FROM {$table} WHERE updated_at < %s AND completed = 1",
+        date('Y-m-d H:i:s', strtotime('-90 days'))
+    ));
+    
+    // Eliminar sesiones huérfanas — mismo participante/form con más de 3 sesiones,
+    // conservar solo las 3 más recientes
+    $wpdb->query("
+        DELETE p1 FROM {$table} p1
+        INNER JOIN (
+            SELECT form_id, participant_id, session_id,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY form_id, participant_id
+                       ORDER BY updated_at DESC
+                   ) as rn
+            FROM {$table}
+            WHERE completed = 0
+        ) p2 ON p1.form_id = p2.form_id
+             AND p1.participant_id = p2.participant_id
+             AND p1.session_id = p2.session_id
+        WHERE p2.rn > 3
+    ");
+    
+    error_log("[EIPSI Save&Continue] Cleanup: {$deleted_incomplete} incompletos y {$deleted_complete} completados eliminados.");
+}
+
+/**
+ * Fase 2 - v2.5: Helper functions for Consent Informado
+ */
+
+/**
+ * Get client IP address
+ * @return string IP address
+ */
+function eipsi_get_client_ip() {
+    $ip_keys = array(
+        'HTTP_CLIENT_IP',
+        'HTTP_X_FORWARDED_FOR',
+        'HTTP_X_FORWARDED',
+        'HTTP_X_CLUSTER_CLIENT_IP',
+        'HTTP_FORWARDED_FOR',
+        'HTTP_FORWARDED',
+        'REMOTE_ADDR'
+    );
+    
+    foreach ($ip_keys as $key) {
+        if (array_key_exists($key, $_SERVER) === true) {
+            foreach (explode(',', $_SERVER[$key]) as $ip) {
+                $ip = trim($ip);
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+                    return $ip;
+                }
+            }
+        }
+    }
+    
+    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+}
+
+/**
+ * Get current participant ID from session/auth
+ * @return string|null Participant ID or null
+ */
+function eipsi_get_current_participant_id() {
+    // Priority 1: From auth system
+    if (isset($_COOKIE['eipsi_participant_id'])) {
+        return sanitize_text_field($_COOKIE['eipsi_participant_id']);
+    }
+    
+    // Priority 2: From localStorage via POST
+    if (!empty($_POST['participant_id'])) {
+        return sanitize_text_field($_POST['participant_id']);
+    }
+    
+    // Priority 3: From session
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    if (!empty($_SESSION['eipsi_participant_id'])) {
+        return sanitize_text_field($_SESSION['eipsi_participant_id']);
+    }
+    
+    return null;
+}
+
+/**
+ * Get study ID for a given form/survey ID
+ * Checks if form belongs to a longitudinal study
+ * 
+ * @param string $form_id Form ID
+ * @return int|null Study ID or null if standalone
+ */
+function eipsi_get_study_id_for_form($form_id) {
+    global $wpdb;
+    
+    // Try to find study that contains this survey
+    $study_id = $wpdb->get_var($wpdb->prepare(
+        "SELECT id FROM {$wpdb->prefix}survey_studies WHERE survey_ids LIKE %s LIMIT 1",
+        '%' . $wpdb->esc_like($form_id) . '%'
+    ));
+    
+    return $study_id ? intval($study_id) : null;
+}
+
+/**
+ * Check if participant has declined consent for a study/form
+ * Used to block access to T1 or future waves
+ * 
+ * @param string $participant_id Participant ID
+ * @param string|int $context Study ID or Form ID
+ * @param string $type 'study' or 'form'
+ * @return array Array with 'blocked' bool and 'reason' string
+ */
+function eipsi_check_consent_blocked($participant_id, $context, $type = 'study') {
+    global $wpdb;
+    
+    $result = array(
+        'blocked' => false,
+        'reason' => null,
+        'decision' => null,
+        'decided_at' => null,
+    );
+    
+    if ($type === 'study') {
+        // Check longitudinal study participants table
+        $table = $wpdb->prefix . 'survey_participants';
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SELECT consent_decision, consent_decided_at, consent_blocked_survey_id 
+             FROM {$table} 
+             WHERE study_id = %d AND participant_id = %s 
+             LIMIT 1",
+            $context,
+            $participant_id
+        ));
+        
+        if ($row && $row->consent_decision === 'declined') {
+            $result['blocked'] = true;
+            $result['reason'] = 'consent_declined';
+            $result['decision'] = $row->consent_decision;
+            $result['decided_at'] = $row->consent_decided_at;
+        }
+    } else {
+        // Check standalone assignments table
+        $table = $wpdb->prefix . 'survey_assignments';
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SELECT consent_decision, consent_decided_at 
+             FROM {$table} 
+             WHERE survey_id = %s AND participant_id = %s 
+             LIMIT 1",
+            $context,
+            $participant_id
+        ));
+        
+        if ($row && $row->consent_decision === 'declined') {
+            $result['blocked'] = true;
+            $result['reason'] = 'consent_declined';
+            $result['decision'] = $row->consent_decision;
+            $result['decided_at'] = $row->consent_decided_at;
+        }
+    }
+    
+    return $result;
+}
+
+/**
+ * Log audit event
+ * 
+ * @param string $event_type Type of event
+ * @param array $data Event data
+ */
+function eipsi_log_audit($event_type, $data) {
+    // Log to error log for now (can be extended to database table)
+    error_log(sprintf(
+        '[EIPSI Audit] %s | Data: %s',
+        $event_type,
+        json_encode($data)
+    ));
 }

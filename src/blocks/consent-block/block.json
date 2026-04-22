@@ -63,6 +63,18 @@
 		"className": {
 			"type": "string",
 			"default": ""
+		},
+		"etiquetaConfirmacionLectura": {
+			"type": "string",
+			"default": "Confirmo que he leído y comprendido el consentimiento informado"
+		},
+		"textoBotonRechazar": {
+			"type": "string",
+			"default": "No deseo participar"
+		},
+		"textoBotonAceptar": {
+			"type": "string",
+			"default": "Acepto participar"
 		}
 	},
 	"example": {
