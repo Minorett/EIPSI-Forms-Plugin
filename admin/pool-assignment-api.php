@@ -317,7 +317,17 @@ add_action( 'wp_ajax_eipsi_get_pool_stats', 'eipsi_ajax_get_pool_stats' );
  * @since 2.5.3 - Fase 5: Pool Hub Dashboard
  */
 function eipsi_ajax_get_all_pools_summary() {
-    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    // Accept both nonces for backward compatibility
+    $nonce_ok = false;
+    if (isset($_POST['nonce']) && wp_verify_nonce($_POST['nonce'], 'eipsi_pool_hub')) {
+        $nonce_ok = true;
+    } elseif (isset($_POST['nonce']) && wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce')) {
+        $nonce_ok = true;
+    }
+    
+    if (!$nonce_ok) {
+        wp_send_json_error(array('message' => __('Token inválido.', 'eipsi-forms'), 'debug' => 'nonce failed'), 403);
+    }
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => __('Sin permisos.', 'eipsi-forms')), 403);
     }
@@ -412,7 +422,17 @@ add_action('wp_ajax_eipsi_get_all_pools_summary', 'eipsi_ajax_get_all_pools_summ
  * @since 2.5.3 - Fase 5: Pool Hub Dashboard
  */
 function eipsi_ajax_toggle_pool_status() {
-    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    // Accept both nonces for backward compatibility
+    $nonce_ok = false;
+    if (isset($_POST['nonce']) && wp_verify_nonce($_POST['nonce'], 'eipsi_pool_hub')) {
+        $nonce_ok = true;
+    } elseif (isset($_POST['nonce']) && wp_verify_nonce($_POST['nonce'], 'eipsi_admin_nonce')) {
+        $nonce_ok = true;
+    }
+    
+    if (!$nonce_ok) {
+        wp_send_json_error(array('message' => __('Token inválido.', 'eipsi-forms'), 'debug' => 'nonce failed'), 403);
+    }
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => __('Sin permisos.', 'eipsi-forms')), 403);
     }
@@ -453,7 +473,17 @@ add_action('wp_ajax_eipsi_toggle_pool_status', 'eipsi_ajax_toggle_pool_status');
  * @since 2.5.3 - Fase 5: Pool Hub Dashboard
  */
 function eipsi_ajax_get_pool_analytics() {
-    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    // Accept both nonces for backward compatibility
+    $nonce_ok = false;
+    if (isset($_GET['nonce']) && wp_verify_nonce($_GET['nonce'], 'eipsi_pool_hub')) {
+        $nonce_ok = true;
+    } elseif (isset($_GET['nonce']) && wp_verify_nonce($_GET['nonce'], 'eipsi_admin_nonce')) {
+        $nonce_ok = true;
+    }
+    
+    if (!$nonce_ok) {
+        wp_send_json_error(array('message' => __('Token inválido.', 'eipsi-forms'), 'debug' => 'nonce failed'), 403);
+    }
     if (!current_user_can('manage_options')) {
         wp_send_json_error(array('message' => __('Sin permisos.', 'eipsi-forms')), 403);
     }
@@ -588,7 +618,17 @@ add_action('wp_ajax_eipsi_get_pool_analytics', 'eipsi_ajax_get_pool_analytics');
  * @since 2.5.3 - Fase 5: Pool Hub Dashboard
  */
 function eipsi_ajax_export_pool_assignments() {
-    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    // Accept both nonces for backward compatibility
+    $nonce_ok = false;
+    if (isset($_GET['nonce']) && wp_verify_nonce($_GET['nonce'], 'eipsi_pool_hub')) {
+        $nonce_ok = true;
+    } elseif (isset($_GET['nonce']) && wp_verify_nonce($_GET['nonce'], 'eipsi_admin_nonce')) {
+        $nonce_ok = true;
+    }
+    
+    if (!$nonce_ok) {
+        wp_die(__('Token inválido.', 'eipsi-forms'));
+    }
     if (!current_user_can('manage_options')) {
         wp_die(__('Sin permisos.', 'eipsi-forms'));
     }
