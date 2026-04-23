@@ -156,7 +156,7 @@ function eipsi_ajax_pool_auth() {
     }
 
     global $wpdb;
-    $participants_table = $wpdb->prefix . 'eipsi_survey_participants';
+    $participants_table = $wpdb->prefix . 'survey_participants';
 
     // -----------------------------------------------------------------
     // 3. Buscar participante por email
@@ -809,7 +809,7 @@ function eipsi_send_pool_email_confirmation( $participant_id, $email, $pool_id )
     
     // Guardar token en la tabla de participantes (o crear tabla de tokens si no existe)
     global $wpdb;
-    $participants_table = $wpdb->prefix . 'eipsi_survey_participants';
+    $participants_table = $wpdb->prefix . 'survey_participants';
     
     // Guardar token en meta temporal (usando transient o opción)
     set_transient( 'eipsi_pool_confirm_' . $participant_id, array(
