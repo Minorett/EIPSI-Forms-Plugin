@@ -168,7 +168,7 @@ function eipsi_ajax_pool_auth() {
     ) );
     
     if ( $participant ) {
-        error_log("[EIPSI POOL AUTH] Participante ENCONTRADO: ID={$participant->id}, email_confirmed={$participant->email_confirmed}");
+        error_log("[EIPSI POOL AUTH] Participante ENCONTRADO: ID={$participant->id}");
     } else {
         error_log("[EIPSI POOL AUTH] Participante NO encontrado para email: {$email}");
     }
@@ -236,10 +236,8 @@ function eipsi_ajax_pool_auth() {
             array(
                 'email'         => $email,
                 'created_at'    => current_time( 'mysql' ),
-                'is_active'     => 1,
-                'email_confirmed' => 0, // Email pendiente de confirmación
             ),
-            array( '%s', '%s', '%d', '%d' )
+            array( '%s', '%s' )
         );
 
         if ( $result === false ) {
