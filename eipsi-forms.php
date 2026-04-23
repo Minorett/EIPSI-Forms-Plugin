@@ -2384,12 +2384,25 @@ function eipsi_handle_pool_email_confirmation() {
         array( '%d' )
     );
     
+    $pool_id = $stored_data["pool_id"] ?? 0;
     if ($result === false) {
         error_log("[EIPSI POOL CONFIRM] ERROR: Falló actualización de email_confirmed en DB");
     } else {
         error_log("[EIPSI POOL CONFIRM] Email confirmado OK para participant_id={$participant_id}");
-    }
+        // Registrar la confirmación exitosa
+        $wpdb->insert(
+            $wpdb->prefix . "eipsi_pool_email_log",
+            array(
+                "pool_id"        => $pool_id,
+                "participant_id" => $participant_id,
+                "email"          => $stored_data["email"] ?? "",
+                "action"         => "confirmed",
+                "created_at"     => current_time( "mysql" ),
+            ),
+            array( "%d", "%d", "%s", "%s", "%s" )
+        );
 
+    }
     // Eliminar transient
     delete_transient( 'eipsi_pool_confirm_' . $participant_id );
     error_log("[EIPSI POOL CONFIRM] Transient eliminado");

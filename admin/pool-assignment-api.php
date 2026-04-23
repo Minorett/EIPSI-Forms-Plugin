@@ -859,6 +859,20 @@ El equipo de EIPSI", 'eipsi-forms' ),
     
     if ( $sent ) {
         error_log( "[EIPSI Pool] Email de confirmación enviado a {$email} para pool {$pool_id}" );
+        
+        // Registrar el envío inicial
+        global $wpdb;
+        $wpdb->insert(
+            $wpdb->prefix . 'eipsi_pool_email_log',
+            array(
+                'pool_id'        => $pool_id,
+                'participant_id' => $participant_id,
+                'email'          => $email,
+                'action'         => 'sent',
+                'created_at'     => current_time( 'mysql' ),
+            ),
+            array( '%d', '%d', '%s', '%s', '%s' )
+        );
     } else {
         error_log( "[EIPSI Pool] ERROR al enviar email de confirmación a {$email}" );
     }
