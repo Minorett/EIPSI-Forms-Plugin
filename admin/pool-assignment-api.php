@@ -531,6 +531,34 @@ function eipsi_ajax_resend_pool_confirmation() {
         wp_send_json_error(array('message' => __('Parámetros inválidos.', 'eipsi-forms')), 400);
     }
 
+    global $wpdb;
+    $log_table = $wpdb->prefix . 'eipsi_pool_email_log';
+
+    // Rate Limit: Max 3 records with action='resent' for that participant_id in the last 24 hours. (v2.5.5)
+    $recent_resends = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$log_table} 
+         WHERE participant_id = %d 
+         AND action = 'resent' 
+         AND created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)",
+        $participant_id
+    ));
+
+    if ($recent_resends >= 3) {
+        wp_send_json_error(array('message' => __('Límite de 3 reenvíos alcanzado para este participante en 24 horas.', 'eipsi-forms')), 429);
+    }
+
+    // Verify status (v2.5.5)
+    $latest_log = $wpdb->get_row($wpdb->prepare(
+        "SELECT action, created_at FROM {$log_table} 
+         WHERE participant_id = %d AND pool_id = %d 
+         ORDER BY created_at DESC LIMIT 1",
+        $participant_id, $pool_id
+    ));
+
+    if ($latest_log && $latest_log->action === 'confirmed') {
+        wp_send_json_error(array('message' => __('El participante ya ha confirmado su email.', 'eipsi-forms')), 400);
+    }
+
     // Call the function to send email with action 'resent'
     $sent = eipsi_send_pool_email_confirmation($participant_id, $email, $pool_id, 'resent');
 

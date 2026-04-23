@@ -1663,7 +1663,7 @@ function eipsi_render_pool_hub_v2() {
                 let actionBtn = '';
                 if (log.status === 'pending' || log.status === 'expired') {
                     actionBtn = `
-                        <button type="button" class="button button-small" onclick="resendPoolConfirmation(${poolId}, '${log.email}', ${log.participant_id}, this)" title="<?php esc_attr_e('Reenviar email', 'eipsi-forms'); ?>">
+                        <button type="button" class="button button-small" onclick="resendPoolEmail(${log.participant_id}, '${log.email}', ${poolId}, this)" title="<?php esc_attr_e('Reenviar email', 'eipsi-forms'); ?>">
                             <span class="dashicons dashicons-email-alt"></span>
                         </button>
                     `;
@@ -1686,14 +1686,16 @@ function eipsi_render_pool_hub_v2() {
             document.getElementById('eipsi-pool-email-logs-modal').style.display = 'none';
         }
 
-        function resendPoolConfirmation(poolId, email, participantId, btn) {
+        function resendPoolEmail(participantId, email, poolId, btn) {
             if (!confirm('<?php _e('¿Estás seguro de que quieres reenviar el email de confirmación?', 'eipsi-forms'); ?>')) {
                 return;
             }
 
-            const originalHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<span class="dashicons dashicons-update spin"></span>';
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="dashicons dashicons-update spin"></span>';
+            }
 
             jQuery.ajax({
                 url: POOL_HUB_V3.ajaxUrl,
@@ -1708,17 +1710,26 @@ function eipsi_render_pool_hub_v2() {
                 success: function(response) {
                     if (response.success) {
                         showToastV3('📧 ' + response.data.message);
-                        openPoolEmailLogs(poolId); // Refresh logs
+                        openPoolEmailLogs(poolId); // Refresh modal table
+                        loadAllPoolsData(); // Update main table counts
                     } else {
                         showToastV3('❌ ' + response.data.message);
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    let msg = '<?php _e('Error de conexión.', 'eipsi-forms'); ?>';
+                    if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+                        msg = xhr.responseJSON.data.message;
+                    }
+                    showToastV3('❌ ' + msg);
+                    if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = originalHtml;
                     }
-                },
-                error: function() {
-                    showToastV3('❌ <?php _e('Error de conexión.', 'eipsi-forms'); ?>');
-                    btn.disabled = false;
-                    btn.innerHTML = originalHtml;
                 }
             });
         }
