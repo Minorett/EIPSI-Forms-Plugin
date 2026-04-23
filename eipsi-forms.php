@@ -873,6 +873,11 @@ function eipsi_forms_activate() {
     if (!wp_next_scheduled('eipsi_cleanup_unconfirmed_participants_daily')) {
         wp_schedule_event(time(), 'daily', 'eipsi_cleanup_unconfirmed_participants_daily');
     }
+
+    // Pool Email Log: Schedule monthly cleanup (v2.5.5)
+    if (!wp_next_scheduled("eipsi_cleanup_pool_email_logs_monthly")) {
+        wp_schedule_event(time(), "eipsi_monthly", "eipsi_cleanup_pool_email_logs_monthly");
+    }
     
     // Save & Continue: Schedule daily cleanup of expired partial responses (30d incomplete, 90d completed)
     if (!wp_next_scheduled('eipsi_cleanup_partial_responses')) {
@@ -1136,6 +1141,9 @@ function eipsi_forms_deactivate() {
     
     // Double Opt-In cleanup cron
     wp_clear_scheduled_hook('eipsi_cleanup_unconfirmed_participants_daily');
+
+    // Pool email log cleanup cron
+    wp_clear_scheduled_hook("eipsi_cleanup_pool_email_logs_monthly");
 }
 
 /**
