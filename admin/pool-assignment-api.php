@@ -387,6 +387,17 @@ function eipsi_ajax_get_all_pools_summary() {
 
         $balance_score = count($studies) > 0 ? round(100 - ($total_deviation / count($studies)), 1) : 100;
 
+        // Email confirmation stats (Fase 5)
+        $email_log_table = $wpdb->prefix . 'eipsi_pool_email_log';
+        $emails_sent = intval($wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$email_log_table} WHERE pool_id = %d AND action = 'sent'",
+            $pool_id
+        )));
+        $emails_confirmed = intval($wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$email_log_table} WHERE pool_id = %d AND action = 'confirmed'",
+            $pool_id
+        )));
+
         // Get pool page URL - use page_id from pool table directly (more reliable than meta query)
         $page_id = !empty($pool['page_id']) ? intval($pool['page_id']) : 0;
         $page_url = $page_id ? get_permalink($page_id) : null;
@@ -405,7 +416,9 @@ function eipsi_ajax_get_all_pools_summary() {
             'distribution' => $distribution,
             'config' => $config,
             'created_at' => $pool['created_at'],
-            'page_url' => $page_url
+            'page_url' => $page_url,
+            'emails_sent' => $emails_sent,
+            'emails_confirmed' => $emails_confirmed
         );
     }
 
@@ -858,6 +871,21 @@ El equipo de EIPSI", 'eipsi-forms' ),
     $sent = wp_mail( $email, $subject, $message, $headers );
     
     if ( $sent ) {
+        // LOGUEO AUTOMÁTICO (Fase 5)
+        global $wpdb;
+        $log_table = $wpdb->prefix . 'eipsi_pool_email_log';
+        $wpdb->insert(
+            $log_table,
+            array(
+                'pool_id'        => $pool_id,
+                'participant_id' => $participant_id,
+                'email'          => $email,
+                'action'         => 'sent',
+                'created_at'     => current_time( 'mysql' )
+            ),
+            array( '%d', '%d', '%s', '%s', '%s' )
+        );
+        
         error_log( "[EIPSI Pool] Email de confirmación enviado a {$email} para pool {$pool_id}" );
     } else {
         error_log( "[EIPSI Pool] ERROR al enviar email de confirmación a {$email}" );
@@ -1001,3 +1029,134 @@ function eipsi_ajax_request_pool_assignment() {
 
 add_action( 'wp_ajax_eipsi_request_pool_assignment', 'eipsi_ajax_request_pool_assignment' );
 add_action( 'wp_ajax_nopriv_eipsi_request_pool_assignment', 'eipsi_ajax_request_pool_assignment' );
+
+/**
+ * Handler AJAX: obtener logs de email de un pool.
+ *
+ * @since 2.5.5
+ */
+function eipsi_ajax_get_pool_email_logs() {
+    // Permitir tanto eipsi_pool_hub como eipsi_admin_nonce
+    $nonce_ok = false;
+    if (isset($_GET['nonce']) && wp_verify_nonce($_GET['nonce'], 'eipsi_pool_hub')) {
+        $nonce_ok = true;
+    } elseif (isset($_GET['nonce']) && wp_verify_nonce($_GET['nonce'], 'eipsi_admin_nonce')) {
+        $nonce_ok = true;
+    }
+    
+    if (!$nonce_ok) {
+        wp_send_json_error(array('message' => __('Token inválido.', 'eipsi-forms')), 403);
+    }
+    
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array( 'message' => __( 'Sin permisos.', 'eipsi-forms' ) ), 403 );
+    }
+
+    $pool_id = isset( $_GET['pool_id'] ) ? absint( $_GET['pool_id'] ) : 0;
+
+    if ( ! $pool_id ) {
+        wp_send_json_error( array( 'message' => __( 'ID de pool inválido.', 'eipsi-forms' ) ), 400 );
+    }
+
+    global $wpdb;
+    $log_table = $wpdb->prefix . 'eipsi_pool_email_log';
+
+    // Obtener todos los emails únicos involucrados en este pool
+    $emails = $wpdb->get_results( $wpdb->prepare(
+        "SELECT email, participant_id, 
+                MAX(CASE WHEN action = 'confirmed' THEN created_at END) as confirmed_at,
+                MAX(CASE WHEN action IN ('sent', 'resent') THEN created_at END) as last_sent_at,
+                COUNT(CASE WHEN action = 'resent' THEN 1 END) as resend_count
+         FROM {$log_table}
+         WHERE pool_id = %d
+         GROUP BY email, participant_id
+         ORDER BY last_sent_at DESC",
+        $pool_id
+    ), ARRAY_A );
+
+    $formatted_logs = array();
+    $now = current_time( 'timestamp' );
+
+    if ($emails) {
+        foreach ( $emails as $log ) {
+            $status = 'expired';
+            if ( ! empty( $log['confirmed_at'] ) ) {
+                $status = 'confirmed';
+            } else {
+                $last_sent = strtotime( $log['last_sent_at'] );
+                if ( ( $now - $last_sent ) < 24 * 60 * 60 ) {
+                    $status = 'pending';
+                }
+            }
+
+            $formatted_logs[] = array(
+                'email'          => $log['email'],
+                'participant_id' => $log['participant_id'],
+                'status'         => $status,
+                'last_sent_at'   => $log['last_sent_at'],
+                'resend_count'   => intval( $log['resend_count'] )
+            );
+        }
+    }
+
+    wp_send_json_success( array( 'logs' => $formatted_logs ) );
+}
+add_action( 'wp_ajax_eipsi_get_pool_email_logs', 'eipsi_ajax_get_pool_email_logs' );
+
+/**
+ * Handler AJAX: reenviar email de confirmación.
+ *
+ * @since 2.5.5
+ */
+function eipsi_ajax_resend_pool_confirmation() {
+    check_ajax_referer( 'eipsi_pool_hub', 'nonce' );
+    
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array( 'message' => __( 'Sin permisos.', 'eipsi-forms' ) ), 403 );
+    }
+
+    $pool_id        = isset( $_POST['pool_id'] ) ? absint( $_POST['pool_id'] ) : 0;
+    $participant_id = isset( $_POST['participant_id'] ) ? absint( $_POST['participant_id'] ) : 0;
+    $email          = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
+
+    if ( ! $pool_id || ! $participant_id || ! is_email( $email ) ) {
+        wp_send_json_error( array( 'message' => __( 'Datos inválidos.', 'eipsi-forms' ) ), 400 );
+    }
+
+    global $wpdb;
+    $log_table = $wpdb->prefix . 'eipsi_pool_email_log';
+
+    // Verificar rate limit (max 3 reenvíos)
+    $resend_count = intval( $wpdb->get_var( $wpdb->prepare(
+        "SELECT COUNT(*) FROM {$log_table} WHERE pool_id = %d AND participant_id = %d AND action = 'resent'",
+        $pool_id,
+        $participant_id
+    ) ) );
+
+    if ( $resend_count >= 3 ) {
+        wp_send_json_error( array( 'message' => __( 'Límite de reenvíos alcanzado (máx 3).', 'eipsi-forms' ) ), 429 );
+    }
+
+    // Intentar reenviar
+    $sent = eipsi_send_pool_email_confirmation( $participant_id, $email, $pool_id );
+
+    if ( $sent ) {
+        // Loggear el reenvío
+        $wpdb->insert(
+            $log_table,
+            array(
+                'pool_id'        => $pool_id,
+                'participant_id' => $participant_id,
+                'email'          => $email,
+                'action'         => 'resent',
+                'created_at'     => current_time( 'mysql' )
+            ),
+            array( '%d', '%d', '%s', '%s', '%s' )
+        );
+
+        wp_send_json_success( array( 'message' => __( 'Email reenviado correctamente.', 'eipsi-forms' ) ) );
+    } else {
+        wp_send_json_error( array( 'message' => __( 'Error al enviar el email.', 'eipsi-forms' ) ), 500 );
+    }
+}
+add_action( 'wp_ajax_eipsi_resend_pool_confirmation', 'eipsi_ajax_resend_pool_confirmation' );

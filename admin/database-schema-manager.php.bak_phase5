@@ -112,7 +112,6 @@ class EIPSI_Database_Schema_Manager {
             // Pool System Tables (v2.5.3) - Pool assignments and analytics
             $pool_assignments_sync = self::sync_local_pool_assignments_table();
             $pool_analytics_sync = self::sync_local_pool_analytics_table();
-            $pool_email_log_sync = self::sync_local_pool_email_log_table();
             
             // Emergency Submissions table (v1.5.0+) - for data safety backup
             $emergency_sync = self::sync_local_emergency_submissions_table();
@@ -138,7 +137,6 @@ class EIPSI_Database_Schema_Manager {
             $results['emergency_submissions_table'] = $emergency_sync;
             $results['pool_assignments_table'] = $pool_assignments_sync;
             $results['pool_analytics_table'] = $pool_analytics_sync;
-	            $results['pool_email_log_table'] = $pool_email_log_sync;
             
             // Job Queue for Nudges (v2.5.0)
             $nudge_jobs_sync = self::sync_local_survey_nudge_jobs_table();
@@ -157,7 +155,7 @@ class EIPSI_Database_Schema_Manager {
                  ! $participant_access_log_sync['success'] ||
                  ! $device_data_sync['success'] ||
                  ! $nudge_jobs_sync['success'] ||
-                 ! $pool_email_log_sync['success'] || ! $emergency_sync['success'] ) {
+                 ! $emergency_sync['success'] ) {
                 $results['success'] = false;
                 if ( ! $results_sync['success'] ) {
                     $results['errors'][] = $results_sync['error'];
@@ -211,7 +209,7 @@ class EIPSI_Database_Schema_Manager {
                  ! $device_data_sync['success'] ) {
                     $results['errors'][] = $participant_access_log_sync['error'];
                 }
-                if ( ! $pool_email_log_sync['success'] || ! $emergency_sync['success'] ) {
+                if ( ! $emergency_sync['success'] ) {
                     $results['errors'][] = $emergency_sync['error'];
                 }
             }
@@ -3358,20 +3356,7 @@ private static function get_schema_map() {
             'completed_at' => 'DATETIME DEFAULT NULL',
             'completion_form_id' => 'VARCHAR(20) DEFAULT NULL'
         ),
-        'eipsi_pool_email_log' => array(
-	            'pool_id' => 'INT(11) NOT NULL',
-	            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-	            'email' => 'VARCHAR(255) NOT NULL',
-	            'action' => "ENUM('sent', 'confirmed', 'resent') NOT NULL",
-	            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-	        ),
-	        'eipsi_pool_email_log',
-	        'eipsi_pool_email_log' => array(
-	                'level' => 2,
-	                'dependencies' => array('eipsi_longitudinal_pools', 'survey_participants'),
-	                'sync_method' => 'sync_local_pool_email_log_table',
-	            ),
-	            'eipsi_pool_analytics' => array(
+        'eipsi_pool_analytics' => array(
             'pool_id' => 'BIGINT(20) UNSIGNED NOT NULL',
             'date' => 'DATE NOT NULL',
             'study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
@@ -3474,8 +3459,7 @@ public static function get_all_tables_status() {
         'survey_participant_access_log',
         'eipsi_device_data',
         'eipsi_pool_assignments',
-        'eipsi_pool_email_log',
-	        'eipsi_pool_analytics'
+        'eipsi_pool_analytics'
     );
     
     $status = array();
@@ -3533,9 +3517,7 @@ public static function repair_single_table($table_name) {
             'survey_participant_access_log' => 'sync_local_survey_participant_access_log_table',
             'eipsi_device_data' => 'sync_local_device_data_table',
             'eipsi_pool_assignments' => 'sync_local_pool_assignments_table',
-            'eipsi_pool_email_log',
-	        'eipsi_pool_email_log' => 'sync_local_pool_email_log_table',
-	            'eipsi_pool_analytics' => 'sync_local_pool_analytics_table'
+            'eipsi_pool_analytics' => 'sync_local_pool_analytics_table'
         );
         
         if (isset($sync_map[$table_name]) && method_exists('EIPSI_Database_Schema_Manager', $sync_map[$table_name])) {
@@ -3753,20 +3735,7 @@ public static function get_schema_health_summary() {
                 'dependencies' => array('eipsi_longitudinal_pools', 'survey_participants', 'survey_studies'),
                 'sync_method' => 'sync_local_pool_assignments_table',
             ),
-            'eipsi_pool_email_log' => array(
-	            'pool_id' => 'INT(11) NOT NULL',
-	            'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
-	            'email' => 'VARCHAR(255) NOT NULL',
-	            'action' => "ENUM('sent', 'confirmed', 'resent') NOT NULL",
-	            'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
-	        ),
-	        'eipsi_pool_email_log',
-	        'eipsi_pool_email_log' => array(
-	                'level' => 2,
-	                'dependencies' => array('eipsi_longitudinal_pools', 'survey_participants'),
-	                'sync_method' => 'sync_local_pool_email_log_table',
-	            ),
-	            'eipsi_pool_analytics' => array(
+            'eipsi_pool_analytics' => array(
                 'level' => 2,
                 'dependencies' => array('eipsi_longitudinal_pools', 'survey_studies'),
                 'sync_method' => 'sync_local_pool_analytics_table',
@@ -4050,8 +4019,7 @@ public static function get_schema_health_summary() {
             'survey_email_log',
             'survey_audit_log',
             'eipsi_pool_assignments',
-            'eipsi_pool_email_log',
-	        'eipsi_pool_analytics'
+            'eipsi_pool_analytics'
         );
         
         $fixed_tables = array();
@@ -4137,8 +4105,7 @@ public static function get_schema_health_summary() {
             'survey_participant_access_log',
             'eipsi_device_data',
             'eipsi_pool_assignments',
-            'eipsi_pool_email_log',
-	        'eipsi_pool_analytics'
+            'eipsi_pool_analytics'
         );
         
         $issues = array();
@@ -4489,101 +4456,9 @@ public static function get_schema_health_summary() {
      * @since 2.5.3
      * @return array Result with success status and details
      */
-    
-    /**
-     * Sync wp_eipsi_pool_email_log table in local DB
-     *
-     * @since 2.5.5
-     * @return array Result with success status and details
-     */
-    private static function sync_local_pool_email_log_table() {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'eipsi_pool_email_log';
-        $charset_collate = $wpdb->get_charset_collate();
-
-        $result = array(
-            'success' => true,
-            'exists' => false,
-            'created' => false,
-            'columns_added' => array(),
-            'columns_missing' => array(),
-            'error' => null,
-        );
-
-        // Check if table exists
-        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
-        $result['exists'] = ! empty( $table_exists );
-
-        if ( ! $result['exists'] ) {
-            $sql = "CREATE TABLE {$table_name} (
-                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-                pool_id INT(11) NOT NULL,
-                participant_id BIGINT(20) UNSIGNED NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                action ENUM('sent', 'confirmed', 'resent') NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (id),
-                KEY idx_pool_id (pool_id),
-                KEY idx_participant_id (participant_id),
-                KEY idx_email (email),
-                KEY idx_action (action),
-                KEY idx_created_at (created_at)
-            ) {$charset_collate};";
-
-            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-            dbDelta( $sql );
-
-            $result['created'] = true;
-            $result['exists'] = true;
-
-            error_log( '[EIPSI Forms] Created table: ' . $table_name );
-        }
-
-        $required_columns = array(
-            'pool_id' => "ALTER TABLE {$table_name} ADD COLUMN pool_id INT(11) NOT NULL AFTER id",
-            'participant_id' => "ALTER TABLE {$table_name} ADD COLUMN participant_id BIGINT(20) UNSIGNED NOT NULL AFTER pool_id",
-            'email' => "ALTER TABLE {$table_name} ADD COLUMN email VARCHAR(255) NOT NULL AFTER participant_id",
-            'action' => "ALTER TABLE {$table_name} ADD COLUMN action ENUM('sent', 'confirmed', 'resent') NOT NULL AFTER email",
-            'created_at' => "ALTER TABLE {$table_name} ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP AFTER action",
-        );
-
-        foreach ( $required_columns as $column => $alter_sql ) {
-            $column_exists = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s",
-                    DB_NAME,
-                    $table_name,
-                    $column
-                )
-            );
-
-            if ( empty( $column_exists ) ) {
-                if ( false !== $wpdb->query( $alter_sql ) ) {
-                    $result['columns_added'][] = $column;
-                    error_log( "[EIPSI Forms] Added missing column '{$column}' to {$table_name}" );
-                } else {
-                    $result['columns_missing'][] = $column;
-                    $result['success'] = false;
-                    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                        error_log( 'EIPSI Schema Manager: Failed to add column ' . $column . ' - ' . $wpdb->last_error );
-                    }
-                }
-            }
-        }
-
-        self::ensure_local_index( $table_name, 'pool_id' );
-        self::ensure_local_index( $table_name, 'participant_id' );
-        self::ensure_local_index( $table_name, 'action' );
-        self::ensure_local_index( $table_name, 'created_at' );
-
-        return $result;
-    }
-
     private static function sync_local_pool_analytics_table() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'eipsi_pool_email_log',
-	        'eipsi_pool_analytics';
+        $table_name = $wpdb->prefix . 'eipsi_pool_analytics';
         $charset_collate = $wpdb->get_charset_collate();
 
         $result = array(

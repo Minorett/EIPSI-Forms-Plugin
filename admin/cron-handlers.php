@@ -986,3 +986,25 @@ function eipsi_cron_action_generate_reports($study_id) {
         'message' => 'Report generation action completed (not yet implemented)'
     );
 }
+
+// === POOL EMAIL LOG CLEANUP (v2.5.5) ===
+add_action('eipsi_cleanup_pool_email_logs_monthly', 'eipsi_run_cleanup_pool_email_logs');
+
+/**
+ * Limpieza mensual de logs de email de pools (más de 30 días)
+ *
+ * @since 2.5.5
+ */
+function eipsi_run_cleanup_pool_email_logs() {
+    global $wpdb;
+    $log_table = $wpdb->prefix . 'eipsi_pool_email_log';
+    
+    // Check if table exists
+    if ($wpdb->get_var("SHOW TABLES LIKE '{$log_table}'")) {
+        $deleted = $wpdb->query( "DELETE FROM {$log_table} WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)" );
+        
+        if ( $deleted > 0 ) {
+            error_log( "[EIPSI Cron] Purged {$deleted} old pool email log records (older than 30 days)" );
+        }
+    }
+}

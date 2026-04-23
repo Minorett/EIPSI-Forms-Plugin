@@ -241,6 +241,24 @@ function eipsi_render_pool_hub_v2() {
         </div>
     </div>
 
+    <!-- Modal: Email Logs (Fase 5) -->
+    <div class="eipsi-modal-overlay" id="eipsi-email-log-modal" style="display: none;">
+        <div class="eipsi-modal-pool">
+            <div class="eipsi-modal-header">
+                <h3>📧 <?php _e('Logs de Confirmación', 'eipsi-forms'); ?></h3>
+                <button class="eipsi-modal-close" onclick="closeEmailLogModal()">&times;</button>
+            </div>
+            <div class="eipsi-modal-body">
+                <div id="eipsi-email-logs-table-container">
+                    <p><?php _e('Cargando logs...', 'eipsi-forms'); ?></p>
+                </div>
+            </div>
+            <div class="eipsi-modal-footer">
+                <button type="button" class="eipsi-btn-ghost" onclick="closeEmailLogModal()"><?php _e('Cerrar', 'eipsi-forms'); ?></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="eipsi-toast-container"></div>
 
@@ -1103,6 +1121,20 @@ function eipsi_render_pool_hub_v2() {
             font-style: italic;
         }
 
+        .eipsi-badge {
+            background: #3b82f6;
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 4px;
+            border-radius: 10px;
+            margin-left: 2px;
+            vertical-align: middle;
+        }
+
+        .eipsi-status-confirmed { color: #16a34a; font-weight: 600; }
+        .eipsi-status-pending { color: #f59e0b; font-weight: 600; }
+        .eipsi-status-expired { color: #64748b; font-weight: 600; }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -1268,15 +1300,21 @@ function eipsi_render_pool_hub_v2() {
                             </div>
                         </td>
                         <td>
-                            <button type="button" class="button button-small" onclick="editPoolV3(${pool.id})">
-                                <span class="dashicons dashicons-edit"></span>
-                            </button>
-                            <button type="button" class="button button-small" onclick="switchPoolSubtab('analytics'); loadPoolAnalytics(${pool.id});">
-                                <span class="dashicons dashicons-chart-area"></span>
-                            </button>
-                            <button type="button" class="button button-small button-link-delete" onclick="confirmDeletePoolV3(${pool.id}, '${escapeHtml(pool.name)}')">
-                                <span class="dashicons dashicons-trash"></span>
-                            </button>
+                            <div style="display: flex; gap: 4px;">
+                                <button type="button" class="button button-small" onclick="editPoolV3(${pool.id})" title="<?php _e('Editar pool', 'eipsi-forms'); ?>">
+                                    <span class="dashicons dashicons-edit"></span>
+                                </button>
+                                <button type="button" class="button button-small" onclick="openEmailLogModal(${pool.id})" title="<?php _e('Logs de Email', 'eipsi-forms'); ?>">
+                                    <span class="dashicons dashicons-email"></span>
+                                    <span class="eipsi-badge">${pool.emails_confirmed || 0}/${pool.emails_sent || 0}</span>
+                                </button>
+                                <button type="button" class="button button-small" onclick="switchPoolSubtab('analytics'); loadPoolAnalytics(${pool.id});" title="<?php _e('Ver Analytics', 'eipsi-forms'); ?>">
+                                    <span class="dashicons dashicons-chart-area"></span>
+                                </button>
+                                <button type="button" class="button button-small button-link-delete" onclick="confirmDeletePoolV3(${pool.id}, '${escapeHtml(pool.name)}')" title="<?php _e('Eliminar pool', 'eipsi-forms'); ?>">
+                                    <span class="dashicons dashicons-trash"></span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -1525,6 +1563,125 @@ function eipsi_render_pool_hub_v2() {
 
         function closeDeleteModalV3() {
             document.getElementById('eipsi-delete-modal-v3').style.display = 'none';
+        }
+
+        // Email Log Modal Functions (Fase 5)
+        function openEmailLogModal(poolId) {
+            const modal = document.getElementById('eipsi-email-log-modal');
+            const container = document.getElementById('eipsi-email-logs-table-container');
+            
+            POOL_HUB_V3.currentPoolId = poolId;
+            container.innerHTML = '<p><?php _e('Cargando logs...', 'eipsi-forms'); ?></p>';
+            modal.style.display = 'flex';
+            
+            loadEmailLogs(poolId);
+        }
+
+        function closeEmailLogModal() {
+            document.getElementById('eipsi-email-log-modal').style.display = 'none';
+        }
+
+        function loadEmailLogs(poolId) {
+            jQuery.ajax({
+                url: POOL_HUB_V3.ajaxUrl,
+                type: 'GET',
+                data: {
+                    action: 'eipsi_get_pool_email_logs',
+                    pool_id: poolId,
+                    nonce: POOL_HUB_V3.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        renderEmailLogs(response.data.logs);
+                    } else {
+                        document.getElementById('eipsi-email-logs-table-container').innerHTML = `<p class="error">${response.data.message}</p>`;
+                    }
+                }
+            });
+        }
+
+        function renderEmailLogs(logs) {
+            const container = document.getElementById('eipsi-email-logs-table-container');
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<p><?php _e('No hay envíos registrados para este pool.', 'eipsi-forms'); ?></p>';
+                return;
+            }
+
+            let html = `
+                <table class="eipsi-data-table">
+                    <thead>
+                        <tr>
+                            <th><?php _e('Email', 'eipsi-forms'); ?></th>
+                            <th><?php _e('Estado', 'eipsi-forms'); ?></th>
+                            <th><?php _e('Último envío', 'eipsi-forms'); ?></th>
+                            <th><?php _e('Acción', 'eipsi-forms'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            logs.forEach(function(log) {
+                let statusLabel = '';
+                let canResend = false;
+                
+                switch(log.status) {
+                    case 'confirmed':
+                        statusLabel = '<span class="eipsi-status-confirmed">✅ <?php _e('Confirmado', 'eipsi-forms'); ?></span>';
+                        break;
+                    case 'pending':
+                        statusLabel = '<span class="eipsi-status-pending">⏳ <?php _e('Pendiente', 'eipsi-forms'); ?></span>';
+                        canResend = true;
+                        break;
+                    case 'expired':
+                        statusLabel = '<span class="eipsi-status-expired">⚪ <?php _e('Expirado', 'eipsi-forms'); ?></span>';
+                        canResend = true;
+                        break;
+                }
+
+                const resendBtn = canResend && log.resend_count < 3
+                    ? `<button type="button" class="button button-small" onclick="resendConfirmation(${log.participant_id}, '${log.email}')" title="<?php _e('Reenviar confirmación', 'eipsi-forms'); ?>">
+                        <span class="dashicons dashicons-email"></span> (${log.resend_count}/3)
+                       </button>`
+                    : (log.resend_count >= 3 ? '<span class="description"><?php _e('Límite reenvíos', 'eipsi-forms'); ?></span>' : '-');
+
+                html += `
+                    <tr>
+                        <td>${escapeHtml(log.email)}</td>
+                        <td>${statusLabel}</td>
+                        <td>${log.last_sent_at}</td>
+                        <td>${resendBtn}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function resendConfirmation(participantId, email) {
+            if (!confirm('<?php _e('¿Estás seguro de reenviar el email de confirmación?', 'eipsi-forms'); ?>')) return;
+
+            jQuery.ajax({
+                url: POOL_HUB_V3.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_resend_pool_confirmation',
+                    pool_id: POOL_HUB_V3.currentPoolId,
+                    participant_id: participantId,
+                    email: email,
+                    nonce: POOL_HUB_V3.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToastV3('✅ ' + response.data.message);
+                        loadEmailLogs(POOL_HUB_V3.currentPoolId);
+                        loadAllPoolsData(); // Update badges in main table
+                    } else {
+                        showToastV3('❌ ' + response.data.message);
+                    }
+                }
+            });
         }
 
         // Load Studies for Select via REST

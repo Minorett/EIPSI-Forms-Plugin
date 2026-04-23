@@ -3,7 +3,7 @@
  * Plugin Name: EIPSI Forms
  * Plugin URI: https://enmediodelcontexto.com.ar
  * Description: Professional form builder with Gutenberg blocks, conditional logic, and Excel export capabilities.
- * Version: 2.0.0
+ * Version: 2.5.5
  * Author: Mathias N. Rojas de la Fuente
  * Author URI: https://www.instagram.com/enmediodel.contexto/
  * Text Domain: eipsi-forms
@@ -14,7 +14,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Tags: forms, contact-form, survey, quiz, poll, form-builder, gutenberg, blocks, admin-dashboard, excel-export, analytics, RCT, randomization, longitudinal, studies
- * Stable tag: 2.0.0
+ * Stable tag: 2.5.5
  *
  * @package EIPSI_Forms
  */
@@ -23,7 +23,7 @@
     exit;
  }
 
- define('EIPSI_FORMS_VERSION', '2.1.4');
+ define('EIPSI_FORMS_VERSION', '2.5.5');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -879,6 +879,11 @@ function eipsi_forms_activate() {
         wp_schedule_event(time(), 'daily', 'eipsi_cleanup_partial_responses');
     }
     add_action('eipsi_cleanup_partial_responses', 'eipsi_run_partial_cleanup');
+
+	    // Phase 5: Pool email log cleanup (monthly)
+	    if (!wp_next_scheduled('eipsi_cleanup_pool_email_logs_monthly')) {
+	        wp_schedule_event(time(), 'eipsi_monthly', 'eipsi_cleanup_pool_email_logs_monthly');
+	    }
     
     // Create form results table
     $table_name = $wpdb->prefix . 'vas_form_results';
@@ -2388,6 +2393,21 @@ function eipsi_handle_pool_email_confirmation() {
         error_log("[EIPSI POOL CONFIRM] ERROR: Falló actualización de email_confirmed en DB");
     } else {
         error_log("[EIPSI POOL CONFIRM] Email confirmado OK para participant_id={$participant_id}");
+        
+        // LOGUEO AUTOMÁTICO (Fase 5)
+        $log_table = $wpdb->prefix . 'eipsi_pool_email_log';
+        $email = $stored_data['email'] ?? '';
+        $wpdb->insert(
+            $log_table,
+            array(
+                'pool_id'        => $pool_id,
+                'participant_id' => $participant_id,
+                'email'          => $email,
+                'action'         => 'confirmed',
+                'created_at'     => current_time( 'mysql' )
+            ),
+            array( '%d', '%d', '%s', '%s', '%s' )
+        );
     }
 
     // Eliminar transient
