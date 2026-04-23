@@ -2380,13 +2380,13 @@ function eipsi_handle_pool_email_confirmation() {
 
     // Token válido → confirmar email
     global $wpdb;
-    $participants_table = $wpdb->prefix . 'eipsi_survey_participants';
+    $participants_table = $wpdb->prefix . 'survey_participants';
     $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
 
     // Actualizar estado de confirmación
     $result = $wpdb->update(
         $participants_table,
-        array( 'email_confirmed' => 1 ),
+        array( 'is_active' => 1 ),
         array( 'id' => $participant_id ),
         array( '%d' ),
         array( '%d' )
@@ -2394,7 +2394,7 @@ function eipsi_handle_pool_email_confirmation() {
     
     $pool_id = $stored_data["pool_id"] ?? 0;
     if ($result === false) {
-        error_log("[EIPSI POOL CONFIRM] ERROR: Falló actualización de email_confirmed en DB");
+        error_log("[EIPSI POOL CONFIRM] ERROR: Falló actualización de is_active en DB");
     } else {
         error_log("[EIPSI POOL CONFIRM] Email confirmado OK para participant_id={$participant_id}");
         // Registrar la confirmación exitosa

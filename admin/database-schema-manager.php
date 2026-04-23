@@ -3396,13 +3396,6 @@ private static function get_schema_map() {
             'webgl_renderer' => 'VARCHAR(255) NULL',
             'screen_resolution' => 'VARCHAR(50) NULL',
             'screen_depth' => 'INT NULL',
-        "eipsi_pool_email_log" => array(
-            "pool_id" => "INT NOT NULL",
-            "participant_id" => "BIGINT UNSIGNED NOT NULL",
-            "email" => "VARCHAR(255) NOT NULL",
-            "action" => "ENUM('sent', 'confirmed', 'resent') NOT NULL",
-            "created_at" => "DATETIME DEFAULT CURRENT_TIMESTAMP"
-        ),
             'pixel_ratio' => 'DECIMAL(4,2) NULL',
             'timezone' => 'VARCHAR(100) NULL',
             'timezone_offset' => 'INT NULL',
@@ -3418,6 +3411,13 @@ private static function get_schema_map() {
             'touch_support' => 'VARCHAR(10) NULL',
             'max_touch_points' => 'INT NULL',
             'captured_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+        ),
+        "eipsi_pool_email_log" => array(
+            "pool_id" => "INT NOT NULL",
+            "participant_id" => "BIGINT UNSIGNED NOT NULL",
+            "email" => "VARCHAR(255) NOT NULL",
+            "action" => "ENUM('sent', 'confirmed', 'resent') NOT NULL",
+            "created_at" => "DATETIME DEFAULT CURRENT_TIMESTAMP"
         )
     );
 }
@@ -3461,7 +3461,6 @@ private static function get_critical_columns_for_table($table_name) {
  * 
  * @since 1.6.0
  * @return array All tables status
-        "eipsi_pool_email_log",
  */
 public static function get_all_tables_status() {
     $tables = array(
@@ -3482,7 +3481,7 @@ public static function get_all_tables_status() {
         'eipsi_pool_assignments',
         'survey_participant_access_log',
         'eipsi_device_data',
-        'eipsi_pool_assignments',
+        'eipsi_pool_email_log',
         'eipsi_pool_analytics'
     );
     
@@ -3520,7 +3519,6 @@ public static function repair_single_table($table_name) {
     
     if (!$status['exists']) {
             "eipsi_pool_email_log" => "sync_local_pool_email_log_table"
-        // Table doesn't exist - we need to call the appropriate sync function
         $sync_method = 'sync_local_' . $table_name . '_table';
         
         // Map table names to sync methods
@@ -3542,7 +3540,8 @@ public static function repair_single_table($table_name) {
             'survey_participant_access_log' => 'sync_local_survey_participant_access_log_table',
             'eipsi_device_data' => 'sync_local_device_data_table',
             'eipsi_pool_assignments' => 'sync_local_pool_assignments_table',
-            'eipsi_pool_analytics' => 'sync_local_pool_analytics_table'
+            'eipsi_pool_analytics' => 'sync_local_pool_analytics_table',
+            'eipsi_pool_email_log' => 'sync_local_pool_email_log_table'
         );
         
         if (isset($sync_map[$table_name]) && method_exists('EIPSI_Database_Schema_Manager', $sync_map[$table_name])) {
