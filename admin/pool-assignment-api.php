@@ -34,7 +34,8 @@ function eipsi_ajax_join_pool() {
         ? sanitize_text_field( wp_unslash( $_POST['eipsi_pool_join_nonce'] ) )
         : '';
 
-    if ( ! wp_verify_nonce( $nonce, 'eipsi_pool_join' ) ) {
+    if ( ! wp_verify_nonce( $nonce, 'eipsi_pool_access' ) ) {
+        error_log( "[EIPSI POOL JOIN] Security failure: nonce verification failed for action eipsi_pool_access. Received: " . $nonce );
         wp_send_json_error(
             array( 'message' => __( 'Token de seguridad inválido. Recargá la página e intentá de nuevo.', 'eipsi-forms' ) ),
             403
@@ -128,7 +129,11 @@ function eipsi_ajax_pool_auth() {
     // -----------------------------------------------------------------
     // 1. Verificar nonce
     // -----------------------------------------------------------------
-    check_ajax_referer( 'eipsi_pool_access', 'nonce' );
+    $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+    if ( ! wp_verify_nonce( $nonce, 'eipsi_pool_access' ) ) {
+        error_log( "[EIPSI POOL AUTH] Security failure: nonce verification failed for action eipsi_pool_access. Received: " . $nonce );
+        wp_send_json_error( array( 'message' => __( 'Error de seguridad. Por favor recargá la página.', 'eipsi-forms' ) ), 403 );
+    }
     error_log("[EIPSI POOL AUTH] Nonce verificado OK");
 
     // -----------------------------------------------------------------
@@ -235,9 +240,10 @@ function eipsi_ajax_pool_auth() {
             $participants_table,
             array(
                 'email'         => $email,
+                'is_active'     => 0, // Inactivo hasta confirmar email
                 'created_at'    => current_time( 'mysql' ),
             ),
-            array( '%s', '%s' )
+            array( '%s', '%d', '%s' )
         );
 
         if ( $result === false ) {
@@ -1069,7 +1075,11 @@ function eipsi_ajax_request_pool_assignment() {
     // -----------------------------------------------------------------
     // 1. Verificar nonce
     // -----------------------------------------------------------------
-    check_ajax_referer( 'eipsi_pool_access', 'nonce' );
+    $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+    if ( ! wp_verify_nonce( $nonce, 'eipsi_pool_access' ) ) {
+        error_log( "[EIPSI POOL ASSIGN] Security failure: nonce verification failed for action eipsi_pool_access. Received: " . $nonce );
+        wp_send_json_error( array( 'message' => __( 'Error de seguridad. Por favor recargá la página.', 'eipsi-forms' ) ), 403 );
+    }
     error_log("[EIPSI POOL ASSIGN] Nonce verificado OK");
 
     // -----------------------------------------------------------------

@@ -101,10 +101,14 @@ class EIPSI_Database_Schema_Manager {
             $magic_links_sync = self::sync_local_survey_magic_links_table();
             $email_log_sync = self::sync_local_survey_email_log_table();
             $audit_log_sync = self::sync_local_survey_audit_log_table();
-            $email_confirmations_sync = self::sync_local_survey_email_confirmations_table();
+
             $longitudinal_pools_sync = self::sync_local_longitudinal_pools_table();
             // Phase 2 - Participant Access Log (v2.0.0)
             $participant_access_log_sync = self::sync_local_survey_participant_access_log_table();
+         = self::sync_local_survey_email_confirmations_table();
+        ['survey_email_confirmations_table']['exists'] = ['exists'];
+        ['survey_email_confirmations_table']['created'] = ['created'];
+        ['survey_email_confirmations_table']['columns_added'] = ['columns_added'];
             
             // Device Data RAW (v2.1.0) - replaces fingerprint hash with raw device data
             $device_data_sync = self::sync_local_device_data_table();
@@ -1018,11 +1022,16 @@ class EIPSI_Database_Schema_Manager {
             'longitudinal_pools_table' => array(
                 'exists' => false,
                 'created' => false,
-            "pool_email_log_table" => array(
-                "exists" => false,
-                "created" => false,
-                "columns_added" => array(),
+                'columns_added' => array(),
             ),
+            'pool_email_log_table' => array(
+                'exists' => false,
+                'created' => false,
+                'columns_added' => array(),
+            ),
+            'survey_email_confirmations_table' => array(
+                'exists' => false,
+                'created' => false,
                 'columns_added' => array(),
             ),
             'longitudinal_pool_assignments_table' => array(
@@ -3482,7 +3491,9 @@ public static function get_all_tables_status() {
         'survey_participant_access_log',
         'eipsi_device_data',
         'eipsi_pool_email_log',
-        'eipsi_pool_analytics'
+        'eipsi_pool_analytics',
+        'survey_nudge_jobs',
+        'emergency_submissions'
     );
     
     $status = array();
@@ -3540,7 +3551,9 @@ public static function repair_single_table($table_name) {
             'eipsi_device_data' => 'sync_local_device_data_table',
             'eipsi_pool_assignments' => 'sync_local_pool_assignments_table',
             'eipsi_pool_analytics' => 'sync_local_pool_analytics_table',
-            'eipsi_pool_email_log' => 'sync_local_pool_email_log_table'
+            'eipsi_pool_email_log' => 'sync_local_pool_email_log_table',
+            'survey_nudge_jobs' => 'sync_local_survey_nudge_jobs_table',
+            'emergency_submissions' => 'sync_local_emergency_submissions_table'
         );
         
         if (isset($sync_map[$table_name]) && method_exists('EIPSI_Database_Schema_Manager', $sync_map[$table_name])) {
@@ -3723,11 +3736,6 @@ public static function get_schema_health_summary() {
                 'sync_method' => 'sync_local_survey_sessions_table',
             ),
             'survey_waves' => array(
-            "eipsi_pool_email_log" => array(
-                "level" => 1,
-                "dependencies" => array("eipsi_longitudinal_pools"),
-                "sync_method" => "sync_local_pool_email_log_table",
-            ),
                 'level' => 1,
                 'dependencies' => array('survey_studies'),
                 'sync_method' => 'sync_local_survey_waves_table',

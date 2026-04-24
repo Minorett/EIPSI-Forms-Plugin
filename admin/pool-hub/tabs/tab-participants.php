@@ -10,8 +10,9 @@
 <div class="eipsi-tab-participants">
     <div class="notice notice-info">
         <p>
-            <strong><?php esc_html_e( 'Gestión de Participantes y Email Logs', 'eipsi-forms' ); ?></strong><br>
-            <?php esc_html_e( 'La gestión de logs de email se realiza desde la tabla de Pools en la pestaña principal.', 'eipsi-forms' ); ?>
+            <strong><?php esc_html_e( 'Gestión de Participantes en Pools', 'eipsi-forms' ); ?></strong><br>
+            <?php esc_html_e( 'La visualización de participantes y el estado de sus confirmaciones de email ahora está integrada directamente en cada Pool.', 'eipsi-forms' ); ?>
+            <?php esc_html_e( 'Dirigite a la pestaña "Vista General" y hacé clic en el icono de email de cualquier Pool para ver los detalles.', 'eipsi-forms' ); ?>
         </p>
     </div>
 </div>
