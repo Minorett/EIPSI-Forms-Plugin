@@ -34,7 +34,7 @@ function eipsi_ajax_join_pool() {
         ? sanitize_text_field( wp_unslash( $_POST['eipsi_pool_join_nonce'] ) )
         : '';
 
-    if ( ! wp_verify_nonce( $nonce, 'eipsi_pool_join' ) ) {
+    if ( ! wp_verify_nonce( $nonce, 'eipsi_pool_access' ) ) {
         wp_send_json_error(
             array( 'message' => __( 'Token de seguridad inválido. Recargá la página e intentá de nuevo.', 'eipsi-forms' ) ),
             403
@@ -128,15 +128,27 @@ function eipsi_ajax_pool_auth() {
     // -----------------------------------------------------------------
     // 1. Verificar nonce
     // -----------------------------------------------------------------
-    check_ajax_referer( 'eipsi_pool_access', 'nonce' );
-    error_log("[EIPSI POOL AUTH] Nonce verificado OK");
-
-    // -----------------------------------------------------------------
-    // 2. Sanitizar inputs
-    // -----------------------------------------------------------------
+    $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
     $pool_id     = isset( $_POST['pool_id'] ) ? absint( $_POST['pool_id'] ) : 0;
     $email       = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
     $auth_action = isset( $_POST['auth_action'] ) ? sanitize_text_field( wp_unslash( $_POST['auth_action'] ) ) : '';
+
+    if ( ! wp_verify_nonce( $nonce, 'eipsi_pool_access' ) ) {
+        error_log( sprintf(
+            "[EIPSI POOL AUTH] ERROR: Nonce inválido. Pool ID: %d, Email: %s, Action: %s, Nonce: %s",
+            $pool_id,
+            $email,
+            $auth_action,
+            $nonce
+        ) );
+        wp_send_json_error( array( 'message' => __( 'Token de seguridad inválido.', 'eipsi-forms' ) ), 403 );
+    }
+    
+    error_log("[EIPSI POOL AUTH] Nonce verificado OK");
+
+    // -----------------------------------------------------------------
+    // 2. Sanitizar inputs (ya realizados arriba para el log)
+    // -----------------------------------------------------------------
     
     error_log("[EIPSI POOL AUTH] Inputs: pool_id={$pool_id}, email={$email}, action={$auth_action}");
 
@@ -1069,14 +1081,25 @@ function eipsi_ajax_request_pool_assignment() {
     // -----------------------------------------------------------------
     // 1. Verificar nonce
     // -----------------------------------------------------------------
-    check_ajax_referer( 'eipsi_pool_access', 'nonce' );
+    $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+    $pool_id        = isset( $_POST['pool_id'] ) ? absint( $_POST['pool_id'] ) : 0;
+    $participant_id = isset( $_POST['participant_id'] ) ? absint( $_POST['participant_id'] ) : 0;
+
+    if ( ! wp_verify_nonce( $nonce, 'eipsi_pool_access' ) ) {
+        error_log( sprintf(
+            "[EIPSI POOL ASSIGN] ERROR: Nonce inválido. Pool ID: %d, Participant ID: %d, Nonce: %s",
+            $pool_id,
+            $participant_id,
+            $nonce
+        ) );
+        wp_send_json_error( array( 'message' => __( 'Token de seguridad inválido.', 'eipsi-forms' ) ), 403 );
+    }
+
     error_log("[EIPSI POOL ASSIGN] Nonce verificado OK");
 
     // -----------------------------------------------------------------
     // 2. Sanitizar inputs
     // -----------------------------------------------------------------
-    $pool_id        = isset( $_POST['pool_id'] ) ? absint( $_POST['pool_id'] ) : 0;
-    $participant_id = isset( $_POST['participant_id'] ) ? absint( $_POST['participant_id'] ) : 0;
     
     error_log("[EIPSI POOL ASSIGN] Inputs: pool_id={$pool_id}, participant_id={$participant_id}");
 

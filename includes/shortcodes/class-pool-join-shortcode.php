@@ -85,7 +85,7 @@ class EIPSI_Pool_Join_Shortcode {
                 'eipsiPoolJoin',
                 array(
                     'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
-                    'nonce'     => wp_create_nonce( 'eipsi_pool_join' ),
+                    'nonce'     => wp_create_nonce( 'eipsi_pool_access' ),
                     'i18n'      => array(
                         'loading'       => __( 'Asignando...', 'eipsi-forms' ),
                         'error_generic' => __( 'Ocurrió un error. Por favor, intentá de nuevo.', 'eipsi-forms' ),
