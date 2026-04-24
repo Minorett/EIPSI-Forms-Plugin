@@ -3723,6 +3723,11 @@ public static function get_schema_health_summary() {
                 'sync_method' => 'sync_local_survey_sessions_table',
             ),
             'survey_waves' => array(
+            "eipsi_pool_email_log" => array(
+                "level" => 1,
+                "dependencies" => array("eipsi_longitudinal_pools"),
+                "sync_method" => "sync_local_pool_email_log_table",
+            ),
                 'level' => 1,
                 'dependencies' => array('survey_studies'),
                 'sync_method' => 'sync_local_survey_waves_table',
