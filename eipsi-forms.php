@@ -873,6 +873,11 @@ function eipsi_forms_activate() {
     if (!wp_next_scheduled('eipsi_cleanup_unconfirmed_participants_daily')) {
         wp_schedule_event(time(), 'daily', 'eipsi_cleanup_unconfirmed_participants_daily');
     }
+
+    // Pool Email Log: Schedule monthly cleanup (v2.5.5)
+    if (!wp_next_scheduled("eipsi_cleanup_pool_email_logs_monthly")) {
+        wp_schedule_event(time(), "eipsi_monthly", "eipsi_cleanup_pool_email_logs_monthly");
+    }
     
     // Save & Continue: Schedule daily cleanup of expired partial responses (30d incomplete, 90d completed)
     if (!wp_next_scheduled('eipsi_cleanup_partial_responses')) {
@@ -1136,6 +1141,9 @@ function eipsi_forms_deactivate() {
     
     // Double Opt-In cleanup cron
     wp_clear_scheduled_hook('eipsi_cleanup_unconfirmed_participants_daily');
+
+    // Pool email log cleanup cron
+    wp_clear_scheduled_hook("eipsi_cleanup_pool_email_logs_monthly");
 }
 
 /**
@@ -2372,24 +2380,37 @@ function eipsi_handle_pool_email_confirmation() {
 
     // Token válido → confirmar email
     global $wpdb;
-    $participants_table = $wpdb->prefix . 'eipsi_survey_participants';
+    $participants_table = $wpdb->prefix . 'survey_participants';
     $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
 
     // Actualizar estado de confirmación
     $result = $wpdb->update(
         $participants_table,
-        array( 'email_confirmed' => 1 ),
+        array( 'is_active' => 1 ),
         array( 'id' => $participant_id ),
         array( '%d' ),
         array( '%d' )
     );
     
+    $pool_id = $stored_data["pool_id"] ?? 0;
     if ($result === false) {
-        error_log("[EIPSI POOL CONFIRM] ERROR: Falló actualización de email_confirmed en DB");
+        error_log("[EIPSI POOL CONFIRM] ERROR: Falló actualización de is_active en DB");
     } else {
         error_log("[EIPSI POOL CONFIRM] Email confirmado OK para participant_id={$participant_id}");
-    }
+        // Registrar la confirmación exitosa
+        $wpdb->insert(
+            $wpdb->prefix . "eipsi_pool_email_log",
+            array(
+                "pool_id"        => $pool_id,
+                "participant_id" => $participant_id,
+                "email"          => $stored_data["email"] ?? "",
+                "action"         => "confirmed",
+                "created_at"     => current_time( "mysql" ),
+            ),
+            array( "%d", "%d", "%s", "%s", "%s" )
+        );
 
+    }
     // Eliminar transient
     delete_transient( 'eipsi_pool_confirm_' . $participant_id );
     error_log("[EIPSI POOL CONFIRM] Transient eliminado");
