@@ -1206,25 +1206,25 @@ class EIPSI_Database_Schema_Manager {
 
         // Repair results table
         if ( $repair_log['results_table']['exists'] ) {
-            $results_repair = self::repair_local_results_table( $results_table );
+            $results_repair = self::sync_local_results_table()["columns_added"];
             $repair_log['results_table']['columns_added'] = $results_repair;
         }
 
         // Repair events table
         if ( $repair_log['events_table']['exists'] ) {
-            $events_repair = self::repair_local_events_table( $events_table );
+            $events_repair = self::sync_local_events_table()["columns_added"];
             $repair_log['events_table']['columns_added'] = $events_repair;
         }
 
         // Repair randomization configs table
         if ( $repair_log['randomization_configs_table']['exists'] ) {
-            $rct_configs_repair = self::repair_local_randomization_configs_table( $rct_configs_table );
+            $rct_configs_repair = self::sync_local_randomization_configs_table()["columns_added"];
             $repair_log['randomization_configs_table']['columns_added'] = $rct_configs_repair;
         }
 
         // Repair randomization assignments table
         if ( $repair_log['randomization_assignments_table']['exists'] ) {
-            $rct_assignments_repair = self::repair_local_randomization_assignments_table( $rct_assignments_table );
+            $rct_assignments_repair = self::sync_local_randomization_assignments_table()["columns_added"];
             $repair_log['randomization_assignments_table']['columns_added'] = $rct_assignments_repair;
         }
 
@@ -1260,6 +1260,7 @@ class EIPSI_Database_Schema_Manager {
 
         return $repair_log;
     }
+
     /**
      * Check if table exists in local database
      */
@@ -1267,259 +1268,7 @@ class EIPSI_Database_Schema_Manager {
         global $wpdb;
         return $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) === $table_name;
     }
-    
-    /**
-     * Repair local results table - add missing columns
-     */
-    private static function repair_local_results_table( $table_name ) {
-        global $wpdb;
-        
-    $required_columns = array(
-        'form_id' => "varchar(20) DEFAULT NULL AFTER id",
-        'participant_id' => "varchar(20) DEFAULT NULL AFTER form_id",
-        'survey_id' => "INT(11) DEFAULT NULL AFTER participant_id",
-        'wave_index' => "INT(11) DEFAULT NULL AFTER survey_id",
-        'longitudinal_participant_id' => "INT(11) DEFAULT NULL AFTER wave_index",
-        'session_id' => "varchar(255) DEFAULT NULL AFTER longitudinal_participant_id",
-        'user_fingerprint' => "varchar(255) DEFAULT NULL AFTER session_id",  // ← NUEVO
-        'form_name' => "varchar(255) NOT NULL AFTER user_fingerprint",  // ← Cambiado: AFTER user_fingerprint
-        'form_responses' => "longtext DEFAULT NULL AFTER form_name",  // ← Agregado AFTER
-        'created_at' => "datetime DEFAULT CURRENT_TIMESTAMP AFTER form_responses",  // ← NUEVO
-        'submitted_at' => "datetime DEFAULT NULL AFTER created_at",  // ← NUEVO
-        'ip_address' => "varchar(100) DEFAULT NULL AFTER submitted_at",  // ← NUEVO (antes no estaba)
-        'device' => "varchar(50) DEFAULT NULL AFTER ip_address",  // ← NUEVO (antes no estaba)
-        'browser' => "varchar(100) DEFAULT NULL AFTER device",  // ← Cambiado: AFTER device
-        'os' => "varchar(100) DEFAULT NULL AFTER browser",
-        'screen_width' => "int(11) DEFAULT NULL AFTER os",
-        'duration' => "int(11) DEFAULT NULL AFTER screen_width",  // ← NUEVO (antes no estaba)
-        'duration_seconds' => "decimal(8,3) DEFAULT NULL AFTER duration",  // ← Correcto: AFTER duration
-        'start_timestamp_ms' => "bigint(20) DEFAULT NULL AFTER duration_seconds",  // ← NUEVO
-        'end_timestamp_ms' => "bigint(20) DEFAULT NULL AFTER start_timestamp_ms",  // ← NUEVO
-        'metadata' => "LONGTEXT DEFAULT NULL AFTER end_timestamp_ms",  // ← Cambiado: AFTER end_timestamp_ms
-        'status' => "varchar(20) DEFAULT 'submitted' AFTER metadata",  // ← NUEVO
-        // v1.5.5 - RCT at submission time
-        'rct_assigned_variant' => "varchar(100) DEFAULT NULL AFTER status",
-        'rct_randomization_id' => "varchar(100) DEFAULT NULL AFTER rct_assigned_variant"
-    );
-        
-        $columns_added = array();
-        
-        foreach ( $required_columns as $col => $definition ) {
-            if ( ! self::local_column_exists( $table_name, $col ) ) {
-                $result = $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN {$col} {$definition}" );
-                if ( false !== $result ) {
-                    $columns_added[] = $col;
-                    error_log( "[EIPSI Forms] Added missing column '{$col}' to {$table_name}" );
-                }
-            }
-        }
-        
-        // Ensure indices exist
-        self::ensure_local_index( $table_name, 'form_id' );
-        self::ensure_local_index( $table_name, 'participant_id' );
-        self::ensure_local_index( $table_name, 'session_id' );
-        self::ensure_local_index( $table_name, 'rct_assigned_variant' );
-        self::ensure_local_index( $table_name, 'rct_randomization_id' );
 
-        // v1.4.0 - Composite index for faster lookups
-        // Check if index exists first (IF NOT EXISTS is not valid for ADD KEY in MySQL/MariaDB)
-        $existing_indices = $wpdb->get_results( "SHOW INDEX FROM {$table_name}" );
-        $index_names = array_column( $existing_indices, 'Key_name' );
-        if ( ! in_array( 'participant_survey_wave', $index_names, true ) ) {
-            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY participant_survey_wave (participant_id, survey_id, wave_index)" );
-        }
-        
-        return $columns_added;
-    }
-    
-    /**
-     * Repair local events table - add missing columns
-     */
-    private static function repair_local_events_table( $table_name ) {
-        global $wpdb;
-        
-        $required_columns = array(
-            'form_id' => "varchar(255) NOT NULL DEFAULT '' AFTER id",
-            'session_id' => "varchar(255) NOT NULL AFTER form_id",
-            'event_type' => "varchar(50) NOT NULL AFTER session_id",
-            'page_number' => "int(11) DEFAULT NULL AFTER event_type",
-            'metadata' => "text DEFAULT NULL AFTER page_number",
-            'user_agent' => "text DEFAULT NULL AFTER metadata",
-        );
-        
-        $columns_added = array();
-        
-        foreach ( $required_columns as $col => $definition ) {
-            if ( ! self::local_column_exists( $table_name, $col ) ) {
-                $result = $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN {$col} {$definition}" );
-                if ( false !== $result ) {
-                    $columns_added[] = $col;
-                    error_log( "[EIPSI Forms] Added missing column '{$col}' to {$table_name}" );
-                }
-            }
-        }
-        
-        // Ensure indices
-        self::ensure_local_index( $table_name, 'form_id' );
-        self::ensure_local_index( $table_name, 'session_id' );
-        self::ensure_local_index( $table_name, 'rct_assigned_variant' );
-        self::ensure_local_index( $table_name, 'rct_randomization_id' );
-
-        self::ensure_local_index( $table_name, 'event_type' );
-        
-        return $columns_added;
-    }
-    
-    /**
-     * Repair local randomization configs table - add missing columns
-     */
-    private static function repair_local_randomization_configs_table( $table_name ) {
-        global $wpdb;
-        
-        $required_columns = array(
-            'randomization_id' => "varchar(255) NOT NULL AFTER id",
-            'formularios' => "LONGTEXT NOT NULL AFTER randomization_id",
-            'probabilidades' => "LONGTEXT AFTER formularios",
-            'method' => "varchar(20) DEFAULT 'seeded' AFTER probabilidades",
-            'manual_assignments' => "LONGTEXT AFTER method",
-            'show_instructions' => "tinyint(1) DEFAULT 0 AFTER manual_assignments",
-            'created_at' => "datetime DEFAULT CURRENT_TIMESTAMP AFTER show_instructions",
-            'updated_at' => "datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at",
-        );
-        
-        $columns_added = array();
-        
-        foreach ( $required_columns as $col => $definition ) {
-            if ( ! self::local_column_exists( $table_name, $col ) ) {
-                $result = $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN {$col} {$definition}" );
-                if ( false !== $result ) {
-                    $columns_added[] = $col;
-                    error_log( "[EIPSI Forms] Added missing column '{$col}' to {$table_name}" );
-                }
-            }
-        }
-        
-        // Ensure indices
-        self::ensure_local_index( $table_name, 'randomization_id' );
-        self::ensure_local_index( $table_name, 'method' );
-        self::ensure_local_index( $table_name, 'created_at' );
-        
-        return $columns_added;
-    }
-    
-    /**
-     * Repair local randomization assignments table - add missing columns
-     */
-    private static function repair_local_randomization_assignments_table( $table_name ) {
-        global $wpdb;
-        
-        $required_columns = array(
-            'randomization_id' => "varchar(255) NOT NULL AFTER id",
-            'config_id' => "varchar(255) NOT NULL AFTER randomization_id",
-            'user_fingerprint' => "varchar(255) NOT NULL AFTER config_id",
-            'assigned_form_id' => "bigint(20) unsigned NOT NULL AFTER user_fingerprint",
-            'assigned_at' => "datetime DEFAULT CURRENT_TIMESTAMP AFTER assigned_form_id",
-            'last_access' => "datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER assigned_at",
-            'access_count' => "int(11) DEFAULT 1 AFTER last_access",
-        );
-        
-        $columns_added = array();
-        
-        foreach ( $required_columns as $col => $definition ) {
-            if ( ! self::local_column_exists( $table_name, $col ) ) {
-                $result = $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN {$col} {$definition}" );
-                if ( false !== $result ) {
-                    $columns_added[] = $col;
-                    error_log( "[EIPSI Forms] Added missing column '{$col}' to {$table_name}" );
-                }
-            }
-        }
-        
-        // Ensure indices
-        self::ensure_local_index( $table_name, 'randomization_id' );
-        self::ensure_local_index( $table_name, 'config_id' );
-        self::ensure_local_index( $table_name, 'user_fingerprint' );
-        self::ensure_local_index( $table_name, 'assigned_form_id' );
-        self::ensure_local_index( $table_name, 'assigned_at' );
-        
-        // Ensure unique constraint
-        $constraint_exists = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT DISTINCT CONSTRAINT_NAME 
-                FROM information_schema.table_constraints 
-                WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND CONSTRAINT_NAME = %s",
-                DB_NAME,
-                $table_name,
-                'unique_assignment'
-            )
-        );
-        
-        if ( empty( $constraint_exists ) ) {
-            $constraint_sql = "ALTER TABLE {$table_name} ADD CONSTRAINT unique_assignment UNIQUE (randomization_id, config_id, user_fingerprint)";
-            if ( false !== $wpdb->query( $constraint_sql ) ) {
-                $columns_added[] = 'unique_constraint_unique_assignment';
-                error_log( "[EIPSI Forms] Added unique constraint to {$table_name}" );
-            }
-        }
-        
-        return $columns_added;
-    }
-    
-    /**
-     * Repair local survey_participants table - add missing columns
-     * 
-     * @since 1.4.0
-     * @param string $table_name Full table name with prefix
-     * @return array Columns added
-     */
-    private static function repair_local_survey_participants_table( $table_name ) {
-        global $wpdb;
-        
-        $required_columns = array(
-            'survey_id' => "INT(11) AFTER id",
-            'email' => "VARCHAR(255) NOT NULL AFTER survey_id",
-            'password_hash' => "VARCHAR(255) AFTER email",
-            'first_name' => "VARCHAR(100) AFTER password_hash",
-            'last_name' => "VARCHAR(100) AFTER first_name",
-            'created_at' => "DATETIME NOT NULL AFTER last_name",
-            'last_login_at' => "DATETIME AFTER created_at",
-            'is_active' => "TINYINT(1) DEFAULT 1 AFTER last_login_at",
-        );
-        
-        $columns_added = array();
-        
-        foreach ( $required_columns as $col => $definition ) {
-            if ( ! self::local_column_exists( $table_name, $col ) ) {
-                $result = $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN {$col} {$definition}" );
-                if ( false !== $result ) {
-                    $columns_added[] = $col;
-                    error_log( "[EIPSI Forms] Added missing column '{$col}' to {$table_name}" );
-                }
-            }
-        }
-        
-        // Ensure security indices (VULN 10 FIX)
-        self::ensure_local_index( $table_name, 'email' );
-        self::ensure_local_index( $table_name, 'created_at' );
-        self::ensure_local_index( $table_name, 'is_active' );
-        
-        // Composite indices for performance
-        $existing_indices = $wpdb->get_results( "SHOW INDEX FROM {$table_name}" );
-        $index_names = array_column( $existing_indices, 'Key_name' );
-        
-        if ( ! in_array( 'idx_survey_email', $index_names, true ) ) {
-            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_survey_email (survey_id, email)" );
-            $columns_added[] = 'idx_survey_email';
-        }
-        
-        if ( ! in_array( 'idx_participant_active', $index_names, true ) ) {
-            $wpdb->query( "ALTER TABLE {$table_name} ADD KEY idx_participant_active (is_active)" );
-            $columns_added[] = 'idx_participant_active';
-        }
-        
-        return $columns_added;
-    }
-    
     /**
      * Check if column exists in local table
      */
@@ -1533,111 +1282,23 @@ class EIPSI_Database_Schema_Manager {
         );
         return ! empty( $result );
     }
-    
-    /**
-     * Fase 2 - v2.5: Agregar campos de consentimiento informado
-     * 
-     * @since 2.5.0
-     */
-    public static function add_consent_v2_fields() {
-        global $wpdb;
-        
-        // Campos para wp_survey_participants (longitudinal)
-        $participants_table = $wpdb->prefix . 'survey_participants';
-        $participants_columns = array(
-            'consent_decision' => "VARCHAR(20) DEFAULT NULL COMMENT 'accepted|declined'",
-            'consent_decided_at' => "DATETIME DEFAULT NULL",
-            'consent_ip_address' => "VARCHAR(45) DEFAULT NULL",
-            'consent_user_agent' => "TEXT DEFAULT NULL",
-            'consent_context' => "VARCHAR(50) DEFAULT NULL COMMENT 'T1_consent_block|dashboard_abandonment'",
-            'consent_blocked_survey_id' => "VARCHAR(50) DEFAULT NULL",
-            'withdrawal_wave_id' => "VARCHAR(50) DEFAULT NULL",
-            'data_deleted' => "TINYINT(1) DEFAULT 0",
-        );
-        
-        // Campos para wp_survey_assignments (standalone)
-        $assignments_table = $wpdb->prefix . 'survey_assignments';
-        $assignments_columns = array(
-            'consent_decision' => "VARCHAR(20) DEFAULT NULL COMMENT 'accepted|declined'",
-            'consent_decided_at' => "DATETIME DEFAULT NULL",
-            'consent_ip_address' => "VARCHAR(45) DEFAULT NULL",
-            'consent_user_agent' => "TEXT DEFAULT NULL",
-            'consent_context' => "VARCHAR(50) DEFAULT NULL",
-        );
-        
-        // Verificar y agregar columnas en survey_participants
-        foreach ( $participants_columns as $column => $definition ) {
-            $column_exists = $wpdb->get_results( 
-                "SHOW COLUMNS FROM `{$participants_table}` LIKE '{$column}'" 
-            );
-            if ( empty( $column_exists ) ) {
-                $wpdb->query( "ALTER TABLE `{$participants_table}` ADD COLUMN {$column} {$definition}" );
-            }
-        }
-        
-        // Verificar y agregar columnas en survey_assignments
-        foreach ( $assignments_columns as $column => $definition ) {
-            $column_exists = $wpdb->get_results( 
-                "SHOW COLUMNS FROM `{$assignments_table}` LIKE '{$column}'" 
-            );
-            if ( empty( $column_exists ) ) {
-                $wpdb->query( "ALTER TABLE `{$assignments_table}` ADD COLUMN {$column} {$definition}" );
-            }
-        }
-        
-        return array(
-            'success' => true,
-            'message' => 'Consent v2.5 fields migrated successfully'
-        );
-    }
-    
+
     /**
      * Ensure index exists on local table
      */
     private static function ensure_local_index( $table, $column ) {
         global $wpdb;
-
-        // Guard: skip if table or column name is empty to avoid malformed SQL.
         if ( empty( $table ) || empty( $column ) ) {
             return;
         }
-
-        // Guard: skip if the table does not exist yet (prevents SHOW INDEX on missing table).
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
         if ( empty( $table_exists ) ) {
             return;
         }
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $indexes = $wpdb->get_results( "SHOW INDEX FROM `{$table}` WHERE Column_name = '{$column}'" );
         if ( empty( $indexes ) ) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
             $wpdb->query( "ALTER TABLE `{$table}` ADD KEY `{$column}` (`{$column}`)" );
         }
-    }
-    
-    /**
-     * Hook: Fallback verification on insert error
-     */
-    public static function fallback_verification() {
-        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
-        $db_helper = new EIPSI_External_Database();
-        
-        if ( $db_helper->is_enabled() ) {
-            $mysqli = $db_helper->get_connection();
-            
-            if ( $mysqli ) {
-                $result = self::verify_and_sync_schema( $mysqli );
-                $mysqli->close();
-                return $result;
-            }
-        }
-        
-        return array(
-            'success' => false,
-            'error' => 'External database not available',
-        );
     }
     
     /**
