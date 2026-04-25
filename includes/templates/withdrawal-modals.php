@@ -14,8 +14,23 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+global $wpdb;
+
 $participant_id = $participant_id ?? '';
 $study_id = $survey_id ?? '';
+
+// Fetch study name for dynamic verification text
+$study_name = '';
+if (!empty($study_id)) {
+    $study_name = $wpdb->get_var($wpdb->prepare(
+        "SELECT study_name FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $study_id
+    ));
+}
+$study_name = $study_name ?: __('Estudio', 'eipsi-forms');
+
+// High friction text according to Task 7.1
+$required_verification_text = strtoupper('ELIMINAR MIS DATOS DE "' . $study_name . '"');
 ?>
 
 <style>
@@ -88,6 +103,10 @@ $study_id = $survey_id ?? '';
     background: #fee2e2;
 }
 
+.eipsi-modal-icon.info {
+    background: #e0f2fe;
+}
+
 .eipsi-modal-title {
     font-size: 20px;
     font-weight: 700;
@@ -108,10 +127,6 @@ $study_id = $survey_id ?? '';
 
 .eipsi-modal-section {
     margin-bottom: 20px;
-}
-
-.eipsi-modal-section:last-child {
-    margin-bottom: 0;
 }
 
 .eipsi-modal-label {
@@ -148,85 +163,9 @@ $study_id = $survey_id ?? '';
     border: 1px solid #fca5a5;
 }
 
-/* Options list */
-.eipsi-withdrawal-options {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin: 20px 0;
-}
-
-.eipsi-withdrawal-option {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: #ffffff;
-}
-
-.eipsi-withdrawal-option:hover {
-    border-color: #d1d5db;
-    background: #f9fafb;
-}
-
-.eipsi-withdrawal-option.selected {
-    border-color: #dc2626;
-    background: #fef2f2;
-}
-
-.eipsi-option-radio {
-    width: 20px;
-    height: 20px;
-    border: 2px solid #d1d5db;
-    border-radius: 50%;
-    flex-shrink: 0;
-    margin-top: 2px;
-    position: relative;
-}
-
-.eipsi-withdrawal-option.selected .eipsi-option-radio {
-    border-color: #dc2626;
-    background: #dc2626;
-}
-
-.eipsi-option-radio::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 8px;
-    height: 8px;
-    background: white;
-    border-radius: 50%;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.eipsi-withdrawal-option.selected .eipsi-option-radio::after {
-    opacity: 1;
-}
-
-.eipsi-option-content {
-    flex: 1;
-}
-
-.eipsi-option-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 4px 0;
-}
-
-.eipsi-option-desc {
-    font-size: 13px;
-    color: #6b7280;
-    margin: 0;
-    line-height: 1.5;
+.eipsi-modal-info-box.info {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
 }
 
 /* High friction text verification (B2) */
@@ -252,6 +191,7 @@ $study_id = $survey_id ?? '';
     color: #991b1b;
     margin-bottom: 12px;
     border: 1px dashed #fca5a5;
+    word-break: break-all;
 }
 
 .eipsi-verification-input {
@@ -312,6 +252,15 @@ $study_id = $survey_id ?? '';
     background: #e5e7eb;
 }
 
+.eipsi-modal-btn.primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.eipsi-modal-btn.primary:hover {
+    background: #2563eb;
+}
+
 .eipsi-modal-btn.danger {
     background: #dc2626;
     color: white;
@@ -355,23 +304,10 @@ $study_id = $survey_id ?? '';
     .eipsi-modal-info-box {
         background: #374151;
     }
-    
-    .eipsi-withdrawal-option {
-        background: #1f2937;
-        border-color: #4b5563;
-    }
-    
-    .eipsi-withdrawal-option:hover {
-        background: #374151;
-        border-color: #6b7280;
-    }
-    
-    .eipsi-option-title {
-        color: #f9fafb;
-    }
-    
-    .eipsi-option-desc {
-        color: #9ca3af;
+
+    .eipsi-modal-info-box.info {
+        background: #1e3a8a;
+        border-color: #1e40af;
     }
     
     .eipsi-modal-btn.secondary {
@@ -431,33 +367,58 @@ $study_id = $survey_id ?? '';
 </style>
 
 <!-- ============================================
-     MODAL 1: Consentimiento de Retención de Datos (GATE)
+     MODAL 1: Advertencia General de Confirmación
      ============================================ -->
-<div class="eipsi-modal-overlay" id="eipsi-withdrawal-modal" data-modal-type="withdrawal">
+<div class="eipsi-modal-overlay" id="eipsi-withdrawal-step-1">
     <div class="eipsi-modal">
         <div class="eipsi-modal-header">
             <div class="eipsi-modal-icon warning">⚠️</div>
             <h2 class="eipsi-modal-title"><?php _e('¿Estás seguro?', 'eipsi-forms'); ?></h2>
-            <p class="eipsi-modal-subtitle"><?php _e('Estás a punto de salir del estudio. Tu decisión tiene consecuencias importantes.', 'eipsi-forms'); ?></p>
+            <p class="eipsi-modal-subtitle"><?php _e('Estás a punto de iniciar el proceso para salir del estudio.', 'eipsi-forms'); ?></p>
         </div>
         
         <div class="eipsi-modal-body">
-            <div class="eipsi-modal-info-box info">
-                <p class="eipsi-modal-text">
-                    <?php _e('Todos los datos que ya proporcionaste son valiosos para la investigación. Antes de continuar, necesitamos confirmar tu comprensión sobre qué sucederá con tus datos.', 'eipsi-forms'); ?>
-                </p>
+            <div class="eipsi-modal-text">
+                <?php _e('Tu participación es fundamental para esta investigación. Antes de continuar, queremos asegurarnos de que esta es tu decisión final.', 'eipsi-forms'); ?>
             </div>
-            
-            <!-- GATE DE CHECKBOX - Según roadmap v2.5 -->
-            <div class="eipsi-checkbox-gate" style="margin: 24px 0; padding: 20px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px;">
+            <div class="eipsi-modal-info-box info">
+                <?php _e('Si decides continuar, te pediremos que elijas qué sucederá con los datos que ya has proporcionado.', 'eipsi-forms'); ?>
+            </div>
+        </div>
+        
+        <div class="eipsi-modal-footer">
+            <button type="button" class="eipsi-modal-btn secondary" data-close-modal>
+                <?php _e('Cancelar', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="eipsi-modal-btn primary" id="eipsi-btn-step-1-next">
+                <?php _e('Siguiente', 'eipsi-forms'); ?>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================
+     MODAL 2: Consentimiento de Retención (GATE)
+     ============================================ -->
+<div class="eipsi-modal-overlay" id="eipsi-withdrawal-step-2">
+    <div class="eipsi-modal">
+        <div class="eipsi-modal-header">
+            <div class="eipsi-modal-icon info">📋</div>
+            <h2 class="eipsi-modal-title"><?php _e('Gestión de tus datos', 'eipsi-forms'); ?></h2>
+            <p class="eipsi-modal-subtitle"><?php _e('Decidí qué sucederá con la información que ya compartiste.', 'eipsi-forms'); ?></p>
+        </div>
+        
+        <div class="eipsi-modal-body">
+            <div class="eipsi-checkbox-gate" style="margin: 0; padding: 20px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px;">
                 <label class="eipsi-checkbox-label" style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
                     <input type="checkbox" 
                            id="eipsi-retention-consent" 
+                           checked
                            style="width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; accent-color: #3b6caa;">
                     <span style="font-size: 14px; line-height: 1.5; color: #374151;">
                         <strong><?php _e('Acepto que mis datos se conserven para la investigación', 'eipsi-forms'); ?></strong><br>
                         <span style="color: #6b7280; font-size: 13px;">
-                            <?php _e('Doy mi consentimiento para que mis respuestas anteriores permanezcan en el estudio y formen parte del análisis. Entiendo que no podrán ser eliminadas posteriormente.', 'eipsi-forms'); ?>
+                            <?php _e('Doy mi consentimiento para que mis respuestas anteriores permanezcan en el estudio y formen parte del análisis.', 'eipsi-forms'); ?>
                         </span>
                     </span>
                 </label>
@@ -466,54 +427,118 @@ $study_id = $survey_id ?? '';
             <div class="eipsi-modal-info-box warning" style="margin-top: 16px;">
                 <p class="eipsi-modal-text" style="font-size: 13px;">
                     <strong><?php _e('Nota importante:', 'eipsi-forms'); ?></strong> 
-                    <?php _e('Si NO tildás esta casilla, se interpretará que querés eliminar todos tus datos del estudio (incluyendo respuestas ya enviadas). Esta acción es irreversible.', 'eipsi-forms'); ?>
+                    <?php _e('Si desmarcas esta casilla, iniciaremos el proceso de eliminación total y permanente de tus datos del estudio.', 'eipsi-forms'); ?>
                 </p>
             </div>
         </div>
         
         <div class="eipsi-modal-footer">
-            <button type="button" class="eipsi-modal-btn secondary" data-close-modal>
-                <?php _e('Cancelar', 'eipsi-forms'); ?>
+            <button type="button" class="eipsi-modal-btn secondary" id="eipsi-btn-step-2-back">
+                <?php _e('Volver', 'eipsi-forms'); ?>
             </button>
-            <!-- Botón SIEMPRE habilitado según roadmap - detecta estado del checkbox -->
-            <button type="button" class="eipsi-modal-btn danger" id="eipsi-confirm-withdrawal-gate">
-                <?php _e('Confirmar abandono', 'eipsi-forms'); ?>
+            <button type="button" class="eipsi-modal-btn primary" id="eipsi-btn-step-2-next">
+                <?php _e('Confirmar', 'eipsi-forms'); ?>
             </button>
         </div>
     </div>
 </div>
 
 <!-- ============================================
-     MODAL B1: Confirmación Abandono Estándar
+     MODAL 3: Advertencia de Acción Irreversible (B2 PATH)
      ============================================ -->
-<div class="eipsi-modal-overlay" id="eipsi-withdrawal-b1-modal" data-modal-type="withdrawal-b1">
+<div class="eipsi-modal-overlay" id="eipsi-withdrawal-step-3">
     <div class="eipsi-modal">
         <div class="eipsi-modal-header">
-            <div class="eipsi-modal-icon warning">🚪</div>
-            <h2 class="eipsi-modal-title"><?php _e('Confirmar abandono del estudio', 'eipsi-forms'); ?></h2>
-            <p class="eipsi-modal-subtitle"><?php _e('Estás a punto de salir del estudio. Verificá que entendés las consecuencias:', 'eipsi-forms'); ?></p>
+            <div class="eipsi-modal-icon danger">🛑</div>
+            <h2 class="eipsi-modal-title"><?php _e('Acción Irreversible', 'eipsi-forms'); ?></h2>
+            <p class="eipsi-modal-subtitle" style="color: #dc2626; font-weight: 600;"><?php _e('Estás a punto de borrar todo tu historial', 'eipsi-forms'); ?></p>
         </div>
         
         <div class="eipsi-modal-body">
-            <div class="eipsi-modal-section">
-                <p class="eipsi-modal-label"><?php _e('Lo que va a pasar:', 'eipsi-forms'); ?></p>
-                <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 14px; line-height: 1.8;">
-                    <li><?php _e('No te contactarán para futuras olas del estudio', 'eipsi-forms'); ?></li>
-                    <li><?php _e('Tus respuestas ya enviadas se conservan en el análisis', 'eipsi-forms'); ?></li>
-                    <li><?php _e('Perderás acceso al dashboard del participante', 'eipsi-forms'); ?></li>
-                    <li><?php _e('No podés volver a entrar al estudio', 'eipsi-forms'); ?></li>
-                </ul>
+            <div class="eipsi-modal-text">
+                <?php _e('Al proceder, todas tus respuestas serán eliminadas de nuestras bases de datos y no podrán ser recuperadas ni utilizadas en la investigación.', 'eipsi-forms'); ?>
             </div>
-            
-            <div class="eipsi-modal-info-box">
-                <p class="eipsi-modal-text">
-                    <?php _e('Tus respuestas hasta ahora son valiosas para la investigación. Gracias por tu contribución.', 'eipsi-forms'); ?>
+            <div class="eipsi-modal-info-box danger">
+                <p class="eipsi-modal-text" style="color: #7f1d1d; font-weight: 600;">
+                    <?php _e('Esta acción es permanente y final.', 'eipsi-forms'); ?>
                 </p>
             </div>
         </div>
         
         <div class="eipsi-modal-footer">
-            <button type="button" class="eipsi-modal-btn secondary" data-close-modal>
+            <button type="button" class="eipsi-modal-btn secondary" id="eipsi-btn-step-3-back">
+                <?php _e('Volver', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="eipsi-modal-btn danger" id="eipsi-btn-step-3-next">
+                <?php _e('Siguiente', 'eipsi-forms'); ?>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================
+     MODAL 4: Verificación de Alta Fricción (B2 PATH)
+     ============================================ -->
+<div class="eipsi-modal-overlay" id="eipsi-withdrawal-step-4">
+    <div class="eipsi-modal">
+        <div class="eipsi-modal-header">
+            <div class="eipsi-modal-icon danger">🗑️</div>
+            <h2 class="eipsi-modal-title"><?php _e('Confirmación de Identidad', 'eipsi-forms'); ?></h2>
+            <p class="eipsi-modal-subtitle"><?php _e('Para confirmar la eliminación, escribí el texto de seguridad.', 'eipsi-forms'); ?></p>
+        </div>
+        
+        <div class="eipsi-modal-body">
+            <div class="eipsi-verification-section" style="margin-top: 0; padding-top: 0; border-top: none;">
+                <p class="eipsi-verification-label"><?php _e('Escribí exactamente el siguiente texto:', 'eipsi-forms'); ?></p>
+                <div class="eipsi-verification-text" id="eipsi-verification-text-display"><?php echo esc_html($required_verification_text); ?></div>
+                <input type="text" 
+                       class="eipsi-verification-input" 
+                       id="eipsi-b2-verification-input"
+                       placeholder="<?php esc_attr_e('Escribí el texto de seguridad aquí...', 'eipsi-forms'); ?>"
+                       autocomplete="off">
+                <p class="eipsi-verification-error" id="eipsi-b2-verification-error">
+                    <?php _e('El texto no coincide. Verificá mayúsculas y comillas.', 'eipsi-forms'); ?>
+                </p>
+            </div>
+        </div>
+        
+        <div class="eipsi-modal-footer">
+            <button type="button" class="eipsi-modal-btn secondary" id="eipsi-btn-step-4-back">
+                <?php _e('Volver', 'eipsi-forms'); ?>
+            </button>
+            <button type="button" class="eipsi-modal-btn danger" id="eipsi-confirm-b2" disabled
+                    data-participant-id="<?php echo esc_attr($participant_id); ?>"
+                    data-study-id="<?php echo esc_attr($study_id); ?>">
+                <?php _e('Eliminar mis datos permanentemente', 'eipsi-forms'); ?>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================
+     MODAL B1 FINAL: Confirmación Abandono Estándar
+     ============================================ -->
+<div class="eipsi-modal-overlay" id="eipsi-withdrawal-b1-final">
+    <div class="eipsi-modal">
+        <div class="eipsi-modal-header">
+            <div class="eipsi-modal-icon warning">🚪</div>
+            <h2 class="eipsi-modal-title"><?php _e('Finalizar participación', 'eipsi-forms'); ?></h2>
+            <p class="eipsi-modal-subtitle"><?php _e('Tus datos se conservarán para la investigación.', 'eipsi-forms'); ?></p>
+        </div>
+        
+        <div class="eipsi-modal-body">
+            <div class="eipsi-modal-section">
+                <p class="eipsi-modal-label"><?php _e('Resumen de tu salida:', 'eipsi-forms'); ?></p>
+                <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 14px; line-height: 1.8;">
+                    <li><?php _e('No recibirás más contactos de este estudio.', 'eipsi-forms'); ?></li>
+                    <li><?php _e('Tus respuestas actuales se mantienen en el análisis.', 'eipsi-forms'); ?></li>
+                    <li><?php _e('Esta acción es definitiva.', 'eipsi-forms'); ?></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="eipsi-modal-footer">
+            <button type="button" class="eipsi-modal-btn secondary" id="eipsi-btn-b1-back">
                 <?php _e('Volver', 'eipsi-forms'); ?>
             </button>
             <button type="button" class="eipsi-modal-btn danger" id="eipsi-confirm-b1" 
@@ -525,181 +550,114 @@ $study_id = $survey_id ?? '';
     </div>
 </div>
 
-<!-- ============================================
-     MODAL B2: Eliminación de Datos (Alta Fricción)
-     ============================================ -->
-<div class="eipsi-modal-overlay" id="eipsi-withdrawal-b2-modal" data-modal-type="withdrawal-b2">
-    <div class="eipsi-modal">
-        <div class="eipsi-modal-header">
-            <div class="eipsi-modal-icon danger">🗑️</div>
-            <h2 class="eipsi-modal-title"><?php _e('Eliminar mis datos del estudio', 'eipsi-forms'); ?></h2>
-            <p class="eipsi-modal-subtitle" style="color: #dc2626; font-weight: 600;"><?php _e('⚠️ Esta acción NO se puede deshacer', 'eipsi-forms'); ?></p>
-        </div>
-        
-        <div class="eipsi-modal-body">
-            <div class="eipsi-modal-info-box danger">
-                <p class="eipsi-modal-text" style="color: #7f1d1d;">
-                    <?php _e('Estás solicitando la eliminación completa de tus datos. Esto es diferente de simplemente abandonar:', 'eipsi-forms'); ?>
-                </p>
-            </div>
-            
-            <div class="eipsi-modal-section">
-                <p class="eipsi-modal-label" style="color: #dc2626;"><?php _e('Consecuencias de la eliminación:', 'eipsi-forms'); ?></p>
-                <ul style="margin: 0; padding-left: 20px; color: #7f1d1d; font-size: 14px; line-height: 1.8;">
-                    <li><strong><?php _e('Todas tus respuestas serán eliminadas permanentemente', 'eipsi-forms'); ?></strong></li>
-                    <li><?php _e('Tus datos NO formarán parte del análisis final', 'eipsi-forms'); ?></li>
-                    <li><?php _e('No podés recuperar tu participación ni tus respuestas', 'eipsi-forms'); ?></li>
-                    <li><?php _e('El investigador será notificado de tu solicitud', 'eipsi-forms'); ?></li>
-                </ul>
-            </div>
-            
-            <div class="eipsi-verification-section">
-                <p class="eipsi-verification-label"><?php _e('Para confirmar, escribí exactamente el siguiente texto:', 'eipsi-forms'); ?></p>
-                <div class="eipsi-verification-text">NO QUIERO QUE MIS RESPUESTAS FORMEN PARTE DEL ANÁLISIS</div>
-                <input type="text" 
-                       class="eipsi-verification-input" 
-                       id="eipsi-b2-verification-input"
-                       placeholder="<?php esc_attr_e('Escribí el texto exacto aquí...', 'eipsi-forms'); ?>"
-                       autocomplete="off">
-                <p class="eipsi-verification-error" id="eipsi-b2-verification-error">
-                    <?php _e('El texto no coincide. Por favor escribilo exactamente como se muestra arriba, respetando mayúsculas.', 'eipsi-forms'); ?>
-                </p>
-            </div>
-        </div>
-        
-        <div class="eipsi-modal-footer">
-            <button type="button" class="eipsi-modal-btn secondary" data-close-modal>
-                <?php _e('Cancelar', 'eipsi-forms'); ?>
-            </button>
-            <button type="button" class="eipsi-modal-btn danger" id="eipsi-confirm-b2" disabled
-                    data-participant-id="<?php echo esc_attr($participant_id); ?>"
-                    data-study-id="<?php echo esc_attr($study_id); ?>">
-                <?php _e('Eliminar mis datos permanentemente', 'eipsi-forms'); ?>
-            </button>
-        </div>
-    </div>
-</div>
-
 <script>
 /**
- * Fase 3 - v2.5: JavaScript para Modales de Abandono
+ * Fase 3 - v2.5: JavaScript para Circuito de Abandono
  */
 (function() {
     'use strict';
     
-    // Referencias a elementos
-    const dropdownTrigger = document.getElementById('eipsi-withdraw-dropdown-trigger');
-    const dropdownMenu = document.getElementById('eipsi-withdraw-dropdown-menu');
-    const withdrawButton = document.getElementById('eipsi-withdraw-button');
-    const mainModal = document.getElementById('eipsi-withdrawal-modal');
-    const b1Modal = document.getElementById('eipsi-withdrawal-b1-modal');
-    const b2Modal = document.getElementById('eipsi-withdrawal-b2-modal');
-    const gateConfirmBtn = document.getElementById('eipsi-confirm-withdrawal-gate');
+    // Referencias a modales
+    const modal1 = document.getElementById('eipsi-withdrawal-step-1');
+    const modal2 = document.getElementById('eipsi-withdrawal-step-2');
+    const modal3 = document.getElementById('eipsi-withdrawal-step-3');
+    const modal4 = document.getElementById('eipsi-withdrawal-step-4');
+    const modalB1 = document.getElementById('eipsi-withdrawal-b1-final');
+    
+    // Botones de navegación
+    const btnStep1Next = document.getElementById('eipsi-btn-step-1-next');
+    const btnStep2Back = document.getElementById('eipsi-btn-step-2-back');
+    const btnStep2Next = document.getElementById('eipsi-btn-step-2-next');
+    const btnStep3Back = document.getElementById('eipsi-btn-step-3-back');
+    const btnStep3Next = document.getElementById('eipsi-btn-step-3-next');
+    const btnStep4Back = document.getElementById('eipsi-btn-step-4-back');
+    const btnB1Back = document.getElementById('eipsi-btn-b1-back');
+    
+    // Inputs y Confirmación
     const retentionCheckbox = document.getElementById('eipsi-retention-consent');
     const b2Input = document.getElementById('eipsi-b2-verification-input');
     const b2ConfirmBtn = document.getElementById('eipsi-confirm-b2');
+    const b1ConfirmBtn = document.getElementById('eipsi-confirm-b1');
     const b2Error = document.getElementById('eipsi-b2-verification-error');
     
-    let dropdownOpen = false;
+    // Texto exacto requerido
+    const REQUIRED_TEXT = "<?php echo esc_js($required_verification_text); ?>";
     
-    // Texto exacto requerido para B2
-    const B2_VERIFICATION_TEXT = 'NO QUIERO QUE MIS RESPUESTAS FORMEN PARTE DEL ANÁLISIS';
-    
-    // Funciones del dropdown
-    function openDropdown() {
-        if (dropdownMenu) {
-            dropdownOpen = true;
-            dropdownMenu.setAttribute('aria-hidden', 'false');
-        }
-    }
-    
-    function closeDropdown() {
-        if (dropdownMenu) {
-            dropdownOpen = false;
-            dropdownMenu.setAttribute('aria-hidden', 'true');
-        }
-    }
-    
-    function toggleDropdown() {
-        if (dropdownOpen) {
-            closeDropdown();
-        } else {
-            openDropdown();
-        }
-    }
-    
-    // Click en trigger del dropdown
+    // Gear Icon Trigger
+    const withdrawButton = document.getElementById('eipsi-withdraw-button');
     if (withdrawButton) {
         withdrawButton.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleDropdown();
+            e.preventDefault();
+            openModal(modal1);
         });
     }
     
-    // Click fuera del dropdown lo cierra
-    document.addEventListener('click', function(e) {
-        if (dropdownOpen && dropdownMenu && !dropdownMenu.contains(e.target) && !withdrawButton.contains(e.target)) {
-            closeDropdown();
-        }
-    });
-    
-    // Abrir modal principal desde el dropdown
-    if (withdrawButton && mainModal) {
-        withdrawButton.addEventListener('click', function() {
-            closeDropdown();
-            openModal(mainModal);
+    // Navegación Paso 1 -> 2
+    if (btnStep1Next) {
+        btnStep1Next.addEventListener('click', () => {
+            closeModal(modal1);
+            setTimeout(() => openModal(modal2), 200);
         });
     }
     
-    // Cerrar modales al hacer click en overlay o botón cancelar
-    document.querySelectorAll('[data-close-modal]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const modal = this.closest('.eipsi-modal-overlay');
-            closeModal(modal);
+    // Navegación Paso 2 -> 1 (Back)
+    if (btnStep2Back) {
+        btnStep2Back.addEventListener('click', () => {
+            closeModal(modal2);
+            setTimeout(() => openModal(modal1), 200);
         });
-    });
+    }
     
-    // Cerrar al hacer click en el overlay (fuera del modal)
-    document.querySelectorAll('.eipsi-modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal(this);
-            }
-        });
-    });
-    
-    // ============================================
-    // GATE DE CHECKBOX - Flujo según roadmap v2.5
-    // ============================================
-    // Modal 1: Checkbox "Entiendo que mis datos se conservan"
-    // Si checked → B1 (abandono estándar)
-    // Si unchecked → B2 (eliminación de datos)
-    
-    if (gateConfirmBtn && mainModal) {
-        gateConfirmBtn.addEventListener('click', function() {
+    // Navegación Paso 2 -> (B1 o Paso 3)
+    if (btnStep2Next) {
+        btnStep2Next.addEventListener('click', () => {
             const isChecked = retentionCheckbox ? retentionCheckbox.checked : false;
-            
-            closeModal(mainModal);
-            
+            closeModal(modal2);
             if (isChecked) {
-                // Checkbox TILDADO → B1 (Abandono estándar, datos se conservan)
-                if (b1Modal) {
-                    setTimeout(() => openModal(b1Modal), 300);
-                }
+                setTimeout(() => openModal(modalB1), 200);
             } else {
-                // Checkbox NO TILDADO → B2 (Eliminación de datos)
-                if (b2Modal) {
-                    setTimeout(() => openModal(b2Modal), 300);
-                }
+                setTimeout(() => openModal(modal3), 200);
             }
         });
     }
     
-    // Validación de texto B2 (alta fricción)
+    // Navegación Paso 3 -> 2 (Back)
+    if (btnStep3Back) {
+        btnStep3Back.addEventListener('click', () => {
+            closeModal(modal3);
+            setTimeout(() => openModal(modal2), 200);
+        });
+    }
+    
+    // Navegación Paso 3 -> 4
+    if (btnStep3Next) {
+        btnStep3Next.addEventListener('click', () => {
+            closeModal(modal3);
+            setTimeout(() => openModal(modal4), 200);
+        });
+    }
+    
+    // Navegación Paso 4 -> 3 (Back)
+    if (btnStep4Back) {
+        btnStep4Back.addEventListener('click', () => {
+            closeModal(modal4);
+            setTimeout(() => openModal(modal3), 200);
+        });
+    }
+    
+    // Navegación B1 -> 2 (Back)
+    if (btnB1Back) {
+        btnB1Back.addEventListener('click', () => {
+            closeModal(modalB1);
+            setTimeout(() => openModal(modal2), 200);
+        });
+    }
+    
+    // Validación de texto B2
     if (b2Input && b2ConfirmBtn) {
         b2Input.addEventListener('input', function() {
             const inputValue = this.value.trim().toUpperCase();
-            const isValid = inputValue === B2_VERIFICATION_TEXT;
+            const isValid = inputValue === REQUIRED_TEXT;
             
             b2ConfirmBtn.disabled = !isValid;
             
@@ -713,32 +671,19 @@ $study_id = $survey_id ?? '';
         });
     }
     
-    // Confirmar B1 (abandono estándar)
-    const b1ConfirmBtn = document.getElementById('eipsi-confirm-b1');
+    // Ejecución de abandono B1
     if (b1ConfirmBtn) {
         b1ConfirmBtn.addEventListener('click', function() {
-            const participantId = this.dataset.participantId;
-            const studyId = this.dataset.studyId;
-            
-            executeWithdrawal('b1', participantId, studyId);
+            executeWithdrawal('b1', this.dataset.participantId, this.dataset.studyId);
         });
     }
     
-    // Confirmar B2 (eliminación de datos)
+    // Ejecución de abandono B2
     if (b2ConfirmBtn) {
         b2ConfirmBtn.addEventListener('click', function() {
             const inputValue = b2Input ? b2Input.value.trim().toUpperCase() : '';
-            
-            if (inputValue !== B2_VERIFICATION_TEXT) {
-                if (b2Error) b2Error.classList.add('visible');
-                if (b2Input) b2Input.classList.add('error');
-                return;
-            }
-            
-            const participantId = this.dataset.participantId;
-            const studyId = this.dataset.studyId;
-            
-            executeWithdrawal('b2', participantId, studyId);
+            if (inputValue !== REQUIRED_TEXT) return;
+            executeWithdrawal('b2', this.dataset.participantId, this.dataset.studyId);
         });
     }
     
@@ -747,12 +692,8 @@ $study_id = $survey_id ?? '';
         if (!modal) return;
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
-        
-        // Focus trap para accesibilidad
-        const focusableElements = modal.querySelectorAll('button, input, [tabindex]:not([tabindex="-1"])');
-        if (focusableElements.length > 0) {
-            focusableElements[0].focus();
-        }
+        const focusable = modal.querySelectorAll('button, input');
+        if (focusable.length > 0) focusable[0].focus();
     }
     
     function closeModal(modal) {
@@ -762,19 +703,15 @@ $study_id = $survey_id ?? '';
     }
     
     function executeWithdrawal(type, participantId, studyId) {
-        // Mostrar estado de carga
         const confirmBtn = type === 'b1' ? b1ConfirmBtn : b2ConfirmBtn;
         if (confirmBtn) {
             confirmBtn.disabled = true;
             confirmBtn.textContent = '<?php echo esc_js(__('Procesando...', 'eipsi-forms')); ?>';
         }
         
-        // Llamada AJAX
         fetch('<?php echo esc_url(admin_url('admin-ajax.php')); ?>', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 action: 'eipsi_abandon_study',
                 nonce: '<?php echo wp_create_nonce('eipsi_abandon_study'); ?>',
@@ -784,10 +721,9 @@ $study_id = $survey_id ?? '';
                 verification_text: type === 'b2' ? (b2Input ? b2Input.value.trim() : '') : ''
             })
         })
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
             if (data.success) {
-                // Redirigir a pantalla de confirmación
                 window.location.href = data.data.redirect_url || '/';
             } else {
                 alert(data.data?.message || '<?php echo esc_js(__('Error al procesar la solicitud', 'eipsi-forms')); ?>');
@@ -799,25 +735,31 @@ $study_id = $survey_id ?? '';
                 }
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('<?php echo esc_js(__('Error de conexión. Intentá de nuevo.', 'eipsi-forms')); ?>');
-            if (confirmBtn) {
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = type === 'b1' 
-                    ? '<?php echo esc_js(__('Sí, quiero abandonar', 'eipsi-forms')); ?>'
-                    : '<?php echo esc_js(__('Eliminar mis datos permanentemente', 'eipsi-forms')); ?>';
-            }
+        .catch(err => {
+            console.error(err);
+            alert('<?php echo esc_js(__('Error de conexión.', 'eipsi-forms')); ?>');
+            if (confirmBtn) confirmBtn.disabled = false;
         });
     }
     
-    // Cerrar con ESC
-    document.addEventListener('keydown', function(e) {
+    // Cerrar con ESC o click fuera
+    document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
-            document.querySelectorAll('.eipsi-modal-overlay.active').forEach(modal => {
-                closeModal(modal);
-            });
+            document.querySelectorAll('.eipsi-modal-overlay.active').forEach(m => closeModal(m));
         }
+    });
+    
+    document.querySelectorAll('.eipsi-modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) closeModal(this);
+        });
+    });
+    
+    // Soporte para atributo data-close-modal
+    document.querySelectorAll('[data-close-modal]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            closeModal(this.closest('.eipsi-modal-overlay'));
+        });
     });
 })();
 </script>
