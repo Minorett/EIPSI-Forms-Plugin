@@ -153,7 +153,7 @@ get_header();
     </h1>
     
     <p class="eipsi-consent-declined-message">
-        <?php _e('Rechazaste el consentimiento informado. No podés participar en este estudio.', 'eipsi-forms'); ?>
+        <?php _e('Rechazaste el consentimiento. No podés participar en este estudio.', 'eipsi-forms'); ?>
     </p>
     
     <div class="eipsi-consent-declined-details">

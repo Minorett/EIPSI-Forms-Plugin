@@ -55,6 +55,31 @@ if ( ! isset( $current_participant_id ) ) {
         : 0;
 }
 
+// === Task 7.2: Access Gate for Declined/Withdrawn Participants ===
+if ( $is_participant_logged_in && $current_participant_id && $view_mode === 'participant' ) {
+    global $wpdb;
+    $participant_record = $wpdb->get_row( $wpdb->prepare(
+        "SELECT status, consent_decision FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+        $current_participant_id
+    ) );
+
+    if ( $participant_record ) {
+        if ( $participant_record->status === 'consent_declined' || $participant_record->consent_decision === 'declined' ) {
+            include EIPSI_FORMS_PLUGIN_DIR . 'templates/consent-declined.php';
+            exit;
+        }
+        if ( $participant_record->status === 'withdrawn' || $participant_record->consent_decision === 'withdrawn' ) {
+             // Assuming there's a template for withdrawal confirmed
+             if ( file_exists( EIPSI_FORMS_PLUGIN_DIR . 'templates/withdrawal-confirmed.php' ) ) {
+                 include EIPSI_FORMS_PLUGIN_DIR . 'templates/withdrawal-confirmed.php';
+             } else {
+                 wp_die( __( 'Has abandonado este estudio.', 'eipsi-forms' ) );
+             }
+             exit;
+        }
+    }
+}
+
 $magic_link_login  = isset( $magic_link_login_success ) && $magic_link_login_success;
 $total_waves       = count( $waves );
 $study_id_for_query = isset( $actual_study_id ) ? $actual_study_id : (int) $study->id;
