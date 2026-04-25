@@ -3127,10 +3127,17 @@ function eipsi_abandon_study_handler() {
     
     // For B2 (data deletion), verify the exact text was entered
     if ($withdrawal_type === 'b2') {
-        $required_text = 'NO QUIERO QUE MIS RESPUESTAS FORMEN PARTE DEL ANÁLISIS';
+            // Fetch study name for dynamic verification text
+            $study_name = $wpdb->get_var($wpdb->prepare(
+                "SELECT study_name FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+                $study_id
+            ));
+            $study_name = $study_name ?: __('Estudio', 'eipsi-forms');
+            $required_text = strtoupper('ELIMINAR MIS DATOS DE "' . $study_name . '"');
         if (strtoupper(trim($verification_text)) !== $required_text) {
             wp_send_json_error(array(
                 'message' => __('Verification text does not match. Please type exactly as shown.', 'eipsi-forms'),
+                    'expected' => $required_text,
                 'code' => 'verification_failed'
             ));
             return;
@@ -3242,8 +3249,8 @@ function eipsi_abandon_study_handler() {
     
     // Prepare redirect URL based on type
     $redirect_url = ($withdrawal_type === 'b2') 
-        ? '/abandono-datos-eliminados' 
-        : '/abandono-confirmado';
+        ? '/withdrawal-data-deleted' 
+        : '/withdrawal-confirmed';
     
     wp_send_json_success(array(
         'message' => ($withdrawal_type === 'b2') 
