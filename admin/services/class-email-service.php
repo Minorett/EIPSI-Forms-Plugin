@@ -57,6 +57,11 @@ class EIPSI_Email_Service {
             $base_url = eipsi_get_study_page_url($survey_id, $study_code);
         }
         
+        // v2.5.4 - Fallback to Pool page if study page is not defined
+        if (empty($base_url)) {
+            $base_url = self::get_pool_page_url_fallback($survey_id);
+        }
+
         // Fallback to site_url if no study page exists
         if (empty($base_url)) {
             $base_url = site_url('/');
@@ -406,6 +411,12 @@ class EIPSI_Email_Service {
             return false;
         }
 
+        // v2.5.4 - Verificar que el participante esté activo (enforce double opt-in logic)
+        if (!$participant->is_active) {
+            error_log("[EIPSI Email] Cannot send welcome after confirmation to inactive participant: $participant_id");
+            return false;
+        }
+
         $survey_name = self::get_study_name($survey_id);
         $magic_link = self::generate_magic_link_url($survey_id, $participant_id);
 
@@ -718,6 +729,58 @@ class EIPSI_Email_Service {
     }
 
     /**
+     * Try to find a pool page for a study (v2.5.4 fallback).
+     *
+     * @param int $study_id Study ID.
+     * @return string|null Page URL or null.
+     */
+    private static function get_pool_page_url_fallback($study_id) {
+        global $wpdb;
+        $pools_table = $wpdb->prefix . 'eipsi_longitudinal_pools';
+        
+        // Check if the table exists first
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$pools_table'") === $pools_table;
+        if (!$table_exists) {
+            return null;
+        }
+        
+        $pools = $wpdb->get_results("SELECT id, config FROM $pools_table");
+        
+        foreach ($pools as $pool) {
+            $config = json_decode($pool->config, true);
+            if (isset($config['studies']) && is_array($config['studies'])) {
+                foreach ($config['studies'] as $study) {
+                    $s_id = is_array($study['study_id']) ? ($study['study_id']['id'] ?? 0) : $study['study_id'];
+                    if (intval($s_id) === intval($study_id)) {
+                        // Found a pool! Now get its page.
+                        $pages = get_posts(array(
+                            'post_type' => 'page',
+                            'meta_key' => 'eipsi_pool_id',
+                            'meta_value' => $pool->id,
+                            'posts_per_page' => 1
+                        ));
+                        if (!empty($pages)) {
+                            return get_permalink($pages[0]->ID);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Final fallback: Any page that looks like a pool
+        $pages = get_posts(array(
+            'post_type' => 'page',
+            'meta_key' => 'eipsi_pool_id',
+            'posts_per_page' => 1
+        ));
+        if (!empty($pages)) {
+            return get_permalink($pages[0]->ID);
+        }
+        
+        return null;
+    }
+
+    /**
      * Get latest magic link URL for preview purposes.
      *
      * @param int $survey_id Survey ID.
@@ -1016,9 +1079,12 @@ class EIPSI_Email_Service {
         $count_query = "SELECT COUNT(*) FROM {$table_name} el {$where_clause}";
         $total = $wpdb->get_var($wpdb->prepare($count_query, $params));
         
-        // Get logs with participant names
+        // v2.5.4 - Get logs with participant names (fallback to email if name is missing)
         $query = "SELECT el.*, 
-                         CONCAT(p.first_name, ' ', p.last_name) as participant_name
+                         CASE 
+                            WHEN p.first_name IS NOT NULL AND p.first_name != '' THEN TRIM(CONCAT(p.first_name, ' ', p.last_name))
+                            ELSE el.recipient_email
+                         END as participant_name
                   FROM {$table_name} el
                   LEFT JOIN {$participants_table} p ON el.participant_id = p.id
                   {$where_clause}
@@ -1063,7 +1129,10 @@ class EIPSI_Email_Service {
         
         return $wpdb->get_row($wpdb->prepare(
             "SELECT el.*, 
-                    CONCAT(p.first_name, ' ', p.last_name) as participant_name
+                    CASE 
+                        WHEN p.first_name IS NOT NULL AND p.first_name != '' THEN TRIM(CONCAT(p.first_name, ' ', p.last_name))
+                        ELSE el.recipient_email
+                    END as participant_name
              FROM {$table_name} el
              LEFT JOIN {$wpdb->prefix}survey_participants p ON el.participant_id = p.id
              WHERE el.id = %d",
@@ -1110,28 +1179,70 @@ class EIPSI_Email_Service {
         
         // Get wave if needed (for reminder/recovery types)
         $wave = null;
-        if (in_array($original_log->email_type, array('reminder', 'recovery'))) {
-            $wave_id = $original_log->metadata ? json_decode($original_log->metadata, true)['wave_id'] ?? 0 : 0;
-            $wave = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}survey_waves WHERE id = %d",
-                $wave_id
-            ));
+        $wave_dependent_types = array('reminder', 'recovery', 'wave_availability', 'manual_reminder', 'nudge_1', 'nudge_2', 'nudge_3', 'nudge_4');
+        if (in_array($original_log->email_type, $wave_dependent_types)) {
+            $wave_id = 0;
+            if (!empty($original_log->metadata)) {
+                $metadata = json_decode($original_log->metadata, true);
+                $wave_id = $metadata['wave_id'] ?? 0;
+            }
+            
+            // Fallback: try to find current wave if metadata is missing
+            if (!$wave_id) {
+                $current_wave = self::get_current_wave_for_participant($original_log->survey_id, $original_log->participant_id);
+                $wave_id = $current_wave ? ($current_wave->wave_id ?? 0) : 0;
+            }
+
+            if ($wave_id) {
+                $wave = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                    $wave_id
+                ));
+            }
         }
         
-        // Resend based on type
+        // v2.5.4 - Resend based on type (Bypasses automatic limits for administrators)
         $result = false;
         switch ($original_log->email_type) {
             case 'welcome':
                 $result = self::send_welcome_email($original_log->survey_id, $original_log->participant_id);
                 break;
             case 'reminder':
-                $result = $wave ? self::send_wave_reminder_email($original_log->survey_id, $original_log->participant_id, $wave) : false;
+            case 'nudge_1':
+            case 'nudge_2':
+            case 'nudge_3':
+            case 'nudge_4':
+            case 'wave_availability':
+                if ($original_log->email_type === 'wave_availability' && class_exists('EIPSI_Wave_Availability_Email_Service')) {
+                    // Special case for Nudge 0: Use force send to bypass 3-attempt limit
+                    $assignment = $wpdb->get_row($wpdb->prepare(
+                        "SELECT * FROM {$wpdb->prefix}survey_assignments WHERE participant_id = %d AND study_id = %d AND status = 'pending' LIMIT 1",
+                        $original_log->participant_id,
+                        $original_log->survey_id
+                    ));
+                    if ($assignment && $wave && $participant) {
+                        $force_res = EIPSI_Wave_Availability_Email_Service::force_send_nudge_zero($assignment, $wave, $participant, $original_log->survey_id);
+                        $result = $force_res['success'];
+                    } else {
+                        $result = $wave ? self::send_wave_reminder_email($original_log->survey_id, $original_log->participant_id, $wave, 0) : false;
+                    }
+                } else {
+                    $stage = (strpos($original_log->email_type, 'nudge_') === 0) ? intval(substr($original_log->email_type, 6)) : 0;
+                    $result = $wave ? self::send_wave_reminder_email($original_log->survey_id, $original_log->participant_id, $wave, $stage) : false;
+                }
                 break;
             case 'confirmation':
                 $result = self::send_wave_confirmation_email($original_log->survey_id, $original_log->participant_id, $wave);
                 break;
             case 'recovery':
                 $result = $wave ? self::send_dropout_recovery_email($original_log->survey_id, $original_log->participant_id, $wave) : false;
+                break;
+            case 'manual_reminder':
+                $result = self::send_manual_reminder_email($original_log->survey_id, $original_log->participant_id, $wave);
+                break;
+            case 'magic_link':
+                $ml_res = self::send_magic_link_email($original_log->survey_id, $original_log->participant_id);
+                $result = $ml_res['success'];
                 break;
         }
         
@@ -1225,6 +1336,13 @@ class EIPSI_Email_Service {
         $participant = self::get_participant($participant_id);
         if (!$participant) {
             self::log_email($survey_id, $participant_id, 'manual_reminder', 'failed', 'Participant not found');
+            return false;
+        }
+
+        // v2.5.4 - Verificar que el participante esté activo
+        if (!$participant->is_active) {
+            error_log("[EIPSI Email] Cannot send manual reminder to inactive participant: $participant_id");
+            self::log_email($survey_id, $participant_id, 'manual_reminder', 'failed', 'Participante inactivo');
             return false;
         }
 
