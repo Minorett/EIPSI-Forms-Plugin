@@ -749,7 +749,7 @@ $view_class      = 'view-' . esc_attr( $view_mode );
 <?php
 // Incluir modales de abandono si el participante está logueado
 if ( $is_participant_logged_in && $current_participant_id ) {
-    eipsi_load_template('withdrawal-modals.php');
+    include EIPSI_FORMS_PLUGIN_DIR . 'includes/templates/withdrawal-modals.php';
 }
 ?>
 
