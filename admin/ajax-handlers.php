@@ -3,6 +3,52 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+add_action('wp_ajax_nopriv_eipsi_save_consent_decision', 'eipsi_save_consent_decision_handler');
+add_action('wp_ajax_eipsi_save_consent_decision', 'eipsi_save_consent_decision_handler');
+
+/**
+ * AJAX Handler: Save consent decision
+ * Sets participant status to 'consent_declined' if declined in longitudinal context.
+ */
+function eipsi_save_consent_decision_handler() {
+    check_ajax_referer('eipsi_forms_nonce', 'nonce');
+    
+    $decision = isset($_POST['decision']) ? sanitize_text_field($_POST['decision']) : '';
+    $study_id = isset($_POST['survey_id']) ? absint($_POST['survey_id']) : 0;
+    
+    if ($decision !== 'declined') {
+        wp_send_json_success(array('message' => 'Decision acknowledged'));
+    }
+
+    if ($study_id > 0) {
+        global $wpdb;
+        $current_participant_id = 0;
+        
+        if (class_exists('EIPSI_Auth_Service')) {
+            $current_participant_id = EIPSI_Auth_Service::get_current_participant();
+        }
+        
+        if ($current_participant_id > 0) {
+            $table_participants = $wpdb->prefix . 'survey_participants';
+            $wpdb->update(
+                $table_participants,
+                array(
+                    'status' => 'consent_declined',
+                    'is_active' => 0
+                ),
+                array('id' => $current_participant_id),
+                array('%s', '%d'),
+                array('%d')
+            );
+            
+            error_log("[EIPSI] Participant $current_participant_id declined consent for study $study_id");
+            wp_send_json_success(array('message' => 'Consent declined recorded successfully'));
+        }
+    }
+    
+    wp_send_json_success(array('message' => 'Consent decision acknowledged'));
+}
+
 function generate_stable_form_id($form_name) {
     global $wpdb;
     

@@ -87,45 +87,37 @@
      * @returns {boolean} true si está validado, false si no
      */
     function validateConsentAccepted( form ) {
-        // ✅ FIX v1.4.3: Buscar solo DENTRO del formulario específico
-        // Evita validar checkboxes de otros formularios en la misma página
-        const consentCheckbox = form.querySelector(
-            'input[name="eipsi_consent_accepted"]'
+        // ✅ v2.5: Buscar el campo hidden de decisión
+        const consentDecision = form.querySelector(
+            'input[name="eipsi_consent_decision"]'
         );
-        if ( ! consentCheckbox ) return true; // Si no hay bloque de consent, pasar
+        
+        if ( ! consentDecision ) return true;
 
-        if ( ! consentCheckbox.checked ) {
-            // Crear mensaje de error clínico
+        if ( consentDecision.value !== 'accepted' ) {
             const errorMsg = document.createElement( 'div' );
             errorMsg.className = 'eipsi-consent-error';
             errorMsg.textContent =
-                '⛔ Debes aceptar los términos de consentimiento';
+                '⛔ Debes elegir una opción de consentimiento para continuar';
             errorMsg.style.cssText =
-                'background:#fee; color:#c33; padding:12px; margin:12px 0; border-left:4px solid #c33;';
+                'background:#fee; color:#c33; padding:12px; margin:12px 0; border-left:4px solid #c33; text-align:center;';
 
-            // Remover error previo si existe
-            const consentBlock = consentCheckbox.closest( '.eipsi-consent-block' );
+            const consentBlock = consentDecision.closest( '.eipsi-consent-block' );
             if ( consentBlock ) {
                 const existingError = consentBlock.querySelector( '.eipsi-consent-error' );
                 if ( existingError ) existingError.remove();
                 consentBlock.appendChild( errorMsg );
             }
             
-            consentCheckbox.scrollIntoView( {
-                behavior: 'smooth',
-                block: 'center',
-            } );
-
+            consentDecision.scrollIntoView( { behavior: 'smooth', block: 'center' } );
             return false;
         }
 
-        // Limpiar mensaje de error si existe
-        const consentBlock = consentCheckbox.closest( '.eipsi-consent-block' );
+        const consentBlock = consentDecision.closest( '.eipsi-consent-block' );
         if ( consentBlock ) {
             const existingError = consentBlock.querySelector( '.eipsi-consent-error' );
             if ( existingError ) existingError.remove();
         }
-
         return true;
     }
 
@@ -1231,7 +1223,7 @@
             this.initLikertFields( form );
             this.initRadioFields( form );
             this.initConditionalFieldListeners( form );
-            this.initConsentBlocks( form );
+            this.initConsentV2( form );
             this.attachTracking( form );
 
             form.addEventListener( 'submit', ( e ) =>
@@ -1680,43 +1672,75 @@
             return version ? `${ os } ${ version }` : os;
         },
 
-        initConsentBlocks( form ) {
+        initConsentV2( form ) {
             const consentBlocks = form.querySelectorAll(
                 '[data-consent-block="true"]'
             );
-            if ( ! consentBlocks.length ) {
-                return;
-            }
+            if ( ! consentBlocks.length ) return;
 
             consentBlocks.forEach( ( block ) => {
-                const checkbox = block.querySelector(
-                    'input[type="checkbox"]'
-                );
-                if ( ! checkbox ) {
-                    return;
-                }
+                const acceptBtn = block.querySelector( '.eipsi-btn-accept' );
+                const rejectBtn = block.querySelector( '.eipsi-btn-reject' );
+                const decisionInput = block.querySelector( 'input[name="eipsi_consent_decision"]' );
 
-                const isRequired = block.dataset.required === 'true';
-                if ( ! isRequired ) {
-                    return;
-                }
+                if ( ! acceptBtn || ! rejectBtn || ! decisionInput ) return;
 
-                // Initial state check
-                this.updateNavigationForConsent( form );
-
-                checkbox.addEventListener( 'change', () => {
+                acceptBtn.addEventListener( 'click', (e) => {
+                    e.preventDefault();
+                    decisionInput.value = 'accepted';
+                    acceptBtn.classList.add('is-selected');
+                    rejectBtn.classList.remove('is-selected');
                     this.updateNavigationForConsent( form );
-                    this.validateField( checkbox );
+                } );
+
+                rejectBtn.addEventListener( 'click', (e) => {
+                    e.preventDefault();
+                    if ( confirm( '¿Estás seguro de que no deseas participar? Esto cerrará el formulario.' ) ) {
+                        decisionInput.value = 'declined';
+                        acceptBtn.classList.remove('is-selected');
+                        rejectBtn.classList.add('is-selected');
+                        this.handleConsentDeclined( form, block );
+                    }
                 } );
             } );
+            this.updateNavigationForConsent( form );
+        },
+
+        handleConsentDeclined( form, block ) {
+            const formId = this.getFormId( form );
+            const participantId = getUniversalParticipantId();
+            const sessionId = getSessionId( formId );
+            const surveyId = form.querySelector('input[name="survey_id"]')?.value || '';
+
+            const formData = new FormData();
+            formData.append( 'action', 'eipsi_save_consent_decision' );
+            formData.append( 'nonce', this.config.nonce );
+            formData.append( 'decision', 'declined' );
+            formData.append( 'form_id', formId );
+            formData.append( 'participant_id', participantId );
+            formData.append( 'session_id', sessionId );
+            if ( surveyId ) formData.append( 'survey_id', surveyId );
+
+            this.setFormLoading( form, true );
+
+            fetch( this.config.ajaxUrl, {
+                method: 'POST',
+                body: formData,
+            } )
+            .then( response => response.json() )
+            .then( () => {
+                this.showMessage( form, 'info', 'Has declinado participar en el estudio. Gracias por tu tiempo.' );
+                form.style.opacity = '0.5';
+                form.querySelectorAll('button, input, select, textarea').forEach(el => el.disabled = true);
+            } )
+            .catch( err => console.error('[EIPSI] Error saving consent decision:', err) )
+            .finally( () => this.setFormLoading( form, false ) );
         },
 
         updateNavigationForConsent( form ) {
             const currentPage = this.getCurrentPage( form );
             const pageElement = this.getPageElement( form, currentPage );
-            if ( ! pageElement ) {
-                return;
-            }
+            if ( ! pageElement ) return;
 
             const consentBlocks = pageElement.querySelectorAll(
                 '[data-consent-block="true"][data-required="true"]'
@@ -1724,10 +1748,8 @@
             let allAccepted = true;
 
             consentBlocks.forEach( ( block ) => {
-                const checkbox = block.querySelector(
-                    'input[type="checkbox"]'
-                );
-                if ( checkbox && ! checkbox.checked ) {
+                const decisionInput = block.querySelector( 'input[name="eipsi_consent_decision"]' );
+                if ( decisionInput && decisionInput.value !== 'accepted' ) {
                     allAccepted = false;
                 }
             } );
@@ -1736,23 +1758,13 @@
             const submitButton = form.querySelector( '.eipsi-submit-button' );
 
             if ( nextButton ) {
-                if ( ! allAccepted ) {
-                    nextButton.setAttribute( 'disabled', 'true' );
-                    nextButton.classList.add( 'is-disabled' );
-                } else {
-                    nextButton.removeAttribute( 'disabled' );
-                    nextButton.classList.remove( 'is-disabled' );
-                }
+                nextButton.disabled = ! allAccepted;
+                nextButton.classList.toggle( 'is-disabled', ! allAccepted );
             }
 
             if ( submitButton ) {
-                if ( ! allAccepted ) {
-                    submitButton.setAttribute( 'disabled', 'true' );
-                    submitButton.classList.add( 'is-disabled' );
-                } else {
-                    submitButton.removeAttribute( 'disabled' );
-                    submitButton.classList.remove( 'is-disabled' );
-                }
+                submitButton.disabled = ! allAccepted;
+                submitButton.classList.toggle( 'is-disabled', ! allAccepted );
             }
         },
 

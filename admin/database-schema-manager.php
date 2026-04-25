@@ -161,17 +161,19 @@ class EIPSI_Database_Schema_Manager {
                     'created_at' => 'DATETIME NOT NULL',
                     'last_login_at' => 'DATETIME',
                     'is_active' => 'TINYINT(1) DEFAULT 1',
+                    'status' => "VARCHAR(50) DEFAULT 'active'",
                     'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-                ),
-                'indices' => array(
+                    ),
+                    'indices' => array(
                     'PRIMARY KEY  (id)',
                     'UNIQUE KEY unique_survey_email (survey_id, email)',
                     'KEY survey_id (survey_id)',
                     'KEY is_active (is_active)',
                     'KEY idx_participant_active (is_active)',
+                    'KEY idx_status (status)',
                     'KEY idx_email (email)',
                     'KEY idx_created_at (created_at)'
-                )
+                    )
             ),
             'survey_sessions' => array(
                 'columns' => array(
