@@ -874,13 +874,13 @@ function eipsi_participant_has_active_pool_study( $participant_id, $pool_id ) {
     global $wpdb;
     
     $assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
-    $studies_table = $wpdb->prefix . 'eipsi_survey_studies';
+    $studies_table = $wpdb->prefix . 'survey_studies';
     
     $assignment = $wpdb->get_row( $wpdb->prepare(
-        "SELECT pa.study_id, ps.name as study_name 
+        "SELECT pa.study_id, ps.study_name 
          FROM {$assignments_table} pa
          JOIN {$studies_table} ps ON pa.study_id = ps.id
-         WHERE pa.participant_id = %d 
+         WHERE pa.participant_id = %s 
          AND pa.pool_id = %d
          AND pa.completed = 0
          ORDER BY pa.assigned_at DESC
@@ -1083,7 +1083,7 @@ function eipsi_ajax_request_pool_assignment() {
     // -----------------------------------------------------------------
     $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
     $pool_id        = isset( $_POST['pool_id'] ) ? absint( $_POST['pool_id'] ) : 0;
-    $participant_id = isset( $_POST['participant_id'] ) ? absint( $_POST['participant_id'] ) : 0;
+    $participant_id = isset( $_POST['participant_id'] ) ? sanitize_text_field( wp_unslash( $_POST['participant_id'] ) ) : '';
 
     if ( ! wp_verify_nonce( $nonce, 'eipsi_pool_access' ) ) {
         error_log( sprintf(
@@ -1117,7 +1117,7 @@ function eipsi_ajax_request_pool_assignment() {
     error_log("[EIPSI POOL ASSIGN] Verificando asignación existente...");
     $existing = $wpdb->get_var( $wpdb->prepare(
         "SELECT id FROM {$assignments_table} 
-         WHERE pool_id = %d AND participant_id = %d AND completed = 0
+         WHERE pool_id = %d AND participant_id = %s AND completed = 0
          LIMIT 1",
         $pool_id,
         $participant_id

@@ -1647,7 +1647,24 @@ function eipsi_render_pool_hub_v2() {
                 return;
             }
 
+            // Calculate ratios (v2.5.5)
+            const totalSent = logs.length;
+            const totalConfirmed = logs.filter(l => l.status === 'confirmed').length;
+            const ratio = totalSent > 0 ? Math.round((totalConfirmed / totalSent) * 100) : 0;
+
             let html = `
+                <div class="eipsi-email-summary" style="margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-size: 14px; color: #64748b;"><?php _e('Tasa de Confirmación:', 'eipsi-forms'); ?></span>
+                            <strong style="font-size: 18px; color: #1e293b; margin-left: 8px;">${totalConfirmed} / ${totalSent} (${ratio}%)</strong>
+                        </div>
+                        <div style="width: 150px; background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden;">
+                            <div style="width: ${ratio}%; background: #22c55e; height: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <table class="eipsi-email-logs-table">
                     <thead>
                         <tr>
@@ -1956,7 +1973,7 @@ function eipsi_get_pool_stats($pool_id) {
     ));
     
     $completed = $wpdb->get_var($wpdb->prepare(
-        "SELECT COUNT(*) FROM {$assignments_table} WHERE pool_id = %d AND status = 'completed'",
+        "SELECT COUNT(*) FROM {$assignments_table} WHERE pool_id = %d AND completed = 1",
         $pool_id
     ));
     

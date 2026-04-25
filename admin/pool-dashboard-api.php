@@ -66,8 +66,8 @@ function eipsi_export_pool_assignments() {
         $wpdb->prepare(
             "SELECT a.id AS assignment_id,
                 a.participant_id,
-                a.assigned_study_id,
-                a.status,
+                a.study_id as assigned_study_id,
+                a.completed,
                 a.assigned_at,
                 p.email,
                 p.first_name,
@@ -76,7 +76,7 @@ function eipsi_export_pool_assignments() {
                 s.study_code
             FROM {$assignments_table} a
             LEFT JOIN {$participants_table} p ON a.participant_id = p.id
-            LEFT JOIN {$studies_table} s ON a.assigned_study_id = s.id
+            LEFT JOIN {$studies_table} s ON a.study_id = s.id
             WHERE a.pool_id = %d
             ORDER BY a.assigned_at DESC",
             $pool_id
@@ -117,7 +117,7 @@ function eipsi_export_pool_assignments() {
             $row['email'],
             $row['study_name'],
             $row['study_code'],
-            $row['status'],
+            $row['completed'] ? 'completed' : 'assigned',
             $row['assigned_at'],
         ) );
     }
