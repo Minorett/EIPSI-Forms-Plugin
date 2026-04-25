@@ -2377,18 +2377,23 @@ function eipsi_check_consent_blocked($participant_id, $context, $type = 'study')
         // Check longitudinal study participants table
         $table = $wpdb->prefix . 'survey_participants';
         $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT consent_decision, consent_decided_at, consent_blocked_survey_id 
+            "SELECT consent_decision, consent_decided_at, consent_blocked_survey_id, status 
              FROM {$table} 
-             WHERE study_id = %d AND participant_id = %s 
+             WHERE survey_id = %d AND participant_id = %s 
              LIMIT 1",
             $context,
             $participant_id
         ));
         
-        if ($row && $row->consent_decision === 'declined') {
+        if ($row && in_array($row->consent_decision, array('declined', 'withdrawn'), true)) {
             $result['blocked'] = true;
-            $result['reason'] = 'consent_declined';
+            $result['reason'] = ($row->consent_decision === 'declined') ? 'consent_declined' : 'study_withdrawn';
             $result['decision'] = $row->consent_decision;
+            $result['decided_at'] = $row->consent_decided_at;
+        } elseif ($row && isset($row->status) && $row->status === 'withdrawn') {
+            $result['blocked'] = true;
+            $result['reason'] = 'study_withdrawn';
+            $result['decision'] = 'withdrawn';
             $result['decided_at'] = $row->consent_decided_at;
         }
     } else {
@@ -2403,9 +2408,9 @@ function eipsi_check_consent_blocked($participant_id, $context, $type = 'study')
             $participant_id
         ));
         
-        if ($row && $row->consent_decision === 'declined') {
+        if ($row && in_array($row->consent_decision, array('declined', 'withdrawn'), true)) {
             $result['blocked'] = true;
-            $result['reason'] = 'consent_declined';
+            $result['reason'] = ($row->consent_decision === 'declined') ? 'consent_declined' : 'study_withdrawn';
             $result['decision'] = $row->consent_decision;
             $result['decided_at'] = $row->consent_decided_at;
         }

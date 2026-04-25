@@ -3198,15 +3198,15 @@ function eipsi_abandon_study_handler() {
         ), $where);
     }
     
-    // For B2, anonymize/delete existing responses
+    // For B2, anonymize/delete existing responses and related data
     if ($withdrawal_type === 'b2') {
-        $submissions_table = $wpdb->prefix . 'survey_submissions';
-        $partial_table = $wpdb->prefix . 'survey_partial_responses';
+        $submissions_table = $wpdb->prefix . 'vas_form_results';
+        $partial_table = $wpdb->prefix . 'eipsi_partial_responses';
         
-        // Get all form IDs for this study
-        $forms_table = $wpdb->prefix . 'study_wave_forms';
+        // Get all form IDs for this study via survey_waves (correct table)
+        $waves_table_forms = $wpdb->prefix . 'survey_waves';
         $form_ids = $wpdb->get_col($wpdb->prepare(
-            "SELECT DISTINCT form_id FROM {$forms_table} WHERE study_id = %s",
+            "SELECT DISTINCT form_id FROM {$waves_table_forms} WHERE study_id = %s",
             $study_id
         ));
         
@@ -3215,12 +3215,10 @@ function eipsi_abandon_study_handler() {
             $wpdb->query($wpdb->prepare(
                 "UPDATE {$submissions_table} 
                  SET participant_id = CONCAT('ANONYMIZED_', MD5(participant_id)),
-                     status = 'anonymized',
-                     anonymized_at = %s
-                 WHERE form_id = %d 
+                     status = 'anonymized'
+                 WHERE form_id = %s 
                  AND participant_id = %s 
                  AND status NOT IN ('anonymized', 'deleted')",
-                $current_time,
                 $form_id,
                 $participant_id
             ));
@@ -3228,12 +3226,41 @@ function eipsi_abandon_study_handler() {
             // Delete partial responses
             $wpdb->query($wpdb->prepare(
                 "DELETE FROM {$partial_table} 
-                 WHERE form_id = %d 
+                 WHERE form_id = %s 
                  AND participant_id = %s",
                 $form_id,
                 $participant_id
             ));
         }
+        
+        // Delete device fingerprint data
+        $device_table = $wpdb->prefix . 'eipsi_device_data';
+        $wpdb->delete($device_table, array('participant_id' => $participant_id), array('%s'));
+        
+        // Anonymize email logs
+        $email_log_table = $wpdb->prefix . 'survey_email_log';
+        $wpdb->update(
+            $email_log_table,
+            array(
+                'recipient_email' => 'purged@withdrawal.b2',
+                'metadata' => wp_json_encode(array('purged_at' => $current_time, 'reason' => 'b2_withdrawal'))
+            ),
+            array('participant_id' => $participant_id),
+            array('%s', '%s'),
+            array('%s')
+        );
+        
+        // Delete magic links
+        $magic_links_table = $wpdb->prefix . 'survey_magic_links';
+        $wpdb->delete($magic_links_table, array('participant_id' => $participant_id), array('%s'));
+        
+        // Delete sessions
+        $sessions_table = $wpdb->prefix . 'survey_sessions';
+        $wpdb->delete($sessions_table, array('participant_id' => $participant_id), array('%s'));
+        
+        // Delete pool email logs
+        $pool_email_log_table = $wpdb->prefix . 'eipsi_pool_email_log';
+        $wpdb->delete($pool_email_log_table, array('participant_id' => $participant_id), array('%s'));
     }
     
     // Log the abandonment

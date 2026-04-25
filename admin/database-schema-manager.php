@@ -161,6 +161,15 @@ class EIPSI_Database_Schema_Manager {
                     'created_at' => 'DATETIME NOT NULL',
                     'last_login_at' => 'DATETIME',
                     'is_active' => 'TINYINT(1) DEFAULT 1',
+                    'status' => "VARCHAR(30) DEFAULT 'active'",
+                    'consent_decision' => 'VARCHAR(20) NULL',
+                    'consent_decided_at' => 'DATETIME NULL',
+                    'consent_ip_address' => 'VARCHAR(45) NULL',
+                    'consent_user_agent' => 'VARCHAR(500) NULL',
+                    'consent_context' => 'VARCHAR(50) NULL',
+                    'consent_blocked_survey_id' => 'VARCHAR(20) NULL',
+                    'withdrawal_wave_id' => 'BIGINT(20) UNSIGNED NULL',
+                    'data_deleted' => 'TINYINT(1) DEFAULT 0',
                     'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
                 ),
                 'indices' => array(
@@ -168,9 +177,9 @@ class EIPSI_Database_Schema_Manager {
                     'UNIQUE KEY unique_survey_email (survey_id, email)',
                     'KEY survey_id (survey_id)',
                     'KEY is_active (is_active)',
-                    'KEY idx_participant_active (is_active)',
                     'KEY idx_email (email)',
-                    'KEY idx_created_at (created_at)'
+                    'KEY idx_created_at (created_at)',
+                    'KEY idx_consent_decision (consent_decision)'
                 )
             ),
             'survey_sessions' => array(

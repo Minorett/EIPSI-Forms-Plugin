@@ -760,6 +760,42 @@ class EIPSI_Participant_Service {
             }
         }
         
+        // 6. Delete device fingerprint data (eipsi_device_data)
+        $device_data_table = $wpdb->prefix . 'eipsi_device_data';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$device_data_table'") === $device_data_table) {
+            $deleted = $wpdb->delete($device_data_table, array('participant_id' => $participant_id), array('%d'));
+            if ($deleted !== false) {
+                $result['deleted'][$device_data_table] = $deleted;
+            }
+        }
+        
+        // 7. Delete partial responses (eipsi_partial_responses)
+        $partial_table = $wpdb->prefix . 'eipsi_partial_responses';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$partial_table'") === $partial_table) {
+            $deleted = $wpdb->delete($partial_table, array('participant_id' => (string) $participant_id), array('%s'));
+            if ($deleted !== false) {
+                $result['deleted'][$partial_table] = $deleted;
+            }
+        }
+        
+        // 8. Delete pool email log (eipsi_pool_email_log)
+        $pool_email_log_table = $wpdb->prefix . 'eipsi_pool_email_log';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$pool_email_log_table'") === $pool_email_log_table) {
+            $deleted = $wpdb->delete($pool_email_log_table, array('participant_id' => $participant_id), array('%d'));
+            if ($deleted !== false) {
+                $result['deleted'][$pool_email_log_table] = $deleted;
+            }
+        }
+        
+        // 9. Delete data requests (survey_data_requests)
+        $data_requests_table = $wpdb->prefix . 'survey_data_requests';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$data_requests_table'") === $data_requests_table) {
+            $deleted = $wpdb->delete($data_requests_table, array('participant_id' => $participant_id), array('%d'));
+            if ($deleted !== false) {
+                $result['deleted'][$data_requests_table] = $deleted;
+            }
+        }
+        
         // Log final audit entry with full purge info
         $current_user = wp_get_current_user();
         $user_id = $current_user->ID ?? 0;
