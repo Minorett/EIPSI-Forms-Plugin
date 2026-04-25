@@ -3561,7 +3561,7 @@ public static function get_schema_health_summary() {
                 ),
                 'fk_pool_assignments_study' => array(
                     'referenced_table' => 'survey_studies',
-                    'sql' => "ALTER TABLE {table} ADD CONSTRAINT fk_pool_assignments_study FOREIGN KEY (assigned_study_id) REFERENCES {prefix}survey_studies(id) ON DELETE CASCADE",
+                    'sql' => "ALTER TABLE {table} ADD CONSTRAINT fk_pool_assignments_study FOREIGN KEY (study_id) REFERENCES {prefix}survey_studies(id) ON DELETE CASCADE",
                 ),
             ),
         );

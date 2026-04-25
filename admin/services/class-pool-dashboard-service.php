@@ -137,17 +137,17 @@ class EIPSI_Pool_Dashboard_Service {
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT a.assigned_study_id,
+                "SELECT a.study_id as assigned_study_id,
                     s.study_name,
                     s.study_code,
                     COUNT(*) AS total_assignments,
-                    SUM(CASE WHEN a.status = 'completed' THEN 1 ELSE 0 END) AS completed,
-                    SUM(CASE WHEN a.status = 'assigned' THEN 1 ELSE 0 END) AS in_progress,
-                    SUM(CASE WHEN a.status = 'dropped' THEN 1 ELSE 0 END) AS dropped
+                    SUM(CASE WHEN a.completed = 1 THEN 1 ELSE 0 END) AS completed,
+                    SUM(CASE WHEN a.completed = 0 THEN 1 ELSE 0 END) AS in_progress,
+                    0 AS dropped
                 FROM {$this->assignments_table} a
-                LEFT JOIN {$this->studies_table} s ON a.assigned_study_id = s.id
+                LEFT JOIN {$this->studies_table} s ON a.study_id = s.id
                 WHERE a.pool_id = %d
-                GROUP BY a.assigned_study_id, s.study_name, s.study_code
+                GROUP BY a.study_id, s.study_name, s.study_code
                 ORDER BY total_assignments DESC",
                 $pool_id
             ),
@@ -221,9 +221,9 @@ class EIPSI_Pool_Dashboard_Service {
             $wpdb->prepare(
                 "SELECT a.id AS assignment_id,
                     a.assigned_at,
-                    a.status,
+                    a.completed,
                     a.participant_id,
-                    a.assigned_study_id,
+                    a.study_id as assigned_study_id,
                     p.email,
                     p.first_name,
                     p.last_name,
@@ -231,7 +231,7 @@ class EIPSI_Pool_Dashboard_Service {
                     s.study_code
                 FROM {$this->assignments_table} a
                 LEFT JOIN {$this->participants_table} p ON a.participant_id = p.id
-                LEFT JOIN {$this->studies_table} s ON a.assigned_study_id = s.id
+                LEFT JOIN {$this->studies_table} s ON a.study_id = s.id
                 WHERE a.pool_id = %d
                 ORDER BY a.assigned_at DESC
                 LIMIT %d",
@@ -246,12 +246,12 @@ class EIPSI_Pool_Dashboard_Service {
             $full_name = trim( sprintf( '%s %s', $row['first_name'], $row['last_name'] ) );
             $activity[] = array(
                 'assignment_id' => (int) $row['assignment_id'],
-                'participant_id' => (int) $row['participant_id'],
+                'participant_id' => $row['participant_id'],
                 'participant_name' => $full_name ? $full_name : $row['email'],
                 'participant_email' => $row['email'],
                 'study_name' => $row['study_name'] ? $row['study_name'] : sprintf( __( 'Estudio #%d', 'eipsi-forms' ), (int) $row['assigned_study_id'] ),
                 'study_code' => $row['study_code'],
-                'status' => $row['status'],
+                'status' => $row['completed'] ? 'completed' : 'assigned',
                 'assigned_at' => $row['assigned_at'],
             );
         }

@@ -27,7 +27,7 @@ if (!defined('ABSPATH')) {
  */
 function eipsi_check_pool_completion_on_submit($data) {
     $survey_id      = absint($data['survey_id'] ?? 0);
-    $participant_id = absint($data['participant_id'] ?? 0);
+    $participant_id = sanitize_text_field($data['participant_id'] ?? '');
     $form_id        = sanitize_text_field($data['form_id'] ?? '');
 
     if (!$survey_id || !$participant_id) {
@@ -44,7 +44,7 @@ function eipsi_check_pool_completion_on_submit($data) {
              FROM {$wpdb->prefix}eipsi_pool_assignments pa
              JOIN {$wpdb->prefix}eipsi_longitudinal_pools p ON p.id = pa.pool_id
              WHERE pa.study_id = %d
-             AND pa.participant_id = %d
+             AND pa.participant_id = %s
              AND pa.completed = 0
              AND p.status = 'active'",
             $survey_id,
@@ -105,7 +105,7 @@ add_action('eipsi_form_submitted', 'eipsi_check_pool_completion_on_submit', 10, 
  */
 function eipsi_notify_researcher_on_pool_completion($data) {
     $pool_id        = absint($data['pool_id'] ?? 0);
-    $participant_id = absint($data['participant_id'] ?? 0);
+    $participant_id = sanitize_text_field($data['participant_id'] ?? '');
     $study_id       = absint($data['study_id'] ?? 0);
 
     if (!$pool_id || !$participant_id || !$study_id) {
@@ -138,13 +138,17 @@ function eipsi_notify_researcher_on_pool_completion($data) {
     $admin_email = get_option('admin_email');
 
     // Obtener datos del participante
+    // Si el participant_id es numérico, buscar por ID. Si no, buscar por email (si aplica) o usarlo directamente.
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-    $participant = $wpdb->get_row(
-        $wpdb->prepare(
-            "SELECT email, first_name, last_name FROM {$wpdb->prefix}survey_participants WHERE id = %d",
-            $participant_id
-        )
-    );
+    $participant = null;
+    if (is_numeric($participant_id)) {
+        $participant = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT email, first_name, last_name FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+                $participant_id
+            )
+        );
+    }
 
     // Obtener nombre del estudio
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
