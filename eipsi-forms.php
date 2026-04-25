@@ -885,166 +885,17 @@ function eipsi_forms_activate() {
     }
     add_action('eipsi_cleanup_partial_responses', 'eipsi_run_partial_cleanup');
     
-    // Create form results table
-    $table_name = $wpdb->prefix . 'vas_form_results';
-    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
-        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-        form_id varchar(20) DEFAULT NULL,
-        participant_id varchar(20) DEFAULT NULL,
-        survey_id INT(11) DEFAULT NULL,
-        wave_index INT(11) DEFAULT NULL,
-        session_id varchar(255) DEFAULT NULL,
-        participant varchar(255) DEFAULT NULL,
-        interaction varchar(255) DEFAULT NULL,
-        form_name varchar(255) NOT NULL,
-        created_at datetime NOT NULL,
-        submitted_at datetime DEFAULT NULL,
-        device varchar(100) DEFAULT NULL,
-        browser varchar(100) DEFAULT NULL,
-        os varchar(100) DEFAULT NULL,
-        screen_width int(11) DEFAULT NULL,
-        duration int(11) DEFAULT NULL,
-        duration_seconds decimal(8,3) DEFAULT NULL,
-        start_timestamp_ms bigint(20) DEFAULT NULL,
-        end_timestamp_ms bigint(20) DEFAULT NULL,
-        ip_address varchar(45) DEFAULT NULL,
-        metadata LONGTEXT DEFAULT NULL,
-        status enum('pending','submitted','error') DEFAULT 'submitted',
-        form_responses longtext DEFAULT NULL,
-        PRIMARY KEY (id),
-        KEY form_name (form_name),
-        KEY created_at (created_at),
-        KEY form_id (form_id),
-        KEY participant_id (participant_id),
-        KEY session_id (session_id),
-        KEY submitted_at (submitted_at),
-        KEY participant_survey_wave (participant_id, survey_id, wave_index),
-        KEY form_participant (form_id, participant_id)
-        ) $charset_collate;";
-    
-    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-    dbDelta($sql);
-    
-    // Create form events tracking table
-    $events_table = $wpdb->prefix . 'vas_form_events';
-    $sql_events = "CREATE TABLE IF NOT EXISTS $events_table (
-        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-        form_id varchar(255) NOT NULL DEFAULT '',
-        session_id varchar(255) NOT NULL,
-        event_type varchar(50) NOT NULL,
-        page_number int(11) DEFAULT NULL,
-        metadata text DEFAULT NULL,
-        user_agent text DEFAULT NULL,
-        created_at datetime NOT NULL,
-        PRIMARY KEY (id),
-        KEY form_id (form_id),
-        KEY session_id (session_id),
-        KEY event_type (event_type),
-        KEY created_at (created_at),
-        KEY form_session (form_id, session_id)
-    ) $charset_collate;";
-    
-    dbDelta($sql_events);
-    
-    // Create partial responses table for Save & Continue
-    EIPSI_Partial_Responses::create_table();
-
-    // ============================================================================
-    // PHASE 3 TABLES - Researcher Data Confidence
-    // ============================================================================
-
-    // Create cron log table
-    $cron_log_table = $wpdb->prefix . 'survey_cron_log';
-    $sql_cron_log = "CREATE TABLE IF NOT EXISTS $cron_log_table (
-        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        cron_hook VARCHAR(100) NOT NULL,
-        executed_at DATETIME NOT NULL,
-        metadata TEXT,
-        PRIMARY KEY (id),
-        KEY cron_hook (cron_hook),
-        KEY executed_at (executed_at)
-    ) $charset_collate;";
-    dbDelta($sql_cron_log);
-
-    // Create data requests table (GDPR)
-    $data_requests_table = $wpdb->prefix . 'survey_data_requests';
-    $sql_data_requests = "CREATE TABLE IF NOT EXISTS $data_requests_table (
-        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        participant_id BIGINT(20) UNSIGNED NOT NULL,
-        survey_id BIGINT(20) UNSIGNED NOT NULL,
-        request_type VARCHAR(20) NOT NULL,
-        reason TEXT,
-        status VARCHAR(20) NOT NULL DEFAULT 'pending',
-        admin_id BIGINT(20) UNSIGNED,
-        admin_notes TEXT,
-        result_data TEXT,
-        created_at DATETIME NOT NULL,
-        started_processing_at DATETIME,
-        processed_at DATETIME,
-        PRIMARY KEY (id),
-        KEY participant_id (participant_id),
-        KEY survey_id (survey_id),
-        KEY status (status),
-        KEY created_at (created_at)
-    ) $charset_collate;";
-    dbDelta($sql_data_requests);
-
-    // ============================================================================
-    // END PHASE 3 TABLES
-    // ============================================================================
-
-    // ============================================================================
-    // POOL STUDIES TABLES - Phase 1 of Pool Randomization System (v2.5.3)
-    // ============================================================================
-
-    // Create pool assignments table - tracks participant assignments to pool studies
-    $pool_assignments_table = $wpdb->prefix . 'eipsi_pool_assignments';
-    $sql_pool_assignments = "CREATE TABLE IF NOT EXISTS $pool_assignments_table (
-        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        pool_id BIGINT(20) UNSIGNED NOT NULL,
-        participant_id VARCHAR(255) NOT NULL,
-        study_id BIGINT(20) UNSIGNED NOT NULL,
-        assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        first_access DATETIME DEFAULT NULL,
-        last_access DATETIME DEFAULT NULL,
-        access_count INT(11) DEFAULT 0,
-        completed TINYINT(1) DEFAULT 0,
-        completed_at DATETIME DEFAULT NULL,
-        completion_form_id VARCHAR(20) DEFAULT NULL,
-        PRIMARY KEY (id),
-        KEY idx_pool_id (pool_id),
-        KEY idx_participant_id (participant_id),
-        KEY idx_study_id (study_id),
-        UNIQUE KEY unique_pool_participant (pool_id, participant_id)
-    ) $charset_collate;";
-    dbDelta($sql_pool_assignments);
-
-    // Create pool analytics table - daily metrics per study per pool
-    $pool_analytics_table = $wpdb->prefix . 'eipsi_pool_analytics';
-    $sql_pool_analytics = "CREATE TABLE IF NOT EXISTS $pool_analytics_table (
-        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        pool_id BIGINT(20) UNSIGNED NOT NULL,
-        date DATE NOT NULL,
-        study_id BIGINT(20) UNSIGNED NOT NULL,
-        assignments INT(11) DEFAULT 0,
-        completions INT(11) DEFAULT 0,
-        cumulative_assignments INT(11) DEFAULT 0,
-        PRIMARY KEY (id),
-        KEY idx_pool_date (pool_id, date),
-        KEY idx_study_id (study_id)
-    ) $charset_collate;";
-    dbDelta($sql_pool_analytics);
-
-    // ============================================================================
-    // END POOL STUDIES TABLES
-    // ============================================================================
+    // === Unified Schema Synchronization (Consolidated v2.6.0) ===
+    if ( class_exists( 'EIPSI_Database_Schema_Manager' ) ) {
+        EIPSI_Database_Schema_Manager::verify_and_sync_schema();
+    }
 
     // Store schema version
-    update_option('eipsi_db_schema_version', '1.2.3');
+    update_option('eipsi_db_schema_version', '2.6.0');
 
     // Log activation
-    error_log('[EIPSI Forms] Plugin activated - Schema v1.2.2 installed');
-}
+    error_log('[EIPSI Forms] Plugin activated - Consolidated Schema Manager v2.6.0 synchronized');
+    }
 
 register_activation_hook(__FILE__, 'eipsi_forms_activate');
 register_deactivation_hook(__FILE__, 'eipsi_forms_deactivate');
@@ -1267,13 +1118,13 @@ add_action('plugins_loaded', 'eipsi_forms_verify_schema_on_load');
 function eipsi_forms_verify_schema_on_load() {
     $schema_version = get_option('eipsi_db_schema_version');
     
-    // If schema version not set or outdated, trigger repair
-    if (!$schema_version || version_compare($schema_version, '1.2.2', '<')) {
-        EIPSI_Database_Schema_Manager::repair_local_schema();
+    // If schema version not set or outdated, trigger consolidated sync (v2.6.0)
+    if (!$schema_version || version_compare($schema_version, '2.6.0', '<')) {
+        if ( class_exists( 'EIPSI_Database_Schema_Manager' ) ) {
+            EIPSI_Database_Schema_Manager::verify_and_sync_schema();
+            update_option('eipsi_db_schema_version', '2.6.0');
+        }
     }
-    
-    // Ensure partial responses table exists (idempotent)
-    EIPSI_Partial_Responses::create_table();
 }
 
 // Add periodic schema verification (every 24 hours)
