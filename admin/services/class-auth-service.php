@@ -112,6 +112,15 @@ class EIPSI_Auth_Service {
             );
         }
 
+        // Verificar si abandonó el estudio (withdrawn)
+        if (isset($participant->consent_decision) && $participant->consent_decision === 'withdrawn') {
+            return array(
+                'success' => false,
+                'participant_id' => null,
+                'error' => 'study_withdrawn'
+            );
+        }
+
         // Actualizar último login
         EIPSI_Participant_Service::update_last_login($participant->id);
 

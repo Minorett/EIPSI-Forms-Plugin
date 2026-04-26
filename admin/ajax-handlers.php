@@ -3166,6 +3166,7 @@ function eipsi_abandon_study_handler() {
         'consent_ip_address' => $ip_address,
         'consent_user_agent' => $user_agent,
         'consent_context' => ($withdrawal_type === 'b2') ? 'T2B_data_deletion' : 'T2A_withdrawal',
+        'is_active' => 0,  // Mark as inactive so they don't appear as "Active" in dashboard
     );
     
     $where = array(
@@ -3326,10 +3327,8 @@ function eipsi_abandon_study_handler() {
         ));
     }
     
-    // Prepare redirect URL based on type
-    $redirect_url = ($withdrawal_type === 'b2') 
-        ? '/withdrawal-data-deleted' 
-        : '/withdrawal-confirmed';
+    // Prepare redirect URL - go to homepage with message parameter
+    $redirect_url = home_url('/?withdrawal=success&type=' . $withdrawal_type);
     
     error_log("[EIPSI-ABANDON] === SUCCESS === type={$withdrawal_type}, redirect={$redirect_url}");
     

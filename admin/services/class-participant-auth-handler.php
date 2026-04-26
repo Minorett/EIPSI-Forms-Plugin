@@ -168,7 +168,8 @@ class EIPSI_Participant_Auth_Handler {
             // Map error codes to user-friendly messages
             $error_messages = array(
                 'user_not_found' => __('No encontramos una cuenta con ese email en este estudio.', 'eipsi-forms'),
-                'user_inactive' => __('Tu cuenta está desactivada. Contactá al investigador.', 'eipsi-forms')
+                'user_inactive' => __('Tu cuenta está desactivada. Contactá al investigador.', 'eipsi-forms'),
+                'study_withdrawn' => __('Abandonaste este estudio y no podés volver a participar. Si tenés dudas, contactá al investigador.', 'eipsi-forms')
             );
 
             wp_send_json_error(array(
