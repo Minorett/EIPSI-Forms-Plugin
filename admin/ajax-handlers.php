@@ -3155,13 +3155,8 @@ function eipsi_abandon_study_handler() {
         'consent_context' => ($withdrawal_type === 'b2') ? 'T2B_data_deletion' : 'T2A_withdrawal',
     );
     
-    // For B2, mark data for deletion
-    if ($withdrawal_type === 'b2') {
-        $update_data['data_deleted'] = 1;
-    }
-    
     $where = array(
-        'study_id' => $study_id,
+        'survey_id' => $study_id,
         'participant_id' => $participant_id,
     );
     
@@ -3185,12 +3180,7 @@ function eipsi_abandon_study_handler() {
         $study_id
     ));
     
-    if ($current_wave) {
-        // Update participant record with withdrawal wave
-        $wpdb->update($participants_table, array(
-            'withdrawal_wave_id' => $current_wave->id
-        ), $where);
-    }
+    // Note: withdrawal_wave_id column doesn't exist, skipping update
     
     // For B2, anonymize/delete existing responses and related data
     if ($withdrawal_type === 'b2') {

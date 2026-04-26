@@ -18,6 +18,37 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
 $schema_status = EIPSI_Database_Schema_Manager::get_schema_health_summary();
 $all_tables = EIPSI_Database_Schema_Manager::get_all_tables_status();
 
+// Ensure schema_status has all required keys with defaults
+$schema_status = wp_parse_args($schema_status, array(
+    'health_score' => 100,
+    'healthy_tables' => 0,
+    'warning_tables' => 0,
+    'error_tables' => 0,
+    'total_rows' => 0,
+    'total_size_mb' => 0,
+    'last_verified' => null,
+    'issues' => array(),
+));
+
+// Ensure each table has required keys
+if (is_array($all_tables)) {
+    foreach ($all_tables as $table_name => &$table) {
+        $table = wp_parse_args($table, array(
+            'full_table_name' => $table_name,
+            'status' => 'ok',
+            'row_count' => 0,
+            'columns' => array(),
+            'required_columns' => array(),
+            'missing_columns' => array(),
+            'indexes' => array(),
+            'size_mb' => 0,
+        ));
+    }
+    unset($table);
+} else {
+    $all_tables = array();
+}
+
 // Table display names
 $table_display_names = array(
     'vas_form_results' => 'VAS Form Results',
