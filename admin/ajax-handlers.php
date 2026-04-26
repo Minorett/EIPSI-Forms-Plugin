@@ -3101,6 +3101,7 @@ add_action('wp_ajax_nopriv_eipsi_abandon_study', 'eipsi_abandon_study_handler');
 function eipsi_abandon_study_handler() {
     // Verify nonce
     if (!wp_verify_nonce($_POST['nonce'] ?? '', 'eipsi_abandon_study')) {
+        error_log('[EIPSI-ABANDON] ERROR: Invalid nonce');
         wp_send_json_error(array('message' => __('Invalid security token', 'eipsi-forms')));
         return;
     }
@@ -3113,8 +3114,11 @@ function eipsi_abandon_study_handler() {
     $withdrawal_type = sanitize_text_field($_POST['withdrawal_type'] ?? ''); // 'b1' or 'b2'
     $verification_text = sanitize_text_field($_POST['verification_text'] ?? '');
     
+    error_log("[EIPSI-ABANDON] === START === participant_id={$participant_id}, study_id={$study_id}, type={$withdrawal_type}");
+    
     // Validate required fields
     if (empty($participant_id) || empty($study_id)) {
+        error_log("[EIPSI-ABANDON] ERROR: Empty participant_id or study_id");
         wp_send_json_error(array('message' => __('Participant ID and Study ID are required', 'eipsi-forms')));
         return;
     }
@@ -3145,6 +3149,15 @@ function eipsi_abandon_study_handler() {
     
     // Update participant record
     $participants_table = $wpdb->prefix . 'survey_participants';
+    error_log("[EIPSI-ABANDON] Table: {$participants_table}");
+    
+    // Check if table exists
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$participants_table}'") === $participants_table;
+    if (!$table_exists) {
+        error_log("[EIPSI-ABANDON] ERROR: Table {$participants_table} does not exist");
+        wp_send_json_error(array('message' => __('Database table not found', 'eipsi-forms')));
+        return;
+    }
     
     // Prepare update data
     $update_data = array(
@@ -3160,9 +3173,13 @@ function eipsi_abandon_study_handler() {
         'id' => (int) $participant_id,
     );
     
+    error_log("[EIPSI-ABANDON] UPDATE data: " . json_encode($update_data));
+    error_log("[EIPSI-ABANDON] WHERE: " . json_encode($where));
+    
     $result = $wpdb->update($participants_table, $update_data, $where);
     
     if ($result === false) {
+        error_log("[EIPSI-ABANDON] ERROR: Update failed - " . $wpdb->last_error);
         wp_send_json_error(array(
             'message' => __('Failed to update participant record', 'eipsi-forms'),
             'error' => $wpdb->last_error
@@ -3170,81 +3187,132 @@ function eipsi_abandon_study_handler() {
         return;
     }
     
+    error_log("[EIPSI-ABANDON] UPDATE successful, rows affected: " . ($result === 0 ? '0 (already withdrawn?)' : $result));
+    
     // Mark all pending waves as withdrawn
     $waves_table = $wpdb->prefix . 'study_waves';
     $assignments_table = $wpdb->prefix . 'survey_assignments';
     
-    // Get current wave if any
-    $current_wave = $wpdb->get_row($wpdb->prepare(
-        "SELECT id FROM {$waves_table} WHERE study_id = %s AND status = 'active' ORDER BY wave_index ASC LIMIT 1",
-        $study_id
-    ));
+    // Check if waves table exists
+    $waves_table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$waves_table}'") === $waves_table;
+    error_log("[EIPSI-ABANDON] Waves table exists: " . ($waves_table_exists ? 'yes' : 'no'));
+    
+    if ($waves_table_exists) {
+        // Get current wave if any
+        $current_wave = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$waves_table} WHERE study_id = %s AND status = 'active' ORDER BY wave_index ASC LIMIT 1",
+            $study_id
+        ));
+        error_log("[EIPSI-ABANDON] Current wave: " . ($current_wave ? $current_wave->id : 'none'));
+    } else {
+        $current_wave = null;
+    }
     
     // Note: withdrawal_wave_id column doesn't exist, skipping update
     
     // For B2, anonymize/delete existing responses and related data
     if ($withdrawal_type === 'b2') {
-        $submissions_table = $wpdb->prefix . 'vas_form_results';
-        $partial_table = $wpdb->prefix . 'eipsi_partial_responses';
+        error_log("[EIPSI-ABANDON] Processing B2 data deletion");
         
-        // Get all form IDs for this study via survey_waves (correct table)
-        $waves_table_forms = $wpdb->prefix . 'survey_waves';
-        $form_ids = $wpdb->get_col($wpdb->prepare(
-            "SELECT DISTINCT form_id FROM {$waves_table_forms} WHERE study_id = %s",
-            $study_id
-        ));
-        
-        foreach ($form_ids as $form_id) {
-            // Anonymize submissions
-            $wpdb->query($wpdb->prepare(
-                "UPDATE {$submissions_table} 
-                 SET participant_id = CONCAT('ANONYMIZED_', MD5(participant_id)),
-                     status = 'anonymized'
-                 WHERE form_id = %s 
-                 AND participant_id = %s 
-                 AND status NOT IN ('anonymized', 'deleted')",
-                $form_id,
-                $participant_id
-            ));
+        try {
+            $submissions_table = $wpdb->prefix . 'vas_form_results';
+            $partial_table = $wpdb->prefix . 'eipsi_partial_responses';
             
-            // Delete partial responses
-            $wpdb->query($wpdb->prepare(
-                "DELETE FROM {$partial_table} 
-                 WHERE form_id = %s 
-                 AND participant_id = %s",
-                $form_id,
-                $participant_id
-            ));
+            // Check which tables exist
+            $tables_to_check = array('survey_waves', 'vas_form_results', 'eipsi_partial_responses', 'eipsi_device_data', 'survey_email_log', 'survey_magic_links', 'survey_sessions', 'eipsi_pool_email_log');
+            $existing_tables = array();
+            foreach ($tables_to_check as $tbl) {
+                $full_name = $wpdb->prefix . $tbl;
+                if ($wpdb->get_var("SHOW TABLES LIKE '{$full_name}'") === $full_name) {
+                    $existing_tables[] = $tbl;
+                }
+            }
+            error_log("[EIPSI-ABANDON] Existing tables for B2: " . json_encode($existing_tables));
+            
+            // Get form IDs if survey_waves exists
+            if (in_array('survey_waves', $existing_tables)) {
+                $waves_table_forms = $wpdb->prefix . 'survey_waves';
+                $form_ids = $wpdb->get_col($wpdb->prepare(
+                    "SELECT DISTINCT form_id FROM {$waves_table_forms} WHERE study_id = %s",
+                    $study_id
+                ));
+                error_log("[EIPSI-ABANDON] Found form IDs: " . json_encode($form_ids));
+            } else {
+                $form_ids = array();
+            }
+            
+            // Process each form
+            foreach ($form_ids as $form_id) {
+                // Anonymize submissions if table exists
+                if (in_array('vas_form_results', $existing_tables)) {
+                    $wpdb->query($wpdb->prepare(
+                        "UPDATE {$submissions_table} 
+                         SET participant_id = CONCAT('ANONYMIZED_', MD5(participant_id)),
+                             status = 'anonymized'
+                         WHERE form_id = %s 
+                         AND participant_id = %s 
+                         AND status NOT IN ('anonymized', 'deleted')",
+                        $form_id,
+                        $participant_id
+                    ));
+                }
+                
+                // Delete partial responses if table exists
+                if (in_array('eipsi_partial_responses', $existing_tables)) {
+                    $wpdb->query($wpdb->prepare(
+                        "DELETE FROM {$partial_table} 
+                         WHERE form_id = %s 
+                         AND participant_id = %s",
+                        $form_id,
+                        $participant_id
+                    ));
+                }
+            }
+            
+            // Delete device fingerprint data
+            if (in_array('eipsi_device_data', $existing_tables)) {
+                $device_table = $wpdb->prefix . 'eipsi_device_data';
+                $wpdb->delete($device_table, array('participant_id' => $participant_id), array('%s'));
+            }
+            
+            // Anonymize email logs
+            if (in_array('survey_email_log', $existing_tables)) {
+                $email_log_table = $wpdb->prefix . 'survey_email_log';
+                $wpdb->update(
+                    $email_log_table,
+                    array(
+                        'recipient_email' => 'purged@withdrawal.b2',
+                        'metadata' => wp_json_encode(array('purged_at' => $current_time, 'reason' => 'b2_withdrawal'))
+                    ),
+                    array('participant_id' => $participant_id),
+                    array('%s', '%s'),
+                    array('%s')
+                );
+            }
+            
+            // Delete magic links
+            if (in_array('survey_magic_links', $existing_tables)) {
+                $magic_links_table = $wpdb->prefix . 'survey_magic_links';
+                $wpdb->delete($magic_links_table, array('participant_id' => $participant_id), array('%s'));
+            }
+            
+            // Delete sessions
+            if (in_array('survey_sessions', $existing_tables)) {
+                $sessions_table = $wpdb->prefix . 'survey_sessions';
+                $wpdb->delete($sessions_table, array('participant_id' => $participant_id), array('%s'));
+            }
+            
+            // Delete pool email logs
+            if (in_array('eipsi_pool_email_log', $existing_tables)) {
+                $pool_email_log_table = $wpdb->prefix . 'eipsi_pool_email_log';
+                $wpdb->delete($pool_email_log_table, array('participant_id' => $participant_id), array('%s'));
+            }
+            
+            error_log("[EIPSI-ABANDON] B2 data deletion completed");
+        } catch (Exception $e) {
+            error_log("[EIPSI-ABANDON] ERROR in B2 deletion: " . $e->getMessage());
+            // Continue anyway - main withdrawal already succeeded
         }
-        
-        // Delete device fingerprint data
-        $device_table = $wpdb->prefix . 'eipsi_device_data';
-        $wpdb->delete($device_table, array('participant_id' => $participant_id), array('%s'));
-        
-        // Anonymize email logs
-        $email_log_table = $wpdb->prefix . 'survey_email_log';
-        $wpdb->update(
-            $email_log_table,
-            array(
-                'recipient_email' => 'purged@withdrawal.b2',
-                'metadata' => wp_json_encode(array('purged_at' => $current_time, 'reason' => 'b2_withdrawal'))
-            ),
-            array('participant_id' => $participant_id),
-            array('%s', '%s'),
-            array('%s')
-        );
-        
-        // Delete magic links
-        $magic_links_table = $wpdb->prefix . 'survey_magic_links';
-        $wpdb->delete($magic_links_table, array('participant_id' => $participant_id), array('%s'));
-        
-        // Delete sessions
-        $sessions_table = $wpdb->prefix . 'survey_sessions';
-        $wpdb->delete($sessions_table, array('participant_id' => $participant_id), array('%s'));
-        
-        // Delete pool email logs
-        $pool_email_log_table = $wpdb->prefix . 'eipsi_pool_email_log';
-        $wpdb->delete($pool_email_log_table, array('participant_id' => $participant_id), array('%s'));
     }
     
     // Log the abandonment
@@ -3262,6 +3330,8 @@ function eipsi_abandon_study_handler() {
     $redirect_url = ($withdrawal_type === 'b2') 
         ? '/withdrawal-data-deleted' 
         : '/withdrawal-confirmed';
+    
+    error_log("[EIPSI-ABANDON] === SUCCESS === type={$withdrawal_type}, redirect={$redirect_url}");
     
     wp_send_json_success(array(
         'message' => ($withdrawal_type === 'b2') 
