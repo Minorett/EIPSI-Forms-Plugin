@@ -16,21 +16,11 @@ if (!defined('ABSPATH')) {
 
 global $wpdb;
 
-$participant_id = $participant_id ?? '';
-$study_id = $survey_id ?? '';
+$participant_id = $participant_id ?? $current_participant_id ?? '';
+$study_id = $survey_id ?? $actual_study_id ?? (isset($study) ? ($study->id ?? '') : '');
 
-// Fetch study name for dynamic verification text
-$study_name = '';
-if (!empty($study_id)) {
-    $study_name = $wpdb->get_var($wpdb->prepare(
-        "SELECT study_name FROM {$wpdb->prefix}survey_studies WHERE id = %d",
-        $study_id
-    ));
-}
-$study_name = $study_name ?: __('Estudio', 'eipsi-forms');
-
-// High friction text according to Task 7.1
-$required_verification_text = strtoupper('ELIMINAR MIS DATOS DE "' . $study_name . '"');
+// Simplified verification text
+$required_verification_text = 'QUIERO QUE ELIMINEN MIS DATOS';
 ?>
 
 <style>
@@ -497,7 +487,7 @@ $required_verification_text = strtoupper('ELIMINAR MIS DATOS DE "' . $study_name
                        placeholder="<?php esc_attr_e('Escribí el texto de seguridad aquí...', 'eipsi-forms'); ?>"
                        autocomplete="off">
                 <p class="eipsi-verification-error" id="eipsi-b2-verification-error">
-                    <?php _e('El texto no coincide. Verificá mayúsculas y comillas.', 'eipsi-forms'); ?>
+                    <?php _e('El texto no coincide. Verificá mayúsculas.', 'eipsi-forms'); ?>
                 </p>
             </div>
         </div>
