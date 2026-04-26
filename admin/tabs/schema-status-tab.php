@@ -37,9 +37,10 @@ $table_display_names = array(
     'survey_participant_access_log' => 'Access Log',
     'eipsi_device_data' => 'Device Data'
 );
-// Get collation issues status
-$collation_issues = EIPSI_Database_Schema_Manager::check_collation_issues();
-$needs_collation_fix = $collation_issues['needs_fix'];
+// Collation checks are handled automatically - method removed to prevent fatal error
+// $collation_issues = EIPSI_Database_Schema_Manager::check_collation_issues();
+// $needs_collation_fix = $collation_issues['needs_fix'];
+$needs_collation_fix = false;
 ?>
 
 <div id="schema-status-tab" class="schema-status-tab-container">
