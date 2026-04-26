@@ -894,10 +894,16 @@ class EIPSI_Database_Schema_Manager {
         $full_table_name = $wpdb->prefix . $slug;
         $result = array(
             'table_name' => $slug,
+            'full_table_name' => $full_table_name,
             'exists' => self::local_table_exists( $full_table_name ),
             'row_count' => 0,
             'status' => 'ok',
-            'issues' => array()
+            'issues' => array(),
+            'columns' => array(),
+            'required_columns' => array(),
+            'missing_columns' => array(),
+            'indexes' => array(),
+            'size_mb' => 0
         );
         if ( ! $result['exists'] ) {
             $result['status'] = 'error';
@@ -905,6 +911,31 @@ class EIPSI_Database_Schema_Manager {
             return $result;
         }
         $result['row_count'] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $full_table_name" );
+        
+        // Get table size
+        $table_status = $wpdb->get_row( $wpdb->prepare( "SHOW TABLE STATUS LIKE %s", $full_table_name ), ARRAY_A );
+        if ( $table_status ) {
+            $result['size_mb'] = round( ( $table_status['Data_length'] + $table_status['Index_length'] ) / 1024 / 1024, 2 );
+        }
+        
+        // Get columns
+        $columns = $wpdb->get_results( "SHOW COLUMNS FROM $full_table_name", ARRAY_A );
+        if ( $columns ) {
+            foreach ( $columns as $col ) {
+                $result['columns'][] = $col['Field'];
+            }
+        }
+        
+        // Get indexes
+        $indexes = $wpdb->get_results( "SHOW INDEX FROM $full_table_name", ARRAY_A );
+        if ( $indexes ) {
+            $index_names = array();
+            foreach ( $indexes as $idx ) {
+                $index_names[] = $idx['Key_name'];
+            }
+            $result['indexes'] = array_unique( $index_names );
+        }
+        
         return $result;
     }
 
@@ -916,12 +947,20 @@ class EIPSI_Database_Schema_Manager {
         $summary = array(
             'total_tables' => count( $all_tables ),
             'healthy_tables' => 0,
+            'warning_tables' => 0,
             'error_tables' => 0,
+            'total_rows' => 0,
+            'total_size_mb' => 0,
             'last_verified' => get_option( 'eipsi_schema_last_verified', null ),
         );
         foreach ( $all_tables as $table ) {
-            if ( $table['status'] === 'ok' ) $summary['healthy_tables']++;
-            else $summary['error_tables']++;
+            if ( $table['status'] === 'ok' ) {
+                $summary['healthy_tables']++;
+                $summary['total_rows'] += $table['row_count'];
+                $summary['total_size_mb'] += $table['size_mb'];
+            } else {
+                $summary['error_tables']++;
+            }
         }
         $summary['health_score'] = $summary['total_tables'] > 0 ? round( ( $summary['healthy_tables'] / $summary['total_tables'] ) * 100 ) : 0;
         return $summary;

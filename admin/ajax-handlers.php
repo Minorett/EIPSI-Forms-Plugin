@@ -3157,7 +3157,7 @@ function eipsi_abandon_study_handler() {
     
     $where = array(
         'survey_id' => $study_id,
-        'participant_id' => $participant_id,
+        'id' => (int) $participant_id,
     );
     
     $result = $wpdb->update($participants_table, $update_data, $where);
