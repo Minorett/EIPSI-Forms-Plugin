@@ -3219,8 +3219,8 @@ function eipsi_abandon_study_handler() {
             $submissions_table = $wpdb->prefix . 'vas_form_results';
             $partial_table = $wpdb->prefix . 'eipsi_partial_responses';
             
-            // Check which tables exist
-            $tables_to_check = array('survey_waves', 'vas_form_results', 'eipsi_partial_responses', 'eipsi_device_data', 'survey_email_log', 'survey_magic_links', 'survey_sessions', 'eipsi_pool_email_log');
+            // Check which tables exist (added eipsi_form_events for complete deletion)
+            $tables_to_check = array('survey_waves', 'vas_form_results', 'eipsi_partial_responses', 'eipsi_device_data', 'survey_email_log', 'survey_magic_links', 'survey_sessions', 'eipsi_pool_email_log', 'eipsi_form_events');
             $existing_tables = array();
             foreach ($tables_to_check as $tbl) {
                 $full_name = $wpdb->prefix . $tbl;
@@ -3242,20 +3242,24 @@ function eipsi_abandon_study_handler() {
                 $form_ids = array();
             }
             
+            // Track which forms had data deleted (for phantom rows)
+            $forms_with_deleted_data = array();
+            
             // Process each form
             foreach ($form_ids as $form_id) {
-                // Anonymize submissions if table exists
+                // B2: DELETE submissions completely (not anonymize)
                 if (in_array('vas_form_results', $existing_tables)) {
-                    $wpdb->query($wpdb->prepare(
-                        "UPDATE {$submissions_table} 
-                         SET participant_id = CONCAT('ANONYMIZED_', MD5(participant_id)),
-                             status = 'anonymized'
+                    $deleted_count = $wpdb->query($wpdb->prepare(
+                        "DELETE FROM {$submissions_table} 
                          WHERE form_id = %s 
-                         AND participant_id = %s 
-                         AND status NOT IN ('anonymized', 'deleted')",
+                         AND participant_id = %s",
                         $form_id,
                         $participant_id
                     ));
+                    if ($deleted_count > 0) {
+                        $forms_with_deleted_data[] = $form_id;
+                        error_log("[EIPSI-ABANDON] Deleted {$deleted_count} submission(s) for form {$form_id}");
+                    }
                 }
                 
                 // Delete partial responses if table exists
@@ -3268,6 +3272,41 @@ function eipsi_abandon_study_handler() {
                         $participant_id
                     ));
                 }
+                
+                // Delete form events (interaction data) if table exists
+                if (in_array('eipsi_form_events', $existing_tables)) {
+                    $events_table = $wpdb->prefix . 'eipsi_form_events';
+                    $wpdb->query($wpdb->prepare(
+                        "DELETE FROM {$events_table} 
+                         WHERE form_id = %s 
+                         AND participant_id = %s",
+                        $form_id,
+                        $participant_id
+                    ));
+                }
+            }
+            
+            // Insert phantom rows to track B2 withdrawals in exports
+            if (!empty($forms_with_deleted_data) && in_array('vas_form_results', $existing_tables)) {
+                foreach ($forms_with_deleted_data as $form_id) {
+                    $wpdb->insert($submissions_table, array(
+                        'participant_id' => 'WITHDRAWN_B2',
+                        'status' => 'data_deleted',
+                        'form_id' => $form_id,
+                        'form_name' => 'B2_WITHDRAWAL',
+                        'form_responses' => null,
+                        'submitted_at' => $current_time,
+                        'created_at' => $current_time,
+                        'ip_address' => $ip_address,
+                        'metadata' => wp_json_encode(array(
+                            'withdrawal_type' => 'b2',
+                            'withdrawal_at' => $current_time,
+                            'original_participant_hash' => hash('sha256', $participant_id),
+                            'study_id' => $study_id
+                        ))
+                    ));
+                }
+                error_log("[EIPSI-ABANDON] Inserted phantom rows for B2 tracking: " . count($forms_with_deleted_data));
             }
             
             // Delete device fingerprint data
@@ -3316,6 +3355,19 @@ function eipsi_abandon_study_handler() {
         }
     }
     
+    // Destroy session and logout participant (B1 and B2)
+    if (class_exists('EIPSI_Auth_Service')) {
+        // Log logout before destroying session
+        if (function_exists('EIPSI_Participant_Access_Log_Service::log')) {
+            EIPSI_Participant_Access_Log_Service::log($participant_id, $study_id, 'logout', array(
+                'reason' => 'study_withdrawal',
+                'withdrawal_type' => $withdrawal_type
+            ));
+        }
+        EIPSI_Auth_Service::destroy_session();
+        error_log("[EIPSI-ABANDON] Session destroyed for participant {$participant_id}");
+    }
+    
     // Log the abandonment
     if (function_exists('eipsi_log_audit')) {
         eipsi_log_audit('study_abandonment', array(
@@ -3327,8 +3379,15 @@ function eipsi_abandon_study_handler() {
         ));
     }
     
-    // Prepare redirect URL - go to homepage with message parameter
-    $redirect_url = home_url('/?withdrawal=success&type=' . $withdrawal_type);
+    // Get study URL for redirect
+    $study_config = $wpdb->get_var($wpdb->prepare(
+        "SELECT config FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+        $study_id
+    ));
+    $study_config_array = $study_config ? json_decode($study_config, true) : array();
+    $study_url = $study_config_array['shortcode_page_url'] ?? home_url('/');
+    $redirect_url = add_query_arg(array('withdrawal' => 'success', 'type' => $withdrawal_type), $study_url);
+    error_log("[EIPSI-ABANDON] Redirect URL: {$redirect_url}");
     
     error_log("[EIPSI-ABANDON] === SUCCESS === type={$withdrawal_type}, redirect={$redirect_url}");
     

@@ -267,7 +267,27 @@ class EIPSI_Auth_Service {
             current_time('mysql')
         ));
         
-        return $result ? (int) $result : null;
+        if (!$result) {
+            return null;
+        }
+        
+        $participant_id = (int) $result;
+        
+        // Check if participant has withdrawn from the study
+        $participants_table = $wpdb->prefix . 'survey_participants';
+        $consent_decision = $wpdb->get_var($wpdb->prepare(
+            "SELECT consent_decision FROM {$participants_table} WHERE id = %d LIMIT 1",
+            $participant_id
+        ));
+        
+        if ($consent_decision === 'withdrawn') {
+            // Participant has withdrawn - clear session and return null
+            error_log("[EIPSI-AUTH] Blocked withdrawn participant {$participant_id} from accessing session");
+            self::destroy_session();
+            return null;
+        }
+        
+        return $participant_id;
     }
     
     /**
