@@ -4280,15 +4280,17 @@ if ( pages.length === 0 ) {
                     decisionInput.value = 'declined';
                 }
                 
-                // Guardar en backend (consent_declined)
+                // Guardar en backend (consent_declined) y redirigir
                 try {
-                    await saveConsentDecision(block, 'declined');
+                    const result = await saveConsentDecision(block, 'declined');
+                    // Usar URL del response o fallback
+                    const redirectUrl = result?.data?.redirect || '/';
+                    window.location.href = redirectUrl;
                 } catch (e) {
                     console.warn('[EIPSI Consent] Error saving decline:', e);
+                    // Fallback: redirigir a home
+                    window.location.href = '/';
                 }
-                
-                // Redirigir a pantalla de bloqueo T1
-                window.location.href = '/consentimiento-rechazado';
             });
             
             // Click en "Acepto participar"
@@ -4316,13 +4318,13 @@ if ( pages.length === 0 ) {
                     console.warn('[EIPSI Consent] Error saving accept:', e);
                 }
                 
-                // Permitir continuar (formulario se habilita)
+                // Marcar bloque como aceptado
                 block.classList.add('consent-accepted');
                 
-                // Scroll al formulario si existe
-                const form = document.querySelector('.eipsi-form');
-                if (form) {
-                    form.scrollIntoView({ behavior: 'smooth' });
+                // ✅ Avanzar a la siguiente página (como el botón "Siguiente")
+                const form = block.closest('.eipsi-form');
+                if (form && window.EIPSIForms) {
+                    window.EIPSIForms.handlePagination(form, 'next');
                 }
             });
         });

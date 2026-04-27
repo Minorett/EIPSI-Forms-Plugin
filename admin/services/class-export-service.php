@@ -366,7 +366,7 @@ public function fetch_participants_data($study_id, $filters = array()) {
     // --- Step 1: Get participants from study ---
     $participants = $wpdb->get_results(
         $wpdb->prepare(
-            "SELECT id, email, is_active, created_at, last_login_at
+            "SELECT id, email, is_active, created_at, last_login_at, consent_decision, consent_context
              FROM {$wpdb->prefix}survey_participants
              WHERE survey_id = %d
              ORDER BY created_at DESC",
@@ -577,6 +577,8 @@ public function fetch_participants_data($study_id, $filters = array()) {
                 'is_active' => (bool) $participant->is_active,
                 'created_at' => $participant->created_at,
                 'last_login_at' => $participant->last_login_at,
+                'consent_decision' => $participant->consent_decision,
+                'consent_context' => $participant->consent_context,
                 'waves_assigned' => count($p_assignments),
                 'waves_submitted' => $submitted_count,
                 'waves_total' => $total_waves,
@@ -840,11 +842,31 @@ public function fetch_participants_data($study_id, $filters = array()) {
     private function build_participants_wide_row($row, $waves, $response_keys_by_wave = array()) {
         error_log("[EIPSI-EXPORT-DIAG] build_participants_wide_row START: participant_id=" . ($row['id'] ?? 'N/A') . ", submissions_count=" . count($row['submissions'] ?? array()));
 
+        // Determine Estado based on consent_decision and consent_context
+        $estado = 'Inactivo';
+        if ($row['is_active']) {
+            $estado = 'Activo';
+        } elseif ($row['consent_decision'] === 'withdrawn') {
+            if ($row['consent_context'] === 'T2B_data_deletion') {
+                $estado = 'Abandono (B2)';
+            } elseif ($row['consent_context'] === 'T2A_withdrawal') {
+                $estado = 'Abandono (B1)';
+            }
+        } elseif ($row['consent_decision'] === 'declined') {
+            $estado = 'Consentimiento rechazado';
+        }
+
+        // Hide email for B2 withdrawals (show ANONYMIZED instead)
+        $email_display = $row['email'];
+        if ($row['consent_context'] === 'T2B_data_deletion') {
+            $email_display = 'ANONYMIZED';
+        }
+
         // Base participant data (without names)
         $data = array(
             $row['id'],
-            $row['email'],
-            $row['is_active'] ? 'Activo' : 'Inactivo',
+            $email_display,
+            $estado,
             $row['created_at'] ? date('Y-m-d H:i', strtotime($row['created_at'])) : '',
             $row['last_login_at'] ? date('Y-m-d H:i', strtotime($row['last_login_at'])) : '',
             $row['waves_assigned'],

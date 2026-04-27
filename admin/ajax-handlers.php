@@ -3082,10 +3082,28 @@ function eipsi_save_consent_decision_handler() {
         ));
     }
     
+    // Prepare redirect URL for declined consent
+    $redirect_url = null;
+    if ($decision === 'declined') {
+        // Get study URL from config (same as abandonment handler)
+        $study_config = $wpdb->get_var($wpdb->prepare(
+            "SELECT config FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+            $study_id
+        ));
+        $study_config_array = $study_config ? json_decode($study_config, true) : array();
+        $study_url = $study_config_array['shortcode_page_url'] ?? home_url('/');
+        $redirect_url = add_query_arg(array('consent' => 'declined'), $study_url);
+        
+        // Destroy session and logout participant
+        if (class_exists('EIPSI_Auth_Service')) {
+            EIPSI_Auth_Service::destroy_session();
+        }
+    }
+    
     wp_send_json_success(array(
         'message' => __('Decision saved', 'eipsi-forms'),
         'decision' => $decision,
-        'redirect' => ($decision === 'declined') ? '/consentimiento-rechazado' : null,
+        'redirect' => $redirect_url,
     ));
 }
 
