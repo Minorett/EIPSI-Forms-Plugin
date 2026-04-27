@@ -3009,6 +3009,15 @@ function eipsi_save_consent_decision_handler() {
     }
     
     global $wpdb;
+
+    // Resolve numeric template ID
+    $template_id = is_numeric($form_id) ? intval($form_id) : 0;
+    if (!$template_id) {
+        $template_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT ID FROM {$wpdb->posts} WHERE post_name = %s AND post_type IN ('eipsi_form_template', 'eipsi_form', 'page') LIMIT 1",
+            $form_id
+        ));
+    }
     
     // v2.5: Check if this is longitudinal (has study_id) or standalone
     $study_id = eipsi_get_study_id_for_form($form_id);
@@ -3027,7 +3036,7 @@ function eipsi_save_consent_decision_handler() {
         
         // If declined, also set blocked_survey_id
         if ($decision === 'declined') {
-            $data['consent_blocked_survey_id'] = $form_id;
+            $data['consent_blocked_survey_id'] = $template_id ?: $form_id;
         }
         
         $existing_participant = $wpdb->get_var($wpdb->prepare(
@@ -3057,8 +3066,9 @@ function eipsi_save_consent_decision_handler() {
             return;
         }
     } else {
-        // Standalone form: save to wp_survey_assignments
-        $table = $wpdb->prefix . 'survey_assignments';
+        // Standalone form: also save to wp_survey_participants (NOT assignments)
+        $table = $wpdb->prefix . 'survey_participants';
+        $context_id = $template_id ?: $form_id;
         
         $data = array(
             'consent_decision' => $decision,
@@ -3069,18 +3079,20 @@ function eipsi_save_consent_decision_handler() {
         );
         
         $where = array(
-            'survey_id' => $form_id,
-            'participant_id' => $participant_id,
+            'survey_id' => $context_id,
+            'id' => $participant_id,
         );
         
         $result = $wpdb->update($table, $data, $where);
         
-        // If no existing record, insert new
+        // If no existing record, and we have a participant_id, try to insert if it's a numeric ID
         if ($result === false || $result === 0) {
-            $data['survey_id'] = $form_id;
-            $data['participant_id'] = $participant_id;
-            $data['status'] = ($decision === 'declined') ? 'consent_declined' : 'active';
-            $wpdb->insert($table, $data);
+            if ($participant_id) {
+                $data['survey_id'] = $context_id;
+                $data['id'] = $participant_id;
+                $data['status'] = ($decision === 'declined') ? 'consent_declined' : 'active';
+                $wpdb->insert($table, $data);
+            }
         }
     }
     
