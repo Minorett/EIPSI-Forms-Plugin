@@ -3094,11 +3094,16 @@ function eipsi_save_consent_decision_handler() {
         $study_url = $study_config_array['shortcode_page_url'] ?? home_url('/');
         $redirect_url = add_query_arg(array('consent' => 'declined'), $study_url);
         
+        error_log("[EIPSI-CONSENT] Decision declined - redirect URL: {$redirect_url}");
+        
         // Destroy session and logout participant
         if (class_exists('EIPSI_Auth_Service')) {
             EIPSI_Auth_Service::destroy_session();
+            error_log("[EIPSI-CONSENT] Session destroyed for declined participant");
         }
     }
+    
+    error_log("[EIPSI-CONSENT] Sending response with redirect: {$redirect_url}");
     
     wp_send_json_success(array(
         'message' => __('Decision saved', 'eipsi-forms'),

@@ -23,7 +23,7 @@
     exit;
  }
 
- define('EIPSI_FORMS_VERSION', '2.1.4');
+ define('EIPSI_FORMS_VERSION', '2.1.5');
 define('EIPSI_FORMS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('EIPSI_FORMS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('EIPSI_FORMS_PLUGIN_FILE', __FILE__);
@@ -1221,7 +1221,7 @@ function eipsi_forms_enqueue_frontend_assets() {
         'eipsi-forms-js',
         EIPSI_FORMS_PLUGIN_URL . 'assets/js/eipsi-forms.js',
         array('eipsi-tracking-js'),
-        EIPSI_FORMS_VERSION,
+        EIPSI_FORMS_VERSION . '.' . time(),
         true
     );
 
