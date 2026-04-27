@@ -3019,20 +3019,21 @@ function eipsi_save_consent_decision_handler() {
         ));
     }
     
-    // v2.5.5: Multi-channel attempt to recover study context
-    $study_id = eipsi_get_study_id_for_form($form_id);
+    // v2.5.6: PRIORIDAD DE CONTEXTO - Invertida para evitar colisiones por form_id "default"
+    // 1. Intentar por sesión activa (Lo más confiable si el usuario ya inició sesión)
+    $study_id = eipsi_get_current_survey_id();
 
-    if (!$study_id) {
-        // Option A: Recover from active user session
-        $study_id = eipsi_get_current_survey_id();
-    }
-
+    // 2. Rescate por Participant ID (Si no hay sesión pero tenemos el ID del participante)
     if (!$study_id && !empty($participant_id) && is_numeric($participant_id)) {
-        // Option B (Critical Rescue): Lookup in DB which study this participant belongs to
         $study_id = $wpdb->get_var($wpdb->prepare(
             "SELECT survey_id FROM {$wpdb->prefix}survey_participants WHERE id = %d LIMIT 1",
             intval($participant_id)
         ));
+    }
+
+    // 3. Último recurso: Adivinar por el form_id (Origen del error actual)
+    if (!$study_id) {
+        $study_id = eipsi_get_study_id_for_form($form_id);
     }
     
     if ($study_id) {
@@ -3124,23 +3125,22 @@ function eipsi_save_consent_decision_handler() {
     if ($decision === 'declined') {
         $study_url = '';
 
-        // Use recovered study_id to find the correct page
         if ($study_id) {
+            // Utilizar el helper que busca por meta eipsi_study_id (inmune a colisiones de texto)
             $study_url = function_exists('eipsi_get_study_page_url') 
                 ? eipsi_get_study_page_url($study_id) 
                 : '';
         }
 
-        // Fallback to Home if all else fails
         if (empty($study_url)) {
             $study_url = home_url('/');
         }
 
         $redirect_url = add_query_arg(array('consent' => 'declined'), $study_url);
         
-        error_log("[EIPSI-CONSENT] Decision declined - Context: participant_id={$participant_id}, study_id={$study_id}. Redirect: {$redirect_url}");
+        error_log("[EIPSI-CONSENT] Decision declined - Redirecting to: {$redirect_url} (Study ID: {$study_id})");
         
-        // Final action: Destroy session only after data has been used for logging/redirects
+        // Destruir sesión SOLO después de haber procesado redirección y logs
         if (class_exists('EIPSI_Auth_Service')) {
             EIPSI_Auth_Service::destroy_session();
         }
