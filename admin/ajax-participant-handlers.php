@@ -683,6 +683,23 @@ function eipsi_get_participant_redirect_url($survey_id, $participant_id) {
         }
     }
     
+    // NEW PRIORITY: Exact match by eipsi_study_id (Avoids false positives in Pools)
+    $precise_pages = get_posts(array(
+        'post_type'      => 'page',
+        'post_status'    => 'publish',
+        'posts_per_page' => 1,
+        'meta_query'     => array(
+            array(
+                'key'   => 'eipsi_study_id',
+                'value' => $survey_id,
+            )
+        )
+    ));
+
+    if (!empty($precise_pages)) {
+        return get_permalink($precise_pages[0]->ID);
+    }
+    
     // Method 1: Check survey meta for assigned dashboard page
     $assigned_dashboard = get_post_meta($survey_id, '_eipsi_dashboard_page_id', true);
     if (!empty($assigned_dashboard)) {
