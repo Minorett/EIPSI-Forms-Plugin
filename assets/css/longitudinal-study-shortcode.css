@@ -267,6 +267,83 @@
 }
 
 /* ========================================
+   PUBLIC STATUS VIEW
+   ======================================== */
+
+.eipsi-public-status-card {
+    background: #ffffff;
+    border: 1px solid var(--eipsi-gray-200);
+    border-radius: var(--eipsi-border-radius);
+    box-shadow: var(--eipsi-shadow-sm);
+    margin: 0 auto;
+    max-width: 760px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+}
+
+.eipsi-public-status-icon {
+    align-items: center;
+    background: var(--eipsi-gray-100);
+    border-radius: 9999px;
+    color: var(--eipsi-primary);
+    display: inline-flex;
+    font-size: 1.125rem;
+    font-weight: 700;
+    height: 56px;
+    justify-content: center;
+    margin-bottom: 1rem;
+    min-width: 56px;
+    padding: 0 1rem;
+}
+
+.eipsi-public-status-title {
+    color: var(--eipsi-gray-900);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+}
+
+.eipsi-public-status-text {
+    color: var(--eipsi-gray-700);
+    font-size: 1rem;
+    line-height: 1.7;
+    margin: 0 auto 1.25rem;
+    max-width: 56ch;
+}
+
+.eipsi-public-status-details {
+    background: var(--eipsi-gray-100);
+    border-radius: var(--eipsi-border-radius-sm);
+    color: var(--eipsi-gray-700);
+    margin: 0 auto 1.5rem;
+    max-width: 60ch;
+    padding: 1rem 1.25rem;
+}
+
+.eipsi-public-status-details p,
+.eipsi-public-status-action {
+    margin: 0;
+}
+
+.eipsi-public-status-action a {
+    background: var(--eipsi-primary);
+    border-radius: 9999px;
+    color: #ffffff;
+    display: inline-flex;
+    font-weight: 600;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.85rem 1.5rem;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.eipsi-public-status-action a:hover {
+    box-shadow: var(--eipsi-shadow-md);
+    transform: translateY(-1px);
+}
+
+/* ========================================
    STUDY HEADER
    ======================================== */
 

@@ -229,9 +229,14 @@ class EIPSI_Survey_Access_Handler {
     }
 
     $args = array(
-        'eipsi_msg'   => 'email_confirmed',
-        'eipsi_email' => rawurlencode( $email ),
+        'eipsi_msg'       => 'email_confirmed',
+        'eipsi_email'     => rawurlencode( $email ),
+        'eipsi_survey_id' => absint( $survey_id ),
     );
+
+    if ( ! empty( $study_code ) ) {
+        $args['eipsi_study_code'] = rawurlencode( $study_code );
+    }
 
     if ( ! empty( $study_url ) ) {
         $args['redirect_to'] = $study_url;

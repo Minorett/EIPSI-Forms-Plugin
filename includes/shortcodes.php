@@ -55,12 +55,146 @@ add_shortcode('eipsi_form', 'eipsi_form_shortcode');
 function eipsi_survey_login_shortcode($atts) {
     $atts = shortcode_atts(array(
         'survey_id' => 0,
+        'study_code' => '',
         'redirect_url' => '', // opcional, redirect post-login
     ), $atts, 'eipsi_survey_login');
     
     return eipsi_render_survey_login_form($atts);
 }
 add_shortcode('eipsi_survey_login', 'eipsi_survey_login_shortcode');
+
+/**
+ * Resolve study context from explicit IDs, study codes, and redirect URLs.
+ *
+ * @param int    $survey_id    Survey/Study ID if already known.
+ * @param string $study_code   Study code if already known.
+ * @param string $redirect_url Redirect URL pointing to a study page.
+ * @return array{survey_id:int,study_code:string,page_id:int}
+ */
+if (!function_exists('eipsi_resolve_survey_context')) {
+    function eipsi_resolve_survey_context($survey_id = 0, $study_code = '', $redirect_url = '') {
+        global $wpdb;
+
+        $resolved = array(
+            'survey_id' => absint($survey_id),
+            'study_code' => sanitize_text_field($study_code),
+            'page_id' => 0,
+        );
+
+        $lookup_survey_id_by_code = static function($code) use ($wpdb) {
+            if (empty($code)) {
+                return 0;
+            }
+
+            return (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}survey_studies WHERE study_code = %s",
+                $code
+            ));
+        };
+
+        $lookup_study_code_by_id = static function($id) use ($wpdb) {
+            if (empty($id)) {
+                return '';
+            }
+
+            return (string) $wpdb->get_var($wpdb->prepare(
+                "SELECT study_code FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+                $id
+            ));
+        };
+
+        if ($resolved['survey_id'] > 0 && empty($resolved['study_code'])) {
+            $resolved['study_code'] = $lookup_study_code_by_id($resolved['survey_id']);
+        }
+
+        if (empty($resolved['survey_id']) && !empty($resolved['study_code'])) {
+            $resolved['survey_id'] = $lookup_survey_id_by_code($resolved['study_code']);
+        }
+
+        if ($resolved['survey_id'] > 0 && !empty($resolved['study_code'])) {
+            return $resolved;
+        }
+
+        $redirect_url = esc_url_raw($redirect_url);
+        if (empty($redirect_url)) {
+            return $resolved;
+        }
+
+        $parsed_url = wp_parse_url($redirect_url);
+        $query_args = array();
+
+        if (!empty($parsed_url['query'])) {
+            parse_str($parsed_url['query'], $query_args);
+        }
+
+        if (empty($resolved['survey_id'])) {
+            $resolved['survey_id'] = absint($query_args['eipsi_survey_id'] ?? ($query_args['survey_id'] ?? 0));
+        }
+
+        if (empty($resolved['study_code'])) {
+            $resolved['study_code'] = sanitize_text_field($query_args['eipsi_study_code'] ?? ($query_args['study_code'] ?? ''));
+        }
+
+        if ($resolved['survey_id'] > 0 && empty($resolved['study_code'])) {
+            $resolved['study_code'] = $lookup_study_code_by_id($resolved['survey_id']);
+        }
+
+        if (empty($resolved['survey_id']) && !empty($resolved['study_code'])) {
+            $resolved['survey_id'] = $lookup_survey_id_by_code($resolved['study_code']);
+        }
+
+        $page_id = url_to_postid($redirect_url);
+
+        if (empty($page_id) && !empty($parsed_url['path'])) {
+            $redirect_path = trim($parsed_url['path'], '/');
+            $redirect_page = get_page_by_path($redirect_path);
+
+            if ($redirect_page) {
+                $page_id = (int) $redirect_page->ID;
+            }
+        }
+
+        if ($page_id > 0) {
+            $resolved['page_id'] = $page_id;
+
+            if (empty($resolved['survey_id'])) {
+                $resolved['survey_id'] = absint(get_post_meta($page_id, 'eipsi_study_id', true));
+            }
+
+            if (empty($resolved['survey_id'])) {
+                $resolved['survey_id'] = absint(get_post_meta($page_id, 'eipsi_survey_id', true));
+            }
+
+            if (empty($resolved['survey_id'])) {
+                $resolved['survey_id'] = absint(get_post_meta($page_id, '_eipsi_survey_id', true));
+            }
+
+            if (empty($resolved['study_code'])) {
+                $resolved['study_code'] = sanitize_text_field(get_post_meta($page_id, 'eipsi_study_code', true));
+            }
+
+            $content = (string) get_post_field('post_content', $page_id);
+
+            if (empty($resolved['study_code']) && preg_match('/\[eipsi_longitudinal_study[^\]]*study_code=["\']([^"\']+)["\']/', $content, $matches)) {
+                $resolved['study_code'] = sanitize_text_field($matches[1]);
+            }
+
+            if (empty($resolved['survey_id']) && preg_match('/\[eipsi_longitudinal_study[^\]]*id=["\'](\d+)["\']/', $content, $matches)) {
+                $resolved['survey_id'] = absint($matches[1]);
+            }
+        }
+
+        if (empty($resolved['survey_id']) && !empty($resolved['study_code'])) {
+            $resolved['survey_id'] = $lookup_survey_id_by_code($resolved['study_code']);
+        }
+
+        if ($resolved['survey_id'] > 0 && empty($resolved['study_code'])) {
+            $resolved['study_code'] = $lookup_study_code_by_id($resolved['survey_id']);
+        }
+
+        return $resolved;
+    }
+}
 
 /**
  * Render helper for survey login form
@@ -76,31 +210,36 @@ function eipsi_render_survey_login_form($atts) {
     // Extract attributes
     $survey_id = isset($atts['survey_id']) ? absint($atts['survey_id']) : 0;
     $redirect_url = isset($atts['redirect_url']) ? esc_url_raw($atts['redirect_url']) : '';
+    $study_code = isset($atts['study_code']) ? sanitize_text_field($atts['study_code']) : '';
     
     // Initialize participant variables
     $is_participant_logged_in = false;
     $current_participant_id = 0;
     
-    // Auto-resolve survey_id from redirect_to if not provided
-    if (empty($atts['survey_id']) && isset($_GET['redirect_to'])) {
-        $redirect_url = esc_url_raw($_GET['redirect_to']);
-        $redirect_path = trim(wp_parse_url($redirect_url, PHP_URL_PATH), '/');
-        $redirect_page = get_page_by_path($redirect_path);
-        
-        if ($redirect_page) {
-            $content = $redirect_page->post_content;
-            if (preg_match('/\[eipsi_longitudinal_study[^\]]*study_code=["\']([^"\']+)["\']/', $content, $matches)) {
-                $study_code = $matches[1];
-                global $wpdb;
-                $study = $wpdb->get_row($wpdb->prepare(
-                    "SELECT id FROM {$wpdb->prefix}survey_studies WHERE study_code = %s",
-                    $study_code
-                ));
-                if ($study) {
-                    $atts['survey_id'] = (int)$study->id;
-                }
-            }
-        }
+    // Handle redirect_to parameter from URL (for post-login redirect)
+    $redirect_to = isset($_GET['redirect_to']) ? esc_url_raw(wp_unslash($_GET['redirect_to'])) : '';
+
+    if (empty($redirect_to) && isset($atts['redirect_url'])) {
+        $redirect_to = $atts['redirect_url'];
+    }
+
+    $query_survey_id = isset($_GET['eipsi_survey_id']) ? absint($_GET['eipsi_survey_id']) : 0;
+    $query_study_code = isset($_GET['eipsi_study_code']) ? sanitize_text_field(wp_unslash($_GET['eipsi_study_code'])) : '';
+
+    $resolved_context = eipsi_resolve_survey_context(
+        $query_survey_id ?: $survey_id,
+        !empty($query_study_code) ? $query_study_code : $study_code,
+        $redirect_to
+    );
+
+    if (!empty($resolved_context['survey_id'])) {
+        $survey_id = (int) $resolved_context['survey_id'];
+        $atts['survey_id'] = $survey_id;
+    }
+
+    if (!empty($resolved_context['study_code'])) {
+        $study_code = $resolved_context['study_code'];
+        $atts['study_code'] = $study_code;
     }
     
     // Enqueue required assets
@@ -158,14 +297,6 @@ function eipsi_render_survey_login_form($atts) {
         EIPSI_FORMS_VERSION,
         true
     );
-
-    // Handle redirect_to parameter from URL (for post-login redirect)
-    $redirect_to = isset($_GET['redirect_to']) ? esc_url_raw(wp_unslash($_GET['redirect_to'])) : '';
-    
-    // If not set in GET, check if passed in $atts
-    if (empty($redirect_to) && isset($atts['redirect_url'])) {
-        $redirect_to = $atts['redirect_url'];
-    }
 
     if (!empty($redirect_to)) {
         wp_add_inline_script('eipsi-participant-auth', 

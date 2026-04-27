@@ -34,35 +34,20 @@ function eipsi_participant_register_handler() {
     // Sanitize and validate inputs
     $survey_id = isset($_POST['survey_id']) ? absint($_POST['survey_id']) : 0;
     $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+    $study_code = isset($_POST['study_code']) ? sanitize_text_field(wp_unslash($_POST['study_code'])) : '';
+    $redirect_to = isset($_POST['redirect_url']) ? esc_url_raw(wp_unslash($_POST['redirect_url'])) : '';
 
-    // Validate required fields
-    // Si no hay survey_id, intentar resolverlo desde study_code o redirect_url
-    if ( empty( $survey_id ) ) {
-        $study_code = isset( $_POST['study_code'] ) ? sanitize_text_field( $_POST['study_code'] ) : '';
-        if ( ! empty( $study_code ) ) {
-            global $wpdb;
-            $study = $wpdb->get_row( $wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}survey_studies WHERE study_code = %s", $study_code
-            ) );
-            if ( $study ) $survey_id = (int) $study->id;
-        }
+    if (function_exists('eipsi_resolve_survey_context')) {
+        $resolved_context = eipsi_resolve_survey_context($survey_id, $study_code, $redirect_to);
+        $survey_id = !empty($resolved_context['survey_id']) ? (int) $resolved_context['survey_id'] : $survey_id;
+        $study_code = !empty($resolved_context['study_code']) ? $resolved_context['study_code'] : $study_code;
     }
-    if ( empty( $survey_id ) ) {
-        $redirect_to = isset( $_POST['redirect_url'] ) ? esc_url_raw( $_POST['redirect_url'] ) : '';
-        if ( ! empty( $redirect_to ) ) {
-            $redirect_path = trim( wp_parse_url( $redirect_to, PHP_URL_PATH ), '/' );
-            $redirect_page = get_page_by_path( $redirect_path );
-            if ( $redirect_page ) {
-                $content = $redirect_page->post_content;
-                if ( preg_match( '/\[eipsi_longitudinal_study[^\]]*study_code=["\']([^"\']+)["\']/', $content, $matches ) ) {
-                    global $wpdb;
-                    $study = $wpdb->get_row( $wpdb->prepare(
-                        "SELECT id FROM {$wpdb->prefix}survey_studies WHERE study_code = %s", $matches[1]
-                    ) );
-                    if ( $study ) $survey_id = (int) $study->id;
-                }
-            }
-        }
+
+    if (empty($survey_id)) {
+        wp_send_json_error(array(
+            'message' => __('No pudimos identificar el estudio para este acceso. Abrí nuevamente el enlace del estudio e intentá otra vez.', 'eipsi-forms'),
+            'code' => 'study_not_resolved'
+        ));
     }
 
     if (empty($email) || !is_email($email)) {
@@ -244,34 +229,20 @@ function eipsi_participant_login_handler() {
     // Sanitize and validate inputs
     $survey_id = isset($_POST['survey_id']) ? absint($_POST['survey_id']) : 0;
     $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+    $study_code = isset($_POST['study_code']) ? sanitize_text_field(wp_unslash($_POST['study_code'])) : '';
+    $redirect_to = isset($_POST['redirect_url']) ? esc_url_raw(wp_unslash($_POST['redirect_url'])) : '';
 
-    // Si no hay survey_id, intentar resolverlo desde study_code o redirect_url
-    if ( empty( $survey_id ) ) {
-        $study_code = isset( $_POST['study_code'] ) ? sanitize_text_field( $_POST['study_code'] ) : '';
-        if ( ! empty( $study_code ) ) {
-            global $wpdb;
-            $study = $wpdb->get_row( $wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}survey_studies WHERE study_code = %s", $study_code
-            ) );
-            if ( $study ) $survey_id = (int) $study->id;
-        }
+    if (function_exists('eipsi_resolve_survey_context')) {
+        $resolved_context = eipsi_resolve_survey_context($survey_id, $study_code, $redirect_to);
+        $survey_id = !empty($resolved_context['survey_id']) ? (int) $resolved_context['survey_id'] : $survey_id;
+        $study_code = !empty($resolved_context['study_code']) ? $resolved_context['study_code'] : $study_code;
     }
-    if ( empty( $survey_id ) ) {
-        $redirect_to = isset( $_POST['redirect_url'] ) ? esc_url_raw( $_POST['redirect_url'] ) : '';
-        if ( ! empty( $redirect_to ) ) {
-            $redirect_path = trim( wp_parse_url( $redirect_to, PHP_URL_PATH ), '/' );
-            $redirect_page = get_page_by_path( $redirect_path );
-            if ( $redirect_page ) {
-                $content = $redirect_page->post_content;
-                if ( preg_match( '/\[eipsi_longitudinal_study[^\]]*study_code=["\']([^"\']+)["\']/', $content, $matches ) ) {
-                    global $wpdb;
-                    $study = $wpdb->get_row( $wpdb->prepare(
-                        "SELECT id FROM {$wpdb->prefix}survey_studies WHERE study_code = %s", $matches[1]
-                    ) );
-                    if ( $study ) $survey_id = (int) $study->id;
-                }
-            }
-        }
+
+    if (empty($survey_id)) {
+        wp_send_json_error(array(
+            'message' => __('No pudimos identificar el estudio para este acceso. Abrí nuevamente el enlace del estudio e intentá otra vez.', 'eipsi-forms'),
+            'code' => 'study_not_resolved'
+        ));
     }
 
     if (empty($email) || !is_email($email)) {

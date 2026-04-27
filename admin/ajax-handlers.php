@@ -3030,19 +3030,31 @@ function eipsi_save_consent_decision_handler() {
             $data['consent_blocked_survey_id'] = $form_id;
         }
         
-        $where = array(
-            'study_id' => $study_id,
-            'participant_id' => $participant_id,
+        $existing_participant = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$table} WHERE id = %d AND survey_id = %d LIMIT 1",
+            $participant_id,
+            $study_id
+        ));
+
+        if (!$existing_participant) {
+            wp_send_json_error(array('message' => __('Participant not found for this study', 'eipsi-forms')));
+            return;
+        }
+
+        $data['status'] = ($decision === 'declined') ? 'consent_declined' : 'active';
+
+        $result = $wpdb->update(
+            $table,
+            $data,
+            array(
+                'id' => $participant_id,
+                'survey_id' => $study_id,
+            )
         );
-        
-        $result = $wpdb->update($table, $data, $where);
-        
-        // If no existing record, insert new
-        if ($result === false || $result === 0) {
-            $data['study_id'] = $study_id;
-            $data['participant_id'] = $participant_id;
-            $data['status'] = ($decision === 'declined') ? 'consent_declined' : 'active';
-            $wpdb->insert($table, $data);
+
+        if ($result === false) {
+            wp_send_json_error(array('message' => __('Could not save consent decision', 'eipsi-forms')));
+            return;
         }
     } else {
         // Standalone form: save to wp_survey_assignments
@@ -3085,13 +3097,25 @@ function eipsi_save_consent_decision_handler() {
     // Prepare redirect URL for declined consent
     $redirect_url = null;
     if ($decision === 'declined') {
-        // Get study URL from config (same as abandonment handler)
-        $study_config = $wpdb->get_var($wpdb->prepare(
-            "SELECT config FROM {$wpdb->prefix}survey_studies WHERE id = %d",
-            $study_id
-        ));
-        $study_config_array = $study_config ? json_decode($study_config, true) : array();
-        $study_url = $study_config_array['shortcode_page_url'] ?? home_url('/');
+        $study_url = '';
+
+        if ($study_id && function_exists('eipsi_get_study_page_url')) {
+            $study_url = eipsi_get_study_page_url($study_id);
+        }
+
+        if (empty($study_url) && $study_id) {
+            $study_config = $wpdb->get_var($wpdb->prepare(
+                "SELECT config FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+                $study_id
+            ));
+            $study_config_array = $study_config ? json_decode($study_config, true) : array();
+            $study_url = $study_config_array['shortcode_page_url'] ?? '';
+        }
+
+        if (empty($study_url)) {
+            $study_url = home_url('/');
+        }
+
         $redirect_url = add_query_arg(array('consent' => 'declined'), $study_url);
         
         error_log("[EIPSI-CONSENT] Decision declined - redirect URL: {$redirect_url}");
@@ -3403,12 +3427,25 @@ function eipsi_abandon_study_handler() {
     }
     
     // Get study URL for redirect
-    $study_config = $wpdb->get_var($wpdb->prepare(
-        "SELECT config FROM {$wpdb->prefix}survey_studies WHERE id = %d",
-        $study_id
-    ));
-    $study_config_array = $study_config ? json_decode($study_config, true) : array();
-    $study_url = $study_config_array['shortcode_page_url'] ?? home_url('/');
+    $study_url = '';
+
+    if (function_exists('eipsi_get_study_page_url')) {
+        $study_url = eipsi_get_study_page_url($study_id);
+    }
+
+    if (empty($study_url)) {
+        $study_config = $wpdb->get_var($wpdb->prepare(
+            "SELECT config FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+            $study_id
+        ));
+        $study_config_array = $study_config ? json_decode($study_config, true) : array();
+        $study_url = $study_config_array['shortcode_page_url'] ?? '';
+    }
+
+    if (empty($study_url)) {
+        $study_url = home_url('/');
+    }
+
     $redirect_url = add_query_arg(array('withdrawal' => 'success', 'type' => $withdrawal_type), $study_url);
     error_log("[EIPSI-ABANDON] Redirect URL: {$redirect_url}");
     

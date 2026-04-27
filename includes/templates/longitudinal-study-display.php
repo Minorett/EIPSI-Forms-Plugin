@@ -175,6 +175,10 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
 $container_class = 'eipsi-longitudinal-study eipsi-theme-' . esc_attr( $theme );
 $status_class    = 'status-' . esc_attr( $study->status );
 $view_class      = 'view-' . esc_attr( $view_mode );
+$public_return_url = get_permalink();
+$consent_declined = isset( $_GET['consent'] ) && sanitize_text_field( wp_unslash( $_GET['consent'] ) ) === 'declined';
+$withdrawal_success = isset( $_GET['withdrawal'] ) && sanitize_text_field( wp_unslash( $_GET['withdrawal'] ) ) === 'success';
+$withdrawal_type = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash( $_GET['type'] ) ) : '';
 ?>
 
 <div class="<?php echo esc_attr( $container_class ); ?> <?php echo esc_attr( $view_class ); ?>"
@@ -427,53 +431,72 @@ $view_class      = 'view-' . esc_attr( $view_mode );
 
         <div class="eipsi-public-view">
 
-            <div class="eipsi-study-hero">
-                <h2 class="hero-title">📊 <?php echo esc_html( $study->study_name ); ?></h2>
-                <?php if ( ! empty( $study->description ) ) : ?>
-                    <p class="hero-description"><?php echo esc_html( wp_trim_words( $study->description, 30 ) ); ?></p>
-                <?php endif; ?>
-                <p class="hero-subtitle"><?php esc_html_e( 'Ayudá a la ciencia clínica completando este estudio', 'eipsi-forms' ); ?></p>
-            </div>
-
-            <div id="login-section" class="eipsi-login-section">
-                <?php if ( function_exists( 'eipsi_render_survey_login_form' ) ) : ?>
-                    <?php echo eipsi_render_survey_login_form( array(
-                        'survey_id'    => $study_id_for_query,
-                        'redirect_url' => get_permalink(),
-                    ) ); ?>
-                <?php else : ?>
-                    <div class="eipsi-login-fallback">
-                        <h3><?php esc_html_e( 'Acceso al Estudio', 'eipsi-forms' ); ?></h3>
-                        <p><?php esc_html_e( 'Para participar en este estudio, necesitás iniciar sesión o registrarte.', 'eipsi-forms' ); ?></p>
+            <?php if ( $consent_declined || $withdrawal_success ) : ?>
+                <div class="eipsi-public-status-card">
+                    <div class="eipsi-public-status-icon" aria-hidden="true">
+                        <?php echo $consent_declined ? 'X' : 'OK'; ?>
+                    </div>
+                    <h2 class="eipsi-public-status-title">
+                        <?php
+                        if ( $consent_declined ) {
+                            esc_html_e( 'Decision registrada', 'eipsi-forms' );
+                        } elseif ( $withdrawal_type === 'b2' ) {
+                            esc_html_e( 'Solicitud de eliminacion registrada', 'eipsi-forms' );
+                        } else {
+                            esc_html_e( 'Participacion finalizada', 'eipsi-forms' );
+                        }
+                        ?>
+                    </h2>
+                    <p class="eipsi-public-status-text">
+                        <?php
+                        if ( $consent_declined ) {
+                            esc_html_e( 'Decidiste no dar tu consentimiento para participar en este estudio. Tu decision quedo registrada y tu sesion se cerro correctamente.', 'eipsi-forms' );
+                        } elseif ( $withdrawal_type === 'b2' ) {
+                            esc_html_e( 'Tu solicitud de eliminacion de datos fue registrada. Ya no tenes una sesion activa en este estudio.', 'eipsi-forms' );
+                        } else {
+                            esc_html_e( 'Tu salida del estudio fue registrada. Ya no tenes una sesion activa y volviste al acceso publico.', 'eipsi-forms' );
+                        }
+                        ?>
+                    </p>
+                    <div class="eipsi-public-status-details">
                         <p>
-                            <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="button button-primary">
-                                <?php esc_html_e( 'Iniciar Sesión', 'eipsi-forms' ); ?>
-                            </a>
+                            <?php
+                            if ( $consent_declined ) {
+                                esc_html_e( 'Esta decision quedara disponible para el investigador en las exportaciones del estudio.', 'eipsi-forms' );
+                            } elseif ( $withdrawal_type === 'b2' ) {
+                                esc_html_e( 'No recibiras nuevos contactos y el equipo investigador procesara tu solicitud segun la configuracion del estudio.', 'eipsi-forms' );
+                            } else {
+                                esc_html_e( 'No recibiras nuevos contactos de este estudio y tus respuestas previas se conservaran segun la configuracion de investigacion.', 'eipsi-forms' );
+                            }
+                            ?>
                         </p>
                     </div>
-                <?php endif; ?>
-            </div>
-
-            <?php // FIX (v2.1.0): description shown only once (in hero above as excerpt,
-            // and in full here). Removed the duplicate block that appeared lower in the
-            // original template for view_mode === 'public'. ?>
-            <div id="study-info" class="eipsi-study-info-section">
-                <?php if ( ! empty( $study->description ) ) : ?>
-                    <div class="eipsi-study-description-section">
-                        <h3 class="section-title">📋 <?php esc_html_e( 'Sobre este estudio', 'eipsi-forms' ); ?></h3>
-                        <div class="description-content">
-                            <?php echo wp_kses_post( wpautop( $study->description ) ); ?>
+                    <p class="eipsi-public-status-action">
+                        <a href="<?php echo esc_url( $public_return_url ); ?>" class="eipsi-button-primary">
+                            <?php esc_html_e( 'Volver al acceso del estudio', 'eipsi-forms' ); ?>
+                        </a>
+                    </p>
+                </div>
+            <?php else : ?>
+                <div id="login-section" class="eipsi-login-section">
+                    <?php if ( function_exists( 'eipsi_render_survey_login_form' ) ) : ?>
+                        <?php echo eipsi_render_survey_login_form( array(
+                            'survey_id'    => $study_id_for_query,
+                            'redirect_url' => $public_return_url,
+                        ) ); ?>
+                    <?php else : ?>
+                        <div class="eipsi-login-fallback">
+                            <h3><?php esc_html_e( 'Acceso al Estudio', 'eipsi-forms' ); ?></h3>
+                            <p><?php esc_html_e( 'Para participar en este estudio, necesitas iniciar sesion o registrarte.', 'eipsi-forms' ); ?></p>
+                            <p>
+                                <a href="<?php echo esc_url( wp_login_url( $public_return_url ) ); ?>" class="button button-primary">
+                                    <?php esc_html_e( 'Iniciar sesion', 'eipsi-forms' ); ?>
+                                </a>
+                            </p>
                         </div>
-                    </div>
-                <?php endif; ?>
-
-                <?php if ( ! empty( $pi_name ) ) : ?>
-                    <div class="eipsi-pi-info">
-                        <span class="pi-label">🔬 <?php esc_html_e( 'Investigador Principal:', 'eipsi-forms' ); ?></span>
-                        <span class="pi-name"><?php echo esc_html( $pi_name ); ?></span>
-                    </div>
-                <?php endif; ?>
-            </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
         </div>
 

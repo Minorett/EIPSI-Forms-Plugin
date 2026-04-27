@@ -4244,28 +4244,18 @@ if ( pages.length === 0 ) {
      * Botón "Aceptar" - guarda estado y permite continuar
      */
     function initConsentV2() {
-        alert('[EIPSI Consent v2.6] Script loaded - cache busted');
-        console.log('[EIPSI Consent v2.6] initConsentV2 START - script loaded');
-        
         const consentBlocks = document.querySelectorAll('.eipsi-consent-block');
-        console.log('[EIPSI Consent v2.6] Found consent blocks:', consentBlocks.length);
         
-        consentBlocks.forEach((block, idx) => {
+        consentBlocks.forEach((block) => {
             const readingCheckbox = block.querySelector('#eipsi-consent-confirm-reading');
             const acceptBtn = block.querySelector('.eipsi-btn-accept');
             const rejectBtn = block.querySelector('.eipsi-btn-reject');
             const decisionInput = block.querySelector('#eipsi-consent-decision');
             const errorMsg = block.querySelector('.eipsi-consent-error');
-            
-            console.log(`[EIPSI Consent v2.6] Block #${idx}:`, {
-                hasCheckbox: !!readingCheckbox,
-                hasAccept: !!acceptBtn,
-                hasReject: !!rejectBtn,
-                hasDecisionInput: !!decisionInput
-            });
+            const originalRejectText = rejectBtn ? rejectBtn.textContent : 'No deseo participar';
+            const originalAcceptText = acceptBtn ? acceptBtn.textContent : 'Acepto participar';
             
             if (!readingCheckbox || !acceptBtn || !rejectBtn) {
-                console.warn('[EIPSI Consent v2.6] Missing elements, skipping block');
                 return;
             }
             
@@ -4279,15 +4269,10 @@ if ( pages.length === 0 ) {
                     errorMsg.style.display = 'none';
                 }
                 
-                if (window.console && window.console.debug) {
-                    window.console.debug('[EIPSI Consent v2.5] Reading confirmed:', isChecked);
-                }
             });
             
             // Click en "No deseo participar" (Rechazo T1)
             rejectBtn.addEventListener('click', async () => {
-                alert('[EIPSI Consent v2.6] REJECT clicked - new code');
-                console.log('[EIPSI Consent v2.6] REJECT clicked');
                 rejectBtn.disabled = true;
                 rejectBtn.textContent = 'Procesando...';
                 
@@ -4298,25 +4283,23 @@ if ( pages.length === 0 ) {
                 
                 // Guardar en backend (consent_declined) y redirigir
                 try {
-                    console.log('[EIPSI Consent v2.6] Calling saveConsentDecision(declined)...');
                     const result = await saveConsentDecision(block, 'declined');
-                    console.log('[EIPSI Consent v2.6] saveConsentDecision result:', result);
+                    if (!result || !result.success) {
+                        throw new Error(result?.data?.message || 'Error saving declined consent');
+                    }
                     // Usar URL del response o fallback
                     const redirectUrl = result?.data?.redirect || '/';
-                    console.log('[EIPSI Consent v2.6] Redirecting to:', redirectUrl);
                     window.location.href = redirectUrl;
                 } catch (e) {
-                    console.error('[EIPSI Consent v2.6] Error saving decline:', e);
-                    // Fallback: redirigir a home
-                    window.location.href = '/';
+                    rejectBtn.disabled = false;
+                    rejectBtn.textContent = originalRejectText;
+                    alert(e?.message || 'No se pudo registrar tu decisión. Intentá nuevamente.');
                 }
             });
             
             // Click en "Acepto participar"
             acceptBtn.addEventListener('click', async () => {
-                console.log('[EIPSI Consent v2.6] ACCEPT clicked');
                 if (!readingCheckbox.checked) {
-                    console.log('[EIPSI Consent v2.6] ACCEPT blocked - reading not checked');
                     if (errorMsg) {
                         errorMsg.style.display = 'block';
                         errorMsg.textContent = 'Debes confirmar que leíste el consentimiento informado para continuar.';
@@ -4334,11 +4317,15 @@ if ( pages.length === 0 ) {
                 
                 // Guardar en backend
                 try {
-                    console.log('[EIPSI Consent v2.6] Calling saveConsentDecision(accepted)...');
                     const result = await saveConsentDecision(block, 'accepted');
-                    console.log('[EIPSI Consent v2.6] saveConsentDecision result:', result);
+                    if (!result || !result.success) {
+                        throw new Error(result?.data?.message || 'Error saving accepted consent');
+                    }
                 } catch (e) {
-                    console.warn('[EIPSI Consent v2.6] Error saving accept:', e);
+                    acceptBtn.disabled = false;
+                    acceptBtn.textContent = originalAcceptText;
+                    alert(e?.message || 'No se pudo registrar tu consentimiento. Intentá nuevamente.');
+                    return;
                 }
                 
                 // Marcar bloque como aceptado
@@ -4346,14 +4333,11 @@ if ( pages.length === 0 ) {
                 
                 // Avanzar a la siguiente página (como el botón "Siguiente")
                 const form = block.closest('.eipsi-form');
-                console.log('[EIPSI Consent v2.6] Form found:', !!form, 'EIPSIForms:', !!window.EIPSIForms);
                 if (form && window.EIPSIForms && window.EIPSIForms.handlePagination) {
-                    console.log('[EIPSI Consent v2.6] Calling handlePagination next');
                     window.EIPSIForms.handlePagination(form, 'next');
                 } else {
-                    console.error('[EIPSI Consent v2.6] Cannot advance page - missing form or EIPSIForms');
                     acceptBtn.disabled = false;
-                    acceptBtn.textContent = 'Acepto participar';
+                    acceptBtn.textContent = originalAcceptText;
                 }
             });
         });
@@ -4364,10 +4348,13 @@ if ( pages.length === 0 ) {
      */
     async function saveConsentDecision(block, decision) {
         const formId = block.closest('.eipsi-form')?.dataset?.formId || 'default';
+        const participantId = window.eipsiAuth?.participantId || '';
         const payload = new URLSearchParams({
             action: 'eipsi_save_consent_decision',
+            nonce: window.eipsiFormsConfig?.nonce || '',
             decision: decision,
             form_id: formId,
+            participant_id: participantId,
             timestamp: new Date().toISOString()
         });
         

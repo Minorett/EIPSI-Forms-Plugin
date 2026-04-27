@@ -19,6 +19,7 @@ if (!defined('ABSPATH')) {
 
 $survey_id = isset($atts['survey_id']) ? absint($atts['survey_id']) : 0;
 $redirect_url = isset($atts['redirect_url']) ? esc_url($atts['redirect_url']) : '';
+$study_code = isset($atts['study_code']) ? sanitize_text_field($atts['study_code']) : '';
 
 // Check for confirmation message from email verification
 $confirmation_message = '';
@@ -110,6 +111,9 @@ if ($survey_id) {
                 <?php // Nonce is injected by JS from window.eipsiAuth.nonce (survey-login-enhanced.js) ?>
                 <input type="hidden" name="survey_id" value="<?php echo esc_attr($survey_id); ?>">
                 <input type="hidden" name="redirect_url" value="<?php echo esc_attr($redirect_url); ?>">
+                <?php if (!empty($study_code)): ?>
+                <input type="hidden" name="study_code" value="<?php echo esc_attr($study_code); ?>">
+                <?php endif; ?>
 
                 <div class="eipsi-form-group">
                     <label for="login-email">
@@ -156,7 +160,7 @@ if ($survey_id) {
                 <input type="hidden" name="survey_id" value="<?php echo esc_attr($survey_id); ?>">
                 <input type="hidden" name="redirect_url" value="<?php echo esc_attr($redirect_url); ?>">
 
-                <?php if (empty($survey_id)): ?>
+                <?php if (empty($survey_id) && empty($study_code)): ?>
                 <div class="eipsi-form-group">
                     <label for="register-study-code">
                         <?php esc_html_e('Código del Estudio', 'eipsi-forms'); ?>
@@ -173,6 +177,8 @@ if ($survey_id) {
                     </div>
                     <small class="field-hint"><?php esc_html_e('Ingresá el código que te proporcionó el investigador.', 'eipsi-forms'); ?></small>
                 </div>
+                <?php elseif (!empty($study_code)): ?>
+                <input type="hidden" name="study_code" value="<?php echo esc_attr($study_code); ?>">
                 <?php endif; ?>
 
                 <div class="eipsi-form-group">
