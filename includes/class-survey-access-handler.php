@@ -210,22 +210,45 @@ class EIPSI_Survey_Access_Handler {
     // Find the study page URL to pass as redirect_to
     $study_url = '';
     if ( $survey_id > 0 ) {
-        global $wpdb;
-        $study_code = $wpdb->get_var( $wpdb->prepare(
-            "SELECT study_code FROM {$wpdb->prefix}survey_studies WHERE id = %d",
-            $survey_id
+        // Level 1: Exact match by eipsi_study_id meta (Immune to text collisions)
+        $study_pages = get_posts( array(
+            'post_type'      => 'page',
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'meta_query'     => array(
+                'relation' => 'OR',
+                array(
+                    'key'   => 'eipsi_study_id',
+                    'value' => $survey_id,
+                ),
+                array(
+                    'key'   => '_eipsi_survey_id',
+                    'value' => $survey_id,
+                ),
+                array(
+                    'key'   => '_eipsi_study_id',
+                    'value' => $survey_id,
+                ),
+            ),
         ) );
-        if ( $study_code ) {
-            $study_pages = get_posts( array(
-                'post_type'      => 'page',
-                'post_status'    => 'publish',
-                'posts_per_page' => 1,
-                's'              => $study_code,
+
+        if ( ! empty( $study_pages ) ) {
+            $study_url = get_permalink( $study_pages[0]->ID );
+        } 
+        // Level 2: Official helper fallback
+        elseif ( function_exists( 'eipsi_get_study_page_url' ) ) {
+            global $wpdb;
+            $study_code = $wpdb->get_var( $wpdb->prepare(
+                "SELECT study_code FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+                $survey_id
             ) );
-            if ( ! empty( $study_pages ) ) {
-                $study_url = get_permalink( $study_pages[0]->ID );
-            }
+            $study_url = eipsi_get_study_page_url( $survey_id, $study_code );
         }
+    }
+
+    // Level 3: Security fallback to Home
+    if ( empty( $study_url ) ) {
+        $study_url = home_url( '/' );
     }
 
     $args = array(
@@ -253,15 +276,24 @@ class EIPSI_Survey_Access_Handler {
      * @return string Login page URL.
      */
     private function find_study_login_page( $survey_id = 0 ) {
-        // Method 1: page tagged with study survey_id meta.
+        // Method 1: page tagged with study eipsi_study_id or legacy _eipsi_survey_id meta.
         if ( $survey_id > 0 ) {
             $pages = get_posts( array(
                 'post_type'      => 'page',
                 'post_status'    => 'publish',
                 'posts_per_page' => 1,
                 'meta_query'     => array(
+                    'relation' => 'OR',
+                    array(
+                        'key'   => 'eipsi_study_id',
+                        'value' => $survey_id,
+                    ),
                     array(
                         'key'   => '_eipsi_survey_id',
+                        'value' => $survey_id,
+                    ),
+                    array(
+                        'key'   => '_eipsi_study_id',
                         'value' => $survey_id,
                     ),
                 ),

@@ -16,6 +16,70 @@ if (!defined('ABSPATH')) {
  */
 class EIPSI_Export_Service {
 
+    /** @var array Request-level cache for form fields */
+    private $form_fields_cache = array();
+
+    /**
+     * Extracts data-generating fields from a form block definition.
+     * v1.4.2 - Used to ensure consistent export alignment.
+     */
+    private function get_fields_by_form_id($form_id) {
+        if (empty($form_id)) return array();
+        
+        if (isset($this->form_fields_cache[$form_id])) {
+            return $this->form_fields_cache[$form_id];
+        }
+
+        $post = get_post($form_id);
+        if (!$post || empty($post->post_content)) {
+            $this->form_fields_cache[$form_id] = array();
+            return array();
+        }
+
+        $blocks = parse_blocks($post->post_content);
+        $fields = $this->extract_fields_from_blocks($blocks);
+        
+        $field_names = array_keys($fields);
+        sort($field_names);
+        
+        $this->form_fields_cache[$form_id] = $field_names;
+        return $this->form_fields_cache[$form_id];
+    }
+
+    private function extract_fields_from_blocks($blocks) {
+        $fields = array();
+        $allowed_blocks = array(
+            'eipsi/campo-texto',
+            'eipsi/campo-likert',
+            'eipsi/campo-radio',
+            'eipsi/campo-select',
+            'eipsi/campo-textarea',
+            'eipsi/vas-slider',
+            'eipsi/campo-multiple',
+        );
+
+        foreach ($blocks as $block) {
+            if (empty($block['blockName'])) continue;
+            
+            // Check if it's an allowed block (with or without prefix)
+            $is_allowed = in_array($block['blockName'], $allowed_blocks) || 
+                          (strpos($block['blockName'], 'eipsi/') === false && in_array('eipsi/' . $block['blockName'], $allowed_blocks));
+            
+            if ($is_allowed) {
+                $fieldName = !empty($block['attrs']['fieldName']) ? $block['attrs']['fieldName'] : null;
+                if ($fieldName) {
+                    $fields[$fieldName] = true;
+                }
+            }
+
+            if (!empty($block['innerBlocks'])) {
+                $innerFields = $this->extract_fields_from_blocks($block['innerBlocks']);
+                $fields = array_merge($fields, $innerFields);
+            }
+        }
+        return $fields;
+    }
+
     // =========================================================================
     // LONGITUDINAL EXPORT (wave responses)
     // =========================================================================
@@ -50,6 +114,7 @@ class EIPSI_Export_Service {
                     WHEN sp.is_anonymized = 1 THEN NULL
                     ELSE sp.id
                 END as participant_id,
+                sp.consent_decision,
                 sw.wave_index,
                 sr.id as submission_id,
                 sr.submitted_at,
@@ -113,6 +178,7 @@ class EIPSI_Export_Service {
 
         $headers = array(
             'Participant ID',
+            'Consent Decision',
             'Wave',
             'Fecha Asignación Toma',
             'Submitted At',
@@ -176,6 +242,7 @@ class EIPSI_Export_Service {
 
             $row = array(
                 $item->participant_id,
+                $item->consent_decision,
                 $item->wave_index,
                 $item->wave_assigned_at,
                 $item->submitted_at,
@@ -234,6 +301,7 @@ class EIPSI_Export_Service {
 
         $headers = array(
             'Participant ID',
+            'Consent Decision',
             'Wave',
             'Fecha Asignación Toma',
             'Submitted At',
@@ -297,6 +365,7 @@ class EIPSI_Export_Service {
 
             $row = array(
                 $item->participant_id,
+                $item->consent_decision,
                 $item->wave_index,
                 $item->wave_assigned_at,
                 $item->submitted_at,
@@ -744,16 +813,10 @@ public function fetch_participants_data($study_id, $filters = array()) {
     /**
      * Build the wide header array for participant export.
      *
-     * Estructura Wide (v2.1.3):
-     * - Columnas base: ID, Email, Estado, Registrado, Último acceso, Ondas asignadas, Ondas completadas, Progreso (%)
-     * - Por cada wave: T{n}_submitted_at, T{n}_duration_seconds, T{n}_device, T{n}_browser, T{n}_os, T{n}_screen_width, T{n}_ip_address, T{n}_canvas_fingerprint, T{n}_webgl_renderer, T{n}_screen_resolution, T{n}_screen_depth, T{n}_pixel_ratio, T{n}_timezone, T{n}_language, T{n}_cpu_cores, T{n}_ram, T{n}_plugins, T{n}_touch_support, T{n}_cookies_enabled, T{n}_{field_name}
-     * - SIN columnas: Nombre, Apellido, fingerprint_id (el investigador lo construye si lo necesita)
-     *
-     * @param array $rows  List of participant rows.
      * @param array $waves List of wave objects.
      * @return string[]
      */
-    private function build_participants_wide_headers($rows, $waves) {
+    private function build_participants_wide_headers($waves) {
         $headers = array(
             'ID',
             'Email',
@@ -765,50 +828,21 @@ public function fetch_participants_data($study_id, $filters = array()) {
             'Progreso (%)',
         );
 
-        // Get all unique field names from submissions across all waves
-        $all_field_names = array();
-        foreach ($rows as $row) {
-            if (isset($row['submissions'])) {
-                foreach ($row['submissions'] as $wave_index => $submission) {
-                    if (isset($submission['form_responses']) && is_array($submission['form_responses'])) {
-                        $excluded_fields = array(
-                            'eipsi_nonce',
-                            'nonce',
-                            'seguimiento',
-                            'wave_id',
-                            'form_action',
-                            'action',
-                            'current_page',
-                            'form_start_time',
-                            'form_end_time',
-                            'end_timestamp_ms',
-                            'eipsi_user_fingerprint',
-                            'eipsi_fingerprint_raw',
-                            'eipsi_consent_accepted',
-                        );
-                        
-                        foreach ($submission['form_responses'] as $field_name => $value) {
-                            if (!in_array($field_name, $excluded_fields)) {
-                                $all_field_names[$field_name] = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        $unique_field_names = array_keys($all_field_names);
+        $excluded_base = array('id', 'email', 'estado', 'registrado', 'último acceso', 'ondas asignadas', 'ondas completadas', 'progreso (%)');
+        $excluded_meta = array('submitted_at', 'duration_seconds', 'device', 'browser', 'os', 'screen_width', 'ip_address', 'canvas_fingerprint', 'webgl_renderer', 'screen_resolution', 'screen_depth', 'pixel_ratio', 'timezone', 'language', 'cpu_cores', 'ram', 'plugins', 'touch_support', 'cookies_enabled', 'eipsi_consent_decision');
 
         foreach ($waves as $wave) {
             $prefix = 'T' . $wave->wave_index;
+            if ($wave->wave_index == 1) {
+                $headers[] = $prefix . "_eipsi_consent_decision";
+            }
             $headers[] = $prefix . '_submitted_at';
             $headers[] = $prefix . '_duration_seconds';
-            // v2.1.3: Removed fingerprint_id - researchers should construct this if needed
             $headers[] = $prefix . '_device';
             $headers[] = $prefix . '_browser';
             $headers[] = $prefix . '_os';
             $headers[] = $prefix . '_screen_width';
             $headers[] = $prefix . '_ip_address';
-            // v2.1.3: Extended device metadata columns (ON by default)
             $headers[] = $prefix . '_canvas_fingerprint';
             $headers[] = $prefix . '_webgl_renderer';
             $headers[] = $prefix . '_screen_resolution';
@@ -822,8 +856,12 @@ public function fetch_participants_data($study_id, $filters = array()) {
             $headers[] = $prefix . '_touch_support';
             $headers[] = $prefix . '_cookies_enabled';
 
-            // Add dynamic headers for form_response fields
-            foreach ($unique_field_names as $field_name) {
+            // Add dynamic headers from form definition
+            $fields = $this->get_fields_by_form_id($wave->form_id);
+            foreach ($fields as $field_name) {
+                if (in_array(strtolower($field_name), $excluded_base) || in_array(strtolower($field_name), $excluded_meta)) {
+                    continue;
+                }
                 $headers[] = $prefix . '_' . $field_name;
             }
         }
@@ -839,7 +877,7 @@ public function fetch_participants_data($study_id, $filters = array()) {
      * @param array $response_keys_by_wave  Optional: keys per wave_index.
      * @return array
      */
-    private function build_participants_wide_row($row, $waves, $response_keys_by_wave = array()) {
+    private function build_participants_wide_row($row, $waves) {
         error_log("[EIPSI-EXPORT-DIAG] build_participants_wide_row START: participant_id=" . ($row['id'] ?? 'N/A') . ", submissions_count=" . count($row['submissions'] ?? array()));
 
         // Determine Estado based on consent_decision and consent_context
@@ -874,50 +912,20 @@ public function fetch_participants_data($study_id, $filters = array()) {
             $row['completion_percent'],
         );
 
-        // Get all unique field names (same as headers)
-        $all_field_names = array();
-        foreach ($waves as $wave) {
-            foreach ($row['submissions'] ?? array() as $wave_index => $submission) {
-                if (isset($submission['form_responses']) && is_array($submission['form_responses'])) {
-                    $excluded_fields = array(
-                        'eipsi_nonce',
-                        'nonce',
-                        'seguimiento',
-                        'wave_id',
-                        'form_action',
-                        'action',
-                        'current_page',
-                        'form_start_time',
-                        'form_end_time',
-                        'end_timestamp_ms',
-                        'eipsi_user_fingerprint',
-                        'eipsi_fingerprint_raw',
-                        'eipsi_consent_accepted',
-                    );
-                    
-                    foreach ($submission['form_responses'] as $field_name => $value) {
-                        if (!in_array($field_name, $excluded_fields)) {
-                            $all_field_names[$field_name] = true;
-                        }
-                    }
-                }
-            }
-        }
-        $unique_field_names = array_keys($all_field_names);
+        $excluded_base = array('id', 'email', 'estado', 'registrado', 'último acceso', 'ondas asignadas', 'ondas completadas', 'progreso (%)');
+        $excluded_meta = array('submitted_at', 'duration_seconds', 'device', 'browser', 'os', 'screen_width', 'ip_address', 'canvas_fingerprint', 'webgl_renderer', 'screen_resolution', 'screen_depth', 'pixel_ratio', 'timezone', 'language', 'cpu_cores', 'ram', 'plugins', 'touch_support', 'cookies_enabled', 'eipsi_consent_decision');
 
         // Add wave data for each wave
         foreach ($waves as $wave) {
             $wi = $wave->wave_index;
+            if ($wave->wave_index == 1) {
+                $data[] = $row["consent_decision"] ?? "";
+            }
             $submission = isset($row['submissions'][$wi]) ? $row['submissions'][$wi] : null;
+            $wave_fields = $this->get_fields_by_form_id($wave->form_id);
 
             if ($submission) {
-                error_log("[EIPSI-EXPORT-DIAG] Processing submission for wave_index={$wi}, submission_id=" . ($submission['id'] ?? 'N/A'));
-                error_log("[EIPSI-EXPORT-DIAG] Extended fields in submission: canvas=" . (isset($submission['canvas_fingerprint']) ? substr($submission['canvas_fingerprint'], 0, 10) : 'NOTSET') . 
-                    ", webgl=" . (isset($submission['webgl_renderer']) ? substr($submission['webgl_renderer'], 0, 10) : 'NOTSET') .
-                    ", ram=" . (isset($submission['ram']) ? $submission['ram'] : 'NOTSET'));
-
                 // Metadata fields
-                // v2.1.3: Removed fingerprint_id from export
                 $data[] = $submission['submitted_at'] ? date('Y-m-d H:i:s', strtotime($submission['submitted_at'])) : '';
                 $data[] = $submission['duration_seconds'] ?? '';
                 $data[] = $submission['device'] ?? '';
@@ -925,38 +933,26 @@ public function fetch_participants_data($study_id, $filters = array()) {
                 $data[] = $submission['os'] ?? '';
                 $data[] = $submission['screen_width'] ?? '';
                 $data[] = $submission['ip_address'] ?? '';
-                // v2.1.3: Extended device metadata values (12 columns)
-                $canvas_fp = $submission['canvas_fingerprint'] ?? '';
-                $webgl = $submission['webgl_renderer'] ?? '';
-                $screen_res = $submission['screen_resolution'] ?? '';
-                $screen_depth = $submission['screen_depth'] ?? '';
-                $pixel_ratio = $submission['pixel_ratio'] ?? '';
-                $timezone = $submission['timezone'] ?? '';
-                $language = $submission['language'] ?? '';
-                $cpu_cores = $submission['cpu_cores'] ?? '';
-                $ram = $submission['ram'] ?? '';
-                $plugins = $submission['plugins'] ?? '';
-                $touch = $submission['touch_support'] ?? '';
-                $cookies = $submission['cookies_enabled'] ?? '';
+                
+                $data[] = $submission['canvas_fingerprint'] ?? '';
+                $data[] = $submission['webgl_renderer'] ?? '';
+                $data[] = $submission['screen_resolution'] ?? '';
+                $data[] = $submission['screen_depth'] ?? '';
+                $data[] = $submission['pixel_ratio'] ?? '';
+                $data[] = $submission['timezone'] ?? '';
+                $data[] = $submission['language'] ?? '';
+                $data[] = $submission['cpu_cores'] ?? '';
+                $data[] = $submission['ram'] ?? '';
+                $data[] = $submission['plugins'] ?? '';
+                $data[] = $submission['touch_support'] ?? '';
+                $data[] = $submission['cookies_enabled'] ?? '';
 
-                error_log("[EIPSI-EXPORT-DIAG] Writing to Excel: canvas={$canvas_fp}, webgl={$webgl}, screen_res={$screen_res}, ram={$ram}");
-
-                $data[] = $canvas_fp;
-                $data[] = $webgl;
-                $data[] = $screen_res;
-                $data[] = $screen_depth;
-                $data[] = $pixel_ratio;
-                $data[] = $timezone;
-                $data[] = $language;
-                $data[] = $cpu_cores;
-                $data[] = $ram;
-                $data[] = $plugins;
-                $data[] = $touch;
-                $data[] = $cookies;
-
-                // Form response fields
+                // Form response fields based on wave definition
                 $form_responses = $submission['form_responses'] ?? array();
-                foreach ($unique_field_names as $field_name) {
+                foreach ($wave_fields as $field_name) {
+                    if (in_array(strtolower($field_name), $excluded_base) || in_array(strtolower($field_name), $excluded_meta)) {
+                        continue;
+                    }
                     $value = '';
                     if (isset($form_responses[$field_name])) {
                         $val = $form_responses[$field_name];
@@ -969,14 +965,17 @@ public function fetch_participants_data($study_id, $filters = array()) {
                     $data[] = $value;
                 }
             } else {
-                // Empty submission - add empty columns
-                // v2.1.3: 19 columns (7 basic + 12 extended, fingerprint_id removed)
-                $metadata_columns = 19; // submitted_at, duration_seconds, device, browser, os, screen_width, ip_address, canvas_fingerprint, webgl_renderer, screen_resolution, screen_depth, pixel_ratio, timezone, language, cpu_cores, ram, plugins, touch_support, cookies_enabled
-                for ($i = 0; $i < $metadata_columns; $i++) {
+                // Empty submission - pad all columns defined for this wave
+                // v1.4.2: 19 columns of metadata
+                $metadata_count = 19;
+                for ($i = 0; $i < $metadata_count; $i++) {
                     $data[] = '';
                 }
-                // Empty form response columns
-                for ($i = 0; $i < count($unique_field_names); $i++) {
+                // Empty form response columns based on wave definition
+                foreach ($wave_fields as $field_name) {
+                    if (in_array(strtolower($field_name), $excluded_base) || in_array(strtolower($field_name), $excluded_meta)) {
+                        continue;
+                    }
                     $data[] = '';
                 }
             }
@@ -1002,7 +1001,7 @@ public function fetch_participants_data($study_id, $filters = array()) {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        $headers = $this->build_participants_wide_headers($rows, $waves);
+        $headers = $this->build_participants_wide_headers($waves);
         $xlsx_data = array($headers);
 
         foreach ($rows as $row) {
@@ -1042,7 +1041,7 @@ public function fetch_participants_data($study_id, $filters = array()) {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        fputcsv($output, $this->build_participants_wide_headers($rows, $waves));
+        fputcsv($output, $this->build_participants_wide_headers($waves));
 
         foreach ($rows as $row) {
             fputcsv($output, $this->build_participants_wide_row($row, $waves));
@@ -1064,8 +1063,7 @@ public function fetch_participants_data($study_id, $filters = array()) {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        // Build full headers for column count, but create limited preview headers
-        $full_headers = $this->build_participants_wide_headers($rows, $waves);
+        $full_headers = $this->build_participants_wide_headers($waves);
         $preview_headers = $this->build_participants_wide_preview_headers($rows, $waves, count($full_headers));
         $preview_rows = array();
 

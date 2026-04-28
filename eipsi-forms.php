@@ -2309,33 +2309,6 @@ function eipsi_get_client_ip() {
 }
 
 /**
- * Get current participant ID from session/auth
- * @return string|null Participant ID or null
- */
-function eipsi_get_current_participant_id() {
-    // Priority 1: From auth system
-    if (isset($_COOKIE['eipsi_participant_id'])) {
-        return sanitize_text_field($_COOKIE['eipsi_participant_id']);
-    }
-    
-    // Priority 2: From localStorage via POST
-    if (!empty($_POST['participant_id'])) {
-        return sanitize_text_field($_POST['participant_id']);
-    }
-    
-    // Priority 3: From session
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    
-    if (!empty($_SESSION['eipsi_participant_id'])) {
-        return sanitize_text_field($_SESSION['eipsi_participant_id']);
-    }
-    
-    return null;
-}
-
-/**
  * Get study ID for a given form/survey ID
  * Checks if form belongs to a longitudinal study
  * 
@@ -2345,10 +2318,23 @@ function eipsi_get_current_participant_id() {
 function eipsi_get_study_id_for_form($form_id) {
     global $wpdb;
     
-    // Try to find study that contains this survey
+    // Resolve form ID if it's a slug
+    $template_id = is_numeric($form_id) ? intval($form_id) : 0;
+    if (!$template_id) {
+        $template_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT ID FROM {$wpdb->posts} WHERE post_name = %s AND post_type IN ('eipsi_form_template', 'eipsi_form', 'page') LIMIT 1",
+            $form_id
+        ));
+    }
+    
+    if (!$template_id) {
+        return null;
+    }
+
+    // Try to find study that contains this survey in survey_waves
     $study_id = $wpdb->get_var($wpdb->prepare(
-        "SELECT id FROM {$wpdb->prefix}survey_studies WHERE survey_ids LIKE %s LIMIT 1",
-        '%' . $wpdb->esc_like($form_id) . '%'
+        "SELECT study_id FROM {$wpdb->prefix}survey_waves WHERE form_id = %d LIMIT 1",
+        $template_id
     ));
     
     return $study_id ? intval($study_id) : null;
@@ -2373,47 +2359,41 @@ function eipsi_check_consent_blocked($participant_id, $context, $type = 'study')
         'decided_at' => null,
     );
     
-    if ($type === 'study') {
-        // Check longitudinal study participants table
-        $table = $wpdb->prefix . 'survey_participants';
-        $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT consent_decision, consent_decided_at, consent_blocked_survey_id, status 
-             FROM {$table} 
-             WHERE survey_id = %d AND participant_id = %s 
-             LIMIT 1",
-            $context,
-            $participant_id
+    $table = $wpdb->prefix . 'survey_participants';
+    
+    // Resolve numeric context ID if it's a slug
+    $context_id = is_numeric($context) ? intval($context) : 0;
+    if (!$context_id) {
+        $context_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT ID FROM {$wpdb->posts} WHERE post_name = %s AND post_type IN ('eipsi_form_template', 'eipsi_form', 'page') LIMIT 1",
+            $context
         ));
-        
-        if ($row && in_array($row->consent_decision, array('declined', 'withdrawn'), true)) {
-            $result['blocked'] = true;
-            $result['reason'] = ($row->consent_decision === 'declined') ? 'consent_declined' : 'study_withdrawn';
-            $result['decision'] = $row->consent_decision;
-            $result['decided_at'] = $row->consent_decided_at;
-        } elseif ($row && isset($row->status) && $row->status === 'withdrawn') {
-            $result['blocked'] = true;
-            $result['reason'] = 'study_withdrawn';
-            $result['decision'] = 'withdrawn';
-            $result['decided_at'] = $row->consent_decided_at;
-        }
-    } else {
-        // Check standalone assignments table
-        $table = $wpdb->prefix . 'survey_assignments';
-        $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT consent_decision, consent_decided_at 
-             FROM {$table} 
-             WHERE survey_id = %s AND participant_id = %s 
-             LIMIT 1",
-            $context,
-            $participant_id
-        ));
-        
-        if ($row && in_array($row->consent_decision, array('declined', 'withdrawn'), true)) {
-            $result['blocked'] = true;
-            $result['reason'] = ($row->consent_decision === 'declined') ? 'consent_declined' : 'study_withdrawn';
-            $result['decision'] = $row->consent_decision;
-            $result['decided_at'] = $row->consent_decided_at;
-        }
+    }
+    
+    if (!$context_id) {
+        $context_id = $context;
+    }
+
+    // Both longitudinal studies and standalone forms now use survey_participants for consent
+    $row = $wpdb->get_row($wpdb->prepare(
+        "SELECT consent_decision, consent_decided_at, consent_blocked_survey_id, status 
+         FROM {$table} 
+         WHERE survey_id = %d AND id = %d 
+         LIMIT 1",
+        $context_id,
+        $participant_id
+    ));
+    
+    if ($row && in_array($row->consent_decision, array('declined', 'withdrawn'), true)) {
+        $result['blocked'] = true;
+        $result['reason'] = ($row->consent_decision === 'declined') ? 'consent_declined' : 'study_withdrawn';
+        $result['decision'] = $row->consent_decision;
+        $result['decided_at'] = $row->consent_decided_at;
+    } elseif ($row && isset($row->status) && $row->status === 'withdrawn') {
+        $result['blocked'] = true;
+        $result['reason'] = 'study_withdrawn';
+        $result['decision'] = 'withdrawn';
+        $result['decided_at'] = $row->consent_decided_at;
     }
     
     return $result;

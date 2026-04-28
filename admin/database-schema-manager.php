@@ -335,9 +335,13 @@ class EIPSI_Database_Schema_Manager {
                     'consent_user_agent' => 'VARCHAR(500) NULL',
 
                     'consent_context' => 'VARCHAR(50) NULL',
+<<<<<<< HEAD
 
                     'consent_blocked_survey_id' => 'VARCHAR(20) NULL',
 
+=======
+                    'consent_blocked_survey_id' => 'BIGINT(20) UNSIGNED NULL',
+>>>>>>> aa236d3baf0101c485e312113250b3271dde599d
                     'withdrawal_wave_id' => 'BIGINT(20) UNSIGNED NULL',
 
                     'data_deleted' => 'TINYINT(1) DEFAULT 0',
