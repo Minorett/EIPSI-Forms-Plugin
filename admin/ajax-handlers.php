@@ -1885,17 +1885,45 @@ function eipsi_forms_submit_form_handler() {
                     }
                     
                     if (class_exists('EIPSI_Wave_Availability_Email_Service')) {
-                        $email_result = EIPSI_Wave_Availability_Email_Service::ensure_wave_availability_email_sent(
-                            $longitudinal_participant_id,
-                            $study_id,
-                            $next_wave['wave_id']
-                        );
-                        error_log(sprintf('[EIPSI-DIAG] Immediate Nudge 0 email result: %s', json_encode($email_result)));
-                        
-                        // Guardar para agregar al success_response después
-                        if ($email_result['success'] && $email_result['sent']) {
-                            $nudge_0_sent = true;
-                            $nudge_0_message = __('Email de siguiente toma enviado inmediatamente', 'eipsi-forms');
+                        // Cargar dependencias necesarias para obtener los objetos (v2.2.3 Fix)
+                        if (!class_exists('EIPSI_Wave_Service')) {
+                            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-wave-service.php';
+                        }
+                        if (!class_exists('EIPSI_Participant_Service')) {
+                            require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-service.php';
+                        }
+
+                        // Obtener objetos requeridos por el servicio
+                        global $wpdb;
+                        $assignment_obj = $wpdb->get_row($wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d AND participant_id = %d",
+                            $next_wave['wave_id'],
+                            $longitudinal_participant_id
+                        ), OBJECT);
+
+                        $wave_obj = EIPSI_Wave_Service::get_wave($next_wave['wave_id']);
+                        $participant_obj = EIPSI_Participant_Service::get_by_id($longitudinal_participant_id);
+
+                        // Solo proceder si tenemos todos los datos necesarios
+                        if ($assignment_obj && $wave_obj && $participant_obj) {
+                            $email_result = EIPSI_Wave_Availability_Email_Service::ensure_wave_availability_email_sent(
+                                $assignment_obj,
+                                $wave_obj,
+                                $participant_obj,
+                                $study_id
+                            );
+                            error_log(sprintf('[EIPSI-DIAG] Immediate Nudge 0 email result: %s', json_encode($email_result)));
+                            
+                            // Guardar para agregar al success_response después
+                            if ($email_result['success'] && $email_result['sent']) {
+                                $nudge_0_sent = true;
+                                $nudge_0_message = __('Email de siguiente toma enviado inmediatamente', 'eipsi-forms');
+                            }
+                        } else {
+                            error_log(sprintf('[EIPSI-DIAG] Could not trigger immediate Nudge 0: Missing objects. Assignment: %s, Wave: %s, Participant: %s', 
+                                $assignment_obj ? 'OK' : 'MISSING', 
+                                $wave_obj ? 'OK' : 'MISSING', 
+                                $participant_obj ? 'OK' : 'MISSING'));
                         }
                     }
                 }
