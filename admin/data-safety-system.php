@@ -510,7 +510,7 @@ function eipsi_auto_sync_participant_fields($data, $insert_id) {
 /**
  * Asegura que una columna exista en survey_participants (la crea si no existe)
  */
-function eipsi_ensure_participant_column_exists($column_name, $data_type = 'VARCHAR(255)') {
+function eipsi_ensure_participant_column_exists($column_name, $data_type = 'TEXT') {
     global $wpdb;
     
     $table_name = $wpdb->prefix . 'survey_participants';
