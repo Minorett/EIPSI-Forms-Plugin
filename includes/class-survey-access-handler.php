@@ -216,8 +216,17 @@ class EIPSI_Survey_Access_Handler {
             'post_status'    => 'publish',
             'posts_per_page' => 1,
             'meta_query'     => array(
+                'relation' => 'OR',
                 array(
                     'key'   => 'eipsi_study_id',
+                    'value' => $survey_id,
+                ),
+                array(
+                    'key'   => '_eipsi_survey_id',
+                    'value' => $survey_id,
+                ),
+                array(
+                    'key'   => '_eipsi_study_id',
                     'value' => $survey_id,
                 ),
             ),
@@ -267,15 +276,24 @@ class EIPSI_Survey_Access_Handler {
      * @return string Login page URL.
      */
     private function find_study_login_page( $survey_id = 0 ) {
-        // Method 1: page tagged with study survey_id meta.
+        // Method 1: page tagged with study eipsi_study_id or legacy _eipsi_survey_id meta.
         if ( $survey_id > 0 ) {
             $pages = get_posts( array(
                 'post_type'      => 'page',
                 'post_status'    => 'publish',
                 'posts_per_page' => 1,
                 'meta_query'     => array(
+                    'relation' => 'OR',
+                    array(
+                        'key'   => 'eipsi_study_id',
+                        'value' => $survey_id,
+                    ),
                     array(
                         'key'   => '_eipsi_survey_id',
+                        'value' => $survey_id,
+                    ),
+                    array(
+                        'key'   => '_eipsi_study_id',
                         'value' => $survey_id,
                     ),
                 ),

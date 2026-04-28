@@ -3066,7 +3066,20 @@ function eipsi_save_consent_decision_handler() {
         
         // If declined, also set blocked_survey_id
         if ($decision === 'declined') {
-            $data['consent_blocked_survey_id'] = $template_id ?: $form_id;
+            // v2.5.5: Ensure it is a numeric ID (template_id if available, else numeric fallback)
+            $blocked_id = (is_numeric($template_id) && $template_id > 0) ? intval($template_id) : null;
+            
+            if (!$blocked_id && is_numeric($form_id)) {
+                $blocked_id = intval($form_id);
+            }
+            
+            // Final fallback to study_id if all else fails to be numeric
+            if (!$blocked_id && is_numeric($study_id)) {
+                $blocked_id = intval($study_id);
+            }
+            
+            $data['consent_blocked_survey_id'] = $blocked_id;
+
         }
         
         $validate_query = $wpdb->prepare(
@@ -3113,7 +3126,18 @@ function eipsi_save_consent_decision_handler() {
             'consent_context' => 'T1_consent_block',
         );
         
+        // If declined, also set blocked_survey_id
+        if ($decision === 'declined') {
+            // v2.5.5: Ensure it is a numeric ID
+            $blocked_id = (is_numeric($template_id) && $template_id > 0) ? intval($template_id) : null;
+            if (!$blocked_id && is_numeric($form_id)) {
+                $blocked_id = intval($form_id);
+            }
+            $data['consent_blocked_survey_id'] = $blocked_id;
+        }
+
         $where = array(
+
             'survey_id' => $context_id,
             'id' => $participant_id,
         );
