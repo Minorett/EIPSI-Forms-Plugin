@@ -771,7 +771,23 @@ if (!function_exists('eipsi_get_current_participant_id')) {
             require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-auth-service.php';
         }
         
-        return EIPSI_Auth_Service::get_current_participant();
+        // Priority 1: From verified session
+        $participant_id = EIPSI_Auth_Service::get_current_participant();
+        if ($participant_id) {
+            return (int) $participant_id;
+        }
+
+        // Priority 2: From POST (context resolution fallback)
+        if (!empty($_POST['participant_id']) && is_numeric($_POST['participant_id'])) {
+            return (int) $_POST['participant_id'];
+        }
+
+        // Priority 3: From Cookie (legacy fallback)
+        if (isset($_COOKIE['eipsi_participant_id']) && is_numeric($_COOKIE['eipsi_participant_id'])) {
+            return (int) $_COOKIE['eipsi_participant_id'];
+        }
+        
+        return null;
     }
 }
 

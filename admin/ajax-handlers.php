@@ -2997,6 +2997,7 @@ function eipsi_save_consent_decision_handler() {
     $form_id = sanitize_text_field($_POST['form_id'] ?? '');
     $decision = sanitize_text_field($_POST['decision'] ?? '');
     $participant_id = sanitize_text_field($_POST['participant_id'] ?? '');
+    $participant_source = !empty($participant_id) ? 'POST' : 'UNKNOWN';
     
     if (empty($form_id) || !in_array($decision, array('accepted', 'declined'))) {
         wp_send_json_error(array('message' => __('Invalid parameters', 'eipsi-forms')));
@@ -3006,6 +3007,7 @@ function eipsi_save_consent_decision_handler() {
     // Get participant_id from session if not provided
     if (empty($participant_id)) {
         $participant_id = eipsi_get_current_participant_id();
+        $participant_source = 'SESSION/HELPER';
     }
     
     global $wpdb;
@@ -3022,6 +3024,7 @@ function eipsi_save_consent_decision_handler() {
     // v2.5.6: PRIORIDAD DE CONTEXTO - Invertida para evitar colisiones por form_id "default"
     // 1. Intentar por sesión activa (Lo más confiable si el usuario ya inició sesión)
     $study_id = eipsi_get_current_survey_id();
+    $study_source = $study_id ? 'SESSION' : 'NONE';
 
     // 2. Rescate por Participant ID (Si no hay sesión pero tenemos el ID del participante)
     if (!$study_id && !empty($participant_id) && is_numeric($participant_id)) {
@@ -3029,12 +3032,25 @@ function eipsi_save_consent_decision_handler() {
             "SELECT survey_id FROM {$wpdb->prefix}survey_participants WHERE id = %d LIMIT 1",
             intval($participant_id)
         ));
+        if ($study_id) { $study_source = 'PARTICIPANT_LOOKUP'; }
     }
 
     // 3. Último recurso: Adivinar por el form_id (Origen del error actual)
     if (!$study_id) {
         $study_id = eipsi_get_study_id_for_form($form_id);
+        if ($study_id) { $study_source = 'FORM_ID_FALLBACK'; }
     }
+
+    // Instrumentación detallada antes de la validación
+    error_log(sprintf(
+        '[EIPSI-CONSENT-DEBUG] Decision Handler: FormID=%s (TemplateID=%d), ParticipantID=%s (Source=%s), StudyID=%s (Source=%s)',
+        $form_id,
+        $template_id,
+        $participant_id,
+        $participant_source,
+        $study_id ?: 'NULL',
+        $study_source
+    ));
     
     if ($study_id) {
         // Longitudinal study: save to wp_survey_participants
@@ -3053,13 +3069,18 @@ function eipsi_save_consent_decision_handler() {
             $data['consent_blocked_survey_id'] = $template_id ?: $form_id;
         }
         
-        $existing_participant = $wpdb->get_var($wpdb->prepare(
+        $validate_query = $wpdb->prepare(
             "SELECT id FROM {$table} WHERE id = %d AND survey_id = %d LIMIT 1",
             $participant_id,
             $study_id
-        ));
+        );
+        
+        error_log("[EIPSI-CONSENT-DEBUG] Validation SQL: " . $validate_query);
+        
+        $existing_participant = $wpdb->get_var($validate_query);
 
         if (!$existing_participant) {
+            error_log(sprintf('[EIPSI-CONSENT-ERROR] Participant %s not found for Study %s', $participant_id, $study_id));
             wp_send_json_error(array('message' => __('Participant not found for this study', 'eipsi-forms')));
             return;
         }
@@ -3097,11 +3118,13 @@ function eipsi_save_consent_decision_handler() {
             'id' => $participant_id,
         );
         
+        error_log(sprintf('[EIPSI-CONSENT-DEBUG] Standalone Fallback: ContextID=%s, ParticipantID=%s', $context_id, $participant_id));
+        
         $result = $wpdb->update($table, $data, $where);
         
         // If no existing record, and we have a participant_id, try to insert if it's a numeric ID
         if ($result === false || $result === 0) {
-            if ($participant_id) {
+            if ($participant_id && is_numeric($participant_id)) {
                 $data['survey_id'] = $context_id;
                 $data['id'] = $participant_id;
                 $data['status'] = ($decision === 'declined') ? 'consent_declined' : 'active';
@@ -3127,6 +3150,10 @@ function eipsi_save_consent_decision_handler() {
 
         if ($study_id) {
             // Utilizar el helper que busca por meta eipsi_study_id (inmune a colisiones de texto)
+            if (!function_exists('eipsi_get_study_page_url')) {
+                require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/setup-wizard.php';
+            }
+            
             $study_url = function_exists('eipsi_get_study_page_url') 
                 ? eipsi_get_study_page_url($study_id) 
                 : '';
