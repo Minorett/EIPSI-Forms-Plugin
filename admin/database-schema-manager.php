@@ -167,7 +167,7 @@ class EIPSI_Database_Schema_Manager {
                     'consent_ip_address' => 'VARCHAR(45) NULL',
                     'consent_user_agent' => 'VARCHAR(500) NULL',
                     'consent_context' => 'VARCHAR(50) NULL',
-                    'consent_blocked_survey_id' => 'VARCHAR(20) NULL',
+                    'consent_blocked_survey_id' => 'BIGINT(20) UNSIGNED NULL',
                     'withdrawal_wave_id' => 'BIGINT(20) UNSIGNED NULL',
                     'data_deleted' => 'TINYINT(1) DEFAULT 0',
                     'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
