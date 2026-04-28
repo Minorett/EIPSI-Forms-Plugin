@@ -1337,14 +1337,19 @@ function eipsi_forms_submit_form_handler() {
     );
     
     foreach ($_POST as $key => $value) {
-        if (!in_array($key, $exclude_fields) && is_string($value)) {
-            $form_responses[$key] = sanitize_text_field($value);
-            
-            if (strtolower($key) === 'email' || strpos(strtolower($key), 'correo') !== false) {
-                $user_data['email'] = sanitize_email($value);
-            }
-            if (strtolower($key) === 'name' || strtolower($key) === 'nombre') {
-                $user_data['name'] = sanitize_text_field($value);
+        if (!in_array($key, $exclude_fields)) {
+            if (is_array($value)) {
+                // Support for array values (checkboxes/multi-select)
+                $form_responses[$key] = array_map('sanitize_text_field', $value);
+            } elseif (is_string($value)) {
+                $form_responses[$key] = sanitize_text_field($value);
+                
+                if (strtolower($key) === 'email' || strpos(strtolower($key), 'correo') !== false) {
+                    $user_data['email'] = sanitize_email($value);
+                }
+                if (strtolower($key) === 'name' || strtolower($key) === 'nombre') {
+                    $user_data['name'] = sanitize_text_field($value);
+                }
             }
         }
     }
