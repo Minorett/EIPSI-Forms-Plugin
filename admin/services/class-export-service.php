@@ -758,7 +758,47 @@ public function fetch_participants_data($study_id, $filters = array()) {
      * @param array $waves List of wave objects.
      * @return string[]
      */
-    private function build_participants_wide_headers($rows, $waves) {
+
+    /**
+     * Get all unique field names across all submissions to ensure consistent columns.
+     * v1.4.2 - Removed 'seguimiento' from exclusion list.
+     */
+    private function get_unique_field_names($rows) {
+        $all_field_names = array();
+        $excluded_fields = array(
+            'eipsi_nonce',
+            'nonce',
+            'wave_id',
+            'form_action',
+            'action',
+            'current_page',
+            'form_start_time',
+            'form_end_time',
+            'end_timestamp_ms',
+            'eipsi_user_fingerprint',
+            'eipsi_fingerprint_raw',
+            'eipsi_consent_accepted',
+        );
+
+        foreach ($rows as $row) {
+            if (isset($row['submissions'])) {
+                foreach ($row['submissions'] as $submission) {
+                    if (isset($submission['form_responses']) && is_array($submission['form_responses'])) {
+                        foreach ($submission['form_responses'] as $field_name => $value) {
+                            if (!in_array($field_name, $excluded_fields)) {
+                                $all_field_names[$field_name] = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        $fields = array_keys($all_field_names);
+        sort($fields);
+        return $fields;
+    }
+
+    private function build_participants_wide_headers($waves, $unique_field_names) {
         $headers = array(
             'ID',
             'Email',
@@ -770,39 +810,6 @@ public function fetch_participants_data($study_id, $filters = array()) {
             'Progreso (%)',
         );
 
-        // Get all unique field names from submissions across all waves
-        $all_field_names = array();
-        foreach ($rows as $row) {
-            if (isset($row['submissions'])) {
-                foreach ($row['submissions'] as $wave_index => $submission) {
-                    if (isset($submission['form_responses']) && is_array($submission['form_responses'])) {
-                        $excluded_fields = array(
-                            'eipsi_nonce',
-                            'nonce',
-                            'seguimiento',
-                            'wave_id',
-                            'form_action',
-                            'action',
-                            'current_page',
-                            'form_start_time',
-                            'form_end_time',
-                            'end_timestamp_ms',
-                            'eipsi_user_fingerprint',
-                            'eipsi_fingerprint_raw',
-                            'eipsi_consent_accepted',
-                        );
-                        
-                        foreach ($submission['form_responses'] as $field_name => $value) {
-                            if (!in_array($field_name, $excluded_fields)) {
-                                $all_field_names[$field_name] = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        $unique_field_names = array_keys($all_field_names);
-
         foreach ($waves as $wave) {
             $prefix = 'T' . $wave->wave_index;
             if ($wave->wave_index == 1) {
@@ -810,13 +817,11 @@ public function fetch_participants_data($study_id, $filters = array()) {
             }
             $headers[] = $prefix . '_submitted_at';
             $headers[] = $prefix . '_duration_seconds';
-            // v2.1.3: Removed fingerprint_id - researchers should construct this if needed
             $headers[] = $prefix . '_device';
             $headers[] = $prefix . '_browser';
             $headers[] = $prefix . '_os';
             $headers[] = $prefix . '_screen_width';
             $headers[] = $prefix . '_ip_address';
-            // v2.1.3: Extended device metadata columns (ON by default)
             $headers[] = $prefix . '_canvas_fingerprint';
             $headers[] = $prefix . '_webgl_renderer';
             $headers[] = $prefix . '_screen_resolution';
@@ -847,7 +852,7 @@ public function fetch_participants_data($study_id, $filters = array()) {
      * @param array $response_keys_by_wave  Optional: keys per wave_index.
      * @return array
      */
-    private function build_participants_wide_row($row, $waves, $response_keys_by_wave = array()) {
+    private function build_participants_wide_row($row, $waves, $unique_field_names) {
         error_log("[EIPSI-EXPORT-DIAG] build_participants_wide_row START: participant_id=" . ($row['id'] ?? 'N/A') . ", submissions_count=" . count($row['submissions'] ?? array()));
 
         // Determine Estado based on consent_decision and consent_context
@@ -881,37 +886,6 @@ public function fetch_participants_data($study_id, $filters = array()) {
             $row['waves_submitted'],
             $row['completion_percent'],
         );
-
-        // Get all unique field names (same as headers)
-        $all_field_names = array();
-        foreach ($waves as $wave) {
-            foreach ($row['submissions'] ?? array() as $wave_index => $submission) {
-                if (isset($submission['form_responses']) && is_array($submission['form_responses'])) {
-                    $excluded_fields = array(
-                        'eipsi_nonce',
-                        'nonce',
-                        'seguimiento',
-                        'wave_id',
-                        'form_action',
-                        'action',
-                        'current_page',
-                        'form_start_time',
-                        'form_end_time',
-                        'end_timestamp_ms',
-                        'eipsi_user_fingerprint',
-                        'eipsi_fingerprint_raw',
-                        'eipsi_consent_accepted',
-                    );
-                    
-                    foreach ($submission['form_responses'] as $field_name => $value) {
-                        if (!in_array($field_name, $excluded_fields)) {
-                            $all_field_names[$field_name] = true;
-                        }
-                    }
-                }
-            }
-        }
-        $unique_field_names = array_keys($all_field_names);
 
         // Add wave data for each wave
         foreach ($waves as $wave) {
@@ -1013,11 +987,12 @@ public function fetch_participants_data($study_id, $filters = array()) {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        $headers = $this->build_participants_wide_headers($rows, $waves);
+        $unique_field_names = $this->get_unique_field_names($rows);
+        $headers = $this->build_participants_wide_headers($waves, $unique_field_names);
         $xlsx_data = array($headers);
 
         foreach ($rows as $row) {
-            $xlsx_data[] = $this->build_participants_wide_row($row, $waves);
+            $xlsx_data[] = $this->build_participants_wide_row($row, $waves, $unique_field_names);
         }
 
         // Summary sheet row
@@ -1053,10 +1028,11 @@ public function fetch_participants_data($study_id, $filters = array()) {
         $rows   = isset($result['rows'])  ? $result['rows']  : array();
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
-        fputcsv($output, $this->build_participants_wide_headers($rows, $waves));
+        $unique_field_names = $this->get_unique_field_names($rows);
+        fputcsv($output, $this->build_participants_wide_headers($waves, $unique_field_names));
 
         foreach ($rows as $row) {
-            fputcsv($output, $this->build_participants_wide_row($row, $waves));
+            fputcsv($output, $this->build_participants_wide_row($row, $waves, $unique_field_names));
         }
     }
 
@@ -1076,12 +1052,13 @@ public function fetch_participants_data($study_id, $filters = array()) {
         $waves  = isset($result['waves']) ? $result['waves'] : array();
 
         // Build full headers for column count, but create limited preview headers
-        $full_headers = $this->build_participants_wide_headers($rows, $waves);
+        $unique_field_names = $this->get_unique_field_names($rows);
+        $full_headers = $this->build_participants_wide_headers($waves, $unique_field_names);
         $preview_headers = $this->build_participants_wide_preview_headers($rows, $waves, count($full_headers));
         $preview_rows = array();
 
         foreach (array_slice($rows, 0, $limit) as $row) {
-            $full_row = $this->build_participants_wide_row($row, $waves);
+            $full_row = $this->build_participants_wide_row($row, $waves, $unique_field_names);
             // Extract only preview columns (base columns + first wave basic data)
             $preview_rows[] = $this->extract_preview_columns($full_row, $full_headers, $preview_headers);
         }
