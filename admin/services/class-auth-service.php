@@ -55,6 +55,15 @@ class EIPSI_Auth_Service {
             );
         }
 
+        // Verificar si rechazó el consentimiento
+        if (isset($participant->consent_decision) && $participant->consent_decision === 'declined') {
+            return array(
+                'success' => false,
+                'participant_id' => null,
+                'error' => 'consent_declined'
+            );
+        }
+
         // Verificar password
         $is_valid = EIPSI_Participant_Service::verify_password($participant->id, $password);
 
@@ -109,6 +118,15 @@ class EIPSI_Auth_Service {
                 'success' => false,
                 'participant_id' => null,
                 'error' => 'user_inactive'
+            );
+        }
+
+        // Verificar si rechazó el consentimiento
+        if (isset($participant->consent_decision) && $participant->consent_decision === 'declined') {
+            return array(
+                'success' => false,
+                'participant_id' => null,
+                'error' => 'consent_declined'
             );
         }
 

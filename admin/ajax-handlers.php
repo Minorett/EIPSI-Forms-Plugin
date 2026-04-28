@@ -3079,6 +3079,7 @@ function eipsi_save_consent_decision_handler() {
             }
             
             $data['consent_blocked_survey_id'] = $blocked_id;
+            $data["is_active"] = 0; // Marcar como inactivo al rechazar
 
         }
         
@@ -3134,6 +3135,7 @@ function eipsi_save_consent_decision_handler() {
                 $blocked_id = intval($form_id);
             }
             $data['consent_blocked_survey_id'] = $blocked_id;
+            $data["is_active"] = 0; // Marcar como inactivo al rechazar
         }
 
         $where = array(
