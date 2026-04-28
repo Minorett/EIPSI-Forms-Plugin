@@ -2309,33 +2309,6 @@ function eipsi_get_client_ip() {
 }
 
 /**
- * Get current participant ID from session/auth
- * @return string|null Participant ID or null
- */
-function eipsi_get_current_participant_id() {
-    // Priority 1: From auth system
-    if (isset($_COOKIE['eipsi_participant_id'])) {
-        return sanitize_text_field($_COOKIE['eipsi_participant_id']);
-    }
-    
-    // Priority 2: From localStorage via POST
-    if (!empty($_POST['participant_id'])) {
-        return sanitize_text_field($_POST['participant_id']);
-    }
-    
-    // Priority 3: From session
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    
-    if (!empty($_SESSION['eipsi_participant_id'])) {
-        return sanitize_text_field($_SESSION['eipsi_participant_id']);
-    }
-    
-    return null;
-}
-
-/**
  * Get study ID for a given form/survey ID
  * Checks if form belongs to a longitudinal study
  * 
