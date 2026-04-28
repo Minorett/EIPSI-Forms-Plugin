@@ -50,6 +50,7 @@ class EIPSI_Export_Service {
                     WHEN sp.is_anonymized = 1 THEN NULL
                     ELSE sp.id
                 END as participant_id,
+                sp.consent_decision,
                 sw.wave_index,
                 sr.id as submission_id,
                 sr.submitted_at,
@@ -113,6 +114,7 @@ class EIPSI_Export_Service {
 
         $headers = array(
             'Participant ID',
+            'Consent Decision',
             'Wave',
             'Fecha Asignación Toma',
             'Submitted At',
@@ -176,6 +178,7 @@ class EIPSI_Export_Service {
 
             $row = array(
                 $item->participant_id,
+                $item->consent_decision,
                 $item->wave_index,
                 $item->wave_assigned_at,
                 $item->submitted_at,
@@ -234,6 +237,7 @@ class EIPSI_Export_Service {
 
         $headers = array(
             'Participant ID',
+            'Consent Decision',
             'Wave',
             'Fecha Asignación Toma',
             'Submitted At',
@@ -297,6 +301,7 @@ class EIPSI_Export_Service {
 
             $row = array(
                 $item->participant_id,
+                $item->consent_decision,
                 $item->wave_index,
                 $item->wave_assigned_at,
                 $item->submitted_at,
@@ -800,6 +805,9 @@ public function fetch_participants_data($study_id, $filters = array()) {
 
         foreach ($waves as $wave) {
             $prefix = 'T' . $wave->wave_index;
+            if ($wave->wave_index == 1) {
+                $headers[] = $prefix . "_eipsi_consent_decision";
+            }
             $headers[] = $prefix . '_submitted_at';
             $headers[] = $prefix . '_duration_seconds';
             // v2.1.3: Removed fingerprint_id - researchers should construct this if needed
@@ -908,6 +916,9 @@ public function fetch_participants_data($study_id, $filters = array()) {
         // Add wave data for each wave
         foreach ($waves as $wave) {
             $wi = $wave->wave_index;
+            if ($wave->wave_index == 1) {
+                $data[] = $row["consent_decision"] ?? "";
+            }
             $submission = isset($row['submissions'][$wi]) ? $row['submissions'][$wi] : null;
 
             if ($submission) {
