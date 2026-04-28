@@ -4459,7 +4459,7 @@ if ( pages.length === 0 ) {
                 block.classList.add('consent-accepted');
                 
                 // Avanzar a la siguiente página (como el botón "Siguiente")
-                const form = block.closest('.eipsi-form');
+                const form = block.closest('form');
                 if (form && window.EIPSIForms && window.EIPSIForms.handlePagination) {
                     window.EIPSIForms.handlePagination(form, 'next');
                 } else {
@@ -4474,7 +4474,7 @@ if ( pages.length === 0 ) {
      * Guardar decisión de consentimiento en backend
      */
     async function saveConsentDecision(block, decision) {
-        const formId = block.closest('.eipsi-form')?.dataset?.formId || 'default';
+        const formId = block.closest('form')?.dataset?.formId || 'default';
         const participantId = window.eipsiAuth?.participantId || '';
         const payload = new URLSearchParams({
             action: 'eipsi_save_consent_decision',
