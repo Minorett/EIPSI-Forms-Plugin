@@ -4363,7 +4363,7 @@ if ( pages.length === 0 ) {
 
         const consentBlocks = document.querySelectorAll('.eipsi-consent-block');
         
-        consentBlocks.forEach((block) => {
+        consentBlocks.forEach((block) => { if (block.dataset.consentInitialized) return; block.dataset.consentInitialized = "true";
             const readingCheckbox = block.querySelector('#eipsi-consent-confirm-reading');
             const acceptBtn = block.querySelector('.eipsi-btn-accept');
             const rejectBtn = block.querySelector('.eipsi-btn-reject');
@@ -4425,7 +4425,7 @@ if ( pages.length === 0 ) {
             });
             
             // Click en "Acepto participar"
-            acceptBtn.addEventListener('click', async () => {
+            acceptBtn.addEventListener('click', async () => { const form = block.closest("form"); if (form && form.dataset.submitting === "true") return;
                 if (!readingCheckbox.checked) {
                     if (errorMsg) {
                         errorMsg.style.display = 'block';
@@ -4434,7 +4434,7 @@ if ( pages.length === 0 ) {
                     return;
                 }
                 
-                acceptBtn.disabled = true;
+                if (form) form.dataset.submitting = "true"; acceptBtn.disabled = true;
                 acceptBtn.textContent = 'Procesando...';
                 
                 // Guardar decisión en campo oculto
@@ -4451,7 +4451,7 @@ if ( pages.length === 0 ) {
                 } catch (e) {
                     acceptBtn.disabled = false;
                     acceptBtn.textContent = originalAcceptText;
-                    alert(e?.message || 'No se pudo registrar tu consentimiento. Intentá nuevamente.');
+                    if (form) delete form.dataset.submitting; alert(e?.message || "No se pudo registrar tu consentimiento. Intentá nuevamente.");
                     return;
                 }
                 
@@ -4459,9 +4459,9 @@ if ( pages.length === 0 ) {
                 block.classList.add('consent-accepted');
                 
                 // Avanzar a la siguiente página (como el botón "Siguiente")
-                const form = block.closest('form');
+                
                 if (form && window.EIPSIForms && window.EIPSIForms.handlePagination) {
-                    window.EIPSIForms.handlePagination(form, 'next');
+                    if (form) delete form.dataset.submitting; window.EIPSIForms.handlePagination(form, "next");
                 } else {
                     acceptBtn.disabled = false;
                     acceptBtn.textContent = originalAcceptText;
