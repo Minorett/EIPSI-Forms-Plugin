@@ -245,34 +245,42 @@ function eipsi_validate_timing_config($data) {
     
     // Timing intervals validation
     if (!empty($data['timing_intervals']) && is_array($data['timing_intervals'])) {
+        $last_offset = 0;
         foreach ($data['timing_intervals'] as $index => $interval) {
             $interval_num = $index + 1;
-            $time_unit = isset($interval['time_unit']) ? sanitize_text_field($interval['time_unit']) : 'days';
-            $value = isset($interval['days_after']) ? $interval['days_after'] : 0;
             
-            if (empty($value) && $value !== '0' && $value !== 0) {
-                $errors[] = "❌ El intervalo {$interval_num} necesita especificar cuánto tiempo después de la toma anterior debe ocurrir.";
-            } elseif (!is_numeric($value) || intval($value) < 1) {
-                $errors[] = "❌ El intervalo {$interval_num} debe tener un número positivo (mínimo 1).";
+            // Check for accumulated offset_minutes (New T1-Anchor System)
+            if (isset($interval['offset_minutes'])) {
+                $offset = intval($interval['offset_minutes']);
+                if ($offset <= $last_offset) {
+                    $errors[] = "❌ La Toma " . ($index + 2) . " debe ocurrir después de la toma anterior. El tiempo acumulado ({$offset} min) debe ser mayor que el de la toma anterior ({$last_offset} min).";
+                }
+                $last_offset = $offset;
             } else {
-                // Validate based on unit
-                if ($time_unit === 'minutes') {
-                    // Max 525600 minutes (1 year)
-                    if (intval($value) > 525600) {
-                        $errors[] = "❌ El intervalo {$interval_num} no puede exceder 525600 minutos (1 año).";
-                    }
-                    // Check if equivalent days would be valid
-                    $equivalent_days = round(intval($value) / 1440);
-                    if ($equivalent_days > 365) {
-                        $errors[] = "❌ El intervalo {$interval_num} equivale a más de 365 días. Para estudios con intervalos más largos, considera crear ondas manualmente.";
-                    }
+                // Legacy validation for days_after (backward compatibility)
+                $time_unit = isset($interval['time_unit']) ? sanitize_text_field($interval['time_unit']) : 'days';
+                $value = isset($interval['days_after']) ? $interval['days_after'] : 0;
+                
+                if (empty($value) && $value !== '0' && $value !== 0) {
+                    $errors[] = "❌ El intervalo {$interval_num} necesita especificar cuánto tiempo después de la toma anterior debe ocurrir.";
+                } elseif (!is_numeric($value) || intval($value) < 1) {
+                    $errors[] = "❌ El intervalo {$interval_num} debe tener un número positivo (mínimo 1).";
                 } else {
-                    // Days validation
-                    if (intval($value) > 365) {
-                        $errors[] = "❌ El intervalo {$interval_num} no puede exceder 365 días (1 año). Para estudios con intervalos más largos, considera crear ondas manualmente.";
-                    }
+                    // Approximate accumulation for legacy check
+                    $current_val_minutes = ($time_unit === 'minutes') ? intval($value) : intval($value) * 1440;
+                    $last_offset += $current_val_minutes;
                 }
             }
+        }
+    }
+
+    // Study End Offset Validation
+    if (isset($data['study_end_offset_minutes']) && $data['study_end_offset_minutes'] !== '') {
+        $study_end = intval($data['study_end_offset_minutes']);
+        if ($study_end <= 0) {
+            $errors[] = '❌ El tiempo de cierre del estudio debe ser un número positivo.';
+        } elseif (isset($last_offset) && $study_end <= $last_offset) {
+            $errors[] = "❌ El cierre del estudio ({$study_end} min) debe ocurrir después de la última toma ({$last_offset} min).";
         }
     }
     
@@ -325,33 +333,31 @@ function eipsi_validate_timing_config($data) {
 function eipsi_sanitize_timing_config($data) {
     $sanitized = array();
     
-    // DEBUG: Log raw timing intervals data
-    if (!empty($data['timing_intervals'])) {
-        error_log('[EIPSI DEBUG] Raw timing_intervals: ' . json_encode($data['timing_intervals']));
-    }
-    
     // Sanitize timing intervals
     if (!empty($data['timing_intervals']) && is_array($data['timing_intervals'])) {
         $sanitized['timing_intervals'] = array();
         foreach ($data['timing_intervals'] as $index => $interval) {
             $time_unit = isset($interval['time_unit']) ? sanitize_text_field($interval['time_unit']) : 'days';
-            $value = intval($interval['days_after']);
+            $days_after = isset($interval['days_after']) ? intval($interval['days_after']) : 0;
             
-            // DEBUG: Log each interval processing
-            error_log("[EIPSI DEBUG] Interval {$index}: time_unit={$time_unit}, value={$value}");
-            
-            // FIXED: Keep original value, don't convert to days
-            // The interval logic uses time_unit to calculate correctly
-            $sanitized['timing_intervals'][] = array(
+            $interval_data = array(
                 'from_wave' => intval($interval['from_wave']),
                 'to_wave' => intval($interval['to_wave']),
-                'days_after' => max(1, $value), // Keep original value (2 minutes, 7 days, etc.)
+                'days_after' => max(1, $days_after),
                 'time_unit' => $time_unit,
             );
+
+            // Include offset_minutes if present (New T1-Anchor System)
+            if (isset($interval['offset_minutes'])) {
+                $interval_data['offset_minutes'] = intval($interval['offset_minutes']);
+            }
+            
+            $sanitized['timing_intervals'][] = $interval_data;
         }
     }
     
     // Sanitize other timing settings
+    $sanitized['study_end_offset_minutes'] = isset($data['study_end_offset_minutes']) && $data['study_end_offset_minutes'] !== '' ? intval($data['study_end_offset_minutes']) : null;
     $sanitized['reminder_days_before'] = !empty($data['reminder_days_before']) ? intval($data['reminder_days_before']) : 3;
     $sanitized['enable_retries'] = !empty($data['enable_retries']);
     $sanitized['retry_after_days'] = !empty($data['retry_after_days']) ? intval($data['retry_after_days']) : 7;
