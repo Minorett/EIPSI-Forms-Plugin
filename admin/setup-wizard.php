@@ -260,19 +260,24 @@ function eipsi_create_study_from_wizard($wizard_data) {
     // Insert study record
     $table_name = $wpdb->prefix . 'survey_studies';
     
-    $result = $wpdb->insert(
-        $table_name,
-        array(
-            'study_code' => $study_code,
-            'study_name' => $step_1['study_name'],
-            'description' => $step_1['description'],
-            'principal_investigator_id' => $step_1['principal_investigator_id'],
-            'status' => 'active',
-            'created_at' => current_time('mysql'),
-            'updated_at' => current_time('mysql')
-        ),
-        array('%s', '%s', '%s', '%d', '%s', '%s', '%s')
+    $study_data = array(
+        'study_code' => $study_code,
+        'study_name' => $step_1['study_name'],
+        'description' => $step_1['description'],
+        'principal_investigator_id' => $step_1['principal_investigator_id'],
+        'status' => 'active',
+        'created_at' => current_time('mysql'),
+        'updated_at' => current_time('mysql')
     );
+    $study_formats = array('%s', '%s', '%s', '%d', '%s', '%s', '%s');
+
+    // T1-Anchor: Include study closure offset
+    if (isset($step_3['study_end_offset_minutes'])) {
+        $study_data['study_end_offset_minutes'] = intval($step_3['study_end_offset_minutes']);
+        $study_formats[] = '%d';
+    }
+
+    $result = $wpdb->insert($table_name, $study_data, $study_formats);
     
     if (!$result) {
         return false;
@@ -427,28 +432,35 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
     }
 
     // Extract timing configuration with defaults
-    $reminder_days = isset($timing_config['reminder_days']) ? absint($timing_config['reminder_days']) : 3;
-    $retry_enabled = isset($timing_config['retry_enabled']) ? (int)(bool)$timing_config['retry_enabled'] : 1;
-    $retry_days = isset($timing_config['retry_days']) ? absint($timing_config['retry_days']) : 7;
+    $reminder_days = isset($timing_config['reminder_days_before']) ? absint($timing_config['reminder_days_before']) : 3;
+    $retry_enabled = isset($timing_config['enable_retries']) ? (int)(bool)$timing_config['enable_retries'] : 1;
+    $retry_days = isset($timing_config['retry_after_days']) ? absint($timing_config['retry_after_days']) : 7;
     $max_retries = isset($timing_config['max_retries']) ? absint($timing_config['max_retries']) : 3;
 
-    // Extract timing intervals between waves (from step 3)
+    // Extract accumulated offsets (from step 3 - T1-Anchor System)
     $timing_intervals = isset($timing_config['timing_intervals']) ? $timing_config['timing_intervals'] : array();
-    // DEBUG: Log raw timing intervals
-    error_log('[EIPSI DEBUG] Raw timing_intervals: ' . json_encode($timing_intervals));
-    // Build a map: from_wave_index => interval_days
+    
+    // Build offset and interval maps
+    $offset_map = array();
     $interval_map = array();
-    $time_unit_map = array(); // ✅ v1.5.7: Guardar también el time_unit
+    $time_unit_map = array();
+
     foreach ($timing_intervals as $interval) {
-        if (isset($interval['from_wave']) && isset($interval['days_after'])) {
-            $interval_map[$interval['from_wave']] = absint($interval['days_after']);
-            // Guardar time_unit (default: 'days')
-            $time_unit_map[$interval['from_wave']] = isset($interval['time_unit']) && $interval['time_unit'] === 'minutes' ? 'minutes' : 'days';
-            error_log("[EIPSI DEBUG] Mapping from_wave={$interval['from_wave']}: interval={$interval['days_after']}, time_unit={$time_unit_map[$interval['from_wave']]}");
+        if (isset($interval['from_wave'])) {
+            $interval_key = intval($interval['from_wave']);
+            
+            // New system: accumulated offset
+            if (isset($interval['offset_minutes'])) {
+                $offset_map[$interval_key] = intval($interval['offset_minutes']);
+            }
+            
+            // Legacy/Fallback: relative interval
+            if (isset($interval['days_after'])) {
+                $interval_map[$interval_key] = absint($interval['days_after']);
+                $time_unit_map[$interval_key] = isset($interval['time_unit']) && $interval['time_unit'] === 'minutes' ? 'minutes' : 'days';
+            }
         }
     }
-    error_log('[EIPSI DEBUG] interval_map: ' . json_encode($interval_map));
-    error_log('[EIPSI DEBUG] time_unit_map: ' . json_encode($time_unit_map));
 
     $created_count = 0;
 
@@ -466,17 +478,25 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             'max_retries' => $max_retries,
         );
 
-        // Add interval_days: days after previous wave (0 for first wave)
         $wave_index = $wave_data['wave_index'];
-        // FIXED: from_wave is 0-based: T2 uses from_wave=0, T3 uses from_wave=1, etc.
-        $interval_key = $wave_index - 2; // T2(2)→0, T3(3)→1, T4(4)→2, etc.
-        if ($wave_index > 1 && isset($interval_map[$interval_key])) {
-            $wave_data['interval_days'] = $interval_map[$interval_key];
-            // Guardar también el time_unit (default: 'days')
-            $wave_data['time_unit'] = isset($time_unit_map[$interval_key]) ? $time_unit_map[$interval_key] : 'days';
+        $interval_key = $wave_index - 2; // T2(2)→0, T3(3)→1, etc.
+
+        if ($wave_index > 1) {
+            // Priority: offset_minutes (New T1-Anchor System)
+            if (isset($offset_map[$interval_key])) {
+                $wave_data['offset_minutes'] = $offset_map[$interval_key];
+            }
+            
+            // Legacy: interval_days/time_unit
+            if (isset($interval_map[$interval_key])) {
+                $wave_data['interval_days'] = $interval_map[$interval_key];
+                $wave_data['time_unit'] = $time_unit_map[$interval_key] ?? 'days';
+            }
         } else {
-            $wave_data['interval_days'] = 0; // First wave has no previous wave
-            $wave_data['time_unit'] = 'days'; // Default for first wave
+            // First wave
+            $wave_data['offset_minutes'] = 0;
+            $wave_data['interval_days'] = 0;
+            $wave_data['time_unit'] = 'days';
         }
 
         // Skip if no form_id
@@ -485,9 +505,6 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             continue;
         }
 
-        // DEBUG: Log wave data before creation
-        error_log("[EIPSI DEBUG] Creating wave {$wave_index}: interval_days={$wave_data['interval_days']}, time_unit={$wave_data['time_unit']}, interval_key={$interval_key}");
-
         // Create wave using service
         $result = EIPSI_Wave_Service::create_wave($study_id, $wave_data);
 
@@ -495,7 +512,6 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             error_log('[EIPSI] Error creating wave: ' . $result->get_error_message());
         } else {
             $created_count++;
-            error_log('[EIPSI DEBUG] Created wave ID ' . $result . ' with time_unit=' . $wave_data['time_unit']);
         }
     }
 
