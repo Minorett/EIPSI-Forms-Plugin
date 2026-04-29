@@ -586,6 +586,124 @@
 }
 
 /* ==========================================================================
+   T1-ANCHOR OFFSET CONFIGURATION (v2.6.0)
+   ========================================================================== */
+.eipsi-offset-section {
+    background: var(--eipsi-bg-subtle);
+    border: 1px solid var(--eipsi-border);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.eipsi-offset-section.is-t1 {
+    background: var(--eipsi-primary-lighter);
+    border-color: var(--eipsi-primary-light);
+}
+
+.eipsi-offset-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.eipsi-offset-value {
+    width: 80px !important;
+    text-align: center;
+}
+
+.eipsi-offset-unit {
+    width: 110px !important;
+}
+
+.eipsi-offset-presets {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.eipsi-offset-presets .preset-label {
+    font-size: 0.8125rem;
+    color: var(--eipsi-text-muted);
+    margin-right: 0.25rem;
+}
+
+.eipsi-offset-preset {
+    padding: 0.25rem 0.625rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    border-radius: 4px !important;
+    min-height: unset !important;
+    line-height: 1.4 !important;
+}
+
+.eipsi-offset-preset:hover {
+    background: var(--eipsi-primary-light) !important;
+    border-color: var(--eipsi-primary) !important;
+}
+
+.eipsi-offset-preset.active {
+    background: var(--eipsi-primary) !important;
+    color: white !important;
+    border-color: var(--eipsi-primary) !important;
+}
+
+/* Timeline Preview */
+.eipsi-timeline-preview {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: white;
+    border: 1px solid var(--eipsi-border);
+    border-radius: 4px;
+}
+
+.eipsi-timeline-preview-title {
+    font-size: 0.75rem;
+    color: var(--eipsi-text-muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.eipsi-timeline-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.375rem 0;
+    font-size: 0.8125rem;
+}
+
+.eipsi-timeline-preview-item .wave-marker {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--eipsi-border);
+    color: var(--eipsi-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.eipsi-timeline-preview-item.current .wave-marker {
+    background: var(--eipsi-primary);
+    color: white;
+}
+
+.eipsi-timeline-preview-item .wave-date {
+    color: var(--eipsi-text);
+}
+
+.eipsi-timeline-preview-item .wave-label {
+    color: var(--eipsi-text-muted);
+    font-size: 0.75rem;
+}
+
+/* ==========================================================================
    FORM STYLES IN MODALS
    ========================================================================== */
 .eipsi-form-group {

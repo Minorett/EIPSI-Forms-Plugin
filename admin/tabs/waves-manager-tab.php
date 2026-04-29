@@ -3,10 +3,45 @@
  * Waves Manager Tab
  * 
  * @since 1.4.0
+ * @updated 2.6.0 - Added T1-Anchor offset configuration
  */
 
 if (!defined('ABSPATH')) {
     exit;
+}
+
+/**
+ * Format offset minutes to human-readable string
+ * 
+ * @param int $minutes Total minutes
+ * @return string Human readable format (e.g., "7 dias", "2 semanas")
+ */
+function eipsi_format_offset_human($minutes) {
+    if ($minutes <= 0) {
+        return __('Inmediatamente', 'eipsi-forms');
+    }
+    
+    $weeks = floor($minutes / 10080);
+    $days = floor(($minutes % 10080) / 1440);
+    $hours = floor(($minutes % 1440) / 60);
+    $mins = $minutes % 60;
+    
+    $parts = array();
+    
+    if ($weeks > 0) {
+        $parts[] = sprintf(_n('%d semana', '%d semanas', $weeks, 'eipsi-forms'), $weeks);
+    }
+    if ($days > 0) {
+        $parts[] = sprintf(_n('%d dia', '%d dias', $days, 'eipsi-forms'), $days);
+    }
+    if ($hours > 0 && $weeks == 0) { // Only show hours if no weeks
+        $parts[] = sprintf(_n('%d hora', '%d horas', $hours, 'eipsi-forms'), $hours);
+    }
+    if ($mins > 0 && $weeks == 0 && $days == 0) { // Only show mins if no weeks/days
+        $parts[] = sprintf(_n('%d min', '%d min', $mins, 'eipsi-forms'), $mins);
+    }
+    
+    return !empty($parts) ? implode(', ', $parts) : __('Inmediatamente', 'eipsi-forms');
 }
 
 global $wpdb;
@@ -184,21 +219,37 @@ $available_forms = get_posts(array(
 
                                 <div class="wave-info">
                                     <div class="wave-info-row">
-                                        <span class="wave-info-label">📋 <?php esc_html_e('Formulario:', 'eipsi-forms'); ?></span>
+                                        <span class="wave-info-label"><?php esc_html_e('Formulario:', 'eipsi-forms'); ?></span>
                                         <span class="wave-info-value"><?php echo esc_html($form_name); ?></span>
                                     </div>
+                                    <?php 
+                                    // Show offset info for waves after T1
+                                    $offset_minutes = isset($wave['offset_minutes']) ? intval($wave['offset_minutes']) : 0;
+                                    if ($wave['wave_index'] > 1 && $offset_minutes > 0): 
+                                        $offset_display = eipsi_format_offset_human($offset_minutes);
+                                    ?>
+                                    <div class="wave-info-row">
+                                        <span class="wave-info-label"><?php esc_html_e('Disponible:', 'eipsi-forms'); ?></span>
+                                        <span class="wave-info-value"><?php echo esc_html($offset_display); ?> <?php esc_html_e('despues de T1', 'eipsi-forms'); ?></span>
+                                    </div>
+                                    <?php elseif ($wave['wave_index'] == 1): ?>
+                                    <div class="wave-info-row">
+                                        <span class="wave-info-label"><?php esc_html_e('Disponible:', 'eipsi-forms'); ?></span>
+                                        <span class="wave-info-value"><?php esc_html_e('Inmediatamente', 'eipsi-forms'); ?></span>
+                                    </div>
+                                    <?php endif; ?>
                                     <?php if (!empty($wave['start_date'])): ?>
                                     <div class="wave-info-row">
-                                        <span class="wave-info-label">🚀 <?php esc_html_e('Inicio:', 'eipsi-forms'); ?></span>
+                                        <span class="wave-info-label"><?php esc_html_e('Inicio fijo:', 'eipsi-forms'); ?></span>
                                         <span class="wave-info-value">
                                             <?php echo esc_html(date_i18n(get_option('date_format') . ' H:i', strtotime($wave['start_date']))); ?>
                                         </span>
                                     </div>
                                     <?php endif; ?>
                                     <div class="wave-info-row">
-                                        <span class="wave-info-label">📅 <?php esc_html_e('Vence:', 'eipsi-forms'); ?></span>
+                                        <span class="wave-info-label"><?php esc_html_e('Vence:', 'eipsi-forms'); ?></span>
                                         <span class="wave-info-value">
-                                            <?php echo esc_html($wave['due_date'] ? date_i18n(get_option('date_format') . ' H:i', strtotime($wave['due_date'])) : __('Sin fecha', 'eipsi-forms')); ?>
+                                            <?php echo esc_html($wave['due_date'] ? date_i18n(get_option('date_format') . ' H:i', strtotime($wave['due_date'])) : __('Relativo a siguiente toma', 'eipsi-forms')); ?>
                                         </span>
                                     </div>
                                     <div class="wave-info-row">
@@ -313,20 +364,55 @@ $available_forms = get_posts(array(
                 </select>
             </div>
 
+            <!-- Offset Configuration (T1-Anchor System) -->
+            <div class="form-group eipsi-offset-section" id="offset-section">
+                <label for="offset_minutes" class="eipsi-form-label">
+                    <?php esc_html_e('Disponible despues de T1:', 'eipsi-forms'); ?>
+                </label>
+                <div class="eipsi-offset-input-group">
+                    <input type="number" 
+                           id="offset_value" 
+                           name="offset_value" 
+                           class="eipsi-form-input eipsi-offset-value" 
+                           min="0" 
+                           value="0"
+                           style="width: 100px;">
+                    <select id="offset_unit" name="offset_unit" class="eipsi-form-select eipsi-offset-unit" style="width: 120px;">
+                        <option value="minutes"><?php esc_html_e('minutos', 'eipsi-forms'); ?></option>
+                        <option value="hours"><?php esc_html_e('horas', 'eipsi-forms'); ?></option>
+                        <option value="days" selected><?php esc_html_e('dias', 'eipsi-forms'); ?></option>
+                        <option value="weeks"><?php esc_html_e('semanas', 'eipsi-forms'); ?></option>
+                    </select>
+                    <input type="hidden" id="offset_minutes" name="offset_minutes" value="0">
+                </div>
+                <small class="form-help" id="offset-help-text">
+                    <?php esc_html_e('T1 se abre inmediatamente. Las demas tomas se abren relativas a cuando el participante completa T1.', 'eipsi-forms'); ?>
+                </small>
+                <div class="eipsi-offset-presets" style="margin-top: 8px;">
+                    <span class="preset-label"><?php esc_html_e('Presets:', 'eipsi-forms'); ?></span>
+                    <button type="button" class="button button-small eipsi-offset-preset" data-minutes="0">T1</button>
+                    <button type="button" class="button button-small eipsi-offset-preset" data-minutes="10080">7d</button>
+                    <button type="button" class="button button-small eipsi-offset-preset" data-minutes="20160">14d</button>
+                    <button type="button" class="button button-small eipsi-offset-preset" data-minutes="43200">30d</button>
+                    <button type="button" class="button button-small eipsi-offset-preset" data-minutes="129600">90d</button>
+                </div>
+            </div>
+
             <div class="eipsi-form-row">
                 <div class="form-group">
                     <label for="start_date" class="eipsi-form-label">
-                        🚀 <?php esc_html_e('Fecha de Inicio:', 'eipsi-forms'); ?>
+                        <?php esc_html_e('Fecha de Inicio (override):', 'eipsi-forms'); ?>
                     </label>
                     <input type="datetime-local" id="start_date" name="start_date" class="eipsi-form-input">
-                    <small class="form-help"><?php esc_html_e('Fecha en que los participantes podrán acceder a esta onda. Si está vacía, estará disponible inmediatamente.', 'eipsi-forms'); ?></small>
+                    <small class="form-help"><?php esc_html_e('Opcional. Si se define, esta fecha tiene prioridad sobre el offset relativo a T1.', 'eipsi-forms'); ?></small>
                 </div>
 
                 <div class="form-group">
                     <label for="due_date" class="eipsi-form-label">
-                        📅 <?php esc_html_e('Fecha de Vencimiento:', 'eipsi-forms'); ?>
+                        <?php esc_html_e('Fecha de Vencimiento (override):', 'eipsi-forms'); ?>
                     </label>
                     <input type="datetime-local" id="due_date" name="due_date" class="eipsi-form-input">
+                    <small class="form-help"><?php esc_html_e('Opcional. Normalmente se calcula automaticamente.', 'eipsi-forms'); ?></small>
                 </div>
             </div>
 

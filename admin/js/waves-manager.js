@@ -39,6 +39,9 @@
 		// Initialize participants management
 		initParticipantsManagement();
 
+		// Initialize T1-Anchor offset editor
+		initOffsetEditor();
+
 		// Time limit toggle
 		$( document ).on( 'change', '#has_time_limit', function () {
 			$( '#time-limit-input-container' ).toggle(
@@ -228,6 +231,121 @@
 	}
 
 	// ===========================
+	// T1-ANCHOR OFFSET EDITOR
+	// ===========================
+
+	function initOffsetEditor() {
+		// Update hidden offset_minutes when value or unit changes
+		$( document ).on( 'change input', '#offset_value, #offset_unit', function() {
+			updateOffsetMinutes();
+			updateOffsetSectionState();
+		} );
+
+		// Preset buttons
+		$( document ).on( 'click', '.eipsi-offset-preset', function( e ) {
+			e.preventDefault();
+			const minutes = parseInt( $( this ).data( 'minutes' ), 10 );
+			setOffsetFromMinutes( minutes );
+			
+			// Highlight active preset
+			$( '.eipsi-offset-preset' ).removeClass( 'active' );
+			$( this ).addClass( 'active' );
+		} );
+
+		// Update UI when wave_index changes (T1 has special handling)
+		$( document ).on( 'change', '#wave_index', function() {
+			updateOffsetSectionState();
+		} );
+	}
+
+	/**
+	 * Convert value + unit to total minutes and update hidden field
+	 */
+	function updateOffsetMinutes() {
+		const value = parseInt( $( '#offset_value' ).val(), 10 ) || 0;
+		const unit = $( '#offset_unit' ).val();
+		
+		let minutes = value;
+		switch ( unit ) {
+			case 'hours':
+				minutes = value * 60;
+				break;
+			case 'days':
+				minutes = value * 1440;
+				break;
+			case 'weeks':
+				minutes = value * 10080;
+				break;
+		}
+		
+		$( '#offset_minutes' ).val( minutes );
+		
+		// Update preset button states
+		$( '.eipsi-offset-preset' ).removeClass( 'active' );
+		$( '.eipsi-offset-preset[data-minutes="' + minutes + '"]' ).addClass( 'active' );
+	}
+
+	/**
+	 * Set offset inputs from total minutes (for loading existing data)
+	 */
+	function setOffsetFromMinutes( totalMinutes ) {
+		let value, unit;
+		
+		if ( totalMinutes === 0 ) {
+			value = 0;
+			unit = 'days';
+		} else if ( totalMinutes % 10080 === 0 ) {
+			// Exact weeks
+			value = totalMinutes / 10080;
+			unit = 'weeks';
+		} else if ( totalMinutes % 1440 === 0 ) {
+			// Exact days
+			value = totalMinutes / 1440;
+			unit = 'days';
+		} else if ( totalMinutes % 60 === 0 ) {
+			// Exact hours
+			value = totalMinutes / 60;
+			unit = 'hours';
+		} else {
+			// Minutes
+			value = totalMinutes;
+			unit = 'minutes';
+		}
+		
+		$( '#offset_value' ).val( value );
+		$( '#offset_unit' ).val( unit );
+		$( '#offset_minutes' ).val( totalMinutes );
+		
+		updateOffsetSectionState();
+	}
+
+	/**
+	 * Update the offset section visual state based on wave index
+	 */
+	function updateOffsetSectionState() {
+		const waveIndex = parseInt( $( '#wave_index' ).val(), 10 ) || 1;
+		const $section = $( '#offset-section' );
+		const $helpText = $( '#offset-help-text' );
+		
+		if ( waveIndex === 1 ) {
+			// T1: offset should be 0, section shows as "anchor"
+			$section.addClass( 'is-t1' );
+			$( '#offset_value' ).val( 0 ).prop( 'disabled', true );
+			$( '#offset_unit' ).prop( 'disabled', true );
+			$( '#offset_minutes' ).val( 0 );
+			$helpText.text( 'T1 es la toma ancla. Se abre inmediatamente cuando el participante se registra.' );
+			$( '.eipsi-offset-presets' ).hide();
+		} else {
+			// T2+: allow configuration
+			$section.removeClass( 'is-t1' );
+			$( '#offset_value' ).prop( 'disabled', false );
+			$( '#offset_unit' ).prop( 'disabled', false );
+			$helpText.text( 'Esta toma se abrira despues de que el participante complete T1.' );
+			$( '.eipsi-offset-presets' ).show();
+		}
+	}
+
+	// ===========================
 	// WAVE CRUD OPERATIONS
 	// ===========================
 
@@ -295,6 +413,11 @@
 		if ( hasTimeLimit && waveData.completion_time_limit ) {
 			$( '#completion_time_limit' ).val( waveData.completion_time_limit );
 		}
+
+		// Handle T1-Anchor offset (v2.6.0)
+		const offsetMinutes = parseInt( waveData.offset_minutes, 10 ) || 0;
+		setOffsetFromMinutes( offsetMinutes );
+		updateOffsetSectionState();
 	}
 
 	function resetWaveForm() {
@@ -302,6 +425,10 @@
 		$( '#wave_id' ).val( '' );
 		$( '#wave_index' ).val( 1 );
 		$( 'input[name="is_mandatory"]' ).prop( 'checked', true );
+		
+		// Reset offset fields (v2.6.0)
+		setOffsetFromMinutes( 0 );
+		updateOffsetSectionState();
 	}
 
 	function saveWave() {
@@ -335,6 +462,8 @@
 				completion_time_limit: $( '#has_time_limit' ).is( ':checked' )
 					? $( '#completion_time_limit' ).val()
 					: null,
+				// T1-Anchor offset (v2.6.0)
+				offset_minutes: $( '#offset_minutes' ).val() || 0,
 			},
 			success( response ) {
 				if ( response.success ) {
