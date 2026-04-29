@@ -267,6 +267,16 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/class-pool-block-renderer.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/pool-completion-hooks.php';
 
 // ============================================================================
+// T1-ANCHOR SYSTEM (v2.6.0) - Longitudinal Timeline Anchoring
+// ============================================================================
+// When T1 is completed, calculates and persists all future wave dates.
+// This enables deterministic, auditable timelines per participant.
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-t1-anchor-service.php';
+
+// T1-Anchor AJAX Handlers (migration, batch anchoring, manual anchoring)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-t1-anchor-handlers.php';
+
+// ============================================================================
 // EMAIL SYSTEM CONFIGURATION (v1.5.4 - Default Email Fix)
 // ============================================================================
 
@@ -869,6 +879,17 @@ function eipsi_forms_activate() {
     
     if (!wp_next_scheduled('eipsi_cleanup_partial_responses')) {
         wp_schedule_event(time(), 'daily', 'eipsi_cleanup_partial_responses');
+    }
+
+    // === T1-Anchor System Crons (v2.6.0) ===
+    // Process assignment expirations every 5 minutes
+    if (!wp_next_scheduled('eipsi_process_assignment_expirations')) {
+        wp_schedule_event(time(), 'every_5_minutes', 'eipsi_process_assignment_expirations');
+    }
+
+    // Process wave availability notifications every 5 minutes
+    if (!wp_next_scheduled('eipsi_process_wave_availability')) {
+        wp_schedule_event(time(), 'every_5_minutes', 'eipsi_process_wave_availability');
     }
 
     // Initialize/Repair Database Schema
