@@ -242,6 +242,8 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             'progress' => ($eligible_participants > 0) ? round(($completed_assignments / $eligible_participants) * 100) : 0,
             'reminders_sent' => 0, // TODO: Implement reminder tracking
             'interval_days' => isset($wave->interval_days) ? intval($wave->interval_days) : 0,
+            'offset_minutes' => isset($wave->offset_minutes) ? intval($wave->offset_minutes) : 0,
+            'window_minutes' => isset($wave->window_minutes) ? intval($wave->window_minutes) : null,
             'time_unit' => isset($wave->time_unit) ? $wave->time_unit : 'days',
             // v2.3.0 - Nuevos campos para wave manager
             'follow_up_reminders_enabled' => $follow_ups_enabled,
@@ -752,6 +754,11 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
     // v2.5.0 - Robust enabled detection: accepts 'true', true, '1', 1, 'on'
     $enabled_raw = isset($_POST['enabled']) ? $_POST['enabled'] : false;
     $enabled = in_array($enabled_raw, array('true', true, '1', 1, 'on', 'yes'), true);
+
+    // v3.3.0 - Reactive Proportional Nudges
+    $offset_minutes = isset($_POST['offset_minutes']) ? intval($_POST['offset_minutes']) : null;
+    $window_minutes = isset($_POST['window_minutes']) ? intval($_POST['window_minutes']) : null;
+
     error_log("[EIPSI DASHBOARD API] Raw enabled value: " . var_export($enabled_raw, true));
     error_log("[EIPSI DASHBOARD API] Parsed enabled value: " . ($enabled ? 'true' : 'false'));
     
@@ -815,14 +822,25 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
             'nudge_config' => wp_json_encode($nudge_config),
             'follow_up_reminders_enabled' => $enabled ? 1 : 0
         );
-        
+        $formats = array('%s', '%d');
+
+        // v3.3.0 - Reactive Proportional Nudges
+        if ($offset_minutes !== null) {
+            $update_data['offset_minutes'] = $offset_minutes;
+            $formats[] = '%d';
+        }
+        if ($window_minutes !== null) {
+            $update_data['window_minutes'] = $window_minutes;
+            $formats[] = '%d';
+        }
+
         error_log("[EIPSI DASHBOARD API] Update data: " . print_r($update_data, true));
-        
+
         $result = $wpdb->update(
             $table_name,
             $update_data,
             array('id' => $wave_id),
-            array('%s', '%d'),
+            $formats,
             array('%d')
         );
 

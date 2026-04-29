@@ -186,10 +186,20 @@
                 const $input = $(this);
                 const minutes = parseInt($input.val()) || 0;
                 const waveId = $input.closest('.wave-card').data('wave-id');
-                const nudgeIndex = $input.closest('.nudge-row').data('nudge-index');
-                const $translation = $('#ntrans-' + waveId + '-' + nudgeIndex);
-                
-                if ($translation.length) {
+
+                let $translation;
+                if ($input.hasClass('wave-offset-input')) {
+                    $translation = $('#otrans-' + waveId);
+                } else if ($input.hasClass('wave-window-input')) {
+                    $translation = $('#wtrans-' + waveId);
+                    // v3.3.0 - REACTIVITY: Proportional nudge proposal
+                    self.updateProportionalNudges(waveId, minutes);
+                } else {
+                    const nudgeIndex = $input.closest('.nudge-row').data('nudge-index');
+                    $translation = $('#ntrans-' + waveId + '-' + nudgeIndex);
+                }
+
+                if ($translation && $translation.length) {
                     $translation.text(self.formatMinutes(minutes));
                 }
             });
@@ -366,6 +376,63 @@
                 const participantEmail = $(this).data('participant-email');
                 console.log('[BUTTON] Reminder clicked, participantId:', participantId, 'email:', participantEmail);
                 self.resendEmail(participantId, 'reminder', participantEmail, null);
+                });
+            // CSV Import Step 1
+            $('#csv-upload-area').on('click', function(e) {
+                if (e.target.id === 'csv-file-input') return;
+                $('#csv-file-input').trigger('click');
+            });
+
+            $('#csv-file-input').on('change', function(e) {
+                if (e.target.files.length > 0) {
+                    self.handleCsvFile(e.target.files[0]);
+                }
+            });
+
+            $('#csv-validate-btn').on('click', function() {
+                self.validateCsv();
+            });
+
+            $('#csv-import-btn').on('click', function() {
+                self.showCsvStep(3);
+                self.importParticipants();
+            });
+
+            $('#csv-cancel-btn, #csv-done-btn').on('click', function() {
+                $('#eipsi-csv-import-modal').fadeOut(200);
+                self.resetCsvModal();
+            });
+
+            $('#csv-prev-btn').on('click', function() {
+                self.showCsvStep(1);
+            });
+
+            $('#download-csv-template').on('click', function(e) {
+                e.preventDefault();
+                self.downloadCsvTemplate();
+            });
+
+            // Individual Reminder (from participants list)
+            $(document).on('click', '.btn-send-individual-reminder', function() {
+                const pId = $(this).data('participant-id');
+                const email = $(this).data('email');
+                self.showReminderModal(pId, email);
+            });
+
+            $('#btn-confirm-send-reminder').on('click', function() {
+                self.sendIndividualReminder();
+            });
+
+            // Remove/Delete Participant
+            $(document).on('click', '.btn-show-remove-participant', function() {
+                const pId = $(this).data('participant-id');
+                const email = $(this).data('email');
+                self.showRemoveParticipantModal(pId, email);
+            });
+
+            $('#btn-confirm-remove-participant').on('click', function() {
+                const hardDelete = $('input[name=remove-type]:checked').val() === 'hard';
+                self.removeParticipant(hardDelete);
             });
         },
 
@@ -535,19 +602,45 @@
          */
         formatMinutes: function(minutes) {
             minutes = parseInt(minutes) || 0;
-            if (minutes === 0) return '0 min';
-            
+            if (minutes === 0) return '';
+
             const days = Math.floor(minutes / 1440);
             const hours = Math.floor((minutes % 1440) / 60);
             const mins = minutes % 60;
-            
+
             const parts = [];
             if (days > 0) parts.push(days + ' día' + (days > 1 ? 's' : ''));
             if (hours > 0) parts.push(hours + ' h');
             if (mins > 0) parts.push(mins + ' min');
-            
-            return parts.join(' ') || '0 min';
-        },
+
+            return parts.join(' ') || '';
+            },
+
+            /**
+            * Update nudges to be 20, 40, 60, 80% of window_minutes
+            * @since 3.3.0
+            */
+            updateProportionalNudges: function(waveId, windowMinutes) {
+            if (!windowMinutes || windowMinutes <= 0) return;
+
+            const percentages = [0.2, 0.4, 0.6, 0.8];
+            const self = this;
+
+            percentages.forEach((pct, index) => {
+                const nudgeIdx = index + 1;
+                const $nudgeInput = $(`#nudge-${waveId}-${nudgeIdx}-val`);
+                if ($nudgeInput.length) {
+                    const calculatedValue = Math.round(windowMinutes * pct);
+                    $nudgeInput.val(calculatedValue);
+
+                    // Update translation span
+                    const $translation = $(`#ntrans-${waveId}-${nudgeIdx}`);
+                    if ($translation.length) {
+                        $translation.text(self.formatMinutes(calculatedValue));
+                    }
+                }
+            });
+            },
 
         /**
          * Render waves cards - FULL MOCKUP VERSION
@@ -629,7 +722,11 @@
                 const ariaProgress = 'role="progressbar" aria-valuenow="' + progress + '" aria-valuemin="0" aria-valuemax="100"';
                 const ariaSwitch = 'role="switch" aria-checked="' + (nudgesEnabled ? 'true' : 'false') + '"';
                 
-                const html = 
+                // v3.3.0 - Timing translations
+                const offsetTranslation = self.formatMinutes(wave.offset_minutes);
+                const windowTranslation = self.formatMinutes(wave.window_minutes);
+
+                const html =
                     '<div class="wave-card" id="wave-card-' + wave.id + '" data-wave-id="' + wave.id + '" role="region" aria-label="Toma ' + waveNum + ': ' + waveName + '">' +
                         '<div class="wave-card-head">' +
                             '<div class="wave-left">' +
@@ -652,7 +749,7 @@
                             '</div>' +
                             '<div class="deadline-section">' +
                                 '<div class="deadline-row">' +
-                                    '<span>Plazo:</span>' +
+                                    '<span>Plazo (Absoluto):</span>' +
                                     '<span class="deadline-val ' + (hasDeadline ? '' : 'none') + '" id="dv-' + wave.id + '">' + deadlineFormatted + '</span>' +
                                     '<button class="btn-link" data-action="toggle-deadline" data-wave-id="' + wave.id + '">' + (hasDeadline ? 'Cambiar' : 'Asignar plazo') + '</button>' +
                                     (hasDeadline ? '<button class="btn-link btn-link-red" data-action="remove-deadline" data-wave-id="' + wave.id + '">Quitar</button>' : '') +
@@ -676,6 +773,28 @@
                                 '</label>' +
                             '</div>' +
                             '<div class="nudge-panel ' + (nudgesEnabled ? 'open' : '') + '" id="np-' + wave.id + '" style="display:' + (nudgesEnabled ? 'block' : 'none') + '">' +
+                                '<div class="nudge-config-header">' +
+                                    '<div class="config-row-group">' +
+                                        '<div class="config-row">' +
+                                            '<label>Disponible a los:</label>' +
+                                            '<div class="input-with-translation">' +
+                                                '<input type="number" value="' + (wave.offset_minutes || 0) + '" class="wave-offset-input nudge-minutes-input" id="offset-' + wave.id + '">' +
+                                                '<span class="nudge-unit-label">min</span>' +
+                                                '<span class="nudge-translation" id="otrans-' + wave.id + '">' + offsetTranslation + '</span>' +
+                                            '</div>' +
+                                            '<div class="config-help">Minutos tras T1</div>' +
+                                        '</div>' +
+                                        '<div class="config-row">' +
+                                            '<label>Ventana (Deadline):</label>' +
+                                            '<div class="input-with-translation">' +
+                                                '<input type="number" value="' + (wave.window_minutes || '') + '" class="wave-window-input nudge-minutes-input" id="window-' + wave.id + '">' +
+                                                '<span class="nudge-unit-label">min</span>' +
+                                                '<span class="nudge-translation" id="wtrans-' + wave.id + '">' + windowTranslation + '</span>' +
+                                            '</div>' +
+                                            '<div class="config-help">Duración de la toma</div>' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>' +
                                 '<div class="nudge-rows" id="nr-' + wave.id + '">' + nudgeRowsHtml + '</div>' +
                                 '<div class="nudge-footer">' +
                                     '<button class="btn-cancel-sm" data-action="cancel-nudge" data-wave-id="' + wave.id + '">Cancelar</button>' +
@@ -973,6 +1092,8 @@
                 wave_id: waveId,
                 nudges: nudges,
                 enabled: enabled,
+                offset_minutes: parseInt($card.find('.wave-offset-input').val()) || 0,
+                window_minutes: parseInt($card.find('.wave-window-input').val()) || 0,
                 nonce: eipsiStudyDash.nonce
             };
             console.log('[NUDGE-SAVE] Full AJAX data:', JSON.stringify(ajaxData, null, 2));
@@ -1999,6 +2120,263 @@
         /**
          * Show toast notification
          */
+        // --- CSV Logic ---
+        csvParticipants: [],
+        csvValidated: [],
+
+        handleCsvFile: function(file) {
+            const self = this;
+            if (!file.name.match(/\.(csv|txt)$/i)) {
+                this.showToast('Por favor selecciona un archivo CSV o TXT', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                self.csvParticipants = self.parseCsv(content);
+                
+                if (self.csvParticipants.length === 0) {
+                    self.showToast('No se encontraron participantes válidos en el archivo', 'error');
+                    return;
+                }
+                
+                if (self.csvParticipants.length > 500) {
+                    self.showToast('El archivo contiene más de 500 participantes. Por favor divide el archivo.', 'error');
+                    return;
+                }
+                
+                self.showCsvStep(2);
+                self.previewCsv(self.csvParticipants);
+            };
+            reader.readAsText(file);
+        },
+
+        parseCsv: function(content) {
+            const lines = content.split(/\r?\n/);
+            const participants = [];
+            let isFirstLine = true;
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+
+                let email = trimmed;
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    if (email.toLowerCase().includes('email')) continue;
+                }
+                
+                email = email.replace(/^["']|["']$/g, '').trim();
+                if (email && email.includes('@')) {
+                    participants.push({ email: email, status: 'pending' });
+                }
+            }
+            return participants;
+        },
+
+        previewCsv: function(participants) {
+            $('#csv-preview-count').text(participants.length + ' participantes encontrados');
+            const tbody = $('#csv-preview-tbody');
+            tbody.empty();
+
+            participants.forEach((p, i) => {
+                tbody.append('<tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;">' + (i + 1) + '</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;"><code>' + p.email + '</code></td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;"><span class="eipsi-badge badge-pending">Pendiente</span></td></tr>');
+            });
+            
+            $('#csv-validate-btn').show();
+            $('#csv-import-btn').hide();
+            $('#csv-prev-btn').show();
+        },
+
+        validateCsv: function() {
+            const self = this;
+            if (!this.currentStudyId) return;
+            
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_validate_csv_participants',
+                    study_id: this.currentStudyId,
+                    csv_data: JSON.stringify(this.csvParticipants),
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.csvValidated = response.data.participants;
+                        self.updateValidationUI(response.data.summary);
+                        $('#csv-import-btn').prop('disabled', false).show();
+                    } else {
+                        self.showToast(response.data?.message || 'Error al validar participantes', 'error');
+                    }
+                }
+            });
+        },
+
+        updateValidationUI: function(summary) {
+            const html = '<div style="display:flex;gap:16px;justify-content:center;"><div style="text-align:center;"><div style="font-size:20px;font-weight:600;color:#008080;">' + summary.valid + '</div><div style="font-size:11px;color:#64748b;">Válidos</div></div><div style="text-align:center;"><div style="font-size:20px;font-weight:600;color:#856404;">' + summary.existing + '</div><div style="font-size:11px;color:#64748b;">Existentes</div></div><div style="text-align:center;"><div style="font-size:20px;font-weight:600;color:#dc2626;">' + summary.invalid + '</div><div style="font-size:11px;color:#64748b;">Inválidos</div></div></div>';
+            $('#csv-validation-summary').html(html);
+        },
+
+        importParticipants: function() {
+            const self = this;
+            const validParticipants = this.csvValidated.filter(p => p.status === 'valid');
+            const total = validParticipants.length;
+            let processed = 0;
+            let imported = 0;
+            let failed = 0;
+            
+            const updateProgress = () => {
+                const pct = Math.round((processed / total) * 100);
+                $('#csv-progress-bar').css('width', pct + '%');
+                $('#csv-progress-text').text(processed + ' / ' + total);
+            };
+            
+            const processBatch = (batch) => {
+                $.ajax({
+                    url: eipsiStudyDash.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'eipsi_import_csv_participants',
+                        study_id: this.currentStudyId,
+                        participants: batch,
+                        nonce: eipsiStudyDash.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            imported += response.data.results.imported;
+                            failed += response.data.results.failed;
+                        }
+                        processed += batch.length;
+                        updateProgress();
+                        
+                        if (processed >= total) {
+                            self.showCsvResults(imported, failed);
+                        }
+                    }
+                });
+            };
+            
+            if (total === 0) {
+                this.showCsvResults(0, 0);
+                return;
+            }
+
+            for (let i = 0; i < validParticipants.length; i += 10) {
+                const batch = validParticipants.slice(i, i + 10);
+                setTimeout(() => processBatch(batch), i * 10);
+            }
+        },
+
+        showCsvResults: function(imported, failed) {
+            this.showCsvStep(4);
+            const html = '<div style="font-size:48px;margin-bottom:16px;">' + (failed === 0 ? '✅' : '⚠️') + '</div><h3 style="font-size:16px;font-weight:600;color:#2c3e50;margin-bottom:12px;">Importación completada</h3><div style="display:flex;gap:24px;justify-content:center;margin-bottom:16px;"><div style="text-align:center;"><div style="font-size:24px;font-weight:600;color:#008080;">' + imported + '</div><div style="font-size:12px;color:#64748b;">Importados</div></div><div style="text-align:center;"><div style="font-size:24px;font-weight:600;color:#dc2626;">' + failed + '</div><div style="font-size:12px;color:#64748b;">Fallidos</div></div></div><p style="font-size:12px;color:#64748b;">Se han enviado los emails de invitación a los participantes importados.</p>';
+            $('#csv-results').html(html);
+            this.loadStudyData(this.currentStudyId);
+        },
+
+        showCsvStep: function(step) {
+            $('#csv-step-1, #csv-step-2, #csv-step-3, #csv-step-4').hide();
+            $('#csv-step-' + step).show();
+            
+            $('#csv-cancel-btn').text(step === 1 ? 'Cancelar' : 'Cerrar');
+            $('#csv-prev-btn').toggle(step > 1 && step < 4);
+            $('#csv-validate-btn').toggle(step === 2);
+            $('#csv-import-btn').toggle(step === 2);
+            $('#csv-done-btn').toggle(step === 4);
+        },
+
+        showCsvError: function(msg) {
+            this.showToast(msg, 'error');
+        },
+
+        resetCsvModal: function() {
+            this.csvParticipants = [];
+            this.csvValidated = [];
+            $('#csv-file-input').val('');
+            $('#csv-import-btn').prop('disabled', true);
+            this.showCsvStep(1);
+        },
+
+        downloadCsvTemplate: function() {
+            const template = 'email\nparticipante1@email.com\nparticipante2@email.com';
+            const blob = new Blob([template], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plantilla_participantes.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        },
+
+        // --- Participant Modal Helpers ---
+        showReminderModal: function(participantId, email) {
+            $('#reminder-participant-id').val(participantId);
+            $('#reminder-participant-email').text(email);
+            $('#reminder-wave-name').text('Toma activa');
+            $('#eipsi-reminder-modal').fadeIn(200);
+        },
+
+        sendIndividualReminder: function() {
+            const participantId = $('#reminder-participant-id').val();
+            const waveId = $('#reminder-wave-id').val() || 0;
+            const self = this;
+
+            if (!participantId) return;
+            
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'eipsi_send_individual_reminder',
+                    participant_id: participantId,
+                    wave_id: waveId,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    $('#eipsi-reminder-modal').fadeOut(200);
+                    if (response.success) {
+                        self.showToast('Recordatorio enviado correctamente', 'success');
+                    } else {
+                        self.showToast('Error: ' + (response.data?.message || 'No se pudo enviar'), 'error');
+                    }
+                }
+            });
+        },
+
+        showRemoveParticipantModal: function(participantId, email) {
+            $('#remove-participant-id').val(participantId);
+            $('#remove-participant-email').text(email);
+            $('#eipsi-remove-participant-modal').fadeIn(200);
+        },
+
+        removeParticipant: function(hardDelete) {
+            const participantId = $('#remove-participant-id').val();
+            const reason = $('#remove-reason').val();
+            const action = hardDelete ? 'eipsi_delete_participant' : 'eipsi_remove_participant';
+            const self = this;
+
+            $.ajax({
+                url: eipsiStudyDash.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: action,
+                    participant_id: participantId,
+                    reason: reason,
+                    nonce: eipsiStudyDash.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#eipsi-remove-participant-modal').fadeOut(200);
+                        self.showToast(response.data.message || 'Participante procesado', 'success');
+                        self.loadParticipantsList(1);
+                    } else {
+                        self.showToast('Error: ' + (response.data.message || 'No se pudo procesar'), 'error');
+                    }
+                }
+            });
+        },
         showToast: function(message, type) {
             const $toast = $(`
                 <div class="eipsi-toast eipsi-toast-${type}" style="
@@ -2029,6 +2407,7 @@
     };
 
     $(document).ready(function() {
+        console.log('Study Dashboard Initializing...');
         StudyDashboard.init();
     });
 
