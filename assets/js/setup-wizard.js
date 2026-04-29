@@ -385,54 +385,42 @@
 
     /**
      * Apply timing template
-     * v2.1.3: Added btn parameter and monitoreo_semanal template
+     * v1.5.7: Updated for T1-Anchor System (Accumulated minutes)
      */
     function applyTimingTemplate(template, btn) {
-        const templates = {
-            'monitoreo_semanal': {
-                2: [7],
-                3: [7, 7],
-                4: [7, 7, 7],
-                5: [7, 7, 7, 7]
-            },
-            'pre_post_follow': {
-                2: [7],
-                3: [7, 30],
-                4: [7, 30, 90],
-                5: [7, 30, 60, 90]
-            },
-            'monthly': {
-                2: [30],
-                3: [30, 30],
-                4: [30, 30, 30],
-                5: [30, 30, 30, 30]
-            },
-            'quarterly': {
-                2: [90],
-                3: [90, 90],
-                4: [90, 90, 90],
-                5: [90, 90, 90, 90]
-            }
+        // Base gaps in days (converted to accumulated below)
+        const baseGaps = {
+            'monitoreo_semanal': [7, 7, 7, 7, 7, 7, 7, 7, 7, 7],
+            'pre_post_follow': [7, 30, 90, 180, 365],
+            'monthly': [30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
+            'quarterly': [90, 90, 90, 90, 90, 90, 90, 90, 90, 90]
         };
 
         const numberOfWaves = parseInt($('#number_of_waves').val()) || 3;
 
-        if (templates[template] && templates[template][numberOfWaves]) {
-            const intervals = templates[template][numberOfWaves];
-            const inputs = $('input[name$="[days_after]"]');
+        if (baseGaps[template]) {
+            const gaps = baseGaps[template];
+            const inputs = $('.eipsi-interval-item:not(.closure) .eipsi-interval-input');
+            const units = $('.eipsi-interval-item:not(.closure) .eipsi-interval-unit');
 
-            intervals.forEach((days, index) => {
-                if (inputs[index]) {
-                    $(inputs[index]).val(days);
+            let accumulatedDays = 0;
+
+            inputs.each(function(i) {
+                accumulatedDays += gaps[i] || 7;
+                $(this).val(accumulatedDays);
+                if (units[i]) $(units[i]).val('days');
+                
+                // Trigger sync if the function is available (defined in template)
+                if (typeof window.eipsiSyncOffset === 'function') {
+                    window.eipsiSyncOffset(this);
                 }
             });
 
-            // v2.1.3: Use btn parameter instead of event.target
             const button = btn || (typeof event !== 'undefined' && event.target);
             if (button) {
                 const originalText = button.textContent;
                 button.textContent = '✅ Aplicado';
-                button.style.background = '#28a745';
+                button.style.background = '#008080';
                 button.style.color = 'white';
 
                 setTimeout(() => {
@@ -842,15 +830,24 @@
 
     /**
      * Validate step 3
+     * v1.5.7: Updated for T1-Anchor System (Accumulated minutes)
      */
     function validateStep3() {
         let isValid = true;
         
-        // Check timing intervals
-        $('input[name$="[days_after]"]').each(function() {
-            const days = parseInt($(this).val());
-            if (days < 1 || days > 365) {
-                showFieldError($(this), 'Los días deben estar entre 1 y 365.');
+        const offsetInputs = $('input[name="offset_minutes[]"]');
+        
+        offsetInputs.each(function(index) {
+            const minutes = parseInt($(this).val()) || 0;
+            
+            // T1 is at index 0, offset 0.
+            if (index === 0) return;
+            
+            const prevMinutes = parseInt(offsetInputs.eq(index - 1).val()) || 0;
+            
+            if (minutes <= prevMinutes) {
+                const label = $(this).closest('.eipsi-interval-item').find('.eipsi-interval-label').text();
+                showError(`Error en ${label}: debe ocurrir después de la toma anterior.`);
                 isValid = false;
             }
         });
