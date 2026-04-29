@@ -53,6 +53,13 @@ class EIPSI_Wave_Service {
         $interval_days = isset($wave_data['interval_days']) ? absint($wave_data['interval_days']) : 0;
         $time_unit = isset($wave_data['time_unit']) && $wave_data['time_unit'] === 'minutes' ? 'minutes' : 'days';
 
+        // T1-Anchor: offset_minutes (minutes after T1 completion when wave becomes available)
+        // For T1 (wave_index = 1), this should be 0
+        $offset_minutes = isset($wave_data['offset_minutes']) ? absint($wave_data['offset_minutes']) : 0;
+        $window_minutes = isset($wave_data['window_minutes']) && $wave_data['window_minutes'] !== '' 
+            ? absint($wave_data['window_minutes']) 
+            : null;
+
         $allowed_statuses = array('draft', 'active', 'completed', 'paused');
         $status = isset($wave_data['status']) ? sanitize_text_field($wave_data['status']) : 'draft';
         if (!in_array($status, $allowed_statuses, true)) {
@@ -65,6 +72,8 @@ class EIPSI_Wave_Service {
             'name' => $name,
             'form_id' => $form_id,
             'interval_days' => $interval_days,
+            'offset_minutes' => $offset_minutes,
+            'window_minutes' => $window_minutes,
             'time_unit' => $time_unit,
             'reminder_days' => $reminder_days,
             'retry_enabled' => $retry_enabled,
@@ -75,7 +84,16 @@ class EIPSI_Wave_Service {
             'follow_up_reminders_enabled' => 1, // v2.5.0 - Nudges activados por defecto
         );
 
-        $formats = array('%d', '%d', '%s', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d');
+        // Formats: study_id, wave_index, name, form_id, interval_days, offset_minutes, time_unit, reminder_days, retry_enabled, retry_days, max_retries, status, is_mandatory, follow_up_reminders_enabled
+        $formats = array('%d', '%d', '%s', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%s', '%d', '%d');
+
+        // window_minutes is optional and can be NULL
+        if ($window_minutes !== null) {
+            $formats[] = '%d';
+        } else {
+            // Remove window_minutes from data if null (don't insert NULL value)
+            unset($data['window_minutes']);
+        }
 
         if (!empty($wave_data['start_date'])) {
             $data['start_date'] = sanitize_text_field($wave_data['start_date']);
@@ -170,6 +188,8 @@ class EIPSI_Wave_Service {
             'form_id',
             'start_date',
             'due_date',
+            'offset_minutes',
+            'window_minutes',
             'reminder_days',
             'retry_enabled',
             'retry_days',
@@ -197,8 +217,14 @@ class EIPSI_Wave_Service {
                 case 'reminder_days':
                 case 'retry_days':
                 case 'max_retries':
+                case 'offset_minutes':
                     $data[$key] = absint($value);
                     $formats[] = '%d';
+                    break;
+                case 'window_minutes':
+                    // window_minutes can be NULL (uses next wave's offset as deadline)
+                    $data[$key] = ($value === null || $value === '') ? null : absint($value);
+                    $formats[] = ($value === null || $value === '') ? null : '%d';
                     break;
                 case 'retry_enabled':
                 case 'is_mandatory':

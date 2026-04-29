@@ -280,6 +280,8 @@ class EIPSI_Database_Schema_Manager {
 
                     'config' => 'JSON',
 
+                    'study_end_offset_minutes' => "INT(11) DEFAULT NULL COMMENT 'Minutes after T1 when study closes for participant'",
+
                     'created_at' => 'DATETIME NOT NULL',
 
                     'updated_at' => 'DATETIME NOT NULL',
@@ -335,13 +337,10 @@ class EIPSI_Database_Schema_Manager {
                     'consent_user_agent' => 'VARCHAR(500) NULL',
 
                     'consent_context' => 'VARCHAR(50) NULL',
-<<<<<<< HEAD
-
-                    'consent_blocked_survey_id' => 'VARCHAR(20) NULL',
-
-=======
                     'consent_blocked_survey_id' => 'BIGINT(20) UNSIGNED NULL',
->>>>>>> aa236d3baf0101c485e312113250b3271dde599d
+
+                    't1_completed_at' => "DATETIME DEFAULT NULL COMMENT 'Anchor timestamp: when participant completed T1'",
+
                     'withdrawal_wave_id' => 'BIGINT(20) UNSIGNED NULL',
 
                     'data_deleted' => 'TINYINT(1) DEFAULT 0',
@@ -425,6 +424,10 @@ class EIPSI_Database_Schema_Manager {
                     'due_date' => 'DATETIME NULL',
 
                     'interval_days' => 'INT(11) DEFAULT 7',
+
+                    'offset_minutes' => "INT(11) DEFAULT 0 COMMENT 'Minutes after T1 completion when this wave becomes available'",
+
+                    'window_minutes' => "INT(11) DEFAULT NULL COMMENT 'Minutes the wave stays open after available_at'",
 
                     'time_unit' => "VARCHAR(10) DEFAULT 'days'",
 

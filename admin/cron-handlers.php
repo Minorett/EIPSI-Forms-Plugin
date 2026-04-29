@@ -988,6 +988,194 @@ function eipsi_cron_action_generate_reports($study_id) {
 }
 
 // =================================================================
+// T1-ANCHOR SYSTEM: Assignment Expiration Processor (v2.6.0)
+// =================================================================
+// This cron processes assignments based on their persisted available_at/due_at.
+// Simple comparison: NOW() > due_at → status = 'expired'
+// =================================================================
+add_action('eipsi_process_assignment_expirations', 'eipsi_run_process_assignment_expirations');
+
+/**
+ * Process assignment expirations based on due_at timestamps.
+ *
+ * This is the core of the T1-Anchor system's cron logic:
+ * - Queries assignments where NOW() > due_at AND status NOT IN ('submitted', 'expired')
+ * - Marks them as 'expired'
+ * - Logs the expiration for audit
+ *
+ * @since 2.6.0
+ */
+function eipsi_run_process_assignment_expirations() {
+    global $wpdb;
+
+    error_log('[EIPSI Cron] Assignment expiration processor started at ' . current_time('mysql'));
+
+    $now = current_time('mysql');
+    $assignments_table = $wpdb->prefix . 'survey_assignments';
+    $audit_table = $wpdb->prefix . 'survey_audit_log';
+
+    // Find assignments that are past due and not yet expired or submitted
+    $expired_assignments = $wpdb->get_results($wpdb->prepare(
+        "SELECT a.id, a.participant_id, a.wave_id, a.study_id, a.due_at, a.status,
+                w.wave_index, w.name as wave_name
+         FROM {$assignments_table} a
+         JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+         WHERE a.due_at IS NOT NULL
+         AND a.due_at < %s
+         AND a.status NOT IN ('submitted', 'expired', 'skipped')
+         LIMIT 500",
+        $now
+    ));
+
+    if (empty($expired_assignments)) {
+        error_log('[EIPSI Cron] No assignments to expire.');
+        return;
+    }
+
+    $expired_count = 0;
+    $audit_entries = array();
+
+    foreach ($expired_assignments as $assignment) {
+        // Update status to expired
+        $updated = $wpdb->update(
+            $assignments_table,
+            array('status' => 'expired'),
+            array('id' => $assignment->id),
+            array('%s'),
+            array('%d')
+        );
+
+        if ($updated !== false) {
+            $expired_count++;
+
+            // Prepare audit entry
+            $audit_entries[] = array(
+                'survey_id' => $assignment->study_id,
+                'participant_id' => $assignment->participant_id,
+                'action' => 'wave_expired',
+                'actor_type' => 'system',
+                'metadata' => wp_json_encode(array(
+                    'wave_id' => $assignment->wave_id,
+                    'wave_index' => $assignment->wave_index,
+                    'wave_name' => $assignment->wave_name,
+                    'due_at' => $assignment->due_at,
+                    'expired_at' => $now,
+                    'previous_status' => $assignment->status,
+                )),
+                'created_at' => $now,
+            );
+
+            // Trigger hook for extensibility (notifications, etc.)
+            do_action('eipsi_assignment_expired', array(
+                'assignment_id' => $assignment->id,
+                'participant_id' => $assignment->participant_id,
+                'wave_id' => $assignment->wave_id,
+                'study_id' => $assignment->study_id,
+                'wave_index' => $assignment->wave_index,
+            ));
+        }
+    }
+
+    // Batch insert audit entries
+    if (!empty($audit_entries) && $wpdb->get_var("SHOW TABLES LIKE '{$audit_table}'")) {
+        foreach ($audit_entries as $entry) {
+            $wpdb->insert(
+                $audit_table,
+                $entry,
+                array('%d', '%d', '%s', '%s', '%s', '%s')
+            );
+        }
+    }
+
+    error_log(sprintf(
+        '[EIPSI Cron] Assignment expiration processor completed. Expired: %d assignments.',
+        $expired_count
+    ));
+}
+
+/**
+ * Process assignments that are now available based on available_at.
+ *
+ * This updates assignments where NOW() >= available_at to be "ready"
+ * and can trigger notifications if configured.
+ *
+ * @since 2.6.0
+ */
+add_action('eipsi_process_wave_availability', 'eipsi_run_process_wave_availability');
+
+function eipsi_run_process_wave_availability() {
+    global $wpdb;
+
+    error_log('[EIPSI Cron] Wave availability processor started at ' . current_time('mysql'));
+
+    $now = current_time('mysql');
+    $assignments_table = $wpdb->prefix . 'survey_assignments';
+
+    // Find assignments that just became available (available_at <= NOW, status = pending, no email sent yet)
+    $newly_available = $wpdb->get_results($wpdb->prepare(
+        "SELECT a.id, a.participant_id, a.wave_id, a.study_id, a.available_at,
+                w.wave_index, w.name as wave_name
+         FROM {$assignments_table} a
+         JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+         WHERE a.available_at IS NOT NULL
+         AND a.available_at <= %s
+         AND a.status = 'pending'
+         AND a.wave_id IN (
+             SELECT id FROM {$wpdb->prefix}survey_waves WHERE wave_index > 1
+         )
+         LIMIT 100",
+        $now
+    ));
+
+    if (empty($newly_available)) {
+        error_log('[EIPSI Cron] No waves newly available.');
+        return;
+    }
+
+    $notified_count = 0;
+
+    // Load email service
+    if (!class_exists('EIPSI_Wave_Availability_Email_Service')) {
+        require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-wave-availability-email-service.php';
+    }
+
+    foreach ($newly_available as $assignment) {
+        // Check if we already sent availability email (use transient to avoid duplicates)
+        $transient_key = "eipsi_wave_available_sent_{$assignment->participant_id}_{$assignment->wave_id}";
+        if (get_transient($transient_key)) {
+            continue;
+        }
+
+        // Send wave availability notification
+        $sent = EIPSI_Wave_Availability_Email_Service::send_wave_available_email(
+            $assignment->study_id,
+            $assignment->participant_id,
+            $assignment->wave_id
+        );
+
+        if ($sent) {
+            // Set transient to prevent duplicate sends (24 hours)
+            set_transient($transient_key, true, DAY_IN_SECONDS);
+            $notified_count++;
+
+            // Trigger hook
+            do_action('eipsi_wave_became_available', array(
+                'assignment_id' => $assignment->id,
+                'participant_id' => $assignment->participant_id,
+                'wave_id' => $assignment->wave_id,
+                'study_id' => $assignment->study_id,
+                'wave_index' => $assignment->wave_index,
+            ));
+        }
+    }
+
+    error_log(sprintf(
+        '[EIPSI Cron] Wave availability processor completed. Notified: %d participants.',
+        $notified_count
+    ));
+}
+
+// =================================================================
 // POOL EMAIL LOG CLEANUP (v2.5.5)
 // =================================================================
 add_action('eipsi_cleanup_pool_email_logs_monthly', 'eipsi_run_cleanup_pool_email_logs');
