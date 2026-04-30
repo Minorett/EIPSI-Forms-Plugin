@@ -432,27 +432,26 @@ function eipsi_participant_dashboard_shortcode($atts) {
         }
     }
     
-    // Calculate availability for next wave (if there's an interval from previous wave)
+    // T1-Anchor: Calculate availability for next wave (offset from T1)
     $wave_locked = false;
     $available_timestamp = null;
-    if ($next_wave) {
-        // Check if previous wave exists and has interval_days
-        $prev_wave = null;
+    if ($next_wave && isset($next_wave['offset_minutes'])) {
+        // Get T1 (first wave) to calculate offset
+        $t1_wave = null;
         foreach ($all_waves as $wave) {
-            if ($wave['wave_index'] == ($next_wave['wave_index'] - 1)) {
-                $prev_wave = $wave;
+            if ($wave['wave_index'] == 1) {
+                $t1_wave = $wave;
                 break;
             }
         }
         
-        if ($prev_wave && !empty($prev_wave['assignment']) && $prev_wave['assignment']['status'] === 'submitted') {
-            // Get interval_days from next wave (or study default)
-            $interval_days = isset($next_wave['interval_days']) ? intval($next_wave['interval_days']) : 0;
+        if ($t1_wave && !empty($t1_wave['assignment']) && $t1_wave['assignment']['status'] === 'submitted') {
+            $offset_minutes = intval($next_wave['offset_minutes']);
             
-            if ($interval_days > 0) {
-                // Calculate available date
-                $submitted_at = strtotime($prev_wave['assignment']['submitted_at']);
-                $available_timestamp = strtotime("+{$interval_days} days", $submitted_at);
+            if ($offset_minutes > 0) {
+                // Calculate available date (T1 submission + offset_minutes)
+                $t1_submitted_at = strtotime($t1_wave['assignment']['submitted_at']);
+                $available_timestamp = $t1_submitted_at + ($offset_minutes * 60);
                 $now = current_time('timestamp');
                 
                 if ($available_timestamp > $now) {

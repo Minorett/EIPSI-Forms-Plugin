@@ -476,27 +476,30 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             'retry_enabled' => $retry_enabled,
             'retry_days' => $retry_days,
             'max_retries' => $max_retries,
+            // Phase 5 T1-Anchor: Nudge defaults (enabled by default)
+            'nudge_config' => json_encode(array(
+                'nudge_1' => array('enabled' => true, 'value' => 24, 'unit' => 'hours'),
+                'nudge_2' => array('enabled' => true, 'value' => 72, 'unit' => 'hours'),
+                'nudge_3' => array('enabled' => true, 'value' => 168, 'unit' => 'hours'),
+                'nudge_4' => array('enabled' => true, 'value' => 336, 'unit' => 'hours'),
+            )),
+            'follow_up_reminders_enabled' => 1,
         );
 
         $wave_index = $wave_data['wave_index'];
         $interval_key = $wave_index - 2; // T2(2)→0, T3(3)→1, etc.
 
         if ($wave_index > 1) {
-            // Priority: offset_minutes (New T1-Anchor System)
+            // T1-Anchor System: Use offset_minutes (absolute time from T1)
             if (isset($offset_map[$interval_key])) {
                 $wave_data['offset_minutes'] = $offset_map[$interval_key];
-            }
-            
-            // Legacy: interval_days/time_unit
-            if (isset($interval_map[$interval_key])) {
-                $wave_data['interval_days'] = $interval_map[$interval_key];
-                $wave_data['time_unit'] = $time_unit_map[$interval_key] ?? 'days';
+            } else {
+                // Fallback: default weekly intervals
+                $wave_data['offset_minutes'] = ($wave_index - 1) * 10080; // 7 days in minutes
             }
         } else {
-            // First wave
+            // First wave (T1) - always available immediately
             $wave_data['offset_minutes'] = 0;
-            $wave_data['interval_days'] = 0;
-            $wave_data['time_unit'] = 'days';
         }
 
         // Skip if no form_id

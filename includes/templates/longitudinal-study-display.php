@@ -104,55 +104,42 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
         : 0;
 
     // =========================================================================
-    // INTERVAL CHECK: Verify if next wave respects configured interval
+    // T1-ANCHOR INTERVAL CHECK: Verify if next wave is available (offset from T1)
     // =========================================================================
-    if ( $next_wave && $last_wave_id && ! empty( $next_wave['interval_days'] ) ) {
-        // Get submitted_at of the last completed submission
-        $last_submission = $wpdb->get_row( $wpdb->prepare(
+    if ( $next_wave && isset( $next_wave['offset_minutes'] ) ) {
+        // Get T1 submission time (first wave completion)
+        $t1_submission = $wpdb->get_row( $wpdb->prepare(
             "SELECT COALESCE(submitted_at, updated_at, created_at) as submitted_at
             FROM {$wpdb->prefix}survey_assignments
-            WHERE participant_id = %d AND wave_id = %d AND status = 'submitted'",
+            WHERE participant_id = %d AND wave_id = (
+                SELECT id FROM {$wpdb->prefix}survey_waves 
+                WHERE study_id = %d AND wave_index = 1 LIMIT 1
+            ) AND status = 'submitted'",
             $current_participant_id,
-            $last_wave_id
+            $study_id
         ) );
 
-        if ( $last_submission ) {
-            // FIX (v2.1.2): Use Wave_Service helper to safely normalize time_unit
-            // This prevents the empty(0) === true bug that treated minutes as days
-            $interval_value  = (int) $next_wave['interval_days'];
-            
-            // CRITICAL: Use Wave_Service::normalize_time_unit() to safely handle
-            // all possible values: 0, '0', 1, '1', 2, '2', 'minutes', 'hours', 'days'
-            // The empty() function treats 0 as empty, causing the minutes bug
-            $time_unit = Wave_Service::normalize_time_unit( $next_wave['time_unit'] ?? null );
+        if ( $t1_submission ) {
+            $offset_minutes = (int) $next_wave['offset_minutes'];
             
             // DEBUG: Log values for troubleshooting
-            error_log(sprintf('[EIPSI-DISPLAY] wave_id=%d, raw_time_unit=%s, normalized_time_unit=%s, interval_value=%d, submitted_at=%s',
+            error_log(sprintf('[EIPSI-DISPLAY] T1-Anchor: wave_id=%d, offset_minutes=%d, t1_submitted_at=%s',
                 $next_wave['id'],
-                $next_wave['time_unit'] ?? 'NULL',
-                $time_unit,
-                $interval_value,
-                $last_submission->submitted_at
+                $offset_minutes,
+                $t1_submission->submitted_at
             ));
             
-            // Map time_unit to strtotime-compatible string
-            $unit_map = array(
-                'minutes' => 'minutes',
-                'hours'   => 'hours',
-                'days'    => 'days'
-            );
-            $strtotime_unit = isset( $unit_map[ $time_unit ] ) ? $unit_map[ $time_unit ] : 'days';
-            
-            $available_date = strtotime( $last_submission->submitted_at . ' +' . $interval_value . ' ' . $strtotime_unit );
+            // Calculate available date (T1 + offset_minutes)
+            $t1_timestamp = strtotime( $t1_submission->submitted_at );
+            $available_date = $t1_timestamp + ( $offset_minutes * 60 );
             
             // DEBUG: Log calculated date
-            error_log(sprintf('[EIPSI-DISPLAY] Calculated available_date=%d (%s), strtotime_unit=%s, time_unit=%s',
+            error_log(sprintf('[EIPSI-DISPLAY] T1-Anchor: Calculated available_date=%d (%s)',
                 $available_date,
-                date('Y-m-d H:i:s', $available_date),
-                $strtotime_unit,
-                $time_unit
+                date('Y-m-d H:i:s', $available_date)
             ));
-            $now            = current_time( 'timestamp' );
+            
+            $now = current_time( 'timestamp' );
 
             if ( $available_date > $now ) {
                 // Next wave is locked - interval not yet passed
@@ -293,15 +280,11 @@ $withdrawal_type = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash( $_G
                                             </p>
                                         <?php endif; ?>
                                     </div>
-                                    <?php if ( ! empty( $next_wave['interval_days'] ) ) : ?>
+                                    <?php if ( isset( $next_wave['offset_minutes'] ) ) : ?>
                                         <small class="lock-hint">
                                             <?php
-                                            // FIX (v2.1.1): Show correct time unit (minutes, hours, days)
-                                            // IMPROVED (v2.2.0): Convert large minutes to human-readable format
-                                            // FIX (v2.2.1): Use Wave_Service::normalize_time_unit() to handle 0 correctly
-                                            // (empty(0) returns true in PHP, causing 'minutes' to become 'days')
-                                            $interval_value = (int) $next_wave['interval_days'];
-                                            $time_unit = Wave_Service::normalize_time_unit( $next_wave['time_unit'] ?? null );
+                                            // T1-Anchor: Show offset from T1 in human-readable format
+                                            $offset_minutes = (int) $next_wave['offset_minutes'];
                                             
                                             /**
                                              * Convert interval to human-readable format
@@ -372,10 +355,10 @@ $withdrawal_type = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash( $_G
                                                 }
                                             }
                                             
-                                            $interval_text = eipsi_format_interval_human_readable( $interval_value, $time_unit );
+                                            $interval_text = eipsi_format_interval_human_readable( $offset_minutes, 'minutes' );
                                             
                                             printf(
-                                                esc_html__( '(disponible después de %s)', 'eipsi-forms' ),
+                                                esc_html__( '(disponible %s desde T1)', 'eipsi-forms' ),
                                                 $interval_text
                                             );
                                             ?>

@@ -152,17 +152,35 @@ class EIPSI_Wave_Availability_Email_Service {
     }
 
     /**
-     * Verificar si la wave está disponible
+     * Verificar si la wave está disponible (T1-Anchor System)
      */
     private static function is_wave_available($assignment, $wave) {
-        // Si no tiene last_submission_date, es la primera wave (T1) - siempre disponible
-        if (empty($assignment->last_submission_date)) {
+        global $wpdb;
+        
+        // T1 (wave_index = 1) is always available immediately
+        if ($wave->wave_index == 1) {
             return true;
         }
 
-        // time_unit: 0 = minutes, 1 = days (from database)
-        $time_unit_str = (intval($wave->time_unit) === 0) ? 'minutes' : 'days';
-        $available_at = strtotime("+{$wave->interval_days} {$time_unit_str}", strtotime($assignment->last_submission_date));
+        // Get T1 submission time for this participant
+        $t1_submitted_at = $wpdb->get_var($wpdb->prepare(
+            "SELECT submitted_at FROM {$wpdb->prefix}survey_assignments 
+             WHERE participant_id = %d AND wave_id = (
+                 SELECT id FROM {$wpdb->prefix}survey_waves 
+                 WHERE study_id = %d AND wave_index = 1 LIMIT 1
+             ) AND status = 'submitted'
+             ORDER BY submitted_at DESC LIMIT 1",
+            $assignment->participant_id,
+            $wave->study_id
+        ));
+
+        if (!$t1_submitted_at) {
+            return false; // T1 not completed yet
+        }
+
+        // Calculate availability (T1 + offset_minutes)
+        $offset_minutes = intval($wave->offset_minutes ?? 0);
+        $available_at = strtotime($t1_submitted_at) + ($offset_minutes * 60);
         $now = current_time('timestamp');
 
         return $now >= $available_at;

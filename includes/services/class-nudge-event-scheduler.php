@@ -35,6 +35,12 @@ class EIPSI_Nudge_Event_Scheduler {
         
         // Hook para reintento programado cuando wave no estaba disponible inicialmente
         add_action('eipsi_wave_available_retry', array(__CLASS__, 'schedule_nudge_sequence'), 10, 1);
+        
+        // Phase 5 T1-Anchor: Hook para recalcular nudges cuando cambian deadlines
+        add_action('eipsi_assignment_deadline_changed', array(__CLASS__, 'reschedule_nudges_for_deadline'), 10, 1);
+        
+        // Phase 5 T1-Anchor: Hook automático cuando se ancla T1
+        add_action('eipsi_t1_anchored', array(__CLASS__, 'reschedule_all_nudges_for_participant'), 10, 2);
     }
     
     /**
@@ -154,6 +160,14 @@ class EIPSI_Nudge_Event_Scheduler {
         if ($nudge_0_success && !empty($assignment->follow_up_reminders_enabled)) {
             error_log(sprintf('[EIPSI EventScheduler] STEP 2: Scheduling follow-up nudges for assignment %d', $assignment_id));
             
+            // Phase 5 T1-Anchor: Get due_at deadline to prevent nudges after expiration
+            $due_at_timestamp = null;
+            if (!empty($assignment->due_at)) {
+                $due_at_timestamp = strtotime($assignment->due_at);
+                error_log(sprintf('[EIPSI EventScheduler] Assignment has due_at: %s (timestamp: %d)', 
+                    $assignment->due_at, $due_at_timestamp));
+            }
+            
             // v2.1.1 - Los nudges son acumulativos: cada uno empieza DESPUÉS del anterior
             $cumulative_delay = 0;
             
@@ -186,6 +200,18 @@ class EIPSI_Nudge_Event_Scheduler {
                             $assignment_id
                         ));
                     }
+                    continue;
+                }
+                
+                // Phase 5 T1-Anchor: CRITICAL - No programar nudges después del deadline
+                if ($due_at_timestamp !== null && $scheduled_time >= $due_at_timestamp) {
+                    error_log(sprintf(
+                        '[EIPSI EventScheduler] BLOCKED nudge %d for assignment %d - would occur AFTER due_at (%s >= %s)',
+                        $stage,
+                        $assignment_id,
+                        date('Y-m-d H:i:s', $scheduled_time),
+                        date('Y-m-d H:i:s', $due_at_timestamp)
+                    ));
                     continue;
                 }
                 
@@ -567,6 +593,74 @@ class EIPSI_Nudge_Event_Scheduler {
                 $assignment_id
             ));
         }
+    }
+    
+    /**
+     * Phase 5 T1-Anchor: Recalcular nudges cuando cambia el deadline de un assignment
+     * 
+     * @param int $assignment_id Assignment ID
+     * @since 2.6.0
+     */
+    public static function reschedule_nudges_for_deadline($assignment_id) {
+        global $wpdb;
+        
+        $assignment = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}survey_assignments WHERE id = %d",
+            $assignment_id
+        ));
+        
+        if (!$assignment || $assignment->status === 'submitted' || $assignment->status === 'expired') {
+            return; // No recalcular si ya está completado o expirado
+        }
+        
+        error_log(sprintf('[EIPSI EventScheduler] Rescheduling nudges for assignment %d due to deadline change', $assignment_id));
+        
+        // Cancelar nudges programados existentes
+        self::cancel_scheduled_nudges($assignment_id);
+        
+        // Reprogramar con el nuevo deadline
+        self::schedule_nudge_sequence($assignment_id);
+    }
+    
+    /**
+     * Phase 5 T1-Anchor: Recalcular todos los nudges de un participante cuando se ancla T1
+     * 
+     * @param int $study_id Study ID
+     * @param int $participant_id Participant ID
+     * @since 2.6.0
+     */
+    public static function reschedule_all_nudges_for_participant($study_id, $participant_id) {
+        global $wpdb;
+        
+        error_log(sprintf('[EIPSI EventScheduler] Rescheduling all nudges for participant %d in study %d (T1 anchored)', $participant_id, $study_id));
+        
+        // Obtener todos los assignments del participante (excepto T1 y los ya completados)
+        $assignments = $wpdb->get_results($wpdb->prepare(
+            "SELECT a.id, a.status, w.wave_index
+             FROM {$wpdb->prefix}survey_assignments a
+             JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+             WHERE a.participant_id = %d
+             AND w.study_id = %d
+             AND w.wave_index > 1
+             AND a.status NOT IN ('submitted', 'expired')
+             ORDER BY w.wave_index ASC",
+            $participant_id,
+            $study_id
+        ));
+        
+        $rescheduled = 0;
+        foreach ($assignments as $assignment) {
+            // Cancelar nudges existentes
+            self::cancel_scheduled_nudges($assignment->id);
+            
+            // Reprogramar con los nuevos deadlines calculados por T1-Anchor
+            if ($assignment->status === 'available') {
+                self::schedule_nudge_sequence($assignment->id);
+                $rescheduled++;
+            }
+        }
+        
+        error_log(sprintf('[EIPSI EventScheduler] Rescheduled nudges for %d assignments', $rescheduled));
     }
     
     /**

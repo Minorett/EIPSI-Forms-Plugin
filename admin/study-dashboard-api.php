@@ -212,12 +212,12 @@ function wp_ajax_eipsi_get_study_overview_handler() {
         $nudge_config_raw = isset($wave->nudge_config) ? $wave->nudge_config : '';
         $nudge_config = !empty($nudge_config_raw) ? json_decode($nudge_config_raw, true) : array();
         
-        // Ensure all nudges have defaults if not set
+        // Ensure all nudges have defaults if not set (enabled by default)
         $default_nudge_config = array(
-            'nudge_1' => array('enabled' => false, 'value' => 24, 'unit' => 'hours'),
-            'nudge_2' => array('enabled' => false, 'value' => 72, 'unit' => 'hours'),
-            'nudge_3' => array('enabled' => false, 'value' => 168, 'unit' => 'hours'),
-            'nudge_4' => array('enabled' => false, 'value' => 336, 'unit' => 'hours'),
+            'nudge_1' => array('enabled' => true, 'value' => 24, 'unit' => 'hours'),
+            'nudge_2' => array('enabled' => true, 'value' => 72, 'unit' => 'hours'),
+            'nudge_3' => array('enabled' => true, 'value' => 168, 'unit' => 'hours'),
+            'nudge_4' => array('enabled' => true, 'value' => 336, 'unit' => 'hours'),
         );
         
         $nudge_config = wp_parse_args($nudge_config, $default_nudge_config);
@@ -244,8 +244,7 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             'pending' => $pending_participants, // Those who should do it but haven't
             'progress' => ($eligible_participants > 0) ? round(($completed_assignments / $eligible_participants) * 100) : 0,
             'reminders_sent' => 0, // TODO: Implement reminder tracking
-            'interval_days' => isset($wave->interval_days) ? intval($wave->interval_days) : 0,
-            'time_unit' => isset($wave->time_unit) ? $wave->time_unit : 'days',
+            'wave_index' => intval($wave->wave_index),
             // v2.3.0 - Nuevos campos para wave manager
             'follow_up_reminders_enabled' => $follow_ups_enabled,
             'reminder_days' => $reminder_days,
@@ -524,6 +523,7 @@ function wp_ajax_eipsi_send_global_reminder_handler() {
 
 /**
  * POST extend wave deadline
+ * Phase 5 T1-Anchor: Updates due_at in assignments and reschedules nudges
  */
 function wp_ajax_eipsi_extend_wave_deadline_handler() {
     error_log('[EIPSI DASHBOARD API] extend_wave_deadline called');
@@ -543,7 +543,21 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
     }
 
     global $wpdb;
-    $updated = $wpdb->update(
+    
+    // Phase 5 T1-Anchor: Update due_at in all assignments for this wave
+    // Convert date to datetime (end of day)
+    $deadline_datetime = $new_deadline . ' 23:59:59';
+    
+    $assignments_updated = $wpdb->update(
+        "{$wpdb->prefix}survey_assignments",
+        array('due_at' => $deadline_datetime),
+        array('wave_id' => $wave_id),
+        array('%s'),
+        array('%d')
+    );
+    
+    // Also update legacy due_date in wave for backward compatibility
+    $wpdb->update(
         "{$wpdb->prefix}survey_waves",
         array('due_date' => $new_deadline),
         array('id' => $wave_id),
@@ -551,8 +565,23 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
         array('%d')
     );
 
-    if ($updated !== false) {
-        wp_send_json_success('Deadline extended successfully');
+    if ($assignments_updated !== false) {
+        // Phase 5 T1-Anchor: Trigger hook to reschedule nudges for all affected assignments
+        $affected_assignments = $wpdb->get_col($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d AND status NOT IN ('submitted', 'expired')",
+            $wave_id
+        ));
+        
+        foreach ($affected_assignments as $assignment_id) {
+            do_action('eipsi_assignment_deadline_changed', $assignment_id);
+        }
+        
+        error_log(sprintf('[EIPSI DASHBOARD API] Updated %d assignments and rescheduled nudges', count($affected_assignments)));
+        
+        wp_send_json_success(array(
+            'message' => 'Deadline extended successfully',
+            'assignments_updated' => count($affected_assignments)
+        ));
     } else {
         wp_send_json_error('Failed to extend deadline');
     }
@@ -560,6 +589,7 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
 
 /**
  * POST remove wave deadline
+ * Phase 5 T1-Anchor: Restores automatic due_at calculation and reschedules nudges
  */
 add_action('wp_ajax_eipsi_remove_wave_deadline', 'wp_ajax_eipsi_remove_wave_deadline_handler');
 function wp_ajax_eipsi_remove_wave_deadline_handler() {
@@ -579,7 +609,9 @@ function wp_ajax_eipsi_remove_wave_deadline_handler() {
 
     try {
         global $wpdb;
-        $updated = $wpdb->update(
+        
+        // Remove legacy due_date from wave
+        $wpdb->update(
             "{$wpdb->prefix}survey_waves",
             array('due_date' => null),
             array('id' => $wave_id),
@@ -587,11 +619,84 @@ function wp_ajax_eipsi_remove_wave_deadline_handler() {
             array('%d')
         );
 
-        if ($updated === false) {
-            throw new Exception($wpdb->last_error);
+        // Phase 5 T1-Anchor: Recalculate automatic due_at for all assignments
+        // Get all assignments for this wave with T1 anchor
+        $assignments = $wpdb->get_results($wpdb->prepare(
+            "SELECT a.id, a.participant_id, a.available_at, w.study_id, w.offset_minutes, w.window_minutes
+             FROM {$wpdb->prefix}survey_assignments a
+             JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+             WHERE a.wave_id = %d
+             AND a.status NOT IN ('submitted', 'expired')",
+            $wave_id
+        ));
+        
+        $recalculated = 0;
+        foreach ($assignments as $assignment) {
+            // Get participant's T1 timestamp
+            $participant = $wpdb->get_row($wpdb->prepare(
+                "SELECT t1_completed_at FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+                $assignment->participant_id
+            ));
+            
+            if (!$participant || !$participant->t1_completed_at) {
+                continue; // Skip if T1 not completed yet
+            }
+            
+            $t1_unix = strtotime($participant->t1_completed_at);
+            $offset_minutes = absint($assignment->offset_minutes ?? 0);
+            
+            // Recalculate automatic due_at
+            $due_at = null;
+            if (!empty($assignment->window_minutes)) {
+                // Use explicit window
+                $due_at = date('Y-m-d H:i:s', $t1_unix + ($offset_minutes * 60) + ($assignment->window_minutes * 60));
+            } else {
+                // Use next wave's offset or study_end
+                $next_wave_offset = $wpdb->get_var($wpdb->prepare(
+                    "SELECT offset_minutes FROM {$wpdb->prefix}survey_waves 
+                     WHERE study_id = %d AND offset_minutes > %d 
+                     ORDER BY offset_minutes ASC LIMIT 1",
+                    $assignment->study_id,
+                    $offset_minutes
+                ));
+                
+                if ($next_wave_offset) {
+                    $due_at = date('Y-m-d H:i:s', $t1_unix + ($next_wave_offset * 60));
+                } else {
+                    // Last wave - use study_end_offset
+                    $study_end_offset = $wpdb->get_var($wpdb->prepare(
+                        "SELECT study_end_offset_minutes FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+                        $assignment->study_id
+                    ));
+                    
+                    if ($study_end_offset) {
+                        $due_at = date('Y-m-d H:i:s', $t1_unix + ($study_end_offset * 60));
+                    }
+                }
+            }
+            
+            // Update assignment with automatic due_at
+            if ($due_at) {
+                $wpdb->update(
+                    "{$wpdb->prefix}survey_assignments",
+                    array('due_at' => $due_at),
+                    array('id' => $assignment->id),
+                    array('%s'),
+                    array('%d')
+                );
+                
+                // Trigger hook to reschedule nudges
+                do_action('eipsi_assignment_deadline_changed', $assignment->id);
+                $recalculated++;
+            }
         }
+        
+        error_log(sprintf('[EIPSI DASHBOARD API] Removed manual deadline, recalculated %d assignments', $recalculated));
 
-        wp_send_json_success('Deadline removed successfully');
+        wp_send_json_success(array(
+            'message' => 'Deadline removed successfully',
+            'recalculated' => $recalculated
+        ));
     } catch (Exception $e) {
         error_log('[EIPSI Remove Deadline] Error: ' . $e->getMessage());
         wp_send_json_error(array(

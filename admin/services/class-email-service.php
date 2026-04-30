@@ -479,6 +479,30 @@ class EIPSI_Email_Service {
             return false;
         }
 
+        // === PHASE 2 T1-ANCHOR: Pre-send validation (Double Check) ===
+        // Prevent sending emails for expired waves
+        // This is the safety net mentioned in the roadmap
+        if (class_exists('EIPSI_Wave_Expiration_Service')) {
+            global $wpdb;
+            $assignment = $wpdb->get_row($wpdb->prepare(
+                "SELECT status, due_at FROM {$wpdb->prefix}survey_assignments
+                 WHERE participant_id = %d AND wave_id = %d",
+                $participant_id,
+                $wave->id
+            ));
+
+            if ($assignment && EIPSI_Wave_Expiration_Service::is_assignment_expired($assignment)) {
+                error_log(sprintf(
+                    '[EIPSI Email] Blocked reminder email for expired wave (Wave %d, Participant %d, Due: %s)',
+                    $wave->id,
+                    $participant_id,
+                    $assignment->due_at ?? 'N/A'
+                ));
+                self::log_email($survey_id, $participant_id, 'reminder', 'blocked', 'Wave expired');
+                return false;
+            }
+        }
+
         $survey_name = self::get_study_name($survey_id);
         $magic_link = self::generate_magic_link_url($survey_id, $participant_id);
 

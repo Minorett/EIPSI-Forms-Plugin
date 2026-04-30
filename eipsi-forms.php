@@ -230,6 +230,14 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-email-handlers.php';
 // Participant Authentication Handlers (v1.5.5)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-participant-handlers.php';
 
+// Database Schema Manager (repair_local_schema uses dbDelta for column changes)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
+
+// Fase 4 Migration: Add missing columns to survey_waves (runs on admin_init)
+add_action('admin_init', array('EIPSI_Database_Schema_Manager', 'migrate_fase4_wave_columns'));
+
+// ============================================================================
+
 // Export AJAX Handlers — participant roster + longitudinal (v1.8.0)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-export-handlers.php';
 
@@ -281,6 +289,10 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-t1-anchor-service.ph
 
 // T1-Anchor AJAX Handlers (migration, batch anchoring, manual anchoring)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-t1-anchor-handlers.php';
+
+// Phase 2 T1-Anchor: Wave Expiration Service (v2.6.0)
+// Handles automatic expiration of waves when due_at is reached
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-wave-expiration-service.php';
 
 // ============================================================================
 // EMAIL SYSTEM CONFIGURATION (v1.5.4 - Default Email Fix)
@@ -896,6 +908,12 @@ function eipsi_forms_activate() {
     // Process wave availability notifications every 5 minutes
     if (!wp_next_scheduled('eipsi_process_wave_availability')) {
         wp_schedule_event(time(), 'every_5_minutes', 'eipsi_process_wave_availability');
+    }
+
+    // === Phase 2 T1-Anchor: Wave Expiration Check (v2.6.0) ===
+    // Check for expired waves every hour (transitions pending/available → expired)
+    if (!wp_next_scheduled('eipsi_hourly_wave_expiration_check')) {
+        wp_schedule_event(time(), 'hourly', 'eipsi_hourly_wave_expiration_check');
     }
 
     // Initialize/Repair Database Schema

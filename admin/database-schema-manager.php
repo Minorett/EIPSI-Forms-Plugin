@@ -298,7 +298,9 @@ class EIPSI_Database_Schema_Manager {
 
                     'KEY principal_investigator_id (principal_investigator_id)',
 
-                    'KEY created_at (created_at)'
+                    'KEY created_at (created_at)',
+
+                    'KEY idx_study_end_offset (study_end_offset_minutes)'
 
                 )
 
@@ -466,6 +468,8 @@ class EIPSI_Database_Schema_Manager {
                     'KEY idx_status (status)',
 
                     'KEY idx_due_date (due_date)',
+
+                    'KEY idx_offset_minutes (offset_minutes)',
 
                     'UNIQUE KEY uk_study_index (study_id, wave_index)'
 
@@ -1496,6 +1500,88 @@ class EIPSI_Database_Schema_Manager {
 
 
         return $repair_log;
+
+    }
+
+
+
+    /**
+
+     * Migration: Add missing columns to survey_waves for Fase 4 (Reactive Proportional Nudges)
+
+     * Runs on admin_init to ensure columns exist even if dbDelta missed them
+
+     *
+
+     * @since 2.5.0
+
+     */
+
+    public static function migrate_fase4_wave_columns() {
+
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'survey_waves';
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        // Check if table exists
+
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") !== $table_name) {
+
+            return;
+
+        }
+
+        // Check and add offset_minutes
+
+        $column_exists = $wpdb->get_results(
+
+            "SHOW COLUMNS FROM `{$table_name}` LIKE 'offset_minutes'"
+
+        );
+
+        if (empty($column_exists)) {
+
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN offset_minutes INT(11) DEFAULT 0");
+
+            error_log("[EIPSI Migration] Added offset_minutes to {$table_name}");
+
+        }
+
+        // Check and add window_minutes
+
+        $column_exists = $wpdb->get_results(
+
+            "SHOW COLUMNS FROM `{$table_name}` LIKE 'window_minutes'"
+
+        );
+
+        if (empty($column_exists)) {
+
+            $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN window_minutes INT(11) NULL");
+
+            error_log("[EIPSI Migration] Added window_minutes to {$table_name}");
+
+        }
+
+        // Check and add study_end_offset_minutes (in survey_studies table)
+
+        $studies_table = $wpdb->prefix . 'survey_studies';
+
+        $column_exists = $wpdb->get_results(
+
+            "SHOW COLUMNS FROM `{$studies_table}` LIKE 'study_end_offset_minutes'"
+
+        );
+
+        if (empty($column_exists)) {
+
+            $wpdb->query("ALTER TABLE `{$studies_table}` ADD COLUMN study_end_offset_minutes INT(11) NULL");
+
+            error_log("[EIPSI Migration] Added study_end_offset_minutes to {$studies_table}");
+
+        }
 
     }
 

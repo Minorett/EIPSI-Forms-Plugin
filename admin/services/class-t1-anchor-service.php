@@ -296,6 +296,9 @@ class EIPSI_T1_Anchor_Service {
             ));
         }
 
+        // Phase 5 T1-Anchor: Trigger hook to reschedule nudges with new deadlines
+        do_action('eipsi_t1_anchored', $study_id, $participant_id);
+
         return array(
             'success' => true,
             'participant_id' => $participant_id,

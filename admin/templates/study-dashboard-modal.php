@@ -802,11 +802,26 @@ input:checked + .tslider:before { transform: translateX(14px); }
     }
     
     function getWaveIntervalText(wave) {
-        if (wave.interval_days && wave.time_unit) {
-            const unit = wave.time_unit === 'minutes' ? 'minutos' : wave.time_unit === 'hours' ? 'horas' : 'días';
-            return `${wave.interval_days} ${unit} después de T${wave.wave_index - 1 || 1}`;
+        if (wave.wave_index === 1) {
+            return 'Toma inicial · disponible desde el registro';
         }
-        return wave.wave_index === 1 ? 'Toma inicial' : `Después de T${wave.wave_index - 1}`;
+        
+        if (wave.offset_minutes !== undefined && wave.offset_minutes !== null) {
+            const minutes = parseInt(wave.offset_minutes);
+            const days = Math.floor(minutes / 1440);
+            const hours = Math.floor((minutes % 1440) / 60);
+            const mins = minutes % 60;
+            
+            let parts = [];
+            if (days > 0) parts.push(`${days} día${days !== 1 ? 's' : ''}`);
+            if (hours > 0) parts.push(`${hours} hora${hours !== 1 ? 's' : ''}`);
+            if (mins > 0 && days === 0) parts.push(`${mins} min`);
+            
+            const timeText = parts.length > 0 ? parts.join(' ') : '0 min';
+            return `Disponible desde T1<br><small style="opacity:0.7">${timeText}</small>`;
+        }
+        
+        return 'Sin intervalo definido';
     }
     
     function renderNudgeRows(config, waveId) {

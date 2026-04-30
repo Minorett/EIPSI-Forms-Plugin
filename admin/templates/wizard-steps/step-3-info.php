@@ -43,7 +43,7 @@ if (empty($timing_intervals)) {
     );
 }
 
-// BUG FIX: Initialize variables to avoid PHP warnings
+// Phase 5 T1-Anchor: Legacy retry fields (now hidden, replaced by nudges)
 $retry_after_days = isset($step_data['retry_after_days']) ? intval($step_data['retry_after_days']) : 7;
 $max_retries = isset($step_data['max_retries']) ? intval($step_data['max_retries']) : 3;
 $investigator_notification_days = isset($step_data['investigator_notification_days']) ? intval($step_data['investigator_notification_days']) : 14;
@@ -211,7 +211,7 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                         }
                     ?>
                     <div class="eipsi-interval-item closure" style="border-top: 2px solid #e2e8f0; padding-top: 15px; margin-top: 10px;">
-                        <span class="eipsi-interval-label" style="font-weight:700;">Cierre del estudio</span>
+                        <span class="eipsi-interval-label" style="font-weight:700;">🔒 Cierre del estudio</span>
                         <div class="eipsi-interval-controls">
                             <input type="number" 
                                    class="eipsi-interval-input"
@@ -228,7 +228,11 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                             
                             <input type="hidden" name="wave_index[]" value="closure">
                             <input type="hidden" name="offset_minutes[]" value="<?php echo $closure_offset; ?>" class="eipsi-hidden-offset">
+                            <input type="hidden" name="study_end_offset_minutes" id="study-end-offset-minutes" value="<?php echo $closure_offset; ?>">
                         </div>
+                        <small style="display:block;margin-top:6px;color:#64748b;font-size:12px;">
+                            ℹ️ Se calcula automáticamente sumando el intervalo de la última toma. Podés ajustarlo manualmente.
+                        </small>
                     </div>
                 </div>
                 
@@ -248,91 +252,39 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         <button type="button"
                             style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
-                            onclick="eipsiApplyTimingTemplate('monitoreo_semanal', this)">
-                            Semanal (7d c/u)
+                            onclick="eipsiApplyTimingTemplate('semanal_7x', this)">
+                            📅 Semanal (7×X)
                         </button>
                         <button type="button"
                             style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
-                            onclick="eipsiApplyTimingTemplate('pre_post_follow', this)">
-                            Pre-Post-Seguimiento
-                        </button>
-                        <button type="button"
-                            style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
-                            onclick="eipsiApplyTimingTemplate('monthly', this)">
-                            Mensual
-                        </button>
-                        <button type="button"
-                            style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
-                            onclick="eipsiApplyTimingTemplate('quarterly', this)">
-                            Trimestral
+                            onclick="eipsiApplyTimingTemplate('quincenal_14x', this)">
+                            📆 Quincenal (14×X)
                         </button>
                     </div>
                 </div>
             </div>
             
-            <!-- Reminders & Retries -->
-            <div class="reminders-section" style="background:#f8f9fa;padding:20px;border-radius:10px;border:1px solid #e2e8f0;">
-                <h3 style="margin:0 0 8px 0;color:#2c3e50;font-size:15px;font-weight:600;">Recordatorios & Reintentos</h3>
-                <p style="margin:0 0 16px 0;color:#64748b;font-size:13px;">Configura cómo y cuándo enviar recordatorios a los participantes.</p>
+            <!-- Recordatorios Automáticos -->
+            <div class="reminders-section" style="background:#f0f9ff;padding:20px;border-radius:10px;border:1px solid #bae6fd;">
+                <h3 style="margin:0 0 8px 0;color:#0c4a6e;font-size:15px;font-weight:600;">📧 Recordatorios Automáticos</h3>
+                <p style="margin:0 0 16px 0;color:#0369a1;font-size:13px;">Los participantes recibirán recordatorios automáticos para completar cada toma.</p>
                 
                 <div class="reminder-config">
                     <div class="eipsi-wiz-field">
-                        <label class="eipsi-wiz-label">Recordatorio de Nueva Toma</label>
-                        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;">
-                            <p style="margin:0;font-size:13px;color:#64748b;line-height:1.5;">Los participantes recibirán un email automático <strong style="color:#2c3e50;">cuando la próxima toma esté disponible</strong> (según el intervalo configurado arriba).</p>
+                        <label class="eipsi-wiz-label" style="color:#0c4a6e;">✅ Recordatorio de Nueva Toma</label>
+                        <div style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:14px 16px;">
+                            <p style="margin:0 0 10px 0;font-size:13px;color:#0369a1;line-height:1.6;">
+                                Los participantes recibirán un email automático <strong style="color:#0c4a6e;">cuando la próxima toma esté disponible</strong> (según el intervalo configurado arriba).
+                            </p>
+                            <p style="margin:0;font-size:13px;color:#0369a1;line-height:1.6;">
+                                <strong style="color:#0c4a6e;">Recordatorios de seguimiento:</strong> Se enviarán automáticamente 4 recordatorios adicionales (a las 24h, 72h, 7 días y 14 días) si el participante no responde. Podrás ajustar estos tiempos en el Dashboard del estudio.
+                            </p>
                         </div>
                         <input type="hidden" name="reminder_days_before" value="0">
-                    </div>
-
-                    <div class="eipsi-wiz-field">
-                        <label class="eipsi-wiz-label">Si NO responde</label>
-                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                <input type="checkbox" 
-                                       name="enable_retries"
-                                       <?php checked(!empty($step_data['enable_retries']), true); ?>
-                                       value="1">
-                                <span style="font-size:13px;color:#2c3e50;">Reintentar después de</span>
-                            </label>
-                            <input type="number" 
-                                   name="retry_after_days" 
-                                   class="eipsi-wiz-input" 
-                                   style="width:80px;text-align:center;"
-                                   value="<?php echo $retry_after_days; ?>"
-                                   min="1" 
-                                   max="60"
-                                   <?php echo empty($step_data['enable_retries']) ? 'disabled' : ''; ?>>
-                            <span style="font-size:13px;color:#64748b;">días</span>
-                        </div>
-                    </div>
-                    
-                    <div class="eipsi-wiz-field">
-                        <label for="max_retries" class="eipsi-wiz-label">Máximo de reintentos</label>
-                        <input type="number" 
-                               id="max_retries"
-                               name="max_retries" 
-                               class="eipsi-wiz-input" 
-                               style="width:100px;text-align:center;"
-                               value="<?php echo $max_retries; ?>"
-                               min="0" 
-                               max="10">
-                        <span class="eipsi-wiz-help">Número máximo de veces que se reenviará el recordatorio sin respuesta.</span>
-                    </div>
-                    
-                    <div class="eipsi-wiz-field">
-                        <label for="investigator_notification_days" class="eipsi-wiz-label">Notificar investigador después de</label>
-                        <div style="display:flex;align-items:center;gap:12px;">
-                            <input type="number" 
-                                   id="investigator_notification_days"
-                                   name="investigator_notification_days" 
-                                   class="eipsi-wiz-input" 
-                                   style="width:100px;text-align:center;"
-                                   value="<?php echo $investigator_notification_days; ?>"
-                                   min="1" 
-                                   max="90">
-                            <span style="font-size:13px;color:#64748b;">días sin respuesta</span>
-                        </div>
-                        <span class="eipsi-wiz-help">El investigador recibirá una notificación si un participante no responde por X días.</span>
+                        <input type="hidden" name="enable_retries" value="0">
+                        <input type="hidden" name="retry_after_days" value="7">
+                        <input type="hidden" name="max_retries" value="3">
+                        <input type="hidden" name="investigator_notification_days" value="14">
                     </div>
                 </div>
             </div>
@@ -373,8 +325,8 @@ function eipsiFormatDuration(minutes) {
 /**
  * Synchronize input with hidden offset minutes
  */
-function eipsiSyncOffset(el) {
-    const item = el.closest('.eipsi-interval-item');
+function eipsiSyncOffset(element) {
+    const item = element.closest('.eipsi-interval-item');
     if (!item) return;
     
     const input = item.querySelector('.eipsi-interval-input');
@@ -394,6 +346,12 @@ function eipsiSyncOffset(el) {
     // If it's not the closure, we might want to auto-update closure
     if (!item.classList.contains('closure')) {
         eipsiAutoUpdateClosure();
+    } else {
+        // Phase 3 T1-Anchor: If closure changed manually, sync study_end_offset_minutes
+        const studyEndField = document.getElementById('study-end-offset-minutes');
+        if (studyEndField) {
+            studyEndField.value = totalMinutes;
+        }
     }
     
     eipsiUpdateTimelinePreview();
@@ -406,6 +364,7 @@ function eipsiSyncOffset(el) {
 
 /**
  * Auto-calculate study closure based on last wave gap
+ * Phase 3 T1-Anchor: Auto-calculates study_end_offset_minutes
  */
 function eipsiAutoUpdateClosure() {
     const hiddenOffsets = Array.from(document.querySelectorAll('.eipsi-hidden-offset'));
@@ -435,6 +394,12 @@ function eipsiAutoUpdateClosure() {
         }
         
         closureItem.querySelector('.eipsi-interval-equiv').textContent = eipsiFormatDuration(closureOffset);
+        
+        // Phase 3 T1-Anchor: Sync study_end_offset_minutes field
+        const studyEndField = document.getElementById('study-end-offset-minutes');
+        if (studyEndField) {
+            studyEndField.value = closureOffset;
+        }
     }
 }
 
@@ -501,10 +466,8 @@ function eipsiApplyTimingTemplate(template, btn) {
     
     // Base intervals in days (converted to accumulated below)
     const baseGaps = {
-        'monitoreo_semanal': [7, 7, 7, 7, 7, 7, 7, 7, 7, 7],
-        'pre_post_follow': [7, 30, 90, 180, 365],
-        'monthly': [30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
-        'quarterly': [90, 90, 90, 90, 90, 90, 90, 90, 90, 90]
+        'semanal_7x': [7, 7, 7, 7, 7, 7, 7, 7, 7, 7],
+        'quincenal_14x': [14, 14, 14, 14, 14, 14, 14, 14, 14, 14]
     };
     
     if (baseGaps[template]) {
@@ -552,16 +515,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     eipsiUpdateTimelinePreview();
-    
-    // Retry checkbox logic
-    const retryCheckbox = document.querySelector('input[name="enable_retries"]');
-    const retryInput = document.querySelector('input[name="retry_after_days"]');
-    
-    if (retryCheckbox && retryInput) {
-        retryCheckbox.addEventListener('change', function() {
-            retryInput.disabled = !this.checked;
-        });
-    }
 });
 
 </script>

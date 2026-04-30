@@ -50,12 +50,15 @@ class EIPSI_Wave_Service {
         $retry_days = isset($wave_data['retry_days']) ? absint($wave_data['retry_days']) : 7;
         $max_retries = isset($wave_data['max_retries']) ? absint($wave_data['max_retries']) : 3;
         $is_mandatory = isset($wave_data['is_mandatory']) ? (int) (bool) $wave_data['is_mandatory'] : 1;
-        $interval_days = isset($wave_data['interval_days']) ? absint($wave_data['interval_days']) : 0;
-        $time_unit = isset($wave_data['time_unit']) && $wave_data['time_unit'] === 'minutes' ? 'minutes' : 'days';
 
         // T1-Anchor: offset_minutes (minutes after T1 completion when wave becomes available)
         // For T1 (wave_index = 1), this should be 0
         $offset_minutes = isset($wave_data['offset_minutes']) ? absint($wave_data['offset_minutes']) : 0;
+        
+        // DEPRECATED: interval_days and time_unit (kept for backward compatibility)
+        // These are now calculated from offset_minutes if not provided
+        $interval_days = isset($wave_data['interval_days']) ? absint($wave_data['interval_days']) : round($offset_minutes / 1440);
+        $time_unit = isset($wave_data['time_unit']) ? $wave_data['time_unit'] : 'days';
         $window_minutes = isset($wave_data['window_minutes']) && $wave_data['window_minutes'] !== '' 
             ? absint($wave_data['window_minutes']) 
             : null;

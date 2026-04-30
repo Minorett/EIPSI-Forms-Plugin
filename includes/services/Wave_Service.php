@@ -234,45 +234,37 @@ class Wave_Service {
             return;
         }
 
-        // Get time unit and interval
-        $time_unit = self::normalize_time_unit($next_wave->time_unit);
-        $interval_value = (int) ($next_wave->interval_days ?? 0);
+        // T1-Anchor System: Use offset_minutes (absolute time from T1)
+        $offset_minutes = (int) ($next_wave->offset_minutes ?? 0);
 
-        // Get the submission time of the completed wave
-        $completed_assignment = $wpdb->get_row($wpdb->prepare(
+        // Get T1 submission time (first wave completion)
+        $t1_assignment = $wpdb->get_row($wpdb->prepare(
             "SELECT submitted_at FROM {$wpdb->prefix}survey_assignments 
-             WHERE participant_id = %d AND study_id = %d AND wave_id = %d AND status = 'submitted'
+             WHERE participant_id = %d AND study_id = %d AND wave_id = (
+                 SELECT id FROM {$wpdb->prefix}survey_waves 
+                 WHERE study_id = %d AND wave_index = 1 LIMIT 1
+             ) AND status = 'submitted'
              ORDER BY submitted_at DESC LIMIT 1",
             $participant_id,
             $study_id,
-            $completed_wave_id
+            $study_id
         ));
 
-        if (!$completed_assignment || !$completed_assignment->submitted_at) {
-            error_log("[Wave_Service] Could not find submission time for completed wave {$completed_wave_id}");
+        if (!$t1_assignment || !$t1_assignment->submitted_at) {
+            error_log("[Wave_Service] Could not find T1 submission time for participant {$participant_id}");
             return;
         }
 
-        // Calculate when the next wave becomes available based on time unit
-        $submitted_at = strtotime($completed_assignment->submitted_at);
-        
-        // Convert interval to seconds based on time unit
-        $interval_seconds = match($time_unit) {
-            'minutes' => $interval_value * 60,
-            'hours' => $interval_value * 3600,
-            'days' => $interval_value * 86400,
-            default => $interval_value * 86400, // default to days
-        };
-        
-        $available_at = $submitted_at + $interval_seconds;
+        // Calculate when the next wave becomes available (offset from T1)
+        $t1_submitted_at = strtotime($t1_assignment->submitted_at);
+        $available_at = $t1_submitted_at + ($offset_minutes * 60);
         $now = current_time('timestamp');
 
         // Log the calculation for debugging
         error_log(sprintf(
-            '[Wave_Service] Next wave availability check: submitted_at=%s, interval=%d %s, available_at=%s, now=%s',
-            date('Y-m-d H:i:s', $submitted_at),
-            $interval_value,
-            $time_unit,
+            '[Wave_Service] Next wave availability check (T1-Anchor): t1_submitted_at=%s, offset_minutes=%d, available_at=%s, now=%s',
+            date('Y-m-d H:i:s', $t1_submitted_at),
+            $offset_minutes,
             date('Y-m-d H:i:s', $available_at),
             date('Y-m-d H:i:s', $now)
         ));

@@ -27,6 +27,9 @@ add_action('eipsi_cleanup_unconfirmed_participants_daily', 'eipsi_run_cleanup_un
 // === STUDY CRON JOBS (v1.5.3) ===
 add_action('eipsi_study_cron_job', 'eipsi_run_study_cron_job', 10, 1);
 
+// === WAVE EXPIRATION (v2.6.0 - Phase 2 T1-Anchor) ===
+add_action('eipsi_hourly_wave_expiration_check', 'eipsi_run_wave_expiration_check');
+
 /**
  * Procesa recordatorios diarios
  * 
@@ -1196,4 +1199,51 @@ function eipsi_run_cleanup_pool_email_logs() {
     );
     
     error_log("[EIPSI Cron] Pool email log cleanup completed. Deleted: {$deleted} rows");
+}
+
+// =================================================================
+// WAVE EXPIRATION CHECK (v2.6.0 - Phase 2 T1-Anchor)
+// =================================================================
+
+/**
+ * Hourly cron job to expire waves that have passed their due_at timestamp.
+ *
+ * This is the core of Phase 2 automation:
+ * - Finds assignments where NOW() >= due_at
+ * - Transitions status from 'pending'/'available' to 'expired'
+ * - Cancels pending nudges for expired waves
+ * - Logs all expirations for audit
+ *
+ * @since 2.6.0
+ */
+function eipsi_run_wave_expiration_check() {
+    if (!class_exists('EIPSI_Wave_Expiration_Service')) {
+        error_log('[EIPSI Cron] EIPSI_Wave_Expiration_Service not found - skipping expiration check');
+        return;
+    }
+
+    error_log('[EIPSI Cron] Wave expiration check started - ' . current_time('mysql'));
+
+    $results = EIPSI_Wave_Expiration_Service::process_expirations();
+
+    if ($results['success']) {
+        error_log(sprintf(
+            '[EIPSI Cron] Wave expiration check completed. Expired: %d assignments, Cancelled nudges: %d, Time: %s ms',
+            $results['expired_count'],
+            $results['nudges_cancelled'],
+            $results['execution_time']
+        ));
+    } else {
+        error_log(sprintf(
+            '[EIPSI Cron] Wave expiration check completed with errors. Expired: %d, Errors: %d',
+            $results['expired_count'],
+            count($results['errors'])
+        ));
+
+        if (!empty($results['errors'])) {
+            foreach ($results['errors'] as $error) {
+                error_log('[EIPSI Cron] Expiration error: ' . $error);
+            }
+        }
+    }
 }
