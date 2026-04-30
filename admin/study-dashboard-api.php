@@ -20,6 +20,7 @@ add_action('wp_ajax_eipsi_get_wave_details', 'wp_ajax_eipsi_get_wave_details_han
 add_action('wp_ajax_eipsi_send_wave_reminder_manual', 'wp_ajax_eipsi_send_wave_reminder_manual_handler');
 add_action('wp_ajax_eipsi_extend_wave_deadline', 'wp_ajax_eipsi_extend_wave_deadline_handler');
 error_log('[EIPSI DASHBOARD API] Action wp_ajax_eipsi_extend_wave_deadline registered');
+error_log('[EIPSI DASHBOARD API] Function exists: ' . (function_exists('wp_ajax_eipsi_extend_wave_deadline_handler') ? 'YES' : 'NO'));
 add_action('wp_ajax_eipsi_remove_wave_deadline', 'wp_ajax_eipsi_remove_wave_deadline_handler');
 add_action('wp_ajax_eipsi_save_wave_nudges', 'wp_ajax_eipsi_save_wave_nudges_handler');
 add_action('wp_ajax_eipsi_get_study_email_logs', 'wp_ajax_eipsi_get_study_email_logs_handler');
@@ -546,7 +547,10 @@ function wp_ajax_eipsi_send_global_reminder_handler() {
  * Phase 5 T1-Anchor: Updates due_at in assignments and reschedules nudges
  */
 function wp_ajax_eipsi_extend_wave_deadline_handler() {
+    error_log('[EIPSI DASHBOARD API] ========== HANDLER CALLED ==========');
     error_log('[EIPSI DASHBOARD API] extend_wave_deadline called');
+    error_log('[EIPSI DASHBOARD API] Current user ID: ' . get_current_user_id());
+    error_log('[EIPSI DASHBOARD API] User logged in: ' . (is_user_logged_in() ? 'YES' : 'NO'));
     error_log('[EIPSI DASHBOARD API] POST data: ' . print_r($_POST, true));
     
     $received_nonce = isset($_POST['nonce']) ? $_POST['nonce'] : 'NONE';
