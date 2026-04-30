@@ -181,13 +181,66 @@
                 }
             });
 
-            // Live update of minutes translation
+            // Live update of minutes translation with Zero-Hide
             $('#waves-container').on('input', '.nudge-minutes-input', function() {
                 const $input = $(this);
                 const minutes = parseInt($input.val()) || 0;
                 const waveId = $input.closest('.wave-card').data('wave-id');
                 const nudgeIndex = $input.closest('.nudge-row').data('nudge-index');
                 const $translation = $('#ntrans-' + waveId + '-' + nudgeIndex);
+                
+                // Zero-Hide: clear translation if value is 0
+                if ($translation.length) {
+                    $translation.text(self.formatMinutes(minutes));
+                }
+                
+                // T1-Anchor: Visual warning for nudge >= window
+                const $card = $input.closest('.wave-card');
+                const windowMinutes = parseInt($card.find('.wave-window-input').val()) || 0;
+                const $warning = $input.closest('.nudge-row').find('.nudge-warning');
+                
+                if (minutes > 0 && windowMinutes > 0 && minutes >= windowMinutes) {
+                    if (!$warning.length) {
+                        $input.closest('.nudge-row').append('<span class="nudge-warning" style="color:#d32f2f;font-size:11px;margin-left:8px;">⚠️ El nudge debe ser menor que la ventana</span>');
+                    }
+                } else {
+                    $warning.remove();
+                }
+            });
+            
+            // T1-Anchor: Window input reactivity (20/40/60/80%)
+            $('#waves-container').on('input', '.wave-window-input', function() {
+                const $input = $(this);
+                const windowMinutes = parseInt($input.val()) || 0;
+                const $card = $input.closest('.wave-card');
+                const waveId = $card.data('wave-id');
+                
+                // Remove "Auto" badge when user enters a value
+                if ($input.val() && $input.val() !== '') {
+                    $input.siblings('.timing-badge').remove();
+                }
+                
+                if (windowMinutes > 0) {
+                    // Calculate proportional nudges: 20%, 40%, 60%, 80%
+                    const proportions = [0.2, 0.4, 0.6, 0.8];
+                    $card.find('.nudge-minutes-input').each(function(index) {
+                        if (index < 4) {
+                            const nudgeValue = Math.round(windowMinutes * proportions[index]);
+                            $(this).val(nudgeValue).trigger('change');
+                            // Update translation
+                            const nudgeIndex = $(this).closest('.nudge-row').data('nudge-index');
+                            $('#ntrans-' + waveId + '-' + nudgeIndex).text(self.formatMinutes(nudgeValue));
+                        }
+                    });
+                }
+            });
+            
+            // T1-Anchor: Offset input translation
+            $('#waves-container').on('input', '.wave-offset-input', function() {
+                const $input = $(this);
+                const minutes = parseInt($input.val()) || 0;
+                const waveId = $input.closest('.wave-card').data('wave-id');
+                const $translation = $('#offset-trans-' + waveId);
                 
                 if ($translation.length) {
                     $translation.text(self.formatMinutes(minutes));
@@ -535,7 +588,8 @@
          */
         formatMinutes: function(minutes) {
             minutes = parseInt(minutes) || 0;
-            if (minutes === 0) return '0 min';
+            // Zero-Hide: return empty string for 0
+            if (minutes === 0) return '';
             
             const days = Math.floor(minutes / 1440);
             const hours = Math.floor((minutes % 1440) / 60);
@@ -546,7 +600,30 @@
             if (hours > 0) parts.push(hours + ' h');
             if (mins > 0) parts.push(mins + ' min');
             
-            return parts.join(' ') || '0 min';
+            return parts.join(' ') || '';
+        },
+
+        /**
+         * Calculate effective window for a wave when window_minutes is null
+         * T1-Anchor: window = offset_next - offset_current
+         */
+        calculateEffectiveWindow: function(wave, index, waves) {
+            if (wave.window_minutes !== null && wave.window_minutes !== undefined && wave.window_minutes !== '') {
+                return wave.window_minutes;
+            }
+            // If null, calculate from next wave's offset
+            if (index < waves.length - 1 && waves[index + 1]) {
+                const nextOffset = waves[index + 1].offset_minutes || 0;
+                const currentOffset = wave.offset_minutes || 0;
+                return nextOffset - currentOffset;
+            }
+            // Last wave: use study_end_offset_minutes if available
+            const studyEndOffset = this.currentStudy?.study_end_offset_minutes || 0;
+            const currentOffset = wave.offset_minutes || 0;
+            if (studyEndOffset > currentOffset) {
+                return studyEndOffset - currentOffset;
+            }
+            return ''; // Fallback
         },
 
         /**
@@ -562,6 +639,9 @@
                 return;
             }
 
+            // T1-Anchor: Store reference for calculating effective windows
+            this.currentWaves = waves;
+            
             const self = this;
             waves.forEach(function(wave, index) {
                 const waveNum = index + 1;
@@ -663,6 +743,27 @@
                                         '<input type="date" class="deadline-date-input" id="de-input-' + wave.id + '" value="' + (wave.due_date || wave.deadline || '') + '">' +
                                         '<button class="btn-save" data-action="save-deadline" data-wave-id="' + wave.id + '">Guardar</button>' +
                                         '<button class="btn-cancel-sm" data-action="cancel-deadline" data-wave-id="' + wave.id + '">Cancelar</button>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        // T1-Anchor: Timing section with offset_minutes and window_minutes
+                        '<div class="timing-section" style="padding:12px 16px;border-top:1px solid #eee;">' +
+                            '<div class="timing-row" style="display:flex;gap:16px;margin-bottom:8px;">' +
+                                '<div class="timing-field" style="flex:1;">' +
+                                    '<label style="display:block;font-size:12px;color:#666;margin-bottom:4px;">' + (waveNum === 1 ? 'Disponible inmediatamente (T1)' : 'Disponible desde T1') + '</label>' +
+                                    '<div class="timing-input-wrap" style="display:flex;align-items:center;gap:8px;">' +
+                                        '<input type="number" ' + (waveNum === 1 ? 'disabled ' : '') + 'class="wave-offset-input" id="offset-' + wave.id + '" value="' + (wave.offset_minutes || 0) + '" min="0" style="width:80px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;">' +
+                                        '<span class="timing-unit">min</span>' +
+                                        '<span class="timing-translation" id="offset-trans-' + wave.id + '">' + self.formatMinutes(wave.offset_minutes || 0) + '</span>' +
+                                    '</div>' +
+                                '</div>' +
+                                '<div class="timing-field" style="flex:1;">' +
+                                    '<label style="display:block;font-size:12px;color:#666;margin-bottom:4px;">Ventana de respuesta</label>' +
+                                    '<div class="timing-input-wrap" style="display:flex;align-items:center;gap:8px;">' +
+                                        '<input type="number" class="wave-window-input" id="window-' + wave.id + '" value="' + (wave.window_minutes || '') + '" min="1" placeholder="' + self.calculateEffectiveWindow(wave, index, waves) + '" style="width:80px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;">' +
+                                        '<span class="timing-unit">min</span>' +
+                                        (wave.window_minutes === null ? '<span class="timing-badge" style="background:#e3f2fd;color:#1976d2;padding:2px 6px;border-radius:4px;font-size:11px;">Auto</span>' : '') +
                                     '</div>' +
                                 '</div>' +
                             '</div>' +
@@ -968,11 +1069,18 @@
             console.log('[NUDGE-SAVE] Enabled type:', typeof enabled);
             console.log('[NUDGE-SAVE] AJAX URL:', eipsiStudyDash.ajaxUrl);
             
+            // T1-Anchor: Get offset_minutes and window_minutes
+            const offsetMinutes = parseInt($card.find('.wave-offset-input').val()) || 0;
+            const windowInput = $card.find('.wave-window-input').val();
+            const windowMinutes = windowInput === '' || windowInput === null ? null : parseInt(windowInput);
+            
             const ajaxData = {
                 action: 'eipsi_save_wave_nudges',
                 wave_id: waveId,
                 nudges: nudges,
                 enabled: enabled,
+                offset_minutes: offsetMinutes,
+                window_minutes: windowMinutes,
                 nonce: eipsiStudyDash.nonce
             };
             console.log('[NUDGE-SAVE] Full AJAX data:', JSON.stringify(ajaxData, null, 2));

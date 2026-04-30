@@ -1126,3 +1126,255 @@ body.eipsi-dark-mode .countdown-label,
         font-size: 12px;
     }
 }
+
+/* ============================================================================
+   FASE 4 - HERO CARD
+   ============================================================================ */
+
+.eipsi-hero-card {
+    background: var(--eipsi-color-card-bg, #fff);
+    border-radius: 12px;
+    padding: 24px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.hero-status-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+
+.hero-status-badge.status-available {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.hero-status-badge.status-pending {
+    background: #fff8e1;
+    color: #f57f17;
+}
+
+.hero-status-badge.status-expired {
+    background: #fce4ec;
+    color: #c62828;
+}
+
+.hero-status-badge.status-completed {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.hero-wave-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--eipsi-color-text, #333);
+    margin: 0 0 16px;
+}
+
+.hero-countdown {
+    margin-bottom: 16px;
+}
+
+.hero-countdown .countdown-label {
+    display: block;
+    font-size: 12px;
+    color: var(--eipsi-color-text-muted, #666);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.countdown-timer {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.countdown-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 52px;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border-radius: 8px;
+    padding: 8px 10px 6px;
+}
+
+.countdown-unit .countdown-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--eipsi-color-text, #333);
+    font-variant-numeric: tabular-nums;
+}
+
+.countdown-unit .countdown-label {
+    font-size: 10px;
+    color: var(--eipsi-color-text-muted, #666);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    display: block;
+}
+
+.hero-cta-button {
+    display: inline-block;
+    background: #2196F3;
+    color: #fff;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px 28px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background .2s ease;
+}
+
+.hero-cta-button:hover {
+    background: #1565c0;
+    color: #fff;
+}
+
+.hero-completed-message {
+    color: var(--eipsi-color-text-muted, #666);
+    font-size: 14px;
+    margin: 8px 0 0;
+}
+
+.countdown--ready .countdown-unit .countdown-value,
+.countdown--expired .countdown-unit .countdown-value {
+    opacity: .4;
+}
+
+/* ============================================================================
+   FASE 4 - TIMELINE HISTÓRICO
+   CORRECCIÓN 2: Íconos via SVG background-image, sin caracteres hardcodeados
+   ============================================================================ */
+
+.eipsi-timeline-history {
+    margin-top: 8px;
+}
+
+.eipsi-timeline-history h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--eipsi-color-text-muted, #666);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin: 0 0 16px;
+}
+
+.timeline-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+}
+
+.timeline-list::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--eipsi-color-border, #e9ecef);
+}
+
+.timeline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    position: relative;
+}
+
+.timeline-marker {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--eipsi-color-background-subtle, #f8f9fa);
+    border: 2px solid var(--eipsi-color-border, #e9ecef);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+/* CORRECCIÓN 2: SVG encoded como background-image — sin content: '✅' */
+
+.timeline-icon {
+    display: block;
+    width: 16px;
+    height: 16px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.timeline-icon--submitted {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232e7d32' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+
+.timeline-icon--available {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231565c0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E");
+}
+
+.timeline-icon--pending {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f57f17' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='16'/%3E%3Cline x1='8' y1='12' x2='16' y2='12'/%3E%3C/svg%3E");
+}
+
+.timeline-icon--expired {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c62828' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='15' y1='9' x2='9' y2='15'/%3E%3Cline x1='9' y1='9' x2='15' y2='15'/%3E%3C/svg%3E");
+}
+
+/* Colorear fondo del marker según estado */
+.timeline-item.status-submitted .timeline-marker {
+    background: #e8f5e9;
+    border-color: #a5d6a7;
+}
+
+.timeline-item.status-available .timeline-marker {
+    background: #e3f2fd;
+    border-color: #90caf9;
+}
+
+.timeline-item.status-pending .timeline-marker {
+    background: #fff8e1;
+    border-color: #ffe082;
+}
+
+.timeline-item.status-expired .timeline-marker {
+    background: #fce4ec;
+    border-color: #ef9a9a;
+}
+
+.timeline-content {
+    padding-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.timeline-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--eipsi-color-text, #333);
+}
+
+.timeline-meta {
+    font-size: 12px;
+    color: var(--eipsi-color-text-muted, #666);
+}
+
+.timeline-meta--expired {
+    color: #c62828;
+}

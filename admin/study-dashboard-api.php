@@ -235,6 +235,9 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             'deadline' => $wave->due_date,
             'deadline_formatted' => $due_date_formatted,
             'status' => $wave->status,
+            // T1-Anchor: relative timing fields
+            'offset_minutes' => isset($wave->offset_minutes) ? intval($wave->offset_minutes) : 0,
+            'window_minutes' => isset($wave->window_minutes) ? (is_null($wave->window_minutes) ? null : intval($wave->window_minutes)) : null,
             // Logical calculation: only count those who are actually eligible
             'total' => $eligible_participants, // Total eligible (can do this wave)
             'completed' => $completed_assignments,
@@ -815,6 +818,16 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
             'nudge_config' => wp_json_encode($nudge_config),
             'follow_up_reminders_enabled' => $enabled ? 1 : 0
         );
+        
+        // T1-Anchor: persist offset_minutes and window_minutes
+        $offset_minutes = isset($_POST['offset_minutes']) ? intval($_POST['offset_minutes']) : null;
+        $window_minutes = isset($_POST['window_minutes']) && $_POST['window_minutes'] !== '' ? intval($_POST['window_minutes']) : null;
+        if ($offset_minutes !== null) {
+            $update_data['offset_minutes'] = $offset_minutes;
+        }
+        if ($window_minutes !== null) {
+            $update_data['window_minutes'] = $window_minutes > 0 ? $window_minutes : null;
+        }
         
         error_log("[EIPSI DASHBOARD API] Update data: " . print_r($update_data, true));
         
@@ -2417,8 +2430,13 @@ function wp_ajax_eipsi_create_study_page_handler() {
     }
 
     // Generate study code if not set
-    if (empty($study->study_code)) {
+    if (!$study->study_code) {
         $study->study_code = 'STUDY_' . $study_id;
+    }
+    
+    // T1-Anchor: ensure study_end_offset_minutes is included
+    if (!isset($study->study_end_offset_minutes)) {
+        $study->study_end_offset_minutes = 0;
     }
 
     // Check if function exists

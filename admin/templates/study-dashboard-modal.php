@@ -113,6 +113,15 @@ $study_data = isset($study_data) ? $study_data : array();
             </div>
         </div>
 
+        <!-- Recalculation Panel (Fase 4) -->
+        <?php
+        // Prepare data for recalculation panel
+        $study_id = isset($study_id) ? $study_id : 0;
+        $preview = isset($preview) ? $preview : array('affected_participants' => 0, 'waves_to_update' => 0);
+        $last_batch_id = isset($last_batch_id) ? $last_batch_id : '';
+        include EIPSI_FORMS_PLUGIN_DIR . 'admin/views/study-settings/recalculation-panel.php';
+        ?>
+
         <!-- Close button -->
         <div class="eipsi-modal-footer" style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:16px;">
             <button class="button button-secondary eipsi-modal-close">Cerrar</button>
@@ -665,62 +674,9 @@ input:checked + .tslider:before { transform: translateX(14px); }
 }
 </style>
 
-<!-- JavaScript para el Dashboard EIPSI -->
-<script>
-(function($) {
-    'use strict';
+<!-- JavaScript removed - now in assets/js/study-dashboard.js -->
+<!-- DEPRECATED: This script section has been moved to the external JS file -->
 
-    let currentStudyId = null;
-    let currentStudyData = null;
-
-    // Define nonce from localized data - expose globally for inline handlers
-    window.eipsi_dashboard_nonce = (typeof eipsiStudyDash !== 'undefined' && eipsiStudyDash.nonce) ? eipsiStudyDash.nonce : '';
-    const eipsi_dashboard_nonce = window.eipsi_dashboard_nonce;
-
-    // Load study data
-    function loadStudyData(studyId) {
-        currentStudyId = studyId;
-        window.currentStudyId = studyId; // Expose globally for handlers outside IIFE
-
-        $.ajax({
-            url: ajaxurl,
-            type: 'GET',
-            data: {
-                action: 'eipsi_get_study_overview',
-                study_id: studyId,
-                nonce: eipsi_dashboard_nonce
-            },
-            success: function(response) {
-                if (response.success) {
-                    currentStudyData = response.data;
-                    renderDashboard(response.data);
-                }
-            },
-            error: function() {
-                alert('Error al cargar los datos del estudio');
-            }
-        });
-    }
-    
-    // Render dashboard
-    function renderDashboard(data) {
-        const general = data.general;
-        const participants = data.participants;
-        const waves = data.waves;
-        const emails = data.emails;
-        const page = data.page;
-        
-        // Header
-        $('#study-name-display').text(general.study_name || 'Estudio sin nombre');
-        $('#study-status-pill').text(general.status === 'active' ? 'Activo' : general.status === 'paused' ? 'Pausado' : 'Cerrado');
-        $('#study-status-pill').attr('class', 'pill pill-' + (general.status === 'active' ? 'active' : general.status === 'paused' ? 'paused' : 'closed'));
-        
-        const created = new Date(general.created_at);
-        const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-        $('#study-meta-display').text(
-            'Creado ' + created.getDate() + ' ' + months[created.getMonth()] + ' ' + created.getFullYear() + 
-            ' · ID interno: ' + general.id + 
-            ' · ' + waves.length + ' tomas' +
             ' · ' + participants.total + ' participantes'
         );
         

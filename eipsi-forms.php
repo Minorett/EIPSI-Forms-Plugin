@@ -208,6 +208,12 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-job-queue.p
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-event-scheduler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-cache.php';
 
+// Fase 4 - Participant Dashboard Data Service
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-participant-dashboard-data.php';
+
+// Fase 4 - Wave Recalculator Service (T1 anchor recalculation)
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-wave-recalculator.php';
+
 // Initialize Survey Access Handler
 $eipsi_survey_access = new EIPSI_Survey_Access_Handler();
 $eipsi_survey_access->init();

@@ -533,6 +533,25 @@ function eipsi_get_login_page_url($survey_id = 0) {
 }
 
 /**
+ * Helper function to generate wave form URL for participant
+ * 
+ * Fase 4 - Centraliza generación de URLs para responder waves
+ * 
+ * @param int $wave_id Wave ID
+ * @param int $survey_id Study/Survey ID
+ * @return string URL para responder la wave
+ */
+function eipsi_get_wave_form_url($wave_id, $survey_id) {
+    return add_query_arg(
+        array(
+            'wave_id' => $wave_id,
+            'survey_id' => $survey_id,
+        ),
+        home_url('/estudio/')
+    );
+}
+
+/**
  * Helper function to get participant waves with assignment data
  * 
  * @param int $participant_id Participant ID
