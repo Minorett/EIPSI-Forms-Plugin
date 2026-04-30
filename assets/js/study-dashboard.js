@@ -743,7 +743,7 @@
                                 '<div class="deadline-editor" id="de-' + wave.id + '" style="display:none;">' +
                                     '<div class="de-label">Fecha límite para completar esta toma</div>' +
                                     '<div class="de-row">' +
-                                        '<input type="date" class="deadline-date-input" id="de-input-' + wave.id + '" value="' + (wave.due_date || wave.deadline || '') + '">' +
+                                        '<input type="date" class="deadline-date-input" id="de-input-' + wave.id + '" value="' + ((wave.due_date || wave.deadline || '').split(' ')[0]) + '">' +
                                         '<button class="btn-save" data-action="save-deadline" data-wave-id="' + wave.id + '">Guardar</button>' +
                                         '<button class="btn-cancel-sm" data-action="cancel-deadline" data-wave-id="' + wave.id + '">Cancelar</button>' +
                                     '</div>' +
@@ -753,7 +753,13 @@
                         // T1-Anchor: Timing info (read-only, configured in wizard)
                         '<div class="timing-info" style="padding:10px 16px;background:#f8f9fa;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;">' +
                             '<div style="display:flex;gap:20px;flex-wrap:wrap;">' +
-                                '<div><strong style="color:#2c3e50;">📅 Disponibilidad:</strong> ' + (waveNum === 1 ? 'Inmediata (T1)' : self.formatMinutes(wave.offset_minutes || 0) + ' desde T1') + '</div>' +
+                                '<div><strong style="color:#2c3e50;">📅 Disponibilidad:</strong> ' + 
+                                (waveNum === 1 
+                                    ? 'Inmediata (T1)' 
+                                    : (wave.absolute_available_at_formatted 
+                                        ? 'Desde ' + wave.absolute_available_at_formatted + ' (T1 deadline)' 
+                                        : self.formatMinutes(wave.offset_minutes || 0) + ' desde T1')) + 
+                                '</div>' +
                                 (wave.window_minutes ? '<div><strong style="color:#2c3e50;">⏱️ Ventana:</strong> ' + self.formatMinutes(wave.window_minutes) + ' para completar</div>' : '<div><strong style="color:#2c3e50;">⏱️ Ventana:</strong> Sin límite</div>') +
                             '</div>' +
                         '</div>' +
