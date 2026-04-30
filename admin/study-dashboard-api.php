@@ -543,11 +543,21 @@ function wp_ajax_eipsi_send_global_reminder_handler() {
  */
 function wp_ajax_eipsi_extend_wave_deadline_handler() {
     error_log('[EIPSI DASHBOARD API] extend_wave_deadline called');
-    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+    error_log('[EIPSI DASHBOARD API] POST data: ' . print_r($_POST, true));
+    
+    try {
+        check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+        error_log('[EIPSI DASHBOARD API] Nonce verified successfully');
+    } catch (Exception $e) {
+        error_log('[EIPSI DASHBOARD API] Nonce verification failed: ' . $e->getMessage());
+        wp_send_json_error('Invalid nonce');
+        return;
+    }
 
     if (!eipsi_user_can_manage_longitudinal()) {
         error_log('[EIPSI DASHBOARD API] Unauthorized access attempt');
         wp_send_json_error('Unauthorized');
+        return;
     }
 
     $wave_id = isset($_POST['wave_id']) ? (int) $_POST['wave_id'] : 0;
@@ -555,7 +565,9 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
     error_log("[EIPSI DASHBOARD API] Wave ID: {$wave_id}, New deadline: {$new_deadline}");
 
     if (!$wave_id || empty($new_deadline)) {
+        error_log('[EIPSI DASHBOARD API] Missing parameters - wave_id or deadline_date');
         wp_send_json_error('Missing parameters');
+        return;
     }
 
     global $wpdb;
@@ -581,12 +593,17 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
         array('%d')
     );
 
+    error_log('[EIPSI DASHBOARD API] Assignments update result: ' . ($assignments_updated !== false ? 'SUCCESS' : 'FAILED'));
+    error_log('[EIPSI DASHBOARD API] Rows affected: ' . $assignments_updated);
+    
     if ($assignments_updated !== false) {
         // Phase 5 T1-Anchor: Trigger hook to reschedule nudges for all affected assignments
         $affected_assignments = $wpdb->get_col($wpdb->prepare(
             "SELECT id FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d AND status NOT IN ('submitted', 'expired')",
             $wave_id
         ));
+        
+        error_log('[EIPSI DASHBOARD API] Affected assignments count: ' . count($affected_assignments));
         
         foreach ($affected_assignments as $assignment_id) {
             do_action('eipsi_assignment_deadline_changed', $assignment_id);
@@ -599,7 +616,8 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
             'assignments_updated' => count($affected_assignments)
         ));
     } else {
-        wp_send_json_error('Failed to extend deadline');
+        error_log('[EIPSI DASHBOARD API] DB error: ' . $wpdb->last_error);
+        wp_send_json_error('Failed to extend deadline: ' . $wpdb->last_error);
     }
 }
 
@@ -607,7 +625,6 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
  * POST remove wave deadline
  * Phase 5 T1-Anchor: Restores automatic due_at calculation and reschedules nudges
  */
-add_action('wp_ajax_eipsi_remove_wave_deadline', 'wp_ajax_eipsi_remove_wave_deadline_handler');
 function wp_ajax_eipsi_remove_wave_deadline_handler() {
     error_log('[EIPSI DASHBOARD API] remove_wave_deadline called');
     check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
