@@ -853,7 +853,7 @@
 
             const self = this;
             const ajaxData = {
-                action: 'eipsi_extend_wave_deadline',
+                action: 'eipsi_test_deadline', // TEMP: testing
                 wave_id: waveId,
                 deadline_date: date,
                 nonce: eipsiStudyDash.nonce

@@ -14,6 +14,7 @@ error_log('[EIPSI DASHBOARD API] File loaded, registering AJAX handlers');
 /**
  * Register AJAX handlers
  */
+add_action('wp_ajax_eipsi_test_deadline', 'wp_ajax_eipsi_test_deadline_handler');
 add_action('wp_ajax_eipsi_get_study_overview', 'wp_ajax_eipsi_get_study_overview_handler');
 add_action('wp_ajax_eipsi_get_wave_details', 'wp_ajax_eipsi_get_wave_details_handler');
 add_action('wp_ajax_eipsi_send_wave_reminder_manual', 'wp_ajax_eipsi_send_wave_reminder_manual_handler');
@@ -2596,4 +2597,13 @@ function wp_ajax_eipsi_create_study_page_handler() {
         'page_id' => $page_id,
         'page_url' => get_permalink($page_id)
     ));
+}
+
+/**
+ * TEST handler to verify AJAX registration works
+ */
+function wp_ajax_eipsi_test_deadline_handler() {
+    error_log('[EIPSI TEST] Test deadline handler called!');
+    error_log('[EIPSI TEST] POST data: ' . print_r($_POST, true));
+    wp_send_json_success(array('message' => 'Test handler works!'));
 }
