@@ -308,10 +308,11 @@ function eipsi_ajax_send_dropout_reminder() {
  * Extend wave deadline
  *
  * @since 1.5.0
+ * @deprecated Conflicto con study-dashboard-api.php - Comentado temporalmente
  */
-add_action('wp_ajax_eipsi_extend_wave_deadline', 'eipsi_ajax_extend_wave_deadline');
+// add_action('wp_ajax_eipsi_extend_wave_deadline', 'eipsi_ajax_extend_wave_deadline');
 
-function eipsi_ajax_extend_wave_deadline() {
+function eipsi_ajax_extend_wave_deadline_DEPRECATED() {
     check_ajax_referer('eipsi_admin_nonce', 'nonce');
 
     if (!current_user_can('manage_options')) {

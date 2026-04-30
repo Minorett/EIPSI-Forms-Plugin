@@ -877,7 +877,8 @@ function eipsi_extend_wave_deadline_handler() {
         'formatted_date' => $formatted_date
     ));
 }
-add_action('wp_ajax_eipsi_extend_wave_deadline', 'eipsi_extend_wave_deadline_handler');
+// DEPRECATED: Conflicto con study-dashboard-api.php - Comentado temporalmente
+// add_action('wp_ajax_eipsi_extend_wave_deadline', 'eipsi_extend_wave_deadline_handler');
 
 /**
  * GET reminder/nudge configuration for a wave
