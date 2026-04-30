@@ -9,6 +9,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+error_log('[EIPSI DASHBOARD API] ===== FILE LOADING START =====');
+error_log('[EIPSI DASHBOARD API] REQUEST_URI: ' . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
+error_log('[EIPSI DASHBOARD API] POST action: ' . ($_POST['action'] ?? 'N/A'));
 error_log('[EIPSI DASHBOARD API] File loaded, registering AJAX handlers');
 
 /**
