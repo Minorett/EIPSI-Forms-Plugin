@@ -17,6 +17,13 @@ error_log('[EIPSI DASHBOARD API] File loaded, registering AJAX handlers');
 /**
  * Register AJAX handlers
  */
+// Debug: Log when WordPress is about to execute AJAX hooks
+add_action('admin_init', function() {
+    if (defined('DOING_AJAX') && DOING_AJAX && isset($_POST['action']) && $_POST['action'] === 'eipsi_extend_wave_deadline') {
+        error_log('[EIPSI DEBUG] admin_init fired for eipsi_extend_wave_deadline');
+    }
+});
+
 add_action('wp_ajax_eipsi_test_no_nonce', 'wp_ajax_eipsi_test_no_nonce_handler');
 add_action('wp_ajax_eipsi_test_deadline', 'wp_ajax_eipsi_test_deadline_handler');
 add_action('wp_ajax_eipsi_get_study_overview', 'wp_ajax_eipsi_get_study_overview_handler');
@@ -25,6 +32,15 @@ add_action('wp_ajax_eipsi_send_wave_reminder_manual', 'wp_ajax_eipsi_send_wave_r
 add_action('wp_ajax_eipsi_extend_wave_deadline', 'wp_ajax_eipsi_extend_wave_deadline_handler');
 error_log('[EIPSI DASHBOARD API] Action wp_ajax_eipsi_extend_wave_deadline registered');
 error_log('[EIPSI DASHBOARD API] Function exists: ' . (function_exists('wp_ajax_eipsi_extend_wave_deadline_handler') ? 'YES' : 'NO'));
+
+// Debug: Verify the hook was added to WordPress
+global $wp_filter;
+if (isset($wp_filter['wp_ajax_eipsi_extend_wave_deadline'])) {
+    error_log('[EIPSI DEBUG] Hook wp_ajax_eipsi_extend_wave_deadline EXISTS in wp_filter');
+    error_log('[EIPSI DEBUG] Hook callbacks: ' . print_r($wp_filter['wp_ajax_eipsi_extend_wave_deadline'], true));
+} else {
+    error_log('[EIPSI DEBUG] Hook wp_ajax_eipsi_extend_wave_deadline NOT FOUND in wp_filter');
+}
 add_action('wp_ajax_eipsi_remove_wave_deadline', 'wp_ajax_eipsi_remove_wave_deadline_handler');
 add_action('wp_ajax_eipsi_save_wave_nudges', 'wp_ajax_eipsi_save_wave_nudges_handler');
 add_action('wp_ajax_eipsi_get_study_email_logs', 'wp_ajax_eipsi_get_study_email_logs_handler');
