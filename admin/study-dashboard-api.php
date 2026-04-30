@@ -212,6 +212,15 @@ function wp_ajax_eipsi_get_study_overview_handler() {
         $nudge_config_raw = isset($wave->nudge_config) ? $wave->nudge_config : '';
         $nudge_config = !empty($nudge_config_raw) ? json_decode($nudge_config_raw, true) : array();
         
+        // Log what we read from DB
+        if (!empty($nudge_config_raw)) {
+            error_log(sprintf('[EIPSI DASHBOARD API] Wave id=%d "%s": nudge_config from DB (length=%d): %s', 
+                $wave->id, $wave->name, strlen($nudge_config_raw), $nudge_config_raw));
+        } else {
+            error_log(sprintf('[EIPSI DASHBOARD API] Wave id=%d "%s": NO nudge_config in DB, will use legacy defaults', 
+                $wave->id, $wave->name));
+        }
+        
         // Fallback defaults for legacy waves without nudge_config
         // NOTE: New waves created via wizard have proportional nudges calculated based on interval
         // These defaults are only used for old waves created before the proportional system
@@ -223,6 +232,11 @@ function wp_ajax_eipsi_get_study_overview_handler() {
         );
         
         $nudge_config = wp_parse_args($nudge_config, $default_nudge_config);
+        
+        error_log(sprintf('[EIPSI DASHBOARD API] Wave id=%d "%s": offset_minutes=%d, window_minutes=%s', 
+            $wave->id, $wave->name, 
+            isset($wave->offset_minutes) ? intval($wave->offset_minutes) : 0,
+            isset($wave->window_minutes) ? (is_null($wave->window_minutes) ? 'NULL' : intval($wave->window_minutes)) : 'NOT SET'));
         
         // Check if any follow-up is enabled (for toggle display)
         $follow_ups_enabled = $nudge_config['nudge_1']['enabled'] || 

@@ -440,6 +440,11 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
     // Extract accumulated offsets (from step 3 - T1-Anchor System)
     $timing_intervals = isset($timing_config['timing_intervals']) ? $timing_config['timing_intervals'] : array();
     
+    error_log(sprintf('[EIPSI WIZARD] Creating waves for study_id=%d, wave_count=%d, study_end_offset=%d min', 
+        $study_id, 
+        count($wave_config['waves_config']), 
+        isset($timing_config['study_end_offset_minutes']) ? $timing_config['study_end_offset_minutes'] : 0));
+    
     // Build offset and interval maps
     $offset_map = array();
     $interval_map = array();
@@ -452,6 +457,8 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             // New system: accumulated offset
             if (isset($interval['offset_minutes'])) {
                 $offset_map[$interval_key] = intval($interval['offset_minutes']);
+                error_log(sprintf('[EIPSI WIZARD] Timing config: T%d offset = %d min', 
+                    $interval_key + 1, $offset_map[$interval_key]));
             }
             
             // Legacy/Fallback: relative interval
@@ -503,21 +510,29 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             if (isset($offset_map[$next_wave_key])) {
                 // Interval = next_wave_offset - current_wave_offset
                 $interval_minutes = $offset_map[$next_wave_key] - $wave_data['offset_minutes'];
+                error_log(sprintf('[EIPSI WIZARD] Wave T%d: interval to next wave = %d - %d = %d min', 
+                    $wave_index, $offset_map[$next_wave_key], $wave_data['offset_minutes'], $interval_minutes));
             } else {
                 // Last wave: use study_end_offset or default to same interval as previous
                 if (isset($timing_config['study_end_offset_minutes']) && $timing_config['study_end_offset_minutes'] > 0) {
                     $interval_minutes = $timing_config['study_end_offset_minutes'] - $wave_data['offset_minutes'];
+                    error_log(sprintf('[EIPSI WIZARD] Wave T%d (last): interval to study end = %d - %d = %d min', 
+                        $wave_index, $timing_config['study_end_offset_minutes'], $wave_data['offset_minutes'], $interval_minutes));
                 } else {
                     // Fallback: 7 days
                     $interval_minutes = 10080;
+                    error_log(sprintf('[EIPSI WIZARD] Wave T%d (last): using fallback interval = %d min (7 days)', 
+                        $wave_index, $interval_minutes));
                 }
             }
         } else {
             // T1: interval to T2
             if (isset($offset_map[0])) {
                 $interval_minutes = $offset_map[0];
+                error_log(sprintf('[EIPSI WIZARD] Wave T1: interval to T2 = %d min', $interval_minutes));
             } else {
                 $interval_minutes = 10080; // 7 days default
+                error_log(sprintf('[EIPSI WIZARD] Wave T1: using fallback interval = %d min (7 days)', $interval_minutes));
             }
         }
 
@@ -534,6 +549,9 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
         $nudge2_hours = min($nudge2_hours, $max_nudge_hours);
         $nudge3_hours = min($nudge3_hours, $max_nudge_hours);
         $nudge4_hours = min($nudge4_hours, $max_nudge_hours);
+
+        error_log(sprintf('[EIPSI WIZARD] Wave T%d nudges calculated: n1=%dh (15%%), n2=%dh (40%%), n3=%dh (70%%), n4=%dh (90%%) | interval=%dmin max=%dh', 
+            $wave_index, $nudge1_hours, $nudge2_hours, $nudge3_hours, $nudge4_hours, $interval_minutes, $max_nudge_hours));
 
         $wave_data['nudge_config'] = json_encode(array(
             'nudge_1' => array('enabled' => true, 'value' => $nudge1_hours, 'unit' => 'hours'),

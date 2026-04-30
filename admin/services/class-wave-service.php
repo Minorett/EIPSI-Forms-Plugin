@@ -94,6 +94,11 @@ class EIPSI_Wave_Service {
         if (isset($wave_data['nudge_config']) && !empty($wave_data['nudge_config'])) {
             $data['nudge_config'] = $wave_data['nudge_config']; // Already JSON encoded
             $formats[] = '%s';
+            error_log(sprintf('[EIPSI WAVE SERVICE] Wave "%s" (index=%d): nudge_config provided, length=%d bytes', 
+                $name, $wave_index, strlen($wave_data['nudge_config'])));
+        } else {
+            error_log(sprintf('[EIPSI WAVE SERVICE] Wave "%s" (index=%d): NO nudge_config provided', 
+                $name, $wave_index));
         }
 
         // window_minutes is optional and can be NULL
@@ -114,6 +119,9 @@ class EIPSI_Wave_Service {
             $formats[] = '%s';
         }
 
+        error_log(sprintf('[EIPSI WAVE SERVICE] Inserting wave: study_id=%d, wave_index=%d, name="%s", offset_minutes=%d, window_minutes=%s', 
+            $study_id, $wave_index, $name, $offset_minutes, $window_minutes !== null ? $window_minutes : 'NULL'));
+
         $result = $wpdb->insert(
             $wpdb->prefix . 'survey_waves',
             $data,
@@ -121,10 +129,15 @@ class EIPSI_Wave_Service {
         );
 
         if ($result === false) {
+            error_log(sprintf('[EIPSI WAVE SERVICE] ERROR inserting wave: %s', $wpdb->last_error));
             return new WP_Error('db_error', 'Failed to create wave: ' . $wpdb->last_error);
         }
 
-        return (int) $wpdb->insert_id;
+        $wave_id = (int) $wpdb->insert_id;
+        error_log(sprintf('[EIPSI WAVE SERVICE] Wave created successfully: id=%d, name="%s", offset=%d min', 
+            $wave_id, $name, $offset_minutes));
+
+        return $wave_id;
     }
 
     /**
