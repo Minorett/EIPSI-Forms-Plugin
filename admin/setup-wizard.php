@@ -476,13 +476,6 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             'retry_enabled' => $retry_enabled,
             'retry_days' => $retry_days,
             'max_retries' => $max_retries,
-            // Phase 5 T1-Anchor: Nudge defaults (enabled by default)
-            'nudge_config' => json_encode(array(
-                'nudge_1' => array('enabled' => true, 'value' => 24, 'unit' => 'hours'),
-                'nudge_2' => array('enabled' => true, 'value' => 72, 'unit' => 'hours'),
-                'nudge_3' => array('enabled' => true, 'value' => 168, 'unit' => 'hours'),
-                'nudge_4' => array('enabled' => true, 'value' => 336, 'unit' => 'hours'),
-            )),
             'follow_up_reminders_enabled' => 1,
         );
 
@@ -501,6 +494,53 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             // First wave (T1) - always available immediately
             $wave_data['offset_minutes'] = 0;
         }
+
+        // Calculate nudge defaults proportionally to interval between waves
+        $interval_minutes = 0;
+        if ($wave_index > 1) {
+            // Calculate interval to NEXT wave (or study end if last wave)
+            $next_wave_key = $interval_key + 1;
+            if (isset($offset_map[$next_wave_key])) {
+                // Interval = next_wave_offset - current_wave_offset
+                $interval_minutes = $offset_map[$next_wave_key] - $wave_data['offset_minutes'];
+            } else {
+                // Last wave: use study_end_offset or default to same interval as previous
+                if (isset($timing_config['study_end_offset_minutes']) && $timing_config['study_end_offset_minutes'] > 0) {
+                    $interval_minutes = $timing_config['study_end_offset_minutes'] - $wave_data['offset_minutes'];
+                } else {
+                    // Fallback: 7 days
+                    $interval_minutes = 10080;
+                }
+            }
+        } else {
+            // T1: interval to T2
+            if (isset($offset_map[0])) {
+                $interval_minutes = $offset_map[0];
+            } else {
+                $interval_minutes = 10080; // 7 days default
+            }
+        }
+
+        // Distribute nudges proportionally within the interval
+        // nudge1: 15% of interval, nudge2: 40%, nudge3: 70%, nudge4: 90%
+        $nudge1_hours = max(24, round($interval_minutes * 0.15 / 60)); // min 24h
+        $nudge2_hours = max(48, round($interval_minutes * 0.40 / 60)); // min 48h
+        $nudge3_hours = max(72, round($interval_minutes * 0.70 / 60)); // min 72h
+        $nudge4_hours = max(96, round($interval_minutes * 0.90 / 60)); // min 96h
+
+        // Ensure nudges don't exceed interval (leave 2h margin)
+        $max_nudge_hours = max(24, floor($interval_minutes / 60) - 2);
+        $nudge1_hours = min($nudge1_hours, $max_nudge_hours);
+        $nudge2_hours = min($nudge2_hours, $max_nudge_hours);
+        $nudge3_hours = min($nudge3_hours, $max_nudge_hours);
+        $nudge4_hours = min($nudge4_hours, $max_nudge_hours);
+
+        $wave_data['nudge_config'] = json_encode(array(
+            'nudge_1' => array('enabled' => true, 'value' => $nudge1_hours, 'unit' => 'hours'),
+            'nudge_2' => array('enabled' => true, 'value' => $nudge2_hours, 'unit' => 'hours'),
+            'nudge_3' => array('enabled' => true, 'value' => $nudge3_hours, 'unit' => 'hours'),
+            'nudge_4' => array('enabled' => true, 'value' => $nudge4_hours, 'unit' => 'hours'),
+        ));
 
         // Skip if no form_id
         if (empty($wave_data['form_id'])) {

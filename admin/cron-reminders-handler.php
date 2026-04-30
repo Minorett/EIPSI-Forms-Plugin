@@ -906,9 +906,36 @@ add_action('eipsi_process_nudge_jobs', 'eipsi_process_nudge_jobs_worker');
  * Schedule Job Worker cron (runs every 5 minutes)
  */
 function eipsi_schedule_job_worker() {
-    if (!wp_next_scheduled('eipsi_process_nudge_jobs')) {
-        wp_schedule_event(time(), 'every_5_minutes', 'eipsi_process_nudge_jobs');
-        error_log('[EIPSI JobWorker] Scheduled job worker cron');
+    $hook = 'eipsi_process_nudge_jobs';
+    $timestamp = wp_next_scheduled($hook);
+    
+    // If event exists, verify it has valid schedule
+    if ($timestamp) {
+        $crons = _get_cron_array();
+        $event_found = false;
+        
+        if (is_array($crons) && isset($crons[$timestamp][$hook])) {
+            foreach ($crons[$timestamp][$hook] as $event) {
+                if (isset($event['schedule']) && $event['schedule'] === 'every_5_minutes') {
+                    $event_found = true;
+                    break;
+                }
+            }
+        }
+        
+        // If event has invalid schedule, clear it
+        if (!$event_found) {
+            wp_clear_scheduled_hook($hook);
+            $timestamp = false;
+        }
+    }
+    
+    // Schedule if not exists or was cleared
+    if (!$timestamp) {
+        $result = wp_schedule_event(time(), 'every_5_minutes', $hook);
+        if ($result !== false) {
+            error_log('[EIPSI JobWorker] Scheduled job worker cron');
+        }
     }
 }
 add_action('wp', 'eipsi_schedule_job_worker');

@@ -271,13 +271,13 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                 
                 <div class="reminder-config">
                     <div class="eipsi-wiz-field">
-                        <label class="eipsi-wiz-label" style="color:#0c4a6e;">✅ Recordatorio de Nueva Toma</label>
+                        <label class="eipsi-wiz-label" style="color:#0c4a6e;">✅ Sistema de Recordatorios Inteligente</label>
                         <div style="background:#fff;border:1px solid #bae6fd;border-radius:8px;padding:14px 16px;">
                             <p style="margin:0 0 10px 0;font-size:13px;color:#0369a1;line-height:1.6;">
-                                Los participantes recibirán un email automático <strong style="color:#0c4a6e;">cuando la próxima toma esté disponible</strong> (según el intervalo configurado arriba).
+                                <strong style="color:#0c4a6e;">📬 Notificación de disponibilidad:</strong> Los participantes recibirán un email automático cuando cada toma esté disponible (según el intervalo configurado arriba).
                             </p>
                             <p style="margin:0;font-size:13px;color:#0369a1;line-height:1.6;">
-                                <strong style="color:#0c4a6e;">Recordatorios de seguimiento:</strong> Se enviarán automáticamente 4 recordatorios adicionales (a las 24h, 72h, 7 días y 14 días) si el participante no responde. Podrás ajustar estos tiempos en el Dashboard del estudio.
+                                <strong style="color:#0c4a6e;">🔔 Recordatorios de seguimiento:</strong> Si el participante no responde, se enviarán automáticamente 4 recordatorios distribuidos proporcionalmente en el tiempo disponible hasta la próxima toma. Por ejemplo, si el intervalo es de 7 días, los recordatorios se enviarán aproximadamente al 15%, 40%, 70% y 90% del intervalo. Podrás ajustar estos tiempos en el Dashboard del estudio.
                             </p>
                         </div>
                         <input type="hidden" name="reminder_days_before" value="0">

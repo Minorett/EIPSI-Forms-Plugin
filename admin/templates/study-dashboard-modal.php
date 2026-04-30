@@ -100,7 +100,8 @@ $study_data = isset($study_data) ? $study_data : array();
                     <button class="btn-sm" id="action-import-csv">Importar CSV</button>
                     <button class="btn-sm" id="action-download-data">Descargar datos</button>
                 </div>
-                <div style="margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9">
+                <div style="margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9;display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn-sm" style="font-size:11px" id="action-recalculate-times">⚙️ Recalcular tiempos</button>
                     <button class="btn-sm btn-danger" style="font-size:11px" id="action-delete-study">Eliminar estudio</button>
                 </div>
             </div>
@@ -112,15 +113,6 @@ $study_data = isset($study_data) ? $study_data : array();
                 <button class="btn-sm" style="margin-top:10px;font-size:11px" id="view-email-logs">Ver log de emails</button>
             </div>
         </div>
-
-        <!-- Recalculation Panel (Fase 4) -->
-        <?php
-        // Prepare data for recalculation panel
-        $study_id = isset($study_id) ? $study_id : 0;
-        $preview = isset($preview) ? $preview : array('affected_participants' => 0, 'waves_to_update' => 0);
-        $last_batch_id = isset($last_batch_id) ? $last_batch_id : '';
-        include EIPSI_FORMS_PLUGIN_DIR . 'admin/views/study-settings/recalculation-panel.php';
-        ?>
 
         <!-- Close button -->
         <div class="eipsi-modal-footer" style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:16px;">
@@ -674,229 +666,13 @@ input:checked + .tslider:before { transform: translateX(14px); }
 }
 </style>
 
-<!-- JavaScript removed - now in assets/js/study-dashboard.js -->
-<!-- DEPRECATED: This script section has been moved to the external JS file -->
+<!-- 
+    TODA la funcionalidad JS está en assets/js/study-dashboard.js
+    El JS externo maneja renderWaves, event delegation, y todos los handlers.
+    Solo se mantienen aquí las funciones globales para onclick handlers inline.
+-->
 
-            ' · ' + participants.total + ' participantes'
-        );
-        
-        // KPIs
-        $('#kpi-total').text(participants.total);
-        $('#kpi-active').text(participants.active);
-        $('#kpi-completed').text(participants.completed);
-        $('#kpi-emails').text(emails.sent_today);
-        
-        // Cards
-        $('#shortcode-display').text(page.shortcode || '[eipsi_longitudinal_study study_code="' + general.study_code + '"]').attr('data-shortcode', page.shortcode);
-        $('#study-page-url').val(page.url || '');
-        
-        if (page.url) {
-            $('#view-study-page').attr('href', page.url).show();
-            $('#edit-study-page').attr('href', page.edit_url || '#').show();
-        } else {
-            $('#view-study-page, #edit-study-page').hide();
-        }
-        
-        // Control buttons
-        if (general.status === 'active') {
-            $('#btn-pause-study').show();
-            $('#btn-resume-study').hide();
-        } else if (general.status === 'paused') {
-            $('#btn-pause-study').hide();
-            $('#btn-resume-study').show();
-        } else {
-            $('#btn-pause-study, #btn-resume-study').hide();
-        }
-        
-        // Emails card
-        $('#emails-today').text(emails.sent_today || 0);
-        $('#emails-failed').text(emails.failed || 0);
-        $('#emails-pending').text(emails.pending || 0);
-        
-        // Render waves
-        renderWaves(waves);
-    }
-    
-    // Render waves
-    function renderWaves(waves) {
-        const container = $('#waves-container');
-        container.empty();
-        
-        waves.forEach(function(wave, index) {
-            const waveNum = index + 1;
-            const progress = wave.progress || 0;
-            const completed = wave.completed || 0;
-            const total = wave.total || 0;
-            const hasDeadline = wave.has_due_date && wave.deadline;
-            const deadlineFormatted = wave.deadline_formatted || 'sin fecha límite';
-            
-            // Nudge config
-            const nudgeConfig = wave.nudge_config || {};
-            const nudgesEnabled = nudgeConfig.nudge_1?.enabled || nudgeConfig.nudge_2?.enabled || false;
-            const nudgeCount = [nudgeConfig.nudge_1, nudgeConfig.nudge_2, nudgeConfig.nudge_3, nudgeConfig.nudge_4]
-                .filter(n => n && n.enabled).length;
-            
-            const waveHtml = `
-                <div class="wave-card" data-wave-id="${wave.id}">
-                    <div class="wave-card-head">
-                        <div class="wave-left">
-                            <span class="wave-idx">T${waveNum}</span>
-                            <div>
-                                <div class="wave-name">${wave.wave_name || 'Toma ' + waveNum}</div>
-                                <div class="wave-sub">${getWaveIntervalText(wave)}</div>
-                            </div>
-                        </div>
-                        <div class="wave-right">
-                            <span class="pill ${wave.status === 'active' ? 'pill-active' : ''}">${wave.status === 'active' ? 'Activo' : 'Inactivo'}</span>
-                        </div>
-                    </div>
-                    <div class="wave-body">
-                        <div class="prog-row">
-                            <div class="prog-track"><div class="prog-fill ${progress === 100 ? 'fill-green' : progress > 0 ? 'fill-blue' : 'fill-gray'}" style="width:${progress}%"></div></div>
-                            <span class="prog-label" style="color:${progress === 100 ? '#006666' : '#2c3e50'}">${completed}/${total} · ${progress}%</span>
-                        </div>
-                        <div class="deadline-row">
-                            <span>Plazo:</span>
-                            <span class="deadline-val ${hasDeadline ? '' : 'none'}">${deadlineFormatted}</span>
-                            <button class="btn-link" onclick="toggleDeadlineEditor('de${wave.id}', this)">${hasDeadline ? 'Cambiar' : 'Asignar plazo'}</button>
-                            ${hasDeadline ? `<button class="btn-link btn-link-red" onclick="removeDeadline(${wave.id})">Quitar</button>` : ''}
-                        </div>
-                        <div class="deadline-editor" id="de${wave.id}">
-                            <div class="de-label">Fecha límite para completar esta toma</div>
-                            <div class="de-row">
-                                <input type="date" id="de${wave.id}-date" value="${wave.deadline || ''}">
-                            </div>
-                            <div class="de-footer">
-                                <button class="btn-sm" onclick="toggleDeadlineEditor('de${wave.id}', null)">Cancelar</button>
-                                <button class="btn-primary btn-sm" onclick="saveDeadline(${wave.id}, 'de${wave.id}')">Guardar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="nudge-section">
-                        <div class="nudge-toggle-row" onclick="toggleNudgePanel('n${wave.id}')">
-                            <span class="nudge-lbl ${nudgesEnabled ? 'on' : ''}" id="nl${wave.id}">
-                                ${nudgesEnabled ? `Recordatorios activados · ${nudgeCount} nudges` : 'Recordatorios desactivados'}
-                            </span>
-                            <label class="toggle" onclick="event.stopPropagation()">
-                                <input type="checkbox" class="nudge-toggle" ${nudgesEnabled ? 'checked' : ''} onchange="toggleNudgePanel('n${wave.id}')">
-                                <span class="tslider"></span>
-                            </label>
-                        </div>
-                        <div class="nudge-panel ${nudgesEnabled ? 'open' : ''}" id="n${wave.id}">
-                            <div class="nudge-ref-row">
-                                Basado en: momento de disponibilidad
-                            </div>
-                            <div class="nudge-rows">
-                                ${renderNudgeRows(nudgeConfig, wave.id)}
-                            </div>
-                            <div class="nudge-footer">
-                                <button class="btn-sm" onclick="toggleNudgePanel('n${wave.id}')">Cancelar</button>
-                                <button class="btn-primary btn-sm" onclick="saveNudgeConfig(${wave.id})">Guardar</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            container.append(waveHtml);
-        });
-    }
-    
-    function getWaveIntervalText(wave) {
-        if (wave.wave_index === 1) {
-            return 'Toma inicial · disponible desde el registro';
-        }
-        
-        if (wave.offset_minutes !== undefined && wave.offset_minutes !== null) {
-            const minutes = parseInt(wave.offset_minutes);
-            const days = Math.floor(minutes / 1440);
-            const hours = Math.floor((minutes % 1440) / 60);
-            const mins = minutes % 60;
-            
-            let parts = [];
-            if (days > 0) parts.push(`${days} día${days !== 1 ? 's' : ''}`);
-            if (hours > 0) parts.push(`${hours} hora${hours !== 1 ? 's' : ''}`);
-            if (mins > 0 && days === 0) parts.push(`${mins} min`);
-            
-            const timeText = parts.length > 0 ? parts.join(' ') : '0 min';
-            return `Disponible desde T1<br><small style="opacity:0.7">${timeText}</small>`;
-        }
-        
-        return 'Sin intervalo definido';
-    }
-    
-    function renderNudgeRows(config, waveId) {
-        const defaults = [
-            { value: 24, unit: 'hours' },
-            { value: 72, unit: 'hours' },
-            { value: 168, unit: 'hours' }
-        ];
-        
-        let html = '';
-        for (let i = 1; i <= 4; i++) {
-            const nudge = config['nudge_' + i] || defaults[i-1] || { value: 24, unit: 'hours' };
-            html += `
-                <div class="nudge-row">
-                    <span class="nudge-num">${i}</span>
-                    <input type="number" value="${nudge.value}" id="nudge-${waveId}-${i}-val" min="1">
-                    <select id="nudge-${waveId}-${i}-unit">
-                        <option value="hours" ${nudge.unit === 'hours' ? 'selected' : ''}>horas</option>
-                        <option value="days" ${nudge.unit === 'days' ? 'selected' : ''}>días</option>
-                    </select>
-                    <span>después de disponible</span>
-                </div>
-            `;
-        }
-        return html;
-    }
-    
-    // Event handlers
-    $('#refresh-dashboard').on('click', function() {
-        if (currentStudyId) loadStudyData(currentStudyId);
-    });
-    
-    // Download data - redirect to export tab
-    $('#action-download-data').on('click', function() {
-        if (currentStudyId) {
-            window.location.href = '?page=eipsi-results&tab=export&study_id=' + currentStudyId;
-        }
-    });
-    
-    $('#copy-shortcode').on('click', function() {
-        const shortcode = $('#shortcode-display').attr('data-shortcode') || $('#shortcode-display').text();
-        navigator.clipboard.writeText(shortcode);
-        $(this).text('Copiado ✓');
-        setTimeout(() => $(this).text('Copiar'), 2000);
-    });
-    
-    $('#copy-page-url').on('click', function() {
-        const url = $('#study-page-url').val();
-        navigator.clipboard.writeText(url);
-        $(this).text('Copiado ✓');
-        setTimeout(() => $(this).text('Copiar'), 2000);
-    });
-    
-    // Expose functions globally
-    window.eipsiLoadStudyDashboard = loadStudyData;
-    
-    // Event handlers for participants (movidos dentro del IIFE para acceder a currentStudyId)
-    $('#action-view-participants').on('click', function() {
-        if (currentStudyId) {
-            loadParticipants(currentStudyId);
-            $('#eipsi-participants-modal').show();
-        }
-    });
-    
-    $('#participant-status-filter').on('change', function() {
-        currentParticipantsFilter = $(this).val();
-        loadParticipants(currentStudyId, 1);
-    });
-    
-    $('#participant-search').on('input', function() {
-        currentParticipantsSearch = $(this).val();
-        loadParticipants(currentStudyId, 1);
-    });
-    
-})(jQuery);
+<script>
 
 // Global functions for inline onclick handlers
 function toggleDeadlineEditor(id, btn) {
@@ -1948,6 +1724,137 @@ table tbody tr:hover td {
         </div>
     </div>
 </div>
+
+<!-- Recalculate Times Modal -->
+<div id="eipsi-recalculate-modal" class="eipsi-modal eipsi-force-light-mode" style="display:none; z-index: 100002;">
+    <div class="eipsi-modal-content" style="max-width:500px;">
+        <div class="eipsi-modal-header" style="border-bottom:1px solid #e2e8f0;padding:16px 20px;">
+            <h3 style="font-size:14px;font-weight:600;color:#2c3e50;margin:0;">⚙️ Recalcular Tiempos de Tomas</h3>
+            <button class="eipsi-modal-close" style="background:none;border:none;font-size:20px;color:#64748b;cursor:pointer;">&times;</button>
+        </div>
+        <div class="eipsi-modal-body" style="padding:20px;">
+            
+            <!-- Warning -->
+            <div style="background:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:12px;font-weight:600;color:#856404;margin-bottom:6px;">⚠️ Acción Avanzada</div>
+                <div style="font-size:11px;color:#856404;line-height:1.5;">
+                    Esta función modifica las fechas de disponibilidad de tomas futuras. Solo úsala si:
+                    <ul style="margin:6px 0 0 16px;padding:0;">
+                        <li>Cometiste un error en la configuración inicial</li>
+                        <li>El protocolo del estudio cambió oficialmente</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div style="background:#f0f6fc;border:1px solid #d6edff;border-radius:8px;padding:12px;margin-bottom:16px;">
+                <div style="font-size:11px;color:#64748b;line-height:1.5;">
+                    <strong style="color:#2c3e50;">¿Qué se modificará?</strong>
+                    <ul style="margin:6px 0 0 16px;padding:0;">
+                        <li>Fechas de disponibilidad de tomas no completadas</li>
+                        <li>Fechas de vencimiento (si aplica)</li>
+                        <li>Recordatorios programados</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div id="recalc-preview" style="background:#f8f9fa;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px;">
+                <div style="font-size:12px;color:#64748b;margin-bottom:4px;">Impacto estimado:</div>
+                <div style="font-size:13px;color:#2c3e50;">
+                    <div id="recalc-participants-count">Calculando...</div>
+                    <div id="recalc-assignments-count"></div>
+                </div>
+            </div>
+
+            <!-- Confirmation -->
+            <label style="display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer;">
+                <input type="checkbox" id="confirm-recalculation" style="cursor:pointer;">
+                <span style="font-size:12px;color:#64748b;">Entiendo que esta acción modificará tiempos de participantes activos</span>
+            </label>
+
+            <!-- Actions -->
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn-sm eipsi-modal-close">Cancelar</button>
+                <button class="btn-sm btn-primary" id="btn-recalculate" disabled>Recalcular ahora</button>
+            </div>
+
+            <!-- Result -->
+            <div id="recalc-result" style="margin-top:12px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function($) {
+    let currentStudyId = 0;
+
+    // Open modal
+    $('#action-recalculate-times').on('click', function() {
+        currentStudyId = $(this).data('study-id') || 0;
+        $('#eipsi-recalculate-modal').show();
+        loadRecalcPreview();
+    });
+
+    // Enable/disable button
+    $('#confirm-recalculation').on('change', function() {
+        $('#btn-recalculate').prop('disabled', !this.checked);
+    });
+
+    // Load preview
+    function loadRecalcPreview() {
+        $('#recalc-preview').html('<div style="text-align:center;color:#94a3b8;padding:10px;">Cargando...</div>');
+        
+        $.post(ajaxurl, {
+            action: 'eipsi_recalculate_preview',
+            study_id: currentStudyId,
+            nonce: eipsiStudyDash.nonce
+        }, function(response) {
+            if (response.success) {
+                const data = response.data;
+                $('#recalc-participants-count').text(data.affected_participants + ' participantes afectados');
+                $('#recalc-assignments-count').text(data.waves_to_update + ' tomas serán recalculadas');
+            } else {
+                $('#recalc-preview').html('<div style="color:#dc2626;font-size:12px;">Error al cargar preview</div>');
+            }
+        });
+    }
+
+    // Recalculate
+    $('#btn-recalculate').on('click', function() {
+        const $btn = $(this);
+        $btn.prop('disabled', true).text('Recalculando...');
+        
+        $.post(ajaxurl, {
+            action: 'eipsi_recalculate_waves',
+            study_id: currentStudyId,
+            nonce: eipsiStudyDash.nonce
+        }, function(response) {
+            const type = response.success ? 'success' : 'error';
+            const color = response.success ? '#008080' : '#dc2626';
+            const bg = response.success ? '#e8f5e9' : '#fee2e2';
+            
+            $('#recalc-result').html(
+                '<div style="background:' + bg + ';border:1px solid ' + color + ';border-radius:6px;padding:10px;font-size:12px;color:' + color + ';">' +
+                    (response.data.message || 'Operación completada') +
+                '</div>'
+            );
+            
+            $btn.prop('disabled', false).text('Recalcular ahora');
+            $('#confirm-recalculation').prop('checked', false);
+            
+            if (response.success) {
+                setTimeout(function() {
+                    $('#eipsi-recalculate-modal').hide();
+                    if (typeof eipsiLoadStudyDashboard === 'function') {
+                        eipsiLoadStudyDashboard(currentStudyId);
+                    }
+                }, 2000);
+            }
+        });
+    });
+})(jQuery);
+</script>
 
 <!-- 
     TODA la funcionalidad JS está en assets/js/study-dashboard.js

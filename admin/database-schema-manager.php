@@ -2157,16 +2157,26 @@ function eipsi_longitudinal_ensure_foreign_key( $table_name, $constraint_name, $
 
     global $wpdb;
 
-    if ( eipsi_longitudinal_fk_exists( $table_name, $constraint_name ) ) return true;
+    // Check if FK already exists
+    if ( eipsi_longitudinal_fk_exists( $table_name, $constraint_name ) ) {
+        return true;
+    }
 
-    $result = @$wpdb->query( $alter_sql );
+    // Suppress errors temporarily to avoid duplicate key warnings
+    $wpdb->suppress_errors( true );
+    $result = $wpdb->query( $alter_sql );
+    $wpdb->suppress_errors( false );
 
     if ( $result === false ) {
-
+        // Check if error is "duplicate key" (errno 121) - this means FK already exists
+        if ( strpos( $wpdb->last_error, 'errno: 121' ) !== false || strpos( $wpdb->last_error, 'Duplicate key' ) !== false ) {
+            // FK already exists, silently succeed
+            return true;
+        }
+        
+        // Only log real errors
         error_log( "[EIPSI] Failed to add FK $constraint_name on $table_name: " . $wpdb->last_error );
-
         return false;
-
     }
 
     return true;

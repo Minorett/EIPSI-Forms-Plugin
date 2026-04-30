@@ -552,6 +552,9 @@
                 $('#btn-pause-study, #btn-resume-study').hide();
             }
 
+            // Set study_id for recalculate button
+            $('#action-recalculate-times').data('study-id', general.id);
+
             // Emails stats
             $('#emails-today').text(emails.sent_today || 0);
             $('#emails-failed').text(emails.failed || 0);
@@ -747,25 +750,11 @@
                                 '</div>' +
                             '</div>' +
                         '</div>' +
-                        // T1-Anchor: Timing section with offset_minutes and window_minutes
-                        '<div class="timing-section" style="padding:12px 16px;border-top:1px solid #eee;">' +
-                            '<div class="timing-row" style="display:flex;gap:16px;margin-bottom:8px;">' +
-                                '<div class="timing-field" style="flex:1;">' +
-                                    '<label style="display:block;font-size:12px;color:#666;margin-bottom:4px;">' + (waveNum === 1 ? 'Disponible inmediatamente (T1)' : 'Disponible desde T1') + '</label>' +
-                                    '<div class="timing-input-wrap" style="display:flex;align-items:center;gap:8px;">' +
-                                        '<input type="number" ' + (waveNum === 1 ? 'disabled ' : '') + 'class="wave-offset-input" id="offset-' + wave.id + '" value="' + (wave.offset_minutes || 0) + '" min="0" style="width:80px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;">' +
-                                        '<span class="timing-unit">min</span>' +
-                                        '<span class="timing-translation" id="offset-trans-' + wave.id + '">' + self.formatMinutes(wave.offset_minutes || 0) + '</span>' +
-                                    '</div>' +
-                                '</div>' +
-                                '<div class="timing-field" style="flex:1;">' +
-                                    '<label style="display:block;font-size:12px;color:#666;margin-bottom:4px;">Ventana de respuesta</label>' +
-                                    '<div class="timing-input-wrap" style="display:flex;align-items:center;gap:8px;">' +
-                                        '<input type="number" class="wave-window-input" id="window-' + wave.id + '" value="' + (wave.window_minutes || '') + '" min="1" placeholder="' + self.calculateEffectiveWindow(wave, index, waves) + '" style="width:80px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;">' +
-                                        '<span class="timing-unit">min</span>' +
-                                        (wave.window_minutes === null ? '<span class="timing-badge" style="background:#e3f2fd;color:#1976d2;padding:2px 6px;border-radius:4px;font-size:11px;">Auto</span>' : '') +
-                                    '</div>' +
-                                '</div>' +
+                        // T1-Anchor: Timing info (read-only, configured in wizard)
+                        '<div class="timing-info" style="padding:10px 16px;background:#f8f9fa;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;">' +
+                            '<div style="display:flex;gap:20px;flex-wrap:wrap;">' +
+                                '<div><strong style="color:#2c3e50;">📅 Disponibilidad:</strong> ' + (waveNum === 1 ? 'Inmediata (T1)' : self.formatMinutes(wave.offset_minutes || 0) + ' desde T1') + '</div>' +
+                                (wave.window_minutes ? '<div><strong style="color:#2c3e50;">⏱️ Ventana:</strong> ' + self.formatMinutes(wave.window_minutes) + ' para completar</div>' : '<div><strong style="color:#2c3e50;">⏱️ Ventana:</strong> Sin límite</div>') +
                             '</div>' +
                         '</div>' +
                         '<div class="nudge-section">' +

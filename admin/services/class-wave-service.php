@@ -90,6 +90,12 @@ class EIPSI_Wave_Service {
         // Formats: study_id, wave_index, name, form_id, interval_days, offset_minutes, time_unit, reminder_days, retry_enabled, retry_days, max_retries, status, is_mandatory, follow_up_reminders_enabled
         $formats = array('%d', '%d', '%s', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%s', '%d', '%d');
 
+        // Phase 5 T1-Anchor: nudge_config (JSON string with proportional nudges)
+        if (isset($wave_data['nudge_config']) && !empty($wave_data['nudge_config'])) {
+            $data['nudge_config'] = $wave_data['nudge_config']; // Already JSON encoded
+            $formats[] = '%s';
+        }
+
         // window_minutes is optional and can be NULL
         if ($window_minutes !== null) {
             $formats[] = '%d';

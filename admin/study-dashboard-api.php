@@ -212,7 +212,9 @@ function wp_ajax_eipsi_get_study_overview_handler() {
         $nudge_config_raw = isset($wave->nudge_config) ? $wave->nudge_config : '';
         $nudge_config = !empty($nudge_config_raw) ? json_decode($nudge_config_raw, true) : array();
         
-        // Ensure all nudges have defaults if not set (enabled by default)
+        // Fallback defaults for legacy waves without nudge_config
+        // NOTE: New waves created via wizard have proportional nudges calculated based on interval
+        // These defaults are only used for old waves created before the proportional system
         $default_nudge_config = array(
             'nudge_1' => array('enabled' => true, 'value' => 24, 'unit' => 'hours'),
             'nudge_2' => array('enabled' => true, 'value' => 72, 'unit' => 'hours'),
