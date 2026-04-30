@@ -548,7 +548,19 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
     error_log('[EIPSI DASHBOARD API] extend_wave_deadline called');
     error_log('[EIPSI DASHBOARD API] POST data: ' . print_r($_POST, true));
     
-    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+    $received_nonce = isset($_POST['nonce']) ? $_POST['nonce'] : 'NONE';
+    error_log('[EIPSI DASHBOARD API] Nonce received: ' . $received_nonce);
+    error_log('[EIPSI DASHBOARD API] Verifying nonce against: eipsi_study_dashboard_nonce');
+    
+    $nonce_valid = wp_verify_nonce($received_nonce, 'eipsi_study_dashboard_nonce');
+    error_log('[EIPSI DASHBOARD API] Nonce validation result: ' . ($nonce_valid ? 'VALID' : 'INVALID'));
+    
+    if (!$nonce_valid) {
+        error_log('[EIPSI DASHBOARD API] Nonce verification FAILED - returning error');
+        wp_send_json_error('Invalid nonce');
+        return;
+    }
+    
     error_log('[EIPSI DASHBOARD API] Nonce verified successfully');
 
     if (!eipsi_user_can_manage_longitudinal()) {
