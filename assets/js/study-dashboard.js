@@ -852,19 +852,22 @@
             }
 
             const self = this;
+            const ajaxData = {
+                action: 'eipsi_extend_wave_deadline',
+                wave_id: waveId,
+                deadline_date: date,
+                nonce: eipsiStudyDash.nonce
+            };
+            
             console.log('[DEADLINE] Sending AJAX with date:', date);
             console.log('[DEADLINE] AJAX URL:', eipsiStudyDash.ajaxUrl);
             console.log('[DEADLINE] Nonce available:', !!eipsiStudyDash.nonce);
+            console.log('[DEADLINE] Full AJAX data:', ajaxData);
             
             $.ajax({
                 url: eipsiStudyDash.ajaxUrl,
                 type: 'POST',
-                data: {
-                    action: 'eipsi_extend_wave_deadline',
-                    wave_id: waveId,
-                    deadline_date: date,
-                    nonce: eipsiStudyDash.nonce
-                },
+                data: ajaxData,
                 timeout: 20000,
                 success: function(response) {
                     console.log('[DEADLINE] AJAX response:', response);
@@ -881,6 +884,9 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('[DEADLINE] AJAX error:', status, error);
+                    console.error('[DEADLINE] XHR status:', xhr.status);
+                    console.error('[DEADLINE] XHR statusText:', xhr.statusText);
+                    console.error('[DEADLINE] XHR responseText:', xhr.responseText);
                     if (status === 'timeout' || xhr.status === 504) {
                         self.showToast('⏱️ Timeout al guardar plazo. Intentá de nuevo.', 'error');
                     } else {

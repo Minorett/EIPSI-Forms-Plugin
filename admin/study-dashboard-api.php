@@ -9,6 +9,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+error_log('[EIPSI DASHBOARD API] File loaded, registering AJAX handlers');
+
 /**
  * Register AJAX handlers
  */
