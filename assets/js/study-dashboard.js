@@ -1091,18 +1091,11 @@
             console.log('[NUDGE-SAVE] Enabled type:', typeof enabled);
             console.log('[NUDGE-SAVE] AJAX URL:', eipsiStudyDash.ajaxUrl);
             
-            // T1-Anchor: Get offset_minutes and window_minutes
-            const offsetMinutes = parseInt($card.find('.wave-offset-input').val()) || 0;
-            const windowInput = $card.find('.wave-window-input').val();
-            const windowMinutes = windowInput === '' || windowInput === null ? null : parseInt(windowInput);
-            
             const ajaxData = {
                 action: 'eipsi_save_wave_nudges',
                 wave_id: waveId,
                 nudges: nudges,
                 enabled: enabled,
-                offset_minutes: offsetMinutes,
-                window_minutes: windowMinutes,
                 nonce: eipsiStudyDash.nonce
             };
             console.log('[NUDGE-SAVE] Full AJAX data:', JSON.stringify(ajaxData, null, 2));

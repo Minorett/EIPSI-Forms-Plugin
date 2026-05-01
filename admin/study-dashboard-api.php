@@ -607,19 +607,19 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
     $deadline_timestamp = strtotime($deadline_datetime);
     
     // Update legacy due_date in wave for backward compatibility
-    // Mark this as a manual deadline by storing a flag in the config
-    $current_config = $wpdb->get_var($wpdb->prepare(
-        "SELECT config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+    // Mark this as a manual deadline by storing a flag in nudge_config
+    $current_nudge_config = $wpdb->get_var($wpdb->prepare(
+        "SELECT nudge_config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
         $wave_id
     ));
-    $config = !empty($current_config) ? json_decode($current_config, true) : array();
-    $config['manual_deadline'] = true;
+    $nudge_config = !empty($current_nudge_config) ? json_decode($current_nudge_config, true) : array();
+    $nudge_config['manual_deadline'] = true;
     
     $wpdb->update(
         "{$wpdb->prefix}survey_waves",
         array(
             'due_date' => $new_deadline,
-            'config' => wp_json_encode($config)
+            'nudge_config' => wp_json_encode($nudge_config)
         ),
         array('id' => $wave_id),
         array('%s', '%s'),
@@ -641,13 +641,13 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
             if ($subsequent_wave->offset_minutes > 0) {
                 // Get current wave data to check if it has a manual deadline
                 $current_wave_data = $wpdb->get_row($wpdb->prepare(
-                    "SELECT due_date, config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                    "SELECT due_date, nudge_config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
                     $subsequent_wave->id
                 ));
                 
                 // Check if this wave has a manual deadline set by the user
-                $wave_config = !empty($current_wave_data->config) ? json_decode($current_wave_data->config, true) : array();
-                $has_manual_deadline = isset($wave_config['manual_deadline']) && $wave_config['manual_deadline'] === true;
+                $wave_nudge_config = !empty($current_wave_data->nudge_config) ? json_decode($current_wave_data->nudge_config, true) : array();
+                $has_manual_deadline = isset($wave_nudge_config['manual_deadline']) && $wave_nudge_config['manual_deadline'] === true;
                 
                 // Calculate new available_at for this wave based on T1 deadline
                 $new_available_at = date('Y-m-d H:i:s', $deadline_timestamp + ($subsequent_wave->offset_minutes * 60));
@@ -765,18 +765,18 @@ function wp_ajax_eipsi_remove_wave_deadline_handler() {
         $is_t1_anchor = ($wave->offset_minutes == 0);
         
         // Remove legacy due_date from wave and clear manual_deadline flag
-        $current_config = $wpdb->get_var($wpdb->prepare(
-            "SELECT config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+        $current_nudge_config = $wpdb->get_var($wpdb->prepare(
+            "SELECT nudge_config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
             $wave_id
         ));
-        $config = !empty($current_config) ? json_decode($current_config, true) : array();
-        unset($config['manual_deadline']);
+        $nudge_config = !empty($current_nudge_config) ? json_decode($current_nudge_config, true) : array();
+        unset($nudge_config['manual_deadline']);
         
         $wpdb->update(
             "{$wpdb->prefix}survey_waves",
             array(
                 'due_date' => null,
-                'config' => wp_json_encode($config)
+                'nudge_config' => wp_json_encode($nudge_config)
             ),
             array('id' => $wave_id),
             array('%s', '%s'),
@@ -796,11 +796,11 @@ function wp_ajax_eipsi_remove_wave_deadline_handler() {
             foreach ($all_waves as $subsequent_wave) {
                 // Check if this wave has a manual deadline
                 $wave_data = $wpdb->get_row($wpdb->prepare(
-                    "SELECT config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                    "SELECT nudge_config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
                     $subsequent_wave->id
                 ));
-                $wave_config = !empty($wave_data->config) ? json_decode($wave_data->config, true) : array();
-                $is_manual = isset($wave_config['manual_deadline']) && $wave_config['manual_deadline'] === true;
+                $wave_nudge_config = !empty($wave_data->nudge_config) ? json_decode($wave_data->nudge_config, true) : array();
+                $is_manual = isset($wave_nudge_config['manual_deadline']) && $wave_nudge_config['manual_deadline'] === true;
                 
                 // Only remove auto-calculated deadlines, keep manual ones
                 if (!$is_manual) {
@@ -1191,23 +1191,13 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
             'follow_up_reminders_enabled' => $enabled ? 1 : 0
         );
         
-        // T1-Anchor: persist offset_minutes and window_minutes
-        $offset_minutes = isset($_POST['offset_minutes']) ? intval($_POST['offset_minutes']) : null;
-        $window_minutes = isset($_POST['window_minutes']) && $_POST['window_minutes'] !== '' ? intval($_POST['window_minutes']) : null;
-        if ($offset_minutes !== null) {
-            $update_data['offset_minutes'] = $offset_minutes;
-        }
-        if ($window_minutes !== null) {
-            $update_data['window_minutes'] = $window_minutes > 0 ? $window_minutes : null;
-        }
-        
         error_log("[EIPSI DASHBOARD API] Update data: " . print_r($update_data, true));
         
         $result = $wpdb->update(
             $table_name,
             $update_data,
             array('id' => $wave_id),
-            array('%s', '%d'),
+            array('%s', '%d'),  // nudge_config (string), follow_up_reminders_enabled (int)
             array('%d')
         );
 
