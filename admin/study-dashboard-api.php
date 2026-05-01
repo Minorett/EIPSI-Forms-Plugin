@@ -851,7 +851,6 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
                 foreach ($affected as $assignment_id) {
                     do_action('eipsi_assignment_deadline_changed', $assignment_id, $new_due_at);
                 }
-            }
         }
     }
     

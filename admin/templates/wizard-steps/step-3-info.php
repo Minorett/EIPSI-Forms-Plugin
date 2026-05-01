@@ -188,6 +188,7 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                                        min="1" 
                                        oninput="eipsiSyncOffset(this)">
                                 <select class="eipsi-wiz-select eipsi-interval-unit"
+                                        data-previous-unit="<?php echo esc_attr($unit); ?>"
                                         onchange="eipsiSyncOffset(this)">
                                     <option value="days" <?php selected($unit, 'days'); ?>>días</option>
                                     <option value="minutes" <?php selected($unit, 'minutes'); ?>>minutos</option>
@@ -220,6 +221,7 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                                    min="1"
                                    oninput="eipsiSyncOffset(this)">
                             <select class="eipsi-wiz-select eipsi-interval-unit"
+                                    data-previous-unit="<?php echo esc_attr($unit_c); ?>"
                                     onchange="eipsiSyncOffset(this)">
                                 <option value="days" <?php selected($unit_c, 'days'); ?>>días</option>
                                 <option value="minutes" <?php selected($unit_c, 'minutes'); ?>>minutos</option>
@@ -253,12 +255,12 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                         <button type="button"
                             style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
                             onclick="eipsiApplyTimingTemplate('semanal_7x', this)">
-                            📅 Semanal (7×X)
+                            📅 Semanal
                         </button>
                         <button type="button"
                             style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
                             onclick="eipsiApplyTimingTemplate('quincenal_14x', this)">
-                            📆 Quincenal (14×X)
+                            📆 Quincenal
                         </button>
                     </div>
                 </div>
@@ -333,6 +335,27 @@ function eipsiSyncOffset(element) {
     const unitSelect = item.querySelector('.eipsi-interval-unit');
     const hiddenOffset = item.querySelector('.eipsi-hidden-offset');
     const equivSpan = item.querySelector('.eipsi-interval-equiv');
+    
+    // Check if unit changed (triggered by select)
+    const isUnitChange = element === unitSelect;
+    const newUnit = unitSelect.value;
+    const currentValue = parseInt(input.value) || 0;
+    
+    // If unit changed, convert the value
+    if (isUnitChange) {
+        const previousUnit = unitSelect.dataset.previousUnit || 'days';
+        
+        if (previousUnit === 'days' && newUnit === 'minutes') {
+            // Convert days to minutes
+            input.value = currentValue * MINUTES_PER_DAY;
+        } else if (previousUnit === 'minutes' && newUnit === 'days') {
+            // Convert minutes to days (rounded)
+            input.value = Math.round(currentValue / MINUTES_PER_DAY);
+        }
+        
+        // Store current unit for next change
+        unitSelect.dataset.previousUnit = newUnit;
+    }
     
     const value = parseInt(input.value) || 0;
     const unit = unitSelect.value;
@@ -479,8 +502,19 @@ function eipsiApplyTimingTemplate(template, btn) {
         
         inputs.forEach((input, i) => {
             accumulatedDays += gaps[i] || 7;
-            input.value = accumulatedDays;
-            if (units[i]) units[i].value = 'days';
+            const currentUnit = units[i] ? units[i].value : 'days';
+            
+            // Set value according to current unit
+            if (currentUnit === 'minutes') {
+                input.value = accumulatedDays * <?php echo MINUTES_PER_DAY; ?>;
+            } else {
+                input.value = accumulatedDays;
+            }
+            
+            // Update data-previous-unit to match current unit
+            if (units[i]) {
+                units[i].dataset.previousUnit = currentUnit;
+            }
             
             // Sync this input
             eipsiSyncOffset(input);
