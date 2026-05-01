@@ -170,6 +170,8 @@ function wp_ajax_eipsi_get_study_overview_handler() {
     foreach ($waves as $wave) {
         if ($wave->offset_minutes == 0 && !empty($wave->due_date)) {
             $t1_deadline = $wave->due_date;
+            // Use end of T1 deadline day (23:59:59) as the anchor point
+            // Subsequent waves become available starting from this timestamp
             $t1_deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
             break;
         }
@@ -605,11 +607,22 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
     $deadline_timestamp = strtotime($deadline_datetime);
     
     // Update legacy due_date in wave for backward compatibility
+    // Mark this as a manual deadline by storing a flag in the config
+    $current_config = $wpdb->get_var($wpdb->prepare(
+        "SELECT config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+        $wave_id
+    ));
+    $config = !empty($current_config) ? json_decode($current_config, true) : array();
+    $config['manual_deadline'] = true;
+    
     $wpdb->update(
         "{$wpdb->prefix}survey_waves",
-        array('due_date' => $new_deadline),
+        array(
+            'due_date' => $new_deadline,
+            'config' => wp_json_encode($config)
+        ),
         array('id' => $wave_id),
-        array('%s'),
+        array('%s', '%s'),
         array('%d')
     );
     
@@ -626,13 +639,40 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
         // Each wave's available_at = T1_deadline + wave.offset_minutes
         foreach ($all_waves as $subsequent_wave) {
             if ($subsequent_wave->offset_minutes > 0) {
+                // Get current wave data to check if it has a manual deadline
+                $current_wave_data = $wpdb->get_row($wpdb->prepare(
+                    "SELECT due_date, config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                    $subsequent_wave->id
+                ));
+                
+                // Check if this wave has a manual deadline set by the user
+                $wave_config = !empty($current_wave_data->config) ? json_decode($current_wave_data->config, true) : array();
+                $has_manual_deadline = isset($wave_config['manual_deadline']) && $wave_config['manual_deadline'] === true;
+                
                 // Calculate new available_at for this wave based on T1 deadline
                 $new_available_at = date('Y-m-d H:i:s', $deadline_timestamp + ($subsequent_wave->offset_minutes * 60));
                 
-                // Calculate new due_at based on window
+                // Calculate new due_at based on window OR manual deadline
                 $new_due_at = null;
-                if ($subsequent_wave->window_minutes > 0) {
+                $new_due_date = null;
+                
+                if ($has_manual_deadline) {
+                    // Keep manual deadline, just update available_at
+                    $new_due_at = $current_wave_data->due_date . ' 23:59:59';
+                    $new_due_date = $current_wave_data->due_date;
+                } else if ($subsequent_wave->window_minutes > 0) {
+                    // Calculate automatic deadline from available_at + window
                     $new_due_at = date('Y-m-d H:i:s', strtotime($new_available_at) + ($subsequent_wave->window_minutes * 60));
+                    $new_due_date = date('Y-m-d', strtotime($new_due_at));
+                    
+                    // Update wave's due_date for display (only if no manual deadline)
+                    $wpdb->update(
+                        "{$wpdb->prefix}survey_waves",
+                        array('due_date' => $new_due_date),
+                        array('id' => $subsequent_wave->id),
+                        array('%s'),
+                        array('%d')
+                    );
                 }
                 
                 // Update all assignments for this wave
@@ -724,12 +764,22 @@ function wp_ajax_eipsi_remove_wave_deadline_handler() {
         
         $is_t1_anchor = ($wave->offset_minutes == 0);
         
-        // Remove legacy due_date from wave
+        // Remove legacy due_date from wave and clear manual_deadline flag
+        $current_config = $wpdb->get_var($wpdb->prepare(
+            "SELECT config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+            $wave_id
+        ));
+        $config = !empty($current_config) ? json_decode($current_config, true) : array();
+        unset($config['manual_deadline']);
+        
         $wpdb->update(
             "{$wpdb->prefix}survey_waves",
-            array('due_date' => null),
+            array(
+                'due_date' => null,
+                'config' => wp_json_encode($config)
+            ),
             array('id' => $wave_id),
-            array('%s'),
+            array('%s', '%s'),
             array('%d')
         );
         
@@ -741,6 +791,28 @@ function wp_ajax_eipsi_remove_wave_deadline_handler() {
                  WHERE study_id = %d AND offset_minutes > 0 ORDER BY offset_minutes ASC",
                 $wave->study_id
             ));
+            
+            // Remove due_date from all subsequent waves (only auto-calculated ones)
+            foreach ($all_waves as $subsequent_wave) {
+                // Check if this wave has a manual deadline
+                $wave_data = $wpdb->get_row($wpdb->prepare(
+                    "SELECT config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                    $subsequent_wave->id
+                ));
+                $wave_config = !empty($wave_data->config) ? json_decode($wave_data->config, true) : array();
+                $is_manual = isset($wave_config['manual_deadline']) && $wave_config['manual_deadline'] === true;
+                
+                // Only remove auto-calculated deadlines, keep manual ones
+                if (!$is_manual) {
+                    $wpdb->update(
+                        "{$wpdb->prefix}survey_waves",
+                        array('due_date' => null),
+                        array('id' => $subsequent_wave->id),
+                        array('%s'),
+                        array('%d')
+                    );
+                }
+            }
             
             // Recalculate each wave's assignments based on participant's t1_completed_at
             foreach ($all_waves as $subsequent_wave) {

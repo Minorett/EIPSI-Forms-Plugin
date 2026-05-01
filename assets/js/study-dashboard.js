@@ -685,7 +685,10 @@
                 
                 // Generate nudge rows HTML - ahora en minutos con traducción automática
                 const nudgeConfig = wave.nudge_config || wave.nudges || {};
-                let nudgeRowsHtml = '';
+                const windowMinutes = wave.window_minutes || 0;
+                
+                // Collect all nudge values
+                let nudgeValues = [];
                 for (let i = 1; i <= 4; i++) {
                     const nudgeKey = 'nudge_' + i;
                     const nudgeData = nudgeConfig[nudgeKey];
@@ -697,13 +700,31 @@
                         // Defaults en minutos: 24h=1440, 72h=4320, 168h=10080, 336h=20160
                         minutes = i === 1 ? 1440 : i === 2 ? 4320 : i === 3 ? 10080 : 20160;
                     }
+                    nudgeValues.push(minutes);
+                }
+                
+                // Auto-redistribute if nudges exceed window
+                if (windowMinutes > 0) {
+                    const totalNudges = nudgeValues.reduce((sum, val) => sum + val, 0);
+                    if (totalNudges > windowMinutes) {
+                        // Redistribute proportionally within 90% of window
+                        const usableWindow = windowMinutes * 0.9;
+                        const scaleFactor = usableWindow / totalNudges;
+                        nudgeValues = nudgeValues.map(val => Math.round(val * scaleFactor));
+                    }
+                }
+                
+                // Build HTML with redistributed values
+                let nudgeRowsHtml = '';
+                for (let i = 0; i < 4; i++) {
+                    const minutes = nudgeValues[i];
                     const timeLabel = self.formatMinutes(minutes);
                     nudgeRowsHtml += 
-                        '<div class="nudge-row" data-nudge-index="' + i + '">' +
-                            '<span class="nudge-num">' + i + '</span>' +
-                            '<input type="number" value="' + minutes + '" id="nudge-' + wave.id + '-' + i + '-val" min="1" class="nudge-minutes-input">' +
+                        '<div class="nudge-row" data-nudge-index="' + (i + 1) + '">' +
+                            '<span class="nudge-num">' + (i + 1) + '</span>' +
+                            '<input type="number" value="' + minutes + '" id="nudge-' + wave.id + '-' + (i + 1) + '-val" min="1" class="nudge-minutes-input">' +
                             '<span class="nudge-unit-label">minutos</span>' +
-                            '<span class="nudge-translation" id="ntrans-' + wave.id + '-' + i + '">' + timeLabel + '</span>' +
+                            '<span class="nudge-translation" id="ntrans-' + wave.id + '-' + (i + 1) + '">' + timeLabel + '</span>' +
                             '<span class="nudge-suffix">después del anterior</span>' +
                         '</div>';
                 }
