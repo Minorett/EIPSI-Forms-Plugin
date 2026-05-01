@@ -177,7 +177,13 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             $t1_deadline = $wave->due_date;
             // Use end of T1 deadline day (23:59:59) as the anchor point
             // Subsequent waves become available starting from this timestamp
-            $t1_deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
+            // If due_date already has time, use it; otherwise add 23:59:59
+            if (strpos($wave->due_date, ':') !== false) {
+                // Already has time component, replace with 23:59:59
+                $t1_deadline_timestamp = strtotime(date('Y-m-d', strtotime($wave->due_date)) . ' 23:59:59');
+            } else {
+                $t1_deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
+            }
             error_log(sprintf('[EIPSI DASHBOARD API] T1 deadline detected: %s (timestamp: %d)', $t1_deadline, $t1_deadline_timestamp));
             break;
         }
