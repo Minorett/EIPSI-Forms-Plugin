@@ -1463,6 +1463,24 @@ function wp_ajax_eipsi_redistribute_nudges_handler() {
             $current_window_minutes = $wave->window_minutes;
         }
         
+        // Validate minimum window for nudge redistribution
+        if ($current_window_minutes < 60) {
+            error_log(sprintf(
+                '[EIPSI Redistribute] Wave %d: Window too short (%d min) for redistribution',
+                $wave_id,
+                $current_window_minutes
+            ));
+            
+            wp_send_json_error(array(
+                'message' => sprintf(
+                    'La ventana es muy corta (%d minutos). Se requiere un mínimo de 60 minutos para redistribuir nudges de manera efectiva.',
+                    $current_window_minutes
+                ),
+                'window_minutes' => $current_window_minutes,
+                'minimum_required' => 60
+            ));
+        }
+        
         // Get current nudge config
         $nudge_config = !empty($wave->nudge_config) ? json_decode($wave->nudge_config, true) : array();
         

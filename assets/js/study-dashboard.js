@@ -1171,10 +1171,26 @@
                     console.log('[REDISTRIBUTE] Response:', response);
                     if (response.success) {
                         const windowDays = response.data.window_days || 0;
-                        const message = `✓ Nudges redistribuidos a ${windowDays} días`;
+                        const blockedCount = response.data.blocked_count || 0;
+                        
+                        let message = `✓ Nudges redistribuidos a ${windowDays} días`;
+                        let toastType = 'success';
+                        
+                        // Advertencia si hay nudges bloqueados
+                        if (blockedCount > 0) {
+                            message += `\n⚠️ ${blockedCount} nudge(s) no se programaron (muy cerca del deadline)`;
+                            toastType = 'warning';
+                            
+                            console.warn('[REDISTRIBUTE] Blocked nudges:', response.data.blocked_details);
+                        }
                         
                         // Mostrar mensaje con fadeout
                         self.showTemporaryMessage(waveId, message);
+                        
+                        // Mostrar toast si hay bloqueados
+                        if (blockedCount > 0) {
+                            self.showToast(message, toastType);
+                        }
                         
                         // Recargar dashboard
                         if (self.currentStudyId) {

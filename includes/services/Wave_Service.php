@@ -318,44 +318,9 @@ class Wave_Service {
             return;
         }
 
-        // Wave is NOW available - send email immediately (Nudge 0)
-        error_log("[Wave_Service] Next wave is NOW available - triggering immediate Nudge 0 email");
-
-        // Check if EIPSI_Email_Service is available
-        if (!class_exists('EIPSI_Email_Service')) {
-            require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-email-service.php';
-        }
-
-        if (!method_exists('EIPSI_Email_Service', 'send_wave_reminder_email')) {
-            error_log('[Wave_Service] EIPSI_Email_Service::send_wave_reminder_email not available');
-            return;
-        }
-
-        // Send the reminder email
-        $result = EIPSI_Email_Service::send_wave_reminder_email(
-            $study_id,
-            $participant_id,
-            $next_wave
-        );
-
-        if ($result) {
-            error_log("[Wave_Service] ✅ Immediate reminder email sent to participant {$participant_id} for wave {$next_wave->id}");
-
-            // Increment reminder count to prevent cron from sending duplicate
-            $wpdb->update(
-                $wpdb->prefix . 'survey_assignments',
-                array('reminder_count' => 1),
-                array(
-                    'participant_id' => $participant_id,
-                    'study_id' => $study_id,
-                    'wave_id' => $next_wave->id
-                ),
-                array('%d'),
-                array('%d', '%d', '%d')
-            );
-        } else {
-            error_log("[Wave_Service] ❌ Failed to send immediate reminder to participant {$participant_id}");
-        }
+        // Wave is NOW available - trigger event-driven nudge system
+        error_log("[Wave_Service] Next wave is NOW available - triggering event-driven nudge sequence");
+        do_action('eipsi_wave_available', $next_assignment->id);
     }
     
     /**
