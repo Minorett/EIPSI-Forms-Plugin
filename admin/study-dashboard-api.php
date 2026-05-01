@@ -20,6 +20,7 @@ add_action('wp_ajax_eipsi_send_wave_reminder_manual', 'wp_ajax_eipsi_send_wave_r
 add_action('wp_ajax_eipsi_extend_wave_deadline', 'wp_ajax_eipsi_extend_wave_deadline_handler');
 add_action('wp_ajax_eipsi_remove_wave_deadline', 'wp_ajax_eipsi_remove_wave_deadline_handler');
 add_action('wp_ajax_eipsi_save_wave_nudges', 'wp_ajax_eipsi_save_wave_nudges_handler');
+add_action('wp_ajax_eipsi_redistribute_nudges', 'wp_ajax_eipsi_redistribute_nudges_handler');
 add_action('wp_ajax_eipsi_get_study_email_logs', 'wp_ajax_eipsi_get_study_email_logs_handler');
 add_action('wp_ajax_eipsi_add_participant', 'wp_ajax_eipsi_add_participant_handler');
 add_action('wp_ajax_eipsi_validate_csv_participants', 'wp_ajax_eipsi_validate_csv_participants_handler');
@@ -1403,6 +1404,117 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
         error_log('[EIPSI Save Nudges] Error: ' . $e->getMessage());
         wp_send_json_error(array(
             'message' => 'Error al guardar nudges: ' . $e->getMessage(),
+            'error' => 'exception'
+        ), 500);
+    }
+}
+
+/**
+ * POST redistribute nudges proportionally to current window
+ */
+function wp_ajax_eipsi_redistribute_nudges_handler() {
+    check_ajax_referer('eipsi_study_dashboard_nonce', 'nonce');
+
+    if (!eipsi_user_can_manage_longitudinal()) {
+        wp_send_json_error('Unauthorized');
+    }
+
+    $wave_id = isset($_POST['wave_id']) ? (int) $_POST['wave_id'] : 0;
+    if (!$wave_id) {
+        wp_send_json_error('Missing wave ID');
+    }
+
+    try {
+        global $wpdb;
+        
+        // Get wave info
+        $wave = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, study_id, offset_minutes, window_minutes, due_date, nudge_config 
+             FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+            $wave_id
+        ));
+        
+        if (!$wave) {
+            wp_send_json_error('Wave not found');
+        }
+        
+        // Get study creation date
+        $study = $wpdb->get_row($wpdb->prepare(
+            "SELECT created_at FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+            $wave->study_id
+        ));
+        
+        if (!$study) {
+            wp_send_json_error('Study not found');
+        }
+        
+        $study_created_timestamp = strtotime($study->created_at);
+        
+        // Calculate current window
+        $current_window_minutes = 0;
+        
+        if (!empty($wave->due_date)) {
+            // Has deadline: calculate dynamic window
+            $deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
+            $theoretical_opening_timestamp = $study_created_timestamp + ($wave->offset_minutes * 60);
+            $current_window_minutes = ceil(($deadline_timestamp - $theoretical_opening_timestamp) / 60);
+        } else {
+            // No deadline: use original window
+            $current_window_minutes = $wave->window_minutes;
+        }
+        
+        // Get current nudge config
+        $nudge_config = !empty($wave->nudge_config) ? json_decode($wave->nudge_config, true) : array();
+        
+        // Get current nudges as base for redistribution
+        $current_nudges = array(
+            'nudge_1' => $nudge_config['nudge_1'] ?? null,
+            'nudge_2' => $nudge_config['nudge_2'] ?? null,
+            'nudge_3' => $nudge_config['nudge_3'] ?? null,
+            'nudge_4' => $nudge_config['nudge_4'] ?? null,
+        );
+        
+        // Use original window as base (or current if no original)
+        $original_window_minutes = isset($nudge_config['original_window_minutes']) 
+            ? $nudge_config['original_window_minutes'] 
+            : $wave->window_minutes;
+        
+        // Redistribute
+        $redistributed = eipsi_redistribute_nudges(
+            $current_nudges,
+            $original_window_minutes,
+            $current_window_minutes
+        );
+        
+        // Update nudge config
+        $nudge_config['nudge_1'] = $redistributed['nudge_1'];
+        $nudge_config['nudge_2'] = $redistributed['nudge_2'];
+        $nudge_config['nudge_3'] = $redistributed['nudge_3'];
+        $nudge_config['nudge_4'] = $redistributed['nudge_4'];
+        
+        // Save to database
+        $wpdb->update(
+            "{$wpdb->prefix}survey_waves",
+            array('nudge_config' => wp_json_encode($nudge_config)),
+            array('id' => $wave_id),
+            array('%s'),
+            array('%d')
+        );
+        
+        $window_days = ceil($current_window_minutes / 1440);
+        
+        error_log(sprintf('[EIPSI Redistribute] Wave %d: Redistributed to %d days (%d minutes)',
+            $wave_id, $window_days, $current_window_minutes));
+        
+        wp_send_json_success(array(
+            'message' => 'Nudges redistribuidos correctamente',
+            'window_days' => $window_days,
+            'window_minutes' => $current_window_minutes
+        ));
+    } catch (Exception $e) {
+        error_log('[EIPSI Redistribute] Error: ' . $e->getMessage());
+        wp_send_json_error(array(
+            'message' => 'Error al redistribuir nudges: ' . $e->getMessage(),
             'error' => 'exception'
         ), 500);
     }

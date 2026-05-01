@@ -116,6 +116,15 @@
                 }
             });
 
+            // Redistribuir nudges manualmente
+            $('#waves-container').on('click', '.btn-redistribute-nudges', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const waveId = $(this).data('wave-id');
+                console.log('[REDISTRIBUTE] Redistributing nudges for wave:', waveId);
+                self.redistributeNudges(waveId);
+            });
+
             // Toggle checkbox for nudges - using event delegation
             // v2.5.1 - Manejar click en el checkbox para evitar propagación a la barra
             $('#waves-container').on('click', '.nudge-toggle-input', function(e) {
@@ -679,8 +688,15 @@
                 console.log('[RENDER] Wave', wave.id, '- nudgesEnabled (final):', nudgesEnabled);
                 const nudgeCount = wave.nudge_count || 4;
                 const nudgeLblClass = nudgesEnabled ? 'on' : '';
+                
+                // Botón de redistribución solo si hay deadline (ventana dinámica)
+                const waveHasDeadline = wave.has_due_date || wave.deadline;
+                const redistributeBtn = waveHasDeadline 
+                    ? ' <button class="btn-redistribute-nudges" data-wave-id="' + wave.id + '" style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 4px;vertical-align:middle;" title="Redistribuir nudges a la ventana actual">🔁</button>'
+                    : '';
+                
                 const nudgeLblText = nudgesEnabled 
-                    ? 'Recordatorios activados · ' + nudgeCount + ' nudges'
+                    ? 'Recordatorios activados · ' + nudgeCount + ' nudges' + redistributeBtn
                     : 'Recordatorios desactivados';
                 
                 // Generate nudge rows HTML - ahora en minutos con traducción automática
@@ -1134,6 +1150,68 @@
                     }
                 }
             });
+        },
+
+        /**
+         * Redistribute nudges proportionally to current window
+         */
+        redistributeNudges: function(waveId) {
+            const self = this;
+            console.log('[REDISTRIBUTE] Starting redistribution for wave:', waveId);
+            
+            $.ajax({
+                url: eipsiDashboard.ajaxUrl,
+                method: 'POST',
+                data: {
+                    action: 'eipsi_redistribute_nudges',
+                    wave_id: waveId,
+                    nonce: eipsiDashboard.nonce
+                },
+                success: function(response) {
+                    console.log('[REDISTRIBUTE] Response:', response);
+                    if (response.success) {
+                        const windowDays = response.data.window_days || 0;
+                        const message = `✓ Nudges redistribuidos a ${windowDays} días`;
+                        
+                        // Mostrar mensaje con fadeout
+                        self.showTemporaryMessage(waveId, message);
+                        
+                        // Recargar dashboard
+                        if (self.currentStudyId) {
+                            self.loadDashboard(self.currentStudyId);
+                        }
+                    } else {
+                        console.error('[REDISTRIBUTE] Failed:', response.data);
+                        self.showToast('Error: ' + (response.data?.message || 'No se pudo redistribuir'), 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('[REDISTRIBUTE] AJAX error:', status, error);
+                    self.showToast('Error al redistribuir nudges', 'error');
+                }
+            });
+        },
+
+        /**
+         * Show temporary message with fadeout
+         */
+        showTemporaryMessage: function(waveId, message) {
+            const $card = $(`#wave-card-${waveId}`);
+            const $nudgeLabel = $card.find('.nudge-toggle-label');
+            
+            // Guardar texto original
+            const originalText = $nudgeLabel.html();
+            
+            // Mostrar mensaje
+            $nudgeLabel.html(`<span style="color:#10b981;font-weight:600;">${message}</span>`);
+            
+            // Fadeout después de 3 segundos
+            setTimeout(function() {
+                $nudgeLabel.fadeOut(300, function() {
+                    $nudgeLabel.html(originalText);
+                    $nudgeLabel.fadeIn(300);
+                });
+            }, 3000);
         },
 
         /**
