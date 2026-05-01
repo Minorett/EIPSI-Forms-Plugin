@@ -778,7 +778,7 @@
                                 (waveNum === 1 
                                     ? 'Inmediata (T1)' 
                                     : (wave.absolute_available_at_formatted 
-                                        ? 'Desde ' + wave.absolute_available_at_formatted + ' (T1 deadline)' 
+                                        ? 'Desde ' + wave.absolute_available_at_formatted
                                         : self.formatMinutes(wave.offset_minutes || 0) + ' desde T1')) + 
                                 '</div>' +
                                 (wave.window_minutes ? '<div><strong style="color:#2c3e50;">⏱️ Ventana:</strong> ' + self.formatMinutes(wave.window_minutes) + ' para completar</div>' : '<div><strong style="color:#2c3e50;">⏱️ Ventana:</strong> Sin límite</div>') +

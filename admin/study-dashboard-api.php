@@ -179,6 +179,7 @@ function wp_ajax_eipsi_get_study_overview_handler() {
 
     $waves_stats = array();
     $previous_wave_completed_ids = null; // Track who completed previous wave
+    $previous_wave_deadline_timestamp = $t1_deadline_timestamp; // Track previous wave's deadline for sequential calculation
     
     foreach ($waves as $index => $wave) {
         $completed_assignments = (int) $wpdb->get_var($wpdb->prepare(
@@ -259,12 +260,22 @@ function wp_ajax_eipsi_get_study_overview_handler() {
                               $nudge_config['nudge_3']['enabled'] || 
                               $nudge_config['nudge_4']['enabled'];
         
-        // T1-Anchor: Calculate absolute availability when T1 has deadline
+        // T1-Anchor: Calculate absolute availability when T1 has deadline (sequential)
         $absolute_available_at = null;
         $absolute_available_at_formatted = null;
         if ($t1_deadline_timestamp && $wave->offset_minutes > 0) {
-            $absolute_available_at = date('Y-m-d H:i:s', $t1_deadline_timestamp + ($wave->offset_minutes * 60));
-            $absolute_available_at_formatted = date_i18n(get_option('date_format'), strtotime($absolute_available_at));
+            // This wave opens when the previous wave closes (sequential)
+            $absolute_available_at = date('Y-m-d H:i:s', $previous_wave_deadline_timestamp);
+            $absolute_available_at_formatted = date_i18n(get_option('date_format'), $previous_wave_deadline_timestamp);
+            
+            // Calculate when THIS wave closes (for next wave's opening)
+            if (!empty($wave->due_date)) {
+                // Use wave's actual deadline (manual or auto-calculated)
+                $previous_wave_deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
+            } else if ($wave->window_minutes > 0) {
+                // Calculate from available_at + window
+                $previous_wave_deadline_timestamp = $previous_wave_deadline_timestamp + ($wave->window_minutes * 60);
+            }
         }
         
         $waves_stats[] = array(
@@ -635,8 +646,10 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
             $wave->study_id
         ));
         
-        // T1 deadline becomes the new anchor point for all subsequent waves
-        // Each wave's available_at = T1_deadline + wave.offset_minutes
+        // T1-Anchor: Each wave opens when the previous wave closes (sequential)
+        // Start with T1's deadline as the opening time for T2
+        $previous_deadline_timestamp = $deadline_timestamp;
+        
         foreach ($all_waves as $subsequent_wave) {
             if ($subsequent_wave->offset_minutes > 0) {
                 // Get current wave data to check if it has a manual deadline
@@ -649,8 +662,8 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
                 $wave_nudge_config = !empty($current_wave_data->nudge_config) ? json_decode($current_wave_data->nudge_config, true) : array();
                 $has_manual_deadline = isset($wave_nudge_config['manual_deadline']) && $wave_nudge_config['manual_deadline'] === true;
                 
-                // Calculate new available_at for this wave based on T1 deadline
-                $new_available_at = date('Y-m-d H:i:s', $deadline_timestamp + ($subsequent_wave->offset_minutes * 60));
+                // This wave opens when the previous wave closes
+                $new_available_at = date('Y-m-d H:i:s', $previous_deadline_timestamp);
                 
                 // Calculate new due_at based on window OR manual deadline
                 $new_due_at = null;
@@ -660,10 +673,13 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
                     // Keep manual deadline, just update available_at
                     $new_due_at = $current_wave_data->due_date . ' 23:59:59';
                     $new_due_date = $current_wave_data->due_date;
+                    // Update previous_deadline for next wave
+                    $previous_deadline_timestamp = strtotime($new_due_at);
                 } else if ($subsequent_wave->window_minutes > 0) {
                     // Calculate automatic deadline from available_at + window
-                    $new_due_at = date('Y-m-d H:i:s', strtotime($new_available_at) + ($subsequent_wave->window_minutes * 60));
-                    $new_due_date = date('Y-m-d', strtotime($new_due_at));
+                    $new_due_timestamp = $previous_deadline_timestamp + ($subsequent_wave->window_minutes * 60);
+                    $new_due_at = date('Y-m-d 23:59:59', $new_due_timestamp);
+                    $new_due_date = date('Y-m-d', $new_due_timestamp);
                     
                     // Update wave's due_date for display (only if no manual deadline)
                     $wpdb->update(
@@ -673,8 +689,11 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
                         array('%s'),
                         array('%d')
                     );
+                    
+                    // Update previous_deadline for next wave
+                    $previous_deadline_timestamp = $new_due_timestamp;
                 }
-                
+            
                 // Update all assignments for this wave
                 $wpdb->query($wpdb->prepare(
                     "UPDATE {$wpdb->prefix}survey_assignments 
