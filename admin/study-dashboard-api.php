@@ -729,16 +729,18 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
                 $nudge_config['original_window_minutes'] = $wave->window_minutes;
             }
             
-            // Redistribute nudges proportionally
-            $current_nudges = array(
-                'nudge_1' => $nudge_config['nudge_1'] ?? null,
-                'nudge_2' => $nudge_config['nudge_2'] ?? null,
-                'nudge_3' => $nudge_config['nudge_3'] ?? null,
-                'nudge_4' => $nudge_config['nudge_4'] ?? null,
-            );
+            // Redistribute nudges proportionally from original values
+            $base_nudges = isset($nudge_config['original_nudges']) 
+                ? $nudge_config['original_nudges']
+                : array(
+                    'nudge_1' => $nudge_config['nudge_1'] ?? null,
+                    'nudge_2' => $nudge_config['nudge_2'] ?? null,
+                    'nudge_3' => $nudge_config['nudge_3'] ?? null,
+                    'nudge_4' => $nudge_config['nudge_4'] ?? null,
+                );
             
             $redistributed = eipsi_redistribute_nudges(
-                $current_nudges,
+                $base_nudges,
                 $nudge_config['original_window_minutes'],
                 $new_window_minutes
             );
@@ -1480,22 +1482,33 @@ function wp_ajax_eipsi_redistribute_nudges_handler() {
         // Get current nudge config
         $nudge_config = !empty($wave->nudge_config) ? json_decode($wave->nudge_config, true) : array();
         
-        // Get current nudges as base for redistribution
-        $current_nudges = array(
-            'nudge_1' => $nudge_config['nudge_1'] ?? null,
-            'nudge_2' => $nudge_config['nudge_2'] ?? null,
-            'nudge_3' => $nudge_config['nudge_3'] ?? null,
-            'nudge_4' => $nudge_config['nudge_4'] ?? null,
-        );
+        // Save original nudges if not already saved
+        if (!isset($nudge_config['original_nudges'])) {
+            $nudge_config['original_nudges'] = array(
+                'nudge_1' => $nudge_config['nudge_1'] ?? null,
+                'nudge_2' => $nudge_config['nudge_2'] ?? null,
+                'nudge_3' => $nudge_config['nudge_3'] ?? null,
+                'nudge_4' => $nudge_config['nudge_4'] ?? null,
+            );
+            $nudge_config['original_window_minutes'] = $wave->window_minutes;
+        }
         
-        // Use original window as base (or current if no original)
-        $original_window_minutes = isset($nudge_config['original_window_minutes']) 
-            ? $nudge_config['original_window_minutes'] 
-            : $wave->window_minutes;
+        // Use original nudges as base for redistribution
+        $base_nudges = isset($nudge_config['original_nudges']) 
+            ? $nudge_config['original_nudges']
+            : array(
+                'nudge_1' => $nudge_config['nudge_1'] ?? null,
+                'nudge_2' => $nudge_config['nudge_2'] ?? null,
+                'nudge_3' => $nudge_config['nudge_3'] ?? null,
+                'nudge_4' => $nudge_config['nudge_4'] ?? null,
+            );
         
-        // Redistribute
+        // Use original window as base
+        $original_window_minutes = $nudge_config['original_window_minutes'];
+        
+        // Redistribute from original values
         $redistributed = eipsi_redistribute_nudges(
-            $current_nudges,
+            $base_nudges,
             $original_window_minutes,
             $current_window_minutes
         );
