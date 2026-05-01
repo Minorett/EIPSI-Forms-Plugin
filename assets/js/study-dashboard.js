@@ -174,9 +174,19 @@
                 // Update ARIA attribute
                 $row.attr('aria-checked', isChecked);
                 
-                // Update label text
+                // Check if wave has deadline (for redistribute button)
+                const $card = $(this).closest('.wave-card');
+                const $deadlineVal = $card.find('.deadline-val');
+                const hasDeadline = $deadlineVal.length > 0 && !$deadlineVal.hasClass('none');
+                
+                // Build redistribute button if needed
+                const redistributeBtn = hasDeadline 
+                    ? ' <button class="btn-redistribute-nudges" data-wave-id="' + waveId + '" style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 4px;vertical-align:middle;" title="Redistribuir nudges a la ventana actual">🔁</button>'
+                    : '';
+                
+                // Update label text preserving redistribute button
                 if (isChecked) {
-                    $label.addClass('on').text('Recordatorios activados · 4 nudges');
+                    $label.addClass('on').html('Recordatorios activados · 4 nudges' + redistributeBtn);
                 } else {
                     $label.removeClass('on').text('Recordatorios desactivados');
                 }

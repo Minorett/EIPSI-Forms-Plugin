@@ -609,43 +609,53 @@ function wp_ajax_eipsi_send_global_reminder_handler() {
 }
 
 /**
- * Helper: Redistribute nudges proportionally when window changes
+ * Helper: Redistribute nudges using evidence-based fixed percentages
  * System: deadline → window → nudges
  * 
- * @param array $current_nudges Current nudge configuration
- * @param int $original_window_minutes Original window in minutes (from wizard)
+ * Distribution based on adherence research:
+ * - Nudge 1: 15% of window (early follow-up)
+ * - Nudge 2: 40% of window (mid-point reminder)
+ * - Nudge 3: 70% of window (moderate urgency)
+ * - Nudge 4: 90% of window (last call, 10% margin)
+ * 
+ * @param array $current_nudges Current nudge configuration (for enabled status)
+ * @param int $original_window_minutes Original window in minutes (unused, kept for compatibility)
  * @param int $new_window_minutes New window in minutes (from deadline)
  * @return array Redistributed nudge configuration
  */
 function eipsi_redistribute_nudges($current_nudges, $original_window_minutes, $new_window_minutes) {
+    // Fixed percentages based on adherence research (cumulative from start)
+    $percentages = array(
+        'nudge_1' => 0.15,  // 15% of window
+        'nudge_2' => 0.40,  // 40% of window
+        'nudge_3' => 0.70,  // 70% of window
+        'nudge_4' => 0.90   // 90% of window
+    );
+    
     $redistributed = array();
+    $previous_cumulative_minutes = 0;
     
     foreach ($current_nudges as $key => $nudge) {
-        if (!isset($nudge['enabled']) || !isset($nudge['value']) || !isset($nudge['unit'])) {
+        if (!isset($nudge['enabled'])) {
             $redistributed[$key] = $nudge;
             continue;
         }
         
-        // Convert current nudge to minutes
-        $current_minutes = $nudge['value'];
-        if ($nudge['unit'] === 'hours') {
-            $current_minutes = $nudge['value'] * 60;
-        } else if ($nudge['unit'] === 'days') {
-            $current_minutes = $nudge['value'] * 1440;
-        }
+        // Get cumulative position in window
+        $cumulative_minutes = isset($percentages[$key]) 
+            ? $new_window_minutes * $percentages[$key]
+            : 0;
         
-        // Calculate percentage relative to original window
-        $percentage = $original_window_minutes > 0 ? ($current_minutes / $original_window_minutes) : 0;
+        // Calculate interval from previous nudge (incremental)
+        $interval_minutes = $cumulative_minutes - $previous_cumulative_minutes;
+        $previous_cumulative_minutes = $cumulative_minutes;
         
-        // Apply percentage to new window
-        $new_minutes = $new_window_minutes * $percentage;
-        
-        // Convert back to hours (preferred unit for display)
-        $new_hours = $new_minutes / 60;
+        // Convert to hours (preferred unit for display)
+        $interval_hours = $interval_minutes / 60;
         
         $redistributed[$key] = array(
             'enabled' => $nudge['enabled'],
-            'value' => round($new_hours, 2),
+            'value' => round($interval_hours, 2),
             'unit' => 'hours'
         );
     }
@@ -714,9 +724,17 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
         ));
         
         if ($study) {
-            // Dynamic window: from NOW to deadline (remaining time)
-            $now_timestamp = current_time('timestamp');
-            $new_window_minutes = ceil(($deadline_timestamp - $now_timestamp) / 60);
+            // T1 (offset=0): window from created_at to deadline (fixed)
+            // Other waves: window from NOW to deadline (dynamic, remaining time)
+            $is_t1 = ($wave->offset_minutes == 0);
+            
+            if ($is_t1) {
+                $study_created_timestamp = strtotime($study->created_at);
+                $new_window_minutes = ceil(($deadline_timestamp - $study_created_timestamp) / 60);
+            } else {
+                $now_timestamp = current_time('timestamp');
+                $new_window_minutes = ceil(($deadline_timestamp - $now_timestamp) / 60);
+            }
             
             // Save original nudges if not already saved
             if (!isset($nudge_config['original_nudges'])) {
@@ -1447,15 +1465,22 @@ function wp_ajax_eipsi_redistribute_nudges_handler() {
         }
         
         $study_created_timestamp = strtotime($study->created_at);
+        $is_t1 = ($wave->offset_minutes == 0);
         
         // Calculate current window
         $current_window_minutes = 0;
         
         if (!empty($wave->due_date)) {
-            // Has deadline: calculate remaining window from NOW
             $deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
-            $now_timestamp = current_time('timestamp');
-            $current_window_minutes = ceil(($deadline_timestamp - $now_timestamp) / 60);
+            
+            // T1 (offset=0): window from created_at to deadline (fixed)
+            // Other waves: window from NOW to deadline (dynamic, remaining time)
+            if ($is_t1) {
+                $current_window_minutes = ceil(($deadline_timestamp - $study_created_timestamp) / 60);
+            } else {
+                $now_timestamp = current_time('timestamp');
+                $current_window_minutes = ceil(($deadline_timestamp - $now_timestamp) / 60);
+            }
         } else {
             // No deadline: use original window
             $current_window_minutes = $wave->window_minutes;
