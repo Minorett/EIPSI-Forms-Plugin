@@ -1454,10 +1454,10 @@ function wp_ajax_eipsi_redistribute_nudges_handler() {
         $current_window_minutes = 0;
         
         if (!empty($wave->due_date)) {
-            // Has deadline: calculate dynamic window
+            // Has deadline: calculate remaining window from NOW
             $deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
-            $theoretical_opening_timestamp = $study_created_timestamp + ($wave->offset_minutes * 60);
-            $current_window_minutes = ceil(($deadline_timestamp - $theoretical_opening_timestamp) / 60);
+            $now_timestamp = current_time('timestamp');
+            $current_window_minutes = ceil(($deadline_timestamp - $now_timestamp) / 60);
         } else {
             // No deadline: use original window
             $current_window_minutes = $wave->window_minutes;
