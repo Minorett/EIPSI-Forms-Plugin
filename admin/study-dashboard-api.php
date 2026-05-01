@@ -608,8 +608,54 @@ function wp_ajax_eipsi_send_global_reminder_handler() {
 }
 
 /**
+ * Helper: Redistribute nudges proportionally when window changes
+ * System: deadline → window → nudges
+ * 
+ * @param array $current_nudges Current nudge configuration
+ * @param int $original_window_minutes Original window in minutes (from wizard)
+ * @param int $new_window_minutes New window in minutes (from deadline)
+ * @return array Redistributed nudge configuration
+ */
+function eipsi_redistribute_nudges($current_nudges, $original_window_minutes, $new_window_minutes) {
+    $redistributed = array();
+    
+    foreach ($current_nudges as $key => $nudge) {
+        if (!isset($nudge['enabled']) || !isset($nudge['value']) || !isset($nudge['unit'])) {
+            $redistributed[$key] = $nudge;
+            continue;
+        }
+        
+        // Convert current nudge to minutes
+        $current_minutes = $nudge['value'];
+        if ($nudge['unit'] === 'hours') {
+            $current_minutes = $nudge['value'] * 60;
+        } else if ($nudge['unit'] === 'days') {
+            $current_minutes = $nudge['value'] * 1440;
+        }
+        
+        // Calculate percentage relative to original window
+        $percentage = $original_window_minutes > 0 ? ($current_minutes / $original_window_minutes) : 0;
+        
+        // Apply percentage to new window
+        $new_minutes = $new_window_minutes * $percentage;
+        
+        // Convert back to hours (preferred unit for display)
+        $new_hours = $new_minutes / 60;
+        
+        $redistributed[$key] = array(
+            'enabled' => $nudge['enabled'],
+            'value' => round($new_hours, 2),
+            'unit' => 'hours'
+        );
+    }
+    
+    return $redistributed;
+}
+
+/**
  * POST extend wave deadline
  * Phase 5 T1-Anchor: Updates due_at in assignments and reschedules nudges
+ * System: deadline → window → nudges (automatic redistribution)
  */
 function wp_ajax_eipsi_extend_wave_deadline_handler() {
     $received_nonce = isset($_POST['nonce']) ? $_POST['nonce'] : '';
@@ -650,13 +696,66 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
     $deadline_timestamp = strtotime($deadline_datetime);
     
     // Update legacy due_date in wave for backward compatibility
-    // Mark this as a manual deadline by storing a flag in nudge_config
+    // Mark this as a manual deadline and redistribute nudges if T1
     $current_nudge_config = $wpdb->get_var($wpdb->prepare(
         "SELECT nudge_config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
         $wave_id
     ));
     $nudge_config = !empty($current_nudge_config) ? json_decode($current_nudge_config, true) : array();
     $nudge_config['manual_deadline'] = true;
+    
+    // System: deadline → window → nudges (any wave)
+    if ($wave->window_minutes > 0) {
+        // Get study creation date to calculate dynamic window
+        $study = $wpdb->get_row($wpdb->prepare(
+            "SELECT created_at FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+            $wave->study_id
+        ));
+        
+        if ($study) {
+            $study_created_timestamp = strtotime($study->created_at);
+            
+            // Calculate theoretical opening time: created_at + offset_minutes
+            $theoretical_opening_timestamp = $study_created_timestamp + ($wave->offset_minutes * 60);
+            
+            // Dynamic window: from theoretical opening to deadline
+            $new_window_minutes = ceil(($deadline_timestamp - $theoretical_opening_timestamp) / 60);
+            
+            // Save original nudges if not already saved
+            if (!isset($nudge_config['original_nudges'])) {
+                $nudge_config['original_nudges'] = array(
+                    'nudge_1' => $nudge_config['nudge_1'] ?? null,
+                    'nudge_2' => $nudge_config['nudge_2'] ?? null,
+                    'nudge_3' => $nudge_config['nudge_3'] ?? null,
+                    'nudge_4' => $nudge_config['nudge_4'] ?? null,
+                );
+                $nudge_config['original_window_minutes'] = $wave->window_minutes;
+            }
+            
+            // Redistribute nudges proportionally
+            $current_nudges = array(
+                'nudge_1' => $nudge_config['nudge_1'] ?? null,
+                'nudge_2' => $nudge_config['nudge_2'] ?? null,
+                'nudge_3' => $nudge_config['nudge_3'] ?? null,
+                'nudge_4' => $nudge_config['nudge_4'] ?? null,
+            );
+            
+            $redistributed = eipsi_redistribute_nudges(
+                $current_nudges,
+                $nudge_config['original_window_minutes'],
+                $new_window_minutes
+            );
+            
+            $nudge_config['nudge_1'] = $redistributed['nudge_1'];
+            $nudge_config['nudge_2'] = $redistributed['nudge_2'];
+            $nudge_config['nudge_3'] = $redistributed['nudge_3'];
+            $nudge_config['nudge_4'] = $redistributed['nudge_4'];
+            $nudge_config['redistributed'] = true;
+            
+            error_log(sprintf('[EIPSI Sequential] Wave %d: Redistributed nudges - original_window=%d min, new_window=%d min',
+                $wave_id, $nudge_config['original_window_minutes'], $new_window_minutes));
+        }
+    }
     
     $wpdb->update(
         "{$wpdb->prefix}survey_waves",
@@ -669,21 +768,27 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
         array('%d')
     );
     
-    // T1-Anchor Logic: If this is T1, recalculate subsequent waves
-    if ($is_t1_anchor) {
-        // Get all waves in this study ordered by offset
-        $all_waves = $wpdb->get_results($wpdb->prepare(
-            "SELECT id, offset_minutes, window_minutes FROM {$wpdb->prefix}survey_waves 
-             WHERE study_id = %d ORDER BY offset_minutes ASC",
-            $wave->study_id
-        ));
+    // Sequential Logic: Recalculate subsequent waves (any wave with deadline triggers this)
+    // Get all waves in this study ordered by offset
+    $all_waves = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, offset_minutes, window_minutes FROM {$wpdb->prefix}survey_waves 
+         WHERE study_id = %d ORDER BY offset_minutes ASC",
+        $wave->study_id
+    ));
+    
+    // Sequential: Each wave opens when the previous wave closes
+    // Start with current wave's deadline as the opening time for the next wave
+    $previous_deadline_timestamp = $deadline_timestamp;
+    $start_processing = false; // Flag to start processing after current wave
+    
+    foreach ($all_waves as $subsequent_wave) {
+        // Start processing waves after the current wave
+        if ($subsequent_wave->id == $wave_id) {
+            $start_processing = true;
+            continue; // Skip current wave
+        }
         
-        // T1-Anchor: Each wave opens when the previous wave closes (sequential)
-        // Start with T1's deadline as the opening time for T2
-        $previous_deadline_timestamp = $deadline_timestamp;
-        
-        foreach ($all_waves as $subsequent_wave) {
-            if ($subsequent_wave->offset_minutes > 0) {
+        if ($start_processing) {
                 // Get current wave data to check if it has a manual deadline
                 $current_wave_data = $wpdb->get_row($wpdb->prepare(
                     "SELECT due_date, nudge_config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
@@ -770,14 +875,9 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
             do_action('eipsi_assignment_deadline_changed', $assignment_id, $deadline_datetime);
         }
         
-        $message = $is_t1_anchor 
-            ? 'T1 deadline set successfully. All subsequent waves recalculated based on T1-Anchor.'
-            : 'Deadline extended successfully';
-        
         wp_send_json_success(array(
-            'message' => $message,
-            'assignments_updated' => count($affected_assignments),
-            'is_t1_anchor' => $is_t1_anchor
+            'message' => 'Deadline set successfully. Subsequent waves recalculated sequentially.',
+            'assignments_updated' => count($affected_assignments)
         ));
     } else {
         wp_send_json_error('Failed to extend deadline: ' . $wpdb->last_error);
@@ -815,13 +915,28 @@ function wp_ajax_eipsi_remove_wave_deadline_handler() {
         
         $is_t1_anchor = ($wave->offset_minutes == 0);
         
-        // Remove legacy due_date from wave and clear manual_deadline flag
+        // Remove legacy due_date from wave and restore original nudges if T1
         $current_nudge_config = $wpdb->get_var($wpdb->prepare(
             "SELECT nudge_config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
             $wave_id
         ));
         $nudge_config = !empty($current_nudge_config) ? json_decode($current_nudge_config, true) : array();
         unset($nudge_config['manual_deadline']);
+        
+        // System: deadline → window → nudges (restore original nudges for T1)
+        if ($is_t1_anchor && isset($nudge_config['original_nudges'])) {
+            $nudge_config['nudge_1'] = $nudge_config['original_nudges']['nudge_1'];
+            $nudge_config['nudge_2'] = $nudge_config['original_nudges']['nudge_2'];
+            $nudge_config['nudge_3'] = $nudge_config['original_nudges']['nudge_3'];
+            $nudge_config['nudge_4'] = $nudge_config['original_nudges']['nudge_4'];
+            
+            // Clean up temporary fields
+            unset($nudge_config['original_nudges']);
+            unset($nudge_config['original_window_minutes']);
+            unset($nudge_config['redistributed']);
+            
+            error_log('[EIPSI T1-Anchor] Restored original nudges after removing deadline');
+        }
         
         $wpdb->update(
             "{$wpdb->prefix}survey_waves",
@@ -834,17 +949,25 @@ function wp_ajax_eipsi_remove_wave_deadline_handler() {
             array('%d')
         );
         
-        // T1-Anchor: If removing T1 deadline, revert all subsequent waves to participant-based timing
-        if ($is_t1_anchor) {
-            // Get all waves in this study
-            $all_waves = $wpdb->get_results($wpdb->prepare(
-                "SELECT id, offset_minutes, window_minutes FROM {$wpdb->prefix}survey_waves 
-                 WHERE study_id = %d AND offset_minutes > 0 ORDER BY offset_minutes ASC",
-                $wave->study_id
-            ));
+        // Sequential Logic: Revert subsequent waves to participant-based timing
+        // Get all waves in this study
+        $all_waves = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, offset_minutes, window_minutes FROM {$wpdb->prefix}survey_waves 
+             WHERE study_id = %d ORDER BY offset_minutes ASC",
+            $wave->study_id
+        ));
+        
+        $start_processing = false;
+        
+        // Remove due_date from all subsequent waves (only auto-calculated ones)
+        foreach ($all_waves as $subsequent_wave) {
+            // Start processing after current wave
+            if ($subsequent_wave->id == $wave_id) {
+                $start_processing = true;
+                continue;
+            }
             
-            // Remove due_date from all subsequent waves (only auto-calculated ones)
-            foreach ($all_waves as $subsequent_wave) {
+            if ($start_processing) {
                 // Check if this wave has a manual deadline
                 $wave_data = $wpdb->get_row($wpdb->prepare(
                     "SELECT nudge_config FROM {$wpdb->prefix}survey_waves WHERE id = %d",
@@ -864,9 +987,17 @@ function wp_ajax_eipsi_remove_wave_deadline_handler() {
                     );
                 }
             }
+        }
+        
+        // Recalculate each subsequent wave's assignments based on participant's t1_completed_at
+        $start_processing = false;
+        foreach ($all_waves as $subsequent_wave) {
+            if ($subsequent_wave->id == $wave_id) {
+                $start_processing = true;
+                continue;
+            }
             
-            // Recalculate each wave's assignments based on participant's t1_completed_at
-            foreach ($all_waves as $subsequent_wave) {
+            if ($start_processing) {
                 $assignments = $wpdb->get_results($wpdb->prepare(
                     "SELECT a.id, a.participant_id 
                      FROM {$wpdb->prefix}survey_assignments a
