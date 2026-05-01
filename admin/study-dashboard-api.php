@@ -167,6 +167,7 @@ function wp_ajax_eipsi_get_study_overview_handler() {
     // T1-Anchor: Check if T1 has a deadline set
     $t1_deadline = null;
     $t1_deadline_timestamp = null;
+    $t1_dynamic_window_days = null; // Ventana dinámica: días desde created_at hasta deadline
     foreach ($waves as $wave) {
         error_log(sprintf('[EIPSI DASHBOARD API] Checking wave %d: offset_minutes=%d, due_date=%s',
             $wave->id,
@@ -184,7 +185,13 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             } else {
                 $t1_deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
             }
-            error_log(sprintf('[EIPSI DASHBOARD API] T1 deadline detected: %s (timestamp: %d)', $t1_deadline, $t1_deadline_timestamp));
+            
+            // Calculate dynamic window: days from study creation to T1 deadline
+            $study_created_timestamp = strtotime($study->created_at);
+            $t1_dynamic_window_days = ceil(($t1_deadline_timestamp - $study_created_timestamp) / 86400);
+            
+            error_log(sprintf('[EIPSI DASHBOARD API] T1 deadline detected: %s (timestamp: %d), dynamic window: %d days',
+                $t1_deadline, $t1_deadline_timestamp, $t1_dynamic_window_days));
             break;
         }
     }
@@ -290,7 +297,12 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             // Calculate when THIS wave closes (for next wave's opening)
             if (!empty($wave->due_date)) {
                 // Use wave's actual deadline (manual or auto-calculated)
-                $previous_wave_deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
+                // If due_date already has time, replace with 23:59:59
+                if (strpos($wave->due_date, ':') !== false) {
+                    $previous_wave_deadline_timestamp = strtotime(date('Y-m-d', strtotime($wave->due_date)) . ' 23:59:59');
+                } else {
+                    $previous_wave_deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
+                }
             } else if ($wave->window_minutes > 0) {
                 // Calculate from available_at + window
                 $previous_wave_deadline_timestamp = $previous_wave_deadline_timestamp + ($wave->window_minutes * 60);
@@ -311,6 +323,7 @@ function wp_ajax_eipsi_get_study_overview_handler() {
             'absolute_available_at' => $absolute_available_at,
             'absolute_available_at_formatted' => $absolute_available_at_formatted,
             't1_has_deadline' => !empty($t1_deadline),
+            't1_dynamic_window_days' => ($wave->offset_minutes == 0 && $t1_dynamic_window_days) ? $t1_dynamic_window_days : null,
             // Logical calculation: only count those who are actually eligible
             'total' => $eligible_participants, // Total eligible (can do this wave)
             'completed' => $completed_assignments,
