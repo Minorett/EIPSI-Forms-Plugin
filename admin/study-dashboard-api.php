@@ -263,10 +263,17 @@ function wp_ajax_eipsi_get_study_overview_handler() {
         // T1-Anchor: Calculate absolute availability when T1 has deadline (sequential)
         $absolute_available_at = null;
         $absolute_available_at_formatted = null;
+        error_log(sprintf('[EIPSI DASHBOARD API] Wave %d: t1_deadline_timestamp=%s, offset_minutes=%d, previous_wave_deadline_timestamp=%s',
+            $wave->id,
+            $t1_deadline_timestamp ? date('Y-m-d H:i:s', $t1_deadline_timestamp) : 'NULL',
+            $wave->offset_minutes,
+            $previous_wave_deadline_timestamp ? date('Y-m-d H:i:s', $previous_wave_deadline_timestamp) : 'NULL'
+        ));
         if ($t1_deadline_timestamp && $wave->offset_minutes > 0) {
             // This wave opens when the previous wave closes (sequential)
             $absolute_available_at = date('Y-m-d H:i:s', $previous_wave_deadline_timestamp);
             $absolute_available_at_formatted = date_i18n(get_option('date_format'), $previous_wave_deadline_timestamp);
+            error_log(sprintf('[EIPSI DASHBOARD API] Wave %d: Calculated absolute_available_at=%s', $wave->id, $absolute_available_at));
             
             // Calculate when THIS wave closes (for next wave's opening)
             if (!empty($wave->due_date)) {
