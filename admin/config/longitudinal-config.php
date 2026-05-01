@@ -408,11 +408,12 @@ if (!defined('EIPSI_ALLOW_DELETE_ANONYMIZED_DATA')) {
 /**
  * Log de configuración cargada (solo en debug)
  */
-if (EIPSI_LONGITUDINAL_DEBUG) {
-    error_log(sprintf(
-        '[EIPSI Forms] Longitudinal config loaded (v%s) - Session: %dh, Magic Link: %dh',
-        EIPSI_LONGITUDINAL_DB_VERSION,
-        EIPSI_SESSION_TTL_HOURS,
-        EIPSI_MAGIC_LINK_EXPIRY_HOURS
-    ));
-}
+// Commented out to reduce log noise - config loads on every request
+// if (EIPSI_LONGITUDINAL_DEBUG) {
+//     error_log(sprintf(
+//         '[EIPSI Forms] Longitudinal config loaded (v%s) - Session: %dh, Magic Link: %dh',
+//         EIPSI_LONGITUDINAL_DB_VERSION,
+//         EIPSI_SESSION_TTL_HOURS,
+//         EIPSI_MAGIC_LINK_EXPIRY_HOURS
+//     ));
+// }

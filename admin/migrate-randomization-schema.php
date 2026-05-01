@@ -50,7 +50,8 @@ function eipsi_migrate_randomization_schema() {
     $column_check = $wpdb->get_results( "SHOW COLUMNS FROM {$table_name} LIKE 'template_id'" );
     
     if ( empty( $column_check ) ) {
-        error_log( '[EIPSI Forms] Migración no requerida: schema ya está actualizado (randomization_id existe).' );
+        // Commented out to reduce log noise - check runs on every request
+        // error_log( '[EIPSI Forms] Migración no requerida: schema ya está actualizado (randomization_id existe).' );
         return true; // Ya está actualizado
     }
 

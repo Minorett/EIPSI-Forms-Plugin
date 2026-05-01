@@ -12,10 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// ✅ DIAGNÓSTICO: Solo en modo debug para evitar I/O overhead en producción
-if (defined('WP_DEBUG') && WP_DEBUG) {
-    error_log('[EIPSI-DIAG-CREATE] Archivo class-assignment-service.php CARGADO - versión 1.5.7');
-}
+// Commented out to reduce log noise - file loads on every request
+// if (defined('WP_DEBUG') && WP_DEBUG) {
+//     error_log('[EIPSI-DIAG-CREATE] Archivo class-assignment-service.php CARGADO - versión 1.5.7');
+// }
 
 class EIPSI_Assignment_Service {
 

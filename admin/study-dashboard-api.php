@@ -714,13 +714,9 @@ function wp_ajax_eipsi_extend_wave_deadline_handler() {
         ));
         
         if ($study) {
-            $study_created_timestamp = strtotime($study->created_at);
-            
-            // Calculate theoretical opening time: created_at + offset_minutes
-            $theoretical_opening_timestamp = $study_created_timestamp + ($wave->offset_minutes * 60);
-            
-            // Dynamic window: from theoretical opening to deadline
-            $new_window_minutes = ceil(($deadline_timestamp - $theoretical_opening_timestamp) / 60);
+            // Dynamic window: from NOW to deadline (remaining time)
+            $now_timestamp = current_time('timestamp');
+            $new_window_minutes = ceil(($deadline_timestamp - $now_timestamp) / 60);
             
             // Save original nudges if not already saved
             if (!isset($nudge_config['original_nudges'])) {
