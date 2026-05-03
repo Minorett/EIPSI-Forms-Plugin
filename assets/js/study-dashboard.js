@@ -1186,7 +1186,7 @@
                         self.showTemporaryMessage(waveId, message);
                         
                         if (self.currentStudyId) {
-                            self.loadDashboard(self.currentStudyId);
+                            self.loadStudyData(self.currentStudyId);
                         }
                     } else {
                         console.error('[REDISTRIBUTE] Failed:', response.data);
