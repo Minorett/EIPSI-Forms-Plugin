@@ -333,6 +333,35 @@ function eipsi_validate_timing_config($data) {
 function eipsi_sanitize_timing_config($data) {
     $sanitized = array();
     
+    // Convert parallel arrays (wave_index[], offset_minutes[]) to timing_intervals format
+    if (isset($data['wave_index']) && is_array($data['wave_index']) && 
+        isset($data['offset_minutes']) && is_array($data['offset_minutes'])) {
+        
+        $timing_intervals = array();
+        $wave_indices = $data['wave_index'];
+        $offset_minutes = $data['offset_minutes'];
+        
+        foreach ($wave_indices as $index => $wave_index) {
+            // Skip T1 (wave_index = 0) and closure
+            if ($wave_index === '0' || $wave_index === 'closure') {
+                continue;
+            }
+            
+            $wave_num = intval($wave_index);
+            $offset = isset($offset_minutes[$index]) ? intval($offset_minutes[$index]) : 0;
+            
+            // Build interval data for this wave
+            $timing_intervals[] = array(
+                'from_wave' => $wave_num - 1, // T2 → from_wave=0, T3 → from_wave=1
+                'to_wave' => $wave_num,
+                'offset_minutes' => $offset,
+            );
+        }
+        
+        // Replace timing_intervals with converted data
+        $data['timing_intervals'] = $timing_intervals;
+    }
+    
     // Sanitize timing intervals
     if (!empty($data['timing_intervals']) && is_array($data['timing_intervals'])) {
         $sanitized['timing_intervals'] = array();
