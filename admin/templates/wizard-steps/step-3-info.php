@@ -25,6 +25,11 @@ $number_of_waves = isset($step_2_data['number_of_waves']) ? intval($step_2_data[
 // T3 default: 14 days (20160 min)
 $timing_intervals = isset($step_data['timing_intervals']) ? $step_data['timing_intervals'] : array();
 
+// Debug: Log timing_intervals format
+if (!empty($timing_intervals)) {
+    error_log('[EIPSI STEP3] Loading timing_intervals: ' . json_encode($timing_intervals));
+}
+
 // If empty or old format, migrate/initialize
 if (empty($timing_intervals)) {
     // Initial default: Weekly
@@ -161,12 +166,26 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                     <?php 
                     // Helper to find existing offset for a wave
                     function get_offset_for_wave($index, $intervals) {
+                        // Handle string index (e.g., 'closure')
+                        if (!is_numeric($index)) {
+                            return 0;
+                        }
+                        
+                        $index = intval($index);
+                        
                         foreach ($intervals as $interval) {
-                            if (isset($interval['wave_index']) && $interval['wave_index'] == $index) {
-                                return intval($interval['offset_minutes']);
+                            // New format: from_wave/to_wave
+                            if (isset($interval['to_wave']) && intval($interval['to_wave']) == $index) {
+                                return isset($interval['offset_minutes']) ? intval($interval['offset_minutes']) : 0;
+                            }
+                            // Legacy format: wave_index
+                            if (isset($interval['wave_index']) && intval($interval['wave_index']) == $index) {
+                                return isset($interval['offset_minutes']) ? intval($interval['offset_minutes']) : 0;
                             }
                         }
-                        return $index * 10080; // Default weekly
+                        
+                        // Default: weekly intervals
+                        return $index * 10080;
                     }
 
                     for ($i = 1; $i < $number_of_waves; $i++): 
