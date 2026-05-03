@@ -1443,6 +1443,9 @@ function wp_ajax_eipsi_redistribute_nudges_handler() {
     try {
         global $wpdb;
         
+        error_log('[EIPSI REDISTRIBUTE BTN] ========================================');
+        error_log('[EIPSI REDISTRIBUTE BTN] Manual redistribution requested for wave_id: ' . $wave_id);
+        
         // Get wave info
         $wave = $wpdb->get_row($wpdb->prepare(
             "SELECT id, study_id, offset_minutes, window_minutes, due_date, nudge_config 
@@ -1451,8 +1454,11 @@ function wp_ajax_eipsi_redistribute_nudges_handler() {
         ));
         
         if (!$wave) {
+            error_log('[EIPSI REDISTRIBUTE BTN] ERROR: Wave not found');
             wp_send_json_error('Wave not found');
         }
+        
+        error_log('[EIPSI REDISTRIBUTE BTN] Wave found: study_id=' . $wave->study_id . ', offset_minutes=' . $wave->offset_minutes . ', window_minutes=' . $wave->window_minutes . ', due_date=' . $wave->due_date);
         
         // Get study creation date
         $study = $wpdb->get_row($wpdb->prepare(
@@ -1461,30 +1467,49 @@ function wp_ajax_eipsi_redistribute_nudges_handler() {
         ));
         
         if (!$study) {
+            error_log('[EIPSI REDISTRIBUTE BTN] ERROR: Study not found');
             wp_send_json_error('Study not found');
         }
         
+        error_log('[EIPSI REDISTRIBUTE BTN] Study created_at: ' . $study->created_at);
+        
         $study_created_timestamp = strtotime($study->created_at);
         $is_t1 = ($wave->offset_minutes == 0);
+        
+        error_log('[EIPSI REDISTRIBUTE BTN] study_created_timestamp (parsed): ' . $study_created_timestamp . ' (' . date('Y-m-d H:i:s', $study_created_timestamp) . ')');
+        error_log('[EIPSI REDISTRIBUTE BTN] is_t1: ' . ($is_t1 ? 'YES' : 'NO'));
         
         // Calculate current window
         $current_window_minutes = 0;
         
         if (!empty($wave->due_date)) {
+            error_log('[EIPSI REDISTRIBUTE BTN] Wave has due_date: ' . $wave->due_date);
+            
             $deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
+            error_log('[EIPSI REDISTRIBUTE BTN] deadline_timestamp (parsed): ' . $deadline_timestamp . ' (' . date('Y-m-d H:i:s', $deadline_timestamp) . ')');
             
             // T1 (offset=0): window from created_at to deadline (fixed)
             // Other waves: window from NOW to deadline (dynamic, remaining time)
             if ($is_t1) {
+                error_log('[EIPSI REDISTRIBUTE BTN] T1 calculation: deadline_timestamp - study_created_timestamp');
+                error_log('[EIPSI REDISTRIBUTE BTN] T1 calculation: ' . $deadline_timestamp . ' - ' . $study_created_timestamp . ' = ' . ($deadline_timestamp - $study_created_timestamp) . ' seconds');
                 $current_window_minutes = ceil(($deadline_timestamp - $study_created_timestamp) / 60);
+                error_log('[EIPSI REDISTRIBUTE BTN] T1 current_window_minutes: ' . $current_window_minutes);
             } else {
                 $now_timestamp = current_time('timestamp');
+                error_log('[EIPSI REDISTRIBUTE BTN] Other wave calculation: deadline_timestamp - now_timestamp');
+                error_log('[EIPSI REDISTRIBUTE BTN] now_timestamp: ' . $now_timestamp . ' (' . date('Y-m-d H:i:s', $now_timestamp) . ')');
+                error_log('[EIPSI REDISTRIBUTE BTN] Other calculation: ' . $deadline_timestamp . ' - ' . $now_timestamp . ' = ' . ($deadline_timestamp - $now_timestamp) . ' seconds');
                 $current_window_minutes = ceil(($deadline_timestamp - $now_timestamp) / 60);
+                error_log('[EIPSI REDISTRIBUTE BTN] Other current_window_minutes: ' . $current_window_minutes);
             }
         } else {
             // No deadline: use original window
+            error_log('[EIPSI REDISTRIBUTE BTN] No due_date, using original window_minutes: ' . $wave->window_minutes);
             $current_window_minutes = $wave->window_minutes;
         }
+        
+        error_log('[EIPSI REDISTRIBUTE BTN] FINAL current_window_minutes: ' . $current_window_minutes);
         
         // Validate minimum window for nudge redistribution
         if ($current_window_minutes < 60) {
