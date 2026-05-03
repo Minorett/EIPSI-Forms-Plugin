@@ -387,11 +387,17 @@ function eipsi_sanitize_timing_config($data) {
     
     // Sanitize other timing settings
     $sanitized['study_end_offset_minutes'] = isset($data['study_end_offset_minutes']) && $data['study_end_offset_minutes'] !== '' ? intval($data['study_end_offset_minutes']) : null;
+    error_log(sprintf('[EIPSI SANITIZE] study_end_offset_minutes: %s (raw: %s)', 
+        $sanitized['study_end_offset_minutes'], 
+        isset($data['study_end_offset_minutes']) ? $data['study_end_offset_minutes'] : 'not set'));
+    
     $sanitized['reminder_days_before'] = !empty($data['reminder_days_before']) ? intval($data['reminder_days_before']) : 3;
     $sanitized['enable_retries'] = !empty($data['enable_retries']);
     $sanitized['retry_after_days'] = !empty($data['retry_after_days']) ? intval($data['retry_after_days']) : 7;
     $sanitized['max_retries'] = !empty($data['max_retries']) ? intval($data['max_retries']) : 3;
     $sanitized['investigator_notification_days'] = !empty($data['investigator_notification_days']) ? intval($data['investigator_notification_days']) : 14;
+    
+    error_log('[EIPSI SANITIZE] Sanitized timing_intervals: ' . json_encode($sanitized['timing_intervals']));
     
     return $sanitized;
 }

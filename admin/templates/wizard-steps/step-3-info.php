@@ -166,8 +166,19 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                     <?php 
                     // Helper to find existing offset for a wave
                     function get_offset_for_wave($index, $intervals) {
-                        // Handle string index (e.g., 'closure')
+                        // Handle 'closure' special case
+                        if ($index === 'closure') {
+                            // Look for study_end_offset_minutes in step_data
+                            global $wizard_data;
+                            $step_data = isset($wizard_data['step_3']) ? $wizard_data['step_3'] : array();
+                            $closure_offset = isset($step_data['study_end_offset_minutes']) ? intval($step_data['study_end_offset_minutes']) : 0;
+                            error_log(sprintf('[EIPSI STEP3] Loading closure offset: %d min', $closure_offset));
+                            return $closure_offset;
+                        }
+                        
+                        // Handle other string indices
                         if (!is_numeric($index)) {
+                            error_log(sprintf('[EIPSI STEP3] Unknown string index: %s, returning 0', $index));
                             return 0;
                         }
                         
@@ -176,16 +187,22 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                         foreach ($intervals as $interval) {
                             // New format: from_wave/to_wave
                             if (isset($interval['to_wave']) && intval($interval['to_wave']) == $index) {
-                                return isset($interval['offset_minutes']) ? intval($interval['offset_minutes']) : 0;
+                                $offset = isset($interval['offset_minutes']) ? intval($interval['offset_minutes']) : 0;
+                                error_log(sprintf('[EIPSI STEP3] Found offset for wave %d (new format): %d min', $index, $offset));
+                                return $offset;
                             }
                             // Legacy format: wave_index
                             if (isset($interval['wave_index']) && intval($interval['wave_index']) == $index) {
-                                return isset($interval['offset_minutes']) ? intval($interval['offset_minutes']) : 0;
+                                $offset = isset($interval['offset_minutes']) ? intval($interval['offset_minutes']) : 0;
+                                error_log(sprintf('[EIPSI STEP3] Found offset for wave %d (legacy format): %d min', $index, $offset));
+                                return $offset;
                             }
                         }
                         
                         // Default: weekly intervals
-                        return $index * 10080;
+                        $default_offset = $index * 10080;
+                        error_log(sprintf('[EIPSI STEP3] No offset found for wave %d, using default: %d min', $index, $default_offset));
+                        return $default_offset;
                     }
 
                     for ($i = 1; $i < $number_of_waves; $i++): 

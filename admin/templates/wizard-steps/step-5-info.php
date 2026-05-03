@@ -69,29 +69,38 @@ function eipsi_format_minutes_human_readable($minutes) {
     return implode(', ', $parts);
 }
 
-// Format timing summary
+// Format timing summary with absolute offsets from T1
 $timing_summary = array();
+$wave_offsets = array(0); // T1 always at 0
+
 if (!empty($step_3['timing_intervals'])) {
     foreach ($step_3['timing_intervals'] as $interval) {
-        $from_wave = intval($interval['from_wave']) + 1;
-        $to_wave = intval($interval['to_wave']) + 1;
-        $value = intval($interval['days_after']);
-        $time_unit = isset($interval['time_unit']) ? $interval['time_unit'] : 'days';
-        
-        if ($time_unit === 'minutes') {
-            $formatted = eipsi_format_minutes_human_readable($value);
-            $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$formatted}";
-        } elseif ($time_unit === 'hours') {
-            $unit_label = $value == 1 ? 'hora' : 'horas';
-            $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$value} {$unit_label}";
-        } elseif ($time_unit === 'days') {
-            $unit_label = $value == 1 ? 'día' : 'días';
-            $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$value} {$unit_label}";
-        } else {
-            $timing_summary[] = "T{$from_wave} → T{$to_wave}: {$value} días";
+        if (isset($interval['offset_minutes'])) {
+            $wave_offsets[] = intval($interval['offset_minutes']);
         }
     }
 }
+
+// Build timing display
+foreach ($wave_offsets as $index => $offset_minutes) {
+    $wave_num = $index + 1;
+    if ($wave_num === 1) {
+        $timing_summary[] = array(
+            'wave' => 'T1',
+            'offset' => 'Inmediato (inicio del estudio)',
+            'offset_raw' => 0
+        );
+    } else {
+        $timing_summary[] = array(
+            'wave' => "T{$wave_num}",
+            'offset' => eipsi_format_minutes_human_readable($offset_minutes) . ' desde T1',
+            'offset_raw' => $offset_minutes
+        );
+    }
+}
+
+// Get study end offset
+$study_end_offset = isset($step_3['study_end_offset_minutes']) ? intval($step_3['study_end_offset_minutes']) : null;
 
 ?>
 <div class="eipsi-wizard-step" id="step-5">
@@ -163,24 +172,65 @@ if (!empty($step_3['timing_intervals'])) {
             
             <!-- Timing Configuration -->
             <div class="eipsi-summary-section">
-                <h3 style="margin:0 0 16px 0;color:#2c3e50;font-size:14px;font-weight:600;">Programación Temporal</h3>
-                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+                <h3 style="margin:0 0 16px 0;color:#2c3e50;font-size:14px;font-weight:600;">📅 Programación Temporal (Anclaje T1)</h3>
+                
+                <!-- Timeline visual -->
+                <div style="background:#f8f9fa;border-radius:8px;padding:16px;margin-bottom:16px;">
+                    <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:12px;">LÍNEA DE TIEMPO DEL ESTUDIO</div>
                     <?php if (!empty($timing_summary)): ?>
-                        <?php foreach ($timing_summary as $interval): ?>
-                            <div style="padding:10px;background:#f8f9fa;border-radius:6px;text-align:center;font-weight:500;color:#2c3e50;font-size:13px;">
-                                <?php echo $interval; ?>
+                        <?php foreach ($timing_summary as $index => $wave_info): ?>
+                            <div style="display:flex;align-items:center;gap:12px;margin-bottom:<?php echo $index < count($timing_summary) - 1 ? '12px' : '0'; ?>;">
+                                <div style="background:#3B6CAA;color:white;padding:6px 12px;border-radius:6px;font-weight:600;font-size:12px;min-width:40px;text-align:center;">
+                                    <?php echo esc_html($wave_info['wave']); ?>
+                                </div>
+                                <div style="flex:1;color:#2c3e50;font-size:13px;font-weight:500;">
+                                    <?php echo esc_html($wave_info['offset']); ?>
+                                </div>
                             </div>
+                            <?php if ($index < count($timing_summary) - 1): ?>
+                                <div style="margin-left:20px;height:16px;border-left:2px dashed #cbd5e1;"></div>
+                            <?php endif; ?>
                         <?php endforeach; ?>
+                        
+                        <?php if ($study_end_offset !== null && $study_end_offset > 0): ?>
+                            <div style="margin-left:20px;height:16px;border-left:2px dashed #cbd5e1;"></div>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div style="background:#dc3545;color:white;padding:6px 12px;border-radius:6px;font-weight:600;font-size:12px;min-width:40px;text-align:center;">
+                                    🔒
+                                </div>
+                                <div style="flex:1;color:#2c3e50;font-size:13px;font-weight:500;">
+                                    Cierre del estudio: <?php echo eipsi_format_minutes_human_readable($study_end_offset); ?> desde T1
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
                 
+                <!-- Nudges summary -->
+                <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px;margin-bottom:16px;">
+                    <div style="font-size:12px;font-weight:600;color:#856404;margin-bottom:8px;">🔔 RECORDATORIOS AUTOMÁTICOS (NUDGES)</div>
+                    <div style="font-size:12px;color:#856404;line-height:1.5;">
+                        Cada toma tendrá <strong>4 recordatorios automáticos</strong> distribuidos proporcionalmente en el tiempo disponible hasta la próxima toma:
+                        <ul style="margin:8px 0 0 0;padding-left:20px;">
+                            <li>Nudge 1: <strong>15%</strong> del intervalo</li>
+                            <li>Nudge 2: <strong>40%</strong> del intervalo</li>
+                            <li>Nudge 3: <strong>70%</strong> del intervalo</li>
+                            <li>Nudge 4: <strong>90%</strong> del intervalo</li>
+                        </ul>
+                        <div style="margin-top:8px;font-style:italic;">
+                            💡 Los tiempos exactos se ajustarán automáticamente según el intervalo entre tomas. Podrás modificarlos manualmente desde el Dashboard del estudio.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other timing settings -->
                 <div style="display:flex;flex-direction:column;gap:12px;">
                     <div class="eipsi-summary-row">
-                        <span class="eipsi-summary-label">Notificación de nueva toma:</span>
-                        <span class="eipsi-summary-value">Email automático el mismo día que esté disponible</span>
+                        <span class="eipsi-summary-label">📬 Email de disponibilidad:</span>
+                        <span class="eipsi-summary-value">Automático cuando cada toma esté lista</span>
                     </div>
                     <div class="eipsi-summary-row">
-                        <span class="eipsi-summary-label">Reintentos:</span>
+                        <span class="eipsi-summary-label">🔁 Reintentos:</span>
                         <span class="eipsi-summary-value">
                             <?php if (!empty($step_3['enable_retries'])): ?>
                                 Cada <?php echo intval($step_3['retry_after_days'] ?? 7); ?> días (máx <?php echo intval($step_3['max_retries'] ?? 3); ?> reintentos)
@@ -190,7 +240,7 @@ if (!empty($step_3['timing_intervals'])) {
                         </span>
                     </div>
                     <div class="eipsi-summary-row">
-                        <span class="eipsi-summary-label">Alerta al investigador:</span>
+                        <span class="eipsi-summary-label">⚠️ Alerta al investigador:</span>
                         <span class="eipsi-summary-value">Después de <?php echo intval($step_3['investigator_notification_days'] ?? 14); ?> días sin respuesta</span>
                     </div>
                 </div>
@@ -201,7 +251,7 @@ if (!empty($step_3['timing_intervals'])) {
                 <h3 style="margin:0 0 16px 0;color:#2c3e50;font-size:14px;font-weight:600;">Participantes</h3>
                 
                 <?php if (!empty($selected_methods)): ?>
-                    <div style="margin-bottom:16px;">
+                    <div>
                         <span class="eipsi-summary-label">Métodos de invitación:</span>
                         <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
                             <?php foreach ($selected_methods as $method): ?>
@@ -209,28 +259,11 @@ if (!empty($step_3['timing_intervals'])) {
                             <?php endforeach; ?>
                         </div>
                     </div>
+                <?php else: ?>
+                    <div style="padding:12px;background:#f8f9fa;border-radius:6px;text-align:center;color:#64748b;font-size:13px;">
+                        No se seleccionaron métodos de invitación
+                    </div>
                 <?php endif; ?>
-                
-                <div style="display:flex;flex-direction:column;gap:12px;">
-                    <div class="eipsi-summary-row">
-                        <span class="eipsi-summary-label">Consentimiento:</span>
-                        <span class="eipsi-summary-value" style="<?php echo !empty($step_4['require_consent']) ? 'color:#008080;font-weight:600;' : 'color:#6c757d;'; ?>">
-                            <?php echo !empty($step_4['require_consent']) ? 'Requerido' : 'Opcional'; ?>
-                        </span>
-                    </div>
-                    <div class="eipsi-summary-row">
-                        <span class="eipsi-summary-label">Aviso privacidad:</span>
-                        <span class="eipsi-summary-value" style="<?php echo !empty($step_4['show_privacy_notice']) ? 'color:#008080;font-weight:600;' : 'color:#6c757d;'; ?>">
-                            <?php echo !empty($step_4['show_privacy_notice']) ? 'Mostrado' : 'Oculto'; ?>
-                        </span>
-                    </div>
-                    <div class="eipsi-summary-row">
-                        <span class="eipsi-summary-label">Auto-remove inactivos:</span>
-                        <span class="eipsi-summary-value" style="<?php echo !empty($step_4['auto_removal_inactive']) ? 'color:#008080;font-weight:600;' : 'color:#6c757d;'; ?>">
-                            <?php echo !empty($step_4['auto_removal_inactive']) ? 'Activado' : 'Desactivado'; ?>
-                        </span>
-                    </div>
-                </div>
             </div>
             
             <!-- Important Notice -->

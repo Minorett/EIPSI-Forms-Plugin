@@ -538,17 +538,34 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
 
         // Distribute nudges proportionally within the interval
         // nudge1: 15% of interval, nudge2: 40%, nudge3: 70%, nudge4: 90%
-        $nudge1_hours = max(24, round($interval_minutes * 0.15 / 60)); // min 24h
-        $nudge2_hours = max(48, round($interval_minutes * 0.40 / 60)); // min 48h
-        $nudge3_hours = max(72, round($interval_minutes * 0.70 / 60)); // min 72h
-        $nudge4_hours = max(96, round($interval_minutes * 0.90 / 60)); // min 96h
-
-        // Ensure nudges don't exceed interval (leave 2h margin)
-        $max_nudge_hours = max(24, floor($interval_minutes / 60) - 2);
-        $nudge1_hours = min($nudge1_hours, $max_nudge_hours);
-        $nudge2_hours = min($nudge2_hours, $max_nudge_hours);
-        $nudge3_hours = min($nudge3_hours, $max_nudge_hours);
-        $nudge4_hours = min($nudge4_hours, $max_nudge_hours);
+        // For short intervals (< 24h), use minutes; for long intervals, use hours with minimums
+        
+        if ($interval_minutes < 1440) {
+            // Short interval: use minutes, no minimum
+            $nudge1_minutes = max(1, round($interval_minutes * 0.15));
+            $nudge2_minutes = max(1, round($interval_minutes * 0.40));
+            $nudge3_minutes = max(1, round($interval_minutes * 0.70));
+            $nudge4_minutes = max(1, round($interval_minutes * 0.90));
+            
+            // Convert to hours for storage (keep decimals)
+            $nudge1_hours = round($nudge1_minutes / 60, 2);
+            $nudge2_hours = round($nudge2_minutes / 60, 2);
+            $nudge3_hours = round($nudge3_minutes / 60, 2);
+            $nudge4_hours = round($nudge4_minutes / 60, 2);
+        } else {
+            // Long interval: use hours with minimums
+            $nudge1_hours = max(24, round($interval_minutes * 0.15 / 60));
+            $nudge2_hours = max(48, round($interval_minutes * 0.40 / 60));
+            $nudge3_hours = max(72, round($interval_minutes * 0.70 / 60));
+            $nudge4_hours = max(96, round($interval_minutes * 0.90 / 60));
+            
+            // Ensure nudges don't exceed interval (leave 2h margin)
+            $max_nudge_hours = max(24, floor($interval_minutes / 60) - 2);
+            $nudge1_hours = min($nudge1_hours, $max_nudge_hours);
+            $nudge2_hours = min($nudge2_hours, $max_nudge_hours);
+            $nudge3_hours = min($nudge3_hours, $max_nudge_hours);
+            $nudge4_hours = min($nudge4_hours, $max_nudge_hours);
+        }
 
         error_log(sprintf('[EIPSI WIZARD] Wave T%d nudges calculated: n1=%dh (15%%), n2=%dh (40%%), n3=%dh (70%%), n4=%dh (90%%) | interval=%dmin max=%dh', 
             $wave_index, $nudge1_hours, $nudge2_hours, $nudge3_hours, $nudge4_hours, $interval_minutes, $max_nudge_hours));
