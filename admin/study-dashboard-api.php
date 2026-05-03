@@ -1448,7 +1448,7 @@ function wp_ajax_eipsi_redistribute_nudges_handler() {
         
         // Get wave info
         $wave = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, study_id, offset_minutes, window_minutes, due_date, nudge_config 
+            "SELECT id, study_id, offset_minutes, window_minutes, deadline, nudge_config 
              FROM {$wpdb->prefix}survey_waves WHERE id = %d",
             $wave_id
         ));
@@ -1458,7 +1458,7 @@ function wp_ajax_eipsi_redistribute_nudges_handler() {
             wp_send_json_error('Wave not found');
         }
         
-        error_log('[EIPSI REDISTRIBUTE BTN] Wave found: study_id=' . $wave->study_id . ', offset_minutes=' . $wave->offset_minutes . ', window_minutes=' . $wave->window_minutes . ', due_date=' . $wave->due_date);
+        error_log('[EIPSI REDISTRIBUTE BTN] Wave found: study_id=' . $wave->study_id . ', offset_minutes=' . $wave->offset_minutes . ', window_minutes=' . $wave->window_minutes . ', deadline=' . $wave->deadline);
         
         // Get study creation date
         $study = $wpdb->get_row($wpdb->prepare(
@@ -1482,10 +1482,10 @@ function wp_ajax_eipsi_redistribute_nudges_handler() {
         // Calculate current window
         $current_window_minutes = 0;
         
-        if (!empty($wave->due_date)) {
-            error_log('[EIPSI REDISTRIBUTE BTN] Wave has due_date: ' . $wave->due_date);
+        if (!empty($wave->deadline)) {
+            error_log('[EIPSI REDISTRIBUTE BTN] Wave has deadline: ' . $wave->deadline);
             
-            $deadline_timestamp = strtotime($wave->due_date . ' 23:59:59');
+            $deadline_timestamp = strtotime($wave->deadline . ' 23:59:59');
             error_log('[EIPSI REDISTRIBUTE BTN] deadline_timestamp (parsed): ' . $deadline_timestamp . ' (' . date('Y-m-d H:i:s', $deadline_timestamp) . ')');
             
             // T1 (offset=0): window from created_at to deadline (fixed)
