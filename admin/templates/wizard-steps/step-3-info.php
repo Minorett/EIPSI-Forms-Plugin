@@ -185,11 +185,9 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                                 <input type="number" 
                                        class="eipsi-interval-input"
                                        value="<?php echo $display_val; ?>"
-                                       min="1" 
-                                       oninput="eipsiSyncOffset(this)">
+                                       min="1">
                                 <select class="eipsi-wiz-select eipsi-interval-unit"
-                                        data-previous-unit="<?php echo esc_attr($unit); ?>"
-                                        onchange="eipsiSyncOffset(this)">
+                                        data-previous-unit="<?php echo esc_attr($unit); ?>">
                                     <option value="days" <?php selected($unit, 'days'); ?>>días</option>
                                     <option value="minutes" <?php selected($unit, 'minutes'); ?>>minutos</option>
                                 </select>
@@ -218,11 +216,9 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                                    class="eipsi-interval-input"
                                    id="eipsi-closure-input"
                                    value="<?php echo $display_val_c; ?>"
-                                   min="1"
-                                   oninput="eipsiSyncOffset(this)">
+                                   min="1">
                             <select class="eipsi-wiz-select eipsi-interval-unit"
-                                    data-previous-unit="<?php echo esc_attr($unit_c); ?>"
-                                    onchange="eipsiSyncOffset(this)">
+                                    data-previous-unit="<?php echo esc_attr($unit_c); ?>">
                                 <option value="days" <?php selected($unit_c, 'days'); ?>>días</option>
                                 <option value="minutes" <?php selected($unit_c, 'minutes'); ?>>minutos</option>
                             </select>
@@ -252,14 +248,14 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                 <div style="border-top:1px solid #e2e8f0;padding-top:16px;margin-top:16px;">
                     <h4 style="margin:0 0 12px 0;color:#2c3e50;font-size:13px;">Plantillas Rápidas:</h4>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <button type="button"
+                        <button type="button" class="eipsi-template-btn"
                             style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
-                            onclick="eipsiApplyTimingTemplate('semanal_7x', this)">
+                            data-template="semanal_7x">
                             📅 Semanal
                         </button>
-                        <button type="button"
+                        <button type="button" class="eipsi-template-btn"
                             style="padding:6px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#2c3e50;cursor:pointer;"
-                            onclick="eipsiApplyTimingTemplate('quincenal_14x', this)">
+                            data-template="quincenal_14x">
                             📆 Quincenal
                         </button>
                     </div>
@@ -506,7 +502,7 @@ function eipsiApplyTimingTemplate(template, btn) {
             
             // Set value according to current unit
             if (currentUnit === 'minutes') {
-                input.value = accumulatedDays * <?php echo MINUTES_PER_DAY; ?>;
+                input.value = accumulatedDays * MINUTES_PER_DAY;
             } else {
                 input.value = accumulatedDays;
             }
@@ -545,6 +541,27 @@ document.addEventListener('DOMContentLoaded', () => {
             if (hidden && equiv) {
                 equiv.textContent = eipsiFormatDuration(parseInt(hidden.value));
             }
+        }
+    });
+    
+    // Event listeners para botones de plantillas
+    document.querySelectorAll('.eipsi-template-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const template = this.dataset.template;
+            eipsiApplyTimingTemplate(template, this);
+        });
+    });
+    
+    // Event delegation para inputs y selects dinámicos
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('eipsi-interval-input')) {
+            eipsiSyncOffset(e.target);
+        }
+    });
+    
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('eipsi-interval-unit')) {
+            eipsiSyncOffset(e.target);
         }
     });
     

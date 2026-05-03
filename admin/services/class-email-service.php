@@ -986,6 +986,9 @@ class EIPSI_Email_Service {
         $table_name = $wpdb->prefix . 'survey_email_log';
         $subject = sanitize_text_field($subject);
         
+        // Log para debug
+        error_log("[EIPSI Email] log_email called - type: '$type', status: '$status', participant: $participant_id");
+        
         // Validate survey_id - allow 0 but cast to int for safe insert
         $survey_id = intval($survey_id);
         

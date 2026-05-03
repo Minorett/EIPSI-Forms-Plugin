@@ -1169,6 +1169,14 @@ function wp_ajax_eipsi_get_study_email_logs_handler() {
          ORDER BY sent_at DESC LIMIT 50",
         $study_id
     ));
+    
+    // Formatear fechas y agregar debug
+    foreach ($logs as $log) {
+        if (!empty($log->sent_at)) {
+            $log->sent_at_formatted = date_i18n('j/n/Y, H:i:s', strtotime($log->sent_at));
+        }
+        error_log("[EIPSI EMAIL LOGS] Log ID {$log->id}: email_type='{$log->email_type}', status='{$log->status}'");
+    }
 
     wp_send_json_success($logs);
 }
