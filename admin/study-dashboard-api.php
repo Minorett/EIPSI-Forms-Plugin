@@ -643,11 +643,11 @@ function eipsi_redistribute_nudges($current_nudges, $original_window_minutes, $n
         
         // Get cumulative position in window
         $cumulative_minutes = isset($percentages[$key]) 
-            ? $new_window_minutes * $percentages[$key]
+            ? round($new_window_minutes * $percentages[$key])
             : 0;
         
         // Calculate interval from previous nudge (incremental)
-        $interval_minutes = $cumulative_minutes - $previous_cumulative_minutes;
+        $interval_minutes = round($cumulative_minutes - $previous_cumulative_minutes);
         $previous_cumulative_minutes = $cumulative_minutes;
         
         // Convert to hours (preferred unit for display)
