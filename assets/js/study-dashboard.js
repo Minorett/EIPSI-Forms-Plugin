@@ -721,7 +721,7 @@
                     // Convertir valores legacy a minutos para display
                     let minutes;
                     if (nudgeData) {
-                        minutes = nudgeData.unit === 'days' ? nudgeData.value * 1440 : nudgeData.value * 60;
+                        minutes = Math.round(nudgeData.unit === 'days' ? nudgeData.value * 1440 : nudgeData.value * 60);
                     } else {
                         // Defaults en minutos: 24h=1440, 72h=4320, 168h=10080, 336h=20160
                         minutes = i === 1 ? 1440 : i === 2 ? 4320 : i === 3 ? 10080 : 20160;

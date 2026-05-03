@@ -31,7 +31,7 @@ class EIPSI_Wave_Eligibility_Service {
         
         // Obtener wave_index de la wave actual
         $current_wave = $wpdb->get_row($wpdb->prepare(
-            "SELECT wave_index FROM {$wpdb->prefix}eipsi_survey_waves 
+            "SELECT wave_index FROM {$wpdb->prefix}survey_waves 
              WHERE id = %d AND study_id = %d",
             $wave_id, 
             $study_id
@@ -49,8 +49,8 @@ class EIPSI_Wave_Eligibility_Service {
         
         // Verificar si completó la wave anterior
         $previous_completed = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}eipsi_survey_assignments a
-             JOIN {$wpdb->prefix}eipsi_survey_waves w ON a.wave_id = w.id
+            "SELECT COUNT(*) FROM {$wpdb->prefix}survey_assignments a
+             JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
              WHERE a.participant_id = %d
              AND w.study_id = %d
              AND w.wave_index = %d
@@ -80,7 +80,7 @@ class EIPSI_Wave_Eligibility_Service {
         
         // Obtener wave_index
         $current_wave = $wpdb->get_row($wpdb->prepare(
-            "SELECT wave_index FROM {$wpdb->prefix}eipsi_survey_waves 
+            "SELECT wave_index FROM {$wpdb->prefix}survey_waves 
              WHERE id = %d AND study_id = %d",
             $wave_id, 
             $study_id
@@ -105,8 +105,8 @@ class EIPSI_Wave_Eligibility_Service {
             $placeholders = implode(',', array_fill(0, count($candidate_ids), '%d'));
             $sql = $wpdb->prepare(
                 "SELECT DISTINCT a.participant_id 
-                 FROM {$wpdb->prefix}eipsi_survey_assignments a
-                 JOIN {$wpdb->prefix}eipsi_survey_waves w ON a.wave_id = w.id
+                 FROM {$wpdb->prefix}survey_assignments a
+                 JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
                  WHERE w.study_id = %d
                  AND w.wave_index = %d
                  AND a.status = 'submitted'
@@ -120,8 +120,8 @@ class EIPSI_Wave_Eligibility_Service {
             // Buscar entre todos los participantes
             $sql = $wpdb->prepare(
                 "SELECT DISTINCT a.participant_id 
-                 FROM {$wpdb->prefix}eipsi_survey_assignments a
-                 JOIN {$wpdb->prefix}eipsi_survey_waves w ON a.wave_id = w.id
+                 FROM {$wpdb->prefix}survey_assignments a
+                 JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
                  WHERE w.study_id = %d
                  AND w.wave_index = %d
                  AND a.status = 'submitted'",
