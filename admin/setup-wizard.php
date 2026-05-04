@@ -257,6 +257,17 @@ function eipsi_create_study_from_wizard($wizard_data) {
     // Generate unique study code
     $study_code = eipsi_generate_unique_study_code($step_1['study_code']);
     
+    // Default config: Weekly T1 reminders enabled (v2.6.0)
+    $default_config = array(
+        'weekly_reminders' => array(
+            'enabled' => true,
+            'start_after_nudge' => 4,
+            'frequency_days' => 7,
+            'max_reminders' => null,
+            'auto_expire_after' => null
+        )
+    );
+    
     // Insert study record
     $table_name = $wpdb->prefix . 'survey_studies';
     
@@ -266,10 +277,11 @@ function eipsi_create_study_from_wizard($wizard_data) {
         'description' => $step_1['description'],
         'principal_investigator_id' => $step_1['principal_investigator_id'],
         'status' => 'active',
+        'config' => wp_json_encode($default_config),
         'created_at' => current_time('mysql'),
         'updated_at' => current_time('mysql')
     );
-    $study_formats = array('%s', '%s', '%s', '%d', '%s', '%s', '%s');
+    $study_formats = array('%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s');
 
     // T1-Anchor: Include study closure offset
     if (isset($step_3['study_end_offset_minutes'])) {

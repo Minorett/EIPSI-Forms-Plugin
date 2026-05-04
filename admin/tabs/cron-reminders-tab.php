@@ -28,9 +28,13 @@ $config = array(
     'reminders_enabled' => true,  // ✅ Default ON for wave reminders
     'reminder_days_before' => 0,  // Not used for longitudinal (waves use intervals instead)
     'max_reminder_emails' => 100,
-    'dropout_recovery_enabled' => false,  // Optional feature, keep OFF by default
-    'dropout_recovery_days' => 7,
-    'max_recovery_emails' => 50,
+    'weekly_reminders' => array(  // v2.6.0 - Weekly T1 reminders (default ON)
+        'enabled' => true,
+        'start_after_nudge' => 4,
+        'frequency_days' => 7,
+        'max_reminders' => null,
+        'auto_expire_after' => null
+    ),
     'investigator_alert_enabled' => true,  // ✅ Default ON for investigator alerts
     'investigator_alert_email' => get_option('admin_email'),
 );
@@ -44,8 +48,13 @@ if ($selected_study_id) {
     if ($study_config) {
         $config_data = json_decode($study_config, true);
         if (is_array($config_data)) {
-            // Merge with defaults, ensuring all keys exist
+            // Merge top-level config
             $config = array_merge($config, array_intersect_key($config_data, $config));
+            
+            // Merge weekly_reminders nested config
+            if (isset($config_data['weekly_reminders']) && is_array($config_data['weekly_reminders'])) {
+                $config['weekly_reminders'] = array_merge($config['weekly_reminders'], $config_data['weekly_reminders']);
+            }
         }
     }
 }
@@ -333,67 +342,91 @@ $cron_command = "*/5 * * * * wget -q -O - {$site_url}/wp-cron.php?doing_wp_cron 
                     </div>
                 </div>
 
-                <!-- Section: Dropout Recovery -->
+                <!-- Section: Weekly T1 Reminders (v2.6.0) -->
                 <div class="eipsi-config-section" style="margin: 30px 0; padding: 25px; background: #fffdf5; border: 2px solid #f0ad4e; border-radius: 8px; box-shadow: 0 2px 8px rgba(240, 173, 78, 0.15);">
                     <h3 style="margin-top: 0; margin-bottom: 20px; color: #856404; font-size: 18px; display: flex; align-items: center; gap: 10px;">
-                        💔 <?php _e('Recuperación de Participantes Inactivos (Dropouts)', 'eipsi-forms'); ?>
+                        � <?php _e('Recordatorios Semanales T1 (Exclusivo Primera Toma)', 'eipsi-forms'); ?>
                     </h3>
 
                     <label class="eipsi-toggle-label" style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; cursor: pointer; padding: 12px; background: #fff8e1; border-radius: 6px; transition: background 0.2s;">
-                        <input type="checkbox" id="dropout_recovery_enabled" name="dropout_recovery_enabled" <?php checked(!empty($config['dropout_recovery_enabled'])); ?> style="margin-top: 3px; width: 20px; height: 20px; cursor: pointer;">
+                        <input type="checkbox" id="weekly_reminders_enabled" name="weekly_reminders[enabled]" <?php checked(!empty($config['weekly_reminders']['enabled'])); ?> style="margin-top: 3px; width: 20px; height: 20px; cursor: pointer;">
                         <div>
                             <strong style="display: block; margin-bottom: 4px; color: #856404;">
-                                <?php _e('Activar recuperación de participantes inactivos', 'eipsi-forms'); ?>
+                                <?php _e('Activar recordatorios semanales para T1', 'eipsi-forms'); ?>
                             </strong>
                             <span style="color: #666; font-size: 13px; display: block;">
-                                <?php _e('Envía un mensaje "Te extrañamos" a participantes que no han completado waves después del tiempo de intervalo configurado.', 'eipsi-forms'); ?>
+                                <?php _e('Envía recordatorios semanales a participantes que no completaron T1 después de todos los nudges. Solo aplica para la primera toma.', 'eipsi-forms'); ?>
                                 <br>
-                                <em style="color: #f0ad4e;">💌 <?php _e('Template: Mensaje de recuperación personalizado', 'eipsi-forms'); ?></em>
+                                <em style="color: #f0ad4e;">💌 <?php _e('Template: Recordatorio semanal T1', 'eipsi-forms'); ?></em>
                             </span>
                         </div>
                     </label>
 
                     <div class="eipsi-input-group" style="margin: 15px 0; padding: 18px; background: #ffffff; border-left: 3px solid #f0ad4e; border-radius: 0 4px 4px 0;">
-                        <label for="dropout_recovery_days" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
-                            📆 <?php _e('Tiempo después del intervalo para considerar dropout', 'eipsi-forms'); ?>
+                        <label for="weekly_frequency_days" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                            ⏰ <?php _e('Frecuencia de recordatorios', 'eipsi-forms'); ?>
                         </label>
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <input type="number"
-                                   id="dropout_recovery_days"
-                                   name="dropout_recovery_days"
-                                   value="<?php echo esc_attr(intval($config['dropout_recovery_days'])); ?>"
+                                   id="weekly_frequency_days"
+                                   name="weekly_reminders[frequency_days]"
+                                   value="<?php echo esc_attr(intval($config['weekly_reminders']['frequency_days'])); ?>"
                                    min="1"
-                                   max="90"
-                                   aria-describedby="dropout_recovery_days_help"
+                                   max="30"
+                                   aria-describedby="weekly_frequency_days_help"
                                    style="width: 120px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 500;">
                             <span style="color: #666; font-size: 13px; background: #fff3cd; padding: 4px 10px; border-radius: 12px;">
-                                <?php _e('Rango: 1-90 días', 'eipsi-forms'); ?>
+                                <?php _e('días entre recordatorios', 'eipsi-forms'); ?>
                             </span>
                         </div>
-                        <p id="dropout_recovery_days_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
-                            <?php _e('¿Cuánto tiempo después del intervalo configurado quieres que se envíe el mensaje de recuperación?', 'eipsi-forms'); ?>
+                        <p id="weekly_frequency_days_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                            <?php _e('Cada cuántos días se envía un recordatorio semanal (default: 7 días)', 'eipsi-forms'); ?>
                         </p>
                     </div>
 
                     <div class="eipsi-input-group" style="margin: 15px 0; padding: 18px; background: #ffffff; border-left: 3px solid #f0ad4e; border-radius: 0 4px 4px 0;">
-                        <label for="max_recovery_emails" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
-                            📩 <?php _e('Máximo de emails de recuperación por ejecución cron', 'eipsi-forms'); ?>
+                        <label for="weekly_max_reminders" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                            � <?php _e('Máximo de recordatorios semanales', 'eipsi-forms'); ?>
                         </label>
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <input type="number"
-                                   id="max_recovery_emails"
-                                   name="max_recovery_emails"
-                                   value="<?php echo esc_attr(intval($config['max_recovery_emails'])); ?>"
+                                   id="weekly_max_reminders"
+                                   name="weekly_reminders[max_reminders]"
+                                   value="<?php echo esc_attr($config['weekly_reminders']['max_reminders'] ?? ''); ?>"
                                    min="1"
-                                   max="500"
-                                   aria-describedby="max_recovery_emails_help"
+                                   max="52"
+                                   placeholder="Sin límite"
+                                   aria-describedby="weekly_max_reminders_help"
                                    style="width: 120px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 500;">
                             <span style="color: #666; font-size: 13px; background: #fff3cd; padding: 4px 10px; border-radius: 12px;">
-                                <?php _e('Rango: 1-500 emails', 'eipsi-forms'); ?>
+                                <?php _e('Dejar vacío = sin límite', 'eipsi-forms'); ?>
                             </span>
                         </div>
-                        <p id="max_recovery_emails_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
-                            <?php _e('Limita cuántos emails de recuperación se envían en una ejecución para evitar sobrecarga.', 'eipsi-forms'); ?>
+                        <p id="weekly_max_reminders_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                            <?php _e('Número máximo de recordatorios semanales antes de marcar como expirado (opcional)', 'eipsi-forms'); ?>
+                        </p>
+                    </div>
+
+                    <div class="eipsi-input-group" style="margin: 15px 0; padding: 18px; background: #ffffff; border-left: 3px solid #f0ad4e; border-radius: 0 4px 4px 0;">
+                        <label for="weekly_auto_expire" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                            ⏳ <?php _e('Auto-expirar después de (días)', 'eipsi-forms'); ?>
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <input type="number"
+                                   id="weekly_auto_expire"
+                                   name="weekly_reminders[auto_expire_after]"
+                                   value="<?php echo esc_attr($config['weekly_reminders']['auto_expire_after'] ?? ''); ?>"
+                                   min="1"
+                                   max="365"
+                                   placeholder="Sin expiración"
+                                   aria-describedby="weekly_auto_expire_help"
+                                   style="width: 120px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 500;">
+                            <span style="color: #666; font-size: 13px; background: #fff3cd; padding: 4px 10px; border-radius: 12px;">
+                                <?php _e('Dejar vacío = sin expiración', 'eipsi-forms'); ?>
+                            </span>
+                        </div>
+                        <p id="weekly_auto_expire_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                            <?php _e('Días desde la creación del assignment para marcar como expirado automáticamente (opcional)', 'eipsi-forms'); ?>
                         </p>
                     </div>
                 </div>

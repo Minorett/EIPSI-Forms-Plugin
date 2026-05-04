@@ -670,12 +670,20 @@ function eipsi_ajax_save_cron_reminders_config() {
         'reminders_enabled' => isset($_POST['reminders_enabled']),
         'reminder_days_before' => isset($_POST['reminder_days_before']) ? max(1, min(30, intval($_POST['reminder_days_before']))) : 3,
         'max_reminder_emails' => isset($_POST['max_reminder_emails']) ? max(1, min(500, intval($_POST['max_reminder_emails']))) : 100,
-        'dropout_recovery_enabled' => isset($_POST['dropout_recovery_enabled']),
-        'dropout_recovery_days' => isset($_POST['dropout_recovery_days']) ? max(1, min(90, intval($_POST['dropout_recovery_days']))) : 7,
-        'max_recovery_emails' => isset($_POST['max_recovery_emails']) ? max(1, min(500, intval($_POST['max_recovery_emails']))) : 50,
         'investigator_alert_enabled' => isset($_POST['investigator_alert_enabled']),
         'investigator_alert_email' => isset($_POST['investigator_alert_email']) ? sanitize_email($_POST['investigator_alert_email']) : get_option('admin_email'),
     );
+    
+    // v2.6.0 - Weekly T1 reminders config
+    if (isset($_POST['weekly_reminders']) && is_array($_POST['weekly_reminders'])) {
+        $config['weekly_reminders'] = array(
+            'enabled' => isset($_POST['weekly_reminders']['enabled']),
+            'start_after_nudge' => 4, // Always start after nudge 4
+            'frequency_days' => isset($_POST['weekly_reminders']['frequency_days']) ? max(1, min(30, intval($_POST['weekly_reminders']['frequency_days']))) : 7,
+            'max_reminders' => !empty($_POST['weekly_reminders']['max_reminders']) ? max(1, min(52, intval($_POST['weekly_reminders']['max_reminders']))) : null,
+            'auto_expire_after' => !empty($_POST['weekly_reminders']['auto_expire_after']) ? max(1, min(365, intval($_POST['weekly_reminders']['auto_expire_after']))) : null,
+        );
+    }
 
     // Get existing config
     global $wpdb;
