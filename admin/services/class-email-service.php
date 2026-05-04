@@ -889,7 +889,7 @@ class EIPSI_Email_Service {
      * @since 1.4.1
      * @access public
      */
-    public static function send_email($survey_id, $participant_id, $to, $type, $subject, $content) {
+    public static function send_email($survey_id, $participant_id, $to, $type, $subject, $content, $metadata = array()) {
         $headers = array('Content-Type: text/html; charset=UTF-8');
 
         try {
@@ -903,14 +903,14 @@ class EIPSI_Email_Service {
                 $result = $smtp_service->send_message($to, $subject, $content, $smtp_config);
 
                 if (!empty($result['success'])) {
-                    self::log_email($survey_id, $participant_id, $type, 'sent', null, $subject);
-                    error_log("[EIPSI Email] SMTP send successful to: $to");
-                    return true;
+                    $log_id = self::log_email($survey_id, $participant_id, $type, 'sent', null, $subject, $metadata);
+                    error_log("[EIPSI Email] SMTP send successful to: $to (log_id={$log_id})");
+                    return $log_id;
                 }
 
                 $error = $result['error'] ?? 'SMTP send failed';
                 error_log("[EIPSI Email] SMTP send failed: $error");
-                self::log_email($survey_id, $participant_id, $type, 'failed', $error, $subject);
+                self::log_email($survey_id, $participant_id, $type, 'failed', $error, $subject, $metadata);
                 return false;
             }
 
@@ -945,15 +945,15 @@ class EIPSI_Email_Service {
             remove_action( 'wp_mail_failed', $wp_mail_failed_listener );
 
             if ($sent) {
-                self::log_email($survey_id, $participant_id, $type, 'sent', null, $subject);
-                error_log("[EIPSI Email] wp_mail successful to: $to");
-                return true;
+                $log_id = self::log_email($survey_id, $participant_id, $type, 'sent', null, $subject, $metadata);
+                error_log("[EIPSI Email] wp_mail successful to: $to (log_id={$log_id})");
+                return $log_id;
             }
 
             // Get detailed error via wp_mail_failed hook
             $error_msg = $wp_mail_last_error ?? 'wp_mail returned false (no SMTP error captured)';
             error_log("[EIPSI Email] wp_mail failed to $to: $error_msg");
-            self::log_email($survey_id, $participant_id, $type, 'failed', $error_msg, $subject);
+            self::log_email($survey_id, $participant_id, $type, 'failed', $error_msg, $subject, $metadata);
             return false;
             
         } catch (Exception $e) {
@@ -981,7 +981,7 @@ class EIPSI_Email_Service {
      * @since 1.4.1
      * @access public
      */
-    public static function log_email($survey_id, $participant_id, $type, $status, $error_message = null, $subject = '') {
+    public static function log_email($survey_id, $participant_id, $type, $status, $error_message = null, $subject = '', $metadata = array()) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'survey_email_log';
         $subject = sanitize_text_field($subject);
@@ -998,6 +998,9 @@ class EIPSI_Email_Service {
             return;
         }
         
+        // Encode metadata as JSON if provided
+        $metadata_json = !empty($metadata) ? wp_json_encode($metadata) : null;
+        
         $result = $wpdb->insert(
             $table_name,
             array(
@@ -1008,15 +1011,19 @@ class EIPSI_Email_Service {
                 'subject' => $subject,
                 'status' => $status,
                 'error_message' => $error_message,
+                'metadata' => $metadata_json,
                 'sent_at' => current_time('mysql'),
                 'created_at' => current_time('mysql')
             ),
-            array('%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+            array('%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
         );
         
         if ($result === false) {
             error_log("[EIPSI Email] log_email failed: " . $wpdb->last_error);
+            return 0;
         }
+        
+        return $wpdb->insert_id;
     }
     
     /**

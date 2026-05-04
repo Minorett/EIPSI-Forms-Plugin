@@ -433,21 +433,27 @@ class EIPSI_Wave_Availability_Email_Service {
             esc_html($magic_link)
         );
 
-        // Send email - EIPSI_Email_Service ya inserta el log automáticamente
-        $sent = EIPSI_Email_Service::send_email(
+        // Send email with metadata for duplicate detection
+        $metadata = array(
+            'wave_id' => $wave->id,
+            'nudge_stage' => 0,
+            'email_variant' => 'wave_available'
+        );
+        
+        $log_id = EIPSI_Email_Service::send_email(
             $study_id,
             $participant->id,
             $participant->email,
             'wave_availability',
             $subject,
-            $message
+            $message,
+            $metadata
         );
         
-        if ($sent) {
-            // v2.5.4 - NO llamar a log_email_success porque send_email ya logueó
+        if ($log_id) {
             return array(
                 'success' => true,
-                'log_id' => null, // El log_id se obtiene del insert de send_email
+                'log_id' => $log_id,
                 'message' => 'Email enviado correctamente'
             );
         } else {
