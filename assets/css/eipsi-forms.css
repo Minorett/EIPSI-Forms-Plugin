@@ -166,7 +166,7 @@
     border-radius: var(--eipsi-border-radius-lg, 20px);
     border: var(--eipsi-border-width, 1px) var(--eipsi-border-style, solid) var(--eipsi-color-border, #e2e8f0);
     box-shadow: var(--eipsi-shadow-lg, 0 8px 25px rgba(59, 108, 170, 0.1));
-    padding: var(--eipsi-spacing-container-padding, 2.5rem);
+    padding: 1rem 0;
     max-width: 900px;
     margin: 0 auto;
     font-family: var(--eipsi-font-family-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
@@ -2039,7 +2039,7 @@ select[aria-invalid="true"]:focus {
 @media (max-width: 768px) {
     .vas-dinamico-form,
     .eipsi-form {
-        padding: 1.5rem;
+        padding: 0.75rem 0;
         border-radius: 12px;
     }
     
@@ -2082,7 +2082,7 @@ select[aria-invalid="true"]:focus {
 @media (max-width: 480px) {
     .vas-dinamico-form,
     .eipsi-form {
-        padding: 1rem;
+        padding: 0.5rem 0;
         border-radius: 10px;
     }
     
@@ -2122,7 +2122,7 @@ select[aria-invalid="true"]:focus {
 @media (max-width: 374px) {
     .vas-dinamico-form,
     .eipsi-form {
-        padding: 0.75rem;
+        padding: 0.25rem 0;
         border-radius: 8px;
     }
     
@@ -3945,7 +3945,7 @@ noscript .eipsi-header .eipsi-toggle {
   /* Fix 3: General spacing and padding */
   .wp-block-eipsi-form-container.eipsi-form,
   .eipsi-form {
-    --eipsi-spacing-container-padding: 1rem;
+    --eipsi-spacing-container-padding: 0;
     --eipsi-spacing-field-gap: 1rem;
     --eipsi-spacing-section-gap: 1.25rem;
   }

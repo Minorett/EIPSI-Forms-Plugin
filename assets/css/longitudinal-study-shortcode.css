@@ -972,8 +972,8 @@
 
 @media (max-width: 768px) {
     .eipsi-longitudinal-study {
-        margin: 1rem auto;
-        padding: 0 0.75rem;
+        margin: 0.5rem auto;
+        padding: 0 12px;
     }
     
     .eipsi-study-header {
@@ -982,6 +982,127 @@
     
     .eipsi-study-name {
         font-size: 1.375rem;
+    }
+    
+    /* Participant Welcome */
+    .eipsi-participant-welcome {
+        border-radius: 12px;
+        padding: 20px;
+    }
+
+    .welcome-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .eipsi-header-dropdown-container {
+        align-self: flex-end;
+    }
+
+    .welcome-title {
+        font-size: 22px;
+    }
+
+    .welcome-subtitle {
+        font-size: 14px;
+    }
+
+    .progress-overview {
+        padding: 16px;
+    }
+
+    .progress-stats {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .stat-item {
+        font-size: 14px;
+    }
+
+    .next-action {
+        padding: 16px;
+    }
+
+    .next-action-title {
+        font-size: 16px;
+    }
+
+    .next-action-card {
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .wave-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .wave-badge {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+
+    .wave-name {
+        font-size: 15px;
+    }
+
+    .button-primary {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 15px;
+    }
+
+    /* Modales de abandono */
+    .eipsi-modal {
+        max-width: 95%;
+        margin: 0 8px;
+    }
+
+    .eipsi-modal-header {
+        padding: 20px 16px 12px;
+    }
+
+    .eipsi-modal-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+    }
+
+    .eipsi-modal-title {
+        font-size: 18px;
+    }
+
+    .eipsi-modal-subtitle {
+        font-size: 13px;
+    }
+
+    .eipsi-modal-body {
+        padding: 16px;
+    }
+
+    .eipsi-modal-footer {
+        padding: 12px 16px 16px;
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .eipsi-modal-btn {
+        width: 100%;
+        padding: 12px 16px;
+    }
+
+    .eipsi-verification-text {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    .eipsi-verification-input {
+        padding: 10px 12px;
+        font-size: 13px;
     }
     
     .eipsi-config-grid {
@@ -1007,12 +1128,149 @@
 }
 
 @media (max-width: 480px) {
+    .eipsi-longitudinal-study {
+        padding: 0 8px;
+    }
+
     .eipsi-study-header {
         padding: 1rem;
     }
     
     .eipsi-study-name {
         font-size: 1.125rem;
+    }
+
+    /* Participant Welcome */
+    .eipsi-participant-welcome {
+        border-radius: 8px;
+        padding: 16px;
+    }
+
+    .welcome-header-content {
+        padding: 0;
+    }
+
+    .welcome-title {
+        font-size: 20px;
+    }
+
+    .welcome-subtitle {
+        font-size: 13px;
+    }
+
+    .progress-overview {
+        padding: 12px;
+    }
+
+    .progress-text {
+        font-size: 13px;
+    }
+
+    .stat-item {
+        font-size: 13px;
+    }
+
+    .next-action {
+        padding: 12px;
+    }
+
+    .next-action-title {
+        font-size: 15px;
+    }
+
+    .next-action-card {
+        padding: 12px;
+    }
+
+    .wave-badge {
+        font-size: 11px;
+        padding: 3px 8px;
+    }
+
+    .wave-name {
+        font-size: 14px;
+    }
+
+    .button-primary {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    /* Modales */
+    .eipsi-modal {
+        max-width: 100%;
+        margin: 0;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .eipsi-modal-overlay {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .eipsi-modal-header {
+        padding: 16px 12px 10px;
+    }
+
+    .eipsi-modal-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 22px;
+    }
+
+    .eipsi-modal-title {
+        font-size: 17px;
+    }
+
+    .eipsi-modal-subtitle {
+        font-size: 12px;
+    }
+
+    .eipsi-modal-body {
+        padding: 12px;
+    }
+
+    .eipsi-modal-text {
+        font-size: 13px;
+    }
+
+    .eipsi-modal-footer {
+        padding: 10px 12px 12px;
+    }
+
+    .eipsi-modal-btn {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    .eipsi-verification-label {
+        font-size: 12px;
+    }
+
+    .eipsi-verification-text {
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+
+    .eipsi-verification-input {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    /* Dropdown de abandono */
+    .eipsi-header-dropdown-trigger {
+        padding: 8px 10px;
+        font-size: 16px;
+    }
+
+    .eipsi-header-dropdown-menu {
+        min-width: 160px;
+        right: 0;
+    }
+
+    .eipsi-dropdown-item {
+        padding: 10px 12px;
+        font-size: 13px;
     }
     
     .eipsi-section-title {
