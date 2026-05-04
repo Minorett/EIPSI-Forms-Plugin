@@ -876,11 +876,11 @@ function eipsi_forms_activate() {
 
     // === Cron Reminders Scheduling (Longitudinal) ===
     if (!wp_next_scheduled('eipsi_send_wave_reminders_hourly')) {
-        wp_schedule_event(time(), 'every_5_minutes', 'eipsi_send_wave_reminders_hourly');
+        wp_schedule_event(time(), 'every_minute', 'eipsi_send_wave_reminders_hourly');
     }
 
     if (!wp_next_scheduled('eipsi_send_dropout_recovery_hourly')) {
-        wp_schedule_event(time(), 'every_5_minutes', 'eipsi_send_dropout_recovery_hourly');
+        wp_schedule_event(time(), 'every_minute', 'eipsi_send_dropout_recovery_hourly');
     }
     
     if (!wp_next_scheduled('eipsi_purge_access_logs_daily')) {
@@ -900,14 +900,14 @@ function eipsi_forms_activate() {
     }
 
     // === T1-Anchor System Crons (v2.6.0) ===
-    // Process assignment expirations every 5 minutes
+    // Process assignment expirations every minute
     if (!wp_next_scheduled('eipsi_process_assignment_expirations')) {
-        wp_schedule_event(time(), 'every_5_minutes', 'eipsi_process_assignment_expirations');
+        wp_schedule_event(time(), 'every_minute', 'eipsi_process_assignment_expirations');
     }
 
-    // Process wave availability notifications every 5 minutes
+    // Process wave availability notifications every minute
     if (!wp_next_scheduled('eipsi_process_wave_availability')) {
-        wp_schedule_event(time(), 'every_5_minutes', 'eipsi_process_wave_availability');
+        wp_schedule_event(time(), 'every_minute', 'eipsi_process_wave_availability');
     }
 
     // === Phase 2 T1-Anchor: Wave Expiration Check (v2.6.0) ===
@@ -964,11 +964,19 @@ add_filter('cron_schedules', function($schedules) {
         );
     }
     
-    // v2.2.2 - Intervalo cada 5 minutos para emails de waves disponibles
+    // v2.2.2 - Intervalo cada minuto para emails de waves disponibles y nudges
+    if (!isset($schedules['every_minute'])) {
+        $schedules['every_minute'] = array(
+            'interval' => MINUTE_IN_SECONDS,
+            'display' => __('Every Minute', 'eipsi-forms'),
+        );
+    }
+    
+    // Mantener compatibilidad con código legacy
     if (!isset($schedules['every_5_minutes'])) {
         $schedules['every_5_minutes'] = array(
             'interval' => 5 * MINUTE_IN_SECONDS,
-            'display' => __('Every 5 Minutes', 'eipsi-forms'),
+            'display' => __('Every 5 Minutes (Legacy)', 'eipsi-forms'),
         );
     }
     
