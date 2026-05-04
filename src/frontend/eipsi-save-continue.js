@@ -1131,7 +1131,7 @@
 				return;
 			}
 
-			const responses = this.collectResponses();
+			const responses = this.collectResponses( true ); // Force full scan before unload
 			const currentPage = this.getCurrentPage();
 
 			const payload = new URLSearchParams();
