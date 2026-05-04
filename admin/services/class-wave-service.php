@@ -69,6 +69,7 @@ class EIPSI_Wave_Service {
             $status = 'draft';
         }
 
+        // Build data array with base fields (without optional fields)
         $data = array(
             'study_id' => $study_id,
             'wave_index' => $wave_index,
@@ -76,7 +77,6 @@ class EIPSI_Wave_Service {
             'form_id' => $form_id,
             'interval_days' => $interval_days,
             'offset_minutes' => $offset_minutes,
-            'window_minutes' => $window_minutes,
             'time_unit' => $time_unit,
             'reminder_days' => $reminder_days,
             'retry_enabled' => $retry_enabled,
@@ -87,10 +87,18 @@ class EIPSI_Wave_Service {
             'follow_up_reminders_enabled' => 1, // v2.5.0 - Nudges activados por defecto
         );
 
-        // Formats: study_id, wave_index, name, form_id, interval_days, offset_minutes, time_unit, reminder_days, retry_enabled, retry_days, max_retries, status, is_mandatory, follow_up_reminders_enabled
+        // Formats for base fields (without window_minutes, nudge_config, start_date, due_date)
         $formats = array('%d', '%d', '%s', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%s', '%d', '%d');
 
-        // Phase 5 T1-Anchor: nudge_config (JSON string with proportional nudges)
+        // Add optional fields in order
+        
+        // 1. window_minutes (optional, can be NULL)
+        if ($window_minutes !== null) {
+            $data['window_minutes'] = $window_minutes;
+            $formats[] = '%d';
+        }
+
+        // 2. nudge_config (Phase 5 T1-Anchor: JSON string with proportional nudges)
         if (isset($wave_data['nudge_config']) && !empty($wave_data['nudge_config'])) {
             $data['nudge_config'] = $wave_data['nudge_config']; // Already JSON encoded
             $formats[] = '%s';
@@ -99,14 +107,6 @@ class EIPSI_Wave_Service {
         } else {
             error_log(sprintf('[EIPSI WAVE SERVICE] Wave "%s" (index=%d): NO nudge_config provided', 
                 $name, $wave_index));
-        }
-
-        // window_minutes is optional and can be NULL
-        if ($window_minutes !== null) {
-            $formats[] = '%d';
-        } else {
-            // Remove window_minutes from data if null (don't insert NULL value)
-            unset($data['window_minutes']);
         }
 
         if (!empty($wave_data['start_date'])) {

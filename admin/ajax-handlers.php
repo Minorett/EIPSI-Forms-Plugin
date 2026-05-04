@@ -2990,7 +2990,11 @@ function eipsi_load_partial_response_handler() {
     $participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
     $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
     
+    error_log(sprintf('[EIPSI SAVE&CONTINUE] Load request: form_id=%s, participant_id=%s, session_id=%s', 
+        $form_id, $participant_id, $session_id));
+    
     if (empty($form_id) || empty($participant_id) || empty($session_id)) {
+        error_log('[EIPSI SAVE&CONTINUE] Load failed: missing required parameters');
         wp_send_json_error(array(
             'message' => __('Missing required parameters', 'eipsi-forms')
         ));
@@ -2999,11 +3003,15 @@ function eipsi_load_partial_response_handler() {
     $partial = EIPSI_Partial_Responses::load($form_id, $participant_id, $session_id);
     
     if ($partial) {
+        error_log(sprintf('[EIPSI SAVE&CONTINUE] Load success: found partial response, page_index=%d, response_count=%d', 
+            isset($partial['page_index']) ? intval($partial['page_index']) : 0,
+            isset($partial['responses']) && is_array($partial['responses']) ? count($partial['responses']) : 0));
         wp_send_json_success(array(
             'found' => true,
             'partial' => $partial
         ));
     } else {
+        error_log('[EIPSI SAVE&CONTINUE] Load success: no partial response found (clean start)');
         wp_send_json_success(array(
             'found' => false,
             'partial' => null

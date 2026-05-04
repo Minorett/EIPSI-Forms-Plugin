@@ -57,6 +57,9 @@ class EIPSI_Partial_Responses {
         
         $table_name = $wpdb->prefix . 'eipsi_partial_responses';
         
+        error_log(sprintf('[EIPSI SAVE&CONTINUE] save() called: form_id=%s, participant_id=%s, session_id=%s, page_index=%d, response_count=%d',
+            $form_id, $participant_id, $session_id, $page_index, is_array($responses) ? count($responses) : 0));
+        
         // Sanitize inputs
         $form_id = sanitize_text_field($form_id);
         $participant_id = sanitize_text_field($participant_id);
@@ -65,6 +68,7 @@ class EIPSI_Partial_Responses {
         
         // Validate
         if (empty($form_id) || empty($participant_id) || empty($session_id)) {
+            error_log('[EIPSI SAVE&CONTINUE] save() validation failed: missing required fields');
             return array(
                 'success' => false,
                 'error' => 'Missing required fields'
@@ -96,11 +100,14 @@ class EIPSI_Partial_Responses {
         $result = $wpdb->query($sql);
 
         if ($result === false) {
+            error_log(sprintf('[EIPSI SAVE&CONTINUE] save() DB error: %s', $wpdb->last_error));
             return array(
                 'success' => false,
                 'error' => $wpdb->last_error
             );
         }
+        
+        error_log(sprintf('[EIPSI SAVE&CONTINUE] save() DB query result: %d rows affected', $result));
 
         // Get the ID (either inserted or updated)
         $record_id = $wpdb->get_var($wpdb->prepare(
@@ -111,9 +118,12 @@ class EIPSI_Partial_Responses {
             $session_id
         ));
 
+        $action = $record_id ? ($result > 0 ? 'inserted' : 'updated') : 'updated';
+        error_log(sprintf('[EIPSI SAVE&CONTINUE] save() success: action=%s, record_id=%d', $action, $record_id));
+        
         return array(
             'success' => true,
-            'action' => $record_id ? ($result > 0 ? 'inserted' : 'updated') : 'updated',
+            'action' => $action,
             'id' => $record_id
         );
     }
@@ -131,6 +141,9 @@ class EIPSI_Partial_Responses {
         
         $table_name = $wpdb->prefix . 'eipsi_partial_responses';
         
+        error_log(sprintf('[EIPSI SAVE&CONTINUE] load() called: form_id=%s, participant_id=%s, session_id=%s',
+            $form_id, $participant_id, $session_id));
+        
         $result = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $table_name 
             WHERE form_id = %s AND participant_id = %s AND session_id = %s AND completed = 0
@@ -142,8 +155,12 @@ class EIPSI_Partial_Responses {
         ));
         
         if (!$result) {
+            error_log('[EIPSI SAVE&CONTINUE] load() result: no partial response found');
             return null;
         }
+        
+        error_log(sprintf('[EIPSI SAVE&CONTINUE] load() result: found record id=%d, page_index=%d, updated_at=%s',
+            $result->id, $result->page_index, $result->updated_at));
         
         return array(
             'id' => $result->id,
@@ -170,6 +187,9 @@ class EIPSI_Partial_Responses {
         
         $table_name = $wpdb->prefix . 'eipsi_partial_responses';
         
+        error_log(sprintf('[EIPSI SAVE&CONTINUE] mark_completed() called: form_id=%s, participant_id=%s, session_id=%s',
+            $form_id, $participant_id, $session_id));
+        
         $result = $wpdb->update(
             $table_name,
             array(
@@ -184,6 +204,12 @@ class EIPSI_Partial_Responses {
             array('%d', '%s'),
             array('%s', '%s', '%s')
         );
+        
+        if ($result !== false) {
+            error_log(sprintf('[EIPSI SAVE&CONTINUE] mark_completed() success: %d rows updated', $result));
+        } else {
+            error_log(sprintf('[EIPSI SAVE&CONTINUE] mark_completed() failed: %s', $wpdb->last_error));
+        }
         
         return $result !== false;
     }
@@ -201,6 +227,9 @@ class EIPSI_Partial_Responses {
         
         $table_name = $wpdb->prefix . 'eipsi_partial_responses';
         
+        error_log(sprintf('[EIPSI SAVE&CONTINUE] discard() called: form_id=%s, participant_id=%s, session_id=%s',
+            $form_id, $participant_id, $session_id));
+        
         $result = $wpdb->delete(
             $table_name,
             array(
@@ -210,6 +239,12 @@ class EIPSI_Partial_Responses {
             ),
             array('%s', '%s', '%s')
         );
+        
+        if ($result !== false) {
+            error_log(sprintf('[EIPSI SAVE&CONTINUE] discard() success: %d rows deleted', $result));
+        } else {
+            error_log(sprintf('[EIPSI SAVE&CONTINUE] discard() failed: %s', $wpdb->last_error));
+        }
         
         return $result !== false;
     }
@@ -224,10 +259,14 @@ class EIPSI_Partial_Responses {
         
         $table_name = $wpdb->prefix . 'eipsi_partial_responses';
         
+        error_log('[EIPSI SAVE&CONTINUE] cleanup_old_responses() called');
+        
         $result = $wpdb->query("
             DELETE FROM $table_name 
             WHERE updated_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
         ");
+        
+        error_log(sprintf('[EIPSI SAVE&CONTINUE] cleanup_old_responses() deleted %d old records', intval($result)));
         
         return intval($result);
     }
