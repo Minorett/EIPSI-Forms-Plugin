@@ -497,6 +497,8 @@ class EIPSI_Database_Schema_Manager {
 
                     'submitted_at' => 'DATETIME NULL',
 
+                    't1_completed_at' => "DATETIME NULL COMMENT 'Phase 5 T1-Anchor: Timestamp when T1 was completed (triggers T2+ availability calculation)'",
+
                     'reminder_count' => 'INT DEFAULT 0',
 
                     'last_nudge_sent_at' => "DATETIME NULL COMMENT 'Timestamp real del último nudge enviado exitosamente'",
@@ -534,6 +536,8 @@ class EIPSI_Database_Schema_Manager {
                     'KEY idx_due_at (due_at)',
 
                     'KEY idx_available_at (available_at)',
+
+                    'KEY idx_t1_completed (t1_completed_at)',
 
                     'UNIQUE KEY uk_wave_participant (wave_id, participant_id)'
 
@@ -1167,6 +1171,34 @@ class EIPSI_Database_Schema_Manager {
 
             ),
 
+            'survey_weekly_reminders' => array(
+
+                'columns' => array(
+
+                    'id' => 'BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT',
+
+                    'assignment_id' => 'BIGINT(20) UNSIGNED NOT NULL',
+
+                    'reminder_number' => 'INT NOT NULL',
+
+                    'sent_at' => 'DATETIME NOT NULL',
+
+                    'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+
+                ),
+
+                'indices' => array(
+
+                    'PRIMARY KEY  (id)',
+
+                    'KEY idx_assignment (assignment_id)',
+
+                    'KEY idx_sent_at (sent_at)'
+
+                )
+
+            ),
+
             'survey_data_requests' => array(
 
                 'columns' => array(
@@ -1292,6 +1324,8 @@ class EIPSI_Database_Schema_Manager {
             'eipsi_randomization_assignments',
 
             'survey_assignments',
+
+            'survey_weekly_reminders',
 
             'eipsi_pool_assignments',
 
@@ -2096,6 +2130,12 @@ class EIPSI_Database_Schema_Manager {
                 'fk_assignments_wave' => "ALTER TABLE {$wpdb->prefix}survey_assignments ADD CONSTRAINT fk_assignments_wave FOREIGN KEY (wave_id) REFERENCES {$wpdb->prefix}survey_waves(id) ON DELETE CASCADE",
 
                 'fk_assignments_participant' => "ALTER TABLE {$wpdb->prefix}survey_assignments ADD CONSTRAINT fk_assignments_participant FOREIGN KEY (participant_id) REFERENCES {$wpdb->prefix}survey_participants(id) ON DELETE CASCADE",
+
+            ),
+
+            'survey_weekly_reminders' => array(
+
+                'fk_weekly_reminders_assignment' => "ALTER TABLE {$wpdb->prefix}survey_weekly_reminders ADD CONSTRAINT fk_weekly_reminders_assignment FOREIGN KEY (assignment_id) REFERENCES {$wpdb->prefix}survey_assignments(id) ON DELETE CASCADE",
 
             ),
 

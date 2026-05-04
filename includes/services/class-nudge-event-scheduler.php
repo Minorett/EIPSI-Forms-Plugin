@@ -713,6 +713,73 @@ class EIPSI_Nudge_Event_Scheduler {
                 return $value * 3600; // Default a horas
         }
     }
+
+    /**
+     * Cancel all pending nudges for an assignment (Phase 5 T1-Anchor)
+     * 
+     * Marks all pending jobs in the queue as 'cancelled'. Used when:
+     * - Wave availability changes (T1 completion triggers recalculation)
+     * - Wave is skipped (participant moved to next wave)
+     * 
+     * @param int $assignment_id Assignment ID
+     * @return int Number of nudges cancelled
+     * @since 2.6.0
+     */
+    public static function cancel_nudges_for_assignment($assignment_id) {
+        global $wpdb;
+        
+        error_log("[EIPSI EventScheduler] Cancelling all pending nudges for assignment {$assignment_id}");
+        
+        $cancelled = $wpdb->update(
+            $wpdb->prefix . 'survey_job_queue',
+            array('status' => 'cancelled'),
+            array(
+                'assignment_id' => $assignment_id,
+                'status' => 'pending'
+            ),
+            array('%s'),
+            array('%d', '%s')
+        );
+        
+        if ($cancelled === false) {
+            error_log("[EIPSI EventScheduler] Error cancelling nudges: " . $wpdb->last_error);
+            return 0;
+        }
+        
+        error_log("[EIPSI EventScheduler] Cancelled {$cancelled} pending nudges for assignment {$assignment_id}");
+        
+        return $cancelled;
+    }
+
+    /**
+     * Reschedule nudges for an assignment (Phase 5 T1-Anchor)
+     * 
+     * Cancels existing pending nudges and schedules new ones based on
+     * the current available_at timestamp. Used when wave availability
+     * changes due to T1 completion.
+     * 
+     * @param int $assignment_id Assignment ID
+     * @return bool True if rescheduled successfully
+     * @since 2.6.0
+     */
+    public static function reschedule_nudges_for_assignment($assignment_id) {
+        error_log("[EIPSI EventScheduler] Rescheduling nudges for assignment {$assignment_id}");
+        
+        // 1. Cancelar nudges pendientes
+        $cancelled = self::cancel_nudges_for_assignment($assignment_id);
+        error_log("[EIPSI EventScheduler] Cancelled {$cancelled} pending nudges before rescheduling");
+        
+        // 2. Re-programar desde cero (lee available_at actualizado de la DB)
+        $result = self::schedule_nudge_sequence($assignment_id);
+        
+        if ($result) {
+            error_log("[EIPSI EventScheduler] Successfully rescheduled nudges for assignment {$assignment_id}");
+        } else {
+            error_log("[EIPSI EventScheduler] Failed to reschedule nudges for assignment {$assignment_id}");
+        }
+        
+        return $result;
+    }
 }
 
 // Inicializar al cargar

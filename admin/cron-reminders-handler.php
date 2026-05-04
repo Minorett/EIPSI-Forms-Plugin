@@ -939,3 +939,115 @@ function eipsi_schedule_job_worker() {
     }
 }
 add_action('wp', 'eipsi_schedule_job_worker');
+
+// ============================================================================
+// PHASE 5 T1-ANCHOR: TIME TRAVEL AJAX HANDLERS (Only in WP_DEBUG)
+// ============================================================================
+
+/**
+ * AJAX handler: Execute time travel
+ * 
+ * @since 2.6.0
+ */
+add_action('wp_ajax_eipsi_time_travel', 'eipsi_ajax_time_travel');
+function eipsi_ajax_time_travel() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+    
+    if (!defined('WP_DEBUG') || !WP_DEBUG) {
+        wp_send_json_error('Time travel only available in WP_DEBUG mode');
+    }
+    
+    $interval = sanitize_text_field($_POST['interval']);
+    $study_id = intval($_POST['study_id']);
+    
+    if (empty($interval)) {
+        wp_send_json_error('Interval is required');
+    }
+    
+    if (empty($study_id)) {
+        wp_send_json_error('Study ID is required');
+    }
+    
+    $result = eipsi_simulate_time_travel($interval, $study_id, null);
+    
+    if (isset($result['error'])) {
+        wp_send_json_error($result['error']);
+    }
+    
+    wp_send_json_success($result);
+}
+
+/**
+ * AJAX handler: Trigger cron manually
+ * 
+ * @since 2.6.0
+ */
+add_action('wp_ajax_eipsi_trigger_cron', 'eipsi_ajax_trigger_cron');
+function eipsi_ajax_trigger_cron() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+    
+    if (!defined('WP_DEBUG') || !WP_DEBUG) {
+        wp_send_json_error('Manual cron only available in WP_DEBUG mode');
+    }
+    
+    $hook = sanitize_text_field($_POST['hook']);
+    $study_id = intval($_POST['study_id']);
+    
+    if (empty($hook)) {
+        wp_send_json_error('Hook is required');
+    }
+    
+    // Validate hook is an EIPSI cron
+    $allowed_hooks = array(
+        'eipsi_wave_skipping_cron',
+        'eipsi_weekly_t1_reminders_cron',
+        'eipsi_send_wave_reminders_hourly',
+        'eipsi_send_dropout_recovery_hourly'
+    );
+    
+    if (!in_array($hook, $allowed_hooks)) {
+        wp_send_json_error('Invalid cron hook');
+    }
+    
+    error_log("[EIPSI Manual Cron] Triggering: {$hook} for study_id={$study_id}");
+    
+    do_action($hook);
+    
+    wp_send_json_success(array('hook' => $hook, 'study_id' => $study_id));
+}
+
+/**
+ * AJAX handler: Get time travel status
+ * 
+ * @since 2.6.0
+ */
+add_action('wp_ajax_eipsi_get_time_travel_status', 'eipsi_ajax_get_time_travel_status');
+function eipsi_ajax_get_time_travel_status() {
+    check_ajax_referer('eipsi_admin_nonce', 'nonce');
+    
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized');
+    }
+    
+    if (!defined('WP_DEBUG') || !WP_DEBUG) {
+        wp_send_json_error('Status check only available in WP_DEBUG mode');
+    }
+    
+    $study_id = intval($_POST['study_id']);
+    
+    if (empty($study_id)) {
+        wp_send_json_error('Study ID is required');
+    }
+    
+    $status = eipsi_get_time_travel_status($study_id, null);
+    
+    wp_send_json_success($status);
+}

@@ -443,6 +443,110 @@ $cron_command = "*/5 * * * * wget -q -O - {$site_url}/wp-cron.php?doing_wp_cron 
                     </div>
                 </div>
 
+                <!-- Section: Time Travel (Testing Only) - Solo visible con WP_DEBUG y estudio seleccionado -->
+                <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
+                <div class="eipsi-config-section" style="margin: 30px 0; padding: 25px; background: #fff9e6; border: 2px solid #ff9800; border-radius: 8px; box-shadow: 0 2px 8px rgba(255, 152, 0, 0.15);">
+                    <h3 style="margin-top: 0; margin-bottom: 20px; color: #e65100; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                        ⏰ <?php _e('Time Travel (Solo Testing - WP_DEBUG activo)', 'eipsi-forms'); ?>
+                    </h3>
+                    
+                    <div class="notice notice-warning inline" style="margin: 0 0 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #ff9800;">
+                        <p style="margin: 0; font-size: 13px; color: #856404; line-height: 1.6;">
+                            <strong>⚠️ ADVERTENCIA:</strong> Esta herramienta modifica timestamps en la base de datos. 
+                            Solo usar en entornos de testing. Los cambios son <strong>permanentes</strong> y afectan:
+                            <code>available_at</code>, <code>t1_completed_at</code>, <code>submitted_at</code>, emails enviados, y cron jobs programados.
+                        </p>
+                    </div>
+                    
+                    <!-- Time Travel Execution -->
+                    <div class="eipsi-input-group" style="margin: 15px 0; padding: 18px; background: #ffffff; border-left: 3px solid #ff9800; border-radius: 0 4px 4px 0;">
+                        <label for="time_travel_interval" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                            🕐 <?php _e('Intervalo de tiempo para viajar', 'eipsi-forms'); ?>
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <input type="text" 
+                                   id="time_travel_interval" 
+                                   placeholder="+7 days" 
+                                   value="+7 days"
+                                   aria-describedby="time_travel_interval_help"
+                                   style="width: 200px; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                            <button type="button" 
+                                    id="execute_time_travel" 
+                                    class="button button-secondary"
+                                    style="padding: 10px 20px; font-size: 14px; background: #ff9800; border-color: #ff9800; color: #fff; font-weight: 600;">
+                                🚀 <?php _e('Ejecutar Time Travel', 'eipsi-forms'); ?>
+                            </button>
+                            <span id="time_travel_spinner" class="spinner" style="display: none; float: none; margin: 0;"></span>
+                        </div>
+                        <p id="time_travel_interval_help" style="margin: 8px 0 0 0; font-size: 12px; color: #666;">
+                            <?php _e('Ejemplos:', 'eipsi-forms'); ?> <code>+7 days</code>, <code>-3 hours</code>, <code>+2 weeks</code>, <code>+30 minutes</code>, <code>+14 days</code>
+                        </p>
+                        <div id="time_travel_result" style="margin-top: 15px; display: none;"></div>
+                    </div>
+                    
+                    <!-- Manual Cron Triggers -->
+                    <div class="eipsi-input-group" style="margin: 15px 0; padding: 18px; background: #ffffff; border-left: 3px solid #ff9800; border-radius: 0 4px 4px 0;">
+                        <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                            ⚡ <?php _e('Ejecutar Cron Jobs Manualmente', 'eipsi-forms'); ?>
+                        </label>
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: #666;">
+                            <?php _e('Ejecuta cron jobs inmediatamente sin esperar el schedule. Útil después de hacer time travel.', 'eipsi-forms'); ?>
+                        </p>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button type="button" 
+                                    class="button button-secondary trigger-cron" 
+                                    data-hook="eipsi_wave_skipping_cron"
+                                    style="padding: 8px 16px; font-size: 13px;">
+                                🔄 Wave Skipping
+                            </button>
+                            <button type="button" 
+                                    class="button button-secondary trigger-cron" 
+                                    data-hook="eipsi_weekly_t1_reminders_cron"
+                                    style="padding: 8px 16px; font-size: 13px;">
+                                📧 Weekly T1 Reminders
+                            </button>
+                            <button type="button" 
+                                    class="button button-secondary trigger-cron" 
+                                    data-hook="eipsi_send_wave_reminders_hourly"
+                                    style="padding: 8px 16px; font-size: 13px;">
+                                ⏰ Wave Reminders
+                            </button>
+                        </div>
+                        <div id="manual_cron_result" style="margin-top: 15px; display: none;"></div>
+                    </div>
+                    
+                    <!-- Status Check -->
+                    <div class="eipsi-input-group" style="margin: 15px 0; padding: 18px; background: #f8f9fa; border-left: 3px solid #6c757d; border-radius: 0 4px 4px 0;">
+                        <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                            📊 <?php _e('Estado Actual de Timestamps', 'eipsi-forms'); ?>
+                        </label>
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: #666;">
+                            <?php _e('Verifica las fechas actuales de assignments, disponibilidad de waves, y T1 completado.', 'eipsi-forms'); ?>
+                        </p>
+                        <button type="button" 
+                                id="check_time_travel_status" 
+                                class="button button-secondary"
+                                style="padding: 8px 16px; font-size: 13px;">
+                            🔍 <?php _e('Ver Estado de Timestamps', 'eipsi-forms'); ?>
+                        </button>
+                        <div id="time_travel_status" style="margin-top: 15px; display: none;"></div>
+                    </div>
+                    
+                    <!-- Usage Examples -->
+                    <div style="margin: 20px 0 0 0; padding: 15px; background: #ffffff; border: 1px solid #dee2e6; border-radius: 6px;">
+                        <p style="margin: 0 0 10px 0; font-size: 13px; color: #495057; font-weight: 600;">
+                            💡 <?php _e('Ejemplos de uso:', 'eipsi-forms'); ?>
+                        </p>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #666; line-height: 1.8;">
+                            <li><strong><?php _e('Testear T2 disponible:', 'eipsi-forms'); ?></strong> <code>+7 days</code> → Ejecutar Time Travel → Verificar dashboard participante</li>
+                            <li><strong><?php _e('Testear wave skipping:', 'eipsi-forms'); ?></strong> <code>+14 days</code> → Ejecutar "Wave Skipping" → Ver T2/T3 skipped</li>
+                            <li><strong><?php _e('Testear spam semanal:', 'eipsi-forms'); ?></strong> <code>+7 days</code> → Ejecutar "Weekly T1 Reminders" → Verificar email log</li>
+                            <li><strong><?php _e('Testear auto-expiración:', 'eipsi-forms'); ?></strong> <code>+31 days</code> → Ejecutar "Weekly T1 Reminders" → Ver T1 expired</li>
+                        </ul>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- Save Button -->
                 <div style="margin-top: 35px; padding-top: 25px; border-top: 2px solid #e0e0e0;">
                     <button type="submit" class="button button-primary" id="eipsi_save_cron_config" style="padding: 12px 24px; font-size: 15px; font-weight: 600; height: auto; box-shadow: 0 2px 4px rgba(59, 108, 170, 0.2); transition: all 0.2s;">
@@ -779,6 +883,227 @@ $cron_command = "*/5 * * * * wget -q -O - {$site_url}/wp-cron.php?doing_wp_cron 
         }
     }
 
+    // ============================================================================
+    // TIME TRAVEL FUNCTIONALITY (Only in WP_DEBUG)
+    // ============================================================================
+    <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
+    
+    // Execute time travel
+    $('#execute_time_travel').on('click', function() {
+        const interval = $('#time_travel_interval').val().trim();
+        const studyId = $('#selected_study_id').val();
+        
+        if (!interval) {
+            alert('Por favor ingresa un intervalo de tiempo (ej: +7 days)');
+            return;
+        }
+        
+        if (!studyId || studyId === '0') {
+            alert('Por favor selecciona un estudio primero');
+            return;
+        }
+        
+        if (!confirm(`¿Estás seguro de viajar ${interval} en el tiempo?\n\nEsto modificará PERMANENTEMENTE las fechas en la base de datos para el estudio seleccionado.`)) {
+            return;
+        }
+        
+        $('#time_travel_spinner').show();
+        $('#time_travel_result').hide();
+        $(this).prop('disabled', true);
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_time_travel',
+                interval: interval,
+                study_id: studyId,
+                nonce: $('#eipsi_admin_nonce').val()
+            },
+            success: function(response) {
+                $('#time_travel_spinner').hide();
+                $('#execute_time_travel').prop('disabled', false);
+                
+                if (response.success) {
+                    const stats = response.data;
+                    let html = '<div class="notice notice-success inline" style="padding: 15px; margin: 0;">';
+                    html += '<p style="margin: 0 0 10px 0;"><strong>✅ Time travel ejecutado: ' + interval + '</strong></p>';
+                    html += '<ul style="margin: 0; padding-left: 20px; font-size: 13px;">';
+                    
+                    let totalRows = 0;
+                    $.each(stats.affected, function(table, count) {
+                        if (count > 0) {
+                            html += '<li><strong>' + table + ':</strong> ' + count + ' rows actualizadas</li>';
+                            totalRows += count;
+                        }
+                    });
+                    
+                    html += '</ul>';
+                    html += '<p style="margin: 10px 0 0 0; font-size: 12px; color: #666;"><strong>Total:</strong> ' + totalRows + ' rows afectadas</p>';
+                    html += '</div>';
+                    $('#time_travel_result').html(html).slideDown();
+                } else {
+                    $('#time_travel_result').html(
+                        '<div class="notice notice-error inline" style="padding: 15px; margin: 0;">' +
+                        '<p style="margin: 0;"><strong>❌ Error:</strong> ' + (response.data || 'Error desconocido') + '</p>' +
+                        '</div>'
+                    ).slideDown();
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#time_travel_spinner').hide();
+                $('#execute_time_travel').prop('disabled', false);
+                $('#time_travel_result').html(
+                    '<div class="notice notice-error inline" style="padding: 15px; margin: 0;">' +
+                    '<p style="margin: 0;">Error de conexión: ' + error + '</p>' +
+                    '</div>'
+                ).slideDown();
+            }
+        });
+    });
+    
+    // Trigger manual cron
+    $('.trigger-cron').on('click', function() {
+        const $btn = $(this);
+        const hook = $btn.data('hook');
+        const studyId = $('#selected_study_id').val();
+        const originalText = $btn.text();
+        
+        if (!studyId || studyId === '0') {
+            alert('Por favor selecciona un estudio primero');
+            return;
+        }
+        
+        $btn.prop('disabled', true).text('Ejecutando...');
+        $('#manual_cron_result').hide();
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_trigger_cron',
+                hook: hook,
+                study_id: studyId,
+                nonce: $('#eipsi_admin_nonce').val()
+            },
+            success: function(response) {
+                $btn.prop('disabled', false).text(originalText);
+                
+                if (response.success) {
+                    $('#manual_cron_result').html(
+                        '<div class="notice notice-success inline" style="padding: 15px; margin: 0;">' +
+                        '<p style="margin: 0;"><strong>✅ Cron ejecutado:</strong> ' + hook + '</p>' +
+                        '<p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Revisa los logs del servidor para ver los resultados.</p>' +
+                        '</div>'
+                    ).slideDown();
+                } else {
+                    $('#manual_cron_result').html(
+                        '<div class="notice notice-error inline" style="padding: 15px; margin: 0;">' +
+                        '<p style="margin: 0;"><strong>❌ Error:</strong> ' + (response.data || 'Error desconocido') + '</p>' +
+                        '</div>'
+                    ).slideDown();
+                }
+                
+                // Auto-hide after 5 seconds
+                setTimeout(function() {
+                    $('#manual_cron_result').slideUp();
+                }, 5000);
+            },
+            error: function() {
+                $btn.prop('disabled', false).text(originalText);
+                $('#manual_cron_result').html(
+                    '<div class="notice notice-error inline" style="padding: 15px; margin: 0;">' +
+                    '<p style="margin: 0;">Error de conexión al ejecutar cron</p>' +
+                    '</div>'
+                ).slideDown();
+            }
+        });
+    });
+    
+    // Check status
+    $('#check_time_travel_status').on('click', function() {
+        const studyId = $('#selected_study_id').val();
+        const $btn = $(this);
+        const originalText = $btn.text();
+        
+        if (!studyId || studyId === '0') {
+            alert('Por favor selecciona un estudio primero');
+            return;
+        }
+        
+        $btn.prop('disabled', true).text('Cargando...');
+        $('#time_travel_status').hide();
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_get_time_travel_status',
+                study_id: studyId,
+                nonce: $('#eipsi_admin_nonce').val()
+            },
+            success: function(response) {
+                $btn.prop('disabled', false).text(originalText);
+                
+                if (response.success) {
+                    const status = response.data;
+                    let html = '<div style="background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 4px; max-height: 500px; overflow-y: auto;">';
+                    html += '<p style="margin: 0 0 10px 0; font-weight: 600;">⏰ Tiempo actual del servidor: <code>' + status.current_time + '</code></p>';
+                    
+                    if (status.assignments && status.assignments.length > 0) {
+                        html += '<table class="wp-list-table widefat fixed striped" style="margin-top: 10px; font-size: 12px;">';
+                        html += '<thead><tr>';
+                        html += '<th style="width: 80px;">Participant</th>';
+                        html += '<th style="width: 60px;">Wave</th>';
+                        html += '<th style="width: 80px;">Status</th>';
+                        html += '<th>Available At</th>';
+                        html += '<th>T1 Completed</th>';
+                        html += '<th>Submitted At</th>';
+                        html += '</tr></thead><tbody>';
+                        
+                        $.each(status.assignments, function(i, a) {
+                            const rowClass = a.is_available ? ' style="background: #d4edda;"' : '';
+                            html += '<tr' + rowClass + '>';
+                            html += '<td>' + a.participant_id + '</td>';
+                            html += '<td><strong>T' + a.wave_index + '</strong></td>';
+                            html += '<td><span style="padding: 2px 6px; border-radius: 3px; font-size: 11px; background: ' + 
+                                    (a.status === 'submitted' ? '#d4edda' : a.status === 'skipped' ? '#fff3cd' : a.status === 'expired' ? '#f8d7da' : '#e2e3e5') + 
+                                    ';">' + a.status + '</span></td>';
+                            html += '<td>' + (a.available_at || '<em style="color: #999;">-</em>') + '</td>';
+                            html += '<td>' + (a.t1_completed_at || '<em style="color: #999;">-</em>') + '</td>';
+                            html += '<td>' + (a.submitted_at || '<em style="color: #999;">-</em>') + '</td>';
+                            html += '</tr>';
+                        });
+                        
+                        html += '</tbody></table>';
+                    } else {
+                        html += '<p style="margin: 10px 0 0 0; color: #666; font-style: italic;">No hay assignments para este estudio.</p>';
+                    }
+                    
+                    html += '</div>';
+                    $('#time_travel_status').html(html).slideDown();
+                } else {
+                    $('#time_travel_status').html(
+                        '<div class="notice notice-error inline" style="padding: 15px; margin: 0;">' +
+                        '<p style="margin: 0;">Error al obtener estado</p>' +
+                        '</div>'
+                    ).slideDown();
+                }
+            },
+            error: function() {
+                $btn.prop('disabled', false).text(originalText);
+                $('#time_travel_status').html(
+                    '<div class="notice notice-error inline" style="padding: 15px; margin: 0;">' +
+                    '<p style="margin: 0;">Error de conexión</p>' +
+                    '</div>'
+                ).slideDown();
+            }
+        });
+    });
+    
+    <?php endif; ?>
+    // ============================================================================
+    
     // Initialize tooltips or additional UI enhancements here
     console.log('EIPSI Reminders Tab Initialized');
 })(jQuery);

@@ -1792,8 +1792,100 @@ function eipsi_forms_submit_form_handler() {
             // Marcar assignment como submitted usando study_id (columna correcta en wp_survey_assignments)
             error_log(sprintf('[EIPSI-DIAG] Marcando como submitted: participant_id=%d, study_id=%d, wave_id=%d',
                 $longitudinal_participant_id, $study_id, $wave_id));
-            $marked = Wave_Service::mark_assignment_submitted($longitudinal_participant_id, $study_id, $wave_id);
-            error_log('[EIPSI-DIAG] Resultado mark_assignment_submitted: ' . ($marked ? 'ÉXITO' : 'FALLÓ'));
+            
+            // ========== PHASE 5 T1-ANCHOR: TRANSACCIÓN CRÍTICA ==========
+            // Submit + t1_completed_at deben ser atómicos
+            $is_t1 = false; // Inicializar antes del try para scope externo
+            
+            $wpdb->query('START TRANSACTION');
+            
+            try {
+                // 1. LOCK y verificar status del assignment (prevenir race condition con wave skipping)
+                $assignment = $wpdb->get_row($wpdb->prepare(
+                    "SELECT id, status FROM {$wpdb->prefix}survey_assignments 
+                     WHERE participant_id = %d AND study_id = %d AND wave_id = %d
+                     FOR UPDATE",
+                    $longitudinal_participant_id, $study_id, $wave_id
+                ));
+                
+                if (!$assignment) {
+                    throw new Exception('Assignment not found');
+                }
+                
+                // Validar que el status permita submit
+                $allowed_statuses = array('pending', 'in_progress');
+                if (!in_array($assignment->status, $allowed_statuses)) {
+                    throw new Exception("Cannot submit assignment with status '{$assignment->status}'. This wave may have been skipped or expired.");
+                }
+                
+                error_log("[EIPSI-DIAG] Assignment status validated: {$assignment->status} (allowed for submit)");
+                
+                // 2. Marcar assignment como submitted
+                $marked = Wave_Service::mark_assignment_submitted($longitudinal_participant_id, $study_id, $wave_id);
+                
+                if (!$marked) {
+                    throw new Exception('Failed to mark assignment as submitted');
+                }
+                
+                error_log('[EIPSI-DIAG] Resultado mark_assignment_submitted: ÉXITO');
+                
+                // 2. Si es T1, actualizar t1_completed_at (dentro de la misma transacción)
+                $wave_info = $wpdb->get_row($wpdb->prepare(
+                    "SELECT wave_index FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                    $wave_id
+                ));
+                
+                $is_t1 = ($wave_info && $wave_info->wave_index == 1);
+                
+                if ($is_t1) {
+                    error_log("[EIPSI T1-Anchor] T1 detected, updating t1_completed_at");
+                    
+                    $t1_updated = $wpdb->update(
+                        $wpdb->prefix . 'survey_assignments',
+                        array('t1_completed_at' => current_time('mysql')),
+                        array(
+                            'participant_id' => $longitudinal_participant_id,
+                            'wave_id' => $wave_id
+                        ),
+                        array('%s'),
+                        array('%d', '%d')
+                    );
+                    
+                    if ($t1_updated === false) {
+                        throw new Exception('Failed to update t1_completed_at: ' . $wpdb->last_error);
+                    }
+                    
+                    error_log("[EIPSI T1-Anchor] t1_completed_at updated successfully");
+                }
+                
+                // COMMIT: submit + t1_completed_at están guardados atómicamente
+                $wpdb->query('COMMIT');
+                error_log('[EIPSI T1-Anchor] Transaction committed successfully');
+                
+            } catch (Exception $e) {
+                $wpdb->query('ROLLBACK');
+                error_log("[EIPSI T1-Anchor] CRITICAL: Transaction failed, rolled back: " . $e->getMessage());
+                
+                // Retornar error al frontend - el participante debe reintentar
+                wp_send_json_error(array(
+                    'message' => __('Error al guardar la respuesta. Por favor, intentá nuevamente.', 'eipsi-forms'),
+                    'error' => $e->getMessage()
+                ), 500);
+                return; // Detener ejecución
+            }
+            
+            // ========== POST-COMMIT: Recalcular waves (fuera de transacción) ==========
+            if ($is_t1 && class_exists('EIPSI_Wave_Service')) {
+                try {
+                    error_log("[EIPSI T1-Anchor] Starting wave recalculation (post-commit)");
+                    $recalculated = EIPSI_Wave_Service::recalculate_after_t1($longitudinal_participant_id, $study_id);
+                    error_log("[EIPSI T1-Anchor] Successfully recalculated {$recalculated} waves");
+                } catch (Exception $e) {
+                    // No revertir el submit - solo loggear el error
+                    error_log("[EIPSI T1-Anchor] WARNING: Wave recalculation failed (submit was successful): " . $e->getMessage());
+                    // El submit fue exitoso, continuar con el flujo normal
+                }
+            }
 
             // ==========================================================================
             // POOL COMPLETION CHECK (v2.5.3)
@@ -3017,6 +3109,114 @@ function eipsi_load_partial_response_handler() {
             'partial' => null
         ));
     }
+}
+
+/**
+ * Save & Continue: Diagnóstico - Mostrar estado guardado
+ * 
+ * Endpoint para debugging que muestra qué datos tiene guardados el backend
+ * para una sesión específica, incluyendo detalles de cada campo.
+ */
+add_action('wp_ajax_nopriv_eipsi_debug_partial_response', 'eipsi_debug_partial_response_handler');
+add_action('wp_ajax_eipsi_debug_partial_response', 'eipsi_debug_partial_response_handler');
+
+function eipsi_debug_partial_response_handler() {
+    $form_id = isset($_POST['form_id']) ? sanitize_text_field($_POST['form_id']) : '';
+    $participant_id = isset($_POST['participant_id']) ? sanitize_text_field($_POST['participant_id']) : '';
+    $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
+    
+    error_log('[EIPSI S&C DEBUG] Diagnostic request received');
+    
+    if (empty($form_id) || empty($participant_id) || empty($session_id)) {
+        wp_send_json_error(array(
+            'message' => 'Missing required parameters',
+            'received' => array(
+                'form_id' => $form_id,
+                'participant_id' => $participant_id,
+                'session_id' => $session_id
+            )
+        ));
+        return;
+    }
+    
+    // Cargar datos guardados
+    $partial = EIPSI_Partial_Responses::load($form_id, $participant_id, $session_id);
+    
+    if (!$partial) {
+        error_log('[EIPSI S&C DEBUG] No partial response found in database');
+        wp_send_json_success(array(
+            'found' => false,
+            'message' => 'No hay datos guardados para esta sesión',
+            'search_params' => array(
+                'form_id' => $form_id,
+                'participant_id' => $participant_id,
+                'session_id' => $session_id
+            )
+        ));
+        return;
+    }
+    
+    // Analizar respuestas guardadas
+    $responses = isset($partial['responses']) && is_array($partial['responses']) ? $partial['responses'] : array();
+    $response_count = count($responses);
+    
+    // Categorizar campos
+    $field_analysis = array(
+        'consent_fields' => array(),
+        'demographic_fields' => array(),
+        'scale_fields' => array(),
+        'other_fields' => array()
+    );
+    
+    foreach ($responses as $field_name => $field_value) {
+        $field_info = array(
+            'name' => $field_name,
+            'value' => $field_value,
+            'type' => gettype($field_value),
+            'length' => is_string($field_value) ? strlen($field_value) : null
+        );
+        
+        // Categorizar
+        if (strpos($field_name, 'consent') !== false || strpos($field_name, 'eipsi_consent') !== false) {
+            $field_analysis['consent_fields'][] = $field_info;
+        } elseif (strpos($field_name, 'phq') !== false || strpos($field_name, 'gad') !== false || strpos($field_name, 'mbi') !== false) {
+            $field_analysis['scale_fields'][] = $field_info;
+        } elseif (in_array($field_name, array('edad', 'genero', 'profesion_sanitaria', 'anos_experiencia', 'tipo_institucion', 'horas_semanales', 'situacion_laboral'))) {
+            $field_analysis['demographic_fields'][] = $field_info;
+        } else {
+            $field_analysis['other_fields'][] = $field_info;
+        }
+    }
+    
+    $diagnostic = array(
+        'found' => true,
+        'summary' => array(
+            'total_responses' => $response_count,
+            'page_index' => isset($partial['page_index']) ? intval($partial['page_index']) : 0,
+            'last_updated' => isset($partial['updated_at']) ? $partial['updated_at'] : null,
+            'consent_fields_count' => count($field_analysis['consent_fields']),
+            'demographic_fields_count' => count($field_analysis['demographic_fields']),
+            'scale_fields_count' => count($field_analysis['scale_fields']),
+            'other_fields_count' => count($field_analysis['other_fields'])
+        ),
+        'field_analysis' => $field_analysis,
+        'raw_responses' => $responses,
+        'search_params' => array(
+            'form_id' => $form_id,
+            'participant_id' => $participant_id,
+            'session_id' => $session_id
+        )
+    );
+    
+    error_log(sprintf('[EIPSI S&C DEBUG] Found %d responses: %d consent, %d demographic, %d scale, %d other',
+        $response_count,
+        count($field_analysis['consent_fields']),
+        count($field_analysis['demographic_fields']),
+        count($field_analysis['scale_fields']),
+        count($field_analysis['other_fields'])
+    ));
+    
+    wp_send_json_success($diagnostic);
 }
 
 /**

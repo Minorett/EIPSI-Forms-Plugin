@@ -674,4 +674,123 @@ class EIPSI_Wave_Service {
 
         return $wpdb->get_row($wpdb->prepare($sql, $participant_id, $study_id), OBJECT);
     }
+
+    /**
+     * Calculate wave availability based on T1 completion (Phase 5 T1-Anchor)
+     * 
+     * For T1 (wave_index = 1): available from participant registration
+     * For T2+: available from T1 completion + offset_minutes
+     * 
+     * @param int $participant_id Participant ID
+     * @param int $study_id Study ID
+     * @param object $wave Wave object with wave_index and offset_minutes
+     * @return string|null DateTime string or null if not available yet
+     * @since 2.6.0
+     */
+    public static function calculate_wave_availability($participant_id, $study_id, $wave) {
+        global $wpdb;
+        
+        // T1: disponible desde el registro del participante
+        if ($wave->wave_index == 1) {
+            $participant = $wpdb->get_row($wpdb->prepare(
+                "SELECT created_at FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+                $participant_id
+            ));
+            
+            return $participant ? $participant->created_at : null;
+        }
+        
+        // T2+: requiere que T1 esté completado
+        $t1 = $wpdb->get_row($wpdb->prepare(
+            "SELECT t1_completed_at FROM {$wpdb->prefix}survey_assignments 
+             WHERE participant_id = %d AND study_id = %d AND wave_index = 1",
+            $participant_id, $study_id
+        ));
+        
+        if (!$t1 || !$t1->t1_completed_at) {
+            error_log("[EIPSI Wave Service] T1 not completed for participant {$participant_id}, wave {$wave->wave_index} not available");
+            return null; // T1 no completado → wave no disponible
+        }
+        
+        // Calcular desde t1_completed_at + offset_minutes
+        $offset_seconds = $wave->offset_minutes * 60;
+        $available_at = date('Y-m-d H:i:s', strtotime($t1->t1_completed_at) + $offset_seconds);
+        
+        error_log("[EIPSI Wave Service] Wave {$wave->wave_index} available at {$available_at} (T1 completed: {$t1->t1_completed_at}, offset: {$wave->offset_minutes} min)");
+        
+        return $available_at;
+    }
+
+    /**
+     * Recalculate wave availability after T1 completion (Phase 5 T1-Anchor)
+     * 
+     * Called when a participant completes T1. Updates available_at for all
+     * subsequent waves (T2, T3, T4...) and reschedules their nudges.
+     * 
+     * @param int $participant_id Participant ID
+     * @param int $study_id Study ID
+     * @return int Number of waves recalculated
+     * @since 2.6.0
+     */
+    public static function recalculate_after_t1($participant_id, $study_id) {
+        global $wpdb;
+        
+        error_log("[EIPSI Wave Service] Recalculating waves for participant {$participant_id} after T1 completion");
+        
+        $waves = self::get_study_waves($study_id);
+        $recalculated = 0;
+        
+        foreach ($waves as $wave) {
+            // Skip T1
+            if ($wave['wave_index'] == 1) {
+                continue;
+            }
+            
+            // Calcular nueva disponibilidad
+            $new_available_at = self::calculate_wave_availability($participant_id, $study_id, (object)$wave);
+            
+            if (!$new_available_at) {
+                error_log("[EIPSI Wave Service] Could not calculate availability for wave {$wave['wave_index']}");
+                continue;
+            }
+            
+            // Actualizar assignment
+            $updated = $wpdb->update(
+                $wpdb->prefix . 'survey_assignments',
+                array('available_at' => $new_available_at),
+                array(
+                    'participant_id' => $participant_id,
+                    'wave_id' => $wave['id']
+                ),
+                array('%s'),
+                array('%d', '%d')
+            );
+            
+            if ($updated === false) {
+                error_log("[EIPSI Wave Service] Failed to update assignment for wave {$wave['wave_index']}: " . $wpdb->last_error);
+                continue;
+            }
+            
+            // Obtener assignment_id para re-programar nudges
+            $assignment_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}survey_assignments 
+                 WHERE participant_id = %d AND wave_id = %d",
+                $participant_id, $wave['id']
+            ));
+            
+            if ($assignment_id) {
+                // Re-programar nudges (requiere EIPSI_Nudge_Event_Scheduler)
+                if (class_exists('EIPSI_Nudge_Event_Scheduler')) {
+                    EIPSI_Nudge_Event_Scheduler::reschedule_nudges_for_assignment($assignment_id);
+                    error_log("[EIPSI Wave Service] Rescheduled nudges for assignment {$assignment_id} (wave {$wave['wave_index']})");
+                }
+                
+                $recalculated++;
+            }
+        }
+        
+        error_log("[EIPSI Wave Service] Recalculated {$recalculated} waves for participant {$participant_id}");
+        
+        return $recalculated;
+    }
 }

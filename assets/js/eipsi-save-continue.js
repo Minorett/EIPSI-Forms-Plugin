@@ -631,13 +631,21 @@
 			const responses = partial.responses || {};
 			const pageIndex = partial.page_index || 1;
 
+			console.log( `[S&C] restorePartial: restoring ${Object.keys(responses).length} responses to page ${pageIndex}` );
+
 			// Fix 10: Restaurar respuestas acumuladas
 			this.accumulatedResponses = { ...responses };
 
+			console.log( `[S&C] accumulatedResponses initialized with ${Object.keys(this.accumulatedResponses).length} fields` );
+
 			// Restaurar los valores de los campos
+			let restoredCount = 0;
 			Object.keys( responses ).forEach( ( fieldName ) => {
-				this.setFieldValue( fieldName, responses[ fieldName ] );
+				const restored = this.setFieldValue( fieldName, responses[ fieldName ] );
+				if ( restored ) restoredCount++;
 			} );
+
+			console.log( `[S&C] Restored ${restoredCount}/${Object.keys(responses).length} field values to DOM` );
 
 			this.hasResponses = Object.keys( responses ).length > 0;
 
@@ -1091,11 +1099,15 @@
 
 		async executeSave( trigger ) {
 			try {
+				console.log( `[S&C] executeSave triggered by: ${trigger}` );
+
 				// Fix 5: fullScan solo para beforeunload o primer guardado
 				const fullScan = trigger === 'beforeunload' || this.dirtyFields.size === 0;
 				const responses = this.collectResponses( fullScan );
 				const currentPage = this.getCurrentPage();
 				this.hasResponses = Object.keys( responses ).length > 0;
+
+				console.log( `[S&C] executeSave: collected ${Object.keys(responses).length} responses, hasResponses=${this.hasResponses}` );
 
 				if (
 					this.config?.settings?.debug &&
@@ -1112,10 +1124,15 @@
 					);
 				}
 
-				await this.saveToIDB( responses, currentPage );
-				await this.saveToServer( responses, currentPage );
+				const idbResult = await this.saveToIDB( responses, currentPage );
+				console.log( `[S&C] saveToIDB result: ${idbResult}` );
+
+				const serverResult = await this.saveToServer( responses, currentPage );
+				console.log( `[S&C] saveToServer result: ${serverResult}` );
+
 				// Fix 5: Limpiar dirty tracking después de save exitoso
 				this.dirtyFields.clear();
+				console.log( `[S&C] executeSave completed successfully for trigger: ${trigger}` );
 			} catch ( error ) {
 				if ( window.console && window.console.warn ) {
 					window.console.warn(
@@ -1131,7 +1148,7 @@
 				return;
 			}
 
-			const responses = this.collectResponses();
+			const responses = this.collectResponses( true ); // Force full scan before unload
 			const currentPage = this.getCurrentPage();
 
 			const payload = new URLSearchParams();
@@ -1170,10 +1187,28 @@
 
 		collectResponses( fullScan = false ) {
 			const currentPageResponses = {};
+			const currentPage = this.getCurrentPage();
+		
+			console.log( `[S&C] collectResponses called: fullScan=${fullScan}, dirtyFields=${this.dirtyFields.size}, page=${currentPage}` );
 		
 			if ( fullScan || this.dirtyFields.size === 0 ) {
 				// Scan completo — para beforeunload y primer guardado
+				// Fix: Habilitar temporalmente campos deshabilitados para que FormData los capture
+				const disabledFields = [];
+				this.form.querySelectorAll( '[disabled]' ).forEach( ( field ) => {
+					disabledFields.push( field );
+					field.disabled = false;
+				} );
+			
+				console.log( `[S&C] Temporarily enabled ${disabledFields.length} disabled fields for FormData capture` );
+			
 				const formData = new FormData( this.form );
+			
+				// Restaurar estado disabled
+				disabledFields.forEach( ( field ) => {
+					field.disabled = true;
+				} );
+			
 				formData.forEach( ( value, key ) => {
 					if ( EXCLUDED_FIELDS.has( key ) ) {
 						return;
@@ -1183,6 +1218,8 @@
 					}
 					currentPageResponses[ key ] = value;
 				} );
+			
+				console.log( `[S&C] Full scan captured ${Object.keys(currentPageResponses).length} fields from page ${currentPage}` );
 			} else {
 				// Solo campos modificados (Fix 5: dirty tracking)
 				this.dirtyFields.forEach( ( fieldName ) => {
@@ -1191,13 +1228,21 @@
 						currentPageResponses[ fieldName ] = field.value;
 					}
 				} );
+			
+				console.log( `[S&C] Dirty scan captured ${Object.keys(currentPageResponses).length} modified fields` );
 			}
 		
 			// CAPTURAR ESTADO DEL CONSENTIMIENTO EXPLÍCITAMENTE
 			this.captureConsentStatus( currentPageResponses );
 		
+			const previousAccumulatedCount = Object.keys( this.accumulatedResponses ).length;
+		
 			// Fix 10: Acumular respuestas de la página actual con las anteriores
 			Object.assign( this.accumulatedResponses, currentPageResponses );
+		
+			const totalAccumulatedCount = Object.keys( this.accumulatedResponses ).length;
+		
+			console.log( `[S&C] Accumulated responses: ${previousAccumulatedCount} → ${totalAccumulatedCount} (added ${totalAccumulatedCount - previousAccumulatedCount} new)` );
 		
 			// Retornar TODAS las respuestas acumuladas, no solo la página actual
 			return { ...this.accumulatedResponses };
@@ -1210,7 +1255,21 @@
 		 * @param {Object} responses - Objeto de respuestas a modificar
 		 */
 		captureConsentStatus( responses ) {
-			// Buscar el checkbox de consentimiento por múltiples selectores comunes
+			// PASO 1: Capturar la decisión del consentimiento (accepted/declined)
+			const decisionField = this.form.querySelector( '#eipsi-consent-decision, input[name="eipsi_consent_decision"]' );
+			if ( decisionField && decisionField.value ) {
+				responses[ 'eipsi_consent_decision' ] = decisionField.value;
+				console.log( `[S&C] Captured consent decision: ${decisionField.value}` );
+			}
+
+			// PASO 2: Capturar el checkbox de confirmación de lectura
+			const readingCheckbox = this.form.querySelector( '#eipsi-consent-confirm-reading, input[name="eipsi_consent_confirm_reading"]' );
+			if ( readingCheckbox ) {
+				responses[ 'eipsi_consent_confirm_reading' ] = readingCheckbox.checked ? 'true' : 'false';
+				console.log( `[S&C] Captured reading confirmation: ${readingCheckbox.checked}` );
+			}
+
+			// PASO 3: Buscar otros campos de consentimiento (legacy/custom)
 			const consentSelectors = [
 				'input[name="consent_informed"]',
 				'input[name="consent"]',
@@ -1376,24 +1435,122 @@
 	}
 
 	document.addEventListener( 'DOMContentLoaded', () => {
+		console.log( '[S&C] DOMContentLoaded - Initializing Save & Continue' );
+		
 		const forms = document.querySelectorAll(
-			'.eipsi-form form, .eipsi-form form'
+			'.eipsi-form form'
 		);
 
-		forms.forEach( ( form ) => {
-			if ( ! window.eipsiFormsConfig || form.eipsiSaveContinue ) {
+		console.log( `[S&C] Found ${forms.length} forms to initialize` );
+
+		forms.forEach( ( form, index ) => {
+			if ( ! window.eipsiFormsConfig ) {
+				console.warn( `[S&C] Form ${index}: window.eipsiFormsConfig not found, skipping` );
+				return;
+			}
+			
+			if ( form.eipsiSaveContinue ) {
+				console.log( `[S&C] Form ${index}: already initialized, skipping` );
 				return;
 			}
 
+			console.log( `[S&C] Form ${index}: initializing...` );
 			const instance = new EIPSISaveContinue(
 				form,
 				window.eipsiFormsConfig
 			);
 			form.eipsiSaveContinue = instance;
+			console.log( `[S&C] Form ${index}: initialized successfully` );
 		} );
+		
+		console.log( '[S&C] Initialization complete' );
 	} );
 
 	window.EIPSISaveContinue = EIPSISaveContinue;
+
+	/**
+	 * Helper global para diagnóstico de Save & Continue
+	 * Uso desde consola: window.eipsiDebugSaveState()
+	 */
+	window.eipsiDebugSaveState = async function() {
+		const form = document.querySelector('.eipsi-form form');
+		if (!form) {
+			console.error('[S&C DEBUG] No se encontró el formulario');
+			return;
+		}
+
+		const instance = form.eipsiSaveContinue;
+		if (!instance) {
+			console.error('[S&C DEBUG] Save & Continue no está inicializado');
+			return;
+		}
+
+		console.log('[S&C DEBUG] ========== DIAGNÓSTICO SAVE & CONTINUE ==========');
+		
+		// Estado del frontend
+		console.log('[S&C DEBUG] Frontend State:');
+		console.log('  - Inicializado:', !!instance);
+		console.log('  - Página actual:', instance.getCurrentPage());
+		console.log('  - Respuestas acumuladas:', Object.keys(instance.accumulatedResponses || {}).length);
+		console.log('  - Campos modificados (dirty):', instance.dirtyFields ? instance.dirtyFields.size : 0);
+		console.log('  - Has responses:', instance.hasResponses);
+		console.table(instance.accumulatedResponses || {});
+
+		// Consultar backend
+		console.log('[S&C DEBUG] Consultando backend...');
+		try {
+			const formData = new FormData();
+			formData.append('action', 'eipsi_debug_partial_response');
+			formData.append('form_id', instance.formId);
+			formData.append('participant_id', instance.participantId);
+			formData.append('session_id', instance.sessionId);
+
+			const response = await fetch(window.eipsiFormsConfig?.ajaxUrl || '/wp-admin/admin-ajax.php', {
+				method: 'POST',
+				body: formData
+			});
+
+			const result = await response.json();
+			
+			if (result.success) {
+				const data = result.data;
+				console.log('[S&C DEBUG] Backend State:');
+				console.log('  - Datos encontrados:', data.found);
+				if (data.found) {
+					console.log('  - Total respuestas:', data.summary.total_responses);
+					console.log('  - Página guardada:', data.summary.page_index);
+					console.log('  - Última actualización:', data.summary.last_updated);
+					console.log('  - Campos de consentimiento:', data.summary.consent_fields_count);
+					console.log('  - Campos demográficos:', data.summary.demographic_fields_count);
+					console.log('  - Campos de escalas:', data.summary.scale_fields_count);
+					console.log('  - Otros campos:', data.summary.other_fields_count);
+					
+					console.log('[S&C DEBUG] Análisis de campos:');
+					if (data.field_analysis.consent_fields.length > 0) {
+						console.log('  Consentimiento:', data.field_analysis.consent_fields);
+					}
+					if (data.field_analysis.demographic_fields.length > 0) {
+						console.log('  Demográficos:', data.field_analysis.demographic_fields);
+					}
+					if (data.field_analysis.scale_fields.length > 0) {
+						console.log('  Escalas (primeros 5):', data.field_analysis.scale_fields.slice(0, 5));
+					}
+					
+					console.log('[S&C DEBUG] Respuestas completas (raw):');
+					console.table(data.raw_responses);
+				} else {
+					console.warn('[S&C DEBUG] No hay datos guardados en backend para esta sesión');
+				}
+			} else {
+				console.error('[S&C DEBUG] Error al consultar backend:', result);
+			}
+		} catch (error) {
+			console.error('[S&C DEBUG] Error en la consulta:', error);
+		}
+
+		console.log('[S&C DEBUG] ========== FIN DIAGNÓSTICO ==========');
+		console.log('[S&C DEBUG] Tip: Podés copiar los logs con: copy(console.history)');
+	};
 
 	/**
 	 * Handler global para botones "Comenzar de nuevo" en thank-you page

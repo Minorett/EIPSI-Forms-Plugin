@@ -162,6 +162,8 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers-wizard.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-email-log-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-reminders-handler.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-wave-skipping.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-weekly-reminders.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/delete-study-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/monitoring.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/study-close-handler.php';
@@ -251,6 +253,11 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-timeline
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-failed-email-alerts-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-cron-health-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-data-request-service.php';
+
+// Phase 5 T1-Anchor: Testing helpers (only in WP_DEBUG mode)
+if (defined('WP_DEBUG') && WP_DEBUG) {
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/testing-helpers.php';
+}
 
 // Phase 3 AJAX Handlers
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-phase3-handlers.php';
@@ -916,6 +923,18 @@ function eipsi_forms_activate() {
         wp_schedule_event(time(), 'hourly', 'eipsi_hourly_wave_expiration_check');
     }
 
+    // === Phase 5 T1-Anchor: Wave Skipping (v2.6.0) ===
+    // Check for waves to skip every hour (marks pending/in_progress → skipped)
+    if (!wp_next_scheduled('eipsi_wave_skipping_cron')) {
+        wp_schedule_event(time(), 'hourly', 'eipsi_wave_skipping_cron');
+    }
+
+    // === Phase 5 T1-Anchor: Weekly T1 Reminders (v2.6.0) ===
+    // Send weekly reminders to T1 non-completers (daily check)
+    if (!wp_next_scheduled('eipsi_weekly_t1_reminders_cron')) {
+        wp_schedule_event(time(), 'daily', 'eipsi_weekly_t1_reminders_cron');
+    }
+
     // Initialize/Repair Database Schema
     if ( class_exists( 'EIPSI_Database_Schema_Manager' ) ) {
         EIPSI_Database_Schema_Manager::repair_local_schema();
@@ -1006,6 +1025,10 @@ function eipsi_forms_deactivate() {
 
     // Pool email log cleanup cron
     wp_clear_scheduled_hook("eipsi_cleanup_pool_email_logs_monthly");
+    
+    // Phase 5 T1-Anchor cron jobs (v2.6.0)
+    wp_clear_scheduled_hook('eipsi_wave_skipping_cron');
+    wp_clear_scheduled_hook('eipsi_weekly_t1_reminders_cron');
 }
 
 /**
