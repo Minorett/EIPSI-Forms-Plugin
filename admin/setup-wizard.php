@@ -552,6 +552,9 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             $nudge2_hours = round($nudge2_minutes / 60, 2);
             $nudge3_hours = round($nudge3_minutes / 60, 2);
             $nudge4_hours = round($nudge4_minutes / 60, 2);
+            
+            // Max for short intervals (in hours)
+            $max_nudge_hours = round($interval_minutes / 60, 2);
         } else {
             // Long interval: use hours with minimums
             $nudge1_hours = max(24, round($interval_minutes * 0.15 / 60));
@@ -567,7 +570,7 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             $nudge4_hours = min($nudge4_hours, $max_nudge_hours);
         }
 
-        error_log(sprintf('[EIPSI WIZARD] Wave T%d nudges calculated: n1=%dh (15%%), n2=%dh (40%%), n3=%dh (70%%), n4=%dh (90%%) | interval=%dmin max=%dh', 
+        error_log(sprintf('[EIPSI WIZARD] Wave T%d nudges calculated: n1=%.2fh (15%%), n2=%.2fh (40%%), n3=%.2fh (70%%), n4=%.2fh (90%%) | interval=%dmin max=%.2fh', 
             $wave_index, $nudge1_hours, $nudge2_hours, $nudge3_hours, $nudge4_hours, $interval_minutes, $max_nudge_hours));
 
         $wave_data['nudge_config'] = json_encode(array(
@@ -576,6 +579,12 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
             'nudge_3' => array('enabled' => true, 'value' => $nudge3_hours, 'unit' => 'hours'),
             'nudge_4' => array('enabled' => true, 'value' => $nudge4_hours, 'unit' => 'hours'),
         ));
+        
+        // Set window_minutes (time available to complete this wave)
+        if ($interval_minutes > 0) {
+            $wave_data['window_minutes'] = $interval_minutes;
+            error_log(sprintf('[EIPSI WIZARD] Wave T%d: window_minutes set to %d min', $wave_index, $interval_minutes));
+        }
 
         // Skip if no form_id
         if (empty($wave_data['form_id'])) {
