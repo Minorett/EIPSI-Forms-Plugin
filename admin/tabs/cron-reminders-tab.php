@@ -452,9 +452,10 @@ $cron_command = "*/5 * * * * wget -q -O - {$site_url}/wp-cron.php?doing_wp_cron 
                     
                     <div class="notice notice-warning inline" style="margin: 0 0 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #ff9800;">
                         <p style="margin: 0; font-size: 13px; color: #856404; line-height: 1.6;">
-                            <strong>⚠️ ADVERTENCIA:</strong> Esta herramienta modifica timestamps en la base de datos. 
-                            Solo usar en entornos de testing. Los cambios son <strong>permanentes</strong> y afectan:
-                            <code>available_at</code>, <code>t1_completed_at</code>, <code>submitted_at</code>, emails enviados, y cron jobs programados.
+                            <strong>⚠️ ADVERTENCIA:</strong> Esta herramienta modifica timestamps en la base de datos y <strong>ejecuta automáticamente</strong> 
+                            los cron jobs (Wave Skipping, Wave Reminders, Weekly T1 Reminders). Solo usar en entornos de testing. 
+                            Los cambios son <strong>permanentes</strong> y afectan: <code>available_at</code>, <code>t1_completed_at</code>, 
+                            <code>submitted_at</code>, emails enviados, y cron jobs programados.
                         </p>
                     </div>
                     
@@ -538,10 +539,10 @@ $cron_command = "*/5 * * * * wget -q -O - {$site_url}/wp-cron.php?doing_wp_cron 
                             💡 <?php _e('Ejemplos de uso:', 'eipsi-forms'); ?>
                         </p>
                         <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #666; line-height: 1.8;">
-                            <li><strong><?php _e('Testear T2 disponible:', 'eipsi-forms'); ?></strong> <code>+7 days</code> → Ejecutar Time Travel → Verificar dashboard participante</li>
-                            <li><strong><?php _e('Testear wave skipping:', 'eipsi-forms'); ?></strong> <code>+14 days</code> → Ejecutar "Wave Skipping" → Ver T2/T3 skipped</li>
-                            <li><strong><?php _e('Testear spam semanal:', 'eipsi-forms'); ?></strong> <code>+7 days</code> → Ejecutar "Weekly T1 Reminders" → Verificar email log</li>
-                            <li><strong><?php _e('Testear auto-expiración:', 'eipsi-forms'); ?></strong> <code>+31 days</code> → Ejecutar "Weekly T1 Reminders" → Ver T1 expired</li>
+                            <li><strong><?php _e('Testear T2 disponible:', 'eipsi-forms'); ?></strong> <code>+7 days</code> → Time Travel (crons se ejecutan automáticamente) → Verificar dashboard participante</li>
+                            <li><strong><?php _e('Testear wave skipping:', 'eipsi-forms'); ?></strong> <code>+14 days</code> → Time Travel (T2 se skipea automáticamente) → Ver T2 skipped en dashboard</li>
+                            <li><strong><?php _e('Testear spam semanal:', 'eipsi-forms'); ?></strong> <code>+7 days</code> → Time Travel (emails se envían automáticamente) → Verificar email log</li>
+                            <li><strong><?php _e('Testear auto-expiración:', 'eipsi-forms'); ?></strong> <code>+31 days</code> → Time Travel (T1 expira automáticamente) → Ver T1 expired</li>
                         </ul>
                     </div>
                 </div>

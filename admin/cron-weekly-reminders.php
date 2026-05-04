@@ -44,7 +44,7 @@ function eipsi_weekly_t1_reminders() {
         JOIN {$wpdb->prefix}survey_participants p ON a.participant_id = p.id
         JOIN {$wpdb->prefix}survey_studies s ON a.study_id = s.id
         JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
-        WHERE a.wave_index = 1
+        WHERE w.wave_index = 1
           AND a.status = 'pending'
     ");
     

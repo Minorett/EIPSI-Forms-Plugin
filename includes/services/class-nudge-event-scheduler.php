@@ -704,10 +704,14 @@ class EIPSI_Nudge_Event_Scheduler {
     private static function convert_to_seconds($value, $unit) {
         switch ($unit) {
             case 'minutes':
+            case 'minutos':
                 return $value * 60;
             case 'hours':
+            case 'horas':
                 return $value * 3600;
             case 'days':
+            case 'días':
+            case 'dias':
                 return $value * 86400;
             default:
                 return $value * 3600; // Default a horas

@@ -145,9 +145,30 @@ function eipsi_simulate_time_travel($interval, $study_id = null, $participant_id
     // 2. Move WP Cron scheduled events (for nudges and reminders)
     eipsi_time_travel_wp_cron($seconds);
     
+    // 3. Auto-execute relevant cron jobs to simulate real-time behavior
+    error_log('[EIPSI Time Travel] Auto-executing cron jobs...');
+    
+    // Execute wave skipping (checks if newer waves are available and skips old ones)
+    if (function_exists('eipsi_wave_skipping_cron')) {
+        eipsi_wave_skipping_cron();
+        error_log('[EIPSI Time Travel] ✓ Executed wave skipping');
+    }
+    
+    // Execute wave reminders (sends nudges if needed)
+    if (function_exists('eipsi_send_wave_reminders_hourly')) {
+        eipsi_send_wave_reminders_hourly();
+        error_log('[EIPSI Time Travel] ✓ Executed wave reminders');
+    }
+    
+    // Execute weekly T1 reminders (sends "we miss you" emails)
+    if (function_exists('eipsi_weekly_t1_reminders')) {
+        eipsi_weekly_t1_reminders();
+        error_log('[EIPSI Time Travel] ✓ Executed weekly T1 reminders');
+    }
+    
     $total_affected = array_sum($stats['affected']);
     error_log(sprintf(
-        '[EIPSI Time Travel] Completed: %d total rows affected across %d tables',
+        '[EIPSI Time Travel] Completed: %d total rows affected across %d tables + crons executed',
         $total_affected,
         count($stats['affected'])
     ));
@@ -241,17 +262,18 @@ function eipsi_get_time_travel_status($study_id = null, $participant_id = null) 
     
     $assignments = $wpdb->get_results("
         SELECT 
-            id,
-            participant_id,
-            wave_index,
-            status,
-            available_at,
-            t1_completed_at,
-            submitted_at,
-            created_at
-        FROM {$wpdb->prefix}survey_assignments
+            a.id,
+            a.participant_id,
+            w.wave_index,
+            a.status,
+            a.available_at,
+            a.t1_completed_at,
+            a.submitted_at,
+            a.created_at
+        FROM {$wpdb->prefix}survey_assignments a
+        JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
         WHERE 1=1 {$where_study} {$where_participant}
-        ORDER BY participant_id, wave_index
+        ORDER BY a.participant_id, w.wave_index
     ");
     
     foreach ($assignments as $a) {

@@ -978,6 +978,12 @@ function eipsi_ajax_time_travel() {
         wp_send_json_error($result['error']);
     }
     
+    // Add message about auto-executed crons
+    $result['message'] = sprintf(
+        'Time travel ejecutado: %s. Cron jobs ejecutados automáticamente: Wave Skipping, Wave Reminders, Weekly T1 Reminders.',
+        $interval
+    );
+    
     wp_send_json_success($result);
 }
 
