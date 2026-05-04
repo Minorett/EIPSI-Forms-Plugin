@@ -107,6 +107,8 @@
 			this.circuitBreaker = new EipsiCircuitBreaker(5, 60000);
 			// Fix 9: Indicador visual
 			this.saveIndicator = null;
+			// Fix 10: Acumulación de respuestas para formularios multipágina
+			this.accumulatedResponses = {};
 
 			this.init();
 		}
@@ -628,6 +630,9 @@
 		async restorePartial( partial ) {
 			const responses = partial.responses || {};
 			const pageIndex = partial.page_index || 1;
+
+			// Fix 10: Restaurar respuestas acumuladas
+			this.accumulatedResponses = { ...responses };
 
 			// Restaurar los valores de los campos
 			Object.keys( responses ).forEach( ( fieldName ) => {
@@ -1164,7 +1169,7 @@
 		}
 
 		collectResponses( fullScan = false ) {
-			const responses = {};
+			const currentPageResponses = {};
 		
 			if ( fullScan || this.dirtyFields.size === 0 ) {
 				// Scan completo — para beforeunload y primer guardado
@@ -1176,22 +1181,26 @@
 					if ( value instanceof File ) {
 						return;
 					}
-					responses[ key ] = value;
+					currentPageResponses[ key ] = value;
 				} );
 			} else {
 				// Solo campos modificados (Fix 5: dirty tracking)
 				this.dirtyFields.forEach( ( fieldName ) => {
 					const field = this.form.querySelector( `[name="${ fieldName }"]` );
 					if ( field ) {
-						responses[ fieldName ] = field.value;
+						currentPageResponses[ fieldName ] = field.value;
 					}
 				} );
 			}
 		
 			// CAPTURAR ESTADO DEL CONSENTIMIENTO EXPLÍCITAMENTE
-			this.captureConsentStatus( responses );
+			this.captureConsentStatus( currentPageResponses );
 		
-			return responses;
+			// Fix 10: Acumular respuestas de la página actual con las anteriores
+			Object.assign( this.accumulatedResponses, currentPageResponses );
+		
+			// Retornar TODAS las respuestas acumuladas, no solo la página actual
+			return { ...this.accumulatedResponses };
 		}
 
 		/**

@@ -194,7 +194,8 @@ if ($survey_id) {
                                required
                                placeholder="ejemplo@email.com"
                                aria-label="<?php esc_attr_e('Email', 'eipsi-forms'); ?>"
-                               autocomplete="email">
+                               autocomplete="email"
+                               value="<?php echo !empty($confirmed_email) ? esc_attr($confirmed_email) : ''; ?>">
                         <span class="eipsi-valid-icon">✓</span>
                     </div>
                     <small class="field-hint"><?php esc_html_e('Usaremos este email para enviarte los recordatorios.', 'eipsi-forms'); ?></small>
