@@ -1143,22 +1143,33 @@ function eipsi_run_process_wave_availability() {
     }
 
     foreach ($newly_available as $assignment) {
-        // Check if we already sent availability email (use transient to avoid duplicates)
-        $transient_key = "eipsi_wave_available_sent_{$assignment->participant_id}_{$assignment->wave_id}";
-        if (get_transient($transient_key)) {
+        // Load required objects for the email service
+        global $wpdb;
+        
+        $wave = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+            $assignment->wave_id
+        ));
+        
+        $participant = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}survey_participants WHERE id = %d",
+            $assignment->participant_id
+        ));
+        
+        if (!$wave || !$participant) {
+            error_log("[EIPSI Cron] Wave availability: Missing wave or participant data for assignment {$assignment->id}");
             continue;
         }
-
-        // Send wave availability notification
-        $sent = EIPSI_Wave_Availability_Email_Service::send_wave_available_email(
-            $assignment->study_id,
-            $assignment->participant_id,
-            $assignment->wave_id
+        
+        // Send wave availability notification using the correct method
+        $result = EIPSI_Wave_Availability_Email_Service::ensure_wave_availability_email_sent(
+            $assignment,
+            $wave,
+            $participant,
+            $assignment->study_id
         );
 
-        if ($sent) {
-            // Set transient to prevent duplicate sends (24 hours)
-            set_transient($transient_key, true, DAY_IN_SECONDS);
+        if ($result['success'] && $result['sent']) {
             $notified_count++;
 
             // Trigger hook

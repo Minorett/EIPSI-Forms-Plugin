@@ -65,7 +65,7 @@ function eipsi_check_wave_skipping_for_participant($participant_id, $study_id) {
     
     // Get all assignments for this participant, ordered by wave_index
     $assignments = $wpdb->get_results($wpdb->prepare(
-        "SELECT a.id, a.wave_id, a.status, a.available_at, w.wave_index, w.wave_name
+        "SELECT a.id, a.wave_id, a.status, a.available_at, w.wave_index, w.name as wave_name
          FROM {$wpdb->prefix}survey_assignments a
          JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
          WHERE a.participant_id = %d AND a.study_id = %d 
