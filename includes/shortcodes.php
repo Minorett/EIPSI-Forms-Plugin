@@ -39,6 +39,95 @@ function eipsi_form_shortcode($atts) {
         $template_id = absint($_GET['form_id']);
     }
     
+    // CRITICAL: Validate wave status before rendering form (prevent skipped/expired waves)
+    if (isset($_GET['wave_id']) && function_exists('eipsi_is_participant_logged_in') && eipsi_is_participant_logged_in()) {
+        global $wpdb;
+        $wave_id = absint($_GET['wave_id']);
+        $participant_id = $_SESSION['eipsi_participant_id'] ?? $_COOKIE['eipsi_participant_id'] ?? 0;
+        
+        if ($wave_id && $participant_id) {
+            $assignment = $wpdb->get_row($wpdb->prepare(
+                "SELECT status FROM {$wpdb->prefix}survey_assignments 
+                 WHERE wave_id = %d AND participant_id = %d",
+                $wave_id,
+                $participant_id
+            ));
+            
+            if ($assignment) {
+                // Only allow pending or in_progress waves to be rendered
+                $allowed_statuses = array('pending', 'in_progress');
+                
+                if (!in_array($assignment->status, $allowed_statuses)) {
+                    error_log(sprintf('[EIPSI Form Render] Blocked form render for wave_id=%d, participant=%d, status=%s (not allowed)', 
+                        $wave_id, $participant_id, $assignment->status));
+                    
+                    // Return user-friendly message based on status
+                    $message = '';
+                    $redirect_url = '';
+                    
+                    if ($assignment->status === 'skipped') {
+                        $message = __('Esta toma ya no está disponible porque una toma posterior se ha vuelto disponible. Por favor, volvé al panel de estudio para continuar con la toma actual.', 'eipsi-forms');
+                    } elseif ($assignment->status === 'expired') {
+                        $message = __('Esta toma ha expirado. Por favor, volvé al panel de estudio.', 'eipsi-forms');
+                    } elseif ($assignment->status === 'submitted') {
+                        $message = __('Ya completaste esta toma. Por favor, volvé al panel de estudio.', 'eipsi-forms');
+                    } else {
+                        $message = sprintf(__('Esta toma no está disponible (estado: %s). Por favor, volvé al panel de estudio.', 'eipsi-forms'), $assignment->status);
+                    }
+                    
+                    // Try to find the study dashboard URL
+                    $study_id = $wpdb->get_var($wpdb->prepare(
+                        "SELECT study_id FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                        $wave_id
+                    ));
+                    
+                    if ($study_id) {
+                        $study = $wpdb->get_row($wpdb->prepare(
+                            "SELECT study_code FROM {$wpdb->prefix}survey_studies WHERE id = %d",
+                            $study_id
+                        ));
+                        
+                        if ($study && !empty($study->study_code)) {
+                            // Find page with [eipsi_longitudinal_study] shortcode
+                            $pages = get_posts(array(
+                                'post_type' => 'page',
+                                'post_status' => 'publish',
+                                'posts_per_page' => -1,
+                                's' => '[eipsi_longitudinal_study',
+                            ));
+                            
+                            foreach ($pages as $page) {
+                                if (has_shortcode($page->post_content, 'eipsi_longitudinal_study')) {
+                                    $redirect_url = add_query_arg('study_code', $study->study_code, get_permalink($page->ID));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Render error message with redirect button
+                    ob_start();
+                    ?>
+                    <div class="eipsi-wave-status-error" style="max-width: 600px; margin: 40px auto; padding: 30px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                        <h3 style="margin: 0 0 16px 0; color: #856404;"><?php _e('Toma no disponible', 'eipsi-forms'); ?></h3>
+                        <p style="margin: 0 0 24px 0; color: #856404; line-height: 1.6;"><?php echo esc_html($message); ?></p>
+                        <?php if ($redirect_url): ?>
+                            <a href="<?php echo esc_url($redirect_url); ?>" class="button button-primary button-large" style="display: inline-block; padding: 12px 24px; background: #0284c7; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                                <?php _e('Volver al panel de estudio', 'eipsi-forms'); ?>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                    <?php
+                    return ob_get_clean();
+                }
+                
+                error_log(sprintf('[EIPSI Form Render] Rendering form for wave_id=%d, participant=%d, status=%s (allowed)', 
+                    $wave_id, $participant_id, $assignment->status));
+            }
+        }
+    }
+    
     // Use shared render helper
     return eipsi_render_form_shortcode_markup($template_id);
 }
