@@ -631,13 +631,21 @@
 			const responses = partial.responses || {};
 			const pageIndex = partial.page_index || 1;
 
+			console.log( `[S&C] restorePartial: restoring ${Object.keys(responses).length} responses to page ${pageIndex}` );
+
 			// Fix 10: Restaurar respuestas acumuladas
 			this.accumulatedResponses = { ...responses };
 
+			console.log( `[S&C] accumulatedResponses initialized with ${Object.keys(this.accumulatedResponses).length} fields` );
+
 			// Restaurar los valores de los campos
+			let restoredCount = 0;
 			Object.keys( responses ).forEach( ( fieldName ) => {
-				this.setFieldValue( fieldName, responses[ fieldName ] );
+				const restored = this.setFieldValue( fieldName, responses[ fieldName ] );
+				if ( restored ) restoredCount++;
 			} );
+
+			console.log( `[S&C] Restored ${restoredCount}/${Object.keys(responses).length} field values to DOM` );
 
 			this.hasResponses = Object.keys( responses ).length > 0;
 
@@ -1091,11 +1099,15 @@
 
 		async executeSave( trigger ) {
 			try {
+				console.log( `[S&C] executeSave triggered by: ${trigger}` );
+
 				// Fix 5: fullScan solo para beforeunload o primer guardado
 				const fullScan = trigger === 'beforeunload' || this.dirtyFields.size === 0;
 				const responses = this.collectResponses( fullScan );
 				const currentPage = this.getCurrentPage();
 				this.hasResponses = Object.keys( responses ).length > 0;
+
+				console.log( `[S&C] executeSave: collected ${Object.keys(responses).length} responses, hasResponses=${this.hasResponses}` );
 
 				if (
 					this.config?.settings?.debug &&
@@ -1112,10 +1124,15 @@
 					);
 				}
 
-				await this.saveToIDB( responses, currentPage );
-				await this.saveToServer( responses, currentPage );
+				const idbResult = await this.saveToIDB( responses, currentPage );
+				console.log( `[S&C] saveToIDB result: ${idbResult}` );
+
+				const serverResult = await this.saveToServer( responses, currentPage );
+				console.log( `[S&C] saveToServer result: ${serverResult}` );
+
 				// Fix 5: Limpiar dirty tracking después de save exitoso
 				this.dirtyFields.clear();
+				console.log( `[S&C] executeSave completed successfully for trigger: ${trigger}` );
 			} catch ( error ) {
 				if ( window.console && window.console.warn ) {
 					window.console.warn(
@@ -1170,10 +1187,28 @@
 
 		collectResponses( fullScan = false ) {
 			const currentPageResponses = {};
+			const currentPage = this.getCurrentPage();
+		
+			console.log( `[S&C] collectResponses called: fullScan=${fullScan}, dirtyFields=${this.dirtyFields.size}, page=${currentPage}` );
 		
 			if ( fullScan || this.dirtyFields.size === 0 ) {
 				// Scan completo — para beforeunload y primer guardado
+				// Fix: Habilitar temporalmente campos deshabilitados para que FormData los capture
+				const disabledFields = [];
+				this.form.querySelectorAll( '[disabled]' ).forEach( ( field ) => {
+					disabledFields.push( field );
+					field.disabled = false;
+				} );
+			
+				console.log( `[S&C] Temporarily enabled ${disabledFields.length} disabled fields for FormData capture` );
+			
 				const formData = new FormData( this.form );
+			
+				// Restaurar estado disabled
+				disabledFields.forEach( ( field ) => {
+					field.disabled = true;
+				} );
+			
 				formData.forEach( ( value, key ) => {
 					if ( EXCLUDED_FIELDS.has( key ) ) {
 						return;
@@ -1183,6 +1218,8 @@
 					}
 					currentPageResponses[ key ] = value;
 				} );
+			
+				console.log( `[S&C] Full scan captured ${Object.keys(currentPageResponses).length} fields from page ${currentPage}` );
 			} else {
 				// Solo campos modificados (Fix 5: dirty tracking)
 				this.dirtyFields.forEach( ( fieldName ) => {
@@ -1191,13 +1228,21 @@
 						currentPageResponses[ fieldName ] = field.value;
 					}
 				} );
+			
+				console.log( `[S&C] Dirty scan captured ${Object.keys(currentPageResponses).length} modified fields` );
 			}
 		
 			// CAPTURAR ESTADO DEL CONSENTIMIENTO EXPLÍCITAMENTE
 			this.captureConsentStatus( currentPageResponses );
 		
+			const previousAccumulatedCount = Object.keys( this.accumulatedResponses ).length;
+		
 			// Fix 10: Acumular respuestas de la página actual con las anteriores
 			Object.assign( this.accumulatedResponses, currentPageResponses );
+		
+			const totalAccumulatedCount = Object.keys( this.accumulatedResponses ).length;
+		
+			console.log( `[S&C] Accumulated responses: ${previousAccumulatedCount} → ${totalAccumulatedCount} (added ${totalAccumulatedCount - previousAccumulatedCount} new)` );
 		
 			// Retornar TODAS las respuestas acumuladas, no solo la página actual
 			return { ...this.accumulatedResponses };
@@ -1210,7 +1255,21 @@
 		 * @param {Object} responses - Objeto de respuestas a modificar
 		 */
 		captureConsentStatus( responses ) {
-			// Buscar el checkbox de consentimiento por múltiples selectores comunes
+			// PASO 1: Capturar la decisión del consentimiento (accepted/declined)
+			const decisionField = this.form.querySelector( '#eipsi-consent-decision, input[name="eipsi_consent_decision"]' );
+			if ( decisionField && decisionField.value ) {
+				responses[ 'eipsi_consent_decision' ] = decisionField.value;
+				console.log( `[S&C] Captured consent decision: ${decisionField.value}` );
+			}
+
+			// PASO 2: Capturar el checkbox de confirmación de lectura
+			const readingCheckbox = this.form.querySelector( '#eipsi-consent-confirm-reading, input[name="eipsi_consent_confirm_reading"]' );
+			if ( readingCheckbox ) {
+				responses[ 'eipsi_consent_confirm_reading' ] = readingCheckbox.checked ? 'true' : 'false';
+				console.log( `[S&C] Captured reading confirmation: ${readingCheckbox.checked}` );
+			}
+
+			// PASO 3: Buscar otros campos de consentimiento (legacy/custom)
 			const consentSelectors = [
 				'input[name="consent_informed"]',
 				'input[name="consent"]',

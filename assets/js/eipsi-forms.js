@@ -4458,6 +4458,16 @@ if ( pages.length === 0 ) {
                 // Marcar bloque como aceptado
                 block.classList.add('consent-accepted');
                 
+                // Guardar estado actual con Save & Continue antes de avanzar
+                if (form && form.eipsiSaveContinue) {
+                    try {
+                        await form.eipsiSaveContinue.queueSave('consent-accepted');
+                        console.log('[S&C] Consent decision saved before page advance');
+                    } catch (e) {
+                        console.warn('[S&C] Failed to save consent decision:', e);
+                    }
+                }
+                
                 // Avanzar a la siguiente página (como el botón "Siguiente")
                 
                 if (form && window.EIPSIForms && window.EIPSIForms.handlePagination) {
