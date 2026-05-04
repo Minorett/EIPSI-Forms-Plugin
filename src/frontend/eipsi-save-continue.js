@@ -1435,21 +1435,35 @@
 	}
 
 	document.addEventListener( 'DOMContentLoaded', () => {
+		console.log( '[S&C] DOMContentLoaded - Initializing Save & Continue' );
+		
 		const forms = document.querySelectorAll(
-			'.eipsi-form form, .eipsi-form form'
+			'.eipsi-form form'
 		);
 
-		forms.forEach( ( form ) => {
-			if ( ! window.eipsiFormsConfig || form.eipsiSaveContinue ) {
+		console.log( `[S&C] Found ${forms.length} forms to initialize` );
+
+		forms.forEach( ( form, index ) => {
+			if ( ! window.eipsiFormsConfig ) {
+				console.warn( `[S&C] Form ${index}: window.eipsiFormsConfig not found, skipping` );
+				return;
+			}
+			
+			if ( form.eipsiSaveContinue ) {
+				console.log( `[S&C] Form ${index}: already initialized, skipping` );
 				return;
 			}
 
+			console.log( `[S&C] Form ${index}: initializing...` );
 			const instance = new EIPSISaveContinue(
 				form,
 				window.eipsiFormsConfig
 			);
 			form.eipsiSaveContinue = instance;
+			console.log( `[S&C] Form ${index}: initialized successfully` );
 		} );
+		
+		console.log( '[S&C] Initialization complete' );
 	} );
 
 	window.EIPSISaveContinue = EIPSISaveContinue;

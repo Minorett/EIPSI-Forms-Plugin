@@ -4459,12 +4459,25 @@ if ( pages.length === 0 ) {
                 block.classList.add('consent-accepted');
                 
                 // Guardar estado actual con Save & Continue antes de avanzar
-                if (form && form.eipsiSaveContinue) {
-                    try {
-                        await form.eipsiSaveContinue.queueSave('consent-accepted');
-                        console.log('[S&C] Consent decision saved before page advance');
-                    } catch (e) {
-                        console.warn('[S&C] Failed to save consent decision:', e);
+                // Esperar hasta 2 segundos a que Save & Continue se inicialice
+                if (form) {
+                    let attempts = 0;
+                    const maxAttempts = 20; // 20 * 100ms = 2 segundos
+                    
+                    while (!form.eipsiSaveContinue && attempts < maxAttempts) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        attempts++;
+                    }
+                    
+                    if (form.eipsiSaveContinue && typeof form.eipsiSaveContinue.queueSave === 'function') {
+                        try {
+                            await form.eipsiSaveContinue.queueSave('consent-accepted');
+                            console.log('[S&C] Consent decision saved before page advance');
+                        } catch (e) {
+                            console.warn('[S&C] Failed to save consent decision:', e);
+                        }
+                    } else {
+                        console.warn('[S&C] Save & Continue not initialized after 2s, proceeding without save');
                     }
                 }
                 
