@@ -1903,13 +1903,14 @@ function eipsi_forms_submit_form_handler() {
                 
                 // Obtener configuración de la wave (intervalo y recordatorio)
                 $wave_config = $wpdb->get_row($wpdb->prepare(
-                    "SELECT interval_days, reminder_days, time_unit FROM {$wpdb->prefix}survey_waves WHERE id = %d",
+                    "SELECT offset_minutes, interval_days, reminder_days, time_unit FROM {$wpdb->prefix}survey_waves WHERE id = %d",
                     $next_wave['wave_id']
                 ), ARRAY_A);
                 
                 // DEBUG: Log raw values from database
-                error_log(sprintf('[EIPSI-DIAG] Raw wave_config from DB: wave_id=%d, interval_days=%s, time_unit=%s',
+                error_log(sprintf('[EIPSI-DIAG] Raw wave_config from DB: wave_id=%d, offset_minutes=%s, interval_days=%s, time_unit=%s',
                     $next_wave['wave_id'],
+                    $wave_config['offset_minutes'] ?? 'NULL',
                     $wave_config['interval_days'] ?? 'NULL',
                     $wave_config['time_unit'] ?? 'NULL'
                 ));
@@ -1934,28 +1935,34 @@ function eipsi_forms_submit_form_handler() {
                 }
                 
                 // Calculate exact available timestamp for countdown
-                $interval_value = isset($wave_config['interval_days']) ? intval($wave_config['interval_days']) : 7;
+                // Phase 5 T1-Anchor: Use offset_minutes from T1 completion, not interval_days
+                $offset_minutes = isset($wave_config['offset_minutes']) ? intval($wave_config['offset_minutes']) : 0;
                 $submitted_at = current_time('timestamp');
-                $available_at = $submitted_at;
+                $available_at = strtotime("+{$offset_minutes} minutes", $submitted_at);
                 
-                switch ($time_unit) {
-                    case 'minutes':
-                        $available_at = strtotime("+{$interval_value} minutes", $submitted_at);
-                        break;
-                    case 'hours':
-                        $available_at = strtotime("+{$interval_value} hours", $submitted_at);
-                        break;
-                    case 'days':
-                    default:
-                        $available_at = strtotime("+{$interval_value} days", $submitted_at);
-                        break;
+                // Legacy fallback for old studies using interval_days
+                if ($offset_minutes === 0 && isset($wave_config['interval_days'])) {
+                    $interval_value = intval($wave_config['interval_days']);
+                    switch ($time_unit) {
+                        case 'minutes':
+                            $available_at = strtotime("+{$interval_value} minutes", $submitted_at);
+                            break;
+                        case 'hours':
+                            $available_at = strtotime("+{$interval_value} hours", $submitted_at);
+                            break;
+                        case 'days':
+                        default:
+                            $available_at = strtotime("+{$interval_value} days", $submitted_at);
+                            break;
+                    }
                 }
                 
                 $next_wave_data = array(
                     'wave_index' => $next_wave['wave_index'],
                     'due_date' => $next_wave['due_date'],
                     'wave_name' => $next_wave['wave_name'],
-                    'interval_days' => $interval_value,
+                    'offset_minutes' => $offset_minutes,
+                    'interval_days' => isset($interval_value) ? $interval_value : 0,
                     'reminder_days' => isset($wave_config['reminder_days']) ? intval($wave_config['reminder_days']) : 0,
                     'time_unit' => $time_unit,
                     'available_at' => $available_at * 1000 // Convert to milliseconds for JS

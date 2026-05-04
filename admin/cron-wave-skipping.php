@@ -61,9 +61,11 @@ function eipsi_check_wave_skipping() {
 function eipsi_check_wave_skipping_for_participant($participant_id, $study_id) {
     global $wpdb;
     
+    error_log(sprintf('[EIPSI Wave Skipping] ========== Checking participant %d (study %d) ==========', $participant_id, $study_id));
+    
     // Get all assignments for this participant, ordered by wave_index
     $assignments = $wpdb->get_results($wpdb->prepare(
-        "SELECT a.id, a.wave_id, a.status, a.available_at, w.wave_index
+        "SELECT a.id, a.wave_id, a.status, a.available_at, w.wave_index, w.wave_name
          FROM {$wpdb->prefix}survey_assignments a
          JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
          WHERE a.participant_id = %d AND a.study_id = %d 
@@ -72,33 +74,74 @@ function eipsi_check_wave_skipping_for_participant($participant_id, $study_id) {
     ));
     
     if (empty($assignments)) {
+        error_log('[EIPSI Wave Skipping] No assignments found for this participant');
         return 0;
+    }
+    
+    // Log current state of all waves
+    error_log(sprintf('[EIPSI Wave Skipping] Found %d waves for participant %d:', count($assignments), $participant_id));
+    foreach ($assignments as $a) {
+        $available_str = $a->available_at ? date('Y-m-d H:i:s', strtotime($a->available_at)) : 'NULL';
+        error_log(sprintf('  - Wave %d (%s): status=%s, available_at=%s, assignment_id=%d', 
+            $a->wave_index, $a->wave_name, $a->status, $available_str, $a->id));
     }
     
     // Find the highest wave_index that is currently available
     $last_available_index = 0;
     $now = current_time('timestamp');
+    $now_str = date('Y-m-d H:i:s', $now);
+    
+    error_log(sprintf('[EIPSI Wave Skipping] Current time: %s', $now_str));
     
     foreach ($assignments as $a) {
         if ($a->available_at && strtotime($a->available_at) <= $now) {
             $last_available_index = max($last_available_index, $a->wave_index);
+            error_log(sprintf('[EIPSI Wave Skipping] Wave %d is AVAILABLE (available_at=%s <= now=%s)', 
+                $a->wave_index, date('Y-m-d H:i:s', strtotime($a->available_at)), $now_str));
+        } else {
+            $reason = !$a->available_at ? 'no available_at set' : 'not yet available';
+            error_log(sprintf('[EIPSI Wave Skipping] Wave %d is NOT AVAILABLE (%s)', $a->wave_index, $reason));
         }
     }
     
+    error_log(sprintf('[EIPSI Wave Skipping] Last available wave index: %d', $last_available_index));
+    
     if ($last_available_index == 0) {
-        // No waves are available yet
+        error_log('[EIPSI Wave Skipping] No waves are available yet - nothing to skip');
         return 0;
     }
     
     // Skip all waves that are:
-    // 1. Skippable status (pending or in_progress)
-    // 2. Have wave_index < last_available_index
+    // 1. NOT T1 (wave_index > 1) - T1 NEVER gets skipped
+    // 2. Skippable status (pending or in_progress)
+    // 3. Have wave_index < last_available_index
     $skippable_statuses = array('pending', 'in_progress');
     $skipped_count = 0;
     
+    error_log('[EIPSI Wave Skipping] Evaluating which waves to skip...');
+    
     foreach ($assignments as $a) {
-        if (in_array($a->status, $skippable_statuses) && 
-            $a->wave_index < $last_available_index) {
+        // CRITICAL: T1 (wave_index = 1) NEVER gets skipped
+        if ($a->wave_index == 1) {
+            error_log(sprintf('[EIPSI Wave Skipping] Wave %d (T1): PROTECTED - T1 never gets skipped (status=%s)', 
+                $a->wave_index, $a->status));
+            continue;
+        }
+        
+        $should_skip = in_array($a->status, $skippable_statuses) && $a->wave_index < $last_available_index;
+        
+        if ($should_skip) {
+            error_log(sprintf('[EIPSI Wave Skipping] Wave %d (%s): WILL SKIP - status=%s (skippable), wave_index=%d < last_available=%d', 
+                $a->wave_index, $a->wave_name, $a->status, $a->wave_index, $last_available_index));
+        } else {
+            $reason = !in_array($a->status, $skippable_statuses) 
+                ? "status={$a->status} (not skippable)" 
+                : "wave_index={$a->wave_index} >= last_available={$last_available_index}";
+            error_log(sprintf('[EIPSI Wave Skipping] Wave %d (%s): NO SKIP - %s', 
+                $a->wave_index, $a->wave_name, $reason));
+        }
+        
+        if ($should_skip) {
             
             // Skip this wave with transaction and lock
             $wpdb->query('START TRANSACTION');
@@ -143,8 +186,8 @@ function eipsi_check_wave_skipping_for_participant($participant_id, $study_id) {
                 $wpdb->query('COMMIT');
                 
                 error_log(sprintf(
-                    '[EIPSI Wave Skipping] Skipped wave %d for participant %d (assignment %d)',
-                    $a->wave_index, $participant_id, $a->id
+                    '[EIPSI Wave Skipping] ✓ SKIPPED: Wave %d (%s) for participant %d (assignment %d) - Nudges cancelled',
+                    $a->wave_index, $a->wave_name, $participant_id, $a->id
                 ));
                 
                 $skipped_count++;
@@ -155,6 +198,9 @@ function eipsi_check_wave_skipping_for_participant($participant_id, $study_id) {
             }
         }
     }
+    
+    error_log(sprintf('[EIPSI Wave Skipping] ========== Summary: %d waves skipped for participant %d ==========', 
+        $skipped_count, $participant_id));
     
     return $skipped_count;
 }
