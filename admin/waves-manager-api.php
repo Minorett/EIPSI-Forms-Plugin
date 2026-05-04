@@ -1000,23 +1000,16 @@ function wp_ajax_eipsi_save_reminder_config_handler() {
         if (isset($config[$stage])) {
             $stage_config = $config[$stage];
             $enabled = !empty($stage_config['enabled']);
-            $hours = isset($stage_config['hours']) ? intval($stage_config['hours']) : 24 * $stage;
+            $value = isset($stage_config['hours']) ? intval($stage_config['hours']) : 24 * $stage;
             $unit = isset($stage_config['unit']) ? sanitize_text_field($stage_config['unit']) : 'hours';
             $subject = isset($stage_config['subject']) ? sanitize_text_field($stage_config['subject']) : '';
             
-            // Convert hours to appropriate unit/value for storage
-            if ($unit === 'days' || $hours >= 24) {
-                $value = floor($hours / 24);
-                $storage_unit = 'days';
-            } else {
-                $value = $hours;
-                $storage_unit = 'hours';
-            }
-            
+            // Store the value and unit exactly as sent from frontend
+            // No conversion needed - the scheduler will handle unit conversion
             $nudge_config["nudge_{$stage}"] = array(
                 'enabled' => $enabled,
                 'value' => $value,
-                'unit' => $storage_unit,
+                'unit' => $unit,
                 'subject' => $subject
             );
             

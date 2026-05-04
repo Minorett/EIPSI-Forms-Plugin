@@ -2789,12 +2789,28 @@
 			return;
 		}
 
+		// Email type labels mapping
+		const emailTypeLabels = {
+			'wave_availability': 'Disponibilidad',
+			'nudge_1': 'Recordatorio 1',
+			'nudge_2': 'Recordatorio 2',
+			'nudge_3': 'Recordatorio 3',
+			'nudge_4': 'Recordatorio 4',
+			'confirmation_request': 'Confirmación',
+			'welcome_after_confirmation': 'Bienvenida',
+			'reminder': 'Recordatorio',
+			'dropout_recovery': 'Recuperación'
+		};
+
 		let html = '';
 		logs.forEach( function ( log ) {
 			const statusBadge =
 				log.status === 'sent'
 					? '<span style="color:#27ae60;">✓ Enviado</span>'
 					: '<span style="color:#d63638;">✗ Fallido</span>';
+
+			const emailType = log.email_type || '';
+			const emailTypeLabel = emailTypeLabels[emailType] || (emailType || '-');
 
 			html +=
 				'<tr>' +
@@ -2805,7 +2821,7 @@
 				escapeHtml( log.recipient_email ) +
 				'</td>' +
 				'<td>' +
-				escapeHtml( log.subject || 'Sin asunto' ) +
+				escapeHtml( emailTypeLabel ) +
 				'</td>' +
 				'<td>' +
 				statusBadge +
