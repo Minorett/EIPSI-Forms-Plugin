@@ -602,8 +602,8 @@ $cron_command = "*/5 * * * * wget -q -O - {$site_url}/wp-cron.php?doing_wp_cron 
                         <?php _e('Se envían automáticamente cuando una wave está disponible según el intervalo configurado (minutos, horas o días). Para intervalos cortos (minutos), usa el botón "Ejecutar Cron de Recordatorios Ahora".', 'eipsi-forms'); ?>
                     </li>
                     <li style="margin-bottom: 12px;">
-                        <strong style="color: #f0ad4e;">💔 Recuperación de dropouts:</strong>
-                        <?php _e('Se envía un mensaje "Te extrañamos" a participantes que no completaron waves después del intervalo configurado más el tiempo de gracia.', 'eipsi-forms'); ?>
+                        <strong style="color: #f0ad4e;">� Recordatorios semanales T1:</strong>
+                        <?php _e('Se envían recordatorios semanales SOLO a participantes que no completaron T1 después de todos los nudges (1-4). Exclusivo para la primera toma.', 'eipsi-forms'); ?>
                     </li>
                     <li style="margin-bottom: 12px;">
                         <strong style="color: #17a2b8;">🛡️ Rate limiting:</strong>
