@@ -1094,6 +1094,105 @@ function eipsi_run_process_assignment_expirations() {
         '[EIPSI Cron] Assignment expiration processor completed. Expired: %d assignments.',
         $expired_count
     ));
+    
+    // Auto-skip expired waves when a later wave is available
+    eipsi_auto_skip_expired_waves();
+}
+
+/**
+ * Auto-skip expired waves when a later wave is available.
+ * 
+ * This ensures participants don't see expired waves in their dashboard,
+ * instead showing the next available wave.
+ * 
+ * @since 2.6.1
+ */
+function eipsi_auto_skip_expired_waves() {
+    global $wpdb;
+    
+    $assignments_table = $wpdb->prefix . 'survey_assignments';
+    $waves_table = $wpdb->prefix . 'survey_waves';
+    $now = current_time('mysql');
+    
+    // Find participants with expired waves that have a later available wave
+    $expired_to_skip = $wpdb->get_results("
+        SELECT a1.id as expired_assignment_id, 
+               a1.participant_id, 
+               a1.wave_id as expired_wave_id,
+               a1.study_id,
+               w1.wave_index as expired_wave_index,
+               w1.name as expired_wave_name,
+               MIN(w2.wave_index) as next_available_wave_index
+        FROM {$assignments_table} a1
+        JOIN {$waves_table} w1 ON a1.wave_id = w1.id
+        JOIN {$waves_table} w2 ON w2.study_id = w1.study_id AND w2.wave_index > w1.wave_index
+        LEFT JOIN {$assignments_table} a2 ON a2.participant_id = a1.participant_id 
+                                          AND a2.wave_id = w2.id
+        WHERE a1.status = 'expired'
+        AND (a2.status IN ('pending', 'in_progress') 
+             OR (a2.available_at IS NOT NULL AND a2.available_at <= '{$now}'))
+        GROUP BY a1.id, a1.participant_id, a1.wave_id, a1.study_id, w1.wave_index, w1.name
+        LIMIT 100
+    ");
+    
+    if (empty($expired_to_skip)) {
+        return;
+    }
+    
+    $skipped_count = 0;
+    
+    foreach ($expired_to_skip as $item) {
+        // Update expired assignment to skipped
+        $updated = $wpdb->update(
+            $assignments_table,
+            array('status' => 'skipped'),
+            array('id' => $item->expired_assignment_id),
+            array('%s'),
+            array('%d')
+        );
+        
+        if ($updated !== false) {
+            $skipped_count++;
+            
+            // Log to audit
+            $audit_table = $wpdb->prefix . 'survey_audit_log';
+            if ($wpdb->get_var("SHOW TABLES LIKE '{$audit_table}'")) {
+                $wpdb->insert(
+                    $audit_table,
+                    array(
+                        'survey_id' => $item->study_id,
+                        'participant_id' => $item->participant_id,
+                        'action' => 'wave_auto_skipped',
+                        'actor_type' => 'system',
+                        'metadata' => wp_json_encode(array(
+                            'wave_id' => $item->expired_wave_id,
+                            'wave_index' => $item->expired_wave_index,
+                            'wave_name' => $item->expired_wave_name,
+                            'reason' => 'expired_with_later_wave_available',
+                            'next_wave_index' => $item->next_available_wave_index,
+                            'skipped_at' => $now,
+                        )),
+                        'created_at' => $now,
+                    ),
+                    array('%d', '%d', '%s', '%s', '%s', '%s')
+                );
+            }
+            
+            error_log(sprintf(
+                '[EIPSI Auto-Skip] Skipped expired wave T%d for participant %d (next available: T%d)',
+                $item->expired_wave_index,
+                $item->participant_id,
+                $item->next_available_wave_index
+            ));
+        }
+    }
+    
+    if ($skipped_count > 0) {
+        error_log(sprintf(
+            '[EIPSI Auto-Skip] Auto-skipped %d expired waves with later waves available.',
+            $skipped_count
+        ));
+    }
 }
 
 /**

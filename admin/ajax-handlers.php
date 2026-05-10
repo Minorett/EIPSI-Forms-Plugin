@@ -1875,11 +1875,23 @@ function eipsi_forms_submit_form_handler() {
             }
             
             // ========== POST-COMMIT: Recalcular waves (fuera de transacción) ==========
-            if ($is_t1 && class_exists('EIPSI_Wave_Service')) {
+            if ($is_t1) {
+                // Load Wave Recalculator service if not already loaded
+                if (!class_exists('EIPSI_Wave_Recalculator')) {
+                    require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-wave-recalculator.php';
+                }
+                
                 try {
                     error_log("[EIPSI T1-Anchor] Starting wave recalculation (post-commit)");
-                    $recalculated = EIPSI_Wave_Service::recalculate_after_t1($longitudinal_participant_id, $study_id);
-                    error_log("[EIPSI T1-Anchor] Successfully recalculated {$recalculated} waves");
+                    $t1_timestamp = current_time('mysql');
+                    $result = EIPSI_Wave_Recalculator::recalculate_after_t1(
+                        $longitudinal_participant_id, 
+                        $study_id, 
+                        $t1_timestamp,
+                        'system'
+                    );
+                    $affected_count = count($result['affected_waves'] ?? array());
+                    error_log("[EIPSI T1-Anchor] Successfully recalculated {$affected_count} waves");
                 } catch (Exception $e) {
                     // No revertir el submit - solo loggear el error
                     error_log("[EIPSI T1-Anchor] WARNING: Wave recalculation failed (submit was successful): " . $e->getMessage());

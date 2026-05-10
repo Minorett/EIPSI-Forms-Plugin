@@ -63,6 +63,29 @@ function eipsi_forms_menu() {
         $capabilities['form_library'],
         'edit.php?post_type=eipsi_form_template'
     );
+    
+    // Submenú: Cron Diagnostic (admin only)
+    add_submenu_page(
+        'eipsi-results-experience',
+        __('Cron Diagnostic', 'eipsi-forms'),
+        __('🔍 Cron Diagnostic', 'eipsi-forms'),
+        'manage_options',
+        'eipsi-cron-diagnostic',
+        'eipsi_display_cron_diagnostic_page'
+    );
+}
+
+/**
+ * Display Cron Diagnostic page
+ */
+function eipsi_display_cron_diagnostic_page() {
+    if (!current_user_can('manage_options')) {
+        wp_die(__('No tenés permisos para acceder a esta página.', 'eipsi-forms'));
+    }
+    
+    echo '<div class="wrap">';
+    require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/tabs/cron-diagnostic-tab.php';
+    echo '</div>';
 }
 
 /**

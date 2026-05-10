@@ -86,16 +86,19 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
 
     $last_wave_id = null;
     foreach ( $waves as $wave ) {
-        if ( empty( $wave_status[ $wave['id'] ] ) || $wave_status[ $wave['id'] ] !== 'submitted' ) {
-            if ( null === $next_wave ) {
-                $next_wave = $wave;
-            }
-        } else {
+        $status = isset( $wave_status[ $wave['id'] ] ) ? $wave_status[ $wave['id'] ] : 'pending';
+        
+        // Count completed waves
+        if ( $status === 'submitted' ) {
             $completed_waves++;
             // Track the last completed wave (most recent one before next_wave)
             if ( null === $next_wave ) {
                 $last_wave_id = $wave['id'];
             }
+        }
+        // Find next available wave (skip expired and skipped waves)
+        elseif ( null === $next_wave && ! in_array( $status, array( 'expired', 'skipped' ) ) ) {
+            $next_wave = $wave;
         }
     }
 
