@@ -242,6 +242,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
 // Fase 4 Migration: Add missing columns to survey_waves (runs on admin_init)
 add_action('admin_init', array('EIPSI_Database_Schema_Manager', 'migrate_fase4_wave_columns'));
 
+// v2.6.1 Migration: Change email_type from ENUM to VARCHAR (runs on admin_init)
+add_action('admin_init', array('EIPSI_Database_Schema_Manager', 'migrate_email_type_to_varchar'));
+
 // ============================================================================
 
 // Export AJAX Handlers — participant roster + longitudinal (v1.8.0)
