@@ -2797,10 +2797,32 @@
 			'nudge_3': 'Recordatorio 3',
 			'nudge_4': 'Recordatorio 4',
 			'confirmation_request': 'Confirmación',
+			'confirmation': 'Confirmación',
+			'welcome': 'Bienvenida',
 			'welcome_after_confirmation': 'Bienvenida',
+			'magic_link': 'Magic Link',
 			'reminder': 'Recordatorio',
-			'dropout_recovery': 'Recuperación'
+			'recovery': 'Recuperación',
+			'dropout_recovery': 'Recuperación',
+			'custom': 'Personalizado'
 		};
+		
+		// v2.6.1 - Function to parse wave-specific email types
+		function getEmailTypeLabel(emailType) {
+			if (!emailType) return '-';
+			
+			// Check for wave-specific format: wave_availability_T1, nudge_1_T2, etc.
+			const waveMatch = emailType.match(/^(.+)_T(\d+)$/);
+			if (waveMatch) {
+				const baseType = waveMatch[1];
+				const waveIndex = waveMatch[2];
+				const baseLabel = emailTypeLabels[baseType] || baseType;
+				return baseLabel + ' (T' + waveIndex + ')';
+			}
+			
+			// Fallback to static mapping
+			return emailTypeLabels[emailType] || emailType;
+		}
 
 		let html = '';
 		logs.forEach( function ( log ) {
@@ -2810,12 +2832,12 @@
 					: '<span style="color:#d63638;">✗ Fallido</span>';
 
 			const emailType = log.email_type || '';
-			const emailTypeLabel = emailTypeLabels[emailType] || (emailType || '-');
+			const emailTypeLabel = getEmailTypeLabel(emailType);
 
 			html +=
 				'<tr>' +
 				'<td>' +
-				formatDateTime( log.sent_at ) +
+				formatDateTime( log.sent_at, log.sent_at_formatted ) +
 				'</td>' +
 				'<td>' +
 				escapeHtml( log.recipient_email ) +
@@ -3267,10 +3289,17 @@
 		} );
 	}
 
-	function formatDateTime( dateStr ) {
+	function formatDateTime( dateStr, formattedDate ) {
+		// v2.6.1 - Use server-formatted date if available (respects WordPress timezone)
+		if ( formattedDate ) {
+			return formattedDate;
+		}
+		
 		if ( ! dateStr ) {
 			return 'N/A';
 		}
+		
+		// Fallback to client-side formatting
 		const date = new Date( dateStr );
 		return date.toLocaleDateString( 'es-ES', {
 			year: 'numeric',

@@ -434,17 +434,24 @@ class EIPSI_Wave_Availability_Email_Service {
         );
 
         // Send email with metadata for duplicate detection
+        // v2.6.1 - Incluir wave_index en email_type
+        $wave_index = isset($wave->wave_index) ? $wave->wave_index : 1;
+        $email_type = 'wave_availability_T' . $wave_index;
+        
         $metadata = array(
             'wave_id' => $wave->id,
+            'wave_index' => $wave_index,
+            'wave_name' => $wave->name,
             'nudge_stage' => 0,
-            'email_variant' => 'wave_available'
+            'email_variant' => 'wave_available',
+            'base_type' => 'wave_availability'
         );
         
         $log_id = EIPSI_Email_Service::send_email(
             $study_id,
             $participant->id,
             $participant->email,
-            'wave_availability',
+            $email_type,
             $subject,
             $message,
             $metadata

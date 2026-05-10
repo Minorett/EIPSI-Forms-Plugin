@@ -224,16 +224,8 @@
 
 		let html = '';
 		logs.forEach( ( log ) => {
-			const dateObj = new Date( log.sent_at );
-			const formattedDate = dateObj.toLocaleDateString( 'es-ES', {
-				day: '2-digit',
-				month: '2-digit',
-				year: 'numeric',
-			} );
-			const formattedTime = dateObj.toLocaleTimeString( 'es-ES', {
-				hour: '2-digit',
-				minute: '2-digit',
-			} );
+			// v2.6.1 - Use server-formatted date to respect WordPress timezone
+			const formattedDateTime = log.sent_at_formatted || log.sent_at || '-';
 
 			const typeLabel = getTypeLabel( log.email_type );
 			const statusBadge = getStatusBadge( log.status );
@@ -241,8 +233,7 @@
 			html += `
                 <tr>
                     <td>
-                        <div style="font-weight: 500;">${ formattedDate }</div>
-                        <div style="font-size: 12px; color: #646970;">${ formattedTime }</div>
+                        <div style="font-weight: 500;">${ escapeHtml(formattedDateTime) }</div>
                     </td>
                     <td>
                         <span class="eipsi-email-type ${
@@ -304,8 +295,28 @@
 			welcome: 'Bienvenida',
 			reminder: 'Recordatorio',
 			confirmation: 'Confirmación',
+			confirmation_request: 'Confirmación',
+			magic_link: 'Magic Link',
 			recovery: 'Recuperación',
+			wave_availability: 'Disponibilidad',
+			nudge_1: 'Recordatorio 1',
+			nudge_2: 'Recordatorio 2',
+			nudge_3: 'Recordatorio 3',
+			nudge_4: 'Recordatorio 4',
+			custom: 'Personalizado',
 		};
+		
+		// v2.6.1 - Handle wave-specific types (wave_availability_T1, nudge_1_T2, etc.)
+		if (type) {
+			const waveMatch = type.match(/^(.+)_T(\d+)$/);
+			if (waveMatch) {
+				const baseType = waveMatch[1];
+				const waveIndex = waveMatch[2];
+				const baseLabel = labels[baseType] || baseType;
+				return baseLabel + ' (T' + waveIndex + ')';
+			}
+		}
+		
 		return labels[ type ] || type;
 	}
 

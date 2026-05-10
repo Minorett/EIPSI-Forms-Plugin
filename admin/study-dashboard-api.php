@@ -1170,10 +1170,14 @@ function wp_ajax_eipsi_get_study_email_logs_handler() {
         $study_id
     ));
     
-    // Formatear fechas y agregar debug
+    // v2.6.1 - Formatear fechas según timezone de WordPress
     foreach ($logs as $log) {
         if (!empty($log->sent_at)) {
-            $log->sent_at_formatted = date_i18n('j/n/Y, H:i:s', strtotime($log->sent_at));
+            $timestamp = strtotime($log->sent_at);
+            $log->sent_at_formatted = wp_date(
+                get_option('date_format') . ', ' . get_option('time_format'),
+                $timestamp
+            );
         }
         error_log("[EIPSI EMAIL LOGS] Log ID {$log->id}: email_type='{$log->email_type}', status='{$log->status}'");
     }

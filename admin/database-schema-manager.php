@@ -593,7 +593,8 @@ class EIPSI_Database_Schema_Manager {
 
                     'survey_id' => 'INT(11)',
 
-                    'email_type' => "ENUM('reminder', 'wave_availability', 'nudge_1', 'nudge_2', 'nudge_3', 'nudge_4', 'welcome', 'confirmation', 'magic_link', 'recovery', 'custom', 'audit_log') DEFAULT 'custom'",
+                    // v2.6.1 - Changed from ENUM to VARCHAR to support wave-specific types (wave_availability_T1, nudge_1_T2, etc.)
+                    'email_type' => "VARCHAR(100) DEFAULT 'custom'",
 
                     'wave_id' => 'BIGINT(20) UNSIGNED',
 

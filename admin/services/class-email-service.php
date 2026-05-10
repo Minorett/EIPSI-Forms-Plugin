@@ -558,11 +558,22 @@ class EIPSI_Email_Service {
         
         $content = self::render_template($template_name, $placeholders);
 
-        // v2.5.3 - Distinguir tipo de nudge para logs más granulares
-        // Nudge 0 = wave_availability, Nudges 1-4 = nudge_1, nudge_2, etc.
-        $email_type = ($stage === 0) ? 'wave_availability' : 'nudge_' . $stage;
+        // v2.6.1 - Incluir wave_index en email_type para mejor tracking
+        // Formato: wave_availability_T1, nudge_1_T2, etc.
+        $wave_index = isset($wave->wave_index) ? $wave->wave_index : 1;
+        $base_type = ($stage === 0) ? 'wave_availability' : 'nudge_' . $stage;
+        $email_type = $base_type . '_T' . $wave_index;
         
-        return self::send_email($survey_id, $participant_id, $participant->email, $email_type, $subject, $content);
+        // Metadata con info de la wave
+        $metadata = array(
+            'wave_id' => $wave->id,
+            'wave_index' => $wave_index,
+            'wave_name' => isset($wave->name) ? $wave->name : '',
+            'nudge_stage' => $stage,
+            'base_type' => $base_type
+        );
+        
+        return self::send_email($survey_id, $participant_id, $participant->email, $email_type, $subject, $content, $metadata);
     }
 
     /**
@@ -985,6 +996,12 @@ class EIPSI_Email_Service {
         global $wpdb;
         $table_name = $wpdb->prefix . 'survey_email_log';
         $subject = sanitize_text_field($subject);
+        
+        // v2.6.1 - Ensure email_type is never null or empty
+        if (empty($type)) {
+            $type = 'custom';
+            error_log("[EIPSI Email] WARNING: email_type was empty, defaulting to 'custom'");
+        }
         
         // Log para debug
         error_log("[EIPSI Email] log_email called - type: '$type', status: '$status', participant: $participant_id");
