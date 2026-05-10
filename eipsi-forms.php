@@ -208,6 +208,10 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-magic-links-service.
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-access-log-service.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-auth-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/class-survey-access-handler.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/class-eipsi-migration-runner.php';
+
+// Initialize Migration Runner early to ensure DB schema is ready
+EIPSI_Migration_Runner::init();
 
 // v2.5.0 - Nudge System Architecture (Job Queue, Event-Driven, Cache)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-job-queue.php';
