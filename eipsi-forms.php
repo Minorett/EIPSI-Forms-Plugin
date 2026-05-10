@@ -176,6 +176,7 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/form-library-tools.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/demo-templates.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/form-template-render.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/shortcodes.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/disable-cache-for-participants.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'assets/js/eipsi-randomization-shortcode.php';
 
 // Sistema RCT completo (v1.3.1)
