@@ -1000,7 +1000,11 @@ class EIPSI_Email_Service {
         // v2.6.1 - Ensure email_type is never null or empty
         if (empty($type)) {
             $type = 'custom';
-            error_log("[EIPSI Email] WARNING: email_type was empty, defaulting to 'custom'");
+            // Log stack trace to identify where empty email_type is coming from
+            $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
+            $caller = isset($backtrace[1]) ? $backtrace[1]['function'] : 'unknown';
+            $file = isset($backtrace[1]) ? basename($backtrace[1]['file']) : 'unknown';
+            error_log("[EIPSI Email] WARNING: email_type was empty, defaulting to 'custom'. Called from: {$caller} in {$file}");
         }
         
         // Log para debug
