@@ -91,7 +91,7 @@ function eipsi_get_frontend_backend_sync_diagnostic() {
     );
     
     $skipped_waves = $wpdb->get_results("
-        SELECT a.participant_id, a.wave_id, a.status, w.wave_name, w.wave_index
+        SELECT a.participant_id, a.wave_id, a.status, w.name as wave_name, w.wave_index
         FROM {$wpdb->prefix}survey_assignments a
         JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
         WHERE a.status IN ('skipped', 'expired')
@@ -106,7 +106,7 @@ function eipsi_get_frontend_backend_sync_diagnostic() {
         foreach ($skipped_waves as $wave) {
             // Check if there's a next wave after this one
             $next_wave = $wpdb->get_row($wpdb->prepare("
-                SELECT w.wave_name, w.wave_index, a.status
+                SELECT w.name as wave_name, w.wave_index, a.status
                 FROM {$wpdb->prefix}survey_waves w
                 LEFT JOIN {$wpdb->prefix}survey_assignments a 
                     ON w.id = a.wave_id AND a.participant_id = %d
@@ -142,7 +142,7 @@ function eipsi_get_frontend_backend_sync_diagnostic() {
     $t1_anchored = $wpdb->get_results("
         SELECT 
             p.email,
-            w.wave_name,
+            w.name as wave_name,
             w.wave_index,
             a.status,
             a.available_at,
