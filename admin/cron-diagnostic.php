@@ -115,43 +115,10 @@ function eipsi_ajax_get_cron_diagnostic() {
 
 /**
  * Force run a specific cron job (for testing)
+ * Note: This function is similar to the one in ajax-phase3-handlers.php
+ * but uses the existing hook name, so we don't redeclare it.
  */
-add_action('wp_ajax_eipsi_force_run_cron', 'eipsi_ajax_force_run_cron');
-function eipsi_ajax_force_run_cron() {
-    check_ajax_referer('eipsi_admin_nonce', 'nonce');
-    
-    if (!current_user_can('manage_options')) {
-        wp_send_json_error('Unauthorized');
-    }
-    
-    $hook = isset($_POST['hook']) ? sanitize_text_field($_POST['hook']) : '';
-    
-    if (empty($hook)) {
-        wp_send_json_error('Missing hook parameter');
-    }
-    
-    // Verify it's a valid EIPSI cron hook
-    $valid_hooks = array(
-        'eipsi_send_wave_reminders_hourly',
-        'eipsi_process_assignment_expirations',
-        'eipsi_process_wave_availability',
-        'eipsi_wave_skipping_cron',
-        'eipsi_weekly_t1_reminders_cron',
-    );
-    
-    if (!in_array($hook, $valid_hooks)) {
-        wp_send_json_error('Invalid hook');
-    }
-    
-    // Execute the cron job
-    error_log("[EIPSI Cron Diagnostic] Manually executing cron job: {$hook}");
-    do_action($hook);
-    
-    wp_send_json_success(array(
-        'message' => "Cron job '{$hook}' executed successfully. Check logs for details.",
-        'executed_at' => current_time('mysql'),
-    ));
-}
+// Function already exists in ajax-phase3-handlers.php, no need to redeclare
 
 /**
  * Reschedule all EIPSI cron jobs
