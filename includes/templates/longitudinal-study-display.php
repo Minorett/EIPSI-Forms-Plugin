@@ -121,8 +121,9 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
         ) );
 
         if ( $next_assignment && ! empty( $next_assignment->available_at ) ) {
-            // Use available_at from database (set by T1-Anchor recalculation)
-            $available_timestamp = strtotime( $next_assignment->available_at );
+            // v2.6.1 - Convert available_at from UTC (DB) to local timezone
+            // available_at is stored in UTC in DB, need to convert to WordPress timezone
+            $available_timestamp = strtotime( get_date_from_gmt( $next_assignment->available_at ) );
             $now = current_time( 'timestamp' );
             
             error_log(sprintf('[EIPSI-DISPLAY] T1-Anchor: wave_id=%d, available_at=%s, now=%s, locked=%s',
@@ -134,12 +135,12 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
 
             if ( $available_timestamp > $now ) {
                 // Next wave is locked - not yet available
-                $current_year = date('Y');
-                $available_year = date('Y', $available_timestamp);
+                $current_year = wp_date('Y');
+                $available_year = wp_date('Y', $available_timestamp);
                 if ( $available_year === $current_year ) {
-                    $next_wave['available_date'] = date_i18n( 'j \d\e F, H:i', $available_timestamp );
+                    $next_wave['available_date'] = wp_date( 'j \d\e F, H:i', $available_timestamp );
                 } else {
-                    $next_wave['available_date'] = date_i18n( 'j \d\e F Y, H:i', $available_timestamp );
+                    $next_wave['available_date'] = wp_date( 'j \d\e F Y, H:i', $available_timestamp );
                 }
                 $next_wave['available_timestamp'] = $available_timestamp;
                 $next_wave['is_locked'] = true;

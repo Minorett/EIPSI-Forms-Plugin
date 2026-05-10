@@ -45,7 +45,7 @@ if (empty($timeline)) {
                         <?php echo esc_html(
                             sprintf(
                                 __('Completada el %s', 'eipsi-forms'),
-                                date_i18n('j M, H:i', strtotime($wave['submitted_at']))
+                                wp_date('j M, H:i', strtotime(get_date_from_gmt($wave['submitted_at'])))
                             )
                         ); ?>
                     </span>
@@ -54,7 +54,7 @@ if (empty($timeline)) {
                     <span class="timeline-meta timeline-meta--expired">
                         <?php echo esc_html(
                             $wave['due_at']
-                                ? sprintf(__('Expiró el %s', 'eipsi-forms'), date_i18n('j M, H:i', strtotime($wave['due_at'])))
+                                ? sprintf(__('Expiró el %s', 'eipsi-forms'), wp_date('j M, H:i', strtotime(get_date_from_gmt($wave['due_at']))))
                                 : __('No completada', 'eipsi-forms')
                         ); ?>
                     </span>
@@ -63,7 +63,7 @@ if (empty($timeline)) {
                     <span class="timeline-meta">
                         <?php echo esc_html(
                             $wave['due_at']
-                                ? sprintf(__('Disponible hasta %s', 'eipsi-forms'), date_i18n('j M, H:i', strtotime($wave['due_at'])))
+                                ? sprintf(__('Disponible hasta %s', 'eipsi-forms'), wp_date('j M, H:i', strtotime(get_date_from_gmt($wave['due_at']))))
                                 : __('Disponible', 'eipsi-forms')
                         ); ?>
                     </span>
@@ -73,7 +73,7 @@ if (empty($timeline)) {
                         <?php echo esc_html(
                             sprintf(
                                 __('Se abre el %s', 'eipsi-forms'),
-                                date_i18n('j M, H:i', strtotime($wave['available_at']))
+                                wp_date('j M, H:i', strtotime(get_date_from_gmt($wave['available_at'])))
                             )
                         ); ?>
                     </span>

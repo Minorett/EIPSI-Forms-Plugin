@@ -33,11 +33,12 @@ if ($study_completed) : ?>
 
 <?php elseif ($active_wave) : 
     
-    // Calcular timestamp objetivo y tipo de countdown
+    // v2.6.1 - Calcular timestamp objetivo y tipo de countdown
+    // Convert UTC timestamps from DB to local timezone
     $countdown_type = $active_wave['status'] === 'available' ? 'until-expires' : 'until-available';
     $target_timestamp = $active_wave['status'] === 'available' 
-        ? ($active_wave['due_at'] ? strtotime($active_wave['due_at']) : 0)
-        : strtotime($active_wave['available_at']);
+        ? ($active_wave['due_at'] ? strtotime(get_date_from_gmt($active_wave['due_at'])) : 0)
+        : strtotime(get_date_from_gmt($active_wave['available_at']));
     
     // Generar URL del formulario
     $form_url = eipsi_get_wave_form_url($active_wave['wave_id'], $survey_id);

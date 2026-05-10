@@ -6,6 +6,70 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.6.1] – 2026-05-10 (Email Type & Timezone Improvements)
+
+### 📧 Email Type Improvements
+
+**Problema resuelto:**
+- Los emails de `wave_availability` y nudges no indicaban a qué wave (T1, T2, T3, etc.) correspondían
+- Difícil distinguir si un email duplicado era un error o correspondía a diferentes waves
+- Algunos emails se guardaban sin `email_type` en la base de datos
+
+**Solución implementada:**
+Los `email_type` ahora incluyen el índice de la wave:
+- `wave_availability_T1` - Email de disponibilidad para T1
+- `nudge_1_T2` - Primer recordatorio de T2
+- `nudge_2_T3` - Segundo recordatorio de T3
+
+**Beneficios:**
+- ✅ Identificación clara de la wave en logs de email
+- ✅ Mejor tracking de emails por wave específica
+- ✅ Facilita debugging de emails duplicados
+- ✅ Metadata enriquecida con `wave_id`, `wave_index`, `wave_name`, `nudge_stage`
+
+### 🕐 Timezone Improvements
+
+**Problema resuelto:**
+- Los timestamps se mostraban en UTC en lugar del timezone configurado en WordPress
+- Confusión para usuarios en diferentes timezones (ej: Argentina UTC-3)
+- Inconsistencia entre horarios mostrados en admin y participante
+
+**Solución implementada:**
+- Backend usa `wp_date()` con formato de WordPress
+- Frontend usa timestamps pre-formateados del servidor
+- Consistencia total en admin y dashboard del participante
+
+### 🔄 Database Migration
+
+**Schema change:**
+- `email_type`: ENUM → VARCHAR(100) para soportar tipos dinámicos
+- Migración automática al activar el plugin
+- Backward compatible: emails antiguos y nuevos funcionan correctamente
+
+### Changed
+- **`admin/services/class-email-service.php`**: Modificado `send_wave_reminder_email()` para incluir wave_index en email_type (líneas 561-576)
+- **`admin/services/class-wave-availability-email-service.php`**: Incluye wave_index en email_type (líneas 437-448)
+- **`admin/database-schema-manager.php`**: Cambió `email_type` de ENUM a VARCHAR(100) (línea 597)
+- **`admin/study-dashboard-api.php`**: Usa `wp_date()` con formato de WordPress (líneas 1173-1181)
+- **`admin/js/email-log.js`**: Parsea tipos con wave y usa timestamps del servidor (líneas 225-237, 302-327)
+- **`admin/js/study-dashboard.js`**: Función `getEmailTypeLabel()` y `formatDateTime()` mejoradas (líneas 2287-2306, 2805-2820)
+- **`includes/templates/longitudinal-study-display.php`**: Convierte timestamps UTC a timezone local con `get_date_from_gmt()` (líneas 126, 141, 143)
+- **`includes/templates/dashboard/timeline-history.php`**: Usa `wp_date()` y `get_date_from_gmt()` para timestamps (líneas 48, 57, 66, 76)
+- **`includes/templates/dashboard/hero-card.php`**: Convierte timestamps UTC a timezone local (líneas 40-41)
+
+### Fixed
+- ❌→✅ **Email type vacío**: Validación agregada para prevenir emails sin tipo (defaultea a 'custom')
+- ❌→✅ **Timezone inconsistente**: Todos los timestamps ahora respetan configuración de WordPress
+- ❌→✅ **Labels faltantes**: Agregados tipos `confirmation_request`, `magic_link`, `custom`
+
+### Technical Details
+- **Archivos modificados**: 10 archivos (8 PHP, 2 JS)
+- **Backward compatibility**: 100% - Emails antiguos y nuevos funcionan correctamente
+- **Migration**: Automática, idempotente, sin pérdida de datos
+- **Testing**: Verificar nuevos emails usen formato `wave_availability_T1` y timestamps muestren hora local
+
+---
+
 ## [2.1.0] – 2025-02-24 (Phase 3: Researcher Data Confidence)
 
 ### ✅ Phase 3 - Confianza en Datos para Investigadores
