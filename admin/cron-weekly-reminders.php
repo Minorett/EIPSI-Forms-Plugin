@@ -60,7 +60,8 @@ function eipsi_weekly_t1_reminders() {
     
     foreach ($pending_t1 as $assignment) {
         // Parse study config
-        $study_config = json_decode($assignment->config, true) ?: array();
+        $study_config = !empty($assignment->config) ? json_decode($assignment->config, true) : array();
+        $study_config = is_array($study_config) ? $study_config : array();
         $weekly_config = $study_config['weekly_reminders'] ?? array('enabled' => false);
         
         // Check if weekly reminders are enabled for this study

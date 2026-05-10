@@ -107,55 +107,42 @@ if ( $is_participant_logged_in && $current_participant_id && $show_waves ) {
         : 0;
 
     // =========================================================================
-    // T1-ANCHOR INTERVAL CHECK: Verify if next wave is available (offset from T1)
+    // T1-ANCHOR INTERVAL CHECK: Verify if next wave is available
     // =========================================================================
-    if ( $next_wave && isset( $next_wave['offset_minutes'] ) ) {
-        // Get T1 submission time (first wave completion)
-        $t1_submission = $wpdb->get_row( $wpdb->prepare(
-            "SELECT COALESCE(submitted_at, updated_at, created_at) as submitted_at
+    if ( $next_wave ) {
+        // Get assignment for next wave to check available_at from database
+        $next_assignment = $wpdb->get_row( $wpdb->prepare(
+            "SELECT available_at, status
             FROM {$wpdb->prefix}survey_assignments
-            WHERE participant_id = %d AND wave_id = (
-                SELECT id FROM {$wpdb->prefix}survey_waves 
-                WHERE study_id = %d AND wave_index = 1 LIMIT 1
-            ) AND status = 'submitted'",
+            WHERE participant_id = %d AND wave_id = %d
+            LIMIT 1",
             $current_participant_id,
-            $study_id
+            $next_wave['id']
         ) );
 
-        if ( $t1_submission ) {
-            $offset_minutes = (int) $next_wave['offset_minutes'];
-            
-            // DEBUG: Log values for troubleshooting
-            error_log(sprintf('[EIPSI-DISPLAY] T1-Anchor: wave_id=%d, offset_minutes=%d, t1_submitted_at=%s',
-                $next_wave['id'],
-                $offset_minutes,
-                $t1_submission->submitted_at
-            ));
-            
-            // Calculate available date (T1 + offset_minutes)
-            $t1_timestamp = strtotime( $t1_submission->submitted_at );
-            $available_date = $t1_timestamp + ( $offset_minutes * 60 );
-            
-            // DEBUG: Log calculated date
-            error_log(sprintf('[EIPSI-DISPLAY] T1-Anchor: Calculated available_date=%d (%s)',
-                $available_date,
-                date('Y-m-d H:i:s', $available_date)
-            ));
-            
+        if ( $next_assignment && ! empty( $next_assignment->available_at ) ) {
+            // Use available_at from database (set by T1-Anchor recalculation)
+            $available_timestamp = strtotime( $next_assignment->available_at );
             $now = current_time( 'timestamp' );
+            
+            error_log(sprintf('[EIPSI-DISPLAY] T1-Anchor: wave_id=%d, available_at=%s, now=%s, locked=%s',
+                $next_wave['id'],
+                $next_assignment->available_at,
+                date('Y-m-d H:i:s', $now),
+                $available_timestamp > $now ? 'YES' : 'NO'
+            ));
 
-            if ( $available_date > $now ) {
-                // Next wave is locked - interval not yet passed
-                // Format date as "8 de abril, 18:00" (no year if same year)
+            if ( $available_timestamp > $now ) {
+                // Next wave is locked - not yet available
                 $current_year = date('Y');
-                $available_year = date('Y', $available_date);
+                $available_year = date('Y', $available_timestamp);
                 if ( $available_year === $current_year ) {
-                    $next_wave['available_date'] = date_i18n( 'j \d\e F, H:i', $available_date );
+                    $next_wave['available_date'] = date_i18n( 'j \d\e F, H:i', $available_timestamp );
                 } else {
-                    $next_wave['available_date'] = date_i18n( 'j \d\e F Y, H:i', $available_date );
+                    $next_wave['available_date'] = date_i18n( 'j \d\e F Y, H:i', $available_timestamp );
                 }
-                $next_wave['available_timestamp'] = $available_date;
-                $next_wave['is_locked']      = true;
+                $next_wave['available_timestamp'] = $available_timestamp;
+                $next_wave['is_locked'] = true;
             }
         }
     }
@@ -239,7 +226,9 @@ $withdrawal_type = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash( $_G
                 <?php if ( $next_wave ) : ?>
                     <div class="next-action">
                         <h4 class="next-action-title">📝 Tu próxima toma</h4>
-                        <div class="next-action-card <?php echo ! empty( $next_wave['is_locked'] ) ? 'wave-locked' : ''; ?>">
+                        <div class="next-action-card next-wave <?php echo ! empty( $next_wave['is_locked'] ) ? 'wave-locked' : ''; ?>"
+                             data-wave-id="<?php echo esc_attr( $next_wave['id'] ); ?>"
+                             data-wave-status="<?php echo esc_attr( isset( $wave_status[ $next_wave['id'] ] ) ? $wave_status[ $next_wave['id'] ] : 'pending' ); ?>">
                             <div class="wave-info">
                                 <span class="wave-badge">T<?php echo esc_html( $next_wave['wave_index'] ); ?></span>
                                 <strong class="wave-name"><?php echo esc_html( $next_wave['name'] ); ?></strong>
@@ -278,7 +267,9 @@ $withdrawal_type = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash( $_G
                                             ?>
                                         </p>
                                         <?php if ( ! empty( $countdown_text ) ) : ?>
-                                            <p class="countdown-text" style="margin: 0; font-size: 13px; color: #0284c7;">
+                                            <p class="countdown-text eipsi-countdown" 
+                                               style="margin: 0; font-size: 13px; color: #0284c7;"
+                                               data-target-timestamp="<?php echo esc_attr( $next_wave['available_timestamp'] ); ?>">
                                                 ⏳ <?php esc_html_e( 'Quedan', 'eipsi-forms' ); ?> <span class="countdown-value"><?php echo esc_html( $countdown_text ); ?></span>
                                             </p>
                                         <?php endif; ?>
@@ -591,7 +582,8 @@ $withdrawal_type = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash( $_G
                         $time_display         = eipsi_format_time_limit( $effective_time_limit );
                     ?>
                         <div class="eipsi-wave-card <?php echo esc_attr( $wave_status_class ); ?>"
-                             data-wave-id="<?php echo esc_attr( $wave['id'] ); ?>">
+                             data-wave-id="<?php echo esc_attr( $wave['id'] ); ?>"
+                             data-wave-status="<?php echo esc_attr( $wave['status'] ); ?>">
 
                             <div class="wave-header">
                                 <span class="wave-index">T<?php echo esc_html( $wave['wave_index'] ); ?></span>

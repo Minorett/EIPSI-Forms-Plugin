@@ -175,10 +175,21 @@ $has_issues = !empty($diagnostics['issues']);
             <button type="button" id="eipsi-reschedule-all-crons" class="button button-secondary">
                 ⏰ Reprogramar Todos los Crons
             </button>
-            <a href="<?php echo esc_url(admin_url('tools.php?page=crontrol_admin_manage_page')); ?>" class="button button-secondary" target="_blank">
-                🔍 Ver WP Crontrol (si está instalado)
-            </a>
+            <div class="eipsi-actions">
+                <button id="eipsi-frontend-backend-sync" class="button button-secondary">
+                    🔄 Test Frontend ↔ Backend Sync
+                </button>
+                <a href="<?php echo esc_url(admin_url('admin.php?page=eipsi-configuration&tab=cron_health')); ?>" class="button button-secondary" target="_blank">
+                    🔍 Ver WP Crontrol (si está instalado)
+                </a>
+            </div>
         </div>
+    </div>
+
+    <!-- Frontend-Backend Sync Results -->
+    <div id="eipsi-sync-results" style="display:none; margin-top: 20px;">
+        <h3>🔄 Resultados del Test de Sincronización</h3>
+        <div id="eipsi-sync-content"></div>
     </div>
 
 </div>
@@ -220,6 +231,71 @@ jQuery(document).ready(function($) {
             },
             complete: function() {
                 $btn.prop('disabled', false).text('⏰ Reprogramar Todos los Crons');
+            }
+        });
+    });
+    
+    // Frontend-Backend Sync Test
+    $('#eipsi-frontend-backend-sync').on('click', function() {
+        const $btn = $(this);
+        $btn.prop('disabled', true).text('⏳ Ejecutando tests...');
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'eipsi_frontend_backend_sync_diagnostic',
+                nonce: '<?php echo wp_create_nonce('eipsi_admin_nonce'); ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    const data = response.data;
+                    let html = '<div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+                    
+                    // Summary
+                    html += '<div style="margin-bottom: 20px; padding: 16px; background: #f0f0f1; border-radius: 4px;">';
+                    html += '<h4 style="margin: 0 0 12px 0;">📊 Resumen</h4>';
+                    html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;">';
+                    html += `<div><strong>Total Tests:</strong> ${data.summary.total_tests}</div>`;
+                    html += `<div style="color: #46b450;"><strong>✅ Passed:</strong> ${data.summary.passed}</div>`;
+                    html += `<div style="color: #dc3232;"><strong>❌ Failed:</strong> ${data.summary.failed}</div>`;
+                    html += `<div style="color: #ffb900;"><strong>⚠️ Warnings:</strong> ${data.summary.warnings}</div>`;
+                    html += '</div></div>';
+                    
+                    // Tests
+                    data.tests.forEach(function(test) {
+                        let statusColor = test.status === 'pass' ? '#46b450' : (test.status === 'fail' ? '#dc3232' : '#ffb900');
+                        let statusIcon = test.status === 'pass' ? '✅' : (test.status === 'fail' ? '❌' : '⚠️');
+                        
+                        html += '<div style="margin-bottom: 16px; padding: 16px; border-left: 4px solid ' + statusColor + '; background: #f9f9f9;">';
+                        html += `<h4 style="margin: 0 0 8px 0;">${statusIcon} ${test.name}</h4>`;
+                        html += `<p style="margin: 0 0 12px 0; color: #666;">${test.description}</p>`;
+                        html += '<div style="font-family: monospace; font-size: 13px;">';
+                        test.details.forEach(function(detail) {
+                            html += `<div style="margin: 4px 0;">${detail}</div>`;
+                        });
+                        html += '</div></div>';
+                    });
+                    
+                    html += `<p style="margin-top: 20px; color: #666; font-size: 12px;">Timestamp: ${data.timestamp}</p>`;
+                    html += '</div>';
+                    
+                    $('#eipsi-sync-content').html(html);
+                    $('#eipsi-sync-results').slideDown();
+                    
+                    // Scroll to results
+                    $('html, body').animate({
+                        scrollTop: $('#eipsi-sync-results').offset().top - 100
+                    }, 500);
+                } else {
+                    alert('✗ Error: ' + (response.data || 'Unknown error'));
+                }
+            },
+            error: function() {
+                alert('✗ Error de conexión al ejecutar el test.');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).text('🔄 Test Frontend ↔ Backend Sync');
             }
         });
     });

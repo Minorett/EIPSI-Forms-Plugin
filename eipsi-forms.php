@@ -165,6 +165,8 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-reminders-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-wave-skipping.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-weekly-reminders.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-diagnostic.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/diagnostic-frontend-backend-sync.php';
+require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-wave-state-checker.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/delete-study-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/monitoring.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/study-close-handler.php';
@@ -776,6 +778,24 @@ function eipsi_enqueue_participant_ux_assets() {
         EIPSI_FORMS_VERSION,
         true
     );
+
+    // Auto-Refresh Script (for longitudinal studies and dashboards)
+    if (has_shortcode($post->post_content, 'eipsi_longitudinal_study') || 
+        has_shortcode($post->post_content, 'eipsi_participant_dashboard')) {
+        wp_enqueue_script(
+            'eipsi-auto-refresh-js',
+            EIPSI_FORMS_PLUGIN_URL . 'assets/js/participant-dashboard-auto-refresh.js',
+            array('jquery'),
+            EIPSI_FORMS_VERSION,
+            true
+        );
+        
+        // Localize auto-refresh script
+        wp_localize_script('eipsi-auto-refresh-js', 'eipsiAutoRefresh', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('eipsi_auto_refresh'),
+        ));
+    }
 
     // Localize script con strings traducibles
     wp_localize_script('eipsi-participant-ux-js', 'eipsiParticipantUX', array(
