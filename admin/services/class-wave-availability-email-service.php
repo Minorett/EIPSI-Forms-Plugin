@@ -189,34 +189,79 @@ class EIPSI_Wave_Availability_Email_Service {
     /**
      * Verificar si Nudge 0 ya fue enviado
      * Usa defensa en profundidad: múltiples métodos de verificación
+     * 
+     * v2.6.1 - Fix crítico: Detecta tipos nuevos (wave_availability_T*), legacy y registros vacíos
      */
     private static function was_nudge_zero_already_sent($participant_id, $wave_id) {
         global $wpdb;
         
-        // MÉTODO 1: Buscar en email_log emails tipo 'reminder' con wave_id en metadata
-        // O buscar en la tabla de nudges enviados
-        // v2.5.3 - Fix: buscar tanto 'reminder' (legacy) como 'wave_availability' (nuevo tipo)
+        // MÉTODO 1: Buscar en email_log con query mejorada que cubre:
+        // - Tipos nuevos: wave_availability_T1, wave_availability_T2, etc. (v2.6.1+)
+        // - Tipos legacy: 'reminder', 'wave_availability', 'nudge_0' (pre v2.6.1)
+        // - Registros históricos con email_type vacío (migración ENUM→VARCHAR)
+        
+        $wave_id_pattern = '%"wave_id":' . intval($wave_id) . '%';
+        
         $logs = $wpdb->get_results($wpdb->prepare(
             "SELECT id, status, metadata, email_type
              FROM {$wpdb->prefix}survey_email_log 
              WHERE participant_id = %d 
-             AND email_type IN ('reminder', 'wave_availability')
              AND status IN ('sent', 'pending')
+             AND (
+                 email_type LIKE 'wave_availability_%%'
+                 OR email_type IN ('wave_availability', 'reminder', 'nudge_0')
+                 OR (
+                     email_type = ''
+                     AND metadata LIKE %s
+                     AND metadata LIKE '%%\"nudge_stage\":0%%'
+                 )
+             )
              ORDER BY sent_at DESC 
-             LIMIT 5",
-            $participant_id
+             LIMIT 10",
+            $participant_id,
+            $wave_id_pattern
         ));
 
         foreach ($logs as $log) {
             $metadata = !empty($log->metadata) ? json_decode($log->metadata, true) : array();
-            if (isset($metadata['wave_id']) && $metadata['wave_id'] == $wave_id) {
-                if (isset($metadata['nudge_stage']) && $metadata['nudge_stage'] === 0) {
-                    // Log solo en debug - no es un error, es prevención de duplicado
-                    if (defined('WP_DEBUG') && WP_DEBUG) {
-                        error_log("[EIPSI WaveEmail] Nudge 0 ya enviado (log_id={$log->id})");
+            
+            // Manejar metadata malformada
+            if (!is_array($metadata)) {
+                $metadata = array();
+            }
+            
+            // Verificar que el registro corresponde al wave_id correcto
+            if (!empty($metadata['wave_id'])) {
+                if ((int) $metadata['wave_id'] === (int) $wave_id) {
+                    // Verificar que es nudge_stage 0
+                    if (isset($metadata['nudge_stage']) && (int) $metadata['nudge_stage'] === 0) {
+                        // Logging para auditoría
+                        if (empty($log->email_type)) {
+                            error_log(sprintf(
+                                '[EIPSI WaveEmail] Deduplicación por fallback metadata: participant=%d wave_id=%d log_id=%d',
+                                $participant_id,
+                                $wave_id,
+                                $log->id
+                            ));
+                        } else {
+                            if (defined('WP_DEBUG') && WP_DEBUG) {
+                                error_log("[EIPSI WaveEmail] Nudge 0 ya enviado (log_id={$log->id}, type={$log->email_type})");
+                            }
+                        }
+                        return true;
                     }
-                    return true;
                 }
+                // Es de otro wave, ignorar y continuar
+                continue;
+            }
+            
+            // Si no tiene wave_id en metadata (registros muy antiguos),
+            // usar el email_type como única señal
+            if (!empty($log->email_type) && $log->email_type !== '') {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("[EIPSI WaveEmail] Nudge 0 detectado por email_type legacy (log_id={$log->id})");
+                }
+                return true;
             }
         }
 

@@ -557,8 +557,6 @@ class EIPSI_Database_Schema_Manager {
 
                     'token_hash' => 'VARCHAR(255) NOT NULL',
 
-                    'token_plain' => 'VARCHAR(36)',
-
                     'expires_at' => 'DATETIME NOT NULL',
 
                     'used_at' => 'DATETIME NULL',
@@ -693,8 +691,6 @@ class EIPSI_Database_Schema_Manager {
                     'email' => 'VARCHAR(255) NOT NULL',
 
                     'token_hash' => 'VARCHAR(64) NOT NULL',
-
-                    'token_plain' => 'VARCHAR(64) NOT NULL',
 
                     'expires_at' => 'DATETIME NOT NULL',
 
@@ -1557,134 +1553,6 @@ class EIPSI_Database_Schema_Manager {
      * @since 2.5.0
 
      */
-
-    public static function migrate_fase4_wave_columns() {
-
-        global $wpdb;
-
-        $table_name = $wpdb->prefix . 'survey_waves';
-
-        $charset_collate = $wpdb->get_charset_collate();
-
-        // Check if table exists
-
-        if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") !== $table_name) {
-
-            return;
-
-        }
-
-        // Check and add offset_minutes
-
-        $column_exists = $wpdb->get_results(
-
-            "SHOW COLUMNS FROM `{$table_name}` LIKE 'offset_minutes'"
-
-        );
-
-        if (empty($column_exists)) {
-
-            $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN offset_minutes INT(11) DEFAULT 0");
-
-            error_log("[EIPSI Migration] Added offset_minutes to {$table_name}");
-
-        }
-
-        // Check and add window_minutes
-
-        $column_exists = $wpdb->get_results(
-
-            "SHOW COLUMNS FROM `{$table_name}` LIKE 'window_minutes'"
-
-        );
-
-        if (empty($column_exists)) {
-
-            $wpdb->query("ALTER TABLE `{$table_name}` ADD COLUMN window_minutes INT(11) NULL");
-
-            error_log("[EIPSI Migration] Added window_minutes to {$table_name}");
-
-        }
-
-        // Check and add study_end_offset_minutes (in survey_studies table)
-
-        $studies_table = $wpdb->prefix . 'survey_studies';
-
-        $column_exists = $wpdb->get_results(
-
-            "SHOW COLUMNS FROM `{$studies_table}` LIKE 'study_end_offset_minutes'"
-
-        );
-
-        if (empty($column_exists)) {
-
-            $wpdb->query("ALTER TABLE `{$studies_table}` ADD COLUMN study_end_offset_minutes INT(11) NULL");
-
-            error_log("[EIPSI Migration] Added study_end_offset_minutes to {$studies_table}");
-
-        }
-
-    }
-
-
-
-    /**
-
-     * Migration: Change email_type from ENUM to VARCHAR to support wave-specific types
-
-     * 
-
-     * @since 2.6.1
-
-     */
-
-    public static function migrate_email_type_to_varchar() {
-
-        global $wpdb;
-
-        $table_name = $wpdb->prefix . 'survey_email_log';
-
-
-
-        // Check if table exists
-
-        if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") !== $table_name) {
-
-            return;
-
-        }
-
-
-
-        // Check current column type
-
-        $column_info = $wpdb->get_results(
-
-            "SHOW COLUMNS FROM `{$table_name}` LIKE 'email_type'"
-
-        );
-
-
-
-        if (!empty($column_info)) {
-
-            $current_type = $column_info[0]->Type;
-
-            
-
-            // Only migrate if it's still ENUM
-
-            if (strpos($current_type, 'enum') !== false) {
-
-                $wpdb->query("ALTER TABLE `{$table_name}` MODIFY COLUMN email_type VARCHAR(100) DEFAULT 'custom'");
-
-                error_log("[EIPSI Migration v2.6.1] Changed email_type from ENUM to VARCHAR(100) in {$table_name}");
-
-            }
-
-        }
-
-    }
 
 
 

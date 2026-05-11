@@ -152,9 +152,6 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/partial-responses.php';
 
-// Database schema migration (v2.0.1) - Fix corrupt indexes
-require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-migration.php';
-
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/configuration.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-handlers-wizard.php';
@@ -192,9 +189,6 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/randomization-frontend.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-page.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/randomization-api.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/waves-manager-api.php';
-
-// RCT Schema Migration (v1.3.6 - CRITICAL FIX)
-require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/migrate-randomization-schema.php';
 
 // Longitudinal Services (v1.4.0 - Fase 0: Arquitectura)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/services/class-participant-service.php';
@@ -242,12 +236,6 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-participant-handlers.php';
 
 // Database Schema Manager (repair_local_schema uses dbDelta for column changes)
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/database-schema-manager.php';
-
-// Fase 4 Migration: Add missing columns to survey_waves (runs on admin_init)
-add_action('admin_init', array('EIPSI_Database_Schema_Manager', 'migrate_fase4_wave_columns'));
-
-// v2.6.1 Migration: Change email_type from ENUM to VARCHAR (runs on admin_init)
-add_action('admin_init', array('EIPSI_Database_Schema_Manager', 'migrate_email_type_to_varchar'));
 
 // ============================================================================
 
