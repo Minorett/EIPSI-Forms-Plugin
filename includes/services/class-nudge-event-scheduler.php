@@ -805,22 +805,39 @@ class EIPSI_Nudge_Event_Scheduler {
     public static function schedule_follow_up_nudges_only($assignment) {
         global $wpdb;
         
+        error_log('[EIPSI EventScheduler] ========================================');
+        error_log('[EIPSI EventScheduler] schedule_follow_up_nudges_only() CALLED');
+        error_log('[EIPSI EventScheduler] ========================================');
+        
         if (empty($assignment->id)) {
-            error_log('[EIPSI EventScheduler] schedule_follow_up_nudges_only: Missing assignment ID');
+            error_log('[EIPSI EventScheduler] ❌ ERROR: Missing assignment ID');
             return 0;
         }
         
         $assignment_id = $assignment->id;
         
+        error_log(sprintf(
+            '[EIPSI EventScheduler] Assignment %d: reminder_count=%d, status=%s, wave_id=%d, available_at=%s',
+            $assignment_id,
+            $assignment->reminder_count,
+            $assignment->status,
+            $assignment->wave_id,
+            $assignment->available_at
+        ));
+        
         // Verify reminder_count is 1 (Nudge 0 was sent)
         if ($assignment->reminder_count != 1) {
             error_log(sprintf(
-                '[EIPSI EventScheduler] schedule_follow_up_nudges_only: Assignment %d has reminder_count=%d (expected 1)',
+                '[EIPSI EventScheduler] ❌ ABORT: Assignment %d has reminder_count=%d (expected 1)',
                 $assignment_id,
                 $assignment->reminder_count
             ));
             return 0;
         }
+        
+        error_log(sprintf(
+            '[EIPSI EventScheduler] ✓ Reminder count validation passed (reminder_count=1)'
+        ));
         
         // Check if follow-up reminders are enabled
         if (empty($assignment->follow_up_reminders_enabled)) {

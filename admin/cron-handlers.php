@@ -1271,15 +1271,18 @@ function eipsi_run_process_wave_availability() {
         if ($result['success'] && $result['sent']) {
             $notified_count++;
 
-            // CRITICAL: Schedule follow-up nudges for this wave
-            if (!class_exists('EIPSI_Nudge_Event_Scheduler')) {
-                require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-event-scheduler.php';
-            }
-            
+            // ========================================
+            // TRIGGER 2: Schedule follow-up nudges from Wave Availability Processor
+            // ========================================
             error_log(sprintf(
-                '[EIPSI WaveAvail] Scheduling follow-up nudges for assignment %d after Nudge 0 sent',
+                '[EIPSI NUDGE0→FOLLOWUP] TRIGGER 2: Wave Availability Processor attempting to schedule nudges for assignment %d',
                 $assignment->id
             ));
+            
+            if (!class_exists('EIPSI_Nudge_Event_Scheduler')) {
+                error_log('[EIPSI NUDGE0→FOLLOWUP] Loading EIPSI_Nudge_Event_Scheduler class');
+                require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-event-scheduler.php';
+            }
             
             // Get fresh assignment data with reminder_count updated
             $fresh_assignment = $wpdb->get_row($wpdb->prepare(
@@ -1287,15 +1290,29 @@ function eipsi_run_process_wave_availability() {
                 $assignment->id
             ));
             
+            error_log(sprintf(
+                '[EIPSI NUDGE0→FOLLOWUP] Fresh assignment state: id=%d, reminder_count=%d, status=%s, last_nudge_sent_at=%s',
+                $fresh_assignment ? $fresh_assignment->id : 'NULL',
+                $fresh_assignment ? $fresh_assignment->reminder_count : 'NULL',
+                $fresh_assignment ? $fresh_assignment->status : 'NULL',
+                $fresh_assignment ? $fresh_assignment->last_nudge_sent_at : 'NULL'
+            ));
+            
             if ($fresh_assignment && $fresh_assignment->reminder_count == 1) {
-                EIPSI_Nudge_Event_Scheduler::schedule_follow_up_nudges_only($fresh_assignment);
                 error_log(sprintf(
-                    '[EIPSI WaveAvail] Follow-up nudges scheduled for assignment %d',
+                    '[EIPSI NUDGE0→FOLLOWUP] Calling schedule_follow_up_nudges_only for assignment %d',
+                    $assignment->id
+                ));
+                
+                EIPSI_Nudge_Event_Scheduler::schedule_follow_up_nudges_only($fresh_assignment);
+                
+                error_log(sprintf(
+                    '[EIPSI NUDGE0→FOLLOWUP] ✅ SUCCESS: Follow-up nudges scheduled for assignment %d via TRIGGER 2',
                     $assignment->id
                 ));
             } else {
                 error_log(sprintf(
-                    '[EIPSI WaveAvail] WARNING: Could not schedule nudges for assignment %d (reminder_count=%d)',
+                    '[EIPSI NUDGE0→FOLLOWUP] ⚠️ WARNING: Could not schedule nudges for assignment %d (reminder_count=%d, expected 1)',
                     $assignment->id,
                     $fresh_assignment ? $fresh_assignment->reminder_count : 'NULL'
                 ));

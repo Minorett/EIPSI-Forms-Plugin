@@ -419,6 +419,16 @@ class EIPSI_Wave_Availability_Email_Service {
                     $updated->reminder_count,
                     $updated->last_nudge_sent_at
                 ));
+                
+                // ========================================
+                // TRIGGER 1: Programar nudges 1-4 inmediatamente después de Nudge 0
+                // ========================================
+                error_log(sprintf(
+                    "[EIPSI NUDGE0→FOLLOWUP] TRIGGER 1: Attempting to schedule follow-up nudges for assignment %d",
+                    $assignment->id
+                ));
+                
+                self::schedule_followup_nudges_after_nudge_zero($assignment->id);
             }
         } else {
             error_log(sprintf(
@@ -643,5 +653,89 @@ class EIPSI_Wave_Availability_Email_Service {
             $study_id,
             1
         );
+    }
+
+    /**
+     * SISTEMA DE FALLBACK: Programar nudges 1-4 después de Nudge 0
+     * Este método se llama desde múltiples puntos para garantizar que SIEMPRE se programen
+     */
+    private static function schedule_followup_nudges_after_nudge_zero($assignment_id) {
+        global $wpdb;
+        
+        error_log(sprintf(
+            "[EIPSI NUDGE0→FOLLOWUP] START: Scheduling follow-up nudges for assignment %d",
+            $assignment_id
+        ));
+        
+        // Verificar que la clase existe
+        if (!class_exists('EIPSI_Nudge_Event_Scheduler')) {
+            error_log("[EIPSI NUDGE0→FOLLOWUP] Loading EIPSI_Nudge_Event_Scheduler class");
+            require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-event-scheduler.php';
+        }
+        
+        // Obtener assignment fresco de la DB
+        $assignments_table = $wpdb->prefix . 'survey_assignments';
+        $fresh_assignment = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$assignments_table} WHERE id = %d",
+            $assignment_id
+        ));
+        
+        if (!$fresh_assignment) {
+            error_log(sprintf(
+                "[EIPSI NUDGE0→FOLLOWUP] ❌ ERROR: Assignment %d not found in database",
+                $assignment_id
+            ));
+            return false;
+        }
+        
+        error_log(sprintf(
+            "[EIPSI NUDGE0→FOLLOWUP] Assignment state: id=%d, reminder_count=%d, status=%s, last_nudge_sent_at=%s",
+            $fresh_assignment->id,
+            $fresh_assignment->reminder_count,
+            $fresh_assignment->status,
+            $fresh_assignment->last_nudge_sent_at
+        ));
+        
+        // Verificar que reminder_count sea 1 (Nudge 0 enviado)
+        if ($fresh_assignment->reminder_count != 1) {
+            error_log(sprintf(
+                "[EIPSI NUDGE0→FOLLOWUP] ⚠️ WARNING: reminder_count=%d (expected 1). Skipping scheduling.",
+                $fresh_assignment->reminder_count
+            ));
+            return false;
+        }
+        
+        // Verificar que no esté submitted o expired
+        if (in_array($fresh_assignment->status, ['submitted', 'expired', 'skipped'])) {
+            error_log(sprintf(
+                "[EIPSI NUDGE0→FOLLOWUP] ⚠️ WARNING: Assignment status=%s. Skipping scheduling.",
+                $fresh_assignment->status
+            ));
+            return false;
+        }
+        
+        // Programar nudges 1-4
+        try {
+            error_log(sprintf(
+                "[EIPSI NUDGE0→FOLLOWUP] Calling EIPSI_Nudge_Event_Scheduler::schedule_follow_up_nudges_only(%d)",
+                $assignment_id
+            ));
+            
+            EIPSI_Nudge_Event_Scheduler::schedule_follow_up_nudges_only($fresh_assignment);
+            
+            error_log(sprintf(
+                "[EIPSI NUDGE0→FOLLOWUP] ✅ SUCCESS: Follow-up nudges scheduled for assignment %d",
+                $assignment_id
+            ));
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log(sprintf(
+                "[EIPSI NUDGE0→FOLLOWUP] ❌ EXCEPTION: %s",
+                $e->getMessage()
+            ));
+            return false;
+        }
     }
 }

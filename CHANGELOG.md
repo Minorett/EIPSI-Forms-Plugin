@@ -6,6 +6,50 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.6.4] – 2026-05-11 (Triple Fallback System for Follow-up Nudges)
+
+### 🔧 ENHANCEMENT: Triple Fallback System + Exhaustive Logging
+
+**Objetivo:**
+- Garantizar que los nudges 1-4 SIEMPRE se programen después de enviar Nudge 0
+- Agregar logs exhaustivos para identificar exactamente por qué flujo se envía cada nudge
+
+**Sistema de Fallback Implementado:**
+
+**TRIGGER 1: Directo desde `mark_nudge_zero_sent()`**
+- Se ejecuta inmediatamente después de actualizar `reminder_count=1`
+- Llama a `schedule_followup_nudges_after_nudge_zero()` 
+- Es el trigger más confiable porque está en el punto exacto donde se confirma el envío
+
+**TRIGGER 2: Wave Availability Processor (cron)**
+- Se ejecuta cuando el cron detecta que una wave está disponible
+- Verifica `reminder_count=1` y programa los nudges
+- Funciona como backup si TRIGGER 1 falla
+
+**TRIGGER 3: Job Queue (submission-triggered)**
+- Se ejecuta cuando se envía Nudge 0 desde el Job Queue
+- Ya existía, ahora con logs mejorados
+
+**Logs Agregados:**
+```
+[EIPSI NUDGE0→FOLLOWUP] TRIGGER 1: Attempting to schedule follow-up nudges for assignment 360
+[EIPSI NUDGE0→FOLLOWUP] START: Scheduling follow-up nudges for assignment 360
+[EIPSI NUDGE0→FOLLOWUP] Assignment state: id=360, reminder_count=1, status=pending, last_nudge_sent_at=2026-05-11 23:20:06
+[EIPSI NUDGE0→FOLLOWUP] Calling EIPSI_Nudge_Event_Scheduler::schedule_follow_up_nudges_only(360)
+[EIPSI EventScheduler] ========================================
+[EIPSI EventScheduler] schedule_follow_up_nudges_only() CALLED
+[EIPSI EventScheduler] Assignment 360: reminder_count=1, status=pending, wave_id=182, available_at=2026-05-11 23:19:12
+[EIPSI EventScheduler] ✓ Reminder count validation passed (reminder_count=1)
+[EIPSI NUDGE0→FOLLOWUP] ✅ SUCCESS: Follow-up nudges scheduled for assignment 360
+```
+
+**Archivos modificados:**
+- `admin/services/class-wave-availability-email-service.php` - Agregado TRIGGER 1 y método `schedule_followup_nudges_after_nudge_zero()`
+- `admin/cron-handlers.php` - Mejorados logs de TRIGGER 2
+- `includes/services/class-nudge-event-scheduler.php` - Logs exhaustivos en `schedule_follow_up_nudges_only()`
+
+---
+
 ## [2.6.3] – 2026-05-11 (CRITICAL: Nudge 0 Assignment Update Fix)
 
 ### 🚨 CRITICAL FIX: Nudge 0 Assignment Update
