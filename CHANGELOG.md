@@ -6,6 +6,52 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.6.3] – 2026-05-11 (CRITICAL: Nudge 0 Assignment Update Fix)
+
+### 🚨 CRITICAL FIX: Nudge 0 Assignment Update
+
+**Problema crítico identificado:**
+- Email `wave_availability_T*` se enviaba correctamente ✅
+- **PERO** el assignment NUNCA se actualizaba en la base de datos ❌
+- `reminder_count` quedaba en 0 (debería ser 1)
+- `last_nudge_sent_at` quedaba en NULL (debería tener timestamp)
+- **Consecuencia:** Nudges 1-4 nunca se programaban porque el sistema creía que Nudge 0 no se había enviado
+
+**Causa raíz:**
+- `mark_nudge_zero_sent()` solo guardaba un transient temporal
+- NO ejecutaba UPDATE en `wp_survey_assignments`
+- Los nudges de seguimiento dependen de `reminder_count >= 1` para programarse
+
+**Solución implementada:**
+- ✅ Agregado UPDATE crítico en `mark_nudge_zero_sent()`:
+  ```php
+  UPDATE wp_survey_assignments 
+  SET reminder_count = 1, 
+      last_nudge_sent_at = NOW(),
+      updated_at = NOW()
+  WHERE participant_id = X AND wave_id = Y
+  ```
+- ✅ Logging detallado BEFORE/AFTER del UPDATE para diagnóstico
+- ✅ Verificación post-UPDATE para confirmar que los cambios se aplicaron
+- ✅ Manejo de errores con logging de `$wpdb->last_error`
+
+**Logs agregados:**
+```
+[EIPSI NUDGE 0 UPDATE] BEFORE: assignment_id=354, reminder_count=0, last_nudge_sent_at=NULL, status=pending
+[EIPSI NUDGE 0 UPDATE] ✅ SUCCESS: assignment_id=354 updated. reminder_count=1, last_nudge_sent_at=2026-05-11 17:52:05, rows_affected=1
+[EIPSI NUDGE 0 UPDATE] AFTER: assignment_id=354, reminder_count=1, last_nudge_sent_at=2026-05-11 17:52:05
+```
+
+**Impacto:**
+- Afecta a **TODAS las waves T2, T3 y posteriores**
+- Sin este fix, solo Nudge 0 se envía, nunca los nudges 1-4
+- T1 no se ve afectada porque usa sistema diferente
+
+**Archivos modificados:**
+- `admin/services/class-wave-availability-email-service.php` (líneas 347-434)
+
+---
+
 ## [2.6.2] – 2026-05-11 (Nudge System Debugging & Email Loop Fix)
 
 ### 🐛 Email Deduplication Loop Fix

@@ -345,6 +345,8 @@ class EIPSI_Wave_Availability_Email_Service {
      * Marcar Nudge 0 como enviado
      */
     private static function mark_nudge_zero_sent($participant_id, $wave_id, $log_id) {
+        global $wpdb;
+        
         $transient_key = "eipsi_wave_email_retries_{$participant_id}_{$wave_id}";
         
         $status = array(
@@ -358,6 +360,73 @@ class EIPSI_Wave_Availability_Email_Service {
         
         // Guardar por 7 días para evitar duplicados
         set_transient($transient_key, $status, 7 * DAY_IN_SECONDS);
+        
+        // CRITICAL FIX: Actualizar assignment en DB con reminder_count=1 y last_nudge_sent_at
+        $assignment = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, reminder_count, last_nudge_sent_at, status FROM {$wpdb->prefix}survey_assignments 
+             WHERE participant_id = %d AND wave_id = %d",
+            $participant_id,
+            $wave_id
+        ));
+        
+        if ($assignment) {
+            error_log(sprintf(
+                "[EIPSI NUDGE 0 UPDATE] BEFORE: assignment_id=%d, reminder_count=%d, last_nudge_sent_at=%s, status=%s",
+                $assignment->id,
+                $assignment->reminder_count,
+                $assignment->last_nudge_sent_at ?: 'NULL',
+                $assignment->status
+            ));
+            
+            $now = current_time('mysql');
+            $rows_affected = $wpdb->update(
+                $wpdb->prefix . 'survey_assignments',
+                array(
+                    'reminder_count' => 1,
+                    'last_nudge_sent_at' => $now,
+                    'updated_at' => $now
+                ),
+                array(
+                    'id' => $assignment->id
+                ),
+                array('%d', '%s', '%s'),
+                array('%d')
+            );
+            
+            if ($rows_affected === false) {
+                error_log(sprintf(
+                    "[EIPSI NUDGE 0 UPDATE] ❌ ERROR: Failed to update assignment_id=%d. DB Error: %s",
+                    $assignment->id,
+                    $wpdb->last_error
+                ));
+            } else {
+                error_log(sprintf(
+                    "[EIPSI NUDGE 0 UPDATE] ✅ SUCCESS: assignment_id=%d updated. reminder_count=1, last_nudge_sent_at=%s, rows_affected=%d",
+                    $assignment->id,
+                    $now,
+                    $rows_affected
+                ));
+                
+                // Verificar que el UPDATE funcionó
+                $updated = $wpdb->get_row($wpdb->prepare(
+                    "SELECT reminder_count, last_nudge_sent_at FROM {$wpdb->prefix}survey_assignments WHERE id = %d",
+                    $assignment->id
+                ));
+                
+                error_log(sprintf(
+                    "[EIPSI NUDGE 0 UPDATE] AFTER: assignment_id=%d, reminder_count=%d, last_nudge_sent_at=%s",
+                    $assignment->id,
+                    $updated->reminder_count,
+                    $updated->last_nudge_sent_at
+                ));
+            }
+        } else {
+            error_log(sprintf(
+                "[EIPSI NUDGE 0 UPDATE] ❌ ERROR: Assignment not found for participant_id=%d, wave_id=%d",
+                $participant_id,
+                $wave_id
+            ));
+        }
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log("[EIPSI WaveEmail] Nudge 0 marcado como enviado. Log ID: {$log_id}");
