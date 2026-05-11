@@ -212,6 +212,9 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-job-queue.p
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-event-scheduler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-cache.php';
 
+// v2.6.2 - Assignment State Logger
+require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-assignment-state-logger.php';
+
 // Fase 4 - Participant Dashboard Data Service
 require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-participant-dashboard-data.php';
 

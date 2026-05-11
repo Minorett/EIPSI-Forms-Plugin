@@ -171,6 +171,13 @@ class EIPSI_Assignment_Service {
 
         $wave_id = absint($wave_id);
         $participant_id = absint($participant_id);
+        
+        // Obtener estado anterior para logging
+        $old_status = $wpdb->get_var($wpdb->prepare(
+            "SELECT status FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d AND participant_id = %d",
+            $wave_id,
+            $participant_id
+        ));
 
         $data = array('status' => $status);
         $formats = array('%s');
@@ -208,6 +215,20 @@ class EIPSI_Assignment_Service {
 
         if ($updated === false) {
             return new WP_Error('db_error', 'Failed to update assignment: ' . $wpdb->last_error);
+        }
+        
+        // Log cambio de estado si hubo update
+        if ($updated > 0 && $old_status !== $status) {
+            // Obtener assignment_id y study_id para logging
+            $assignment = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, study_id FROM {$wpdb->prefix}survey_assignments WHERE wave_id = %d AND participant_id = %d",
+                $wave_id,
+                $participant_id
+            ));
+            
+            if ($assignment && class_exists('EIPSI_Assignment_State_Logger')) {
+                EIPSI_Assignment_State_Logger::log_assignment_change($assignment->id, $old_status, $status);
+            }
         }
 
         return true;

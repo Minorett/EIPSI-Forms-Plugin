@@ -113,6 +113,14 @@ class Wave_Service {
         
         $table = $wpdb->prefix . 'survey_assignments';
         
+        // Obtener estado anterior para logging
+        $old_status = $wpdb->get_var($wpdb->prepare(
+            "SELECT status FROM {$table} WHERE participant_id = %d AND study_id = %d AND wave_id = %d",
+            $participant_id,
+            $study_id,
+            $wave_id
+        ));
+        
         $result = $wpdb->update(
             $table,
             array(
@@ -166,6 +174,10 @@ class Wave_Service {
             ));
             
             if ($assignment) {
+                // Log cambio de estado
+                if (class_exists('EIPSI_Assignment_State_Logger')) {
+                    EIPSI_Assignment_State_Logger::log_assignment_change($assignment->id, $old_status, 'submitted');
+                }
                 // Cancelar eventos programados
                 if (class_exists('EIPSI_Nudge_Event_Scheduler')) {
                     EIPSI_Nudge_Event_Scheduler::cancel_scheduled_nudges($assignment->id);

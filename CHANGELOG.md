@@ -28,6 +28,46 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 - 0 emails duplicados en 1+ hora de monitoreo
 - Deduplicación funciona correctamente para T1, T2, T3
 
+### 🔍 Assignment State Logging System
+
+**Problema identificado:**
+- Difícil rastrear transiciones de estado de assignments (pending → available → submitted/expired)
+- Logs constantes generaban ruido innecesario
+- No había visibilidad clara del estado completo del participante
+
+**Solución implementada:**
+- ✅ Nuevo servicio `EIPSI_Assignment_State_Logger` que loguea **solo cuando hay cambios**
+- ✅ Formato consolidado que muestra estado de todas las waves del participante
+- ✅ Integrado en todos los puntos de cambio de estado:
+  - Submission (pending → submitted)
+  - Expiration (pending → expired)
+  - Skipping (pending → skipped)
+  - Status updates manuales
+
+**Formato de logs:**
+```
+[EIPSI WAVE STATUS] [T1: pending→submitted] Participant 159 | T1: submitted | T2: available | T3: pending
+[EIPSI WAVE STATUS] [T2: pending→expired] Participant 159 | T1: submitted | T2: expired | T3: available
+```
+
+**Ejemplos de flujo:**
+```
+Sin completar T1:
+[EIPSI WAVE STATUS] Participant X | T1: available | T2: pending | T3: pending
+
+Completó T1, pasaron los minutos:
+[EIPSI WAVE STATUS] [T1: pending→submitted] Participant X | T1: submitted | T2: available | T3: pending
+
+T2 expiró sin completar:
+[EIPSI WAVE STATUS] [T2: pending→expired] Participant X | T1: submitted | T2: expired | T3: available
+```
+
+**Beneficios:**
+- Logs limpios: solo se muestra cuando hay cambios
+- Vista completa del estado del participante en una línea
+- Fácil seguimiento de progreso en estudios longitudinales
+- Debugging simplificado de transiciones de estado
+
 ### 🔍 Nudge System Enhanced Logging
 
 **Problema identificado:**
@@ -57,14 +97,23 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 - Tracking preciso de transiciones de estado
 - Debugging más rápido de problemas de nudges
 
+### Added
+- **`includes/services/class-assignment-state-logger.php`**: Nuevo servicio para logging consolidado de estados
+
 ### Changed
 - **`admin/services/class-wave-availability-email-service.php`**: Actualizada query de deduplicación (líneas 193-266)
 - **`includes/services/class-nudge-job-queue.php`**: Agregado logging de transiciones de estado (líneas 455-493, 587-636)
 - **`includes/services/class-nudge-event-scheduler.php`**: Agregado logging de estado de assignments (líneas 315-322)
+- **`admin/services/class-assignment-service.php`**: Integrado Assignment State Logger en updates de estado
+- **`admin/services/class-wave-expiration-service.php`**: Integrado logging en expiración de assignments
+- **`includes/services/Wave_Service.php`**: Integrado logging en submissions
+- **`admin/cron-wave-skipping.php`**: Integrado logging en skipping de waves
+- **`eipsi-forms.php`**: Agregada carga de Assignment State Logger
 
 ### Fixed
 - Email deduplication loop causado por query incompleta
 - Falta de visibilidad en transiciones de estado de assignments
+- Logs constantes que generaban ruido innecesario
 
 ---
 

@@ -178,6 +178,11 @@ function eipsi_check_wave_skipping_for_participant($participant_id, $study_id) {
                     throw new Exception("Failed to update assignment {$a->id}: " . $wpdb->last_error);
                 }
                 
+                // Log cambio de estado
+                if ($updated > 0 && class_exists('EIPSI_Assignment_State_Logger')) {
+                    EIPSI_Assignment_State_Logger::log_assignment_change($a->id, $locked->status, 'skipped');
+                }
+                
                 // Cancel pending nudges for this assignment
                 if (class_exists('EIPSI_Nudge_Event_Scheduler')) {
                     EIPSI_Nudge_Event_Scheduler::cancel_nudges_for_assignment($a->id);

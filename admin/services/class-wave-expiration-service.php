@@ -97,6 +97,11 @@ class EIPSI_Wave_Expiration_Service {
                 }
 
                 $results['expired_count']++;
+                
+                // Log cambio de estado
+                if ($updated > 0 && class_exists('EIPSI_Assignment_State_Logger')) {
+                    EIPSI_Assignment_State_Logger::log_assignment_change($assignment->id, $assignment->status, 'expired');
+                }
 
                 // Cancel pending nudges for this assignment
                 $cancelled = self::cancel_pending_nudges($assignment->participant_id, $assignment->wave_id);
