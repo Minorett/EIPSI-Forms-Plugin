@@ -161,7 +161,8 @@ require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-handlers.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-reminders-handler.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-wave-skipping.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-weekly-reminders.php';
-require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-diagnostic.php';
+// Cron diagnostic tab removed - files kept for reference but not loaded
+// require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/cron-diagnostic.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/diagnostic-frontend-backend-sync.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/ajax-wave-state-checker.php';
 require_once EIPSI_FORMS_PLUGIN_DIR . 'admin/delete-study-handler.php';

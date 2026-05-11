@@ -1271,6 +1271,36 @@ function eipsi_run_process_wave_availability() {
         if ($result['success'] && $result['sent']) {
             $notified_count++;
 
+            // CRITICAL: Schedule follow-up nudges for this wave
+            if (!class_exists('EIPSI_Nudge_Event_Scheduler')) {
+                require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-event-scheduler.php';
+            }
+            
+            error_log(sprintf(
+                '[EIPSI WaveAvail] Scheduling follow-up nudges for assignment %d after Nudge 0 sent',
+                $assignment->id
+            ));
+            
+            // Get fresh assignment data with reminder_count updated
+            $fresh_assignment = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$assignments_table} WHERE id = %d",
+                $assignment->id
+            ));
+            
+            if ($fresh_assignment && $fresh_assignment->reminder_count == 1) {
+                EIPSI_Nudge_Event_Scheduler::schedule_follow_up_nudges_only($fresh_assignment);
+                error_log(sprintf(
+                    '[EIPSI WaveAvail] Follow-up nudges scheduled for assignment %d',
+                    $assignment->id
+                ));
+            } else {
+                error_log(sprintf(
+                    '[EIPSI WaveAvail] WARNING: Could not schedule nudges for assignment %d (reminder_count=%d)',
+                    $assignment->id,
+                    $fresh_assignment ? $fresh_assignment->reminder_count : 'NULL'
+                ));
+            }
+
             // Trigger hook
             do_action('eipsi_wave_became_available', array(
                 'assignment_id' => $assignment->id,

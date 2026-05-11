@@ -50,6 +50,31 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 **Archivos modificados:**
 - `admin/services/class-wave-availability-email-service.php` (líneas 347-434)
 
+### 🐛 FIX: Follow-up Nudges Not Scheduled from Wave Availability Processor
+
+**Problema identificado:**
+- Cuando T3 se hacía disponible vía el `Wave availability processor` (cron), solo se enviaba Nudge 0
+- Los nudges 1-4 NO se programaban porque ese flujo no llamaba al Event Scheduler
+- Solo afectaba a waves que se hacían disponibles automáticamente (no desde submission de wave anterior)
+
+**Solución implementada:**
+- ✅ Agregado scheduling de nudges 1-4 después de enviar Nudge 0 en `eipsi_run_process_wave_availability()`
+- ✅ Nuevo método `schedule_follow_up_nudges_only()` en Event Scheduler para programar solo nudges 1-4
+- ✅ Verificación de `reminder_count=1` antes de programar follow-ups
+- ✅ Logging detallado del proceso de scheduling
+
+**Logs agregados:**
+```
+[EIPSI WaveAvail] Scheduling follow-up nudges for assignment 357 after Nudge 0 sent
+[EIPSI EventScheduler] Scheduling follow-up nudges 1-4 for assignment 357 (available_at=2026-05-11 21:54:38)
+[EIPSI EventScheduler] Scheduled nudge 1 for assignment 357 at 2026-05-11 21:57:38 (delay: 3 minutes)
+[EIPSI WaveAvail] Follow-up nudges scheduled for assignment 357
+```
+
+**Archivos modificados:**
+- `admin/cron-handlers.php` (líneas 1271-1312) - Agregado scheduling después de Nudge 0
+- `includes/services/class-nudge-event-scheduler.php` (líneas 797-946) - Nuevo método `schedule_follow_up_nudges_only()`
+
 ---
 
 ## [2.6.2] – 2026-05-11 (Nudge System Debugging & Email Loop Fix)
