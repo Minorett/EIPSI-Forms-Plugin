@@ -6,6 +6,68 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.6.2] – 2026-05-11 (Nudge System Debugging & Email Loop Fix)
+
+### 🐛 Email Deduplication Loop Fix
+
+**Problema resuelto:**
+- Loop infinito de emails `wave_availability_T3` enviados cada minuto
+- Query de deduplicación no detectaba tipos nuevos (`wave_availability_T*`)
+- Registros con `email_type = ''` no se detectaban en deduplicación
+
+**Solución implementada:**
+- ✅ Query actualizada en `was_nudge_zero_already_sent()` para detectar:
+  - Tipos nuevos: `wave_availability_T1`, `T2`, `T3`, etc.
+  - Tipos legacy: `reminder`, `wave_availability`, `nudge_0`
+  - Registros vacíos con metadata válida
+- ✅ Logging mejorado para auditoría de deduplicación
+- ✅ Fallback para registros históricos con `email_type = ''`
+
+**Validación:**
+- Test en producción con estudio nuevo (ID: 63)
+- 0 emails duplicados en 1+ hora de monitoreo
+- Deduplicación funciona correctamente para T1, T2, T3
+
+### 🔍 Nudge System Enhanced Logging
+
+**Problema identificado:**
+- Nudges 1-4 no se enviaban después de Nudge 0
+- `reminder_count` no se incrementaba después de enviar emails
+- Difícil diagnosticar fallos en transiciones de estado
+
+**Mejoras implementadas:**
+- ✅ Logging detallado de transiciones de estado en `class-nudge-job-queue.php`:
+  - Log ANTES del update de `reminder_count`
+  - Log DESPUÉS del update con `rows_affected`
+  - Verificación automática del estado post-update
+- ✅ Logging de estado en `class-nudge-event-scheduler.php`:
+  - Estado del assignment antes de ejecutar nudge
+  - Comparación de `reminder_count` esperado vs actual
+- ✅ Logs con prefijo `[EIPSI STATE TRANSITION]` para fácil filtrado
+
+**Logs agregados:**
+```
+[EIPSI STATE TRANSITION] BEFORE UPDATE: assignment=X, reminder_count=Y, status=Z
+[EIPSI STATE TRANSITION] AFTER UPDATE: assignment=X, reminder_count=Y+1, rows_affected=N
+[EIPSI STATE VERIFICATION] assignment=X, reminder_count=Y+1, status=Z
+```
+
+**Beneficios:**
+- Identificación inmediata de fallos en updates de base de datos
+- Tracking preciso de transiciones de estado
+- Debugging más rápido de problemas de nudges
+
+### Changed
+- **`admin/services/class-wave-availability-email-service.php`**: Actualizada query de deduplicación (líneas 193-266)
+- **`includes/services/class-nudge-job-queue.php`**: Agregado logging de transiciones de estado (líneas 455-493, 587-636)
+- **`includes/services/class-nudge-event-scheduler.php`**: Agregado logging de estado de assignments (líneas 315-322)
+
+### Fixed
+- Email deduplication loop causado por query incompleta
+- Falta de visibilidad en transiciones de estado de assignments
+
+---
+
 ## [2.6.1] – 2026-05-10 (Email Type & Timezone Improvements)
 
 ### 📧 Email Type Improvements

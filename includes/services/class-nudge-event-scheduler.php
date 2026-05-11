@@ -312,6 +312,15 @@ class EIPSI_Nudge_Event_Scheduler {
             return;
         }
         
+        // Log estado actual del assignment
+        error_log(sprintf(
+            '[EIPSI EventScheduler] Assignment %d state: status=%s, reminder_count=%d, expected_count=%d',
+            $assignment_id,
+            $assignment->status,
+            $assignment->reminder_count,
+            $stage
+        ));
+        
         // Si ya completó la toma, no enviar
         if ($assignment->status !== 'pending') {
             if (defined('WP_DEBUG') && WP_DEBUG) {

@@ -451,7 +451,16 @@ class EIPSI_Nudge_Job_Queue {
         // v2.5.1 - También actualizar last_nudge_sent_at como punto de referencia para nudge 1
         if ($result['success'] && $result['sent']) {
             global $wpdb;
-            $wpdb->update(
+            
+            // Log ANTES del update
+            error_log(sprintf(
+                '[EIPSI STATE TRANSITION] BEFORE UPDATE: assignment=%d, reminder_count=%d, status=%s',
+                $assignment_id,
+                $assignment->reminder_count,
+                $assignment->status
+            ));
+            
+            $rows_affected = $wpdb->update(
                 $wpdb->prefix . 'survey_assignments',
                 array(
                     'reminder_count' => 1,
@@ -461,6 +470,27 @@ class EIPSI_Nudge_Job_Queue {
                 array('%d', '%s'),
                 array('%d')
             );
+            
+            // Log DESPUÉS del update
+            error_log(sprintf(
+                '[EIPSI STATE TRANSITION] AFTER UPDATE: assignment=%d, reminder_count=1, rows_affected=%d, last_nudge_sent_at=%s',
+                $assignment_id,
+                $rows_affected,
+                current_time('mysql')
+            ));
+            
+            // Verificar que el update funcionó
+            $updated_assignment = $wpdb->get_row($wpdb->prepare(
+                "SELECT reminder_count, status FROM {$wpdb->prefix}survey_assignments WHERE id = %d",
+                $assignment_id
+            ));
+            
+            error_log(sprintf(
+                '[EIPSI STATE VERIFICATION] assignment=%d, reminder_count=%d, status=%s',
+                $assignment_id,
+                $updated_assignment ? $updated_assignment->reminder_count : 'NULL',
+                $updated_assignment ? $updated_assignment->status : 'NULL'
+            ));
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log(sprintf(
@@ -554,8 +584,17 @@ class EIPSI_Nudge_Job_Queue {
         );
         
         if ($email_sent) {
+            // Log ANTES del update
+            error_log(sprintf(
+                '[EIPSI STATE TRANSITION] NUDGE %d BEFORE UPDATE: assignment=%d, reminder_count=%d, status=%s',
+                $stage,
+                $assignment_id,
+                $assignment->reminder_count,
+                $assignment->status
+            ));
+            
             // Actualizar contador solo si el email se envió realmente
-            $wpdb->update(
+            $rows_affected = $wpdb->update(
                 $wpdb->prefix . 'survey_assignments',
                 array('reminder_count' => $stage + 1),
                 array('id' => $assignment_id),
@@ -571,6 +610,30 @@ class EIPSI_Nudge_Job_Queue {
                 array('%s'),
                 array('%d')
             );
+            
+            // Log DESPUÉS del update
+            error_log(sprintf(
+                '[EIPSI STATE TRANSITION] NUDGE %d AFTER UPDATE: assignment=%d, reminder_count=%d, rows_affected=%d, last_nudge_sent_at=%s',
+                $stage,
+                $assignment_id,
+                $stage + 1,
+                $rows_affected,
+                current_time('mysql')
+            ));
+            
+            // Verificar que el update funcionó
+            $updated_assignment = $wpdb->get_row($wpdb->prepare(
+                "SELECT reminder_count, status FROM {$wpdb->prefix}survey_assignments WHERE id = %d",
+                $assignment_id
+            ));
+            
+            error_log(sprintf(
+                '[EIPSI STATE VERIFICATION] NUDGE %d: assignment=%d, reminder_count=%d, status=%s',
+                $stage,
+                $assignment_id,
+                $updated_assignment ? $updated_assignment->reminder_count : 'NULL',
+                $updated_assignment ? $updated_assignment->status : 'NULL'
+            ));
             
             // Invalidar cache
             if (class_exists('EIPSI_Nudge_Cache')) {
