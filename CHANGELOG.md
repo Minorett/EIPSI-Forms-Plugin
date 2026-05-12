@@ -6,48 +6,55 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
-## [2.6.5] – 2026-05-11 (CRITICAL: T3+ Event-Driven Scheduling Fix)
+## [2.6.5] – 2026-05-11 (CRITICAL: T3+ Event-Driven Unification)
 
-### 🚨 CRITICAL FIX: T3+ Nudges Not Scheduled
+### 🚨 CRITICAL FIX: T3+ Nudges Not Scheduled (Complete Fix)
 
 **Root Cause:**
-- T3+ waves usan T1-Anchor System: `available_at` se calcula y persiste cuando T1 se completa
-- En `Wave_Service::maybe_send_immediate_wave_reminder()` línea 327:
-  - Si `available_at` está en el futuro, el código solo logueaba y retornaba
-  - NO programaba ningún evento para cuando la wave estuviera disponible
-  - Dependía 100% del cron `eipsi_run_process_wave_availability` (polling cada 1 min)
-- **Consecuencia:** T3+ solo se enviaban si el cron funcionaba, creando inconsistencia con T1/T2
+T3+ waves tienen DOS caminos posibles:
+1. **Happy path:** Participante completa T2 → T3 se activa
+2. **Real path:** T2 expira sin completar → T3 se activa automáticamente
 
-**Fix Implementado:**
+El fix inicial (v2.6.5-alpha) solo resolvió el caso 1. El caso 2 seguía fallando porque:
+- `eipsi_auto_skip_expired_waves()` skipea T2 expirado pero NO dispara evento para T3
+- `eipsi_run_process_wave_availability()` detecta T3 disponible pero llama a `schedule_follow_up_nudges_only()` que falla con "Follow-up reminders disabled"
+
+**Fix Completo Implementado:**
+
+**1. Wave_Service.php (línea 327-339) - Happy Path:**
 ```php
-// ANTES (línea 327-330):
 if ($now < $available_at) {
-    error_log("[Wave_Service] Next wave not available yet. Waiting. Cron will handle it.");
-    return;
-}
-
-// DESPUÉS:
-if ($now < $available_at) {
-    error_log(sprintf(
-        "[Wave_Service] Scheduling event for assignment %d at %s",
-        $next_assignment->id,
-        date('Y-m-d H:i:s', $available_at)
-    ));
-    
     wp_clear_scheduled_hook('eipsi_wave_available', array($next_assignment->id));
     wp_schedule_single_event($available_at, 'eipsi_wave_available', array($next_assignment->id));
     return;
 }
 ```
 
-**Impacto:**
-- ✅ T1, T2, T3+ ahora usan el MISMO flujo event-driven
-- ✅ Timing exacto para todas las waves (no más polling)
-- ✅ Cron `eipsi_run_process_wave_availability` ahora es redundante (deprecar en futuro)
-- ✅ Consistencia arquitectónica completa
+**2. cron-handlers.php (línea 1188-1227) - Expiration Path:**
+```php
+// En eipsi_auto_skip_expired_waves() después de skipear:
+if ($available_at <= $now_ts) {
+    do_action('eipsi_wave_available', $next_assignment->id);
+} else {
+    wp_schedule_single_event($available_at, 'eipsi_wave_available', array($next_assignment->id));
+}
+```
+
+**3. cron-handlers.php (línea 1315-1322) - Deprecar cron:**
+```php
+// Wave Availability Processor ahora solo loguea deprecation warning
+// El evento eipsi_wave_available maneja todo
+```
+
+**Resultado:**
+- ✅ T1, T2, T3+ usan el MISMO flujo event-driven en TODOS los casos
+- ✅ Funciona tanto si el participante completa waves como si expiran
+- ✅ Timing exacto (no más polling)
+- ✅ Cron `eipsi_run_process_wave_availability` ahora redundante
 
 **Archivos modificados:**
 - `includes/services/Wave_Service.php` (líneas 327-339)
+- `admin/cron-handlers.php` (líneas 1188-1227, 1315-1322)
 
 ---
 

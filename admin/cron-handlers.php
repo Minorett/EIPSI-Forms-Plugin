@@ -1184,6 +1184,47 @@ function eipsi_auto_skip_expired_waves() {
                 $item->participant_id,
                 $item->next_available_wave_index
             ));
+            
+            // ========================================
+            // FIX: Trigger event-driven system for next available wave
+            // ========================================
+            $next_assignment = $wpdb->get_row($wpdb->prepare(
+                "SELECT a.id, a.available_at, a.status, a.reminder_count
+                 FROM {$assignments_table} a
+                 JOIN {$waves_table} w ON a.wave_id = w.id
+                 WHERE a.participant_id = %d 
+                 AND a.study_id = %d
+                 AND w.wave_index = %d
+                 LIMIT 1",
+                $item->participant_id,
+                $item->study_id,
+                $item->next_available_wave_index
+            ));
+            
+            if ($next_assignment && $next_assignment->status === 'pending' && $next_assignment->reminder_count == 0) {
+                $available_at = strtotime($next_assignment->available_at);
+                $now_ts = current_time('timestamp');
+                
+                if ($available_at <= $now_ts) {
+                    // Wave disponible AHORA - trigger inmediato
+                    error_log(sprintf(
+                        '[EIPSI Auto-Skip] Triggering eipsi_wave_available for assignment %d (T%d now available)',
+                        $next_assignment->id,
+                        $item->next_available_wave_index
+                    ));
+                    do_action('eipsi_wave_available', $next_assignment->id);
+                } else {
+                    // Wave disponible en el FUTURO - programar evento
+                    error_log(sprintf(
+                        '[EIPSI Auto-Skip] Scheduling eipsi_wave_available for assignment %d (T%d available at %s)',
+                        $next_assignment->id,
+                        $item->next_available_wave_index,
+                        date('Y-m-d H:i:s', $available_at)
+                    ));
+                    wp_clear_scheduled_hook('eipsi_wave_available', array($next_assignment->id));
+                    wp_schedule_single_event($available_at, 'eipsi_wave_available', array($next_assignment->id));
+                }
+            }
         }
     }
     
@@ -1272,51 +1313,13 @@ function eipsi_run_process_wave_availability() {
             $notified_count++;
 
             // ========================================
-            // TRIGGER 2: Schedule follow-up nudges from Wave Availability Processor
+            // DEPRECATED: This cron is now redundant with event-driven system
+            // Keeping for backward compatibility during transition
             // ========================================
             error_log(sprintf(
-                '[EIPSI NUDGE0→FOLLOWUP] TRIGGER 2: Wave Availability Processor attempting to schedule nudges for assignment %d',
+                '[EIPSI WaveAvail] DEPRECATED: Wave detected by cron for assignment %d. Event-driven system should handle this.',
                 $assignment->id
             ));
-            
-            if (!class_exists('EIPSI_Nudge_Event_Scheduler')) {
-                error_log('[EIPSI NUDGE0→FOLLOWUP] Loading EIPSI_Nudge_Event_Scheduler class');
-                require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-event-scheduler.php';
-            }
-            
-            // Get fresh assignment data with reminder_count updated
-            $fresh_assignment = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$assignments_table} WHERE id = %d",
-                $assignment->id
-            ));
-            
-            error_log(sprintf(
-                '[EIPSI NUDGE0→FOLLOWUP] Fresh assignment state: id=%d, reminder_count=%d, status=%s, last_nudge_sent_at=%s',
-                $fresh_assignment ? $fresh_assignment->id : 'NULL',
-                $fresh_assignment ? $fresh_assignment->reminder_count : 'NULL',
-                $fresh_assignment ? $fresh_assignment->status : 'NULL',
-                $fresh_assignment ? $fresh_assignment->last_nudge_sent_at : 'NULL'
-            ));
-            
-            if ($fresh_assignment && $fresh_assignment->reminder_count == 1) {
-                error_log(sprintf(
-                    '[EIPSI NUDGE0→FOLLOWUP] Calling schedule_follow_up_nudges_only for assignment %d',
-                    $assignment->id
-                ));
-                
-                EIPSI_Nudge_Event_Scheduler::schedule_follow_up_nudges_only($fresh_assignment);
-                
-                error_log(sprintf(
-                    '[EIPSI NUDGE0→FOLLOWUP] ✅ SUCCESS: Follow-up nudges scheduled for assignment %d via TRIGGER 2',
-                    $assignment->id
-                ));
-            } else {
-                error_log(sprintf(
-                    '[EIPSI NUDGE0→FOLLOWUP] ⚠️ WARNING: Could not schedule nudges for assignment %d (reminder_count=%d, expected 1)',
-                    $assignment->id,
-                    $fresh_assignment ? $fresh_assignment->reminder_count : 'NULL'
-                ));
-            }
 
             // Trigger hook
             do_action('eipsi_wave_became_available', array(
