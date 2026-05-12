@@ -326,7 +326,16 @@ class Wave_Service {
         // Only send if the wave is actually available now
         if ($now < $available_at) {
             $wait_hours = ceil(($available_at - $now) / 3600);
-            error_log("[Wave_Service] Next wave not available yet. Waiting ~{$wait_hours} hours. Cron will handle it.");
+            error_log(sprintf(
+                "[Wave_Service] Next wave not available yet. Scheduling event for assignment %d at %s (~%d hours)",
+                $next_assignment->id,
+                date('Y-m-d H:i:s', $available_at),
+                $wait_hours
+            ));
+            
+            // Schedule exact event when wave becomes available
+            wp_clear_scheduled_hook('eipsi_wave_available', array($next_assignment->id));
+            wp_schedule_single_event($available_at, 'eipsi_wave_available', array($next_assignment->id));
             return;
         }
 

@@ -6,6 +6,51 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.
 
 ---
 
+## [2.6.5] – 2026-05-11 (CRITICAL: T3+ Event-Driven Scheduling Fix)
+
+### 🚨 CRITICAL FIX: T3+ Nudges Not Scheduled
+
+**Root Cause:**
+- T3+ waves usan T1-Anchor System: `available_at` se calcula y persiste cuando T1 se completa
+- En `Wave_Service::maybe_send_immediate_wave_reminder()` línea 327:
+  - Si `available_at` está en el futuro, el código solo logueaba y retornaba
+  - NO programaba ningún evento para cuando la wave estuviera disponible
+  - Dependía 100% del cron `eipsi_run_process_wave_availability` (polling cada 1 min)
+- **Consecuencia:** T3+ solo se enviaban si el cron funcionaba, creando inconsistencia con T1/T2
+
+**Fix Implementado:**
+```php
+// ANTES (línea 327-330):
+if ($now < $available_at) {
+    error_log("[Wave_Service] Next wave not available yet. Waiting. Cron will handle it.");
+    return;
+}
+
+// DESPUÉS:
+if ($now < $available_at) {
+    error_log(sprintf(
+        "[Wave_Service] Scheduling event for assignment %d at %s",
+        $next_assignment->id,
+        date('Y-m-d H:i:s', $available_at)
+    ));
+    
+    wp_clear_scheduled_hook('eipsi_wave_available', array($next_assignment->id));
+    wp_schedule_single_event($available_at, 'eipsi_wave_available', array($next_assignment->id));
+    return;
+}
+```
+
+**Impacto:**
+- ✅ T1, T2, T3+ ahora usan el MISMO flujo event-driven
+- ✅ Timing exacto para todas las waves (no más polling)
+- ✅ Cron `eipsi_run_process_wave_availability` ahora es redundante (deprecar en futuro)
+- ✅ Consistencia arquitectónica completa
+
+**Archivos modificados:**
+- `includes/services/Wave_Service.php` (líneas 327-339)
+
+---
+
 ## [2.6.4] – 2026-05-11 (Triple Fallback System for Follow-up Nudges)
 
 ### 🔧 ENHANCEMENT: Triple Fallback System + Exhaustive Logging
