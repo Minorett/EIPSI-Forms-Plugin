@@ -360,6 +360,12 @@ $withdrawal_type = isset( $_GET['type'] ) ? sanitize_text_field( wp_unslash( $_G
                                         </small>
                                     <?php endif; ?>
                                 </div>
+                            <?php elseif ( isset( $wave_status[ $next_wave['id'] ] ) && $wave_status[ $next_wave['id'] ] === 'expired' ) : ?>
+                                <div class="wave-expired-message">
+                                    <p class="expired-text" style="margin: 0; font-weight: 500; color: #dc2626;">
+                                        ⏰ El plazo para completar esta evaluación ha expirado
+                                    </p>
+                                </div>
                             <?php else : ?>
                                 <form action="" method="get">
                                     <input type="hidden" name="form_id" value="<?php echo esc_attr( $next_wave['form_id'] ); ?>">

@@ -1119,11 +1119,15 @@
             console.log('[NUDGE-SAVE] Enabled type:', typeof enabled);
             console.log('[NUDGE-SAVE] AJAX URL:', eipsiStudyDash.ajaxUrl);
             
+            const $card = $('#wave-card-' + waveId);
+            const windowMinutes = $card.find('.wave-window-input').val() ? parseInt($card.find('.wave-window-input').val()) : null;
+            
             const ajaxData = {
                 action: 'eipsi_save_wave_nudges',
                 wave_id: waveId,
                 nudges: nudges,
                 enabled: enabled,
+                window_minutes: windowMinutes,
                 nonce: eipsiStudyDash.nonce
             };
             console.log('[NUDGE-SAVE] Full AJAX data:', JSON.stringify(ajaxData, null, 2));

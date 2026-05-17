@@ -1306,11 +1306,13 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
 
     $wave_id = isset($_POST['wave_id']) ? (int) $_POST['wave_id'] : 0;
     $nudges = isset($_POST['nudges']) ? $_POST['nudges'] : array();
+    $window_minutes = isset($_POST['window_minutes']) ? (int) $_POST['window_minutes'] : null;
     // v2.5.0 - Robust enabled detection: accepts 'true', true, '1', 1, 'on'
     $enabled_raw = isset($_POST['enabled']) ? $_POST['enabled'] : false;
     $enabled = in_array($enabled_raw, array('true', true, '1', 1, 'on', 'yes'), true);
     error_log("[EIPSI DASHBOARD API] Raw enabled value: " . var_export($enabled_raw, true));
     error_log("[EIPSI DASHBOARD API] Parsed enabled value: " . ($enabled ? 'true' : 'false'));
+    error_log("[EIPSI DASHBOARD API] window_minutes: " . ($window_minutes ? $window_minutes : 'NULL'));
     
     // Handle JSON string if passed
     if (is_string($nudges)) {
@@ -1395,11 +1397,69 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
         
         error_log("[EIPSI DASHBOARD API] Built nudge_config: " . wp_json_encode($nudge_config));
 
-        // v2.5.1 - Update wave with BOTH nudge_config AND follow_up_reminders_enabled
+        // v2.5.1 - Update wave with nudge_config, follow_up_reminders_enabled, and window_minutes
         $update_data = array(
             'nudge_config' => wp_json_encode($nudge_config),
             'follow_up_reminders_enabled' => $enabled ? 1 : 0
         );
+        $update_formats = array('%s', '%d');
+        
+        if ($window_minutes !== null) {
+            $update_data['window_minutes'] = $window_minutes;
+            $update_formats[] = '%d';
+            
+            // Recalculate nudge_config proportionally to window_minutes (20/40/60/80%)
+            $nudge1_hours = round($window_minutes * 0.20 / 60, 2);
+            $nudge2_hours = round($window_minutes * 0.40 / 60, 2);
+            $nudge3_hours = round($window_minutes * 0.60 / 60, 2);
+            $nudge4_hours = round($window_minutes * 0.80 / 60, 2);
+            
+            $nudge_config = array(
+                'nudge_1' => array('enabled' => $enabled && !empty($nudges[0]), 'value' => $nudge1_hours, 'unit' => 'hours'),
+                'nudge_2' => array('enabled' => $enabled && !empty($nudges[1]), 'value' => $nudge2_hours, 'unit' => 'hours'),
+                'nudge_3' => array('enabled' => $enabled && !empty($nudges[2]), 'value' => $nudge3_hours, 'unit' => 'hours'),
+                'nudge_4' => array('enabled' => $enabled && !empty($nudges[3]), 'value' => $nudge4_hours, 'unit' => 'hours')
+            );
+            $update_data['nudge_config'] = wp_json_encode($nudge_config);
+            
+            error_log("[EIPSI DASHBOARD API] Recalculated nudges from window_minutes: " . wp_json_encode($nudge_config));
+            
+            // Recalculate due_at for pending assignments
+            $assignments_table = $wpdb->prefix . 'survey_assignments';
+            $assignments = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, available_at FROM {$assignments_table} WHERE wave_id = %d AND status = 'pending'",
+                $wave_id
+            ));
+            
+            if (!empty($assignments)) {
+                foreach ($assignments as $assignment) {
+                    $available_at = $assignment->available_at;
+                    $due_at = date('Y-m-d H:i:s', strtotime($available_at) + ($window_minutes * 60));
+                    
+                    $wpdb->update(
+                        $assignments_table,
+                        array('due_at' => $due_at),
+                        array('id' => $assignment->id),
+                        array('%s'),
+                        array('%d')
+                    );
+                    
+                    error_log("[EIPSI DASHBOARD API] Updated due_at for assignment {$assignment->id}: {$due_at}");
+                    
+                    // Cancel and reschedule pending nudges
+                    wp_clear_scheduled_hook('eipsi_nudge_event', array($assignment->id, 1));
+                    wp_clear_scheduled_hook('eipsi_nudge_event', array($assignment->id, 2));
+                    wp_clear_scheduled_hook('eipsi_nudge_event', array($assignment->id, 3));
+                    wp_clear_scheduled_hook('eipsi_nudge_event', array($assignment->id, 4));
+                    
+                    // Reschedule with new nudge times
+                    if (class_exists('EIPSI_Nudge_Event_Scheduler')) {
+                        require_once EIPSI_FORMS_PLUGIN_DIR . 'includes/services/class-nudge-event-scheduler.php';
+                        EIPSI_Nudge_Event_Scheduler::reschedule_nudges_for_assignment($assignment->id);
+                    }
+                }
+            }
+        }
         
         error_log("[EIPSI DASHBOARD API] Update data: " . print_r($update_data, true));
         
@@ -1407,7 +1467,7 @@ function wp_ajax_eipsi_save_wave_nudges_handler() {
             $table_name,
             $update_data,
             array('id' => $wave_id),
-            array('%s', '%d'),  // nudge_config (string), follow_up_reminders_enabled (int)
+            $update_formats,
             array('%d')
         );
 

@@ -214,23 +214,65 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                             $unit = 'minutes';
                             $display_val = $current_offset;
                         }
+                        
+                        // Window: default = offset to next wave (or same as offset if last wave)
+                        $next_offset = ($i + 1 < $number_of_waves) ? get_offset_for_wave($i + 1, $timing_intervals) : $current_offset;
+                        $default_window = $next_offset - $current_offset;
+                        if ($default_window <= 0) $default_window = $current_offset; // Fallback
+                        
+                        $window_unit = 'days';
+                        $window_display_val = round($default_window / 1440);
+                        if ($default_window % 1440 !== 0) {
+                            $window_unit = 'minutes';
+                            $window_display_val = $default_window;
+                        }
                     ?>
-                        <div class="eipsi-interval-item" data-wave-index="<?php echo $i; ?>">
-                            <span class="eipsi-interval-label">T<?php echo $i + 1; ?> desde T1</span>
-                            <div class="eipsi-interval-controls">
+                        <div class="eipsi-interval-item" data-wave-index="<?php echo $i; ?>" style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;background:#fff;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                                <span class="eipsi-interval-label" style="font-weight:600;color:#1e293b;">T<?php echo $i + 1; ?> desde T1</span>
+                            </div>
+                            <div class="eipsi-interval-controls" style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
                                 <input type="number" 
                                        class="eipsi-interval-input"
                                        value="<?php echo $display_val; ?>"
-                                       min="1">
+                                       min="1"
+                                       style="width:80px;">
                                 <select class="eipsi-wiz-select eipsi-interval-unit"
-                                        data-previous-unit="<?php echo esc_attr($unit); ?>">
+                                        data-previous-unit="<?php echo esc_attr($unit); ?>"
+                                        style="width:100px;">
                                     <option value="days" <?php selected($unit, 'days'); ?>>días</option>
                                     <option value="minutes" <?php selected($unit, 'minutes'); ?>>minutos</option>
                                 </select>
-                                <span class="eipsi-interval-equiv"></span>
+                                <span class="eipsi-interval-equiv" style="font-size:11px;color:#64748b;"></span>
                                 
                                 <input type="hidden" name="wave_index[]" value="<?php echo $i; ?>">
                                 <input type="hidden" name="offset_minutes[]" value="<?php echo $current_offset; ?>" class="eipsi-hidden-offset">
+                            </div>
+                            
+                            <!-- Ventana de respuesta -->
+                            <div style="border-top:1px dashed #e2e8f0;padding-top:10px;">
+                                <label style="display:block;font-size:12px;color:#64748b;margin-bottom:6px;">
+                                    ⏱️ Ventana de respuesta (tiempo disponible para completar)
+                                </label>
+                                <div class="eipsi-window-controls" style="display:flex;gap:8px;align-items:center;">
+                                    <input type="number" 
+                                           class="eipsi-window-input"
+                                           value="<?php echo $window_display_val; ?>"
+                                           min="1"
+                                           style="width:80px;">
+                                    <select class="eipsi-wiz-select eipsi-window-unit"
+                                            data-previous-unit="<?php echo esc_attr($window_unit); ?>"
+                                            style="width:100px;">
+                                        <option value="days" <?php selected($window_unit, 'days'); ?>>días</option>
+                                        <option value="minutes" <?php selected($window_unit, 'minutes'); ?>>minutos</option>
+                                    </select>
+                                    <span class="eipsi-window-equiv" style="font-size:11px;color:#64748b;"></span>
+                                    
+                                    <input type="hidden" name="window_minutes[]" value="<?php echo $default_window; ?>" class="eipsi-hidden-window">
+                                </div>
+                                <small style="display:block;margin-top:4px;color:#94a3b8;font-size:11px;">
+                                    ℹ️ Por defecto: intervalo hasta la siguiente toma. Los nudges se distribuirán proporcionalmente.
+                                </small>
                             </div>
                         </div>
                     <?php endfor; ?>
@@ -418,6 +460,61 @@ function eipsiSyncOffset(element) {
 }
 
 /**
+ * Synchronize window_minutes input
+ */
+function eipsiSyncWindow(element) {
+    const item = element.closest('.eipsi-interval-item');
+    if (!item) return;
+    
+    const windowInput = item.querySelector('.eipsi-window-input');
+    const windowUnitSelect = item.querySelector('.eipsi-window-unit');
+    const hiddenWindow = item.querySelector('.eipsi-hidden-window');
+    const windowEquivSpan = item.querySelector('.eipsi-window-equiv');
+    const hiddenOffset = item.querySelector('.eipsi-hidden-offset');
+    
+    // Check if unit changed
+    const isUnitChange = element === windowUnitSelect;
+    const newUnit = windowUnitSelect.value;
+    const currentValue = parseInt(windowInput.value) || 0;
+    
+    if (isUnitChange) {
+        const previousUnit = windowUnitSelect.dataset.previousUnit || 'days';
+        
+        if (previousUnit === 'days' && newUnit === 'minutes') {
+            windowInput.value = currentValue * MINUTES_PER_DAY;
+        } else if (previousUnit === 'minutes' && newUnit === 'days') {
+            windowInput.value = Math.round(currentValue / MINUTES_PER_DAY);
+        }
+        
+        windowUnitSelect.dataset.previousUnit = newUnit;
+    }
+    
+    const value = parseInt(windowInput.value) || 0;
+    const unit = windowUnitSelect.value;
+    const windowMinutes = (unit === 'days') ? value * MINUTES_PER_DAY : value;
+    
+    // Validación: window no puede ser mayor al offset
+    const offsetMinutes = parseInt(hiddenOffset.value) || 0;
+    if (windowMinutes > offsetMinutes) {
+        windowInput.style.borderColor = '#ef4444';
+        windowEquivSpan.textContent = '⚠️ No puede ser mayor al offset';
+        windowEquivSpan.style.color = '#ef4444';
+        return;
+    } else {
+        windowInput.style.borderColor = '';
+        windowEquivSpan.style.color = '#64748b';
+    }
+    
+    hiddenWindow.value = windowMinutes;
+    windowEquivSpan.textContent = eipsiFormatDuration(windowMinutes);
+    
+    // Trigger dirty state
+    if (window.jQuery) {
+        window.jQuery('#eipsi-wizard-form').trigger('change');
+    }
+}
+
+/**
  * Auto-calculate study closure based on last wave gap
  * Phase 3 T1-Anchor: Auto-calculates study_end_offset_minutes
  */
@@ -568,12 +665,24 @@ function eipsiApplyTimingTemplate(template, btn) {
 
 // Initial update
 document.addEventListener('DOMContentLoaded', () => {
-    // Initial sync for all inputs
+    // Initial sync for all offset inputs
     document.querySelectorAll('.eipsi-interval-input').forEach(input => {
         const item = input.closest('.eipsi-interval-item');
         if (item) {
             const hidden = item.querySelector('.eipsi-hidden-offset');
             const equiv = item.querySelector('.eipsi-interval-equiv');
+            if (hidden && equiv) {
+                equiv.textContent = eipsiFormatDuration(parseInt(hidden.value));
+            }
+        }
+    });
+    
+    // Initial sync for all window inputs
+    document.querySelectorAll('.eipsi-window-input').forEach(input => {
+        const item = input.closest('.eipsi-interval-item');
+        if (item) {
+            const hidden = item.querySelector('.eipsi-hidden-window');
+            const equiv = item.querySelector('.eipsi-window-equiv');
             if (hidden && equiv) {
                 equiv.textContent = eipsiFormatDuration(parseInt(hidden.value));
             }
@@ -588,16 +697,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Event delegation para inputs y selects dinámicos
+    // Event delegation para offset inputs y selects
     document.addEventListener('input', function(e) {
         if (e.target.classList.contains('eipsi-interval-input')) {
             eipsiSyncOffset(e.target);
+        }
+        if (e.target.classList.contains('eipsi-window-input')) {
+            eipsiSyncWindow(e.target);
         }
     });
     
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('eipsi-interval-unit')) {
             eipsiSyncOffset(e.target);
+        }
+        if (e.target.classList.contains('eipsi-window-unit')) {
+            eipsiSyncWindow(e.target);
         }
     });
     
