@@ -243,21 +243,103 @@ function eipsi_sanitize_waves_config($data) {
 function eipsi_validate_timing_config($data) {
     $errors = array();
     
-    // Timing intervals validation
+    // --- Validate offset_minutes (T1-Anchor System) ---
+    // Collect all wave offsets from parallel arrays
+    $wave_offsets = array(); // wave_index => offset_minutes
+    if (isset($data['wave_index']) && is_array($data['wave_index']) && 
+        isset($data['offset_minutes']) && is_array($data['offset_minutes'])) {
+        
+        foreach ($data['wave_index'] as $i => $wave_idx) {
+            $offset = isset($data['offset_minutes'][$i]) ? intval($data['offset_minutes'][$i]) : 0;
+            $wave_offsets[$wave_idx] = $offset;
+        }
+    }
+    
+    // Validate offsets are sequential (each must be > previous)
+    $last_offset = 0;
+    $sorted_offsets = array();
+    foreach ($wave_offsets as $wave_idx => $offset) {
+        if ($wave_idx === '0' || $wave_idx === 'closure') continue;
+        $num_idx = intval($wave_idx);
+        $sorted_offsets[$num_idx] = $offset;
+    }
+    ksort($sorted_offsets);
+    
+    foreach ($sorted_offsets as $num_idx => $offset) {
+        if ($offset <= $last_offset) {
+            $errors[] = "❌ La Toma " . ($num_idx + 1) . " debe ocurrir después de la toma anterior. El tiempo acumulado ({$offset} min) debe ser mayor que el de la toma anterior ({$last_offset} min).";
+        }
+        $last_offset = $offset;
+    }
+    
+    // --- Validate window_minutes against gaps ---
+    // window_minutes[] is a parallel array to wave_index[]
+    if (isset($data['wave_index']) && is_array($data['wave_index']) && 
+        isset($data['window_minutes']) && is_array($data['window_minutes'])) {
+        
+        // Build a mapping: wave_index => window_minutes
+        $window_map = array();
+        foreach ($data['wave_index'] as $i => $wave_idx) {
+            $window_minutes = isset($data['window_minutes'][$i]) ? intval($data['window_minutes'][$i]) : 0;
+            if ($wave_idx !== '0' && $wave_idx !== 'closure') {
+                $window_map[intval($wave_idx)] = $window_minutes;
+            }
+        }
+        
+        // Get closure offset for last wave validation
+        $closure_offset = isset($wave_offsets['closure']) ? intval($wave_offsets['closure']) : 0;
+        
+        // For each wave, validate window doesn't exceed gap to next wave/closure
+        foreach ($sorted_offsets as $num_idx => $offset) {
+            $window = isset($window_map[$num_idx]) ? $window_map[$num_idx] : 0;
+            
+            // Find next offset
+            $next_offset = 0;
+            if (isset($sorted_offsets[$num_idx + 1])) {
+                // There's a next wave
+                $next_offset = $sorted_offsets[$num_idx + 1];
+            } elseif ($closure_offset > 0) {
+                // Last wave - use closure offset
+                $next_offset = $closure_offset;
+            } else {
+                // No closure defined, use a generous fallback
+                $next_offset = $offset + $offset;
+            }
+            
+            $max_allowed = $next_offset - $offset;
+            
+            if ($window > $max_allowed) {
+                $toma_label = "Toma " . ($num_idx + 1);
+                $hasta_label = ($next_offset === $closure_offset) ? 'el cierre del estudio' : 'la siguiente toma';
+                $errors[] = "❌ El plazo de respuesta de {$toma_label} ({$window} min) supera el tiempo máximo permitido ({$max_allowed} min) hasta {$hasta_label}. El plazo debe ser menor o igual al intervalo entre esta toma y la siguiente.";
+            }
+        }
+    }
+
+    // Study End Offset Validation (legacy code path)
+    if (isset($data['study_end_offset_minutes']) && $data['study_end_offset_minutes'] !== '') {
+        $study_end = intval($data['study_end_offset_minutes']);
+        if ($study_end <= 0) {
+            $errors[] = '❌ El tiempo de cierre del estudio debe ser un número positivo.';
+        } elseif ($last_offset > 0 && $study_end <= $last_offset) {
+            $errors[] = "❌ El cierre del estudio ({$study_end} min) debe ocurrir después de la última toma ({$last_offset} min).";
+        }
+    }
+    
+    // Legacy timing_intervals validation (backward compatibility)
     if (!empty($data['timing_intervals']) && is_array($data['timing_intervals'])) {
-        $last_offset = 0;
+        $legacy_last_offset = 0;
         foreach ($data['timing_intervals'] as $index => $interval) {
             $interval_num = $index + 1;
             
-            // Check for accumulated offset_minutes (New T1-Anchor System)
             if (isset($interval['offset_minutes'])) {
                 $offset = intval($interval['offset_minutes']);
-                if ($offset <= $last_offset) {
-                    $errors[] = "❌ La Toma " . ($index + 2) . " debe ocurrir después de la toma anterior. El tiempo acumulado ({$offset} min) debe ser mayor que el de la toma anterior ({$last_offset} min).";
+                if ($offset <= $legacy_last_offset) {
+                    $errors[] = "❌ La Toma " . ($index + 2) . " debe ocurrir después de la toma anterior. El tiempo acumulado ({$offset} min) debe ser mayor que el de la toma anterior ({$legacy_last_offset} min).";
                 }
-                $last_offset = $offset;
+                $legacy_last_offset = $offset;
             } else {
-                // Legacy validation for days_after (backward compatibility)
+                // Legacy validation for days_after
                 $time_unit = isset($interval['time_unit']) ? sanitize_text_field($interval['time_unit']) : 'days';
                 $value = isset($interval['days_after']) ? $interval['days_after'] : 0;
                 
@@ -266,21 +348,10 @@ function eipsi_validate_timing_config($data) {
                 } elseif (!is_numeric($value) || intval($value) < 1) {
                     $errors[] = "❌ El intervalo {$interval_num} debe tener un número positivo (mínimo 1).";
                 } else {
-                    // Approximate accumulation for legacy check
                     $current_val_minutes = ($time_unit === 'minutes') ? intval($value) : intval($value) * 1440;
-                    $last_offset += $current_val_minutes;
+                    $legacy_last_offset += $current_val_minutes;
                 }
             }
-        }
-    }
-
-    // Study End Offset Validation
-    if (isset($data['study_end_offset_minutes']) && $data['study_end_offset_minutes'] !== '') {
-        $study_end = intval($data['study_end_offset_minutes']);
-        if ($study_end <= 0) {
-            $errors[] = '❌ El tiempo de cierre del estudio debe ser un número positivo.';
-        } elseif (isset($last_offset) && $study_end <= $last_offset) {
-            $errors[] = "❌ El cierre del estudio ({$study_end} min) debe ocurrir después de la última toma ({$last_offset} min).";
         }
     }
     
