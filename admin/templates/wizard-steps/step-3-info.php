@@ -100,17 +100,11 @@ if (!function_exists('eipsi_format_duration_human')) {
         padding-left: 20px;
     }
     .timeline-container::before {
-        content: '';
-        position: absolute;
-        left: 5px;
-        top: 10px;
-        bottom: 10px;
-        width: 2px;
-        background: #e2e8f0;
+        display: none; /* Replaced by dynamic vertical bars */
     }
     .timeline-event {
         position: relative;
-        padding-bottom: 20px;
+        padding-bottom: 70px; /* Space to fit the 60px visual bars and avoid overlaps */
         padding-left: 20px;
     }
     .timeline-event:last-child {
@@ -146,13 +140,32 @@ if (!function_exists('eipsi_format_duration_human')) {
         color: #64748b;
         font-family: monospace;
     }
-    .timeline-gap {
+    .timeline-resource-info {
+        display: block;
         font-size: 11px;
-        color: #94a3b8;
-        font-style: italic;
-        margin-top: -15px;
-        margin-bottom: 10px;
-        padding-left: 20px;
+        color: #0d9488; /* Elegant teal/cyan clinical color */
+        font-weight: 500;
+        margin-top: 4px;
+    }
+    .timeline-bars {
+        position: absolute;
+        left: -16px;
+        top: 20px;
+        width: 4px;
+        display: flex;
+        flex-direction: column;
+        z-index: 0;
+    }
+    .bar-solid {
+        width: 100%;
+        background-color: #3B6CAA; /* EIPSI brand blue */
+        border-radius: 2px;
+    }
+    .bar-dotted {
+        width: 100%;
+        background-image: linear-gradient(to bottom, #cbd5e1 50%, transparent 50%);
+        background-size: 4px 8px;
+        background-repeat: repeat-y;
     }
     .eipsi-interval-equiv {
         display: block;
@@ -641,6 +654,9 @@ function eipsiSyncWindow(element) {
     // Trigger step validation (will enable Next if all valid)
     eipsiValidateStep3();
     
+    // Ensure the visual timeline preview is updated in real-time on window change
+    eipsiUpdateTimelinePreview();
+    
     // Trigger dirty state
     if (window.jQuery) {
         window.jQuery('#eipsi-wizard-form').trigger('change');
@@ -762,47 +778,112 @@ function eipsiUpdateTimelinePreview() {
     
     const hiddenOffsets = Array.from(document.querySelectorAll('.eipsi-hidden-offset'));
     const indices = Array.from(document.querySelectorAll('input[name="wave_index[]"]'));
+    const hiddenWindows = Array.from(document.querySelectorAll('.eipsi-hidden-window'));
+    
+    // Helper to format days nicely (integer or decimal up to 2 decimal places)
+    function formatDayValue(minutes) {
+        const days = minutes / MINUTES_PER_DAY;
+        if (Number.isInteger(days)) {
+            return days;
+        }
+        return parseFloat(days.toFixed(2));
+    }
     
     let html = '';
-    let previousOffset = 0;
-    
-    // T1 is always first
-    html += `
-        <div class="timeline-event">
-            <div class="timeline-dot"></div>
-            <div class="timeline-content">
-                <span class="timeline-label">T1 (Inicio del estudio)</span>
-                <span class="timeline-time">Día 0</span>
-            </div>
-        </div>
-    `;
+    const totalHeight = 60; // Fixed total height for the visual connection bar
     
     indices.forEach((input, i) => {
         const index = input.value;
-        if (index === '0') return; // Skip T1 as it's already added
-        
-        const offset = parseInt(hiddenOffsets[i].value) || 0;
         const isClosure = index === 'closure';
-        const label = isClosure ? 'Cierre del estudio' : `Toma ${parseInt(index) + 1}`;
-        const dayLabel = `Día ${Math.floor(offset / MINUTES_PER_DAY)}`;
+        const offset = parseInt(hiddenOffsets[i].value) || 0;
         
-        // Add gap info
-        const gap = offset - previousOffset;
-        if (gap > 0) {
-            html += `<div class="timeline-gap">... espera de ${eipsiFormatDuration(gap)} ...</div>`;
+        let label = '';
+        let timeText = '';
+        let openDays = null;
+        let closeDays = null;
+        let solidHeight = 0;
+        let dottedHeight = 0;
+        let showBars = false;
+        
+        if (index === '0') {
+            // T1 (Inicio)
+            label = 'T1 (Inicio del estudio)';
+            timeText = 'Día 0';
+            
+            // Next offset is T2's offset
+            const nextOffset = (hiddenOffsets[1] && parseInt(hiddenOffsets[1].value)) || 0;
+            const windowMinutes = nextOffset; // T1 is open until T2
+            const availability = nextOffset;
+            
+            openDays = 0;
+            closeDays = formatDayValue(nextOffset);
+            
+            if (availability > 0) {
+                showBars = true;
+                const solidMinutes = Math.min(windowMinutes, availability);
+                solidHeight = Math.round(totalHeight * (solidMinutes / availability));
+                dottedHeight = totalHeight - solidHeight;
+            }
+        } else if (isClosure) {
+            // Closure
+            label = 'Cierre del estudio';
+            timeText = `Día ${formatDayValue(offset)}`;
+            showBars = false;
+        } else {
+            // Subsequent waves (T2, T3...)
+            const idx = parseInt(index);
+            label = `Toma ${idx + 1}`;
+            timeText = `Día ${formatDayValue(offset)}`;
+            
+            // Next offset is either the next wave's offset or closure's offset
+            const nextOffset = (hiddenOffsets[i + 1] && parseInt(hiddenOffsets[i + 1].value)) || 0;
+            const availability = nextOffset - offset;
+            
+            // Find corresponding window from hiddenWindows (maps to idx - 1)
+            const windowInput = hiddenWindows[idx - 1];
+            const windowMinutes = windowInput ? (parseInt(windowInput.value) || 0) : 0;
+            
+            openDays = formatDayValue(offset);
+            closeDays = formatDayValue(offset + windowMinutes);
+            
+            if (availability > 0) {
+                showBars = true;
+                const solidMinutes = Math.min(windowMinutes, availability);
+                solidHeight = Math.round(totalHeight * (solidMinutes / availability));
+                dottedHeight = totalHeight - solidHeight;
+            }
+        }
+        
+        let barsHtml = '';
+        if (showBars) {
+            barsHtml = `
+                <div class="timeline-bars" style="height: ${totalHeight}px;">
+                    <div class="bar-solid" style="height: ${solidHeight}px;"></div>
+                    ${dottedHeight > 0 ? `<div class="bar-dotted" style="height: ${dottedHeight}px;"></div>` : ''}
+                </div>
+            `;
+        }
+        
+        let resourceInfoHtml = '';
+        if (openDays !== null && closeDays !== null) {
+            resourceInfoHtml = `
+                <div class="timeline-resource-info">
+                    Abre: Día ${openDays} | Cierra: Día ${closeDays}
+                </div>
+            `;
         }
         
         html += `
             <div class="timeline-event ${isClosure ? 'closure' : ''}">
                 <div class="timeline-dot"></div>
+                ${barsHtml}
                 <div class="timeline-content">
                     <span class="timeline-label">${label}</span>
-                    <span class="timeline-time">${dayLabel}</span>
+                    <span class="timeline-time">${timeText}</span>
                 </div>
+                ${resourceInfoHtml}
             </div>
         `;
-        
-        previousOffset = offset;
     });
     
     container.innerHTML = html;
