@@ -215,12 +215,8 @@ class EIPSI_Nudge_Event_Scheduler {
                 // Programar el evento exacto
                 $event_args = array(
                     'assignment_id' => $assignment_id,
-                    'stage' => $stage,
-                    'scheduled_at' => $scheduled_time
+                    'stage' => $stage
                 );
-                
-                // Crear identificador único para este evento
-                $event_key = self::get_event_key($assignment_id, $stage);
                 
                 // Limpiar evento previo si existe (evita duplicados)
                 wp_clear_scheduled_hook(self::NUDGE_EVENT_HOOK, array($event_args));
@@ -278,26 +274,12 @@ class EIPSI_Nudge_Event_Scheduler {
         
         $assignment_id = intval($args['assignment_id']);
         $stage = intval($args['stage']);
-        $scheduled_at = isset($args['scheduled_at']) ? intval($args['scheduled_at']) : 0;
-        
         $now = current_time('timestamp');
-        $is_catch_up = ($scheduled_at > 0 && $now > $scheduled_at + 300); // 5 min grace period
-        
-        if (defined('WP_DEBUG') || $is_catch_up) {
-            error_log(sprintf(
-                '[EIPSI EventScheduler] Executing scheduled nudge %d for assignment %d (scheduled: %s, now: %s, catch-up: %s)',
-                $stage,
-                $assignment_id,
-                $scheduled_at ? date('Y-m-d H:i:s', $scheduled_at) : 'N/A',
-                date('Y-m-d H:i:s', $now),
-                $is_catch_up ? 'YES' : 'NO'
-            ));
-        }
         
         // Verificar que sigue siendo válido enviar este nudge
         global $wpdb;
         $assignment = $wpdb->get_row($wpdb->prepare(
-            "SELECT a.*, w.follow_up_reminders_enabled 
+            "SELECT a.*, w.nudge_config, w.follow_up_reminders_enabled 
              FROM {$wpdb->prefix}survey_assignments a
              JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
              WHERE a.id = %d",
@@ -307,6 +289,33 @@ class EIPSI_Nudge_Event_Scheduler {
         if (!$assignment) {
             error_log(sprintf('[EIPSI EventScheduler] Assignment %d no longer exists', $assignment_id));
             return;
+        }
+
+        // Recalcular si es catch-up basado en available_at y la configuración del nudge
+        $is_catch_up = false;
+        if (!empty($assignment->available_at)) {
+            $available_at = strtotime($assignment->available_at);
+            $nudge_config = !empty($assignment->nudge_config) ? json_decode($assignment->nudge_config, true) : array();
+            $nudge_key = "nudge_{$stage}";
+            
+            if (isset($nudge_config[$nudge_key])) {
+                $config = $nudge_config[$nudge_key];
+                $value = isset($config['value']) ? floatval($config['value']) : ($stage * 24);
+                $unit = isset($config['unit']) ? $config['unit'] : 'hours';
+                $delay_seconds = self::convert_to_seconds($value, $unit);
+                $intended_time = $available_at + $delay_seconds;
+                $is_catch_up = ($now > $intended_time + 600); // 10 min grace period
+            }
+        }
+        
+        if (defined('WP_DEBUG') || $is_catch_up) {
+            error_log(sprintf(
+                '[EIPSI EventScheduler] Executing scheduled nudge %d for assignment %d (now: %s, catch-up: %s)',
+                $stage,
+                $assignment_id,
+                date('Y-m-d H:i:s', $now),
+                $is_catch_up ? 'YES' : 'NO'
+            ));
         }
         
         // Log estado actual del assignment
@@ -490,20 +499,13 @@ class EIPSI_Nudge_Event_Scheduler {
                                 $new_scheduled_time = $now + $interval;
                                 
                                 // Clear old event and schedule new one
-                                $old_event_args = array(
+                                $event_args = array(
                                     'assignment_id' => $assignment_id,
-                                    'stage' => $next_stage,
-                                    'scheduled_at' => 0 // Old events don't have this
+                                    'stage' => $next_stage
                                 );
-                                wp_clear_scheduled_hook(self::NUDGE_EVENT_HOOK, array($old_event_args));
+                                wp_clear_scheduled_hook(self::NUDGE_EVENT_HOOK, array($event_args));
                                 
-                                $new_event_args = array(
-                                    'assignment_id' => $assignment_id,
-                                    'stage' => $next_stage,
-                                    'scheduled_at' => $new_scheduled_time
-                                );
-                                
-                                wp_schedule_single_event($new_scheduled_time, self::NUDGE_EVENT_HOOK, array($new_event_args));
+                                wp_schedule_single_event($new_scheduled_time, self::NUDGE_EVENT_HOOK, array($event_args));
                                 
                                 error_log(sprintf(
                                     '[EIPSI EventScheduler] CATCH-UP: Rescheduled nudge %d for assignment %d at %s (+ %d seconds interval from now)',
@@ -592,8 +594,7 @@ class EIPSI_Nudge_Event_Scheduler {
         for ($stage = 0; $stage <= 4; $stage++) {
             $event_args = array(
                 'assignment_id' => $assignment_id,
-                'stage' => $stage,
-                'scheduled_at' => 0
+                'stage' => $stage
             );
             
             wp_clear_scheduled_hook(self::NUDGE_EVENT_HOOK, array($event_args));
@@ -926,8 +927,7 @@ class EIPSI_Nudge_Event_Scheduler {
             // Schedule the event
             $event_args = array(
                 'assignment_id' => $assignment_id,
-                'stage' => $stage,
-                'scheduled_at' => $scheduled_time
+                'stage' => $stage
             );
             
             // Clear previous event if exists
