@@ -168,9 +168,7 @@ class EIPSI_Nudge_Event_Scheduler {
                     $assignment->due_at, $due_at_timestamp));
             }
             
-            // v2.1.1 - Los nudges son acumulativos: cada uno empieza DESPUÉS del anterior
-            $cumulative_delay = 0;
-            
+            // v1.4.2 - Absolute offsets: calculate directly from available_at
             for ($stage = 1; $stage <= 4; $stage++) {
                 $nudge_key = "nudge_{$stage}";
                 
@@ -183,13 +181,12 @@ class EIPSI_Nudge_Event_Scheduler {
                 $value = isset($config['value']) ? floatval($config['value']) : ($stage * 24);
                 $unit = isset($config['unit']) ? $config['unit'] : 'hours';
                 
-                // v2.1.1 - Acumular el delay del nudge anterior
+                // v1.4.2 - Scheduled time is absolute from available_at
                 $delay_seconds = self::convert_to_seconds($value, $unit);
-                $cumulative_delay += $delay_seconds;
-                $scheduled_time = $available_at + $cumulative_delay;
+                $scheduled_time = $available_at + $delay_seconds;
                 
-                error_log(sprintf('[EIPSI EventScheduler] Nudge %d: +%d seconds (total: %d seconds from available)', 
-                    $stage, $delay_seconds, $cumulative_delay));
+                error_log(sprintf('[EIPSI EventScheduler] Nudge %d: %d seconds from available', 
+                    $stage, $delay_seconds));
                 
                 // No programar en el pasado
                 if ($scheduled_time <= current_time('timestamp')) {
@@ -482,8 +479,15 @@ class EIPSI_Nudge_Event_Scheduler {
                                 $unit = isset($config['unit']) ? $config['unit'] : 'hours';
                                 $delay_seconds = self::convert_to_seconds($value, $unit);
                                 
-                                // Reschedule from NOW, not from original available_at
-                                $new_scheduled_time = $now + $delay_seconds;
+                                // v1.4.2 - Calculate proportional shift based on absolute offsets
+                                // We want to maintain the gap between stages if one was delayed
+                                $current_key = "nudge_{$stage}";
+                                $current_delay = isset($nudge_config[$current_key]) 
+                                    ? self::convert_to_seconds(floatval($nudge_config[$current_key]['value']), $nudge_config[$current_key]['unit'])
+                                    : 0;
+                                
+                                $interval = max(0, $delay_seconds - $current_delay);
+                                $new_scheduled_time = $now + $interval;
                                 
                                 // Clear old event and schedule new one
                                 $old_event_args = array(
@@ -502,12 +506,11 @@ class EIPSI_Nudge_Event_Scheduler {
                                 wp_schedule_single_event($new_scheduled_time, self::NUDGE_EVENT_HOOK, array($new_event_args));
                                 
                                 error_log(sprintf(
-                                    '[EIPSI EventScheduler] CATCH-UP: Rescheduled nudge %d for assignment %d at %s (+ %d %s from now)',
+                                    '[EIPSI EventScheduler] CATCH-UP: Rescheduled nudge %d for assignment %d at %s (+ %d seconds interval from now)',
                                     $next_stage,
                                     $assignment_id,
                                     date('Y-m-d H:i:s', $new_scheduled_time),
-                                    $value,
-                                    $unit
+                                    $interval
                                 ));
                             }
                         }
@@ -883,7 +886,6 @@ class EIPSI_Nudge_Event_Scheduler {
         ));
         
         $scheduled_count = 0;
-        $cumulative_delay = 0;
         
         for ($stage = 1; $stage <= 4; $stage++) {
             $nudge_key = "nudge_{$stage}";
@@ -897,10 +899,9 @@ class EIPSI_Nudge_Event_Scheduler {
             $value = isset($config['value']) ? floatval($config['value']) : ($stage * 24);
             $unit = isset($config['unit']) ? $config['unit'] : 'hours';
             
-            // Accumulate delay
+            // v1.4.2 - Absolute offset from available_at
             $delay_seconds = self::convert_to_seconds($value, $unit);
-            $cumulative_delay += $delay_seconds;
-            $scheduled_time = $available_at + $cumulative_delay;
+            $scheduled_time = $available_at + $delay_seconds;
             
             // Don't schedule in the past
             if ($scheduled_time <= current_time('timestamp')) {
@@ -960,6 +961,23 @@ class EIPSI_Nudge_Event_Scheduler {
         ));
         
         return $scheduled_count;
+    }
+
+    /**
+     * Formatear delay para logs
+     */
+    private static function format_delay($value, $unit) {
+        $units = array(
+            'minutes' => 'minutos',
+            'minutos' => 'minutos',
+            'hours' => 'horas',
+            'horas' => 'horas',
+            'days' => 'días',
+            'días' => 'días',
+            'dias' => 'días'
+        );
+        $unit_name = isset($units[$unit]) ? $units[$unit] : $unit;
+        return sprintf('%s %s', $value, $unit_name);
     }
 }
 
