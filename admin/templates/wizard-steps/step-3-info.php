@@ -53,6 +53,27 @@ $retry_after_days = isset($step_data['retry_after_days']) ? intval($step_data['r
 $max_retries = isset($step_data['max_retries']) ? intval($step_data['max_retries']) : 3;
 $investigator_notification_days = isset($step_data['investigator_notification_days']) ? intval($step_data['investigator_notification_days']) : 14;
 
+/**
+ * Format duration in minutes to human-readable Spanish
+ */
+if (!function_exists('eipsi_format_duration_human')) {
+    function eipsi_format_duration_human($minutes) {
+        if ($minutes <= 0) return '0 minutos';
+        
+        $weeks = floor($minutes / 10080);
+        $days = floor(($minutes % 10080) / 1440);
+        $hours = floor(($minutes % 1440) / 60);
+        $mins = $minutes % 60;
+        
+        $parts = [];
+        if ($weeks > 0) $parts[] = $weeks === 1 ? '1 semana' : "{$weeks} semanas";
+        if ($days > 0) $parts[] = $days === 1 ? '1 día' : "{$days} días";
+        if ($hours > 0) $parts[] = $hours === 1 ? '1 hora' : "{$hours} horas";
+        if ($mins > 0) $parts[] = $mins === 1 ? '1 minuto' : "{$mins} minutos";
+        
+        return implode(', ', $parts);
+    }
+}
 ?>
 <style>
     .eipsi-timeline-preview {
@@ -205,8 +226,17 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                         return $default_offset;
                     }
 
+                    <?php 
+                    // Pre-calculate all offsets including closure for window defaults
+                    $all_offsets = array();
+                    for ($i = 1; $i < $number_of_waves; $i++) {
+                        $all_offsets[$i] = get_offset_for_wave($i, $timing_intervals);
+                    }
+                    $closure_offset_final = get_offset_for_wave('closure', $timing_intervals);
+                    
                     for ($i = 1; $i < $number_of_waves; $i++): 
-                        $current_offset = get_offset_for_wave($i, $timing_intervals);
+                        $current_offset = $all_offsets[$i];
+                        
                         // Determine display unit
                         $unit = 'days';
                         $display_val = round($current_offset / 1440);
@@ -215,10 +245,15 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                             $display_val = $current_offset;
                         }
                         
-                        // Window: default = offset to next wave (or same as offset if last wave)
-                        $next_offset = ($i + 1 < $number_of_waves) ? get_offset_for_wave($i + 1, $timing_intervals) : $current_offset;
-                        $default_window = $next_offset - $current_offset;
-                        if ($default_window <= 0) $default_window = $current_offset; // Fallback
+                        // Calculate maxAllowed: next_offset - current_offset
+                        // For last wave, use closure offset as next_offset
+                        $is_last_wave = ($i === $number_of_waves - 1);
+                        $next_offset = $is_last_wave ? $closure_offset_final : $all_offsets[$i + 1];
+                        $max_allowed_window = $next_offset - $current_offset;
+                        if ($max_allowed_window <= 0) $max_allowed_window = $current_offset; // Fallback safety
+                        
+                        // Default window = maxAllowed
+                        $default_window = $max_allowed_window;
                         
                         $window_unit = 'days';
                         $window_display_val = round($default_window / 1440);
@@ -227,9 +262,18 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                             $window_display_val = $default_window;
                         }
                     ?>
-                        <div class="eipsi-interval-item" data-wave-index="<?php echo $i; ?>" style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;background:#fff;">
+                        <div class="eipsi-interval-item" data-wave-index="<?php echo $i; ?>" 
+                             data-offset-minutes="<?php echo $current_offset; ?>"
+                             data-next-offset-minutes="<?php echo $next_offset; ?>"
+                             data-max-allowed-window="<?php echo $max_allowed_window; ?>"
+                             style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;background:#fff;">
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                                 <span class="eipsi-interval-label" style="font-weight:600;color:#1e293b;">T<?php echo $i + 1; ?> desde T1</span>
+                                <?php if ($is_last_wave): ?>
+                                    <span style="font-size:10px;color:#0891b2;background:#e0f2fe;padding:2px 8px;border-radius:4px;">Última toma → cierre</span>
+                                <?php else: ?>
+                                    <span style="font-size:10px;color:#64748b;background:#f1f5f9;padding:2px 8px;border-radius:4px;">Siguiente: T<?php echo $i + 2; ?></span>
+                                <?php endif; ?>
                             </div>
                             <div class="eipsi-interval-controls" style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
                                 <input type="number" 
@@ -249,16 +293,17 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                                 <input type="hidden" name="offset_minutes[]" value="<?php echo $current_offset; ?>" class="eipsi-hidden-offset">
                             </div>
                             
-                            <!-- Ventana de respuesta -->
+                            <!-- Plazo de respuesta (antes "Ventana de respuesta") -->
                             <div style="border-top:1px dashed #e2e8f0;padding-top:10px;">
                                 <label style="display:block;font-size:12px;color:#64748b;margin-bottom:6px;">
-                                    ⏱️ Ventana de respuesta (tiempo disponible para completar)
+                                    ⏱️ Plazo de respuesta
                                 </label>
                                 <div class="eipsi-window-controls" style="display:flex;gap:8px;align-items:center;">
                                     <input type="number" 
                                            class="eipsi-window-input"
                                            value="<?php echo $window_display_val; ?>"
                                            min="1"
+                                           max="<?php echo $window_display_val; ?>"
                                            style="width:80px;">
                                     <select class="eipsi-wiz-select eipsi-window-unit"
                                             data-previous-unit="<?php echo esc_attr($window_unit); ?>"
@@ -270,9 +315,10 @@ $investigator_notification_days = isset($step_data['investigator_notification_da
                                     
                                     <input type="hidden" name="window_minutes[]" value="<?php echo $default_window; ?>" class="eipsi-hidden-window">
                                 </div>
-                                <small style="display:block;margin-top:4px;color:#94a3b8;font-size:11px;">
-                                    ℹ️ Por defecto: intervalo hasta la siguiente toma. Los nudges se distribuirán proporcionalmente.
+                                <small class="eipsi-window-hint" style="display:block;margin-top:4px;color:#94a3b8;font-size:11px;">
+                                    ℹ️ Máximo: <?php echo eipsi_format_duration_human($max_allowed_window); ?> (hasta la <?php echo $is_last_wave ? 'el cierre del estudio' : 'siguiente toma'; ?>). Los nudges se distribuirán dentro de este plazo.
                                 </small>
+                                <small class="eipsi-window-error" style="display:none;margin-top:2px;color:#ef4444;font-size:11px;font-weight:500;">⚠️ No puede superar el tiempo hasta la <?php echo $is_last_wave ? 'el cierre del estudio' : 'siguiente toma'; ?>.</small>
                             </div>
                         </div>
                     <?php endfor; ?>
@@ -440,6 +486,71 @@ function eipsiSyncOffset(element) {
     // Update equivalent label
     equivSpan.textContent = eipsiFormatDuration(totalMinutes);
     
+    // Update data attributes for this item
+    item.dataset.offsetMinutes = totalMinutes;
+    
+    // Find and update the NEXT wave's maxAllowed for its window
+    const allWaveItems = Array.from(document.querySelectorAll('.eipsi-interval-item:not(.closure):not([data-wave-index="0"])'));
+    const currentIndex = allWaveItems.indexOf(item);
+    
+    if (currentIndex >= 0) {
+        // Update this wave's maxAllowed based on next wave offset
+        const nextItem = allWaveItems[currentIndex + 1]; // Next wave after this
+        const closureItem = document.querySelector('.eipsi-interval-item.closure');
+        
+        let nextOffset;
+        if (nextItem) {
+            const nextHiddenOffset = nextItem.querySelector('.eipsi-hidden-offset');
+            nextOffset = parseInt(nextHiddenOffset.value) || 0;
+        } else if (closureItem) {
+            const closureHidden = closureItem.querySelector('.eipsi-hidden-offset');
+            nextOffset = parseInt(closureHidden.value) || 0;
+        } else {
+            nextOffset = totalMinutes + 10080;
+        }
+        
+        item.dataset.nextOffsetMinutes = nextOffset;
+        item.dataset.maxAllowedWindow = nextOffset - totalMinutes;
+        
+        // Update hint text if it exists
+        const hint = item.querySelector('.eipsi-window-hint');
+        if (hint && typeof eipsiFormatDuration === 'function') {
+            const isLast = !nextItem;
+            hint.textContent = 'ℹ️ Máximo: ' + eipsiFormatDuration(nextOffset - totalMinutes) + 
+                ' (hasta ' + (isLast ? 'el cierre del estudio' : 'la siguiente toma') + 
+                '). Los nudges se distribuirán dentro de este plazo.';
+        }
+        
+        // Re-validate this wave's window
+        const windowInput = item.querySelector('.eipsi-window-input');
+        if (windowInput) {
+            eipsiSyncWindow(windowInput);
+        }
+        
+        // Also update the PREVIOUS wave (its maxAllowed depends on this wave's offset)
+        if (currentIndex > 0) {
+            const prevItem = allWaveItems[currentIndex - 1];
+            const prevHiddenOffset = prevItem.querySelector('.eipsi-hidden-offset');
+            const prevOffset = parseInt(prevHiddenOffset.value) || 0;
+            
+            prevItem.dataset.nextOffsetMinutes = totalMinutes;
+            prevItem.dataset.maxAllowedWindow = totalMinutes - prevOffset;
+            
+            // Update hint
+            const prevHint = prevItem.querySelector('.eipsi-window-hint');
+            if (prevHint && typeof eipsiFormatDuration === 'function') {
+                prevHint.textContent = 'ℹ️ Máximo: ' + eipsiFormatDuration(totalMinutes - prevOffset) + 
+                    ' (hasta la siguiente toma). Los nudges se distribuirán dentro de este plazo.';
+            }
+            
+            // Re-validate previous wave's window
+            const prevWindowInput = prevItem.querySelector('.eipsi-window-input');
+            if (prevWindowInput) {
+                eipsiSyncWindow(prevWindowInput);
+            }
+        }
+    }
+    
     // If it's not the closure, we might want to auto-update closure
     if (!item.classList.contains('closure')) {
         eipsiAutoUpdateClosure();
@@ -453,6 +564,9 @@ function eipsiSyncOffset(element) {
     
     eipsiUpdateTimelinePreview();
     
+    // Trigger step validation
+    eipsiValidateStep3();
+    
     // Trigger dirty state for wizard
     if (window.jQuery) {
         window.jQuery('#eipsi-wizard-form').trigger('change');
@@ -460,7 +574,8 @@ function eipsiSyncOffset(element) {
 }
 
 /**
- * Synchronize window_minutes input
+ * Synchronize window_minutes input with maxAllowed validation
+ * maxAllowed = next_offset - current_offset
  */
 function eipsiSyncWindow(element) {
     const item = element.closest('.eipsi-interval-item');
@@ -470,7 +585,11 @@ function eipsiSyncWindow(element) {
     const windowUnitSelect = item.querySelector('.eipsi-window-unit');
     const hiddenWindow = item.querySelector('.eipsi-hidden-window');
     const windowEquivSpan = item.querySelector('.eipsi-window-equiv');
-    const hiddenOffset = item.querySelector('.eipsi-hidden-offset');
+    const windowHint = item.querySelector('.eipsi-window-hint');
+    const windowError = item.querySelector('.eipsi-window-error');
+    
+    // Get maxAllowed from data attribute (set by PHP)
+    const maxAllowedMinutes = parseInt(item.dataset.maxAllowedWindow) || 0;
     
     // Check if unit changed
     const isUnitChange = element === windowUnitSelect;
@@ -493,20 +612,34 @@ function eipsiSyncWindow(element) {
     const unit = windowUnitSelect.value;
     const windowMinutes = (unit === 'days') ? value * MINUTES_PER_DAY : value;
     
-    // Validación: window no puede ser mayor al offset
-    const offsetMinutes = parseInt(hiddenOffset.value) || 0;
-    if (windowMinutes > offsetMinutes) {
+    // Clear previous state
+    windowInput.style.borderColor = '';
+    windowInput.style.backgroundColor = '';
+    windowEquivSpan.style.color = '#64748b';
+    if (windowError) windowError.style.display = 'none';
+    if (windowHint) windowHint.style.display = 'block';
+    
+    // Validate: windowMinutes cannot exceed maxAllowedMinutes (gap to next wave/closure)
+    if (windowMinutes > maxAllowedMinutes) {
         windowInput.style.borderColor = '#ef4444';
-        windowEquivSpan.textContent = '⚠️ No puede ser mayor al offset';
+        windowInput.style.backgroundColor = '#fef2f2';
+        windowEquivSpan.textContent = '⚠️ Excede el plazo máximo';
         windowEquivSpan.style.color = '#ef4444';
+        if (windowError) windowError.style.display = 'block';
+        if (windowHint) windowHint.style.display = 'none';
+        
+        // Don't update hidden value when invalid
+        // Trigger step validation (will disable Next button)
+        eipsiValidateStep3();
         return;
-    } else {
-        windowInput.style.borderColor = '';
-        windowEquivSpan.style.color = '#64748b';
     }
     
+    // Valid - update hidden and display
     hiddenWindow.value = windowMinutes;
     windowEquivSpan.textContent = eipsiFormatDuration(windowMinutes);
+    
+    // Trigger step validation (will enable Next if all valid)
+    eipsiValidateStep3();
     
     // Trigger dirty state
     if (window.jQuery) {
@@ -515,8 +648,49 @@ function eipsiSyncWindow(element) {
 }
 
 /**
+ * Validate all window inputs in Step 3 and disable/enable Next button
+ * Called after every window or offset change
+ */
+function eipsiValidateStep3() {
+    let allValid = true;
+    
+    document.querySelectorAll('.eipsi-window-input').forEach(windowInput => {
+        const item = windowInput.closest('.eipsi-interval-item');
+        if (!item) return;
+        
+        const windowUnitSelect = item.querySelector('.eipsi-window-unit');
+        const value = parseInt(windowInput.value) || 0;
+        const unit = windowUnitSelect.value;
+        const windowMinutes = (unit === 'days') ? value * MINUTES_PER_DAY : value;
+        const maxAllowedMinutes = parseInt(item.dataset.maxAllowedWindow) || 0;
+        
+        // Check if window exceeds maxAllowed
+        if (windowMinutes > maxAllowedMinutes) {
+            allValid = false;
+        }
+    });
+    
+    // Find the Next button in the parent wizard template
+    const nextBtn = document.querySelector('.eipsi-wiz-btn-primary');
+    if (nextBtn) {
+        if (allValid) {
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+        } else {
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.cursor = 'default';
+        }
+    }
+    
+    return allValid;
+}
+
+/**
  * Auto-calculate study closure based on last wave gap
- * Phase 3 T1-Anchor: Auto-calculates study_end_offset_minutes
+ * Phase 3 T1-Anchor: Auto-calculates study_end_offset_minutes and updates 
+ * data-next-offset-minutes / data-max-allowed-window on the last wave
  */
 function eipsiAutoUpdateClosure() {
     const hiddenOffsets = Array.from(document.querySelectorAll('.eipsi-hidden-offset'));
@@ -551,6 +725,30 @@ function eipsiAutoUpdateClosure() {
         const studyEndField = document.getElementById('study-end-offset-minutes');
         if (studyEndField) {
             studyEndField.value = closureOffset;
+        }
+    }
+    
+    // Update the last wave's data attributes and re-validate its window
+    const waveItems = document.querySelectorAll('.eipsi-interval-item:not(.closure)');
+    if (waveItems.length > 0) {
+        const lastWaveItem = waveItems[waveItems.length - 1];
+        const lastWaveHiddenOffset = lastWaveItem.querySelector('.eipsi-hidden-offset');
+        const lastWaveOffsetVal = parseInt(lastWaveHiddenOffset.value) || 0;
+        
+        // Update data attributes for maxAllowed validation
+        lastWaveItem.dataset.nextOffsetMinutes = closureOffset;
+        lastWaveItem.dataset.maxAllowedWindow = closureOffset - lastWaveOffsetVal;
+        
+        // Also update the hint text for the last wave
+        const lastWaveHint = lastWaveItem.querySelector('.eipsi-window-hint');
+        if (lastWaveHint && typeof eipsiFormatDuration === 'function') {
+            lastWaveHint.textContent = 'ℹ️ Máximo: ' + eipsiFormatDuration(closureOffset - lastWaveOffsetVal) + ' (hasta el cierre del estudio). Los nudges se distribuirán dentro de este plazo.';
+        }
+        
+        // Re-validate the last wave's window
+        const lastWaveWindowInput = lastWaveItem.querySelector('.eipsi-window-input');
+        if (lastWaveWindowInput) {
+            eipsiSyncWindow(lastWaveWindowInput);
         }
     }
 }
@@ -717,6 +915,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     eipsiUpdateTimelinePreview();
+    
+    // Initial validation to set correct Next button state
+    eipsiValidateStep3();
 });
 
 </script>
