@@ -239,7 +239,6 @@ if (!function_exists('eipsi_format_duration_human')) {
                         return $default_offset;
                     }
 
-                    <?php 
                     // Pre-calculate all offsets including closure for window defaults
                     $all_offsets = array();
                     for ($i = 1; $i < $number_of_waves; $i++) {
