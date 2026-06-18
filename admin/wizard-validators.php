@@ -259,7 +259,7 @@ function eipsi_validate_timing_config($data) {
     $last_offset = 0;
     $sorted_offsets = array();
     foreach ($wave_offsets as $wave_idx => $offset) {
-        if ($wave_idx === '0' || $wave_idx === 'closure') continue;
+        if ($wave_idx == 0 || $wave_idx === 'closure') continue;
         $num_idx = intval($wave_idx);
         $sorted_offsets[$num_idx] = $offset;
     }
