@@ -308,14 +308,13 @@ if (!function_exists('eipsi_format_duration_human')) {
                             <!-- Plazo de respuesta (antes "Ventana de respuesta") -->
                             <div style="border-top:1px dashed #e2e8f0;padding-top:10px;">
                                 <label style="display:block;font-size:12px;color:#64748b;margin-bottom:6px;">
-                                    ⏱️ Plazo de respuesta
+                                    ⏱️ ¿Cuánto tiempo tiene para responder?
                                 </label>
                                 <div class="eipsi-window-controls" style="display:flex;gap:8px;align-items:center;">
                                     <input type="number" 
                                            class="eipsi-window-input"
                                            value="<?php echo $window_display_val; ?>"
                                            min="1"
-                                           max="<?php echo $window_display_val; ?>"
                                            style="width:80px;">
                                     <select class="eipsi-wiz-select eipsi-window-unit"
                                             data-previous-unit="<?php echo esc_attr($window_unit); ?>"
@@ -635,7 +634,8 @@ function eipsiSyncWindow(element) {
     if (windowMinutes > maxAllowedMinutes) {
         windowInput.style.borderColor = '#ef4444';
         windowInput.style.backgroundColor = '#fef2f2';
-        windowEquivSpan.textContent = '⚠️ Excede el plazo máximo';
+        const maxAllowedDays = Math.floor((maxAllowedMinutes / 1440) * 100) / 100;
+        windowEquivSpan.textContent = '⚠️ No puede superar los ' + maxAllowedDays + ' días de disponibilidad de esta toma.';
         windowEquivSpan.style.color = '#ef4444';
         if (windowError) windowError.style.display = 'block';
         if (windowHint) windowHint.style.display = 'none';
