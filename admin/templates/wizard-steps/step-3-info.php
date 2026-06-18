@@ -634,10 +634,13 @@ function eipsiSyncWindow(element) {
     if (windowMinutes > maxAllowedMinutes) {
         windowInput.style.borderColor = '#ef4444';
         windowInput.style.backgroundColor = '#fef2f2';
-        const maxAllowedDays = Math.floor((maxAllowedMinutes / 1440) * 100) / 100;
-        windowEquivSpan.textContent = '⚠️ No puede superar los ' + maxAllowedDays + ' días de disponibilidad de esta toma.';
+        windowEquivSpan.textContent = '⚠️ Excede el plazo máximo';
         windowEquivSpan.style.color = '#ef4444';
-        if (windowError) windowError.style.display = 'block';
+        if (windowError) {
+            const maxAllowedDays = Math.floor((maxAllowedMinutes / 1440) * 100) / 100;
+            windowError.textContent = '⚠️ No puede superar los ' + maxAllowedDays + ' días de disponibilidad de esta toma.';
+            windowError.style.display = 'block';
+        }
         if (windowHint) windowHint.style.display = 'none';
         
         // Don't update hidden value when invalid
