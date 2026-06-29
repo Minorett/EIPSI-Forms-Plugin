@@ -327,9 +327,9 @@ if (!function_exists('eipsi_format_duration_human')) {
                                     <input type="hidden" name="window_minutes[]" value="<?php echo $default_window; ?>" class="eipsi-hidden-window">
                                 </div>
                                 <small class="eipsi-window-hint" style="display:block;margin-top:4px;color:#94a3b8;font-size:11px;">
-                                    ℹ️ Máximo: <?php echo eipsi_format_duration_human($max_allowed_window); ?> (hasta la <?php echo $is_last_wave ? 'el cierre del estudio' : 'siguiente toma'; ?>). Los nudges se distribuirán dentro de este plazo.
+                                    ℹ️ Disponibilidad de esta toma: <?php echo eipsi_format_duration_human($max_allowed_window); ?>. Los recordatorios se distribuirán dentro de este período.
                                 </small>
-                                <small class="eipsi-window-error" style="display:none;margin-top:2px;color:#ef4444;font-size:11px;font-weight:500;">⚠️ No puede superar el tiempo hasta la <?php echo $is_last_wave ? 'el cierre del estudio' : 'siguiente toma'; ?>.</small>
+                                <small class="eipsi-window-error" style="display:none;margin-top:2px;color:#ef4444;font-size:11px;font-weight:500;">⚠️ No puede superar la disponibilidad de esta toma.</small>
                             </div>
                         </div>
                     <?php endfor; ?>
@@ -410,7 +410,7 @@ if (!function_exists('eipsi_format_duration_human')) {
                                 <strong style="color:#0c4a6e;">📬 Notificación de disponibilidad:</strong> Los participantes recibirán un email automático cuando cada toma esté disponible (según el intervalo configurado arriba).
                             </p>
                             <p style="margin:0;font-size:13px;color:#0369a1;line-height:1.6;">
-                                <strong style="color:#0c4a6e;">🔔 Recordatorios de seguimiento:</strong> Si el participante no responde, se enviarán automáticamente 4 recordatorios distribuidos proporcionalmente en el tiempo disponible hasta la próxima toma. Por ejemplo, si el intervalo es de 7 días, los recordatorios se enviarán aproximadamente al 15%, 40%, 70% y 90% del intervalo. Podrás ajustar estos tiempos en el Dashboard del estudio.
+                                <strong style="color:#0c4a6e;">🔔 Recordatorios de seguimiento:</strong> se enviarán automáticamente distribuidos dentro del período de respuesta de cada toma. Podrás ajustar estos tiempos desde el Dashboard del estudio.
                             </p>
                         </div>
                         <input type="hidden" name="reminder_days_before" value="0">
@@ -998,6 +998,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     eipsiUpdateTimelinePreview();
+    eipsiAutoUpdateClosure();
     
     // Initial validation to set correct Next button state
     eipsiValidateStep3();
