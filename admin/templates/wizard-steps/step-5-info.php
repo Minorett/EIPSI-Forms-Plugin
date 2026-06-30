@@ -231,10 +231,7 @@ $study_end_offset = isset($step_3['study_end_offset_minutes']) ? intval($step_3[
                 <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px;margin-bottom:16px;">
                     <div style="font-size:12px;font-weight:600;color:#856404;margin-bottom:8px;">🔔 RECORDATORIOS AUTOMÁTICOS</div>
                     <div style="font-size:12px;color:#856404;line-height:1.5;">
-                        Cada toma tendrá <strong>4 recordatorios automáticos</strong> distribuidos proporcionalmente en el tiempo disponible hasta la próxima toma.
-                        <div style="margin-top:8px;font-style:italic;">
-                            💡 Los tiempos exactos se ajustarán automáticamente según el intervalo entre tomas. Podrás modificarlos manualmente desde el Dashboard del estudio.
-                        </div>
+                        Los recordatorios se enviarán automáticamente distribuidos dentro del período de respuesta de cada toma. Podrás ajustar estos tiempos desde el Dashboard del estudio.
                     </div>
                 </div>
                 
