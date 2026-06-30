@@ -47,13 +47,33 @@ function eipsi_form_shortcode($atts) {
         
         if ($wave_id && $participant_id) {
             $assignment = $wpdb->get_row($wpdb->prepare(
-                "SELECT status FROM {$wpdb->prefix}survey_assignments 
-                 WHERE wave_id = %d AND participant_id = %d",
+                "SELECT a.status, w.available_at, w.window_minutes 
+                 FROM {$wpdb->prefix}survey_assignments a
+                 JOIN {$wpdb->prefix}survey_waves w ON a.wave_id = w.id
+                 WHERE a.wave_id = %d AND a.participant_id = %d",
                 $wave_id,
                 $participant_id
             ));
             
             if ($assignment) {
+                // GAP 2: Auto-expire if window has passed (real-time check)
+                if (!empty($assignment->window_minutes) && !empty($assignment->available_at)) {
+                    $available_ts = strtotime($assignment->available_at);
+                    $window_seconds = intval($assignment->window_minutes) * 60;
+                    $expiration_ts = $available_ts + $window_seconds;
+                    
+                    if ($expiration_ts < time() && in_array($assignment->status, array('pending', 'in_progress'))) {
+                        $wpdb->update(
+                            $wpdb->prefix . 'survey_assignments',
+                            array('status' => 'expired', 'updated_at' => current_time('mysql')),
+                            array('wave_id' => $wave_id, 'participant_id' => $participant_id)
+                        );
+                        $assignment->status = 'expired';
+                        error_log(sprintf('[EIPSI Form Render] Auto-expired wave_id=%d, participant=%d (window passed)', 
+                            $wave_id, $participant_id));
+                    }
+                }
+                
                 // Only allow pending or in_progress waves to be rendered
                 $allowed_statuses = array('pending', 'in_progress');
                 
@@ -1104,13 +1124,37 @@ function eipsi_longitudinal_study_shortcode($atts) {
             ), ARRAY_A);
         }
     }
-    
+
+    // GAP 1: Auto-expire waves whose window has passed (real-time check)
+    if (!empty($waves)) {
+        $now_db = current_time('mysql');
+        foreach ($waves as $wave) {
+            if (!empty($wave['window_minutes']) && !empty($wave['available_at'])) {
+                $available_ts = strtotime($wave['available_at']);
+                $window_seconds = intval($wave['window_minutes']) * 60;
+                $expiration_ts = $available_ts + $window_seconds;
+
+                if ($expiration_ts < time()) {
+                    // Auto-expire all pending/in_progress assignments for this wave
+                    $wpdb->query($wpdb->prepare(
+                        "UPDATE {$wpdb->prefix}survey_assignments 
+                         SET status = 'expired', updated_at = %s
+                         WHERE wave_id = %d AND status IN ('pending', 'in_progress')",
+                        $now_db,
+                        $wave['id']
+                    ));
+                    error_log(sprintf('[EIPSI Long Study] Auto-expired assignments for wave_id=%d (window passed)', $wave['id']));
+                }
+            }
+        }
+    }
+
     // Get participant count
     $participant_count = $wpdb->get_var($wpdb->prepare(
         "SELECT COUNT(*) FROM {$wpdb->prefix}survey_participants WHERE survey_id = %d",
         $actual_study_id
     ));
-    
+
     // Get study configuration from JSON
     $study_config = !empty($study->config) ? json_decode($study->config, true) : array();
     
