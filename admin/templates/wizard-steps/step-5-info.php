@@ -72,13 +72,26 @@ function eipsi_format_minutes_human_readable($minutes) {
 // Format timing summary with absolute offsets from T1
 $timing_summary = array();
 $wave_offsets = array(0); // T1 always at 0
+$wave_windows = array(); // windows per wave (index 0 = T1)
 
 if (!empty($step_3['timing_intervals'])) {
     foreach ($step_3['timing_intervals'] as $interval) {
         if (isset($interval['offset_minutes'])) {
             $wave_offsets[] = intval($interval['offset_minutes']);
         }
+        // Capture window_minutes for the wave this interval belongs to
+        $wave_windows[] = isset($interval['window_minutes']) ? intval($interval['window_minutes']) : null;
     }
+}
+
+// T1's window comes from the first interval (window before T2), or from a top-level default
+$t1_window = null;
+if (!empty($step_3['timing_intervals'])) {
+    $t1_window = $wave_windows[0] ?? null;
+}
+// Also check if there's a top-level window_minutes for T1
+if ($t1_window === null && isset($step_3['window_minutes'])) {
+    $t1_window = intval($step_3['window_minutes']);
 }
 
 // Build timing display
@@ -88,13 +101,16 @@ foreach ($wave_offsets as $index => $offset_minutes) {
         $timing_summary[] = array(
             'wave' => 'T1',
             'offset' => 'Inmediato (inicio del estudio)',
-            'offset_raw' => 0
+            'offset_raw' => 0,
+            'window_raw' => $t1_window
         );
     } else {
+        $window_for_wave = isset($wave_windows[$index - 1]) ? $wave_windows[$index - 1] : null;
         $timing_summary[] = array(
             'wave' => "T{$wave_num}",
             'offset' => eipsi_format_minutes_human_readable($offset_minutes) . ' desde T1',
-            'offset_raw' => $offset_minutes
+            'offset_raw' => $offset_minutes,
+            'window_raw' => $window_for_wave
         );
     }
 }
@@ -185,6 +201,11 @@ $study_end_offset = isset($step_3['study_end_offset_minutes']) ? intval($step_3[
                                 </div>
                                 <div style="flex:1;color:#2c3e50;font-size:13px;font-weight:500;">
                                     <?php echo esc_html($wave_info['offset']); ?>
+                                    <?php if ($wave_info['window_raw'] !== null && $wave_info['window_raw'] > 0): ?>
+                                        <div style="font-size:11px;color:#64748b;font-weight:400;margin-top:2px;">
+                                            ⏱️ Tiempo para responder: <?php echo eipsi_format_minutes_human_readable($wave_info['window_raw']); ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <?php if ($index < count($timing_summary) - 1): ?>
@@ -208,18 +229,9 @@ $study_end_offset = isset($step_3['study_end_offset_minutes']) ? intval($step_3[
                 
                 <!-- Nudges summary -->
                 <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px;margin-bottom:16px;">
-                    <div style="font-size:12px;font-weight:600;color:#856404;margin-bottom:8px;">🔔 RECORDATORIOS AUTOMÁTICOS (NUDGES)</div>
+                    <div style="font-size:12px;font-weight:600;color:#856404;margin-bottom:8px;">🔔 RECORDATORIOS AUTOMÁTICOS</div>
                     <div style="font-size:12px;color:#856404;line-height:1.5;">
-                        Cada toma tendrá <strong>4 recordatorios automáticos</strong> distribuidos proporcionalmente en el tiempo disponible hasta la próxima toma:
-                        <ul style="margin:8px 0 0 0;padding-left:20px;">
-                            <li>Nudge 1: <strong>15%</strong> del intervalo</li>
-                            <li>Nudge 2: <strong>40%</strong> del intervalo</li>
-                            <li>Nudge 3: <strong>70%</strong> del intervalo</li>
-                            <li>Nudge 4: <strong>90%</strong> del intervalo</li>
-                        </ul>
-                        <div style="margin-top:8px;font-style:italic;">
-                            💡 Los tiempos exactos se ajustarán automáticamente según el intervalo entre tomas. Podrás modificarlos manualmente desde el Dashboard del estudio.
-                        </div>
+                        Los recordatorios se enviarán automáticamente distribuidos dentro del período de respuesta de cada toma. Podrás ajustar estos tiempos desde el Dashboard del estudio.
                     </div>
                 </div>
                 
