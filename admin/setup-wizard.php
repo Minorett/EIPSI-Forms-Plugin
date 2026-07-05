@@ -463,12 +463,13 @@ function eipsi_create_study_waves($study_id, $wave_config, $timing_config) {
     $time_unit_map = array();
     $window_map = array();
 
-    // Extract window_minutes from POST data
-    if (isset($_POST['window_minutes']) && is_array($_POST['window_minutes'])) {
-        foreach ($_POST['window_minutes'] as $idx => $window_val) {
-            $window_map[$idx] = intval($window_val);
+    // Extract window_minutes from timing_intervals (stored in transient from Step 3)
+    foreach ($timing_intervals as $interval) {
+        if (isset($interval['window_minutes'])) {
+            $interval_key = intval($interval['from_wave']); // T2=0, T3=1, etc.
+            $window_map[$interval_key] = intval($interval['window_minutes']);
             error_log(sprintf('[EIPSI WIZARD] Window config: T%d window = %d min', 
-                $idx + 2, $window_map[$idx])); // idx 0 = T2
+                $interval_key + 2, $window_map[$interval_key]));
         }
     }
 
