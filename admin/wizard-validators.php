@@ -273,16 +273,21 @@ function eipsi_validate_timing_config($data) {
     }
     
     // --- Validate window_minutes against gaps ---
-    // window_minutes[] is a parallel array to wave_index[]
+    // window_minutes[] is a parallel array to wave_index[] but has FEWER elements
+    // because T1 (index=0) and closure don't have configurable windows.
+    // A separate counter aligns window_minutes entries to T2+ waves only.
     if (isset($data['wave_index']) && is_array($data['wave_index']) && 
         isset($data['window_minutes']) && is_array($data['window_minutes'])) {
         
         // Build a mapping: wave_index => window_minutes
+        // Use a separate counter since window_minutes[] skips T1 and closure
         $window_map = array();
+        $w_idx = 0; // Separate counter for window_minutes entries (T2+ only)
         foreach ($data['wave_index'] as $i => $wave_idx) {
-            $window_minutes = isset($data['window_minutes'][$i]) ? intval($data['window_minutes'][$i]) : 0;
             if ($wave_idx !== '0' && $wave_idx !== 'closure') {
+                $window_minutes = isset($data['window_minutes'][$w_idx]) ? intval($data['window_minutes'][$w_idx]) : 0;
                 $window_map[intval($wave_idx)] = $window_minutes;
+                $w_idx++;
             }
         }
         
@@ -404,13 +409,20 @@ function eipsi_validate_timing_config($data) {
 function eipsi_sanitize_timing_config($data) {
     $sanitized = array();
     
-    // Convert parallel arrays (wave_index[], offset_minutes[]) to timing_intervals format
+    // Convert parallel arrays (wave_index[], offset_minutes[], window_minutes[]) to timing_intervals format
     if (isset($data['wave_index']) && is_array($data['wave_index']) && 
         isset($data['offset_minutes']) && is_array($data['offset_minutes'])) {
         
         $timing_intervals = array();
         $wave_indices = $data['wave_index'];
         $offset_minutes = $data['offset_minutes'];
+        
+        // window_minutes[] has fewer elements than wave_index[] — it starts at T2
+        // (T1 and closure don't have configurable windows)
+        $window_idx = 0;
+        $window_minutes_raw = isset($data['window_minutes']) && is_array($data['window_minutes']) 
+            ? $data['window_minutes'] 
+            : array();
         
         foreach ($wave_indices as $index => $wave_index) {
             // Skip T1 (wave_index = 0) and closure
@@ -421,11 +433,16 @@ function eipsi_sanitize_timing_config($data) {
             $wave_num = intval($wave_index);
             $offset = isset($offset_minutes[$index]) ? intval($offset_minutes[$index]) : 0;
             
+            // window_minutes aligned with T2+ waves (separate counter)
+            $window = isset($window_minutes_raw[$window_idx]) ? intval($window_minutes_raw[$window_idx]) : 0;
+            $window_idx++;
+            
             // Build interval data for this wave
             $timing_intervals[] = array(
                 'from_wave' => $wave_num - 1, // T2 → from_wave=0, T3 → from_wave=1
                 'to_wave' => $wave_num,
                 'offset_minutes' => $offset,
+                'window_minutes' => $window,
             );
         }
         
@@ -450,6 +467,11 @@ function eipsi_sanitize_timing_config($data) {
             // Include offset_minutes if present (New T1-Anchor System)
             if (isset($interval['offset_minutes'])) {
                 $interval_data['offset_minutes'] = intval($interval['offset_minutes']);
+            }
+            
+            // Include window_minutes if present (Response Window for T2+)
+            if (isset($interval['window_minutes'])) {
+                $interval_data['window_minutes'] = intval($interval['window_minutes']);
             }
             
             $sanitized['timing_intervals'][] = $interval_data;
