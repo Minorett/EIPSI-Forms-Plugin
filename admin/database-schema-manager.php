@@ -770,7 +770,11 @@ class EIPSI_Database_Schema_Manager {
 
                     'pool_id' => 'BIGINT(20) UNSIGNED NOT NULL',
 
-                    'participant_id' => 'VARCHAR(255) NOT NULL',
+                    // v2.6.1: BIGINT UNSIGNED to match survey_participants.id. VARCHAR(255) broke
+
+                    // fk_pool_assignments_participant with errno 150 (FK incorrectly formed).
+
+                    'participant_id' => 'BIGINT(20) UNSIGNED NOT NULL',
 
                     'study_id' => 'BIGINT(20) UNSIGNED NOT NULL',
 
@@ -1522,20 +1526,12 @@ class EIPSI_Database_Schema_Manager {
 
         update_option( 'eipsi_schema_last_verified', current_time( 'mysql' ) );
 
-
-
         // Fix collations
-
         self::fix_collations();
-
-
-
-        // v2.6.1: Migrate email_type from ENUM to VARCHAR
-
-        self::migrate_email_type_to_varchar();
-
-
-
+        // v2.6.1: email_type ENUM->VARCHAR migration is handled by dbDelta via
+        // get_schema_map() (survey_email_log is created as VARCHAR(100)). The legacy
+        // migrate_email_type_to_varchar() no longer exists and crashed activation
+        // on fresh installs (Call to undefined method).
         return $repair_log;
 
     }
