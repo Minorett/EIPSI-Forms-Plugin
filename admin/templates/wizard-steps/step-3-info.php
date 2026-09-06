@@ -410,7 +410,7 @@ if (!function_exists('eipsi_format_duration_human')) {
                                 <strong style="color:#0c4a6e;">📬 Notificación de disponibilidad:</strong> Los participantes recibirán un email automático cuando cada toma esté disponible (según el intervalo configurado arriba).
                             </p>
                             <p style="margin:0;font-size:13px;color:#0369a1;line-height:1.6;">
-                                <strong style="color:#0c4a6e;">🔔 Recordatorios de seguimiento:</strong> se enviarán automáticamente distribuidos dentro del período de respuesta de cada toma. Podrás ajustar estos tiempos desde el Dashboard del estudio.
+                                <strong style="color:#0c4a6e;">🔔 Recordatorios de seguimiento:</strong> se enviarán automáticamente según la configuración de recordatorios asociada a cada toma. Podrás ajustar estos tiempos desde el Dashboard del estudio.
                             </p>
                         </div>
                         <input type="hidden" name="reminder_days_before" value="0">
