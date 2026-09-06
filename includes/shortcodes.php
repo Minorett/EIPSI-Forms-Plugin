@@ -943,59 +943,75 @@ function eipsi_longitudinal_study_shortcode($atts) {
             ));
 
             if ($form_belongs_to_study > 0) {
-                // GAP 1: Validate assignment status and real-time window before rendering
+                // GAP 1 (Task C+Step5): Validate assignment window before rendering.
+                // available_at lives ONLY on survey_assignments; survey_waves holds
+                // just window_minutes. The window is ALWAYS enforced from the assignment.
                 $participant_id = EIPSI_Auth_Service::get_current_participant();
-                
-                // Find wave that uses this form_id
+
+                // Find wave that uses this form_id (window config only, no available_at)
                 $wave = $wpdb->get_row($wpdb->prepare(
-                    "SELECT id, available_at, window_minutes 
-                     FROM {$wpdb->prefix}survey_waves 
+                    "SELECT id, window_minutes
+                     FROM {$wpdb->prefix}survey_waves
                      WHERE study_id = %d AND form_id = %d",
                     $actual_study_id,
                     $form_id
                 ));
-                
+
                 if ($wave && $participant_id) {
                     // Check assignment for this participant
                     $wave_assignment = $wpdb->get_row($wpdb->prepare(
-                        "SELECT status, available_at 
-                         FROM {$wpdb->prefix}survey_assignments 
+                        "SELECT status, available_at
+                         FROM {$wpdb->prefix}survey_assignments
                          WHERE wave_id = %d AND participant_id = %d",
                         $wave->id,
                         $participant_id
                     ));
-                    
-                    if ($wave_assignment) {
-                        // Real-time auto-expiration check
-                        $window_mins = intval($wave->window_minutes);
-                        $assign_avail = $wave_assignment->available_at ?: $wave->available_at;
-                        
-                        if ($window_mins > 0 && !empty($assign_avail)) {
-                            $avail_ts = strtotime($assign_avail);
-                            $window_secs = $window_mins * 60;
-                            $exp_ts = $avail_ts + $window_secs;
-                            
-                            if ($exp_ts < time() && in_array($wave_assignment->status, array('pending', 'in_progress'))) {
-                                $wpdb->update(
-                                    $wpdb->prefix . 'survey_assignments',
-                                    array('status' => 'expired', 'updated_at' => current_time('mysql')),
-                                    array('wave_id' => $wave->id, 'participant_id' => $participant_id)
-                                );
-                                error_log(sprintf('[EIPSI Long Study GAP1] Auto-expired assignment wave=%d, participant=%d', $wave->id, $participant_id));
-                                return eipsi_longitudinal_study_error(
-                                    __('Esta toma ha expirado.', 'eipsi-forms'),
-                                    __('El tiempo para responder esta toma ya pasó.', 'eipsi-forms')
-                                );
-                            }
-                        }
-                        
-                        // Block if status is not allowed
-                        if (!in_array($wave_assignment->status, array('pending', 'in_progress'))) {
+
+                    // No assignment for this participant => no window => do NOT render
+                    if (!$wave_assignment) {
+                        return eipsi_longitudinal_study_error(
+                            __('Esta toma no está disponible.', 'eipsi-forms'),
+                            __('No tenés una asignación para esta toma.', 'eipsi-forms')
+                        );
+                    }
+
+                    // available_at comes ONLY from the assignment; empty => do NOT render
+                    $assign_avail = $wave_assignment->available_at;
+                    if (empty($assign_avail)) {
+                        return eipsi_longitudinal_study_error(
+                            __('Esta toma no está disponible.', 'eipsi-forms'),
+                            __('La ventana de respuesta de esta toma aún no está definida.', 'eipsi-forms')
+                        );
+                    }
+
+                    // Real-time auto-expiration check (assignment available_at + wave window)
+                    $window_mins = intval($wave->window_minutes);
+
+                    if ($window_mins > 0) {
+                        $avail_ts = strtotime($assign_avail);
+                        $window_secs = $window_mins * 60;
+                        $exp_ts = $avail_ts + $window_secs;
+
+                        if ($exp_ts < time() && in_array($wave_assignment->status, array('pending', 'in_progress'))) {
+                            $wpdb->update(
+                                $wpdb->prefix . 'survey_assignments',
+                                array('status' => 'expired', 'updated_at' => current_time('mysql')),
+                                array('wave_id' => $wave->id, 'participant_id' => $participant_id)
+                            );
+                            error_log(sprintf('[EIPSI Long Study GAP1] Auto-expired assignment wave=%d, participant=%d', $wave->id, $participant_id));
                             return eipsi_longitudinal_study_error(
-                                __('Esta toma no está disponible.', 'eipsi-forms'),
-                                sprintf(__('Estado: %s', 'eipsi-forms'), $wave_assignment->status)
+                                __('Esta toma ha expirado.', 'eipsi-forms'),
+                                __('El tiempo para responder esta toma ya pasó.', 'eipsi-forms')
                             );
                         }
+                    }
+
+                    // Block if status is not allowed
+                    if (!in_array($wave_assignment->status, array('pending', 'in_progress'))) {
+                        return eipsi_longitudinal_study_error(
+                            __('Esta toma no está disponible.', 'eipsi-forms'),
+                            sprintf(__('Estado: %s', 'eipsi-forms'), $wave_assignment->status)
+                        );
                     }
                 }
                 
